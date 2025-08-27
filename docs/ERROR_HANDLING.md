@@ -125,7 +125,6 @@ ResourceError.performanceScale.inUse(15)
 // Users
 ResourceError.user.notFound()
 ResourceError.user.emailExists()
-ResourceError.user.invalidPassword()
 ResourceError.user.cannotDeleteSelf()
 ResourceError.user.cannotDemoteSelf()
 ResourceError.user.notInDatabase('user-123')

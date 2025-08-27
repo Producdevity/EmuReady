@@ -12,7 +12,7 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
    */
   get: mobilePublicProcedure.input(GetDevicesSchema).query(async ({ ctx, input }) => {
     const repository = new DevicesRepository(ctx.prisma)
-    return repository.getMobile(input ?? {})
+    return repository.listMobile(input ?? {})
   }),
 
   /**
@@ -20,7 +20,7 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
    */
   brands: mobilePublicProcedure.query(async ({ ctx }) => {
     const repository = new DeviceBrandsRepository(ctx.prisma)
-    return repository.getAllForMobile()
+    return repository.listForMobile()
   }),
 
   /**
@@ -28,7 +28,7 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
    */
   socs: mobilePublicProcedure.query(async ({ ctx }) => {
     const repository = new SoCsRepository(ctx.prisma)
-    return repository.getAllForMobile()
+    return repository.listForMobile()
   }),
 
   /**
@@ -36,7 +36,7 @@ export const mobileDevicesRouter = createMobileTRPCRouter({
    */
   byId: mobilePublicProcedure.input(GetDeviceByIdSchema).query(async ({ ctx, input }) => {
     const repository = new DevicesRepository(ctx.prisma)
-    const device = await repository.getByIdMobile(input.id)
+    const device = await repository.byIdMobile(input.id)
     return device ?? ResourceError.device.notFound()
   }),
 })

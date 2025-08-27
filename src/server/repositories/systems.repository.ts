@@ -1,3 +1,4 @@
+import { ResourceError } from '@/lib/errors'
 import { Prisma, type System } from '@orm'
 import { BaseRepository } from './base.repository'
 import type { GetSystemsInput, CreateSystemInput, UpdateSystemInput } from '@/schemas/system'
@@ -6,7 +7,27 @@ import type { GetSystemsInput, CreateSystemInput, UpdateSystemInput } from '@/sc
  * Repository for System data access
  */
 export class SystemsRepository extends BaseRepository {
-  async get(filters: GetSystemsInput = {}): Promise<(System & { _count: { games: number } })[]> {
+  // Static query shapes for this repository
+  static readonly includes = {
+    default: {} satisfies Prisma.SystemInclude,
+
+    withCounts: {
+      _count: { select: { games: true } },
+    } satisfies Prisma.SystemInclude,
+
+    withGames: {
+      games: { orderBy: { title: 'asc' as const } },
+      _count: { select: { games: true } },
+    } satisfies Prisma.SystemInclude,
+
+    withEmulators: {
+      emulators: { select: { id: true, name: true } },
+    } satisfies Prisma.SystemInclude,
+  } as const
+
+  async list(
+    filters: GetSystemsInput = {},
+  ): Promise<Prisma.SystemGetPayload<{ include: typeof SystemsRepository.includes.withCounts }>[]> {
     const sortDirection = filters.sortDirection ?? this.sortOrder
     const sortField = filters.sortField ?? 'name'
 
@@ -29,26 +50,17 @@ export class SystemsRepository extends BaseRepository {
 
     return this.prisma.system.findMany({
       where,
-      include: { _count: { select: { games: true } } },
+      include: SystemsRepository.includes.withCounts,
       orderBy,
     })
   }
 
-  async byId(
-    id: string,
-  ): Promise<
-    | (System & {
-        games: { id: string; title: string; systemId: string }[]
-        _count: { games: number }
-      })
-    | null
-  > {
+  async byId(id: string): Promise<Prisma.SystemGetPayload<{
+    include: typeof SystemsRepository.includes.withGames
+  }> | null> {
     return this.prisma.system.findUnique({
       where: { id },
-      include: {
-        games: { orderBy: { title: this.sortOrder } },
-        _count: { select: { games: true } },
-      },
+      include: SystemsRepository.includes.withGames,
     })
   }
 
@@ -57,15 +69,40 @@ export class SystemsRepository extends BaseRepository {
   }
 
   async create(data: CreateSystemInput): Promise<System> {
-    return this.prisma.system.create({ data })
+    // Check for duplicate name
+    const exists = await this.existsByName(data.name)
+    if (exists) throw ResourceError.system.alreadyExists(data.name)
+
+    return this.handleDatabaseOperation(() => this.prisma.system.create({ data }), 'System')
   }
 
   async update(id: string, data: Partial<UpdateSystemInput>): Promise<System> {
-    return this.prisma.system.update({ where: { id }, data })
+    // Check if system exists
+    const system = await this.byId(id)
+    if (!system) throw ResourceError.system.notFound()
+
+    // Check for duplicate name if being updated
+    if (data.name) {
+      const exists = await this.existsByName(data.name, id)
+      if (exists) throw ResourceError.system.alreadyExists(data.name)
+    }
+
+    return this.handleDatabaseOperation(
+      () => this.prisma.system.update({ where: { id }, data }),
+      'System',
+    )
   }
 
   async delete(id: string): Promise<void> {
-    await this.prisma.system.delete({ where: { id } })
+    // Check if system exists and has games
+    const system = await this.byId(id)
+    if (!system) throw ResourceError.system.notFound()
+
+    if (system._count.games > 0) {
+      throw ResourceError.system.inUse(system._count.games)
+    }
+
+    await this.handleDatabaseOperation(() => this.prisma.system.delete({ where: { id } }), 'System')
   }
 
   /**
@@ -89,7 +126,7 @@ export class SystemsRepository extends BaseRepository {
   /**
    * Get system by key
    */
-  async getByKey(key: string): Promise<System | null> {
+  async byKey(key: string): Promise<System | null> {
     return this.prisma.system.findFirst({ where: { key } })
   }
 
@@ -109,9 +146,11 @@ export class SystemsRepository extends BaseRepository {
   /**
    * Get systems with game counts
    */
-  async getWithGameCounts(): Promise<(System & { _count: { games: number } })[]> {
+  async listWithCounts(): Promise<
+    Prisma.SystemGetPayload<{ include: typeof SystemsRepository.includes.withCounts }>[]
+  > {
     return this.prisma.system.findMany({
-      include: { _count: { select: { games: true } } },
+      include: SystemsRepository.includes.withCounts,
       orderBy: { games: { _count: Prisma.SortOrder.desc } },
     })
   }
@@ -119,9 +158,11 @@ export class SystemsRepository extends BaseRepository {
   /**
    * Get systems with emulator compatibility
    */
-  async getWithEmulators(): Promise<(System & { emulators: { id: string; name: string }[] })[]> {
+  async listWithEmulators(): Promise<
+    Prisma.SystemGetPayload<{ include: typeof SystemsRepository.includes.withEmulators }>[]
+  > {
     return this.prisma.system.findMany({
-      include: { emulators: { select: { id: true, name: true } } },
+      include: SystemsRepository.includes.withEmulators,
       orderBy: { name: this.sortOrder },
     })
   }
@@ -129,7 +170,7 @@ export class SystemsRepository extends BaseRepository {
   /**
    * Get statistics about systems
    */
-  async getStats(): Promise<{
+  async stats(): Promise<{
     total: number
     withGames: number
     withoutGames: number

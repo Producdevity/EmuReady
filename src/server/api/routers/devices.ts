@@ -1,4 +1,4 @@
-import { ResourceError, AppError } from '@/lib/errors'
+import { ResourceError } from '@/lib/errors'
 import {
   GetDevicesSchema,
   GetDeviceByIdSchema,
@@ -17,7 +17,7 @@ import { DevicesRepository } from '@/server/repositories/devices.repository'
 export const devicesRouter = createTRPCRouter({
   get: publicProcedure.input(GetDevicesSchema).query(async ({ ctx, input }) => {
     const repository = new DevicesRepository(ctx.prisma)
-    return repository.getPaginated(input ?? {})
+    return repository.list(input ?? {})
   }),
 
   byId: publicProcedure.input(GetDeviceByIdSchema).query(async ({ ctx, input }) => {
@@ -29,27 +29,7 @@ export const devicesRouter = createTRPCRouter({
   create: manageDevicesProcedure.input(CreateDeviceSchema).mutation(async ({ ctx, input }) => {
     const repository = new DevicesRepository(ctx.prisma)
 
-    const brand = await ctx.prisma.deviceBrand.findUnique({
-      where: { id: input.brandId },
-    })
-
-    if (!brand) return ResourceError.deviceBrand.notFound()
-
-    // Validate SoC if provided
-    if (input.socId) {
-      const soc = await ctx.prisma.soC.findUnique({
-        where: { id: input.socId },
-      })
-
-      if (!soc) return AppError.notFound('SoC')
-    }
-
-    const exists = await repository.existsByModelAndBrand(input.modelName, input.brandId)
-    if (exists) {
-      return ResourceError.device.alreadyExists(input.modelName)
-    }
-
-    // Create and then fetch with counts for web
+    // Repository handles all validation (brand exists, SoC exists, no duplicates)
     const created = await repository.create(input)
     return repository.byIdWithCounts(created.id)
   }),
@@ -58,30 +38,7 @@ export const devicesRouter = createTRPCRouter({
     const repository = new DevicesRepository(ctx.prisma)
     const { id, ...data } = input
 
-    const device = await repository.byId(id)
-    if (!device) return ResourceError.device.notFound()
-
-    const brand = await ctx.prisma.deviceBrand.findUnique({
-      where: { id: input.brandId },
-    })
-
-    if (!brand) return ResourceError.deviceBrand.notFound()
-
-    // Validate SoC if provided
-    if (input.socId) {
-      const soc = await ctx.prisma.soC.findUnique({
-        where: { id: input.socId },
-      })
-
-      if (!soc) return AppError.notFound('SoC')
-    }
-
-    const exists = await repository.existsByModelAndBrand(input.modelName, input.brandId)
-    if (exists) {
-      return ResourceError.device.alreadyExists(input.modelName)
-    }
-
-    // Update and then fetch with counts for web
+    // Repository handles all validation (device exists, brand exists, SoC exists, no duplicates)
     const updated = await repository.update(id, data)
     return repository.byIdWithCounts(updated.id)
   }),
@@ -89,34 +46,17 @@ export const devicesRouter = createTRPCRouter({
   delete: manageDevicesProcedure.input(DeleteDeviceSchema).mutation(async ({ ctx, input }) => {
     const repository = new DevicesRepository(ctx.prisma)
 
-    const existingDevice = await ctx.prisma.device.findUnique({
-      where: { id: input.id },
-      include: { _count: { select: { listings: true } } },
-    })
-
+    // Get device before deletion to return it
+    const existingDevice = await repository.byIdWithCounts(input.id)
     if (!existingDevice) return ResourceError.device.notFound()
 
-    if (existingDevice._count.listings > 0) {
-      return AppError.conflict(
-        `Cannot delete device "${existingDevice.modelName}" because it has ${existingDevice._count.listings} active listing(s). Please remove all listings for this device first.`,
-      )
-    }
-
+    // Repository handles validation (device exists, not in use)
     await repository.delete(input.id)
     return existingDevice // Return the deleted device
   }),
 
   stats: viewStatisticsProcedure.query(async ({ ctx }) => {
-    const [total, withListings, withoutListings] = await Promise.all([
-      ctx.prisma.device.count(),
-      ctx.prisma.device.count({ where: { listings: { some: {} } } }),
-      ctx.prisma.device.count({ where: { listings: { none: {} } } }),
-    ])
-
-    return {
-      total,
-      withListings,
-      withoutListings,
-    }
+    const repository = new DevicesRepository(ctx.prisma)
+    return repository.stats()
   }),
 })

@@ -72,7 +72,7 @@ export async function warmRecentListings(limit = 100): Promise<WarmingResult> {
     const repository = new ListingsRepository(prisma)
 
     // Get recent approved listings using repository
-    const recentListingsResult = await repository.getRecentListings(limit)
+    const recentListingsResult = await repository.listRecent(limit)
     const recentListings = recentListingsResult.listings.map((listing) => ({ id: listing.id }))
 
     // Get recent approved PC listings

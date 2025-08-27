@@ -1,11 +1,21 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { type Prisma } from '@orm'
 import { updateListingVoteCounts, updatePcListingVoteCounts } from './vote-counts'
 import { calculateWilsonScore } from './wilson-score'
 
+type MockPrismaClient = {
+  listing: {
+    update: ReturnType<typeof vi.fn>
+  }
+  pcListing?: {
+    update: ReturnType<typeof vi.fn>
+  }
+}
+
 describe('vote-counts', () => {
   describe('updateListingVoteCounts', () => {
-    let mockUpdate: any
-    let prisma: any
+    let mockUpdate: ReturnType<typeof vi.fn>
+    let prisma: MockPrismaClient
 
     beforeEach(() => {
       mockUpdate = vi.fn()
@@ -37,7 +47,12 @@ describe('vote-counts', () => {
           successRate: calculateWilsonScore(1, 0),
         })
 
-        await updateListingVoteCounts(prisma, listingId, 'create', true)
+        await updateListingVoteCounts(
+          prisma as unknown as Prisma.TransactionClient,
+          listingId,
+          'create',
+          true,
+        )
 
         expect(mockUpdate).toHaveBeenCalledTimes(2)
 
@@ -78,7 +93,12 @@ describe('vote-counts', () => {
           successRate: 0,
         })
 
-        await updateListingVoteCounts(prisma, listingId, 'create', false)
+        await updateListingVoteCounts(
+          prisma as unknown as Prisma.TransactionClient,
+          listingId,
+          'create',
+          false,
+        )
 
         expect(mockUpdate).toHaveBeenCalledTimes(2)
 
@@ -119,7 +139,13 @@ describe('vote-counts', () => {
           successRate: 0.8,
         })
 
-        await updateListingVoteCounts(prisma, listingId, 'delete', undefined, true)
+        await updateListingVoteCounts(
+          prisma as unknown as Prisma.TransactionClient,
+          listingId,
+          'delete',
+          undefined,
+          true,
+        )
 
         expect(mockUpdate).toHaveBeenCalledTimes(2)
 
@@ -157,7 +183,13 @@ describe('vote-counts', () => {
           successRate: 0.6,
         })
 
-        await updateListingVoteCounts(prisma, listingId, 'delete', undefined, false)
+        await updateListingVoteCounts(
+          prisma as unknown as Prisma.TransactionClient,
+          listingId,
+          'delete',
+          undefined,
+          false,
+        )
 
         expect(mockUpdate).toHaveBeenCalledTimes(2)
 
@@ -197,7 +229,13 @@ describe('vote-counts', () => {
           successRate: 0.4,
         })
 
-        await updateListingVoteCounts(prisma, listingId, 'update', false, true)
+        await updateListingVoteCounts(
+          prisma as unknown as Prisma.TransactionClient,
+          listingId,
+          'update',
+          false,
+          true,
+        )
 
         expect(mockUpdate).toHaveBeenCalledTimes(2)
 
@@ -235,7 +273,13 @@ describe('vote-counts', () => {
           successRate: 0.6,
         })
 
-        await updateListingVoteCounts(prisma, listingId, 'update', true, false)
+        await updateListingVoteCounts(
+          prisma as unknown as Prisma.TransactionClient,
+          listingId,
+          'update',
+          true,
+          false,
+        )
 
         expect(mockUpdate).toHaveBeenCalledTimes(2)
 
@@ -258,7 +302,13 @@ describe('vote-counts', () => {
       it('should skip update when vote value does not change', async () => {
         const listingId = 'test-listing-id'
 
-        await updateListingVoteCounts(prisma, listingId, 'update', true, true)
+        await updateListingVoteCounts(
+          prisma as unknown as Prisma.TransactionClient,
+          listingId,
+          'update',
+          true,
+          true,
+        )
 
         expect(mockUpdate).not.toHaveBeenCalled()
       })
@@ -269,7 +319,12 @@ describe('vote-counts', () => {
         const listingId = 'test-listing-id'
 
         await expect(
-          updateListingVoteCounts(prisma, listingId, 'invalid' as any, true),
+          updateListingVoteCounts(
+            prisma as unknown as Prisma.TransactionClient,
+            listingId,
+            'invalid' as 'create',
+            true,
+          ),
         ).rejects.toThrow('Invalid operation: invalid')
       })
 
@@ -277,7 +332,12 @@ describe('vote-counts', () => {
         const listingId = 'test-listing-id'
 
         await expect(
-          updateListingVoteCounts(prisma, listingId, 'create', undefined),
+          updateListingVoteCounts(
+            prisma as unknown as Prisma.TransactionClient,
+            listingId,
+            'create',
+            undefined,
+          ),
         ).rejects.toThrow('Create operation requires a value')
       })
 
@@ -285,7 +345,13 @@ describe('vote-counts', () => {
         const listingId = 'test-listing-id'
 
         await expect(
-          updateListingVoteCounts(prisma, listingId, 'delete', undefined, undefined),
+          updateListingVoteCounts(
+            prisma as unknown as Prisma.TransactionClient,
+            listingId,
+            'delete',
+            undefined,
+            undefined,
+          ),
         ).rejects.toThrow('Delete operation requires oldValue')
       })
 
@@ -293,7 +359,13 @@ describe('vote-counts', () => {
         const listingId = 'test-listing-id'
 
         await expect(
-          updateListingVoteCounts(prisma, listingId, 'update', true, undefined),
+          updateListingVoteCounts(
+            prisma as unknown as Prisma.TransactionClient,
+            listingId,
+            'update',
+            true,
+            undefined,
+          ),
         ).rejects.toThrow('Update operation requires both newValue and oldValue')
       })
     })
@@ -310,7 +382,12 @@ describe('vote-counts', () => {
           successRate: 0,
         })
 
-        await updateListingVoteCounts(prisma, listingId, 'create', true)
+        await updateListingVoteCounts(
+          prisma as unknown as Prisma.TransactionClient,
+          listingId,
+          'create',
+          true,
+        )
 
         const expectedScore = calculateWilsonScore(2, 0)
         expect(mockUpdate).toHaveBeenNthCalledWith(2, {
@@ -331,7 +408,13 @@ describe('vote-counts', () => {
           successRate: 0,
         })
 
-        await updateListingVoteCounts(prisma, listingId, 'delete', undefined, true)
+        await updateListingVoteCounts(
+          prisma as unknown as Prisma.TransactionClient,
+          listingId,
+          'delete',
+          undefined,
+          true,
+        )
 
         expect(mockUpdate).toHaveBeenNthCalledWith(2, {
           where: { id: listingId },
@@ -342,12 +425,13 @@ describe('vote-counts', () => {
   })
 
   describe('updatePcListingVoteCounts', () => {
-    let mockUpdate: any
-    let prisma: any
+    let mockUpdate: ReturnType<typeof vi.fn>
+    let prisma: MockPrismaClient
 
     beforeEach(() => {
       mockUpdate = vi.fn()
       prisma = {
+        listing: {} as never, // Required by type but not used in pcListing tests
         pcListing: {
           update: mockUpdate,
         },
@@ -366,7 +450,12 @@ describe('vote-counts', () => {
           successRate: 0,
         })
 
-        await updatePcListingVoteCounts(prisma, pcListingId, 'create', true)
+        await updatePcListingVoteCounts(
+          prisma as unknown as Prisma.TransactionClient,
+          pcListingId,
+          'create',
+          true,
+        )
 
         expect(mockUpdate).toHaveBeenCalledTimes(2)
 
@@ -399,7 +488,13 @@ describe('vote-counts', () => {
           successRate: 0,
         })
 
-        await updatePcListingVoteCounts(prisma, pcListingId, 'update', true, false)
+        await updatePcListingVoteCounts(
+          prisma as unknown as Prisma.TransactionClient,
+          pcListingId,
+          'update',
+          true,
+          false,
+        )
 
         expect(mockUpdate).toHaveBeenCalledTimes(2)
 
@@ -426,7 +521,13 @@ describe('vote-counts', () => {
           successRate: 0,
         })
 
-        await updatePcListingVoteCounts(prisma, pcListingId, 'delete', undefined, false)
+        await updatePcListingVoteCounts(
+          prisma as unknown as Prisma.TransactionClient,
+          pcListingId,
+          'delete',
+          undefined,
+          false,
+        )
 
         expect(mockUpdate).toHaveBeenCalledTimes(2)
 

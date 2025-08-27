@@ -14,6 +14,7 @@ import { mobileListingReportsRouter } from './mobile/listingReports'
 import { mobileListingsRouter } from './mobile/listings'
 import { mobileNotificationsRouter } from './mobile/notifications'
 import { mobilePcListingsRouter } from './mobile/pcListings'
+import { mobilePcPresetsRouter } from './mobile/pcPresets'
 import { mobilePreferencesRouter } from './mobile/preferences'
 import { mobileRawgRouter } from './mobile/rawg'
 import { mobileSocsRouter } from './mobile/socs'
@@ -26,6 +27,7 @@ export const mobileRouter = createMobileTRPCRouter({
   auth: mobileAuthRouter,
   listings: mobileListingsRouter,
   pcListings: mobilePcListingsRouter,
+  pcPresets: mobilePcPresetsRouter,
   games: mobileGamesRouter,
   devices: mobileDevicesRouter,
   emulators: mobileEmulatorsRouter,

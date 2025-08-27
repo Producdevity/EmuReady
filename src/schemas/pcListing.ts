@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { PAGINATION, CHAR_LIMITS } from '@/data/constants'
-import { ApprovalStatus, PcOs } from '@orm'
+import { ApprovalStatus, PcOs, ReportReason, ReportStatus } from '@orm'
 
 export const CreatePcListingSchema = z.object({
   gameId: z.string().uuid(),
@@ -258,25 +258,18 @@ export const VotePcListingCommentSchema = z.object({
 // PC Listing Report schemas
 export const CreatePcListingReportSchema = z.object({
   pcListingId: z.string().uuid(),
-  reason: z.enum([
-    'INAPPROPRIATE_CONTENT',
-    'SPAM',
-    'MISLEADING_INFORMATION',
-    'FAKE_LISTING',
-    'COPYRIGHT_VIOLATION',
-    'OTHER',
-  ]),
+  reason: z.nativeEnum(ReportReason),
   description: z.string().max(1000).optional(),
 })
 
 export const UpdatePcListingReportSchema = z.object({
   reportId: z.string().uuid(),
-  status: z.enum(['PENDING', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED']),
+  status: z.nativeEnum(ReportStatus),
   reviewNotes: z.string().max(1000).optional(),
 })
 
 export const GetPcListingReportsSchema = z.object({
-  status: z.enum(['PENDING', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED']).optional(),
+  status: z.nativeEnum(ReportStatus).optional(),
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(100).default(20),
 })

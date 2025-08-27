@@ -73,7 +73,7 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
       })
 
       if (!verifiedDeveloper) {
-        return AppError.forbidden(`You are not a verified developer for ${listing.emulator.name}`)
+        return ResourceError.verifiedDeveloper.mustBeVerifiedToVerify(listing.emulator.name)
       }
 
       // Check if already verified by this developer
@@ -109,7 +109,7 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
       if (!verification) return ResourceError.verification.notFound()
 
       if (verification.verifiedBy !== userId) {
-        return AppError.forbidden('You can only remove your own verifications')
+        return ResourceError.verification.canOnlyRemoveOwn()
       }
 
       await ctx.prisma.listingDeveloperVerification.delete({

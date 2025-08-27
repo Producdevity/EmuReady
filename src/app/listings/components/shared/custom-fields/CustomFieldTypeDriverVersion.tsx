@@ -55,7 +55,6 @@ function CustomFieldTypeDriverVersion<TFieldValues extends FieldValues = FieldVa
       <Controller
         name={props.fieldName}
         control={props.control}
-        defaultValue={'' as TFieldValues[FieldPath<TFieldValues>]}
         rules={props.rules}
         render={({ field }) => (
           <Autocomplete<DriverReleaseOption>

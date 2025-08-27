@@ -1,4 +1,4 @@
-import { AppError, ResourceError } from '@/lib/errors'
+import { ResourceError } from '@/lib/errors'
 import { GetNotificationsSchema, MarkNotificationReadSchema } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobileProtectedProcedure } from '@/server/api/mobileContext'
 
@@ -74,7 +74,7 @@ export const mobileNotificationsRouter = createMobileTRPCRouter({
       if (!notification) return ResourceError.notification.notFound()
 
       if (notification.userId !== ctx.session.user.id) {
-        return AppError.forbidden('You can only mark your own notifications as read')
+        return ResourceError.notification.canOnlyMarkOwnAsRead()
       }
 
       await ctx.prisma.notification.update({

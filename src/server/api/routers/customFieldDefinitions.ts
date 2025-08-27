@@ -28,34 +28,29 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
         const verifiedDeveloper = await prisma.verifiedDeveloper.findUnique({
           where: {
-            userId_emulatorId: {
-              userId: ctx.session.user.id,
-              emulatorId: input.emulatorId,
-            },
+            userId_emulatorId: { userId: ctx.session.user.id, emulatorId: input.emulatorId },
           },
         })
 
         if (!verifiedDeveloper) {
-          return AppError.forbidden(
-            'You can only manage custom fields for emulators you are verified for',
-          )
+          return ResourceError.customField.canOnlyManageVerified()
         }
       }
 
       if (input.type === CustomFieldType.SELECT) {
         if (!input.options || input.options.length === 0) {
-          ValidationError.requiresOptions('SELECT')
+          return ValidationError.requiresOptions(CustomFieldType.SELECT)
         }
       } else if (input.options && input.options.length > 0) {
-        ValidationError.optionsNotAllowed(input.type)
+        return ValidationError.optionsNotAllowed(input.type)
       }
 
       if (input.type === CustomFieldType.RANGE) {
         if (input.rangeMin === undefined || input.rangeMax === undefined) {
-          AppError.badRequest('Range minimum and maximum are required for RANGE type fields')
+          return ResourceError.customField.rangeMinMaxRequired()
         }
-        if (input.rangeMin >= input.rangeMax) {
-          AppError.badRequest('Range minimum must be less than maximum')
+        if (input.rangeMin! >= input.rangeMax!) {
+          return ResourceError.customField.rangeMinLessThanMax()
         }
       }
 
@@ -65,9 +60,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
         },
       })
 
-      if (existingField) {
-        ResourceError.customField.alreadyExists(input.name)
-      }
+      if (existingField) return ResourceError.customField.alreadyExists(input.name)
 
       return prisma.customFieldDefinition.create({
         data: {
@@ -95,9 +88,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       return prisma.customFieldDefinition.findMany({
         where: { emulatorId: input.emulatorId },
         orderBy: { displayOrder: 'asc' },
-        include: {
-          emulator: true,
-        },
+        include: { emulator: true },
       })
     }),
 
@@ -105,14 +96,12 @@ export const customFieldDefinitionRouter = createTRPCRouter({
     .input(GetCustomFieldDefinitionByIdSchema)
     .query(async ({ ctx, input }) => {
       if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        AppError.insufficientRole(Role.SUPER_ADMIN)
+        return AppError.insufficientRole(Role.SUPER_ADMIN)
       }
       const field = await prisma.customFieldDefinition.findUnique({
         where: { id: input.id },
       })
-      if (!field) {
-        ResourceError.customField.notFound()
-      }
+      if (!field) return ResourceError.customField.notFound()
       return field
     }),
 
@@ -123,10 +112,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
         where: { id: input.id },
       })
 
-      if (!fieldToUpdate) {
-        ResourceError.customField.notFound()
-        return // This will never execute, but helps TypeScript understand
-      }
+      if (!fieldToUpdate) return ResourceError.customField.notFound()
 
       // For developers, verify they can manage this emulator
       if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
@@ -139,11 +125,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
           },
         })
 
-        if (!verifiedDeveloper) {
-          return AppError.forbidden(
-            'You can only manage custom fields for emulators you are verified for',
-          )
-        }
+        if (!verifiedDeveloper) return ResourceError.customField.canOnlyManageVerified()
       }
 
       const newType = input.type ?? fieldToUpdate.type
@@ -154,20 +136,20 @@ export const customFieldDefinitionRouter = createTRPCRouter({
           if (input.options && input.options.length > 0) {
             optionsToSave = input.options
           } else if (input.options && input.options.length === 0) {
-            ValidationError.emptyOptions('SELECT')
+            return ValidationError.emptyOptions(CustomFieldType.SELECT)
           } else {
             optionsToSave = Prisma.DbNull
           }
         } else {
           const currentOptions = fieldToUpdate.options as CustomFieldOptionArray | null
           if (!Array.isArray(currentOptions) || currentOptions.length === 0) {
-            ValidationError.invalidOptions('SELECT')
+            return ValidationError.invalidOptions(CustomFieldType.SELECT)
           }
           optionsToSave = currentOptions
         }
       } else {
         if (input.hasOwnProperty('options') && input.options && input.options.length > 0) {
-          ValidationError.optionsNotAllowed(newType)
+          return ValidationError.optionsNotAllowed(newType)
         }
         optionsToSave = Prisma.DbNull
       }
@@ -176,22 +158,15 @@ export const customFieldDefinitionRouter = createTRPCRouter({
         const rangeMin = input.rangeMin ?? fieldToUpdate.rangeMin
         const rangeMax = input.rangeMax ?? fieldToUpdate.rangeMax
         if (rangeMin !== null && rangeMax !== null && rangeMin >= rangeMax) {
-          AppError.badRequest('Range minimum must be less than maximum')
+          return ResourceError.customField.rangeMinLessThanMax()
         }
       }
 
       if (input.name && input.name !== fieldToUpdate.name) {
         const existingField = await prisma.customFieldDefinition.findUnique({
-          where: {
-            emulatorId_name: {
-              emulatorId: fieldToUpdate.emulatorId,
-              name: input.name,
-            },
-          },
+          where: { emulatorId_name: { emulatorId: fieldToUpdate.emulatorId, name: input.name } },
         })
-        if (existingField) {
-          ResourceError.customField.alreadyExists(input.name)
-        }
+        if (existingField) return ResourceError.customField.alreadyExists(input.name)
       }
 
       return prisma.customFieldDefinition.update({
@@ -233,23 +208,17 @@ export const customFieldDefinitionRouter = createTRPCRouter({
           },
         })
 
-        if (!verifiedDeveloper) {
-          return AppError.forbidden(
-            'You can only manage custom fields for emulators you are verified for',
-          )
-        }
+        if (!verifiedDeveloper) return ResourceError.customField.canOnlyManageVerified()
       }
 
-      return prisma.customFieldDefinition.delete({
-        where: { id: input.id },
-      })
+      return prisma.customFieldDefinition.delete({ where: { id: input.id } })
     }),
 
   updateOrder: protectedProcedure
     .input(UpdateCustomFieldDefinitionOrderSchema)
     .mutation(async ({ ctx, input }) => {
       if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        AppError.insufficientRole(Role.SUPER_ADMIN)
+        return AppError.insufficientRole(Role.SUPER_ADMIN)
       }
 
       return ctx.prisma.$transaction(

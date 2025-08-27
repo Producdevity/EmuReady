@@ -6,7 +6,6 @@
 import { PAGINATION } from '@/data/constants'
 import { Prisma, ApprovalStatus, type PcOs, type Role } from '@orm'
 import { BaseRepository } from './base.repository'
-import { pcListingInclude, type PcListingWithInclude } from '../api/utils/pcListingHelpers'
 import { buildShadowBanFilter } from '../utils/query-builders'
 import { calculateWilsonScore } from '../utils/wilson-score'
 
@@ -33,39 +32,35 @@ export interface PcListingFilters {
   canSeeBannedUsers?: boolean
 }
 
-// Type namespace for PcListingsRepository
-export namespace PcListingsRepositoryTypes {
-  // Type for PC listing with full details including vote counts and custom fields
-  export type WithDetails = Prisma.PcListingGetPayload<{
-    include: {
-      game: { include: { system: true } }
-      cpu: { include: { brand: true } }
-      gpu: { include: { brand: true } }
-      emulator: {
-        include: { customFieldDefinitions: { orderBy: { displayOrder: 'asc' } } }
-      }
-      performance: true
-      author: true
-      developerVerifications: {
-        include: { developer: { select: { id: true; name: true } } }
-      }
-      customFieldValues: { include: { customFieldDefinition: true } }
-      _count: {
-        select: {
-          reports: true
-          votes: true
-          comments: true
-        }
-      }
-    }
-  }> & {
-    userVote: boolean | null
-    upvotes: number
-    downvotes: number
-  }
+// Export types using static includes pattern
+export type PcListingMinimal = Prisma.PcListingGetPayload<{
+  include: typeof PcListingsRepository.includes.minimal
+}>
 
-  // Type for basic PC listing from database
-  export type Basic = PcListingWithInclude
+export type PcListingDefault = Prisma.PcListingGetPayload<{
+  include: typeof PcListingsRepository.includes.default
+}>
+
+export type PcListingWithVotes = Prisma.PcListingGetPayload<{
+  include: typeof PcListingsRepository.includes.withVotes
+}>
+
+export type PcListingForList = Prisma.PcListingGetPayload<{
+  include: typeof PcListingsRepository.includes.forList
+}>
+
+export type PcListingForDetails = Prisma.PcListingGetPayload<{
+  include: typeof PcListingsRepository.includes.forDetails
+}>
+
+export type PcListingWithRelations = Prisma.PcListingGetPayload<{
+  include: typeof PcListingsRepository.includes.forGetById
+}>
+
+export type PcListingWithUserVote = PcListingForDetails & {
+  userVote: boolean | null
+  upvotes: number
+  downvotes: number
 }
 
 export class PcListingsRepository extends BaseRepository {
@@ -104,13 +99,117 @@ export class PcListingsRepository extends BaseRepository {
         },
       },
     } satisfies Prisma.PcListingInclude,
+
+    forList: {
+      game: { include: { system: true } },
+      cpu: { include: { brand: true } },
+      gpu: { include: { brand: true } },
+      emulator: true,
+      performance: true,
+      author: true,
+      _count: {
+        select: {
+          reports: true,
+          votes: true,
+          comments: { where: { deletedAt: null } },
+        },
+      },
+    } satisfies Prisma.PcListingInclude,
+
+    forGetById: {
+      game: { include: { system: true } },
+      emulator: { select: { id: true, name: true, logo: true } },
+      performance: {
+        select: {
+          id: true,
+          label: true,
+          rank: true,
+          description: true,
+        },
+      },
+      author: { select: { id: true, name: true, profileImage: true } },
+      cpu: { include: { brand: true } },
+      gpu: { include: { brand: true } },
+      _count: {
+        select: {
+          comments: true,
+          votes: true,
+        },
+      },
+    } satisfies Prisma.PcListingInclude,
+
+    forDetails: {
+      game: { include: { system: true } },
+      cpu: { include: { brand: true } },
+      gpu: { include: { brand: true } },
+      emulator: {
+        include: { customFieldDefinitions: { orderBy: { displayOrder: 'asc' } } },
+      },
+      performance: true,
+      author: true,
+      developerVerifications: {
+        include: { developer: { select: { id: true, name: true } } },
+      },
+      customFieldValues: { include: { customFieldDefinition: true } },
+      _count: {
+        select: {
+          votes: true,
+          comments: { where: { deletedAt: null } },
+          reports: true,
+        },
+      },
+    } satisfies Prisma.PcListingInclude,
+
+    forTopBySuccessRate: {
+      game: { include: { system: true } },
+      emulator: { select: { id: true, name: true, logo: true } },
+      performance: {
+        select: {
+          id: true,
+          label: true,
+          rank: true,
+          description: true,
+        },
+      },
+      author: { select: { id: true, name: true, profileImage: true } },
+      cpu: { include: { brand: true } },
+      gpu: { include: { brand: true } },
+      _count: {
+        select: {
+          comments: true,
+          votes: true,
+        },
+      },
+    } satisfies Prisma.PcListingInclude,
+
+    forFeatured: {
+      game: { include: { system: true } },
+      emulator: { select: { id: true, name: true, logo: true } },
+      performance: {
+        select: {
+          id: true,
+          label: true,
+          rank: true,
+          description: true,
+        },
+      },
+      author: { select: { id: true, name: true, profileImage: true } },
+      cpu: { include: { brand: true } },
+      gpu: { include: { brand: true } },
+      _count: {
+        select: {
+          comments: true,
+          votes: true,
+        },
+      },
+    } satisfies Prisma.PcListingInclude,
   } as const
 
   /**
    * Get PC listings with filters and optimized vote count sorting
    */
-  async getPcListings(filters: PcListingFilters): Promise<{
-    pcListings: PcListingWithInclude[]
+  async list(filters: PcListingFilters): Promise<{
+    pcListings: PcListingForList[]
     pagination: {
       total: number
       pages: number
@@ -239,7 +338,7 @@ export class PcListingsRepository extends BaseRepository {
       this.prisma.pcListing.count({ where }),
       this.prisma.pcListing.findMany({
         where,
-        include: pcListingInclude,
+        include: PcListingsRepository.includes.forList,
         orderBy,
         skip: offset,
         take: limit,
@@ -264,28 +363,7 @@ export class PcListingsRepository extends BaseRepository {
   async getById(id: string): Promise<PcListingWithRelations | null> {
     return this.prisma.pcListing.findUnique({
       where: { id },
-      include: {
-        ...PcListingsRepository.includes.default,
-        game: {
-          include: {
-            system: true,
-          },
-        },
-        performance: {
-          select: {
-            id: true,
-            label: true,
-            rank: true,
-            description: true,
-          },
-        },
-        _count: {
-          select: {
-            comments: true,
-            votes: true,
-          },
-        },
-      },
+      include: PcListingsRepository.includes.forGetById,
     })
   }
 
@@ -296,7 +374,7 @@ export class PcListingsRepository extends BaseRepository {
     id: string,
     canSeeBannedUsers: boolean = false,
     userId?: string,
-  ): Promise<PcListingsRepositoryTypes.WithDetails | null> {
+  ): Promise<PcListingWithUserVote | null> {
     // Build where with banned user filtering
     const shadowBanFilter = canSeeBannedUsers ? undefined : buildShadowBanFilter(null)
     const where: Prisma.PcListingWhereInput = {
@@ -306,23 +384,7 @@ export class PcListingsRepository extends BaseRepository {
 
     const pcListing = await this.prisma.pcListing.findFirst({
       where,
-      include: {
-        ...pcListingInclude,
-        emulator: {
-          include: { customFieldDefinitions: { orderBy: { displayOrder: 'asc' } } },
-        },
-        developerVerifications: {
-          include: { developer: { select: { id: true, name: true } } },
-        },
-        customFieldValues: { include: { customFieldDefinition: true } },
-        _count: {
-          select: {
-            votes: true,
-            comments: { where: { deletedAt: null } },
-            reports: true,
-          },
-        },
-      },
+      include: PcListingsRepository.includes.forDetails,
     })
 
     if (!pcListing) return null
@@ -370,28 +432,7 @@ export class PcListingsRepository extends BaseRepository {
         voteCount: { gte: minVotes },
         status: ApprovalStatus.APPROVED,
       },
-      include: {
-        ...PcListingsRepository.includes.default,
-        game: {
-          include: {
-            system: true,
-          },
-        },
-        performance: {
-          select: {
-            id: true,
-            label: true,
-            rank: true,
-            description: true,
-          },
-        },
-        _count: {
-          select: {
-            comments: true,
-            votes: true,
-          },
-        },
-      },
+      include: PcListingsRepository.includes.forTopBySuccessRate,
       orderBy: [{ successRate: Prisma.SortOrder.desc }, { createdAt: Prisma.SortOrder.desc }],
       take: limit,
     })
@@ -404,7 +445,7 @@ export class PcListingsRepository extends BaseRepository {
     gameId: string,
     limit: number = PAGINATION.DEFAULT_LIMIT,
   ): Promise<PcListingWithRelations[]> {
-    const result = await this.getPcListings({
+    const result = await this.list({
       gameId,
       limit,
       sortField: 'successRate',
@@ -420,7 +461,7 @@ export class PcListingsRepository extends BaseRepository {
     cpuId: string,
     limit: number = PAGINATION.DEFAULT_LIMIT,
   ): Promise<PcListingWithRelations[]> {
-    return this.getPcListings({
+    return this.list({
       cpuIds: [cpuId],
       limit,
       sortField: 'successRate',
@@ -435,7 +476,7 @@ export class PcListingsRepository extends BaseRepository {
     gpuId: string,
     limit: number = PAGINATION.DEFAULT_LIMIT,
   ): Promise<PcListingWithRelations[]> {
-    return this.getPcListings({
+    return this.list({
       gpuIds: [gpuId],
       limit,
       sortField: 'successRate',
@@ -453,28 +494,7 @@ export class PcListingsRepository extends BaseRepository {
         voteCount: { gte: 2 },
         successRate: { gte: 0.8 },
       },
-      include: {
-        ...PcListingsRepository.includes.default,
-        game: {
-          include: {
-            system: true,
-          },
-        },
-        performance: {
-          select: {
-            id: true,
-            label: true,
-            rank: true,
-            description: true,
-          },
-        },
-        _count: {
-          select: {
-            comments: true,
-            votes: true,
-          },
-        },
-      },
+      include: PcListingsRepository.includes.forFeatured,
       orderBy: { createdAt: this.sortOrder },
       take: limit,
     })
@@ -545,7 +565,7 @@ export class PcListingsRepository extends BaseRepository {
   /**
    * Get statistics for PC listings
    */
-  async getStats(): Promise<{
+  async stats(): Promise<{
     total: number
     pending: number
     approved: number
@@ -608,7 +628,7 @@ export class PcListingsRepository extends BaseRepository {
       canSeeBannedUsers?: boolean
     } = {},
   ): Promise<{
-    pcListings: PcListingWithInclude[]
+    pcListings: PcListingForList[]
     pagination: {
       total: number
       pages: number
@@ -657,7 +677,7 @@ export class PcListingsRepository extends BaseRepository {
       this.prisma.pcListing.count({ where }),
       this.prisma.pcListing.findMany({
         where,
-        include: pcListingInclude,
+        include: PcListingsRepository.includes.forList,
         orderBy,
         skip: offset,
         take: limit,
@@ -739,10 +759,7 @@ export class PcListingsRepository extends BaseRepository {
   /**
    * Approve a PC listing
    */
-  async approve(
-    pcListingId: string,
-    processedByUserId: string,
-  ): Promise<PcListingsRepositoryTypes.Basic> {
+  async approve(pcListingId: string, processedByUserId: string): Promise<PcListingDefault> {
     return this.prisma.pcListing.update({
       where: { id: pcListingId },
       data: {
@@ -750,7 +767,7 @@ export class PcListingsRepository extends BaseRepository {
         processedAt: new Date(),
         processedByUserId,
       },
-      include: pcListingInclude,
+      include: PcListingsRepository.includes.forList,
     })
   }
 
@@ -761,7 +778,7 @@ export class PcListingsRepository extends BaseRepository {
     pcListingId: string,
     processedByUserId: string,
     processedNotes?: string,
-  ): Promise<PcListingsRepositoryTypes.Basic> {
+  ): Promise<PcListingDefault> {
     return this.prisma.pcListing.update({
       where: { id: pcListingId },
       data: {
@@ -770,7 +787,7 @@ export class PcListingsRepository extends BaseRepository {
         processedByUserId,
         processedNotes,
       },
-      include: pcListingInclude,
+      include: PcListingsRepository.includes.forList,
     })
   }
 
@@ -779,45 +796,8 @@ export class PcListingsRepository extends BaseRepository {
    */
   async isDeveloperVerifiedForEmulator(userId: string, emulatorId: string): Promise<boolean> {
     const verified = await this.prisma.verifiedDeveloper.findUnique({
-      where: {
-        userId_emulatorId: {
-          userId,
-          emulatorId,
-        },
-      },
+      where: { userId_emulatorId: { userId, emulatorId } },
     })
     return !!verified
   }
 }
-
-// Use Prisma's type inference for the full listing type
-type PcListingWithRelations = Prisma.PcListingGetPayload<{
-  include: typeof PcListingsRepository.includes.default & {
-    game: {
-      include: {
-        system: true
-      }
-    }
-    performance: {
-      select: {
-        id: true
-        label: true
-        rank: true
-        description: true
-      }
-    }
-    _count: {
-      select: {
-        comments: true
-        votes: true
-      }
-    }
-  }
-}>
-
-type PcListingDefault = Prisma.PcListingGetPayload<{
-  include: typeof PcListingsRepository.includes.default
-}>
-
-// Export types for external use
-export type { PcListingWithRelations, PcListingDefault }

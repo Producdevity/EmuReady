@@ -1,3 +1,170 @@
+# 🚀 EmuReady Release Notes - 25 August 2025 (v0.10.0)
+
+## 🎮 Enhanced Game Discovery
+
+**🔍 IGDB Integration for Game Search (BETA)**
+
+- **Comprehensive Game Database**: Search millions of games through IGDB's extensive catalog
+- **Smart Search**: Intelligent game matching with fuzzy search and relevance scoring
+- **Rich Game Data**: Access detailed game information including descriptions, genres, and metadata
+- **High-Quality Cover Art**: Beautiful game artwork from IGDB's curated image database
+- **Seamless Integration**: Works alongside existing TheGamesDB and RAWG sources
+
+## 📊 Admin Activity Dashboard
+
+**🎯 Real-Time Platform Insights**
+
+- **Live Activity Monitoring**: Track platform activity as it happens
+- **Role-Based Access**: MODERATOR+ can view comprehensive activity metrics
+- **Platform Statistics**: Monitor handheld and PC listing submissions in real-time
+- **User Engagement Metrics**: Track comments, votes, and user interactions
+- **Critical Actions Panel**: Prioritized view of items needing immediate attention
+- **Time Range Controls**: Analyze activity patterns over different periods
+
+**📈 Enhanced Analytics**
+
+- **Moderation Queue**: See pending approvals and reports at a glance
+- **Activity Trends**: Visual indicators showing platform growth
+- **Quick Navigation**: Jump directly to areas needing attention
+- **Mobile-Optimized**: Full dashboard functionality on all devices
+
+## ⚡ Performance Improvements
+
+**🚀 Smarter Listing Sorting**
+
+- **Wilson Score Algorithm**: More accurate success rate calculations for listings
+- **Database-Level Optimization**: Pre-calculated vote counts for 10x faster sorting
+- **Improved Relevance**: Better ranking algorithm considers both votes and confidence
+- **Instant Results**: No more loading delays when sorting by success rate
+
+**📦 Service Worker Enhancements**
+
+- **Smart Cache Management**: Intelligent cache duration based on content type
+- **Auto-Cleanup**: Old service workers automatically unregistered
+- **Faster Page Loads**: Improved caching strategies for static assets
+- **Offline Support**: Better handling of offline scenarios
+
+## 🐛 Critical Bug Fixes
+
+**📝 Markdown Rendering Fix**
+
+- **Fixed Bold Text**: **Bold text** now renders correctly instead of showing asterisks
+- **Working Lists**: Numbered and bulleted lists display properly
+- **Multiline Support**: Headers, blockquotes, and lists work across multiple lines
+- **Universal Fix**: Applied to both listing notes and comment sections
+
+**🔧 Platform Stability**
+
+- **Migration Safety**: CI/CD migrations now handle edge cases gracefully
+- **Driver Version Compatibility**: Fixed Eden emulator driver version parsing
+- **Admin Navigation**: Corrected broken links in admin panel
+- **API Documentation**: Mobile API docs now generate correctly
+
+## 🏗️ Developer Experience
+
+**📚 Repository Pattern Implementation**
+
+- **13 New Repository Classes**: Cleaner data access layer with dedicated repositories
+- **Service Layer Enhancement**: Better separation of business logic from data access
+- **Type Safety**: Full TypeScript support in repository methods
+- **Performance Utilities**: Reusable pagination and query optimization helpers
+- **Consistent Patterns**: Standardized data fetching across the platform
+
+**🧪 Comprehensive Testing**
+
+- **91 Test Files Updated**: Massive expansion of test coverage
+- **New Test Suites**: PC listings, trust system, user moderation, router coverage
+- **E2E Authentication**: Improved test authentication with storage states
+- **Performance Tests**: Automated Core Web Vitals monitoring
+
+## 🎨 User Experience Refinements
+
+**📱 Mobile Improvements**
+
+- **Responsive Admin Dashboard**: Full admin functionality on mobile devices
+- **Touch-Optimized Controls**: Better interaction patterns for touch screens
+- **Improved Navigation**: Cleaner mobile menu with better organization
+
+**🔄 Data Consistency**
+
+- **Pagination Constants**: Standardized page sizes across the platform
+- **Handheld vs PC**: Consistent terminology (mobile → handheld)
+- **URL State Management**: Better handling of filters and search parameters
+
+## 🔒 Security & Reliability
+
+**🛡️ Enhanced Security**
+
+- **Conditional Migrations**: Safer database migrations that handle all scenarios
+- **Permission Checks**: Stricter role-based access control
+- **Username Validation**: Better handling of username normalization
+
+**📊 Error Monitoring**
+
+- **Sentry Optimization**: Production-only error tracking for better performance
+- **Structured Logging**: Improved debugging with detailed error context
+- **Performance Tracing**: Monitor slow queries and API endpoints
+
+## 🌐 API & Integration
+
+**📡 Mobile API Improvements**
+
+- **Better Token Verification**: Enhanced mobile authentication
+- **Request Logging**: Detailed logging for debugging mobile issues
+- **Schema Updates**: Cleaner API documentation generation
+- **CORS Enhancements**: Better cross-origin request handling
+
+**🔗 External Services**
+
+- **IGDB Integration**: Full support for IGDB game database
+- **CSP Updates**: Content Security Policy allows IGDB image sources
+- **Eden Configuration**: Improved handling of emulator configurations
+
+---
+
+## 🔄 Migration Notes
+
+**For Users:**
+
+- The new admin dashboard provides real-time insights (MODERATOR+ only)
+- IGDB search makes finding games much easier and faster
+- Markdown formatting in comments and notes now works correctly
+- Listing sorting by success rate is significantly faster
+
+**For Developers:**
+
+- Repository pattern provides cleaner data access - use repositories instead of direct Prisma calls
+- Run `npm run check` after all changes - zero warnings/errors tolerance
+- Use `PAGINATION.DEFAULT_LIMIT` constant instead of magic number 20
+- New test suites require proper authentication setup
+
+**For Administrators:**
+
+- New activity dashboard at `/admin` shows real-time platform metrics
+- Enhanced moderation tools with better queue management
+- Critical actions panel highlights urgent items
+- All dashboards now mobile-responsive
+
+---
+
+## 📊 By The Numbers
+
+- **622 files changed** with 30,672 insertions and 23,487 deletions
+- **91 test files** updated or added
+- **13 repository classes** implemented
+- **10x performance improvement** in success rate sorting
+- **3 external game databases** now integrated (IGDB, TheGamesDB, RAWG)
+
+---
+
+_This release focuses on platform intelligence and performance, with the new admin dashboard providing unprecedented visibility into platform activity. Combined with IGDB integration, performance optimizations, and extensive testing improvements, v0.10.0 sets the foundation for scalable growth._
+
+**Need help or found an issue?** Report it in our support channels or GitHub repository.
+
+🎮 **Happy Gaming!** - The EmuReady Team
+
+---
+
 # 🚀 EmuReady Release Notes - 8 August 2025 (v0.9.0)
 
 ## 📱 Android App Launch Support

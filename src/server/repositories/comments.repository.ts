@@ -20,85 +20,22 @@ export interface CommentFilters {
   userId?: string
 }
 
-// Type namespace for CommentsRepository
-export namespace CommentsRepositoryTypes {
-  export type Default = Prisma.CommentGetPayload<{
-    include: {
-      user: {
-        select: {
-          id: true
-          name: true
-          profileImage: true
-        }
-      }
-      votes: {
-        select: {
-          id: true
-          value: true
-          userId: true
-        }
-      }
-      _count: {
-        select: {
-          votes: true
-        }
-      }
-    }
-  }>
+// Export types directly without namespace
+export type CommentDefault = Prisma.CommentGetPayload<{
+  include: typeof CommentsRepository.includes.default
+}>
 
-  export type Minimal = Prisma.CommentGetPayload<{
-    include: {
-      user: {
-        select: {
-          id: true
-          name: true
-          profileImage: true
-        }
-      }
-    }
-  }>
+export type CommentMinimal = Prisma.CommentGetPayload<{
+  include: typeof CommentsRepository.includes.minimal
+}>
 
-  export type WithListing = Prisma.CommentGetPayload<{
-    include: {
-      user: {
-        select: {
-          id: true
-          name: true
-          profileImage: true
-        }
-      }
-      listing: {
-        select: {
-          id: true
-          gameId: true
-        }
-      }
-    }
-  }>
+export type CommentWithListing = Prisma.CommentGetPayload<{
+  include: typeof CommentsRepository.includes.withListing
+}>
 
-  export type Recent = Prisma.CommentGetPayload<{
-    include: {
-      user: {
-        select: {
-          id: true
-          name: true
-          profileImage: true
-        }
-      }
-      listing: {
-        select: {
-          id: true
-          game: {
-            select: {
-              id: true
-              title: true
-            }
-          }
-        }
-      }
-    }
-  }>
-}
+export type CommentRecent = Prisma.CommentGetPayload<{
+  include: typeof CommentsRepository.includes.recent
+}>
 
 export class CommentsRepository extends BaseRepository {
   // Static query shapes for this repository
@@ -127,8 +64,8 @@ export class CommentsRepository extends BaseRepository {
   /**
    * Get comments with pagination
    */
-  async getPaginated(filters: CommentFilters = {}): Promise<{
-    comments: CommentsRepositoryTypes.Default[]
+  async list(filters: CommentFilters = {}): Promise<{
+    comments: CommentDefault[]
     pagination: PaginationResult
   }> {
     const { limit = PAGINATION.DEFAULT_LIMIT, offset = 0, page, sortField, sortDirection } = filters
@@ -164,10 +101,7 @@ export class CommentsRepository extends BaseRepository {
   /**
    * Get comments for a listing
    */
-  async getForListing(
-    listingId: string,
-    userRole?: Role,
-  ): Promise<CommentsRepositoryTypes.Default[]> {
+  async listByListing(listingId: string, userRole?: Role): Promise<CommentDefault[]> {
     const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
 
     const where: Prisma.CommentWhereInput = {
@@ -195,7 +129,7 @@ export class CommentsRepository extends BaseRepository {
   /**
    * Get comment by ID
    */
-  async getById(id: string): Promise<CommentsRepositoryTypes.WithListing | null> {
+  async byId(id: string): Promise<CommentWithListing | null> {
     return this.prisma.comment.findUnique({
       where: { id },
       include: CommentsRepository.includes.withListing,
@@ -205,7 +139,7 @@ export class CommentsRepository extends BaseRepository {
   /**
    * Create a new comment
    */
-  async create(data: Prisma.CommentCreateInput): Promise<CommentsRepositoryTypes.Minimal> {
+  async create(data: Prisma.CommentCreateInput): Promise<CommentMinimal> {
     return this.prisma.comment.create({
       data,
       include: CommentsRepository.includes.minimal,
@@ -215,10 +149,7 @@ export class CommentsRepository extends BaseRepository {
   /**
    * Update a comment
    */
-  async update(
-    id: string,
-    data: Prisma.CommentUpdateInput,
-  ): Promise<CommentsRepositoryTypes.Minimal> {
+  async update(id: string, data: Prisma.CommentUpdateInput): Promise<CommentMinimal> {
     return this.prisma.comment.update({
       where: { id },
       data,
@@ -227,10 +158,13 @@ export class CommentsRepository extends BaseRepository {
   }
 
   /**
-   * Delete a comment
+   * Soft delete a comment
    */
   async delete(id: string): Promise<void> {
-    await this.prisma.comment.delete({ where: { id } })
+    await this.prisma.comment.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    })
   }
 
   /**
@@ -260,7 +194,7 @@ export class CommentsRepository extends BaseRepository {
   /**
    * Get recent comments
    */
-  async getRecent(limit = 10, userRole?: Role): Promise<CommentsRepositoryTypes.Recent[]> {
+  async listRecent(limit = 10, userRole?: Role): Promise<CommentRecent[]> {
     const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
 
     const where: Prisma.CommentWhereInput = !canSeeBannedUsers

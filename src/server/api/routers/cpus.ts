@@ -1,4 +1,4 @@
-import { ResourceError, AppError } from '@/lib/errors'
+import { ResourceError } from '@/lib/errors'
 import {
   GetCpusSchema,
   GetCpuByIdSchema,
@@ -13,12 +13,11 @@ import {
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import { CpusRepository } from '@/server/repositories/cpus.repository'
-import { DeviceBrandsRepository } from '@/server/repositories/device-brands.repository'
 
 export const cpusRouter = createTRPCRouter({
   get: publicProcedure.input(GetCpusSchema).query(async ({ ctx, input }) => {
     const repository = new CpusRepository(ctx.prisma)
-    return repository.getPaginated(input ?? {})
+    return repository.list(input ?? {})
   }),
 
   byId: publicProcedure.input(GetCpuByIdSchema).query(async ({ ctx, input }) => {
@@ -30,58 +29,22 @@ export const cpusRouter = createTRPCRouter({
   create: manageDevicesProcedure.input(CreateCpuSchema).mutation(async ({ ctx, input }) => {
     const repository = new CpusRepository(ctx.prisma)
 
-    const brand = await ctx.prisma.deviceBrand.findUnique({
-      where: { id: input.brandId },
-    })
-
-    if (!brand) return ResourceError.deviceBrand.notFound()
-
-    const exists = await repository.existsByModelName(input.modelName)
-    if (exists) return ResourceError.cpu.alreadyExists(input.modelName)
-
-    // Create and then fetch with counts for web
     const created = await repository.create(input)
     return repository.byIdWithCounts(created.id)
   }),
 
   update: manageDevicesProcedure.input(UpdateCpuSchema).mutation(async ({ ctx, input }) => {
-    const cpusRepository = new CpusRepository(ctx.prisma)
-    const deviceBrandsRepository = new DeviceBrandsRepository(ctx.prisma)
+    const repository = new CpusRepository(ctx.prisma)
     const { id, ...data } = input
 
-    const cpu = await cpusRepository.byId(id)
-    if (!cpu) return ResourceError.cpu.notFound()
-
-    const brand = await deviceBrandsRepository.byId(input.brandId)
-
-    if (!brand) return ResourceError.deviceBrand.notFound()
-
-    const exists = await cpusRepository.existsByModelName(input.modelName, id)
-    if (exists) return ResourceError.cpu.alreadyExists(input.modelName)
-
-    // Update and then fetch with counts for web
-    const updated = await cpusRepository.update(id, data)
-    return cpusRepository.byIdWithCounts(updated.id)
+    const updated = await repository.update(id, data)
+    return repository.byIdWithCounts(updated.id)
   }),
 
   delete: manageDevicesProcedure.input(DeleteCpuSchema).mutation(async ({ ctx, input }) => {
     const repository = new CpusRepository(ctx.prisma)
-
-    const existingCpu = await ctx.prisma.cpu.findUnique({
-      where: { id: input.id },
-      include: { _count: { select: { pcListings: true } } },
-    })
-
-    if (!existingCpu) return ResourceError.cpu.notFound()
-
-    if (existingCpu._count.pcListings > 0) {
-      return AppError.conflict(
-        `Cannot delete CPU "${existingCpu.modelName}" because it has ${existingCpu._count.pcListings} active PC listing(s). Please remove all PC listings for this CPU first.`,
-      )
-    }
-
     await repository.delete(input.id)
-    return existingCpu // Return the deleted CPU
+    return { success: true }
   }),
 
   stats: viewStatisticsProcedure.query(async ({ ctx }) => {

@@ -16,24 +16,17 @@ import {
 } from '@/server/api/trpc'
 import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
 import { batchQueries } from '@/server/utils/query-performance'
+import { validateEnum, sanitizeInput, validatePagination } from '@/server/utils/security-validation'
 import { PERMISSIONS } from '@/utils/permission-system'
-import { ApprovalStatus, type Prisma, ReportStatus, TrustAction } from '@orm'
+import { ApprovalStatus, type Prisma, ReportStatus, TrustAction, ReportReason } from '@orm'
 
 export const listingReportsRouter = createTRPCRouter({
   getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
     const [pending, underReview, resolved, dismissed] = await batchQueries([
-      ctx.prisma.listingReport.count({
-        where: { status: ReportStatus.PENDING },
-      }),
-      ctx.prisma.listingReport.count({
-        where: { status: ReportStatus.UNDER_REVIEW },
-      }),
-      ctx.prisma.listingReport.count({
-        where: { status: ReportStatus.RESOLVED },
-      }),
-      ctx.prisma.listingReport.count({
-        where: { status: ReportStatus.DISMISSED },
-      }),
+      ctx.prisma.listingReport.count({ where: { status: ReportStatus.PENDING } }),
+      ctx.prisma.listingReport.count({ where: { status: ReportStatus.UNDER_REVIEW } }),
+      ctx.prisma.listingReport.count({ where: { status: ReportStatus.RESOLVED } }),
+      ctx.prisma.listingReport.count({ where: { status: ReportStatus.DISMISSED } }),
     ])
 
     return {
@@ -54,24 +47,24 @@ export const listingReportsRouter = createTRPCRouter({
         reason,
         sortField = 'createdAt',
         sortDirection = 'desc',
-        page = 1,
-        limit = 20,
       } = input ?? {}
+
+      // Validate pagination
+      const { page, limit } = validatePagination(input?.page, input?.limit, 50)
+
+      // Sanitize search term (plain text, not markdown)
+      const sanitizedSearch = search ? sanitizeInput(search) : undefined
 
       const offset = calculateOffset({ page }, limit)
 
       // Build where clause
       const where: Prisma.ListingReportWhereInput = {}
 
-      if (search) {
+      if (sanitizedSearch) {
         where.OR = [
-          {
-            listing: {
-              game: { title: { contains: search, mode: 'insensitive' } },
-            },
-          },
-          { reportedBy: { name: { contains: search, mode: 'insensitive' } } },
-          { description: { contains: search, mode: 'insensitive' } },
+          { listing: { game: { title: { contains: sanitizedSearch, mode: 'insensitive' } } } },
+          { reportedBy: { name: { contains: sanitizedSearch, mode: 'insensitive' } } },
+          { description: { contains: sanitizedSearch, mode: 'insensitive' } },
         ]
       }
 
@@ -80,9 +73,7 @@ export const listingReportsRouter = createTRPCRouter({
       if (reason) where.reason = reason
 
       const orderBy: Prisma.ListingReportOrderByWithRelationInput = {}
-      if (sortField && sortDirection) {
-        orderBy[sortField] = sortDirection
-      }
+      if (sortField && sortDirection) orderBy[sortField] = sortDirection
 
       const [reports, total] = await batchQueries([
         ctx.prisma.listingReport.findMany({
@@ -139,6 +130,12 @@ export const listingReportsRouter = createTRPCRouter({
     const { listingId, reason, description } = input
     const userId = ctx.session.user.id
 
+    // Validate reason enum
+    validateEnum(reason, Object.values(ReportReason), 'reason')
+
+    // Sanitize description if provided (plain text, not markdown)
+    const sanitizedDescription = description ? sanitizeInput(description) : description
+
     // Check if listing exists
     const listing = await ctx.prisma.listing.findUnique({
       where: { id: listingId },
@@ -171,7 +168,7 @@ export const listingReportsRouter = createTRPCRouter({
         listingId,
         reportedById: userId,
         reason,
-        description,
+        description: sanitizedDescription,
       },
       include: {
         listing: {
@@ -190,6 +187,9 @@ export const listingReportsRouter = createTRPCRouter({
       const { id, status, reviewNotes } = input
       const reviewerId = ctx.session.user.id
 
+      // Validate status enum
+      validateEnum(status, Object.values(ReportStatus), 'status')
+
       const report = await ctx.prisma.listingReport.findUnique({
         where: { id },
         include: {
@@ -198,7 +198,7 @@ export const listingReportsRouter = createTRPCRouter({
       })
 
       if (!report) {
-        throw ResourceError.listingReport.notFound()
+        return ResourceError.listingReport.notFound()
       }
 
       // If resolving the report and marking listing as rejected
@@ -286,18 +286,10 @@ export const listingReportsRouter = createTRPCRouter({
       const { userId } = input
 
       const [reportedListingsCount, totalReports] = await batchQueries([
+        ctx.prisma.listingReport.count({ where: { listing: { authorId: userId } } }),
         ctx.prisma.listingReport.count({
           where: {
-            listing: {
-              authorId: userId,
-            },
-          },
-        }),
-        ctx.prisma.listingReport.count({
-          where: {
-            listing: {
-              authorId: userId,
-            },
+            listing: { authorId: userId },
             status: { in: [ReportStatus.RESOLVED, ReportStatus.UNDER_REVIEW] },
           },
         }),
@@ -315,9 +307,7 @@ export const listingReportsRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const reportCount = await ctx.prisma.listingReport.count({
         where: {
-          listing: {
-            authorId: input.userId,
-          },
+          listing: { authorId: input.userId },
           status: { in: [ReportStatus.RESOLVED, ReportStatus.UNDER_REVIEW] },
         },
       })

@@ -1,4 +1,5 @@
 import { PAGINATION } from '@/data/constants'
+import { ResourceError } from '@/lib/errors'
 import {
   calculateOffset,
   createPaginationResult,
@@ -41,17 +42,15 @@ export class EmulatorsRepository extends BaseRepository {
         },
       },
     } satisfies Prisma.EmulatorInclude,
+
+    forDeletion: {
+      _count: { select: { listings: true, pcListings: true } },
+    } satisfies Prisma.EmulatorInclude,
   } as const
 
-  async getPaginated(filters: EmulatorFilters = {}): Promise<{
+  async list(filters: EmulatorFilters = {}): Promise<{
     emulators: Prisma.EmulatorGetPayload<{
-      include: {
-        systems: { select: { id: true; name: true; key: true } }
-        verifiedDevelopers: {
-          include: {
-            user: { select: { id: true; name: true; profileImage: true } }
-          }
-        }
+      include: typeof EmulatorsRepository.includes.withDevelopers & {
         _count: { select: { listings: true; systems: true } }
       }
     }>[]
@@ -78,12 +77,7 @@ export class EmulatorsRepository extends BaseRepository {
       this.prisma.emulator.findMany({
         where,
         include: {
-          systems: { select: { id: true, name: true, key: true } },
-          verifiedDevelopers: {
-            include: {
-              user: { select: { id: true, name: true, profileImage: true } },
-            },
-          },
+          ...EmulatorsRepository.includes.withDevelopers,
           _count: { select: { listings: true, systems: true } },
         },
         orderBy,
@@ -102,32 +96,17 @@ export class EmulatorsRepository extends BaseRepository {
     return { emulators, pagination }
   }
 
-  async getById(id: string): Promise<Prisma.EmulatorGetPayload<{
-    include: {
-      systems: { select: { id: true; name: true; key: true } }
-      verifiedDevelopers: {
-        include: {
-          user: { select: { id: true; name: true; profileImage: true } }
-        }
+  async byId(id: string): Promise<Prisma.EmulatorGetPayload<{
+    include: typeof EmulatorsRepository.includes.withDevelopers &
+      typeof EmulatorsRepository.includes.withCustomFields & {
+        _count: { select: { listings: true; systems: true; customFieldDefinitions: true } }
       }
-      customFieldDefinitions: {
-        orderBy: { displayOrder: 'asc' }
-      }
-      _count: { select: { listings: true; systems: true; customFieldDefinitions: true } }
-    }
   }> | null> {
     return this.prisma.emulator.findUnique({
       where: { id },
       include: {
-        systems: { select: { id: true, name: true, key: true } },
-        verifiedDevelopers: {
-          include: {
-            user: { select: { id: true, name: true, profileImage: true } },
-          },
-        },
-        customFieldDefinitions: {
-          orderBy: { displayOrder: 'asc' },
-        },
+        ...EmulatorsRepository.includes.withDevelopers,
+        ...EmulatorsRepository.includes.withCustomFields,
         _count: {
           select: {
             listings: true,
@@ -141,15 +120,21 @@ export class EmulatorsRepository extends BaseRepository {
 
   async create(data: Prisma.EmulatorCreateInput): Promise<
     Prisma.EmulatorGetPayload<{
-      include: { systems: { select: { id: true; name: true; key: true } } }
+      include: typeof EmulatorsRepository.includes.default
     }>
   > {
-    return this.prisma.emulator.create({
-      data,
-      include: {
-        systems: { select: { id: true, name: true, key: true } },
-      },
-    })
+    // Check for duplicate name
+    const exists = await this.existsByName(data.name as string)
+    if (exists) throw ResourceError.emulator.alreadyExists(data.name as string)
+
+    return this.handleDatabaseOperation(
+      () =>
+        this.prisma.emulator.create({
+          data,
+          include: EmulatorsRepository.includes.default,
+        }),
+      'Emulator',
+    )
   }
 
   async update(
@@ -157,23 +142,51 @@ export class EmulatorsRepository extends BaseRepository {
     data: Prisma.EmulatorUpdateInput,
   ): Promise<
     Prisma.EmulatorGetPayload<{
-      include: { systems: { select: { id: true; name: true; key: true } } }
+      include: typeof EmulatorsRepository.includes.default
     }>
   > {
-    return this.prisma.emulator.update({
-      where: { id },
-      data,
-      include: {
-        systems: { select: { id: true, name: true, key: true } },
-      },
-    })
+    // Check if emulator exists
+    const emulator = await this.byId(id)
+    if (!emulator) throw ResourceError.emulator.notFound()
+
+    // Check for duplicate name if being updated
+    if (data.name && typeof data.name === 'string') {
+      const exists = await this.existsByName(data.name, id)
+      if (exists) throw ResourceError.emulator.alreadyExists(data.name)
+    }
+
+    return this.handleDatabaseOperation(
+      () =>
+        this.prisma.emulator.update({
+          where: { id },
+          data,
+          include: EmulatorsRepository.includes.default,
+        }),
+      'Emulator',
+    )
   }
 
   async delete(id: string): Promise<void> {
-    await this.prisma.emulator.delete({ where: { id } })
+    // Check if emulator exists and has listings
+    const emulator = await this.prisma.emulator.findUnique({
+      where: { id },
+      include: EmulatorsRepository.includes.forDeletion,
+    })
+
+    if (!emulator) throw ResourceError.emulator.notFound()
+
+    const totalListings = emulator._count.listings + emulator._count.pcListings
+    if (totalListings > 0) {
+      throw ResourceError.emulator.inUse(totalListings)
+    }
+
+    await this.handleDatabaseOperation(
+      () => this.prisma.emulator.delete({ where: { id } }),
+      'Emulator',
+    )
   }
 
-  async getStats(): Promise<{
+  async stats(): Promise<{
     total: number
     withListings: number
     withSystems: number
@@ -243,7 +256,7 @@ export class EmulatorsRepository extends BaseRepository {
     systemIds: string[],
   ): Promise<
     Prisma.EmulatorGetPayload<{
-      include: { systems: { select: { id: true; name: true; key: true } } }
+      include: typeof EmulatorsRepository.includes.default
     }>
   > {
     // First disconnect all existing systems
@@ -264,9 +277,7 @@ export class EmulatorsRepository extends BaseRepository {
           connect: systemIds.map((id) => ({ id })),
         },
       },
-      include: {
-        systems: { select: { id: true, name: true, key: true } },
-      },
+      include: EmulatorsRepository.includes.default,
     })
   }
 }

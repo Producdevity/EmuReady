@@ -11,6 +11,7 @@ import {
   renderCustomField,
   PerformanceSelector,
 } from '@/app/listings/components/shared'
+import { initializeCustomFieldValues } from '@/app/listings/components/shared/utils/formHelpers'
 import { Button, Modal, LoadingSpinner, SelectInput } from '@/components/ui'
 import { api } from '@/lib/api'
 import { MarkdownEditor } from '@/lib/dynamic-imports'
@@ -65,15 +66,17 @@ function EditPcListingModal(props: Props) {
 
   const { control, handleSubmit, formState, reset } = useForm<UpdatePcListingFormData>({
     resolver: zodResolver(UpdatePcListingUserSchema),
+    mode: 'onSubmit',
+    criteriaMode: 'all',
   })
 
   // Reset form when modal opens or PC listing data changes
   useEffect(() => {
     if (pcListingQuery.data && props.isOpen) {
-      const defaultCustomFieldValues = pcListingQuery.data.customFieldValues.map((cfv) => ({
-        customFieldDefinitionId: cfv.customFieldDefinition.id,
-        value: cfv.value,
-      }))
+      const defaultCustomFieldValues = initializeCustomFieldValues(
+        pcListingQuery.data.customFieldValues,
+        pcListingQuery.data.emulator.customFieldDefinitions,
+      )
 
       reset({
         id: pcListingQuery.data.id,

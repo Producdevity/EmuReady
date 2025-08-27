@@ -9,7 +9,7 @@ import analytics from '@/lib/analytics'
 import { AppError } from '@/lib/errors'
 import { log } from '@/lib/logger'
 import { prisma } from '@/server/db'
-import { initializeNotificationService } from '@/server/notifications/init'
+import { ensureServicesInitialized } from '@/server/init'
 import { hasDeveloperAccessToEmulator } from '@/server/utils/permissions'
 import { type Nullable } from '@/types/utils'
 import { hasPermissionInContext, PERMISSIONS } from '@/utils/permission-system'
@@ -156,8 +156,8 @@ export const createMobileTRPCContext = async (opts: CreateNextContextOptions) =>
     }
   }
 
-  // Initialize notification service
-  initializeNotificationService()
+  // Initialize all services
+  await ensureServicesInitialized()
 
   return createInnerMobileContext({
     session,
@@ -272,8 +272,8 @@ export const createMobileTRPCFetchContext = async (opts: FetchCreateContextFnOpt
     }
   }
 
-  // Initialize notification service
-  initializeNotificationService()
+  // Initialize all services
+  await ensureServicesInitialized()
 
   return createInnerMobileContext({
     session,

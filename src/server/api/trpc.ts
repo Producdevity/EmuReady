@@ -6,9 +6,7 @@ import { ZodError } from 'zod'
 import analytics from '@/lib/analytics'
 import { AppError } from '@/lib/errors'
 import { prisma } from '@/server/db'
-import { initializeNotificationService } from '@/server/notifications/init'
 import { hasDeveloperAccessToEmulator } from '@/server/utils/permissions'
-import { initializeSwitchGameService } from '@/server/utils/switchGameInit'
 import { type Nullable } from '@/types/utils'
 import { hasPermissionInContext, PERMISSIONS } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
@@ -126,12 +124,6 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
 
   if (userId) session = await createSessionFromClerkUserId(userId)
 
-  // Initialize notification service
-  initializeNotificationService()
-
-  // Initialize Switch game service (singleton pattern prevents multiple inits)
-  initializeSwitchGameService().catch(console.error)
-
   return createInnerTRPCContext({
     session,
     headers: new Headers(opts.req.headers as Record<string, string>),
@@ -147,12 +139,6 @@ export const createAppRouterTRPCContext = async () => {
   let session: Nullable<Session> = null
 
   if (userId) session = await createSessionFromClerkUserId(userId)
-
-  // Initialize notification service
-  initializeNotificationService()
-
-  // Initialize Switch game service (singleton pattern prevents multiple inits)
-  initializeSwitchGameService().catch(console.error)
 
   return {
     session,

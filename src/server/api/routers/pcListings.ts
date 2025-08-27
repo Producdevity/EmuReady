@@ -55,10 +55,12 @@ import {
 } from '@/server/cache/invalidation'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
+import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
 import { listingStatsCache } from '@/server/utils/cache'
 import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
+import { validatePagination, sanitizeInput } from '@/server/utils/security-validation'
 import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
-import { PERMISSIONS } from '@/utils/permission-system'
+import { PERMISSIONS, roleIncludesRole } from '@/utils/permission-system'
 import { canDeleteComment, canEditComment, hasPermission, isModerator } from '@/utils/permissions'
 import { type Prisma, ApprovalStatus, Role, ReportStatus, TrustAction } from '@orm'
 
@@ -68,7 +70,10 @@ export const pcListingsRouter = createTRPCRouter({
     const repository = new PcListingsRepository(ctx.prisma)
     const canSeeBannedUsers = ctx.session?.user ? isModerator(ctx.session.user.role) : false
 
-    const result = await repository.getPcListings({
+    // Validate and sanitize pagination parameters
+    const { page, limit } = validatePagination(input.page, input.limit, 50)
+
+    const result = await repository.list({
       ...input,
       sortDirection: input.sortDirection ?? undefined,
       userId: ctx.session?.user?.id,
@@ -76,8 +81,8 @@ export const pcListingsRouter = createTRPCRouter({
       showNsfw: ctx.session?.user?.showNsfw,
       canSeeBannedUsers,
       approvalStatus: input.approvalStatus || ApprovalStatus.APPROVED,
-      page: input.page || 1,
-      limit: input.limit || 10,
+      page,
+      limit,
     })
 
     return {
@@ -210,14 +215,14 @@ export const pcListingsRouter = createTRPCRouter({
         },
       })
 
-      if (!pcListing) throw ResourceError.pcListing.notFound()
+      if (!pcListing) return ResourceError.pcListing.notFound()
 
       // Only allow owners or moderators to fetch for editing
       if (
         pcListing.authorId !== ctx.session.user.id &&
-        !hasPermission(ctx.session.user.role, Role.MODERATOR)
+        !roleIncludesRole(ctx.session.user.role, Role.MODERATOR)
       ) {
-        throw AppError.forbidden('You can only edit your own PC listings')
+        return ResourceError.pcListing.canOnlyEditOwn()
       }
 
       return pcListing
@@ -265,12 +270,12 @@ export const pcListingsRouter = createTRPCRouter({
     const isSystemCompatible = emulator.systems.some((system) => system.id === game.systemId)
 
     if (!isSystemCompatible) {
-      throw AppError.badRequest("The selected emulator does not support this game's system")
+      return AppError.badRequest("The selected emulator does not support this game's system")
     }
 
     // Check if user can auto-approve
     const canAutoApprove = await canUserAutoApprove(authorId)
-    const isAuthorOrHigher = hasPermission(ctx.session.user.role, Role.AUTHOR)
+    const isAuthorOrHigher = roleIncludesRole(ctx.session.user.role, Role.AUTHOR)
     const listingStatus =
       canAutoApprove || isAuthorOrHigher ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING
 
@@ -285,7 +290,7 @@ export const pcListingsRouter = createTRPCRouter({
         memorySize: input.memorySize,
         os: input.os,
         osVersion: input.osVersion,
-        notes: input.notes,
+        notes: input.notes ? sanitizeInput(input.notes) : input.notes,
         authorId: ctx.session.user.id,
         status: listingStatus,
         ...((canAutoApprove || isAuthorOrHigher) && {
@@ -335,7 +340,7 @@ export const pcListingsRouter = createTRPCRouter({
 
     // Only author can delete their own PC listing
     if (pcListing.authorId !== ctx.session.user.id) {
-      return AppError.forbidden('You can only delete your own PC listings')
+      return ResourceError.pcListing.canOnlyDeleteOwn()
     }
 
     const deletedListing = await ctx.prisma.pcListing.delete({
@@ -357,63 +362,56 @@ export const pcListingsRouter = createTRPCRouter({
       select: { authorId: true, status: true, processedAt: true },
     })
 
-    if (!pcListing) {
-      throw ResourceError.pcListing.notFound()
-    }
+    if (!pcListing) return ResourceError.pcListing.notFound()
 
     // Only allow owners or moderators to edit
     if (
       pcListing.authorId !== ctx.session.user.id &&
       !hasPermission(ctx.session.user.role, Role.MODERATOR)
     ) {
-      throw AppError.forbidden('You can only edit your own PC listings')
+      return ResourceError.pcListing.canOnlyEditOwn()
     }
 
     // Check edit permissions based on PC listing status
     switch (pcListing.status) {
       case ApprovalStatus.REJECTED:
-        throw AppError.badRequest(
-          'Rejected PC listings cannot be edited. Please create a new listing.',
-        )
-
-      case ApprovalStatus.APPROVED:
-        // Moderators can always edit approved listings
-        if (hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-          break
+        // Moderators can edit rejected listings
+        if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+          return ResourceError.pcListing.cannotEditRejected()
         }
+        break
+
+      case ApprovalStatus.APPROVED: {
+        // Moderators can always edit approved listings
+        if (hasPermission(ctx.session.user.role, Role.MODERATOR)) break
 
         // Regular users have a time limit for editing approved listings
-        if (!pcListing.processedAt) {
-          throw AppError.badRequest('PC listing approval time not found')
-        }
+        if (!pcListing.processedAt) return ResourceError.pcListing.approvalTimeNotFound()
 
         const now = new Date()
         const timeSinceApproval = now.getTime() - pcListing.processedAt.getTime()
         const timeLimit = EDIT_TIME_LIMIT_MINUTES * 60 * 1000
 
         if (timeSinceApproval > timeLimit) {
-          throw AppError.badRequest(
-            `You can only edit PC listings within ${EDIT_TIME_LIMIT_MINUTES} minutes of approval`,
-          )
+          return ResourceError.pcListing.editTimeExpired(EDIT_TIME_LIMIT_MINUTES)
         }
         break
+      }
 
       case ApprovalStatus.PENDING:
         // Pending listings can always be edited by their author
         break
 
       default:
-        throw AppError.badRequest('Invalid PC listing status')
+        return AppError.badRequest('Invalid PC listing status')
     }
 
     // Validate referenced entities exist
     const [performance] = await Promise.all([
-      ctx.prisma.performanceScale.findUnique({
-        where: { id: input.performanceId },
-      }),
+      ctx.prisma.performanceScale.findUnique({ where: { id: input.performanceId } }),
     ])
 
-    if (!performance) throw ResourceError.performanceScale.notFound()
+    if (!performance) return ResourceError.performanceScale.notFound()
 
     // Update PC listing and handle custom field values
     const { id, customFieldValues, ...updateData } = input
@@ -435,9 +433,7 @@ export const pcListingsRouter = createTRPCRouter({
     // Handle custom field values if provided
     if (customFieldValues) {
       // Delete existing custom field values
-      await ctx.prisma.pcListingCustomFieldValue.deleteMany({
-        where: { pcListingId: id },
-      })
+      await ctx.prisma.pcListingCustomFieldValue.deleteMany({ where: { pcListingId: id } })
 
       // Create new custom field values
       if (customFieldValues.length > 0) {
@@ -461,7 +457,7 @@ export const pcListingsRouter = createTRPCRouter({
     const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
     if (!isModerator && !isDeveloper) {
-      return AppError.forbidden('You need to be at least a Developer to view pending PC listings')
+      return ResourceError.pcListing.requiresDeveloperToView()
     }
 
     const repository = new PcListingsRepository(ctx.prisma)
@@ -509,7 +505,7 @@ export const pcListingsRouter = createTRPCRouter({
     const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
     if (!isModerator && !isDeveloper) {
-      return AppError.forbidden('You need to be at least a Developer to approve PC listings')
+      return ResourceError.pcListing.requiresDeveloperToApprove()
     }
 
     const repository = new PcListingsRepository(ctx.prisma)
@@ -529,9 +525,7 @@ export const pcListingsRouter = createTRPCRouter({
       )
 
       if (!isVerified) {
-        return AppError.forbidden(
-          'You can only approve PC listings for emulators you are verified for',
-        )
+        return ResourceError.pcListing.mustBeVerifiedToApprove()
       }
     }
 
@@ -550,7 +544,7 @@ export const pcListingsRouter = createTRPCRouter({
     const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
     if (!isModerator && !isDeveloper) {
-      return AppError.forbidden('You need to be at least a Developer to reject PC listings')
+      return ResourceError.pcListing.requiresDeveloperToReject()
     }
 
     const repository = new PcListingsRepository(ctx.prisma)
@@ -570,9 +564,7 @@ export const pcListingsRouter = createTRPCRouter({
       )
 
       if (!isVerified) {
-        return AppError.forbidden(
-          'You can only reject PC listings for emulators you are verified for',
-        )
+        return ResourceError.pcListing.mustBeVerifiedToReject()
       }
     }
 
@@ -597,7 +589,7 @@ export const pcListingsRouter = createTRPCRouter({
       const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
       if (!isModerator && !isDeveloper) {
-        return AppError.forbidden('You need to be at least a Developer to approve PC listings')
+        return ResourceError.pcListing.requiresDeveloperToApprove()
       }
       const result = await ctx.prisma.pcListing.updateMany({
         where: {
@@ -626,7 +618,7 @@ export const pcListingsRouter = createTRPCRouter({
       const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
 
       if (!isModerator && !isDeveloper) {
-        return AppError.forbidden('You need to be at least a Developer to reject PC listings')
+        return ResourceError.pcListing.requiresDeveloperToReject()
       }
       const result = await ctx.prisma.pcListing.updateMany({
         where: {
@@ -767,7 +759,7 @@ export const pcListingsRouter = createTRPCRouter({
     if (cached) return cached
 
     const repository = new PcListingsRepository(ctx.prisma)
-    const stats = await repository.getStats()
+    const stats = await repository.stats()
 
     listingStatsCache.set(STATS_CACHE_KEY, stats)
     return stats
@@ -776,128 +768,44 @@ export const pcListingsRouter = createTRPCRouter({
   // PC Preset procedures
   presets: {
     get: protectedProcedure.input(GetPcPresetsSchema).query(async ({ ctx, input }) => {
+      const repository = new UserPcPresetsRepository(ctx.prisma)
       const userId = input.userId ?? ctx.session.user.id
 
-      // Only allow users to see their own presets unless admin
-      if (
-        userId !== ctx.session.user.id &&
-        ctx.session.user.role !== Role.ADMIN &&
-        ctx.session.user.role !== Role.SUPER_ADMIN
-      ) {
-        return AppError.forbidden('You can only view your own PC presets')
-      }
-
-      return await ctx.prisma.userPcPreset.findMany({
-        where: { userId },
-        include: {
-          cpu: { include: { brand: true } },
-          gpu: { include: { brand: true } },
-        },
-        orderBy: { createdAt: 'desc' },
+      return await repository.listByUserId(userId, {
+        requestingUserId: ctx.session.user.id,
+        userRole: ctx.session.user.role,
       })
     }),
 
     create: protectedProcedure.input(CreatePcPresetSchema).mutation(async ({ ctx, input }) => {
-      // Check if user already has a preset with this name
-      const existingPreset = await ctx.prisma.userPcPreset.findFirst({
-        where: { userId: ctx.session.user.id, name: input.name },
-      })
+      const repository = new UserPcPresetsRepository(ctx.prisma)
 
-      if (existingPreset) {
-        return ResourceError.pcPreset.alreadyExists(input.name)
-      }
-
-      // Validate CPU and GPU exist
-      const [cpu, gpu] = await Promise.all([
-        ctx.prisma.cpu.findUnique({ where: { id: input.cpuId } }),
-        input.gpuId ? ctx.prisma.gpu.findUnique({ where: { id: input.gpuId } }) : null,
-      ])
-
-      if (!cpu) return ResourceError.cpu.notFound()
-      if (input.gpuId && !gpu) return ResourceError.gpu.notFound() // Only check GPU if provided
-
-      return ctx.prisma.userPcPreset.create({
-        data: {
-          userId: ctx.session.user.id,
-          name: input.name,
-          cpuId: input.cpuId,
-          ...(input.gpuId ? { gpuId: input.gpuId } : {}), // Handle optional GPU
-          memorySize: input.memorySize,
-          os: input.os,
-          osVersion: input.osVersion,
-        },
-        include: {
-          cpu: { include: { brand: true } },
-          gpu: { include: { brand: true } },
-        },
+      return await repository.create({
+        userId: ctx.session.user.id,
+        name: input.name,
+        cpuId: input.cpuId,
+        gpuId: input.gpuId,
+        memorySize: input.memorySize,
+        os: input.os,
+        osVersion: input.osVersion,
       })
     }),
 
     update: protectedProcedure.input(UpdatePcPresetSchema).mutation(async ({ ctx, input }) => {
       const { id, ...data } = input
+      const repository = new UserPcPresetsRepository(ctx.prisma)
 
-      const preset = await ctx.prisma.userPcPreset.findUnique({
-        where: { id },
-      })
-
-      if (!preset) return ResourceError.pcPreset.notFound()
-
-      // Only allow users to edit their own presets
-      if (preset.userId !== ctx.session.user.id) {
-        return AppError.forbidden('You can only edit your own PC presets')
-      }
-
-      // Check if name conflicts with another preset
-      const existingPreset = await ctx.prisma.userPcPreset.findFirst({
-        where: {
-          userId: ctx.session.user.id,
-          name: data.name,
-          id: { not: id },
-        },
-      })
-
-      if (existingPreset) {
-        return ResourceError.pcPreset.alreadyExists(data.name)
-      }
-
-      // Validate CPU and GPU exist
-      const [cpu, gpu] = await Promise.all([
-        ctx.prisma.cpu.findUnique({ where: { id: data.cpuId } }),
-        ctx.prisma.gpu.findUnique({ where: { id: data.gpuId } }),
-      ])
-
-      if (!cpu) return ResourceError.cpu.notFound()
-      if (!gpu) return ResourceError.gpu.notFound()
-
-      return ctx.prisma.userPcPreset.update({
-        where: { id },
-        data,
-        include: {
-          cpu: {
-            include: { brand: true },
-          },
-          gpu: {
-            include: { brand: true },
-          },
-        },
+      return await repository.update(id, ctx.session.user.id, data, {
+        requestingUserRole: ctx.session.user.role,
       })
     }),
 
     delete: protectedProcedure.input(DeletePcPresetSchema).mutation(async ({ ctx, input }) => {
-      const preset = await ctx.prisma.userPcPreset.findUnique({
-        where: { id: input.id },
+      const repository = new UserPcPresetsRepository(ctx.prisma)
+      await repository.delete(input.id, ctx.session.user.id, {
+        requestingUserRole: ctx.session.user.role,
       })
-
-      if (!preset) return ResourceError.pcPreset.notFound()
-
-      // Only allow users to delete their own presets
-      if (preset.userId !== ctx.session.user.id) {
-        return AppError.forbidden('You can only delete your own PC presets')
-      }
-
-      return ctx.prisma.userPcPreset.delete({
-        where: { id: input.id },
-      })
+      return { success: true }
     }),
   },
 
@@ -1126,7 +1034,7 @@ export const pcListingsRouter = createTRPCRouter({
       const canEdit = canEditComment(ctx.session.user.role, comment.user.id, ctx.session.user.id)
 
       if (!canEdit) {
-        AppError.forbidden('You do not have permission to edit this comment')
+        return ResourceError.comment.noPermission('edit')
       }
 
       return ctx.prisma.pcListingComment.update({
@@ -1162,7 +1070,7 @@ export const pcListingsRouter = createTRPCRouter({
       )
 
       if (!canDelete) {
-        AppError.forbidden('You do not have permission to delete this comment')
+        return ResourceError.comment.noPermission('delete')
       }
 
       return ctx.prisma.pcListingComment.update({
@@ -1241,7 +1149,7 @@ export const pcListingsRouter = createTRPCRouter({
       })
 
       if (!pcListing) {
-        throw ResourceError.pcListing.notFound()
+        return ResourceError.pcListing.notFound()
       }
 
       // Prevent users from reporting their own listings
@@ -1333,7 +1241,7 @@ export const pcListingsRouter = createTRPCRouter({
       })
 
       if (!report) {
-        throw ResourceError.listingReport.notFound()
+        return ResourceError.listingReport.notFound()
       }
 
       // If resolving the report and marking listing as rejected
@@ -1454,12 +1362,12 @@ export const pcListingsRouter = createTRPCRouter({
       })
 
       if (!verification) {
-        throw ResourceError.verification.notFound()
+        return ResourceError.verification.notFound()
       }
 
       // Only allow the verifier or admin to remove verification
       if (verification.verifiedBy !== ctx.session.user.id && !isModerator(ctx.session.user.role)) {
-        AppError.forbidden('You can only remove your own verifications')
+        return ResourceError.verification.canOnlyRemoveOwn()
       }
 
       return ctx.prisma.pcListingDeveloperVerification.delete({

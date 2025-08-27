@@ -25,12 +25,12 @@ import { type Prisma, Role } from '@orm'
 export const emulatorsRouter = createTRPCRouter({
   getStats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const repository = new EmulatorsRepository(ctx.prisma)
-    return repository.getStats()
+    return repository.stats()
   }),
 
   get: publicProcedure.input(GetEmulatorsSchema).query(async ({ ctx, input }) => {
     const repository = new EmulatorsRepository(ctx.prisma)
-    return repository.getPaginated({
+    return repository.list({
       search: input?.search,
       limit: input?.limit,
       offset: input?.offset,
@@ -42,7 +42,7 @@ export const emulatorsRouter = createTRPCRouter({
 
   byId: publicProcedure.input(GetEmulatorByIdSchema).query(async ({ ctx, input }) => {
     const repository = new EmulatorsRepository(ctx.prisma)
-    const emulator = await repository.getById(input.id)
+    const emulator = await repository.byId(input.id)
 
     return emulator ?? ResourceError.emulator.notFound()
   }),
@@ -156,13 +156,13 @@ export const emulatorsRouter = createTRPCRouter({
       })
 
       if (!verifiedDeveloper) {
-        return AppError.forbidden('You can only manage emulators you are verified for')
+        return ResourceError.emulator.canOnlyManageVerified()
       }
     }
 
     const repository = new EmulatorsRepository(ctx.prisma)
 
-    const emulator = await repository.getById(input.id)
+    const emulator = await repository.byId(input.id)
     if (!emulator) return ResourceError.emulator.notFound()
 
     if (input.name !== emulator.name) {
@@ -182,7 +182,7 @@ export const emulatorsRouter = createTRPCRouter({
   delete: manageEmulatorsProcedure.input(DeleteEmulatorSchema).mutation(async ({ ctx, input }) => {
     // Developers can NEVER delete emulators
     if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-      return AppError.forbidden('You do not have permission to delete emulators')
+      return ResourceError.emulator.requiresPermissionToDelete()
     }
 
     const repository = new EmulatorsRepository(ctx.prisma)
@@ -203,7 +203,7 @@ export const emulatorsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const repository = new EmulatorsRepository(ctx.prisma)
 
-      const emulator = await repository.getById(input.emulatorId)
+      const emulator = await repository.byId(input.emulatorId)
       if (!emulator) return ResourceError.emulator.notFound()
 
       const systems = await ctx.prisma.system.findMany({

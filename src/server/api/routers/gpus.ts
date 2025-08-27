@@ -1,4 +1,4 @@
-import { ResourceError, AppError } from '@/lib/errors'
+import { ResourceError } from '@/lib/errors'
 import {
   GetGpusSchema,
   GetGpuByIdSchema,
@@ -18,9 +18,9 @@ export const gpusRouter = createTRPCRouter({
   get: publicProcedure.input(GetGpusSchema).query(async ({ ctx, input }) => {
     const repository = new GpusRepository(ctx.prisma)
 
-    // For web, we need counts - use getWithListingCounts for pcListings sort
+    // For web, we need counts - use getWithListingCounts for pcListings sort TODO: clean this up
     if (input?.sortField === 'pcListings' && (input?.limit || 20) <= 100) {
-      const gpus = await repository.getWithListingCounts(input.limit || 20)
+      const gpus = await repository.listWithCounts(input.limit || 20)
       const total = await repository.count({ search: input.search, brandId: input.brandId })
 
       return {
@@ -36,7 +36,7 @@ export const gpusRouter = createTRPCRouter({
     }
 
     // Regular paginated query
-    return repository.getPaginated(input ?? {})
+    return repository.list(input ?? {})
   }),
 
   byId: publicProcedure.input(GetGpuByIdSchema).query(async ({ ctx, input }) => {
@@ -48,18 +48,6 @@ export const gpusRouter = createTRPCRouter({
   create: manageDevicesProcedure.input(CreateGpuSchema).mutation(async ({ ctx, input }) => {
     const repository = new GpusRepository(ctx.prisma)
 
-    const brand = await ctx.prisma.deviceBrand.findUnique({
-      where: { id: input.brandId },
-    })
-
-    if (!brand) return ResourceError.deviceBrand.notFound()
-
-    const exists = await repository.existsByModelName(input.modelName)
-    if (exists) {
-      return ResourceError.gpu.alreadyExists(input.modelName)
-    }
-
-    // Create and then fetch with counts for web
     const created = await repository.create(input)
     return repository.byIdWithCounts(created.id)
   }),
@@ -68,43 +56,14 @@ export const gpusRouter = createTRPCRouter({
     const repository = new GpusRepository(ctx.prisma)
     const { id, ...data } = input
 
-    const gpu = await repository.byId(id)
-    if (!gpu) return ResourceError.gpu.notFound()
-
-    const brand = await ctx.prisma.deviceBrand.findUnique({
-      where: { id: input.brandId },
-    })
-
-    if (!brand) return ResourceError.deviceBrand.notFound()
-
-    const exists = await repository.existsByModelName(input.modelName, id)
-    if (exists) {
-      return ResourceError.gpu.alreadyExists(input.modelName)
-    }
-
-    // Update and then fetch with counts for web
     const updated = await repository.update(id, data)
     return repository.byIdWithCounts(updated.id)
   }),
 
   delete: manageDevicesProcedure.input(DeleteGpuSchema).mutation(async ({ ctx, input }) => {
     const repository = new GpusRepository(ctx.prisma)
-
-    const existingGpu = await ctx.prisma.gpu.findUnique({
-      where: { id: input.id },
-      include: { _count: { select: { pcListings: true } } },
-    })
-
-    if (!existingGpu) return ResourceError.gpu.notFound()
-
-    if (existingGpu._count.pcListings > 0) {
-      return AppError.conflict(
-        `Cannot delete GPU "${existingGpu.modelName}" because it has ${existingGpu._count.pcListings} active PC listing(s). Please remove all PC listings for this GPU first.`,
-      )
-    }
-
     await repository.delete(input.id)
-    return existingGpu // Return the deleted GPU
+    return { success: true }
   }),
 
   stats: viewStatisticsProcedure.query(async ({ ctx }) => {

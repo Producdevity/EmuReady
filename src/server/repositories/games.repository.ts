@@ -28,113 +28,26 @@ export interface GameFilters {
   showNsfw?: boolean | null
 }
 
-// Type namespace for GamesRepository
-export namespace GamesRepositoryTypes {
-  export type Minimal = Prisma.GameGetPayload<{
-    include: {
-      system: { select: { id: true; name: true } }
-    }
-  }>
+// Export types directly without namespace
+export type GameMinimal = Prisma.GameGetPayload<{
+  include: typeof GamesRepository.includes.minimal
+}>
 
-  export type Full = Prisma.GameGetPayload<{
-    include: {
-      system: {
-        include: {
-          emulators: true
-        }
-      }
-      submitter: true
-      listings: {
-        include: {
-          device: { include: { brand: true; soc: true } }
-          emulator: true
-          performance: true
-          author: { select: { id: true; name: true; profileImage: true } }
-          _count: { select: { votes: true; comments: true } }
-        }
-      }
-      pcListings: {
-        include: {
-          cpu: { include: { brand: true } }
-          gpu: { include: { brand: true } }
-          emulator: true
-          performance: true
-          author: { select: { id: true; name: true; profileImage: true } }
-          _count: { select: { votes: true; comments: true } }
-        }
-      }
-      _count: {
-        select: {
-          listings: true
-          pcListings: true
-        }
-      }
-    }
-  }>
+export type GameFull = Prisma.GameGetPayload<{
+  include: typeof GamesRepository.includes.full
+}>
 
-  export type WithCounts = Prisma.GameGetPayload<{
-    select: {
-      id: true
-      title: true
-      systemId: true
-      imageUrl: true
-      boxartUrl: true
-      bannerUrl: true
-      tgdbGameId: true
-      metadata: true
-      isErotic: true
-      status: true
-      submittedBy: true
-      submittedAt: true
-      approvedBy: true
-      approvedAt: true
-      createdAt: true
-      system: { select: { id: true; name: true } }
-      _count: { select: { listings: true; pcListings: true } }
-    }
-  }>
+export type GameWithCounts = Prisma.GameGetPayload<{
+  select: typeof GamesRepository.selects.withCounts
+}>
 
-  export type WithSubmitter = Prisma.GameGetPayload<{
-    select: {
-      id: true
-      title: true
-      systemId: true
-      imageUrl: true
-      boxartUrl: true
-      bannerUrl: true
-      tgdbGameId: true
-      metadata: true
-      isErotic: true
-      status: true
-      submittedBy: true
-      submittedAt: true
-      approvedBy: true
-      approvedAt: true
-      createdAt: true
-      system: { select: { id: true; name: true } }
-      submitter: { select: { id: true; name: true; email: true } }
-      _count: { select: { listings: true; pcListings: true } }
-    }
-  }>
+export type GameWithSubmitter = Prisma.GameGetPayload<{
+  select: typeof GamesRepository.selects.withSubmitter
+}>
 
-  export type Mobile = Prisma.GameGetPayload<{
-    select: {
-      id: true
-      title: true
-      systemId: true
-      imageUrl: true
-      boxartUrl: true
-      bannerUrl: true
-      tgdbGameId: true
-      metadata: true
-      isErotic: true
-      status: true
-      createdAt: true
-      system: { select: { id: true; name: true; key: true } }
-      _count: { select: { listings: true } }
-    }
-  }>
-}
+export type GameMobile = Prisma.GameGetPayload<{
+  select: typeof GamesRepository.selects.mobile
+}>
 
 /**
  * Repository for Game data access operations.
@@ -293,8 +206,8 @@ export class GamesRepository extends BaseRepository {
    * @returns Games array with complete pagination metadata
    * @throws {Error} If database query fails
    */
-  async getPaginated(filters: GameFilters = {}): Promise<{
-    games: (GamesRepositoryTypes.WithSubmitter | GamesRepositoryTypes.WithCounts)[]
+  async list(filters: GameFilters = {}): Promise<{
+    games: (GameWithSubmitter | GameWithCounts)[]
     pagination: PaginationResult
   }> {
     const {
@@ -350,8 +263,8 @@ export class GamesRepository extends BaseRepository {
    * @param filters.limit - Items per page (default: PAGINATION.DEFAULT_LIMIT)
    * @returns Simplified game data optimized for mobile consumption
    */
-  async getMobile(filters: GameFilters = {}): Promise<{
-    games: GamesRepositoryTypes.Mobile[]
+  async listMobile(filters: GameFilters = {}): Promise<{
+    games: GameMobile[]
     pagination: PaginationResult
   }> {
     const {
@@ -410,7 +323,7 @@ export class GamesRepository extends BaseRepository {
    * @param showNsfw - Include NSFW content (default: false)
    * @returns Array of popular games with mobile-optimized data
    */
-  async getPopularMobile(showNsfw = false): Promise<GamesRepositoryTypes.Mobile[]> {
+  async listPopularMobile(showNsfw = false): Promise<GameMobile[]> {
     const where: Prisma.GameWhereInput = {
       status: ApprovalStatus.APPROVED,
       ...(!showNsfw && { isErotic: false }),
@@ -432,7 +345,7 @@ export class GamesRepository extends BaseRepository {
    * @param showNsfw - Include NSFW content (default: false)
    * @returns Array of games matching the search
    */
-  async searchMobile(query: string, showNsfw = false): Promise<GamesRepositoryTypes.Mobile[]> {
+  async listSearchMobile(query: string, showNsfw = false): Promise<GameMobile[]> {
     const where: Prisma.GameWhereInput = {
       status: ApprovalStatus.APPROVED,
       title: { contains: query, mode: this.mode },
@@ -458,7 +371,7 @@ export class GamesRepository extends BaseRepository {
    * @param id - The game's unique identifier
    * @returns Game data for mobile or null if not found
    */
-  async getByIdMobile(id: string): Promise<GamesRepositoryTypes.Mobile | null> {
+  async byIdMobile(id: string): Promise<GameMobile | null> {
     return this.prisma.game.findUnique({
       where: { id },
       select: GamesRepository.selects.mobile,
@@ -473,7 +386,7 @@ export class GamesRepository extends BaseRepository {
    * @param canSeeBannedUsers - Whether to include content from banned users
    * @returns Complete game data with listings or null if not found
    */
-  async getById(id: string, canSeeBannedUsers = false): Promise<GamesRepositoryTypes.Full | null> {
+  async byId(id: string, canSeeBannedUsers = false): Promise<GameFull | null> {
     // Build shadow ban filter once
     const shadowBanFilter = canSeeBannedUsers ? undefined : buildShadowBanFilter(null)
 
@@ -520,7 +433,7 @@ export class GamesRepository extends BaseRepository {
    * @returns Created game with system relationship
    * @throws {Error} If unique constraint violated
    */
-  async create(data: Prisma.GameCreateInput): Promise<GamesRepositoryTypes.Minimal> {
+  async create(data: Prisma.GameCreateInput): Promise<GameMinimal> {
     return this.handleDatabaseOperation(
       () =>
         this.prisma.game.create({
@@ -539,7 +452,7 @@ export class GamesRepository extends BaseRepository {
    * @returns Updated game with system relationship
    * @throws {Error} If game not found or constraint violated
    */
-  async update(id: string, data: Prisma.GameUpdateInput): Promise<GamesRepositoryTypes.Minimal> {
+  async update(id: string, data: Prisma.GameUpdateInput): Promise<GameMinimal> {
     return this.handleDatabaseOperation(
       () =>
         this.prisma.game.update({
@@ -567,7 +480,7 @@ export class GamesRepository extends BaseRepository {
    *
    * @returns Object containing counts by approval status
    */
-  async getStats(): Promise<{
+  async stats(): Promise<{
     pending: number
     approved: number
     rejected: number

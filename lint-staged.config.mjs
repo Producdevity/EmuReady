@@ -8,7 +8,10 @@ const buildEslintCommand = (filenames) =>
  * @type {import('lint-staged').Configuration}
  */
 const lintStagedConfig = {
-  'package.json': () => ['node scripts/sync-version.js', 'git add public/service-worker.js'],
+  'package.json': () => [
+    'node scripts/sync-version.js',
+    'git add public/service-worker.js public/sw-register.js',
+  ],
   '*.{json,css,md,js,jsx,ts,tsx}': ['prettier --write'],
   '*.{js,jsx,ts,tsx}': [buildEslintCommand],
 }

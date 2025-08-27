@@ -105,7 +105,7 @@ export const commentsRouter = createTRPCRouter({
   get: publicProcedure.input(GetCommentsSchema).query(async ({ ctx, input }) => {
     const { listingId } = input
     const repository = new CommentsRepository(ctx.prisma)
-    const comments = await repository.getForListing(listingId, ctx.session?.user?.role)
+    const comments = await repository.listByListing(listingId, ctx.session?.user?.role)
     return { comments }
   }),
 
@@ -226,10 +226,9 @@ export const commentsRouter = createTRPCRouter({
   }),
 
   edit: protectedProcedure.input(EditCommentSchema).mutation(async ({ ctx, input }) => {
-    const comment = await ctx.prisma.comment.findUnique({
-      where: { id: input.commentId },
-      include: { user: { select: { id: true } } },
-    })
+    const repository = new CommentsRepository(ctx.prisma)
+    const comment = await repository.byId(input.commentId)
+
     if (!comment) return ResourceError.comment.notFound()
 
     if (comment.deletedAt) return ResourceError.comment.cannotEditDeleted()
@@ -238,18 +237,10 @@ export const commentsRouter = createTRPCRouter({
 
     if (!canEdit) return ResourceError.comment.noPermission('edit')
 
-    const updatedComment = await ctx.prisma.comment.update({
-      where: { id: input.commentId },
-      data: {
-        content: input.content,
-        isEdited: true,
-        updatedAt: new Date(),
-      },
-      include: {
-        user: {
-          select: { id: true, name: true, profileImage: true, role: true },
-        },
-      },
+    const updatedComment = await repository.update(input.commentId, {
+      content: input.content,
+      isEdited: true,
+      updatedAt: new Date(),
     })
 
     // Emit notification event
@@ -269,10 +260,8 @@ export const commentsRouter = createTRPCRouter({
   }),
 
   delete: protectedProcedure.input(DeleteCommentSchema).mutation(async ({ ctx, input }) => {
-    const comment = await ctx.prisma.comment.findUnique({
-      where: { id: input.commentId },
-      include: { user: { select: { id: true } } },
-    })
+    const repository = new CommentsRepository(ctx.prisma)
+    const comment = await repository.byId(input.commentId)
 
     if (!comment) return ResourceError.comment.notFound()
 
@@ -282,24 +271,21 @@ export const commentsRouter = createTRPCRouter({
 
     if (!canDelete) return ResourceError.comment.noPermission('delete')
 
-    const deletedComment = await ctx.prisma.comment.update({
-      where: { id: input.commentId },
-      data: { deletedAt: new Date() },
-    })
+    await repository.delete(input.commentId)
 
     // Emit notification event
     notificationEventEmitter.emitNotificationEvent({
       eventType: NOTIFICATION_EVENTS.COMMENT_DELETED,
       entityType: 'comment',
-      entityId: deletedComment.id,
+      entityId: comment.id,
       triggeredBy: ctx.session.user.id,
       payload: {
-        listingId: deletedComment.listingId,
-        commentId: deletedComment.id,
+        listingId: comment.listingId,
+        commentId: comment.id,
       },
     })
 
-    return deletedComment
+    return comment
   }),
 
   vote: protectedProcedure.input(CreateVoteComment).mutation(async ({ ctx, input }) => {

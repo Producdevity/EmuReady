@@ -191,7 +191,7 @@ export const permissionsRouter = createTRPCRouter({
 
       // Prevent deletion of system permissions
       if (permission.isSystem) {
-        return AppError.forbidden('System permissions cannot be deleted')
+        return ResourceError.permission.systemCannotBeDeleted()
       }
 
       // Check if permission is currently assigned to any roles

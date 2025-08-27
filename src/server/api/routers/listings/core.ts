@@ -2,7 +2,7 @@ import analytics from '@/lib/analytics'
 import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
 import { getClientIP, verifyRecaptcha } from '@/lib/captcha/verify'
 import { ResourceError, AppError } from '@/lib/errors'
-import { applyTrustAction, canUserAutoApprove, reverseTrustAction } from '@/lib/trust/service'
+import { applyTrustAction, canUserAutoApprove } from '@/lib/trust/service'
 import {
   CreateListingSchema,
   CreateVoteSchema,
@@ -27,10 +27,10 @@ import {
 } from '@/server/cache/invalidation'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
+import { validatePagination, sanitizeInput } from '@/server/utils/security-validation'
 import { withSavepoint } from '@/server/utils/transactions'
 import { updateListingVoteCounts } from '@/server/utils/vote-counts'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { hasPermission } from '@/utils/permissions'
 import { ms } from '@/utils/time'
 import { ApprovalStatus, Prisma, Role, TrustAction } from '@orm'
 import { validateCustomFields } from './validation'
@@ -45,6 +45,12 @@ export const coreRouter = createTRPCRouter({
     const userId = ctx.session?.user?.id
     const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
 
+    // Validate and sanitize pagination
+    const { page, limit } = validatePagination(input.page, input.limit, 100)
+
+    // Sanitize search term (plain text, not markdown)
+    const sanitizedSearchTerm = input.searchTerm ? sanitizeInput(input.searchTerm) : undefined
+
     // Map input to repository filters (convert null to undefined)
     const filters = {
       systemIds: input.systemIds || undefined,
@@ -52,9 +58,9 @@ export const coreRouter = createTRPCRouter({
       socIds: input.socIds || undefined,
       emulatorIds: input.emulatorIds || undefined,
       performanceIds: input.performanceIds || undefined,
-      search: input.searchTerm || undefined,
-      page: input.page,
-      limit: input.limit,
+      search: sanitizedSearchTerm,
+      page,
+      limit,
       sortField: input.sortField || undefined,
       sortDirection: input.sortDirection || undefined,
       approvalStatus: input.approvalStatus || undefined,
@@ -65,7 +71,7 @@ export const coreRouter = createTRPCRouter({
     }
 
     // Use the repository for the main listing logic
-    const result = await repository.getListings(filters)
+    const result = await repository.list(filters)
 
     // Batch fetch additional data to avoid N+1 queries
     const listingIds = result.listings.map((l) => l.id)
@@ -149,6 +155,7 @@ export const coreRouter = createTRPCRouter({
             id: true,
             name: true,
             profileImage: true,
+            verifiedDeveloperBy: true,
             // Include ban status for moderators to show banned user indication
             ...(canSeeBannedUsers && {
               userBans: {
@@ -161,13 +168,7 @@ export const coreRouter = createTRPCRouter({
             }),
           },
         },
-        developerVerifications: {
-          include: {
-            developer: {
-              select: { id: true, name: true },
-            },
-          },
-        },
+        developerVerifications: { include: { developer: { select: { id: true, name: true } } } },
         customFieldValues: {
           include: { customFieldDefinition: true },
           orderBy: { customFieldDefinition: { name: 'asc' } },
@@ -201,14 +202,12 @@ export const coreRouter = createTRPCRouter({
         select: { id: true },
       })
 
-      if (authorBanStatus) {
-        throw AppError.forbidden('This listing is not accessible.')
-      }
+      if (authorBanStatus) return ResourceError.listing.notAccessible()
     }
 
     // CRITICAL: Check approval status - REJECTED listings should NEVER be visible to regular users
     if (!canSeeBannedUsers && listing.status === ApprovalStatus.REJECTED) {
-      throw AppError.forbidden('This listing is not accessible.')
+      return ResourceError.listing.notAccessible()
     }
 
     // Use materialized vote counts
@@ -220,14 +219,9 @@ export const coreRouter = createTRPCRouter({
     const userVote = ctx.session && listing.votes.length > 0 ? listing.votes[0].value : null
 
     // Check if the author is a verified developer for this emulator
-    const isVerifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
-      where: {
-        userId_emulatorId: {
-          userId: listing.authorId,
-          emulatorId: listing.emulatorId,
-        },
-      },
-    })
+    const isVerifiedDeveloper =
+      listing.author.verifiedDeveloperBy?.some((vd) => vd.emulatorId === listing.emulatorId) ||
+      false
 
     return {
       ...listing,
@@ -236,9 +230,8 @@ export const coreRouter = createTRPCRouter({
       downVotes,
       totalVotes,
       userVote,
-      isVerifiedDeveloper: !!isVerifiedDeveloper,
-      // Remove the raw votes array from the response
-      votes: undefined,
+      isVerifiedDeveloper,
+      votes: undefined, // Remove the raw votes array from the response
     }
   }),
 
@@ -285,7 +278,7 @@ export const coreRouter = createTRPCRouter({
 
       // Check if user's listing can be auto-approved
       const canAutoApprove = await canUserAutoApprove(authorId)
-      const isAuthorOrHigher = hasPermission(ctx.session.user.role, Role.AUTHOR)
+      const isAuthorOrHigher = roleIncludesRole(ctx.session.user.role, Role.AUTHOR)
       const listingStatus =
         canAutoApprove || isAuthorOrHigher ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING
 
@@ -438,31 +431,48 @@ export const coreRouter = createTRPCRouter({
 
     if (!userExists) return ResourceError.user.notInDatabase(userId)
 
-    // Check if user already voted
-    const existingVote = await ctx.prisma.vote.findUnique({
-      where: { userId_listingId: { userId, listingId: input.listingId } },
-    })
-
-    if (!existingVote) {
-      // Get listing details to find the author
-      const listing = await ctx.prisma.listing.findUnique({
-        where: { id: input.listingId },
-        select: { authorId: true },
+    // Use a single transaction to avoid race conditions
+    const voteResult = await ctx.prisma.$transaction(async (tx) => {
+      // Check for existing vote with row-level lock (SELECT ... FOR UPDATE equivalent)
+      const existingVote = await tx.vote.findUnique({
+        where: { userId_listingId: { userId, listingId: input.listingId } },
       })
 
-      if (!listing) return ResourceError.listing.notFound()
-
-      // Create new vote and update counts in transaction
-      const vote = await ctx.prisma.$transaction(async (tx) => {
+      if (!existingVote) {
+        // Create new vote
         const newVote = await tx.vote.create({
           data: { value: input.value, userId, listingId: input.listingId },
         })
 
         await updateListingVoteCounts(tx, input.listingId, 'create', input.value)
 
-        return newVote
+        return { vote: newVote, action: 'created' as const, previousValue: null }
+      }
+
+      // If value is the same, remove the vote (toggle)
+      if (existingVote.value === input.value) {
+        await tx.vote.delete({
+          where: { userId_listingId: { userId, listingId: input.listingId } },
+        })
+
+        await updateListingVoteCounts(tx, input.listingId, 'delete', undefined, existingVote.value)
+
+        return { vote: null, action: 'deleted' as const, previousValue: existingVote.value }
+      }
+
+      // Update vote to new value
+      const updatedVote = await tx.vote.update({
+        where: { userId_listingId: { userId, listingId: input.listingId } },
+        data: { value: input.value },
       })
 
+      await updateListingVoteCounts(tx, input.listingId, 'update', input.value, existingVote.value)
+
+      return { vote: updatedVote, action: 'updated' as const, previousValue: existingVote.value }
+    })
+
+    // Handle post-transaction operations based on action
+    if (voteResult.action === 'created' || voteResult.action === 'updated') {
       // Apply trust action for the voter
       await applyTrustAction({
         userId,
@@ -481,158 +491,36 @@ export const coreRouter = createTRPCRouter({
         })
       }
 
-      // Emit notification event for new vote
-      notificationEventEmitter.emitNotificationEvent({
-        eventType: NOTIFICATION_EVENTS.LISTING_VOTED,
-        entityType: 'listing',
-        entityId: input.listingId,
-        triggeredBy: userId,
-        payload: {
-          listingId: input.listingId,
-          voteId: vote.id,
-          voteValue: input.value,
-        },
-      })
+      // Emit notification event
+      if (voteResult.vote) {
+        notificationEventEmitter.emitNotificationEvent({
+          eventType: NOTIFICATION_EVENTS.LISTING_VOTED,
+          entityType: 'listing',
+          entityId: input.listingId,
+          triggeredBy: userId,
+          payload: {
+            listingId: input.listingId,
+            voteId: voteResult.vote.id,
+            voteValue: input.value,
+          },
+        })
+      }
 
       analytics.engagement.vote({
         listingId: input.listingId,
         voteValue: input.value,
       })
+    }
 
-      // Check if this is user's first vote for journey analytics
-      const userVoteCount = await ctx.prisma.vote.count({
-        where: { userId: userId },
-      })
-
+    // Check if this is user's first vote for journey analytics
+    if (voteResult.action === 'created') {
+      const userVoteCount = await ctx.prisma.vote.count({ where: { userId: userId } })
       if (userVoteCount === 1) {
-        analytics.userJourney.firstTimeAction({
-          userId: userId,
-          action: 'first_vote',
-        })
+        analytics.userJourney.firstTimeAction({ userId: userId, action: 'first_vote' })
       }
-
-      return vote
     }
 
-    // If value is the same, remove the vote (toggle)
-    if (existingVote.value === input.value) {
-      // Get listing details to find the author
-      const listingForRemoval = await ctx.prisma.listing.findUnique({
-        where: { id: input.listingId },
-        select: { authorId: true },
-      })
-
-      if (!listingForRemoval) return AppError.notFound('Listing')
-
-      await ctx.prisma.$transaction(async (tx) => {
-        await tx.vote.delete({
-          where: { userId_listingId: { userId, listingId: input.listingId } },
-        })
-
-        await updateListingVoteCounts(tx, input.listingId, 'delete', undefined, existingVote.value)
-      })
-
-      // Reverse trust action for the voter
-      await reverseTrustAction({
-        userId,
-        action: existingVote.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE,
-        context: { listingId: input.listingId, reason: 'vote_removed' },
-      })
-
-      // Reverse trust action for the listing creator (only if they didn't vote on their own listing)
-      if (listingForRemoval.authorId && listingForRemoval.authorId !== userId) {
-        await reverseTrustAction({
-          userId: listingForRemoval.authorId,
-          action: existingVote.value
-            ? TrustAction.LISTING_RECEIVED_UPVOTE
-            : TrustAction.LISTING_RECEIVED_DOWNVOTE,
-          context: {
-            listingId: input.listingId,
-            reason: 'vote_removed',
-            voterId: userId,
-          },
-        })
-      }
-
-      return { message: 'Vote removed' }
-    }
-
-    // Otherwise update the existing vote
-    // Get listing details to find the author
-    const listingForUpdate = await ctx.prisma.listing.findUnique({
-      where: { id: input.listingId },
-      select: { authorId: true },
-    })
-
-    if (!listingForUpdate) {
-      AppError.notFound('Listing')
-    }
-
-    const updatedVote = await ctx.prisma.$transaction(async (tx) => {
-      const vote = await tx.vote.update({
-        where: { userId_listingId: { userId, listingId: input.listingId } },
-        data: { value: input.value },
-      })
-
-      await updateListingVoteCounts(tx, input.listingId, 'update', input.value, existingVote.value)
-
-      return vote
-    })
-
-    // Apply trust action for vote change (properly reverse old, add new) for voter
-    await reverseTrustAction({
-      userId,
-      action: existingVote.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE,
-      context: { listingId: input.listingId, reason: 'vote_changed_from' },
-    })
-    await applyTrustAction({
-      userId,
-      action: input.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE,
-      context: { listingId: input.listingId, reason: 'vote_changed_to' },
-    })
-
-    // Apply trust action for vote change for listing creator (only if they didn't vote on their own listing)
-    if (listingForUpdate.authorId && listingForUpdate.authorId !== userId) {
-      // Reverse old received vote action
-      await reverseTrustAction({
-        userId: listingForUpdate.authorId,
-        action: existingVote.value
-          ? TrustAction.LISTING_RECEIVED_UPVOTE
-          : TrustAction.LISTING_RECEIVED_DOWNVOTE,
-        context: {
-          listingId: input.listingId,
-          reason: 'vote_changed_from',
-          voterId: userId,
-        },
-      })
-      // Apply new received vote action
-      await applyTrustAction({
-        userId: listingForUpdate.authorId,
-        action: input.value
-          ? TrustAction.LISTING_RECEIVED_UPVOTE
-          : TrustAction.LISTING_RECEIVED_DOWNVOTE,
-        context: {
-          listingId: input.listingId,
-          reason: 'vote_changed_to',
-          voterId: userId,
-        },
-      })
-    }
-
-    // Emit notification event for vote update
-    notificationEventEmitter.emitNotificationEvent({
-      eventType: NOTIFICATION_EVENTS.LISTING_VOTED,
-      entityType: 'listing',
-      entityId: input.listingId,
-      triggeredBy: userId,
-      payload: {
-        listingId: input.listingId,
-        voteId: updatedVote.id,
-        voteValue: input.value,
-      },
-    })
-
-    return updatedVote
+    return voteResult.vote || { id: '', value: false, listingId: input.listingId, userId }
   }),
 
   performanceScales: publicProcedure.query(async ({ ctx }) =>
@@ -682,23 +570,18 @@ export const coreRouter = createTRPCRouter({
         emulator: true,
         performance: true,
         author: { select: { id: true, name: true } },
-        developerVerifications: {
-          include: { developer: { select: { id: true, name: true } } },
-        },
+        developerVerifications: { include: { developer: { select: { id: true, name: true } } } },
         _count: { select: { votes: true, comments: true } },
       },
     })
 
     // Get all verified developer statuses in a single query
-    const verifiedDevelopers = await ctx.prisma.verifiedDeveloper.findMany({
-      where: {
-        OR: listings.map((l) => ({
-          userId: l.authorId,
-          emulatorId: l.emulatorId,
-        })),
-      },
-      select: { userId: true, emulatorId: true },
-    })
+    const verifiedDevelopers = listings.length
+      ? await ctx.prisma.verifiedDeveloper.findMany({
+          where: { OR: listings.map((l) => ({ userId: l.authorId, emulatorId: l.emulatorId })) },
+          select: { userId: true, emulatorId: true },
+        })
+      : []
 
     const verifiedSet = new Set(verifiedDevelopers.map((v) => `${v.userId}_${v.emulatorId}`))
 
@@ -714,32 +597,26 @@ export const coreRouter = createTRPCRouter({
   }),
 
   canEdit: protectedProcedure.input(GetListingForUserEditSchema).query(async ({ ctx, input }) => {
-    if (hasPermission(ctx.session.user.role, Role.ADMIN)) {
-      return {
-        canEdit: true,
-        isOwner: true,
-        reason: 'Admin can edit any listing',
-      }
-    }
-
     const listing = await ctx.prisma.listing.findUnique({
       where: { id: input.id },
-      select: {
-        authorId: true,
-        status: true,
-        processedAt: true,
-      },
+      select: { authorId: true, status: true, processedAt: true },
     })
 
-    if (!listing) {
-      return { canEdit: false, isOwner: false, reason: 'Listing not found' }
-    }
+    if (!listing) return { canEdit: false, isOwner: false, reason: 'Listing not found' }
 
     // Check ownership
     const isOwner = listing.authorId === ctx.session.user.id
-    if (!isOwner) {
-      return { canEdit: false, isOwner: false, reason: 'Not your listing' }
+
+    // Moderators and higher can always edit any listing (but still reflect true ownership)
+    if (roleIncludesRole(ctx.session.user.role, Role.MODERATOR)) {
+      return {
+        canEdit: true,
+        isOwner,
+        reason: 'Moderators can edit any listing',
+      }
     }
+
+    if (!isOwner) return { canEdit: false, isOwner: false, reason: 'Not your listing' }
 
     // PENDING listings can always be edited by the author
     if (listing.status === ApprovalStatus.PENDING) {
@@ -801,34 +678,28 @@ export const coreRouter = createTRPCRouter({
     // First check if user can edit this listing
     const listing = await ctx.prisma.listing.findUnique({
       where: { id: input.id },
-      select: {
-        authorId: true,
-        status: true,
-        processedAt: true,
-        emulatorId: true,
-      },
+      select: { authorId: true, status: true, processedAt: true, emulatorId: true },
     })
 
     if (!listing) return ResourceError.listing.notFound()
 
     const userRole = ctx.session.user.role
-    const isModerator = hasPermission(userRole, Role.MODERATOR)
+    const isModerator = roleIncludesRole(userRole, Role.MODERATOR)
 
     // Check ownership unless user is a moderator or higher
     if (!isModerator && listing.authorId !== ctx.session.user.id) {
-      return AppError.forbidden('You can only edit your own listings')
+      return ResourceError.listing.canOnlyEditOwn()
     }
 
-    // REJECTED listings cannot be edited
-    if (listing.status === ApprovalStatus.REJECTED) {
-      return AppError.badRequest('Rejected listings cannot be edited. Please create a new listing.')
-    }
+    // For non-moderators, apply edit restrictions
+    if (!isModerator) {
+      // REJECTED listings cannot be edited by regular users
+      if (listing.status === ApprovalStatus.REJECTED) {
+        return ResourceError.listing.cannotEditRejected()
+      }
 
-    // For APPROVED listings, check permissions and time limits
-    if (listing.status === ApprovalStatus.APPROVED) {
-      // Moderators and higher can always edit approved listings
-      if (!isModerator) {
-        // Regular users have a time limit for approved listings
+      // For APPROVED listings, check time limits for regular users
+      if (listing.status === ApprovalStatus.APPROVED) {
         if (!listing.processedAt) return AppError.badRequest('Listing approval time not found')
 
         const now = new Date()
@@ -836,12 +707,11 @@ export const coreRouter = createTRPCRouter({
         const timeLimit = EDIT_TIME_LIMIT_MINUTES * 60 * 1000
 
         if (timeSinceApproval > timeLimit) {
-          return AppError.badRequest(
-            `You can only edit listings within ${EDIT_TIME_LIMIT_MINUTES} minutes of approval`,
-          )
+          return ResourceError.listing.editTimeExpired(EDIT_TIME_LIMIT_MINUTES)
         }
       }
     }
+    // Moderators can edit any listing regardless of status or time
 
     // Update the listing using a transaction to handle custom fields
     return await ctx.prisma.$transaction(async (tx) => {
@@ -854,9 +724,7 @@ export const coreRouter = createTRPCRouter({
 
       // Delete existing custom field values
       if (input.customFieldValues) {
-        await tx.listingCustomFieldValue.deleteMany({
-          where: { listingId: input.id },
-        })
+        await tx.listingCustomFieldValue.deleteMany({ where: { listingId: input.id } })
 
         // Create new custom field values
         if (input.customFieldValues.length > 0) {
@@ -878,7 +746,7 @@ export const coreRouter = createTRPCRouter({
     })
   }),
 
-  getForUserEdit: authorProcedure
+  getForUserEdit: protectedProcedure
     .input(GetListingForUserEditSchema)
     .query(async ({ ctx, input }) => {
       const listing = await ctx.prisma.listing.findUnique({
@@ -890,19 +758,9 @@ export const coreRouter = createTRPCRouter({
           processedAt: true,
           notes: true,
           performanceId: true,
-          game: {
-            select: {
-              id: true,
-              title: true,
-              system: { select: { id: true, name: true } },
-            },
-          },
+          game: { select: { id: true, title: true, system: { select: { id: true, name: true } } } },
           device: {
-            select: {
-              id: true,
-              modelName: true,
-              brand: { select: { id: true, name: true } },
-            },
+            select: { id: true, modelName: true, brand: { select: { id: true, name: true } } },
           },
           emulator: {
             select: {
@@ -916,10 +774,14 @@ export const coreRouter = createTRPCRouter({
         },
       })
 
-      if (!listing) throw ResourceError.listing.notFound()
+      if (!listing) return ResourceError.listing.notFound()
 
-      if (listing.authorId !== ctx.session.user.id) {
-        return AppError.forbidden('You can only view your own listings for editing')
+      // Moderators and higher can edit any listing
+      const userRole = ctx.session.user.role
+      const isModerator = roleIncludesRole(userRole, Role.MODERATOR)
+
+      if (!isModerator && listing.authorId !== ctx.session.user.id) {
+        return ResourceError.listing.canOnlyEditOwn()
       }
 
       return listing
@@ -931,53 +793,35 @@ export const coreRouter = createTRPCRouter({
     // Get the listing with emulator information
     const listing = await ctx.prisma.listing.findUnique({
       where: { id: input.listingId },
-      include: {
-        emulator: true,
-        author: { select: { id: true, name: true } },
-      },
+      include: { emulator: true, author: { select: { id: true, name: true } } },
     })
 
     if (!listing) return ResourceError.listing.notFound()
 
     // Check if user is verified developer for this emulator
     const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
-      where: {
-        userId_emulatorId: { userId: userId, emulatorId: listing.emulatorId },
-      },
+      where: { userId_emulatorId: { userId: userId, emulatorId: listing.emulatorId } },
     })
 
     if (!verifiedDeveloper) {
-      return AppError.forbidden(
-        `You must be a verified developer for ${listing.emulator.name} to verify listings for this emulator`,
-      )
+      return ResourceError.verifiedDeveloper.mustBeVerifiedToVerify(listing.emulator.name)
     }
 
     // Prevent developers from verifying their own listings
     if (listing.authorId === userId) {
-      return AppError.forbidden('You cannot verify your own listings')
+      return ResourceError.verifiedDeveloper.cannotVerifyOwnListings()
     }
 
     // Check if verification already exists
     const existingVerification = await ctx.prisma.listingDeveloperVerification.findUnique({
-      where: {
-        listingId_verifiedBy: {
-          listingId: input.listingId,
-          verifiedBy: userId,
-        },
-      },
+      where: { listingId_verifiedBy: { listingId: input.listingId, verifiedBy: userId } },
     })
 
-    if (existingVerification) {
-      return AppError.conflict('You have already verified this listing')
-    }
+    if (existingVerification) return ResourceError.verifiedDeveloper.alreadyVerifiedListing()
 
     // Create the verification
     const verification = await ctx.prisma.listingDeveloperVerification.create({
-      data: {
-        listingId: input.listingId,
-        verifiedBy: userId,
-        notes: input.notes,
-      },
+      data: { listingId: input.listingId, verifiedBy: userId, notes: input.notes },
       include: { developer: { select: { id: true, name: true } } },
     })
 
@@ -1005,21 +849,14 @@ export const coreRouter = createTRPCRouter({
 
       // Check if verification exists
       const verification = await ctx.prisma.listingDeveloperVerification.findUnique({
-        where: {
-          listingId_verifiedBy: {
-            listingId: input.listingId,
-            verifiedBy: userId,
-          },
-        },
+        where: { listingId_verifiedBy: { listingId: input.listingId, verifiedBy: userId } },
         include: { listing: { include: { emulator: true } } },
       })
 
       if (!verification) return ResourceError.verification.notFound()
 
       // Delete the verification
-      await ctx.prisma.listingDeveloperVerification.delete({
-        where: { id: verification.id },
-      })
+      await ctx.prisma.listingDeveloperVerification.delete({ where: { id: verification.id } })
 
       return { message: 'Verification removed successfully' }
     }),

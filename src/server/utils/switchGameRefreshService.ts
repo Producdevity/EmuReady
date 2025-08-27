@@ -25,6 +25,7 @@ export class SwitchGameRefreshService {
   private isRefreshing = false
   private lastRefresh: Date | null = null
   private config: RefreshConfig
+  private isInitialized = false
 
   constructor(config: Partial<RefreshConfig> = {}) {
     this.config = {
@@ -33,14 +34,26 @@ export class SwitchGameRefreshService {
       refreshOnStartup: true,
       ...config,
     }
+  }
 
-    this.initializeService()
-      .then(() => {
-        console.log('Switch game refresh service initialized with config:', this.config)
-      })
-      .catch((error) => {
-        console.error('Failed to initialize Switch game refresh service:', error)
-      })
+  /**
+   * Initialize the service - should only be called once per process
+   */
+  async initialize(): Promise<void> {
+    if (this.isInitialized) {
+      return // Already initialized, skip
+    }
+
+    this.isInitialized = true
+
+    try {
+      await this.initializeService()
+      console.log('Switch game refresh service initialized with config:', this.config)
+    } catch (error) {
+      console.error('Failed to initialize Switch game refresh service:', error)
+      this.isInitialized = false // Reset on failure
+      throw error
+    }
   }
 
   private async initializeService(): Promise<void> {
@@ -184,8 +197,15 @@ export class SwitchGameRefreshService {
 
 // Singleton instance - configure for production use
 // Refresh every 12 hours since the data updates weekly
+// Disable auto-refresh during tests to improve performance
+const isTest =
+  process.env.NODE_ENV === 'test' ||
+  process.env.CI === 'true' ||
+  process.env.PWTEST_SKIP_WEBSERVER === '1' ||
+  process.env.PLAYWRIGHT_TEST === 'true'
+
 export const switchGameRefreshService = new SwitchGameRefreshService({
   refreshIntervalMs: ms.hours(12),
-  autoRefreshEnabled: true,
-  refreshOnStartup: true,
+  autoRefreshEnabled: !isTest,
+  refreshOnStartup: !isTest,
 })

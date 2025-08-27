@@ -1,5 +1,6 @@
 import { ActivityQuerySchema, DashboardQuerySchema } from '@/schemas/activity'
 import { createTRPCRouter, moderatorProcedure, protectedProcedure } from '@/server/api/trpc'
+import { getServiceStatus } from '@/server/init'
 import { ActivityService } from '@/server/services/activity.service'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role } from '@orm'
@@ -45,6 +46,13 @@ export const activityRouter = createTRPCRouter({
   recentReports: moderatorProcedure.input(ActivityQuerySchema).query(async ({ ctx, input }) => {
     const service = new ActivityService(ctx.prisma)
     return service.getRecentReports(input.timeRange, input.limit, ctx.session.user.role)
+  }),
+
+  /**
+   * Get service initialization status (MODERATOR+)
+   */
+  serviceStatus: moderatorProcedure.query(async () => {
+    return getServiceStatus()
   }),
 
   /**
