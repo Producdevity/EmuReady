@@ -3,8 +3,9 @@
 import { useUser } from '@clerk/nextjs'
 import { User, Smartphone, Bell, Settings, Computer } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect } from 'react'
 import { PageSkeletonLoading } from '@/components/ui'
+import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
@@ -63,6 +64,48 @@ function ProfilePage() {
     enabled: !!user,
   })
 
+  // Profile page view tracking - only on initial load
+  useEffect(() => {
+    if (isLoaded && user) {
+      analytics.navigation.pageView({
+        page: 'profile',
+        section: 'main',
+      })
+    }
+  }, [isLoaded, user])
+
+  // Profile completion goal tracking - only fires once
+  useEffect(() => {
+    if (userQuery.data && preferencesQuery.data) {
+      const hasCompletedProfile = !!(
+        userQuery.data.bio && preferencesQuery.data.devicePreferences.length > 0
+      )
+
+      if (hasCompletedProfile) {
+        // Store in sessionStorage to prevent duplicate tracking
+        const storageKey = `profile_completed_${user?.id}`
+        if (!sessionStorage.getItem(storageKey)) {
+          analytics.conversion.goalCompleted({
+            goalType: 'profile_completed',
+            userId: user?.id,
+          })
+          sessionStorage.setItem(storageKey, 'true')
+        }
+      }
+    }
+  }, [userQuery.data, preferencesQuery.data, user?.id])
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId)
+
+    // Track tab navigation
+    analytics.navigation.menuItemClicked({
+      menuItem: `profile_tab_${tabId}`,
+      section: 'profile',
+      page: 'profile',
+    })
+  }
+
   if (!isLoaded) return <PageSkeletonLoading />
 
   if (!user) return <ProfilePageUnauthenticated />
@@ -80,7 +123,7 @@ function ProfilePage() {
         <ProfileHeader clerkUser={user} profileData={userQuery.data} />
 
         <div className="mt-8">
-          <ProfileTabs tabs={visibleTabs} activeTab={activeTab} onTabChange={setActiveTab} />
+          <ProfileTabs tabs={visibleTabs} activeTab={activeTab} onTabChange={handleTabChange} />
         </div>
 
         <div className="mt-8">
