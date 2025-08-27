@@ -21,7 +21,7 @@ export const mobileGamesRouter = createMobileTRPCRouter({
    */
   get: mobilePublicProcedure.input(GetGamesSchema).query(async ({ ctx, input }) => {
     const repository = new GamesRepository(ctx.prisma)
-    return repository.getMobile({
+    return repository.listMobile({
       ...input,
       showNsfw: ctx.session?.user?.showNsfw ?? false,
     })
@@ -32,7 +32,7 @@ export const mobileGamesRouter = createMobileTRPCRouter({
    */
   getPopularGames: mobilePublicProcedure.query(async ({ ctx }) => {
     const repository = new GamesRepository(ctx.prisma)
-    return repository.getPopularMobile(ctx.session?.user?.showNsfw ?? false)
+    return repository.listPopularMobile(ctx.session?.user?.showNsfw ?? false)
   }),
 
   /**
@@ -40,16 +40,15 @@ export const mobileGamesRouter = createMobileTRPCRouter({
    */
   searchGames: mobilePublicProcedure.input(SearchGamesSchema).query(async ({ ctx, input }) => {
     const repository = new GamesRepository(ctx.prisma)
-    return repository.searchMobile(input.query, ctx.session?.user?.showNsfw ?? false)
+    return repository.listSearchMobile(input.query, ctx.session?.user?.showNsfw ?? false)
   }),
 
   /**
    * Get game by ID
-   * TODO: change to byId and deprecate getGameById
    */
-  getGameById: mobilePublicProcedure.input(GetGameByIdSchema).query(async ({ ctx, input }) => {
+  byId: mobilePublicProcedure.input(GetGameByIdSchema).query(async ({ ctx, input }) => {
     const repository = new GamesRepository(ctx.prisma)
-    return repository.getByIdMobile(input.id)
+    return repository.byIdMobile(input.id)
   }),
 
   /**

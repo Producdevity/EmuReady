@@ -383,9 +383,7 @@ export function convertToEdenConfig(input: EdenConfigInput): EdenConfig {
   // Process each custom field value
   for (const fieldValue of input.customFieldValues) {
     // Validate field value structure
-    if (!fieldValue || typeof fieldValue !== 'object') {
-      continue // Skip invalid field values
-    }
+    if (!fieldValue || typeof fieldValue !== 'object') continue // Skip invalid field values
 
     if (!fieldValue.customFieldDefinition || typeof fieldValue.customFieldDefinition !== 'object') {
       continue // Skip if missing definition

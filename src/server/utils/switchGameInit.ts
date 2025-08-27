@@ -1,29 +1,36 @@
 /**
  * Initialize Switch game services
+ * This should only be called once during app startup
  */
 
 import { switchGameRefreshService } from './switchGameRefreshService'
 
-let isInitialized = false
+let initPromise: Promise<void> | null = null
 
 export async function initializeSwitchGameService(): Promise<void> {
-  if (isInitialized) return
-  try {
-    // Initialize the refresh service by getting its status
-    // This ensures the singleton is created and starts processing
-    const status = await switchGameRefreshService.getStatus()
+  // Return existing initialization promise if already in progress
+  if (initPromise) return initPromise
 
-    console.log('Switch game service initialized')
-    console.log(`Auto-refresh: ${status.autoRefreshEnabled ? 'enabled' : 'disabled'}`)
-    console.log(`Games cached: ${status.totalGames}`)
+  initPromise = (async () => {
+    try {
+      // Initialize the service (handles its own duplicate check)
+      await switchGameRefreshService.initialize()
 
-    if (status.nextRefresh) {
-      console.log(`Next refresh: ${status.nextRefresh.toISOString()}`)
+      const status = await switchGameRefreshService.getStatus()
+      console.log('Switch game service initialized')
+      console.log(`Auto-refresh: ${status.autoRefreshEnabled ? 'enabled' : 'disabled'}`)
+      console.log(`Games cached: ${status.totalGames}`)
+
+      if (status.nextRefresh) {
+        console.log(`Next refresh: ${status.nextRefresh.toISOString()}`)
+      }
+    } catch (error) {
+      console.error('Failed to initialize Switch game service:', error)
+      // Reset promise on failure to allow retry
+      initPromise = null
+      // Don't throw here to prevent breaking the app startup
     }
+  })()
 
-    isInitialized = true
-  } catch (error) {
-    console.error('Failed to initialize Switch game service:', error)
-    // Don't throw here to prevent breaking the app startup
-  }
+  return initPromise
 }

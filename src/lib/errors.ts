@@ -213,26 +213,27 @@ export class ResourceError {
   static permission = {
     notFound: () => AppError.notFound('Permission'),
     alreadyExists: (name: string) => AppError.alreadyExists('Permission', `key "${name}"`),
+    systemCannotBeDeleted: () => AppError.forbidden('System permissions cannot be deleted'),
   }
 
   static device = {
     notFound: () => AppError.notFound('Device'),
     alreadyExists: (modelName: string) =>
-      AppError.conflict(
-        `Permission with this key already exists A device with model name "${modelName}" already exists for this brand`,
-      ),
+      AppError.conflict(`A device with model name "${modelName}" already exists for this brand`),
     inUse: (count: number) => AppError.resourceInUse('device', count),
   }
 
   static soc = {
     notFound: () => AppError.notFound('SoC'),
     alreadyExists: (name: string) => AppError.alreadyExists('SoC', `name "${name}"`),
+    inUse: (count: number) => AppError.resourceInUse('SoC', count),
   }
 
   static system = {
     notFound: () => AppError.notFound('System'),
     alreadyExists: (name: string) => AppError.alreadyExists('System', `name "${name}"`),
     hasGames: (count: number) => AppError.resourceInUse('system', count),
+    inUse: (count: number) => AppError.resourceInUse('system', count),
   }
 
   static game = {
@@ -241,23 +242,82 @@ export class ResourceError {
     alreadyExists: (title: string, systemName: string) =>
       AppError.conflict(`A game titled "${title}" already exists for the system "${systemName}"`),
     alreadyProcessed: () => AppError.badRequest('Game has already been processed'),
+    canOnlyEditOwn: () => AppError.forbidden('You can only edit your own games'),
+    canOnlyEditPending: () => AppError.forbidden('You can only edit pending games'),
   }
 
   static emulator = {
     notFound: () => AppError.notFound('Emulator'),
     alreadyExists: (name: string) => AppError.alreadyExists('Emulator', `name "${name}"`),
     inUse: (count: number) => AppError.resourceInUse('emulator', count),
+    canOnlyManageVerified: () =>
+      AppError.forbidden('You can only manage emulators you are verified for'),
+    requiresPermissionToDelete: () =>
+      AppError.forbidden('You do not have permission to delete emulators'),
   }
 
   static listing = {
-    notFound: () => AppError.notFound('Listing'),
+    notFound: () => AppError.notFound('Report'),
     alreadyExists: () =>
-      AppError.conflict('A listing for this game, device, and emulator combination already exists'),
-    notPending: () => AppError.notFound('Pending listing not found or already processed'),
+      AppError.conflict('A report for this game, device, and emulator combination already exists'),
+    notPending: () => AppError.notFound('Pending report not found or already processed'),
+    canOnlyEditOwn: () => AppError.forbidden('You can only edit your own report'),
+    cannotEditRejected: () => AppError.badRequest('Rejected reports cannot be edited'),
+    notAccessible: () => AppError.forbidden('This listing is not accessible.'),
+    editTimeExpired: (timeLimitMinutes: number) =>
+      AppError.badRequest(
+        `You can only edit listings within ${timeLimitMinutes} minutes of approval`,
+      ),
+    requiresDeveloperToApprove: () =>
+      AppError.forbidden('You need to be at least a Developer to approve listings'),
+    requiresDeveloperToReject: () =>
+      AppError.forbidden('You need to be at least a Developer to reject listings'),
+    requiresModeratorToEdit: () =>
+      AppError.forbidden('You need to be at least a Moderator to edit listings'),
+    requiresModeratorToUpdate: () =>
+      AppError.forbidden('You need to be at least a Moderator to update listings'),
+    requiresAdminOrDeveloper: () => AppError.forbidden('Admin or Developer access required'),
+    mustBeVerifiedToApprove: () =>
+      AppError.forbidden('You can only approve listings for emulators you are verified for'),
+    mustBeVerifiedToReject: () =>
+      AppError.forbidden('You can only reject listings for emulators you are verified for'),
+    mustBeVerifiedToViewConfigs: () =>
+      AppError.forbidden('You can only view configs for emulators you are verified for'),
+    cannotApproveBannedUser: (banReason: string) =>
+      AppError.badRequest(`Cannot approve listing: Author is currently banned (${banReason})`),
+  }
+
+  static pcListing = {
+    notFound: () => AppError.notFound('PC Report'),
+    alreadyExists: () =>
+      AppError.conflict(
+        'A PC report for this game, CPU, GPU, and emulator combination already exists',
+      ),
+    notPending: () => AppError.notFound('Pending PC report not found or already processed'),
+    canOnlyEditOwn: () => AppError.forbidden('You can only edit your own PC report'),
+    canOnlyDeleteOwn: () => AppError.forbidden('You can only delete your own PC listings'),
+    cannotEditRejected: () => AppError.badRequest('Rejected PC reports cannot be edited'),
+    editTimeExpired: (timeLimitMinutes: number) =>
+      AppError.badRequest(
+        `You can only edit PC reports within ${timeLimitMinutes} minutes of approval`,
+      ),
+    approvalTimeNotFound: () => AppError.internalError('Approval time not found for PC report'),
+    requiresDeveloperToView: () =>
+      AppError.forbidden('You need to be at least a Developer to view pending PC listings'),
+    requiresDeveloperToApprove: () =>
+      AppError.forbidden('You need to be at least a Developer to approve PC listings'),
+    requiresDeveloperToReject: () =>
+      AppError.forbidden('You need to be at least a Developer to reject PC listings'),
+    mustBeVerifiedToApprove: () =>
+      AppError.forbidden('You can only approve PC listings for emulators you are verified for'),
+    mustBeVerifiedToReject: () =>
+      AppError.forbidden('You can only reject PC listings for emulators you are verified for'),
   }
 
   static notification = {
     notFound: () => AppError.notFound('Notification'),
+    canOnlyMarkOwnAsRead: () =>
+      AppError.forbidden('You can only mark your own notifications as read'),
   }
 
   static customField = {
@@ -268,18 +328,29 @@ export class ResourceError {
       AppError.badRequest(
         `Invalid custom field definition ID: ${fieldId} for emulator ${emulatorId}`,
       ),
+    canOnlyManageVerified: () =>
+      AppError.forbidden('You can only manage custom fields for emulators you are verified for'),
+    rangeMinMaxRequired: () =>
+      AppError.badRequest('Range minimum and maximum are required for RANGE type fields'),
+    rangeMinLessThanMax: () => AppError.badRequest('Range minimum must be less than maximum'),
   }
 
   static customFieldTemplate = {
     notFound: () => AppError.notFound('Custom field template'),
     alreadyExists: (name: string) =>
       AppError.conflict(`A custom field template with name "${name}" already exists`),
+    fieldNamesMustBeUnique: () =>
+      AppError.badRequest('Field names must be unique within a template'),
   }
 
   static performanceScale = {
     notFound: () => AppError.notFound('Performance scale'),
     labelExists: (label: string) => AppError.alreadyExists('Performance scale', `label "${label}"`),
     rankExists: (rank: number) => AppError.alreadyExists('Performance scale', `rank ${rank}`),
+    rankAlreadyExists: (rank: number) =>
+      AppError.alreadyExists('Performance scale', `rank ${rank}`),
+    alreadyExists: (label: string) =>
+      AppError.alreadyExists('Performance scale', `label "${label}"`),
     inUse: (count: number) => AppError.resourceInUse('performance scale', count),
   }
 
@@ -287,9 +358,13 @@ export class ResourceError {
     notFound: () => AppError.notFound('User'),
     emailExists: () => AppError.alreadyExists('User', 'this email'),
     usernameExists: () => AppError.alreadyExists('User', 'this username'),
-    invalidPassword: () => AppError.custom('UNAUTHORIZED', 'Current password is incorrect'),
     cannotDeleteSelf: () => AppError.forbidden('You cannot delete your own account'),
     cannotDemoteSelf: () => AppError.forbidden('You cannot demote yourself from the admin role'),
+    profileNotAccessible: () => AppError.forbidden('This user profile is not accessible.'),
+    needsPermissionToModifySuperAdmin: () =>
+      AppError.forbidden('You need permission to modify super admin users'),
+    needsPermissionToAssignSuperAdmin: () =>
+      AppError.forbidden('You need permission to assign super admin role'),
     notInDatabase: (userId: string) =>
       AppError.internalError(`User with ID ${userId} not found in database`),
   }
@@ -326,7 +401,16 @@ export class ResourceError {
     alreadyBanned: () => AppError.conflict('User already has an active ban'),
     cannotBanHigherRole: () =>
       AppError.forbidden('You cannot ban a user with equal or higher role than yours'),
+    insufficientPermissions: () =>
+      AppError.forbidden('You do not have sufficient permissions to ban this user'),
     alreadyInactive: () => AppError.badRequest('Ban is already inactive'),
+    requiresModerator: () => AppError.forbidden('You need to be at least a Moderator to ban users'),
+    requiresModeratorToUpdate: () =>
+      AppError.forbidden('You need to be at least a Moderator to update bans'),
+    requiresModeratorToLift: () =>
+      AppError.forbidden('You need to be at least a Moderator to lift bans'),
+    requiresModeratorToDelete: () =>
+      AppError.forbidden('You need to be at least a Moderator to delete bans'),
   }
 
   static badge = {
@@ -353,26 +437,35 @@ export class ResourceError {
     inUse: (count: number) => AppError.resourceInUse('GPU', count),
   }
 
-  static pcListing = {
-    notFound: () => AppError.notFound('PC listing'),
-    alreadyExists: () =>
-      AppError.conflict(
-        'A PC listing for this game, CPU, GPU, and emulator combination already exists',
-      ),
-    notPending: () => AppError.notFound('Pending PC listing not found or already processed'),
-  }
-
   static pcPreset = {
     notFound: () => AppError.notFound('PC preset'),
     alreadyExists: (name: string) =>
       AppError.conflict(`A PC preset with name "${name}" already exists for this user`),
+    canOnlyViewOwn: () => AppError.forbidden('You can only view your own PC presets'),
+    canOnlyEditOwn: () => AppError.forbidden('You can only edit your own PC presets'),
+    canOnlyDeleteOwn: () => AppError.forbidden('You can only delete your own PC presets'),
   }
 
   static verification = {
     notFound: () => AppError.notFound('Verification'),
+    canOnlyRemoveOwn: () => AppError.forbidden('You can only remove your own verifications'),
   }
 
   static verifiedDeveloper = {
     notFound: () => AppError.notFound('Verified Developer'),
+    mustBeVerifiedToVerify: (emulatorName: string) =>
+      AppError.badRequest(
+        `You must be a verified developer for ${emulatorName} to verify reports for this emulator`,
+      ),
+    cannotVerifyOwnListings: () => AppError.forbidden('You cannot verify your own reports'),
+    alreadyVerifiedListing: () => AppError.conflict('You have already verified this report'),
+    userMustBeDeveloper: (userName: string, currentRole: string) =>
+      AppError.forbidden(
+        `${userName} must have the DEVELOPER role or higher to be verified as a developer. Current role: ${currentRole}`,
+      ),
+    userMustBeDeveloperToRemove: (userName: string, currentRole: string) =>
+      AppError.forbidden(
+        `${userName} must have the DEVELOPER role or higher to be removed as a verified developer. Current role: ${currentRole}`,
+      ),
   }
 }

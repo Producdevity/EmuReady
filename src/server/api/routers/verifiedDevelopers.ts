@@ -96,8 +96,9 @@ export const verifiedDevelopersRouter = createTRPCRouter({
 
       // Check if user has DEVELOPER role or higher
       if (!hasPermission(user.role, Role.DEVELOPER)) {
-        return AppError.forbidden(
-          `${user.name || user.email} must have the DEVELOPER role or higher to be verified as a developer. Current role: ${user.role}`,
+        return ResourceError.verifiedDeveloper.userMustBeDeveloper(
+          user.name || user.email,
+          user.role,
         )
       }
 
@@ -196,8 +197,9 @@ export const verifiedDevelopersRouter = createTRPCRouter({
 
       // Re-check user role when updating (in case their role was downgraded)
       if (!hasPermission(verifiedDeveloper.user.role, Role.DEVELOPER)) {
-        return AppError.forbidden(
-          `${verifiedDeveloper.user.name || verifiedDeveloper.user.email} no longer has the DEVELOPER role or higher. Current role: ${verifiedDeveloper.user.role}`,
+        return ResourceError.verifiedDeveloper.userMustBeDeveloperToRemove(
+          verifiedDeveloper.user.name || verifiedDeveloper.user.email,
+          verifiedDeveloper.user.role,
         )
       }
 

@@ -239,6 +239,13 @@ const permissions: PermissionDefinition[] = [
     category: PermissionCategory.CONTENT,
     isSystem: true,
   },
+  {
+    key: 'manage_performance_scales',
+    label: 'Manage Performance Scales',
+    description: 'Create and manage performance rating scales',
+    category: PermissionCategory.CONTENT,
+    isSystem: true,
+  },
 ]
 
 // Default role-permission assignments based on current hierarchy
@@ -275,6 +282,8 @@ const rolePermissionAssignments: RolePermissionAssignment[] = [
       'edit_games',
       'approve_games',
       'view_user_bans',
+      'manage_user_bans',
+      'manage_devices',
       'view_statistics',
       'view_logs',
       'view_trust_logs',
@@ -308,6 +317,7 @@ const rolePermissionAssignments: RolePermissionAssignment[] = [
       'view_trust_logs',
       'manage_devices',
       'manage_systems',
+      'manage_performance_scales',
     ],
   },
   {
@@ -343,6 +353,7 @@ const rolePermissionAssignments: RolePermissionAssignment[] = [
       'view_trust_logs',
       'manage_devices',
       'manage_systems',
+      'manage_performance_scales',
     ],
   },
 ]

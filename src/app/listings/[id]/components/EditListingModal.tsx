@@ -7,6 +7,7 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { toast } from 'sonner'
 import { FormValidationSummary, renderCustomField } from '@/app/listings/components/shared'
+import { initializeCustomFieldValues } from '@/app/listings/components/shared/utils/formHelpers'
 import { Button, Modal, SelectInput, LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
 import { MarkdownEditor } from '@/lib/dynamic-imports'
@@ -54,15 +55,17 @@ function EditListingModal(props: Props) {
 
   const { control, handleSubmit, formState, reset } = useForm<UpdateListingFormData>({
     resolver: zodResolver(UpdateListingUserSchema),
+    mode: 'onSubmit',
+    criteriaMode: 'all',
   })
 
   // Reset form when modal opens or listing data changes
   useEffect(() => {
     if (listingQuery.data && props.isOpen) {
-      const defaultCustomFieldValues = listingQuery.data.customFieldValues.map((cfv) => ({
-        customFieldDefinitionId: cfv.customFieldDefinition.id,
-        value: cfv.value,
-      }))
+      const defaultCustomFieldValues = initializeCustomFieldValues(
+        listingQuery.data.customFieldValues,
+        listingQuery.data.emulator.customFieldDefinitions,
+      )
 
       reset({
         id: listingQuery.data.id,

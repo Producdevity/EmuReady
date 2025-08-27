@@ -13,12 +13,12 @@ import { PERMISSIONS } from '@/utils/permission-system'
 export const performanceScalesRouter = createTRPCRouter({
   getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
     const repository = new PerformanceScalesRepository(ctx.prisma)
-    return repository.getStats()
+    return repository.stats()
   }),
 
   get: publicProcedure.input(GetPerformanceScalesSchema).query(async ({ ctx, input }) => {
     const repository = new PerformanceScalesRepository(ctx.prisma)
-    return repository.get(input ?? {})
+    return repository.list(input ?? {})
   }),
 
   byId: publicProcedure.input(GetPerformanceScaleByIdSchema).query(async ({ ctx, input }) => {
@@ -31,39 +31,14 @@ export const performanceScalesRouter = createTRPCRouter({
     .input(CreatePerformanceScaleSchema)
     .mutation(async ({ ctx, input }) => {
       const repository = new PerformanceScalesRepository(ctx.prisma)
-
-      const existingByLabel = await repository.byLabel(input.label)
-      if (existingByLabel) return ResourceError.performanceScale.labelExists(input.label)
-
-      const existingByRank = await repository.byRank(input.rank)
-      if (existingByRank) return ResourceError.performanceScale.rankExists(input.rank)
-
       return repository.create(input)
     }),
 
   update: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
     .input(UpdatePerformanceScaleSchema)
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input
       const repository = new PerformanceScalesRepository(ctx.prisma)
-
-      const scale = await repository.byNumericId(id)
-      if (!scale) return ResourceError.performanceScale.notFound()
-
-      if (input.label && input.label !== scale.label) {
-        const existingByLabel = await repository.byLabel(input.label)
-        if (existingByLabel && existingByLabel.id !== id) {
-          return ResourceError.performanceScale.labelExists(input.label)
-        }
-      }
-
-      if (input.rank && input.rank !== scale.rank) {
-        const existingByRank = await repository.byRank(input.rank)
-        if (existingByRank && existingByRank.id !== id) {
-          return ResourceError.performanceScale.rankExists(input.rank)
-        }
-      }
-
+      const { id, ...data } = input
       return repository.updateByNumericId(id, data)
     }),
 
@@ -71,15 +46,6 @@ export const performanceScalesRouter = createTRPCRouter({
     .input(DeletePerformanceScaleSchema)
     .mutation(async ({ ctx, input }) => {
       const repository = new PerformanceScalesRepository(ctx.prisma)
-
-      const [listingsCount, pcListingsCount] = await Promise.all([
-        ctx.prisma.listing.count({ where: { performanceId: input.id } }),
-        ctx.prisma.pcListing.count({ where: { performanceId: input.id } }),
-      ])
-
-      const totalCount = listingsCount + pcListingsCount
-      if (totalCount > 0) return ResourceError.performanceScale.inUse(totalCount)
-
       await repository.deleteByNumericId(input.id)
       return { success: true }
     }),

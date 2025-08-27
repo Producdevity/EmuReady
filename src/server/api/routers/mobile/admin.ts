@@ -1,4 +1,4 @@
-import { AppError, ResourceError } from '@/lib/errors'
+import { ResourceError } from '@/lib/errors'
 import { applyTrustAction } from '@/lib/trust/service'
 import {
   MobileAdminApproveGameSchema,
@@ -188,7 +188,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
           },
         })
 
-        AppError.badRequest(`Cannot approve listing: Author is currently banned (${banReason})`)
+        ResourceError.listing.cannotApproveBannedUser(banReason)
       }
 
       const updatedListing = await ctx.prisma.listing.update({

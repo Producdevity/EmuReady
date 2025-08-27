@@ -17,6 +17,7 @@ import {
   ListingVerificationBadge,
   ApprovalStatusBadge,
   LocalizedDate,
+  GameImage,
 } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -211,6 +212,17 @@ function ListingDetailsClient(props: Props) {
           <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
             {/* Game Info */}
             <div className="flex-1 md:pr-8 sm:border-r-0 md:border-r md:border-gray-200 md:dark:border-gray-700">
+              {/* Game Image */}
+              <div className="mb-6">
+                <GameImage
+                  game={props.listing.game}
+                  className="w-full h-48 sm:h-56 md:h-64 rounded-lg shadow-md"
+                  aspectRatio="video"
+                  showFallback={true}
+                  priority={true}
+                />
+              </div>
+
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                 <h1 className="text-2xl lg:text-3xl font-extrabold text-indigo-700 dark:text-indigo-300">
                   {props.listing?.game.title}

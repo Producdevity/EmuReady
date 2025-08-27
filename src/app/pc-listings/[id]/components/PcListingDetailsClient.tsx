@@ -14,6 +14,7 @@ import {
   TranslatableMarkdown,
   ApprovalStatusBadge,
   LocalizedDate,
+  GameImage,
 } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
@@ -135,6 +136,17 @@ function PcListingDetailsClient(props: Props) {
           <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
             {/* Game Info */}
             <div className="flex-1 md:pr-8 sm:border-r-0 md:border-r md:border-gray-200 md:dark:border-gray-700">
+              {/* Game Image */}
+              <div className="mb-6">
+                <GameImage
+                  game={props.pcListing.game}
+                  className="w-full h-48 sm:h-56 md:h-64 rounded-lg shadow-md"
+                  aspectRatio="video"
+                  showFallback={true}
+                  priority={true}
+                />
+              </div>
+
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                 <h1 className="text-2xl lg:text-3xl font-extrabold text-indigo-700 dark:text-indigo-300">
                   {props.pcListing?.game.title}
@@ -214,7 +226,7 @@ function PcListingDetailsClient(props: Props) {
                     <div>
                       <span className="font-medium text-gray-700 dark:text-gray-300">OS:</span>
                       <span className="ml-2 text-gray-600 dark:text-gray-400">
-                        {osLabels[props.pcListing.os] || osLabels.UNKNOWN}{' '}
+                        {osLabels[props.pcListing.os as PcOs] || osLabels.UNKNOWN}{' '}
                       </span>
                     </div>
                   </div>
@@ -262,23 +274,26 @@ function PcListingDetailsClient(props: Props) {
                     <div className="space-y-3">
                       {props.pcListing.customFieldValues
                         .filter(
-                          (fieldValue) => !isNullish(fieldValue.value) && fieldValue.value !== '',
+                          (fieldValue: NonNullable<Props['pcListing']['customFieldValues']>[0]) =>
+                            !isNullish(fieldValue.value) && fieldValue.value !== '',
                         )
-                        .map((fieldValue) => (
-                          <div
-                            key={fieldValue.id}
-                            className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"
-                          >
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                              <span className="font-medium text-gray-700 dark:text-gray-300 min-w-[120px]">
-                                {fieldValue.customFieldDefinition.label}:
-                              </span>
-                              <span className="text-gray-600 dark:text-gray-400">
-                                {renderCustomFieldValue(fieldValue)}
-                              </span>
+                        .map(
+                          (fieldValue: NonNullable<Props['pcListing']['customFieldValues']>[0]) => (
+                            <div
+                              key={fieldValue.id}
+                              className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"
+                            >
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                <span className="font-medium text-gray-700 dark:text-gray-300 min-w-[120px]">
+                                  {fieldValue.customFieldDefinition.label}:
+                                </span>
+                                <span className="text-gray-600 dark:text-gray-400">
+                                  {renderCustomFieldValue(fieldValue)}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ),
+                        )}
                     </div>
                   </div>
                 )}
@@ -351,12 +366,14 @@ function PcListingDetailsClient(props: Props) {
                   authorId={props.pcListing.authorId}
                   isAlreadyVerified={
                     props.pcListing.developerVerifications?.some(
-                      (v) => v.developer.id === currentUserQuery.data?.id,
+                      (v: NonNullable<typeof props.pcListing.developerVerifications>[0]) =>
+                        v.developer.id === currentUserQuery.data?.id,
                     ) ?? false
                   }
                   verificationId={
                     props.pcListing.developerVerifications?.find(
-                      (v) => v.developer.id === currentUserQuery.data?.id,
+                      (v: NonNullable<typeof props.pcListing.developerVerifications>[0]) =>
+                        v.developer.id === currentUserQuery.data?.id,
                     )?.id
                   }
                   onSuccess={refreshData}

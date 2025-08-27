@@ -35,85 +35,8 @@ export interface ListingFilters {
 
   // User context
   userId?: string
-  userRole?: string
+  userRole?: Role
   showNsfw?: boolean
-}
-
-export interface ListingStats {
-  upVotes: number
-  downVotes: number
-  totalVotes: number
-  successRate: number
-  userVote?: boolean | null
-}
-
-// Type namespace for ListingsRepository
-export namespace ListingsRepositoryTypes {
-  export type Minimal = Prisma.ListingGetPayload<{
-    include: {
-      game: { select: { id: true; title: true; systemId: true } }
-      device: { include: { brand: true; soc: true } }
-      emulator: { select: { id: true; name: true; logo: true } }
-      performance: true
-      author: { select: { id: true; name: true; profileImage: true } }
-    }
-  }>
-
-  export type Default = Prisma.ListingGetPayload<{
-    include: {
-      game: { select: { id: true; title: true; systemId: true } }
-      device: { include: { brand: true; soc: true } }
-      emulator: { select: { id: true; name: true; logo: true } }
-      performance: true
-      author: { select: { id: true; name: true; profileImage: true } }
-      _count: { select: { votes: true; comments: true } }
-    }
-  }>
-
-  export type WithVotes = Prisma.ListingGetPayload<{
-    include: {
-      game: { select: { id: true; title: true; systemId: true } }
-      device: { include: { brand: true; soc: true } }
-      emulator: { select: { id: true; name: true; logo: true } }
-      performance: true
-      author: { select: { id: true; name: true; profileImage: true } }
-      votes: { select: { id: true; value: true; userId: true } }
-      _count: { select: { votes: true; comments: true } }
-    }
-  }>
-
-  export type Full = Prisma.ListingGetPayload<{
-    include: {
-      game: {
-        include: {
-          system: { select: { id: true; name: true; key: true } }
-        }
-      }
-      device: { include: { brand: true; soc: true } }
-      emulator: {
-        include: {
-          customFieldDefinitions: { orderBy: { displayOrder: 'asc' } }
-        }
-      }
-      performance: true
-      author: {
-        select: {
-          id: true
-          name: true
-          profileImage: true
-          userBans: true
-        }
-      }
-      customFieldValues: {
-        include: { customFieldDefinition: true }
-      }
-      votes: { select: { id: true; value: true; userId: true } }
-      developerVerifications: {
-        include: { developer: { select: { id: true; name: true } } }
-      }
-      _count: { select: { votes: true; comments: true } }
-    }
-  }>
 }
 
 /**
@@ -149,40 +72,50 @@ export class ListingsRepository extends BaseRepository {
       performance: true,
       author: { select: { id: true, name: true, profileImage: true } },
       votes: true,
-      _count: {
-        select: {
-          votes: true,
-          comments: true,
-        },
-      },
+      _count: { select: { votes: true, comments: true } },
     } satisfies Prisma.ListingInclude,
 
     full: {
-      game: {
-        include: {
-          system: { select: { id: true, name: true, key: true } },
-        },
-      },
+      game: { include: { system: { select: { id: true, name: true, key: true } } } },
       device: { include: { brand: true, soc: true } },
       emulator: true,
       performance: true,
       author: true,
       votes: true,
-      comments: {
-        include: {
-          user: { select: { id: true, name: true, profileImage: true } },
-        },
-      },
-      customFieldValues: {
-        include: {
-          customFieldDefinition: true,
-        },
-      },
-      developerVerifications: {
-        include: {
-          developer: { select: { id: true, name: true } },
-        },
-      },
+      comments: { include: { user: { select: { id: true, name: true, profileImage: true } } } },
+      customFieldValues: { include: { customFieldDefinition: true } },
+      developerVerifications: { include: { developer: { select: { id: true, name: true } } } },
+    } satisfies Prisma.ListingInclude,
+
+    forList: {
+      game: { include: { system: { select: { id: true, name: true, key: true } } } },
+      device: { include: { brand: true, soc: true } },
+      emulator: { select: { id: true, name: true, logo: true } },
+      performance: { select: { id: true, label: true, rank: true, description: true } },
+      author: { select: { id: true, name: true, profileImage: true } },
+      _count: { select: { votes: true, comments: true } },
+    } satisfies Prisma.ListingInclude,
+
+    forById: {
+      game: { include: { system: { select: { id: true, name: true, key: true } } } },
+      device: { include: { brand: true, soc: true } },
+      emulator: { include: { customFieldDefinitions: true } },
+      performance: true,
+      author: true,
+      votes: true,
+      comments: { include: { user: { select: { id: true, name: true, profileImage: true } } } },
+      customFieldValues: { include: { customFieldDefinition: true } },
+      developerVerifications: { include: { developer: { select: { id: true, name: true } } } },
+      _count: { select: { votes: true, comments: true } },
+    } satisfies Prisma.ListingInclude,
+
+    forFeatured: {
+      game: { include: { system: { select: { id: true, name: true, key: true } } } },
+      device: { include: { brand: true, soc: true } },
+      emulator: { select: { id: true, name: true, logo: true } },
+      performance: true,
+      author: { select: { id: true, name: true, profileImage: true } },
+      _count: { select: { votes: true, comments: true } },
     } satisfies Prisma.ListingInclude,
   } as const
 
@@ -194,6 +127,7 @@ export class ListingsRepository extends BaseRepository {
    */
   private buildWhereClause(filters: ListingFilters): Prisma.ListingWhereInput {
     const where: Prisma.ListingWhereInput = {}
+    let gameFilter: Prisma.GameWhereInput = {}
 
     // Basic filters
     if (filters.gameId) where.gameId = filters.gameId
@@ -231,7 +165,10 @@ export class ListingsRepository extends BaseRepository {
 
     // System filtering through game relationship
     if (filters.systemIds && filters.systemIds.length > 0) {
-      where.game = { ...(where.game as Prisma.GameWhereInput), systemId: { in: filters.systemIds } }
+      gameFilter = {
+        ...gameFilter,
+        systemId: { in: filters.systemIds },
+      }
     }
 
     // Build comprehensive search conditions
@@ -256,7 +193,7 @@ export class ListingsRepository extends BaseRepository {
 
     // Approval status (default to APPROVED for public access)
     const statusFilter = buildApprovalStatusFilter(
-      filters.userRole as Role | undefined,
+      filters.userRole,
       filters.userId,
       filters.approvalStatus,
       'authorId',
@@ -264,17 +201,19 @@ export class ListingsRepository extends BaseRepository {
     if (statusFilter) Object.assign(where, statusFilter)
 
     // NSFW filtering on games
-    where.game = {
-      ...(where.game as Prisma.GameWhereInput),
+    gameFilter = {
+      ...gameFilter,
       status: ApprovalStatus.APPROVED,
       ...buildNsfwFilter(filters.showNsfw),
     }
 
+    // Apply game filter if any conditions were added
+    if (Object.keys(gameFilter).length > 0) {
+      where.game = gameFilter
+    }
+
     // Shadow ban filtering
-    const shadowBanFilter = buildShadowBanFilter(
-      filters.userRole as Role | undefined,
-      filters.userId,
-    )
+    const shadowBanFilter = buildShadowBanFilter(filters.userRole, filters.userId)
     if (shadowBanFilter) where.author = shadowBanFilter
 
     // My listings filter
@@ -286,7 +225,7 @@ export class ListingsRepository extends BaseRepository {
   /**
    * Get paginated listings with all related data
    */
-  async getListings(filters: ListingFilters) {
+  async list(filters: ListingFilters) {
     const limit = filters.limit || 20
     const offset = calculateOffset({ page: filters.page, offset: filters.offset }, limit)
 
@@ -301,12 +240,7 @@ export class ListingsRepository extends BaseRepository {
         skip: offset,
         take: limit,
         orderBy,
-        include: {
-          ...ListingsRepository.includes.default,
-          performance: { select: { id: true, label: true, rank: true, description: true } },
-          game: { include: { system: { select: { id: true, name: true, key: true } } } },
-          _count: { select: { votes: true, comments: true } },
-        },
+        include: ListingsRepository.includes.forList,
       }),
       this.prisma.listing.count({ where }),
     ])
@@ -350,14 +284,10 @@ export class ListingsRepository extends BaseRepository {
   /**
    * Get a single listing by ID with full details
    */
-  async getListingById(id: string, userId?: string) {
+  async byId(id: string, userId?: string) {
     const listing = await this.prisma.listing.findUnique({
       where: { id },
-      include: {
-        ...ListingsRepository.includes.full,
-        emulator: { include: { customFieldDefinitions: true } },
-        _count: { select: { votes: true, comments: true } },
-      },
+      include: ListingsRepository.includes.forById,
     })
 
     if (!listing) return null
@@ -388,7 +318,7 @@ export class ListingsRepository extends BaseRepository {
     sortField?: string,
     sortDirection?: 'asc' | 'desc',
   ): Prisma.ListingOrderByWithRelationInput | Prisma.ListingOrderByWithRelationInput[] {
-    const direction = (sortDirection as Prisma.SortOrder) || this.sortOrder
+    const direction: Prisma.SortOrder = sortDirection || this.sortOrder
 
     switch (sortField) {
       case 'game.title':
@@ -416,7 +346,7 @@ export class ListingsRepository extends BaseRepository {
   /**
    * Get featured listings (high success rate)
    */
-  async getFeaturedListings(limit: number = 10) {
+  async listFeatured(limit: number = 10) {
     const listings = await this.prisma.listing.findMany({
       where: {
         status: ApprovalStatus.APPROVED,
@@ -432,11 +362,7 @@ export class ListingsRepository extends BaseRepository {
         { successRate: 'desc' }, // Wilson Score accounts for both rate and confidence
         { createdAt: 'desc' }, // Tie breaker
       ],
-      include: {
-        ...ListingsRepository.includes.default,
-        game: { include: { system: { select: { id: true, name: true, key: true } } } },
-        _count: { select: { votes: true, comments: true } },
-      },
+      include: ListingsRepository.includes.forFeatured,
     })
 
     // Use materialized stats
@@ -453,21 +379,21 @@ export class ListingsRepository extends BaseRepository {
   /**
    * Get recent listings
    */
-  async getRecentListings(limit: number = PAGINATION.DEFAULT_LIMIT) {
-    return this.getListings({ limit, sortField: 'createdAt', sortDirection: 'desc' })
+  async listRecent(limit: number = PAGINATION.DEFAULT_LIMIT) {
+    return this.list({ limit, sortField: 'createdAt', sortDirection: 'desc' })
   }
 
   /**
    * Get listings by game
    */
-  async getListingsByGame(gameId: string, userId?: string) {
-    return this.getListings({ gameId, userId, limit: 100 })
+  async listByGameId(gameId: string, userId?: string) {
+    return this.list({ gameId, userId, limit: 100 })
   }
 
   /**
    * Get user's listings
    */
-  async getUserListings(userId: string, includeUnapproved: boolean = false) {
+  async listByUserId(userId: string, includeUnapproved: boolean = false) {
     const filters: ListingFilters = {
       authorId: userId,
       userId,
@@ -476,6 +402,6 @@ export class ListingsRepository extends BaseRepository {
 
     if (!includeUnapproved) filters.approvalStatus = ApprovalStatus.APPROVED
 
-    return this.getListings(filters)
+    return this.list(filters)
   }
 }
