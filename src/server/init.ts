@@ -6,6 +6,7 @@
  * If a service fails to initialize, it will be retried on next access.
  */
 
+import { logger } from '@/lib/logger'
 import { ms } from '@/utils/time'
 import { initializeNotificationService } from './notifications/init'
 import { initializeSwitchGameService } from './utils/switchGameInit'
@@ -16,10 +17,18 @@ interface ServiceStatus {
   failureCount: number
 }
 
-const serviceStatus: Record<string, ServiceStatus> = {
+// Use global to persist across hot reloads in development
+const globalForServices = globalThis as unknown as {
+  serviceStatus: Record<string, ServiceStatus>
+  initializationPromise?: Promise<void>
+}
+
+const serviceStatus: Record<string, ServiceStatus> = globalForServices.serviceStatus ?? {
   notification: { initialized: false, lastAttempt: null, failureCount: 0 },
   switchGame: { initialized: false, lastAttempt: null, failureCount: 0 },
 }
+
+if (process.env.NODE_ENV !== 'production') globalForServices.serviceStatus = serviceStatus
 
 const MAX_RETRY_ATTEMPTS = 3
 const RETRY_DELAY_MS = ms.seconds(5) // 5 seconds between retries
@@ -52,11 +61,13 @@ async function initNotificationServiceWithRetry(): Promise<boolean> {
     initializeNotificationService()
     status.initialized = true
     status.failureCount = 0
-    console.log('✅ Notification service initialized successfully')
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Notification service initialized successfully')
+    }
     return true
   } catch (error) {
     status.failureCount++
-    console.error(
+    logger.error(
       `❌ Failed to initialize notification service (attempt ${status.failureCount}/${MAX_RETRY_ATTEMPTS}):`,
       error,
     )
@@ -92,11 +103,11 @@ async function initSwitchGameServiceWithRetry(): Promise<boolean> {
     await initializeSwitchGameService()
     status.initialized = true
     status.failureCount = 0
-    console.log('✅ Switch game service initialized successfully')
+    logger.log('✅ Switch game service initialized successfully')
     return true
   } catch (error) {
     status.failureCount++
-    console.error(
+    logger.error(
       `❌ Failed to initialize switch game service (attempt ${status.failureCount}/${MAX_RETRY_ATTEMPTS}):`,
       error,
     )
@@ -108,7 +119,7 @@ async function initSwitchGameServiceWithRetry(): Promise<boolean> {
  * Main initialization function that handles all services
  */
 export async function initializeServer(): Promise<void> {
-  console.log('🚀 Initializing server services...')
+  logger.log('🚀 Initializing server services...')
 
   // Initialize services in parallel with individual error handling
   const [notificationSuccess, switchGameSuccess] = await Promise.all([
@@ -119,9 +130,9 @@ export async function initializeServer(): Promise<void> {
   // Log overall status
   const allSuccess = notificationSuccess && switchGameSuccess
   if (allSuccess) {
-    console.log('✅ All server services initialized successfully')
+    logger.log('✅ All server services initialized successfully', null, true)
   } else {
-    console.warn('⚠️ Some services failed to initialize. They will be retried on next access.')
+    logger.warn('⚠️ Some services failed to initialize. They will be retried on next access.')
   }
 }
 
@@ -131,17 +142,11 @@ export async function initializeServer(): Promise<void> {
 export async function ensureServicesInitialized(): Promise<void> {
   const promises: Promise<boolean>[] = []
 
-  if (!serviceStatus.notification.initialized) {
-    promises.push(initNotificationServiceWithRetry())
-  }
+  if (!serviceStatus.notification.initialized) promises.push(initNotificationServiceWithRetry())
 
-  if (!serviceStatus.switchGame.initialized) {
-    promises.push(initSwitchGameServiceWithRetry())
-  }
+  if (!serviceStatus.switchGame.initialized) promises.push(initSwitchGameServiceWithRetry())
 
-  if (promises.length > 0) {
-    await Promise.all(promises)
-  }
+  if (promises.length > 0) await Promise.all(promises)
 }
 
 /**
@@ -154,7 +159,7 @@ export function getServiceStatus() {
   }
 }
 
-// Auto-initialize on module load (happens once per process)
-if (typeof window === 'undefined') {
-  initializeServer().catch(console.error)
+// Auto-initialize on module load with singleton pattern
+if (typeof window === 'undefined' && !globalForServices.initializationPromise) {
+  globalForServices.initializationPromise = initializeServer().catch(console.error)
 }
