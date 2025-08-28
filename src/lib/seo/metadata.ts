@@ -48,10 +48,11 @@ export const defaultMetadata: Metadata = {
     description: siteConfig.description,
     images: [
       {
-        url: `${siteConfig.url}/og-image.svg`,
+        url: `${siteConfig.url}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: siteConfig.name,
+        alt: `${siteConfig.name} - Know before you load`,
+        type: 'image/png',
       },
     ],
   },

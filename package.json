@@ -94,7 +94,7 @@
     "react-error-boundary": "^6.0.0",
     "react-google-recaptcha-v3": "^1.11.0",
     "react-hook-form": "^7.56.4",
-    "react-syntax-highlighter": "^15.6.1",
+    "react-syntax-highlighter": "^15.6.6",
     "remeda": "^2.22.1",
     "sonner": "^2.0.3",
     "superjson": "^2.2.2",
