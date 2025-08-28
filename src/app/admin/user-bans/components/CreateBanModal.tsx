@@ -4,9 +4,11 @@ import { useUser } from '@clerk/nextjs'
 import { Search, AlertTriangle, ShieldOff } from 'lucide-react'
 import { useState, useRef, useEffect, type FormEvent } from 'react'
 import { Button, Modal, Badge } from '@/components/ui'
+import { CHAR_LIMITS } from '@/data/constants'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
+import { formatUserRole } from '@/utils/format'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { Role } from '@orm'
@@ -70,10 +72,33 @@ function CreateBanModal(props: Props) {
   // User search query - filters out users that current user cannot ban
   const userSearchQuery = api.users.searchUsers.useQuery(
     { query: userSearch },
-    {
-      enabled: userSearch.length >= 2 && !selectedUser && !props.userId,
-    },
+    { enabled: userSearch.length >= 2 && !selectedUser && !props.userId },
   )
+
+  // Fetch user details if userId is provided
+  const preselectedUserQuery = api.users.getUserById.useQuery(
+    { userId: props.userId! },
+    { enabled: !!props.userId },
+  )
+
+  // Set pre-selected user when data is available
+  useEffect(() => {
+    if (props.userId && preselectedUserQuery.data) {
+      const user = preselectedUserQuery.data
+      // The getUserById returns a user profile object, we just need basic fields
+      // Only set the user if we have a valid id
+      if (!user) return
+      setSelectedUser({
+        id: user.id,
+        name: user.name || null,
+        email: '', // getUserById doesn't return email for privacy
+        profileImage: user.profileImage || null,
+        role: user.role as Role,
+        trustScore: user.trustScore || 0,
+      })
+      setUserSearch(user.name)
+    }
+  }, [props.userId, preselectedUserQuery.data])
 
   // Show dropdown when search results are available
   useEffect(() => {
@@ -188,7 +213,7 @@ function CreateBanModal(props: Props) {
             Insufficient Permissions
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-            You must have at least MODERATOR role to ban users.
+            You must have at least {formatUserRole(Role.MODERATOR)} role to ban users.
           </p>
           <Button variant="outline" onClick={props.onClose}>
             Close
@@ -231,6 +256,9 @@ function CreateBanModal(props: Props) {
                 type="text"
                 value={userSearch}
                 onChange={(ev) => {
+                  // Don't allow changes if user is pre-selected from props
+                  if (props.userId) return
+
                   setUserSearch(ev.target.value)
                   if (!selectedUser && ev.target.value.length >= 2) {
                     setShowUserDropdown(true)
@@ -245,8 +273,9 @@ function CreateBanModal(props: Props) {
                     setSelectedUser(null)
                   }
                 }}
+                disabled={!!props.userId}
                 placeholder="Search users by name or email..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
               />
               {isLoading && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -304,23 +333,27 @@ function CreateBanModal(props: Props) {
                     <div className="font-medium text-gray-900 dark:text-white">
                       {selectedUser.name || 'Unknown'}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {selectedUser.email}
-                    </div>
+                    {selectedUser.email && (
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        {selectedUser.email}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge>{selectedUser.role}</Badge>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedUser(null)
-                        setUserSearch('')
-                      }}
-                    >
-                      Change
-                    </Button>
+                    {!props.userId && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedUser(null)
+                          setUserSearch('')
+                        }}
+                      >
+                        Change
+                      </Button>
+                    )}
                   </div>
                 </div>
                 {/* Show warning for privileged users */}
@@ -435,11 +468,11 @@ function CreateBanModal(props: Props) {
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Any additional context or notes about this ban..."
             rows={3}
-            maxLength={1000}
+            maxLength={CHAR_LIMITS.NOTES}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white resize-none"
           />
           <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-right">
-            {notes.length}/1000 characters
+            {notes.length}/{CHAR_LIMITS.NOTES} characters
           </div>
         </div>
 
