@@ -3,7 +3,7 @@
 import { useUser } from '@clerk/nextjs'
 import { Search, AlertTriangle, ShieldOff } from 'lucide-react'
 import { useState, useRef, useEffect, type FormEvent } from 'react'
-import { Button, Modal, Badge } from '@/components/ui'
+import { Button, Modal, Badge, Input } from '@/components/ui'
 import { CHAR_LIMITS } from '@/data/constants'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -87,7 +87,7 @@ function CreateBanModal(props: Props) {
       const user = preselectedUserQuery.data
       // The getUserById returns a user profile object, we just need basic fields
       // Only set the user if we have a valid id
-      if (!user) return
+      if (!user || !user.id || !user.name) return
       setSelectedUser({
         id: user.id,
         name: user.name || null,
@@ -199,8 +199,6 @@ function CreateBanModal(props: Props) {
   }, [props.isOpen, props.userId])
 
   const users = userSearchQuery.data ?? []
-  const isLoading = userSearchQuery.isPending
-
   const minDate = new Date().toISOString().split('T')[0]
 
   // Show permission error if user doesn't have the right role
@@ -250,8 +248,7 @@ function CreateBanModal(props: Props) {
           </label>
           <div className="relative" ref={dropdownRef}>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
+              <Input
                 ref={searchInputRef}
                 type="text"
                 value={userSearch}
@@ -275,9 +272,10 @@ function CreateBanModal(props: Props) {
                 }}
                 disabled={!!props.userId}
                 placeholder="Search users by name or email..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+                leftIcon={<Search className="w-5 h-5" />}
+                className="w-full pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
               />
-              {isLoading && (
+              {userSearchQuery.isPending && !selectedUser && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                   <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full" />
                 </div>
@@ -368,11 +366,14 @@ function CreateBanModal(props: Props) {
               </div>
             )}
 
-            {showUserDropdown && userSearch.length >= 2 && users.length === 0 && !isLoading && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg p-4 text-center text-gray-500 dark:text-gray-400">
-                No users found matching &quot;{userSearch}&quot;
-              </div>
-            )}
+            {showUserDropdown &&
+              userSearch.length >= 2 &&
+              users.length === 0 &&
+              !userSearchQuery.isPending && (
+                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg p-4 text-center text-gray-500 dark:text-gray-400">
+                  No users found matching &quot;{userSearch}&quot;
+                </div>
+              )}
           </div>
           {userSearch.length > 0 && userSearch.length < 2 && (
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">

@@ -1,6 +1,6 @@
 'use client'
 
-import { ShieldUser, User, Award } from 'lucide-react'
+import { ShieldUser, User, Award, Gavel } from 'lucide-react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
@@ -91,6 +91,7 @@ function AdminUsersPage() {
   const isModerator =
     hasPermission(currentUserQuery.data?.role, RoleEnum.MODERATOR) &&
     !hasPermission(currentUserQuery.data?.role, RoleEnum.ADMIN)
+  const canBanUsers = hasPermission(currentUserQuery.data?.role, RoleEnum.MODERATOR)
 
   const usersQuery = api.users.getAll.useQuery({
     search: isEmpty(table.search) ? null : table.search,
@@ -155,6 +156,10 @@ function AdminUsersPage() {
     params.delete('userId')
     const newUrl = params.toString() ? `?${params.toString()}` : '/admin/users'
     router.replace(newUrl, { scroll: false })
+  }
+
+  const handleBanUser = (userId: string) => {
+    router.push(`/admin/user-bans?action=ban&userId=${userId}`)
   }
 
   return (
@@ -377,6 +382,14 @@ function AdminUsersPage() {
                           title="View User Details"
                           onClick={() => openUserDetailsModal(user.id)}
                         />
+                        {canBanUsers && (
+                          <TableButton
+                            onClick={() => handleBanUser(user.id)}
+                            title="Ban User"
+                            icon={Gavel}
+                            color="red"
+                          />
+                        )}
                         {!isModerator && canManageUsers && (
                           <DeleteButton
                             onClick={() => handleDelete(user.id)}
