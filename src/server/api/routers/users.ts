@@ -422,8 +422,8 @@ export const usersRouter = createTRPCRouter({
     return result
   }),
 
-  // Admin-only routes
-  getAll: permissionProcedure(PERMISSIONS.MANAGE_USERS)
+  // Admin and Moderator routes
+  getAll: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
     .input(GetAllUsersSchema)
     .query(async ({ ctx, input }) => {
       const { search, sortField, sortDirection, page = 1, limit = 20 } = input ?? {}
@@ -610,7 +610,7 @@ export const usersRouter = createTRPCRouter({
       return { success: true }
     }),
 
-  searchUsers: permissionProcedure(PERMISSIONS.MANAGE_USERS)
+  searchUsers: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
     .input(SearchUsersSchema)
     .query(async ({ ctx, input }) => {
       const { query, limit, minRole } = input
@@ -645,6 +645,7 @@ export const usersRouter = createTRPCRouter({
           email: true,
           profileImage: true,
           role: true,
+          trustScore: true,
         },
         orderBy: [{ name: 'asc' }, { email: 'asc' }],
         take: limit,

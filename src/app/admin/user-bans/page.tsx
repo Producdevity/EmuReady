@@ -1,7 +1,8 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
@@ -59,6 +60,8 @@ const getBanStatusText = (ban: { isActive: boolean; expiresAt: Date | null }) =>
 
 function AdminUserBansPage() {
   const { user: clerkUser } = useUser()
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const table = useAdminTable<BanSortField>({ defaultLimit: 20 })
   const confirm = useConfirmDialog()
   const utils = api.useUtils()
@@ -72,7 +75,20 @@ function AdminUserBansPage() {
   })
   const [createBanModal, setCreateBanModal] = useState<CreateBanModalState>({
     isOpen: false,
+    userId: undefined,
   })
+
+  // Handle query params to auto-open modal
+  useEffect(() => {
+    const action = searchParams.get('action')
+    const userId = searchParams.get('userId')
+
+    if (action === 'ban' && userId) {
+      setCreateBanModal({ isOpen: true, userId })
+      // Clean up URL after opening modal
+      router.replace('/admin/user-bans')
+    }
+  }, [searchParams, router])
 
   // Get current user data to check permissions
   const currentUserQuery = api.users.me.useQuery(undefined, {

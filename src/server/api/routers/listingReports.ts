@@ -38,7 +38,7 @@ export const listingReportsRouter = createTRPCRouter({
     }
   }),
 
-  getAll: permissionProcedure(PERMISSIONS.ACCESS_ADMIN_PANEL)
+  getAll: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
     .input(GetListingReportsSchema)
     .query(async ({ ctx, input }) => {
       const {
@@ -103,7 +103,7 @@ export const listingReportsRouter = createTRPCRouter({
       }
     }),
 
-  getById: permissionProcedure(PERMISSIONS.ACCESS_ADMIN_PANEL)
+  getById: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
     .input(GetReportByIdSchema)
     .query(async ({ ctx, input }) => {
       const report = await ctx.prisma.listingReport.findUnique({
@@ -181,7 +181,7 @@ export const listingReportsRouter = createTRPCRouter({
     })
   }),
 
-  updateStatus: permissionProcedure(PERMISSIONS.ACCESS_ADMIN_PANEL)
+  updateStatus: permissionProcedure(PERMISSIONS.MANAGE_USER_BANS)
     .input(UpdateReportStatusSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, status, reviewNotes } = input
@@ -266,7 +266,7 @@ export const listingReportsRouter = createTRPCRouter({
       })
     }),
 
-  delete: permissionProcedure(PERMISSIONS.ACCESS_ADMIN_PANEL)
+  delete: permissionProcedure(PERMISSIONS.MANAGE_USER_BANS)
     .input(DeleteReportSchema)
     .mutation(async ({ ctx, input }) => {
       const report = await ctx.prisma.listingReport.findUnique({
@@ -280,7 +280,7 @@ export const listingReportsRouter = createTRPCRouter({
       })
     }),
 
-  getUserReportStats: permissionProcedure(PERMISSIONS.ACCESS_ADMIN_PANEL)
+  getUserReportStats: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
     .input(GetUserReportStatsSchema)
     .query(async ({ ctx, input }) => {
       const { userId } = input

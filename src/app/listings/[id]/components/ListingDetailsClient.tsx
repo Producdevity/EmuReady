@@ -20,6 +20,7 @@ import {
   GameImage,
 } from '@/components/ui'
 import { api } from '@/lib/api'
+import { logger } from '@/lib/logger'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -52,8 +53,9 @@ function ListingDetailsClient(props: Props) {
   const currentUserQuery = api.users.me.useQuery()
   const canViewBannedUsers = roleIncludesRole(currentUserQuery.data?.role, Role.MODERATOR)
 
-  const refreshData = () => {
-    utils.listings.byId.invalidate({ id: listingId }).catch(console.error)
+  const refreshData = async () => {
+    // Use refetch for immediate update instead of just invalidating
+    await utils.listings.byId.refetch({ id: listingId })
   }
 
   const scrollToVoteSection = () => {
@@ -63,9 +65,7 @@ function ListingDetailsClient(props: Props) {
   }
 
   const voteMutation = api.listings.vote.useMutation({
-    onSuccess: () => {
-      refreshData()
-    },
+    onSuccess: refreshData,
     onError: (error) => {
       toast.error(`Failed to vote: ${getErrorMessage(error)}`)
     },
@@ -87,10 +87,8 @@ function ListingDetailsClient(props: Props) {
           value: props.userVote, // Send current vote value to toggle it off
         })
       }
-
-      utils.listings.byId.invalidate({ id: listingId }).catch(console.error)
     } catch (error) {
-      console.error('Error voting:', error)
+      logger.error('handleVoting:', error)
       // The mutation's onError will handle user-facing error messages
     }
   }

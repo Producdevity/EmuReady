@@ -14,9 +14,13 @@ import {
   Minus,
   Flag,
   Ban,
+  Gavel,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Modal, Code, Button, Badge, LoadingSpinner, Input, LocalizedDate } from '@/components/ui'
 import { api } from '@/lib/api'
@@ -37,6 +41,7 @@ interface Props {
 
 function UserDetailsModal(props: Props) {
   const utils = api.useUtils()
+  const router = useRouter()
   const userQuery = api.users.getUserById.useQuery(
     { userId: props.userId! },
     { enabled: !!props.userId },
@@ -45,6 +50,7 @@ function UserDetailsModal(props: Props) {
   // Get current user to check if they're SUPER_ADMIN
   const currentUserQuery = api.users.me.useQuery()
   const isSuperAdmin = hasPermission(currentUserQuery.data?.role, Role.SUPER_ADMIN)
+  const isModerator = hasPermission(currentUserQuery.data?.role, Role.MODERATOR)
 
   // Get ban status and report statistics
   const banStatusQuery = api.userBans.checkUserBanStatus.useQuery(
@@ -61,6 +67,11 @@ function UserDetailsModal(props: Props) {
   const [customAdjustment, setCustomAdjustment] = useState('')
   const [adjustmentReason, setAdjustmentReason] = useState('')
   const [isAdjusting, setIsAdjusting] = useState(false)
+
+  // Expandable sections state
+  const [expandedListings, setExpandedListings] = useState(false)
+  const [expandedVotes, setExpandedVotes] = useState(false)
+  const [expandedTrustActions, setExpandedTrustActions] = useState(false)
 
   const adjustTrustScoreMutation = api.trust.adjustTrustScore.useMutation({
     onSuccess: () => {
@@ -395,23 +406,41 @@ function UserDetailsModal(props: Props) {
 
                     {userQuery.data.listings.items.length > 0 ? (
                       <div className="space-y-1">
-                        {userQuery.data.listings.items.slice(0, 3).map((listing) => (
-                          <Link
-                            key={listing.id}
-                            href={`/listings/${listing.id}`}
-                            className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
-                          >
-                            <span className="truncate">
-                              {listing.game.title} on {listing.device.brand.name}{' '}
-                              {listing.device.modelName}
-                            </span>
-                            <span className="text-gray-500 ml-2">{listing.performance.label}</span>
-                          </Link>
-                        ))}
+                        {userQuery.data.listings.items
+                          .slice(0, expandedListings ? undefined : 3)
+                          .map((listing) => (
+                            <Link
+                              key={listing.id}
+                              href={`/listings/${listing.id}`}
+                              className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
+                            >
+                              <span className="truncate">
+                                {listing.game.title} on {listing.device.brand.name}{' '}
+                                {listing.device.modelName}
+                              </span>
+                              <span className="text-gray-500 ml-2">
+                                {listing.performance.label}
+                              </span>
+                            </Link>
+                          ))}
                         {userQuery.data.listings.items.length > 3 && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            +{userQuery.data.listings.items.length - 3} more...
-                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedListings(!expandedListings)}
+                            className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+                          >
+                            {expandedListings ? (
+                              <>
+                                <ChevronUp className="w-3 h-3" />
+                                Show less
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="w-3 h-3" />+
+                                {userQuery.data.listings.items.length - 3} more...
+                              </>
+                            )}
+                          </button>
                         )}
                       </div>
                     ) : (
@@ -434,23 +463,42 @@ function UserDetailsModal(props: Props) {
 
                     {userQuery.data.votes.items.length > 0 ? (
                       <div className="space-y-1">
-                        {userQuery.data.votes.items.slice(0, 3).map((vote) => (
-                          <div
-                            key={vote.id}
-                            className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between"
-                          >
-                            <span className="truncate">{vote.listing.game.title}</span>
-                            <span
-                              className={cn('ml-2', vote.value ? 'text-green-600' : 'text-red-600')}
+                        {userQuery.data.votes.items
+                          .slice(0, expandedVotes ? undefined : 3)
+                          .map((vote) => (
+                            <div
+                              key={vote.id}
+                              className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between"
                             >
-                              {vote.value ? '👍' : '👎'}
-                            </span>
-                          </div>
-                        ))}
+                              <span className="truncate">{vote.listing.game.title}</span>
+                              <span
+                                className={cn(
+                                  'ml-2',
+                                  vote.value ? 'text-green-600' : 'text-red-600',
+                                )}
+                              >
+                                {vote.value ? '👍' : '👎'}
+                              </span>
+                            </div>
+                          ))}
                         {userQuery.data.votes.items.length > 3 && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            +{userQuery.data.votes.items.length - 3} more votes...
-                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedVotes(!expandedVotes)}
+                            className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+                          >
+                            {expandedVotes ? (
+                              <>
+                                <ChevronUp className="w-3 h-3" />
+                                Show less
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="w-3 h-3" />+
+                                {userQuery.data.votes.items.length - 3} more votes...
+                              </>
+                            )}
+                          </button>
                         )}
                       </div>
                     ) : (
@@ -472,35 +520,51 @@ function UserDetailsModal(props: Props) {
 
                     {userQuery.data.trustActionLogs && userQuery.data.trustActionLogs.length > 0 ? (
                       <div className="space-y-1">
-                        {userQuery.data.trustActionLogs.slice(0, 3).map((log) => (
-                          <div
-                            key={log.id}
-                            className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between"
-                          >
-                            <span className="truncate flex items-center gap-1">
-                              <Badge
-                                variant={getTrustActionBadgeColor(log.action)}
-                                size="sm"
-                                className="text-xs"
-                              >
-                                {log.action}
-                              </Badge>
-                            </span>
-                            <span
-                              className={cn(
-                                'ml-2 font-medium',
-                                log.weight > 0 ? 'text-green-600' : 'text-red-600',
-                              )}
+                        {userQuery.data.trustActionLogs
+                          .slice(0, expandedTrustActions ? undefined : 3)
+                          .map((log) => (
+                            <div
+                              key={log.id}
+                              className="text-xs text-gray-600 dark:text-gray-400 flex items-center justify-between"
                             >
-                              {log.weight > 0 ? '+' : ''}
-                              {log.weight}
-                            </span>
-                          </div>
-                        ))}
+                              <span className="truncate flex items-center gap-1">
+                                <Badge
+                                  variant={getTrustActionBadgeColor(log.action)}
+                                  size="sm"
+                                  className="text-xs"
+                                >
+                                  {log.action}
+                                </Badge>
+                              </span>
+                              <span
+                                className={cn(
+                                  'ml-2 font-medium',
+                                  log.weight > 0 ? 'text-green-600' : 'text-red-600',
+                                )}
+                              >
+                                {log.weight > 0 ? '+' : ''}
+                                {log.weight}
+                              </span>
+                            </div>
+                          ))}
                         {userQuery.data.trustActionLogs.length > 3 && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            +{userQuery.data.trustActionLogs.length - 3} more actions...
-                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedTrustActions(!expandedTrustActions)}
+                            className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+                          >
+                            {expandedTrustActions ? (
+                              <>
+                                <ChevronUp className="w-3 h-3" />
+                                Show less
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="w-3 h-3" />+
+                                {userQuery.data.trustActionLogs.length - 3} more actions...
+                              </>
+                            )}
+                          </button>
                         )}
                       </div>
                     ) : (
@@ -665,10 +729,25 @@ function UserDetailsModal(props: Props) {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <Button variant="outline" onClick={props.onClose} className="min-w-[100px]">
-                Close
-              </Button>
+            <div className="flex justify-between items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              {isModerator && !banStatusQuery.data?.isBanned && (
+                <Button
+                  variant="danger"
+                  onClick={() => {
+                    router.push(`/admin/user-bans?action=ban&userId=${props.userId}`)
+                    props.onClose()
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Gavel className="w-4 h-4" />
+                  Ban User
+                </Button>
+              )}
+              <div className="flex gap-3 ml-auto">
+                <Button variant="outline" onClick={props.onClose} className="min-w-[100px]">
+                  Close
+                </Button>
+              </div>
             </div>
           </div>
         </div>

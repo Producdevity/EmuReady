@@ -1189,7 +1189,7 @@ export const pcListingsRouter = createTRPCRouter({
       })
     }),
 
-  getReports: permissionProcedure(PERMISSIONS.ACCESS_ADMIN_PANEL)
+  getReports: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
     .input(GetPcListingReportsSchema)
     .query(async ({ ctx, input }) => {
       const { status, page = 1, limit = 20 } = input
@@ -1229,7 +1229,7 @@ export const pcListingsRouter = createTRPCRouter({
       }
     }),
 
-  updateReport: permissionProcedure(PERMISSIONS.ACCESS_ADMIN_PANEL)
+  updateReport: permissionProcedure(PERMISSIONS.MANAGE_USER_BANS)
     .input(UpdatePcListingReportSchema)
     .mutation(async ({ ctx, input }) => {
       const { reportId, status, reviewNotes } = input

@@ -91,6 +91,10 @@ export function buildPcListingOrderBy(
       case 'createdAt':
         orderBy.push({ createdAt: sortDirection })
         break
+      case 'successRate':
+        orderBy.push({ successRate: sortDirection })
+        orderBy.push({ createdAt: 'desc' }) // Secondary sort for consistent ordering
+        break
     }
   }
 

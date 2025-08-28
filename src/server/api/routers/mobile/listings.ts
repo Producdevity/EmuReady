@@ -50,25 +50,20 @@ async function getListingsHelper(
   const {
     page = 1,
     limit = 20,
-    gameId,
-    systemId,
+    gameIds,
     systemIds,
-    deviceId,
+    deviceIds,
+    socIds,
     emulatorIds,
     performanceIds,
     search,
   } = input ?? {}
 
-  // Handle both single systemId (deprecated) and multiple systemIds
-  const effectiveSystemIds = systemIds || (systemId ? [systemId] : undefined)
-
-  // Convert single deviceId to array format for consistency
-  const deviceIds = deviceId ? [deviceId] : undefined
-
   const result = await repository.list({
-    gameId,
-    systemIds: effectiveSystemIds,
+    gameId: gameIds?.[0], // Repository expects single gameId, take first if provided
+    systemIds,
     deviceIds,
+    socIds,
     emulatorIds,
     performanceIds,
     search,

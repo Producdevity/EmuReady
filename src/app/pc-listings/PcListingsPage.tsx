@@ -22,6 +22,7 @@ import {
   ViewButton,
   Badge,
   DisplayToggleButton,
+  SuccessRateBar,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import {
@@ -49,6 +50,7 @@ const PC_LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'os', label: 'OS', defaultVisible: false },
   { key: 'emulator', label: 'Emulator', defaultVisible: true },
   { key: 'performance', label: 'Performance', defaultVisible: true },
+  { key: 'verified', label: 'Verified', defaultVisible: true },
   { key: 'author', label: 'Author', defaultVisible: false },
   { key: 'posted', label: 'Posted', defaultVisible: false },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
@@ -414,6 +416,15 @@ function PcListingsPage() {
                         onSort={listingsState.handleSort}
                       />
                     )}
+                    {columnVisibility.isColumnVisible('verified') && (
+                      <SortableHeader
+                        label="Verified"
+                        field="successRate"
+                        currentSortField={listingsState.sortField}
+                        currentSortDirection={listingsState.sortDirection}
+                        onSort={listingsState.handleSort}
+                      />
+                    )}
                     {columnVisibility.isColumnVisible('author') && (
                       <SortableHeader
                         label="Author"
@@ -547,6 +558,14 @@ function PcListingsPage() {
                             rank={listing.performance?.rank ?? 8}
                             label={listing.performance?.label ?? 'N/A'}
                             description={listing.performance?.description}
+                          />
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('verified') && (
+                        <td className="px-4 py-2">
+                          <SuccessRateBar
+                            rate={listing.successRate * 100}
+                            voteCount={listing._count.votes}
                           />
                         </td>
                       )}

@@ -30,7 +30,9 @@ import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import { getRoleVariant } from '@/utils/badgeColors'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { type Role } from '@orm'
+import { PERMISSIONS } from '@/utils/permission-system'
+import { hasPermission } from '@/utils/permissions'
+import { type Role, Role as RoleEnum } from '@orm'
 import UserBadgeModal from './components/UserBadgeModal'
 import UserDetailsModal from './components/UserDetailsModal'
 import UserRoleModal from './components/UserRoleModal'
@@ -81,6 +83,14 @@ function AdminUsersPage() {
     name: string | null
     email: string
   } | null>(null)
+
+  // Get current user permissions
+  const currentUserQuery = api.users.me.useQuery()
+  const canManageUsers = currentUserQuery.data?.permissions?.includes(PERMISSIONS.MANAGE_USERS)
+  const canChangeRoles = currentUserQuery.data?.permissions?.includes(PERMISSIONS.CHANGE_USER_ROLES)
+  const isModerator =
+    hasPermission(currentUserQuery.data?.role, RoleEnum.MODERATOR) &&
+    !hasPermission(currentUserQuery.data?.role, RoleEnum.ADMIN)
 
   const usersQuery = api.users.getAll.useQuery({
     search: isEmpty(table.search) ? null : table.search,
@@ -347,28 +357,34 @@ function AdminUsersPage() {
                     )}
                     {columnVisibility.isColumnVisible('actions') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                        <TableButton
-                          onClick={() => openRoleModal(user)}
-                          title="Change Role"
-                          icon={ShieldUser}
-                          color="yellow"
-                        />
-                        <TableButton
-                          onClick={() => openBadgeModal(user)}
-                          title="Manage Badges"
-                          icon={Award}
-                          color="purple"
-                        />
+                        {!isModerator && canChangeRoles && (
+                          <TableButton
+                            onClick={() => openRoleModal(user)}
+                            title="Change Role"
+                            icon={ShieldUser}
+                            color="yellow"
+                          />
+                        )}
+                        {!isModerator && canManageUsers && (
+                          <TableButton
+                            onClick={() => openBadgeModal(user)}
+                            title="Manage Badges"
+                            icon={Award}
+                            color="purple"
+                          />
+                        )}
                         <ViewButton
                           title="View User Details"
                           onClick={() => openUserDetailsModal(user.id)}
                         />
-                        <DeleteButton
-                          onClick={() => handleDelete(user.id)}
-                          title="Delete User"
-                          isLoading={deleteUser.isPending}
-                          disabled={deleteUser.isPending}
-                        />
+                        {!isModerator && canManageUsers && (
+                          <DeleteButton
+                            onClick={() => handleDelete(user.id)}
+                            title="Delete User"
+                            isLoading={deleteUser.isPending}
+                            disabled={deleteUser.isPending}
+                          />
+                        )}
                       </td>
                     )}
                   </tr>

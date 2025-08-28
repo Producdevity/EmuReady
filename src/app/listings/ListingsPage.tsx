@@ -45,7 +45,7 @@ const LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'device', label: 'Device', defaultVisible: true },
   { key: 'emulator', label: 'Emulator', defaultVisible: true },
   { key: 'performance', label: 'Performance', defaultVisible: true },
-  { key: 'successRate', label: 'Success Rate', defaultVisible: true },
+  { key: 'successRate', label: 'Verified', defaultVisible: true },
   { key: 'author', label: 'Author', defaultVisible: false },
   { key: 'posted', label: 'Posted', defaultVisible: false },
   { key: 'actions', label: 'Actions', alwaysVisible: true },

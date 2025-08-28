@@ -1,6 +1,5 @@
 import { auth } from '@clerk/nextjs/server'
 import { type NextRequest } from 'next/server'
-import { ensureServicesInitialized } from '@/server/init'
 import {
   realtimeNotificationService,
   createSSEResponse,
@@ -8,9 +7,6 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    // Ensure services are initialized
-    await ensureServicesInitialized()
-
     // Get authenticated user
     const { userId } = await auth()
 
