@@ -412,15 +412,13 @@
                 "default": 20,
                 "description": "Number of results per page (1-50)"
               },
-              "gameId": {
-                "type": "string",
-                "format": "uuid",
-                "description": "Filter by game ID"
-              },
-              "systemId": {
-                "type": "string",
-                "format": "uuid",
-                "description": "Filter by single system ID (deprecated - use systemIds)"
+              "gameIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Filter by game IDs"
               },
               "systemIds": {
                 "type": "array",
@@ -428,12 +426,23 @@
                   "type": "string",
                   "format": "uuid"
                 },
-                "description": "Filter by multiple system IDs"
+                "description": "Filter by system IDs"
               },
-              "deviceId": {
-                "type": "string",
-                "format": "uuid",
-                "description": "Filter by device ID"
+              "deviceIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Filter by device IDs"
+              },
+              "socIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Filter by SoC IDs"
               },
               "emulatorIds": {
                 "type": "array",
