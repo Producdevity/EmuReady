@@ -114,14 +114,6 @@ export const pcListingsRouter = createTRPCRouter({
   canEdit: protectedProcedure.input(GetPcListingForUserEditSchema).query(async ({ ctx, input }) => {
     const EDIT_TIME_LIMIT_MINUTES = 60
 
-    if (hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-      return {
-        canEdit: true,
-        isOwner: true,
-        reason: 'Moderator can edit any PC listing',
-      }
-    }
-
     const pcListing = await ctx.prisma.pcListing.findUnique({
       where: { id: input.id },
       select: { authorId: true, status: true, processedAt: true },
@@ -137,6 +129,16 @@ export const pcListingsRouter = createTRPCRouter({
 
     // Check ownership
     const isOwner = pcListing.authorId === ctx.session.user.id
+
+    // Moderators and higher can always edit any PC listing (but still reflect true ownership)
+    if (hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+      return {
+        canEdit: true,
+        isOwner,
+        reason: 'Moderator can edit any PC listing',
+      }
+    }
+
     if (!isOwner) {
       return { canEdit: false, isOwner: false, reason: 'Not your PC listing' }
     }

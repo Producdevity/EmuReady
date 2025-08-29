@@ -27,9 +27,6 @@ function EditPcListingButton(props: Props) {
   // Don't show anything if user is not logged in
   if (!user?.id) return null
 
-  // If it's not our listing, don't show the button at all
-  if (canEditQuery.data?.isOwner === false) return null
-
   // Show loading state
   if (canEditQuery.isPending) {
     return (
@@ -39,16 +36,22 @@ function EditPcListingButton(props: Props) {
     )
   }
 
+  // If user can't edit (not owner and not moderator), don't show the button
+  if (!canEditQuery.data?.canEdit) return null
+
   const canEdit = canEditQuery.data?.canEdit ?? false
+  const isOwner = canEditQuery.data?.isOwner ?? true
   const remainingMinutes = canEditQuery.data?.remainingMinutes ?? 0
   const timeExpired = canEditQuery.data?.timeExpired ?? false
   const isPending = canEditQuery.data?.isPending ?? false
   const isApproved = canEditQuery.data?.isApproved ?? false
 
   const buttonTitle = canEdit
-    ? isPending
-      ? 'Edit PC listing (pending approval - no time limit)'
-      : `Edit PC listing (${remainingMinutes} minutes remaining after approval)`
+    ? !isOwner
+      ? 'Edit PC listing (moderator override)'
+      : isPending
+        ? 'Edit PC listing (pending approval - no time limit)'
+        : `Edit PC listing (${remainingMinutes} minutes remaining after approval)`
     : timeExpired
       ? 'Edit time expired (60 minute limit after approval)'
       : 'Cannot edit PC listing'
