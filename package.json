@@ -33,6 +33,7 @@
     "postinstall": "prisma generate",
     "prepare": "husky",
     "prepare-deploy": "npm run format && npm run lint && npm run types && npm run test && npm run build",
+    "deploy": "tsx scripts/deploy-manually.ts",
     "shadcn": "tsx ./scripts/shadcn.ts",
     "start": "next start",
     "test": "vitest run",
