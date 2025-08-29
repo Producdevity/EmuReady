@@ -135,7 +135,7 @@ INTERNAL_API_KEY=your_secure_random_api_key_here
 RAWG_API_KEY=your_rawg_api_key_here
 NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your_recaptcha_site_key_here
 RECAPTCHA_SECRET_KEY=your_recaptcha_secret_key_here
-TGDB_API_KEY=your_tgdb_api_key_here
+THE_GAMES_DB_API_KEY=your_tgdb_api_key_here
 ```
 
 #### API Protection
