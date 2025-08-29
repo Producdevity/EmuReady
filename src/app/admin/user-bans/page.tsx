@@ -165,9 +165,7 @@ function AdminUserBansPage() {
 
     if (!confirmed) return
 
-    deleteBan.mutate({
-      id: ban.id,
-    } satisfies RouterInput['userBans']['delete'])
+    deleteBan.mutate({ id: ban.id } satisfies RouterInput['userBans']['delete'])
   }
 
   const statsData = bansStatsQuery.data
@@ -221,8 +219,8 @@ function AdminUserBansPage() {
         <div className="flex gap-2">
           <select
             value={selectedStatus === '' ? '' : selectedStatus.toString()}
-            onChange={(e) => {
-              const value = e.target.value
+            onChange={(ev) => {
+              const value = ev.target.value
               setSelectedStatus(value === '' ? '' : value === 'true')
             }}
             className="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"

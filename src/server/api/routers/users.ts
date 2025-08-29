@@ -21,7 +21,12 @@ import { buildOrderBy, calculateOffset, createPaginationResult } from '@/server/
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { createCountQuery } from '@/server/utils/query-performance'
 import { updateUserRole } from '@/server/utils/roleSync'
-import { hasPermissionInContext, PERMISSIONS, roleIncludesRole } from '@/utils/permission-system'
+import {
+  hasPermissionInContext,
+  PERMISSIONS,
+  ROLE_HIERARCHY,
+  roleIncludesRole,
+} from '@/utils/permission-system'
 import { sanitizeBio } from '@/utils/sanitization'
 import { ApprovalStatus, Role } from '@orm'
 import type { Prisma } from '@orm'
@@ -246,9 +251,7 @@ export const usersRouter = createTRPCRouter({
             id: true,
             assignedAt: true,
             color: true,
-            badge: {
-              select: { id: true, name: true, description: true, color: true, icon: true },
-            },
+            badge: { select: { id: true, name: true, description: true, color: true, icon: true } },
           },
           orderBy: { assignedAt: 'desc' },
         },
@@ -290,14 +293,9 @@ export const usersRouter = createTRPCRouter({
           listing: {
             select: {
               id: true,
-              device: {
-                select: { brand: { select: { id: true, name: true } }, modelName: true },
-              },
+              device: { select: { brand: { select: { id: true, name: true } }, modelName: true } },
               game: {
-                select: {
-                  title: true,
-                  system: { select: { id: true, name: true, key: true } },
-                },
+                select: { title: true, system: { select: { id: true, name: true, key: true } } },
               },
               emulator: { select: { name: true } },
               performance: { select: { label: true, rank: true } },
@@ -406,14 +404,7 @@ export const usersRouter = createTRPCRouter({
         ...(bio !== undefined && { bio: bio ? sanitizeBio(bio) : null }),
         lastActiveAt: new Date(),
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        bio: true,
-        profileImage: true,
-        role: true,
-      },
+      select: { id: true, name: true, email: true, bio: true, profileImage: true, role: true },
     })
 
     // Invalidate SEO cache for user profile
@@ -601,9 +592,7 @@ export const usersRouter = createTRPCRouter({
     .input(DeleteUserSchema)
     .mutation(async ({ ctx, input }) => {
       // Prevent self-deletion
-      if (input.userId === ctx.session.user.id) {
-        return ResourceError.user.cannotDeleteSelf()
-      }
+      if (input.userId === ctx.session.user.id) return ResourceError.user.cannotDeleteSelf()
 
       await ctx.prisma.user.delete({ where: { id: input.userId } })
 
@@ -618,22 +607,12 @@ export const usersRouter = createTRPCRouter({
       const where: Prisma.UserWhereInput = {}
 
       const searchConditions = buildSearchFilter(query, ['name', 'email'])
-      if (searchConditions) {
-        where.OR = searchConditions
-      }
+      if (searchConditions) where.OR = searchConditions
 
       // Filter by minimum role if specified
       if (minRole) {
-        const roles: Role[] = [
-          Role.USER,
-          Role.AUTHOR,
-          Role.DEVELOPER,
-          Role.MODERATOR,
-          Role.ADMIN,
-          Role.SUPER_ADMIN,
-        ]
-        const minRoleIndex = roles.indexOf(minRole)
-        const allowedRoles = roles.slice(minRoleIndex)
+        const minRoleIndex = ROLE_HIERARCHY.indexOf(minRole)
+        const allowedRoles = ROLE_HIERARCHY.slice(minRoleIndex)
         where.role = { in: allowedRoles }
       }
 

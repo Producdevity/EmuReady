@@ -42,9 +42,7 @@ export function hasAllPermissions(
   userPermissions: string[] | undefined | null,
   requiredPermissions: string[],
 ): boolean {
-  if (!userPermissions || userPermissions.length === 0) {
-    return false
-  }
+  if (!userPermissions || userPermissions.length === 0) return false
 
   return requiredPermissions.every((permission) => userPermissions.includes(permission))
 }
@@ -143,20 +141,39 @@ export const PERMISSIONS = {
 // Type for permission keys
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 
+export const ROLE_HIERARCHY: Role[] = [
+  Role.USER,
+  Role.AUTHOR,
+  Role.DEVELOPER,
+  Role.MODERATOR,
+  Role.ADMIN,
+  Role.SUPER_ADMIN,
+]
+
 // Utility to check if a role hierarchically includes another role (backward compatibility)
 export function roleIncludesRole(userRole: Maybe<Role>, requiredRole: Role): boolean {
   if (!userRole) return false
-  const roleHierarchy: Role[] = [
-    Role.USER,
-    Role.AUTHOR,
-    Role.DEVELOPER,
-    Role.MODERATOR,
-    Role.ADMIN,
-    Role.SUPER_ADMIN,
-  ]
 
-  const userRoleIndex = roleHierarchy.indexOf(userRole)
-  const requiredRoleIndex = roleHierarchy.indexOf(requiredRole)
+  const userRoleIndex = ROLE_HIERARCHY.indexOf(userRole)
+  const requiredRoleIndex = ROLE_HIERARCHY.indexOf(requiredRole)
 
   return userRoleIndex >= requiredRoleIndex
+}
+
+/**
+ * Check if an actor with a specific role can ban a target with another rol
+ * @param actorRole
+ * @param targetRole
+ */
+export function canBanUser(actorRole: Maybe<Role>, targetRole: Role): boolean {
+  if (!actorRole || !targetRole) return false
+  if (actorRole === Role.SUPER_ADMIN) return true // Super admin is basically God
+
+  const actorRoleIndex = ROLE_HIERARCHY.indexOf(actorRole)
+  const targetRoleIndex = ROLE_HIERARCHY.indexOf(targetRole)
+
+  if (actorRoleIndex < 0 || targetRoleIndex < 0) return false
+
+  // Can only ban users when actor's role is higher than target's role
+  return actorRoleIndex > targetRoleIndex
 }

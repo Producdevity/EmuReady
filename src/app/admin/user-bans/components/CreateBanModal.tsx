@@ -6,11 +6,12 @@ import { useState, useRef, useEffect, type FormEvent } from 'react'
 import { Button, Modal, Badge, Input } from '@/components/ui'
 import { CHAR_LIMITS } from '@/data/constants'
 import { api } from '@/lib/api'
+import { logger } from '@/lib/logger'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import { formatUserRole } from '@/utils/format'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { PERMISSIONS } from '@/utils/permission-system'
+import { canBanUser, hasAllPermissions, PERMISSIONS } from '@/utils/permission-system'
 import { Role } from '@orm'
 
 interface Props {
@@ -41,33 +42,9 @@ function CreateBanModal(props: Props) {
     enabled: !!clerkUser,
   })
 
-  const currentUserRole = currentUserQuery.data?.role
-  const isSuperAdmin = currentUserRole === Role.SUPER_ADMIN
-
-  // Role hierarchy for ban permissions
-  const roleHierarchy = [
-    Role.USER,
-    Role.AUTHOR,
-    Role.DEVELOPER,
-    Role.MODERATOR,
-    Role.ADMIN,
-    Role.SUPER_ADMIN,
-  ]
-
-  // Check if current user can ban other users (must have manage_user_bans permission)
-  const canBanUsers = currentUserQuery.data?.permissions?.includes(PERMISSIONS.MANAGE_USER_BANS)
-
-  // Function to check if current user can ban a specific user
-  const canBanUser = (userRole: string): boolean => {
-    if (!currentUserRole) return false
-    if (isSuperAdmin) return true // Super admin can ban anyone
-
-    const currentRoleIndex = roleHierarchy.indexOf(currentUserRole)
-    const targetRoleIndex = roleHierarchy.indexOf(userRole as Role)
-
-    // Can only ban users with lower role hierarchy
-    return targetRoleIndex < currentRoleIndex
-  }
+  const canManageUserBans = hasAllPermissions(currentUserQuery.data?.permissions, [
+    PERMISSIONS.MANAGE_USER_BANS,
+  ])
 
   // User search query - filters out users that current user cannot ban
   const userSearchQuery = api.users.searchUsers.useQuery(
@@ -115,6 +92,7 @@ function CreateBanModal(props: Props) {
     },
     onError: (err) => {
       toast.error(`Failed to ban user: ${getErrorMessage(err)}`)
+      logger.error('Failed to create user ban:', err)
     },
   })
 
@@ -145,7 +123,7 @@ function CreateBanModal(props: Props) {
     }
 
     // Double-check permission to ban this user
-    if (!canBanUser(selectedUser.role)) {
+    if (!canBanUser(currentUserQuery.data?.role, selectedUser.role)) {
       toast.error(`You cannot ban users with ${selectedUser.role} role or higher`)
       return
     }
@@ -198,11 +176,10 @@ function CreateBanModal(props: Props) {
     }
   }, [props.isOpen, props.userId])
 
-  const users = userSearchQuery.data ?? []
   const minDate = new Date().toISOString().split('T')[0]
 
   // Show permission error if user doesn't have the right role
-  if (props.isOpen && currentUserQuery.isSuccess && !canBanUsers) {
+  if (props.isOpen && currentUserQuery.isSuccess && !canManageUserBans) {
     return (
       <Modal isOpen={props.isOpen} onClose={props.onClose} title="Access Denied" size="sm">
         <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
@@ -283,12 +260,12 @@ function CreateBanModal(props: Props) {
             </div>
 
             {/* User Dropdown */}
-            {showUserDropdown && users.length > 0 && (
+            {showUserDropdown && userSearchQuery.data && userSearchQuery.data.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
-                {users.map((user) => {
-                  const canBan = canBanUser(user.role)
+                {userSearchQuery.data?.map((user) => {
+                  const canBan = canBanUser(currentUserQuery.data?.role, user.role)
                   return (
-                    <button
+                    <Button
                       key={user.id}
                       type="button"
                       onClick={() => canBan && handleUserSelect(user)}
@@ -317,7 +294,7 @@ function CreateBanModal(props: Props) {
                         </div>
                         <Badge>{user.role}</Badge>
                       </div>
-                    </button>
+                    </Button>
                   )
                 })}
               </div>
@@ -368,7 +345,7 @@ function CreateBanModal(props: Props) {
 
             {showUserDropdown &&
               userSearch.length >= 2 &&
-              users.length === 0 &&
+              userSearchQuery.data?.length === 0 &&
               !userSearchQuery.isPending && (
                 <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg p-4 text-center text-gray-500 dark:text-gray-400">
                   No users found matching &quot;{userSearch}&quot;

@@ -190,15 +190,11 @@ export const permissionsRouter = createTRPCRouter({
       if (!permission) return ResourceError.permission.notFound()
 
       // Prevent deletion of system permissions
-      if (permission.isSystem) {
-        return ResourceError.permission.systemCannotBeDeleted()
-      }
+      if (permission.isSystem) return ResourceError.permission.systemCannotBeDeleted()
 
       // Check if permission is currently assigned to any roles
       if (permission._count.rolePermissions > 0) {
-        return AppError.conflict(
-          'Cannot delete permission that is assigned to roles. Remove from all roles first.',
-        )
+        return ResourceError.permission.inUse(permission._count.rolePermissions)
       }
 
       await ctx.prisma.permission.delete({ where: { id: input.id } })

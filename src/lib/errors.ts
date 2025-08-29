@@ -214,6 +214,7 @@ export class ResourceError {
     notFound: () => AppError.notFound('Permission'),
     alreadyExists: (name: string) => AppError.alreadyExists('Permission', `key "${name}"`),
     systemCannotBeDeleted: () => AppError.forbidden('System permissions cannot be deleted'),
+    inUse: (count: number) => AppError.resourceInUse('permission', count),
   }
 
   static device = {
