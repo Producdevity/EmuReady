@@ -90,6 +90,22 @@ const nextConfig: NextConfig = {
 
   serverExternalPackages: ['@prisma/client', 'jsdom', 'markdown-it', 'dompurify'],
 
+  outputFileTracingExcludes: {
+    // apply to all server routes
+    '/*': [
+      'backups/**/*',
+      'test-results/**/*',
+      'playwright-report/**/*',
+      'blob-report/**/*',
+      'coverage/**/*',
+      '**/*.sql',
+      '**/*.pgdump',
+      '**/*.data.sql',
+      '**/*.zip',
+      'tsconfig.tsbuildinfo',
+    ],
+  },
+
   eslint: {
     dirs: ['src', 'tests'],
   },

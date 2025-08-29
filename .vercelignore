@@ -4,7 +4,6 @@
 .next/
 out/
 *.tsbuildinfo
-tsconfig.tsbuildinfo
 
 # -------------------------------------
 # Test / CI outputs
