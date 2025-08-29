@@ -198,7 +198,15 @@ export class ListingsRepository extends BaseRepository {
       filters.approvalStatus,
       'authorId',
     )
-    if (statusFilter) Object.assign(where, statusFilter)
+    if (statusFilter) {
+      if (Array.isArray(statusFilter)) {
+        where.OR = where.OR
+          ? [...(Array.isArray(where.OR) ? where.OR : [where.OR]), ...statusFilter]
+          : statusFilter
+      } else {
+        Object.assign(where, statusFilter)
+      }
+    }
 
     // NSFW filtering on games
     gameFilter = {
