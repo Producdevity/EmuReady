@@ -93,7 +93,7 @@ const sampleComments = [
 async function createVotesAndComments(
   prisma: PrismaClient,
   listingId: string,
-  users: Array<{ id: string; role: Role }>,
+  users: { id: string; role: Role }[],
 ) {
   // Add some random votes (60% upvotes, 40% downvotes)
   const votersCount = Math.floor(Math.random() * 8) + 2 // 2-9 voters

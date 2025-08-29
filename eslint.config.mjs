@@ -13,15 +13,18 @@ const compat = new FlatCompat({
 })
 
 const eslintConfig = [
-  // Ignore rules
   {
     ignores: [
-      'node_modules/',
+      'node_modules/**',
+      '.next/**',
+      'out/**',
+      'build/**',
+      'next-env.d.ts',
+      'notes/**',
       '.next/',
-      'dist/',
-      'build/',
-      'public/',
-      'coverage/',
+      'dist/**',
+      'public/**',
+      'coverage/**',
       'prisma/generated/**',
       '*.log',
       '*.tsbuildinfo',
@@ -29,13 +32,10 @@ const eslintConfig = [
       '.vercel/',
     ],
   },
-
   // Next.js + Prettier via FlatCompat
   ...compat.config({
     extends: ['next/core-web-vitals', 'next/typescript', 'prettier'],
-  }),
-
-  // JS and TS global config
+  }), // JS and TS global config
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     languageOptions: {
@@ -57,9 +57,7 @@ const eslintConfig = [
       'no-prototype-builtins': 'off',
       'no-redeclare': 'off',
     },
-  },
-
-  // TypeScript config
+  }, // TypeScript config
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
@@ -95,9 +93,7 @@ const eslintConfig = [
         },
       ],
     },
-  },
-
-  // Import plugin
+  }, // Import plugin
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: { import: importPlugin },
@@ -143,17 +139,13 @@ const eslintConfig = [
         },
       ],
     },
-  },
-
-  // UI component import cycle override
+  }, // UI component import cycle override
   {
     files: ['src/components/ui/**/*.{ts,tsx}'],
     rules: {
       'import/no-cycle': 'off',
     },
-  },
-
-  // Test file rules
+  }, // Test file rules
   {
     files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', 'tests/**/*.{ts,tsx}'],
     languageOptions: {
