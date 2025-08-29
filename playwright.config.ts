@@ -14,9 +14,9 @@ export default defineConfig({
   fullyParallel: true,
   /* Fail the build on CI when test.only is left on. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
+  /* Retry on CI only - 1 retry helps catch flaky tests without hiding consistent issues */
+  retries: process.env.CI ? 1 : 0,
+  /* Conservative approach for CI stability - 1 worker ensures each test gets full resources */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'list',
@@ -56,13 +56,15 @@ export default defineConfig({
     },
   ],
 
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000, // 2 minutes to start
-    stdout: 'pipe',
-    stderr: 'pipe',
-  },
+  /* Let Playwright handle starting the server - removed manual handling */
+  webServer: process.env.PWTEST_SKIP_WEBSERVER
+    ? undefined
+    : {
+        command: process.env.CI ? 'npm run build && npm run start' : 'npm run dev',
+        url: 'http://localhost:3000',
+        reuseExistingServer: !process.env.CI,
+        timeout: process.env.CI ? 180 * 1000 : 120 * 1000, // 3 minutes in CI, 2 minutes locally
+        stdout: 'pipe',
+        stderr: 'pipe',
+      },
 })
