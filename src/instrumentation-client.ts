@@ -29,10 +29,35 @@ Sentry.init({
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
 
-  // Filter out localhost errors
-  beforeSend(event) {
+  // Filter out localhost and third-party errors
+  beforeSend(event, hint) {
     // Don't send events from localhost
-    return typeof window !== 'undefined' && window.location.hostname === 'localhost' ? null : event
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') return null
+
+    // Filter out third-party script errors
+    const error = hint?.originalException
+    const errorMessage = error?.toString() || event.exception?.values?.[0]?.value || ''
+    const errorUrl = event.request?.url || ''
+
+    // List of third-party domains and patterns to ignore
+    const ignoredPatterns = [
+      'productfruits',
+      'my.productfruits.com',
+      'pf - starting script',
+      'chrome-extension://',
+      'moz-extension://',
+      'safari-extension://',
+      'ResizeObserver loop',
+    ]
+
+    // Check if error matches any ignored pattern
+    const shouldIgnore = ignoredPatterns.some(
+      (pattern) =>
+        errorMessage.toLowerCase().includes(pattern.toLowerCase()) ||
+        errorUrl.toLowerCase().includes(pattern.toLowerCase()),
+    )
+
+    return shouldIgnore ? null : event
   },
 })
 
