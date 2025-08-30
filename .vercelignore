@@ -15,6 +15,7 @@ playwright-report/
 blob-report/
 playwright/.cache/
 tests/.auth/*.json
+*.trace.zip
 
 # -------------------------------------
 # Local data / backups
