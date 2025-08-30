@@ -20,23 +20,6 @@ export interface CommentFilters {
   userId?: string
 }
 
-// Export types directly without namespace
-export type CommentDefault = Prisma.CommentGetPayload<{
-  include: typeof CommentsRepository.includes.default
-}>
-
-export type CommentMinimal = Prisma.CommentGetPayload<{
-  include: typeof CommentsRepository.includes.minimal
-}>
-
-export type CommentWithListing = Prisma.CommentGetPayload<{
-  include: typeof CommentsRepository.includes.withListing
-}>
-
-export type CommentRecent = Prisma.CommentGetPayload<{
-  include: typeof CommentsRepository.includes.recent
-}>
-
 export class CommentsRepository extends BaseRepository {
   // Static query shapes for this repository
   static readonly includes = {
@@ -65,7 +48,7 @@ export class CommentsRepository extends BaseRepository {
    * Get comments with pagination
    */
   async list(filters: CommentFilters = {}): Promise<{
-    comments: CommentDefault[]
+    comments: Prisma.CommentGetPayload<{ include: typeof CommentsRepository.includes.default }>[]
     pagination: PaginationResult
   }> {
     const { limit = PAGINATION.DEFAULT_LIMIT, offset = 0, page, sortField, sortDirection } = filters
@@ -101,7 +84,7 @@ export class CommentsRepository extends BaseRepository {
   /**
    * Get comments for a listing
    */
-  async listByListing(listingId: string, userRole?: Role): Promise<CommentDefault[]> {
+  async listByListing(listingId: string, userRole?: Role): Promise<Prisma.CommentGetPayload<{ include: typeof CommentsRepository.includes.default }>[]> {
     const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
 
     const where: Prisma.CommentWhereInput = {
@@ -129,7 +112,7 @@ export class CommentsRepository extends BaseRepository {
   /**
    * Get comment by ID
    */
-  async byId(id: string): Promise<CommentWithListing | null> {
+  async byId(id: string): Promise<Prisma.CommentGetPayload<{ include: typeof CommentsRepository.includes.withListing }> | null> {
     return this.prisma.comment.findUnique({
       where: { id },
       include: CommentsRepository.includes.withListing,
@@ -139,7 +122,7 @@ export class CommentsRepository extends BaseRepository {
   /**
    * Create a new comment
    */
-  async create(data: Prisma.CommentCreateInput): Promise<CommentMinimal> {
+  async create(data: Prisma.CommentCreateInput): Promise<Prisma.CommentGetPayload<{ include: typeof CommentsRepository.includes.minimal }>> {
     return this.prisma.comment.create({
       data,
       include: CommentsRepository.includes.minimal,
@@ -149,7 +132,7 @@ export class CommentsRepository extends BaseRepository {
   /**
    * Update a comment
    */
-  async update(id: string, data: Prisma.CommentUpdateInput): Promise<CommentMinimal> {
+  async update(id: string, data: Prisma.CommentUpdateInput): Promise<Prisma.CommentGetPayload<{ include: typeof CommentsRepository.includes.minimal }>> {
     return this.prisma.comment.update({
       where: { id },
       data,
@@ -194,7 +177,7 @@ export class CommentsRepository extends BaseRepository {
   /**
    * Get recent comments
    */
-  async listRecent(limit = 10, userRole?: Role): Promise<CommentRecent[]> {
+  async listRecent(limit = 10, userRole?: Role): Promise<Prisma.CommentGetPayload<{ include: typeof CommentsRepository.includes.recent }>[]> {
     const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
 
     const where: Prisma.CommentWhereInput = !canSeeBannedUsers

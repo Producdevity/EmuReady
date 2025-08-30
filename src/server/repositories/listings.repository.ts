@@ -48,6 +48,8 @@ export interface ListingFilters {
  * - Mobile and web-optimized query methods
  */
 export class ListingsRepository extends BaseRepository {
+  protected readonly sortOrder: Prisma.SortOrder = Prisma.SortOrder.desc
+
   // Static query shapes for this repository
   static readonly includes = {
     minimal: {
@@ -343,7 +345,7 @@ export class ListingsRepository extends BaseRepository {
         // Wilson Score already accounts for vote count in its calculation
         return [
           { successRate: direction }, // Primary sort by Wilson Score
-          { createdAt: Prisma.SortOrder.desc }, // Tie breaker for identical scores
+          { createdAt: this.sortOrder }, // Tie breaker for identical scores
         ]
       case 'createdAt':
       default:

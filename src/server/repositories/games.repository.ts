@@ -28,27 +28,6 @@ export interface GameFilters {
   showNsfw?: boolean | null
 }
 
-// Export types directly without namespace
-export type GameMinimal = Prisma.GameGetPayload<{
-  include: typeof GamesRepository.includes.minimal
-}>
-
-export type GameFull = Prisma.GameGetPayload<{
-  include: typeof GamesRepository.includes.full
-}>
-
-export type GameWithCounts = Prisma.GameGetPayload<{
-  select: typeof GamesRepository.selects.withCounts
-}>
-
-export type GameWithSubmitter = Prisma.GameGetPayload<{
-  select: typeof GamesRepository.selects.withSubmitter
-}>
-
-export type GameMobile = Prisma.GameGetPayload<{
-  select: typeof GamesRepository.selects.mobile
-}>
-
 /**
  * Repository for Game data access operations.
  * Handles all database interactions for games with support for:
@@ -207,7 +186,7 @@ export class GamesRepository extends BaseRepository {
    * @throws {Error} If database query fails
    */
   async list(filters: GameFilters = {}): Promise<{
-    games: (GameWithSubmitter | GameWithCounts)[]
+    games: (Prisma.GameGetPayload<{ select: typeof GamesRepository.selects.withSubmitter }> | Prisma.GameGetPayload<{ select: typeof GamesRepository.selects.withCounts }>)[]
     pagination: PaginationResult
   }> {
     const {
@@ -264,7 +243,7 @@ export class GamesRepository extends BaseRepository {
    * @returns Simplified game data optimized for mobile consumption
    */
   async listMobile(filters: GameFilters = {}): Promise<{
-    games: GameMobile[]
+    games: Prisma.GameGetPayload<{ select: typeof GamesRepository.selects.mobile }>[]
     pagination: PaginationResult
   }> {
     const {
@@ -323,7 +302,7 @@ export class GamesRepository extends BaseRepository {
    * @param showNsfw - Include NSFW content (default: false)
    * @returns Array of popular games with mobile-optimized data
    */
-  async listPopularMobile(showNsfw = false): Promise<GameMobile[]> {
+  async listPopularMobile(showNsfw = false): Promise<Prisma.GameGetPayload<{ select: typeof GamesRepository.selects.mobile }>[]> {
     const where: Prisma.GameWhereInput = {
       status: ApprovalStatus.APPROVED,
       ...(!showNsfw && { isErotic: false }),
@@ -345,7 +324,7 @@ export class GamesRepository extends BaseRepository {
    * @param showNsfw - Include NSFW content (default: false)
    * @returns Array of games matching the search
    */
-  async listSearchMobile(query: string, showNsfw = false): Promise<GameMobile[]> {
+  async listSearchMobile(query: string, showNsfw = false): Promise<Prisma.GameGetPayload<{ select: typeof GamesRepository.selects.mobile }>[]> {
     const where: Prisma.GameWhereInput = {
       status: ApprovalStatus.APPROVED,
       title: { contains: query, mode: this.mode },
@@ -371,7 +350,7 @@ export class GamesRepository extends BaseRepository {
    * @param id - The game's unique identifier
    * @returns Game data for mobile or null if not found
    */
-  async byIdMobile(id: string): Promise<GameMobile | null> {
+  async byIdMobile(id: string): Promise<Prisma.GameGetPayload<{ select: typeof GamesRepository.selects.mobile }> | null> {
     return this.prisma.game.findUnique({
       where: { id },
       select: GamesRepository.selects.mobile,
@@ -386,7 +365,7 @@ export class GamesRepository extends BaseRepository {
    * @param canSeeBannedUsers - Whether to include content from banned users
    * @returns Complete game data with listings or null if not found
    */
-  async byId(id: string, canSeeBannedUsers = false): Promise<GameFull | null> {
+  async byId(id: string, canSeeBannedUsers = false): Promise<Prisma.GameGetPayload<{ include: typeof GamesRepository.includes.full }> | null> {
     // Build shadow ban filter once
     const shadowBanFilter = canSeeBannedUsers ? undefined : buildShadowBanFilter(null)
 
@@ -433,7 +412,7 @@ export class GamesRepository extends BaseRepository {
    * @returns Created game with system relationship
    * @throws {Error} If unique constraint violated
    */
-  async create(data: Prisma.GameCreateInput): Promise<GameMinimal> {
+  async create(data: Prisma.GameCreateInput): Promise<Prisma.GameGetPayload<{ include: typeof GamesRepository.includes.minimal }>> {
     return this.handleDatabaseOperation(
       () =>
         this.prisma.game.create({
@@ -452,7 +431,7 @@ export class GamesRepository extends BaseRepository {
    * @returns Updated game with system relationship
    * @throws {Error} If game not found or constraint violated
    */
-  async update(id: string, data: Prisma.GameUpdateInput): Promise<GameMinimal> {
+  async update(id: string, data: Prisma.GameUpdateInput): Promise<Prisma.GameGetPayload<{ include: typeof GamesRepository.includes.minimal }>> {
     return this.handleDatabaseOperation(
       () =>
         this.prisma.game.update({
