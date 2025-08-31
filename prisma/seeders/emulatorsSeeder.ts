@@ -76,6 +76,11 @@ const emulators: EmulatorData[] = [
     logo: 'horizon.png',
   },
   {
+    name: 'Kenji-NX',
+    supportedSystemNames: ['Nintendo Switch'],
+    logo: 'kenjinx.png',
+  },
+  {
     name: 'Lemuroid',
     supportedSystemNames: [
       'Nintendo DS',
