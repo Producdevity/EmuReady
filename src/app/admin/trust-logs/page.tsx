@@ -307,7 +307,7 @@ function AdminTrustLogsPage() {
       </AdminTableContainer>
       {pagination && pagination.pages > 1 && (
         <Pagination
-          currentPage={table.page}
+          page={table.page}
           totalPages={pagination.pages}
           totalItems={pagination.total}
           itemsPerPage={pagination.limit}

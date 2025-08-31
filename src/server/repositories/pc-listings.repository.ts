@@ -4,6 +4,7 @@
  */
 
 import { PAGINATION } from '@/data/constants'
+import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { Prisma, ApprovalStatus, type PcOs, type Role } from '@orm'
 import { BaseRepository } from './base.repository'
 import { buildShadowBanFilter } from '../utils/query-builders'
@@ -31,7 +32,6 @@ export interface PcListingFilters {
   memoryMax?: number
   canSeeBannedUsers?: boolean
 }
-
 
 export class PcListingsRepository extends BaseRepository {
   // Static query shapes for this repository
@@ -179,7 +179,9 @@ export class PcListingsRepository extends BaseRepository {
    * Get PC listings with filters and optimized vote count sorting
    */
   async list(filters: PcListingFilters): Promise<{
-    pcListings: Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.forList }>[]
+    pcListings: Prisma.PcListingGetPayload<{
+      include: typeof PcListingsRepository.includes.forList
+    }>[]
     pagination: {
       total: number
       pages: number
@@ -301,7 +303,7 @@ export class PcListingsRepository extends BaseRepository {
     if (!orderBy.length) orderBy.push({ createdAt: 'desc' })
 
     // Calculate offset
-    const offset = (page - 1) * limit
+    const actualOffset = calculateOffset({ page }, limit)
 
     // Execute queries in parallel
     const [total, pcListings] = await Promise.all([
@@ -310,27 +312,27 @@ export class PcListingsRepository extends BaseRepository {
         where,
         include: PcListingsRepository.includes.forList,
         orderBy,
-        skip: offset,
+        skip: actualOffset,
         take: limit,
       }),
     ])
 
+    const pagination = paginate({ total: total, page, limit: limit })
+
     return {
       pcListings,
-      pagination: {
-        total,
-        pages: Math.ceil(total / limit),
-        page,
-        offset,
-        limit,
-      },
+      pagination,
     }
   }
 
   /**
    * Get a single PC listing by ID with all relations
    */
-  async getById(id: string): Promise<Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.forGetById }> | null> {
+  async getById(
+    id: string,
+  ): Promise<Prisma.PcListingGetPayload<{
+    include: typeof PcListingsRepository.includes.forGetById
+  }> | null> {
     return this.prisma.pcListing.findUnique({
       where: { id },
       include: PcListingsRepository.includes.forGetById,
@@ -344,7 +346,14 @@ export class PcListingsRepository extends BaseRepository {
     id: string,
     canSeeBannedUsers: boolean = false,
     userId?: string,
-  ): Promise<(Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.forDetails }> & { userVote: boolean | null; upvotes: number; downvotes: number }) | null> {
+  ): Promise<
+    | (Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.forDetails }> & {
+        userVote: boolean | null
+        upvotes: number
+        downvotes: number
+      })
+    | null
+  > {
     // Build where with banned user filtering
     const shadowBanFilter = canSeeBannedUsers ? undefined : buildShadowBanFilter(null)
     const where: Prisma.PcListingWhereInput = {
@@ -396,7 +405,9 @@ export class PcListingsRepository extends BaseRepository {
   async getTopBySuccessRate(
     minVotes: number = 3,
     limit: number = 10,
-  ): Promise<Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.forGetById }>[]> {
+  ): Promise<
+    Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.forGetById }>[]
+  > {
     return this.prisma.pcListing.findMany({
       where: {
         voteCount: { gte: minVotes },
@@ -414,7 +425,9 @@ export class PcListingsRepository extends BaseRepository {
   async getByGameId(
     gameId: string,
     limit: number = PAGINATION.DEFAULT_LIMIT,
-  ): Promise<Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.forGetById }>[]> {
+  ): Promise<
+    Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.forGetById }>[]
+  > {
     const result = await this.list({
       gameId,
       limit,
@@ -430,7 +443,9 @@ export class PcListingsRepository extends BaseRepository {
   async getByCpuId(
     cpuId: string,
     limit: number = PAGINATION.DEFAULT_LIMIT,
-  ): Promise<Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.forGetById }>[]> {
+  ): Promise<
+    Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.forGetById }>[]
+  > {
     return this.list({
       cpuIds: [cpuId],
       limit,
@@ -445,7 +460,9 @@ export class PcListingsRepository extends BaseRepository {
   async getByGpuId(
     gpuId: string,
     limit: number = PAGINATION.DEFAULT_LIMIT,
-  ): Promise<Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.forGetById }>[]> {
+  ): Promise<
+    Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.forGetById }>[]
+  > {
     return this.list({
       gpuIds: [gpuId],
       limit,
@@ -457,7 +474,11 @@ export class PcListingsRepository extends BaseRepository {
   /**
    * Get featured PC listings (most recent with high success rate)
    */
-  async getFeatured(limit: number = 3): Promise<Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.forGetById }>[]> {
+  async getFeatured(
+    limit: number = 3,
+  ): Promise<
+    Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.forGetById }>[]
+  > {
     return this.prisma.pcListing.findMany({
       where: {
         status: ApprovalStatus.APPROVED,
@@ -505,7 +526,11 @@ export class PcListingsRepository extends BaseRepository {
   /**
    * Create a PC listing
    */
-  async create(data: Prisma.PcListingCreateInput): Promise<Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.default }>> {
+  async create(
+    data: Prisma.PcListingCreateInput,
+  ): Promise<
+    Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.default }>
+  > {
     return this.prisma.pcListing.create({
       data,
       include: PcListingsRepository.includes.default,
@@ -515,7 +540,12 @@ export class PcListingsRepository extends BaseRepository {
   /**
    * Update a PC listing
    */
-  async update(id: string, data: Prisma.PcListingUpdateInput): Promise<Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.default }>> {
+  async update(
+    id: string,
+    data: Prisma.PcListingUpdateInput,
+  ): Promise<
+    Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.default }>
+  > {
     return this.prisma.pcListing.update({
       where: { id },
       data,
@@ -598,7 +628,9 @@ export class PcListingsRepository extends BaseRepository {
       canSeeBannedUsers?: boolean
     } = {},
   ): Promise<{
-    pcListings: Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.forList }>[]
+    pcListings: Prisma.PcListingGetPayload<{
+      include: typeof PcListingsRepository.includes.forList
+    }>[]
     pagination: {
       total: number
       pages: number
@@ -640,7 +672,7 @@ export class PcListingsRepository extends BaseRepository {
       ...(shadowBanFilter && { author: shadowBanFilter }),
     }
 
-    const offset = (page - 1) * limit
+    const actualOffset = calculateOffset({ page }, limit)
     const orderBy = this.buildOrderBy(sortField, sortDirection)
 
     const [total, pcListings] = await Promise.all([
@@ -649,20 +681,16 @@ export class PcListingsRepository extends BaseRepository {
         where,
         include: PcListingsRepository.includes.forList,
         orderBy,
-        skip: offset,
+        skip: actualOffset,
         take: limit,
       }),
     ])
 
+    const pagination = paginate({ total: total, page, limit: limit })
+
     return {
       pcListings,
-      pagination: {
-        total,
-        pages: Math.ceil(total / limit),
-        page,
-        offset,
-        limit,
-      },
+      pagination,
     }
   }
 
@@ -729,7 +757,12 @@ export class PcListingsRepository extends BaseRepository {
   /**
    * Approve a PC listing
    */
-  async approve(pcListingId: string, processedByUserId: string): Promise<Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.default }>> {
+  async approve(
+    pcListingId: string,
+    processedByUserId: string,
+  ): Promise<
+    Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.default }>
+  > {
     return this.prisma.pcListing.update({
       where: { id: pcListingId },
       data: {
@@ -748,7 +781,9 @@ export class PcListingsRepository extends BaseRepository {
     pcListingId: string,
     processedByUserId: string,
     processedNotes?: string,
-  ): Promise<Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.default }>> {
+  ): Promise<
+    Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.default }>
+  > {
     return this.prisma.pcListing.update({
       where: { id: pcListingId },
       data: {

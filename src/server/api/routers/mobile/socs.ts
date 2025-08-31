@@ -1,6 +1,7 @@
 import { ResourceError } from '@/lib/errors'
 import { GetSoCsSchema, GetSoCByIdSchema } from '@/schemas/soc'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
+import { paginate } from '@/server/utils/pagination'
 import type { Prisma } from '@orm'
 
 export const mobileSocsRouter = createMobileTRPCRouter({
@@ -11,7 +12,7 @@ export const mobileSocsRouter = createMobileTRPCRouter({
     const { search, limit = 20, offset = 0, page, sortField, sortDirection } = input ?? {}
 
     // Calculate actual offset based on page or use provided offset
-    const actualOffset = page ? (page - 1) * limit : offset
+    const actualOffset = page ? (page - 1) * limit : (offset ?? 0)
 
     // Build where clause for filtering with more restrictive search
     const where: Prisma.SoCWhereInput = search
@@ -78,16 +79,15 @@ export const mobileSocsRouter = createMobileTRPCRouter({
       ctx.prisma.soC.count({ where }),
     ])
 
-    const pages = Math.ceil(total / limit)
+    const pagination = paginate({
+      total: total,
+      page: page ?? Math.floor(actualOffset / limit) + 1,
+      limit: limit,
+    })
 
     return {
       socs,
-      pagination: {
-        page: page ?? Math.floor(actualOffset / limit) + 1,
-        limit,
-        total,
-        pages,
-      },
+      pagination,
     }
   }),
 

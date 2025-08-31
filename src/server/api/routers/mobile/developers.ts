@@ -11,6 +11,7 @@ import {
   mobileDeveloperProcedure,
   mobileProtectedProcedure,
 } from '@/server/api/mobileContext'
+import { paginate } from '@/server/utils/pagination'
 
 export const mobileDevelopersRouter = createMobileTRPCRouter({
   /**
@@ -167,14 +168,11 @@ export const mobileDevelopersRouter = createMobileTRPCRouter({
         }),
       ])
 
+      const pagination = paginate({ total: total, page: actualPage, limit: actualLimit })
+
       return {
         verifications,
-        pagination: {
-          page: actualPage,
-          pages: Math.ceil(total / actualLimit),
-          total,
-          limit: actualLimit,
-        },
+        pagination,
       }
     }),
 })

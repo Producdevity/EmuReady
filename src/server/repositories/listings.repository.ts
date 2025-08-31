@@ -1,5 +1,5 @@
 import { PAGINATION } from '@/data/constants'
-import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
+import { paginate, calculateOffset } from '@/server/utils/pagination'
 import {
   buildNsfwFilter,
   buildArrayFilter,
@@ -278,12 +278,11 @@ export class ListingsRepository extends BaseRepository {
       userVote: userVoteMap.get(listing.id) ?? null,
     }))
 
-    const pagination = createPaginationResult(
-      total,
-      { page: filters.page, offset: filters.offset },
-      limit,
-      offset,
-    )
+    const pagination = paginate({
+      total: total,
+      page: filters.page ?? Math.floor(offset / limit) + 1,
+      limit: limit,
+    })
 
     return {
       listings: listingsWithStats,

@@ -17,7 +17,7 @@ import {
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import { EmulatorsRepository } from '@/server/repositories/emulators.repository'
-import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
+import { paginate } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { hasPermission } from '@/utils/permissions'
 import { type Prisma, Role } from '@orm'
@@ -52,7 +52,7 @@ export const emulatorsRouter = createTRPCRouter({
     const limit = input?.limit ?? 20
     const offset = input?.offset ?? 0
 
-    const actualOffset = calculateOffset({ page: input?.page, offset }, limit)
+    const actualOffset = input?.page ? (input?.page - 1) * limit : (offset ?? 0)
 
     // Build where clause for filtering
     const searchConditions = buildSearchFilter(input?.search, ['name'])
@@ -114,7 +114,11 @@ export const emulatorsRouter = createTRPCRouter({
 
     return {
       emulators,
-      pagination: createPaginationResult(total, { page: input?.page, offset }, limit, actualOffset),
+      pagination: paginate({
+        total: total,
+        page: input?.page ?? Math.floor(actualOffset / limit) + 1,
+        limit: limit,
+      }),
     }
   }),
 

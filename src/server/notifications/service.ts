@@ -1,6 +1,7 @@
 import { prisma } from '@/server/db'
 import { notificationAnalyticsService } from '@/server/notifications/analyticsService'
 import { notificationBatchingService } from '@/server/notifications/batchingService'
+import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { hasPermission } from '@/utils/permissions'
 import { ms } from '@/utils/time'
 import {
@@ -324,11 +325,12 @@ export class NotificationService {
     options: {
       limit?: number
       offset?: number
+      page?: number
       isRead?: boolean
       category?: string
     } = {},
   ) {
-    const { limit = 20, offset = 0, isRead, category } = options
+    const { limit = 20, offset = 0, page, isRead, category } = options
 
     const where: Prisma.NotificationWhereInput = { userId }
     if (isRead !== undefined) {
@@ -338,24 +340,27 @@ export class NotificationService {
       where.category = category as NotificationCategory
     }
 
+    const actualOffset = calculateOffset({ page, offset }, limit)
+
     const [notifications, total] = await Promise.all([
       prisma.notification.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         take: limit,
-        skip: offset,
+        skip: actualOffset,
       }),
       prisma.notification.count({ where }),
     ])
 
+    const pagination = paginate({
+      total,
+      page: page ?? Math.floor(actualOffset / limit) + 1,
+      limit,
+    })
+
     return {
       notifications,
-      pagination: {
-        total,
-        limit,
-        offset,
-        hasMore: offset + limit < total,
-      },
+      pagination,
     }
   }
 

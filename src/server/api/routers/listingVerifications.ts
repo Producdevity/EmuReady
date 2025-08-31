@@ -6,6 +6,7 @@ import {
   RemoveVerificationSchema,
   VerifyListingSchema,
 } from '@/schemas/listingVerification'
+import { paginate } from '@/server/utils/pagination'
 import { TrustAction } from '@orm'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 
@@ -147,12 +148,7 @@ export const listingVerificationsRouter = createTRPCRouter({
 
       return {
         verifications,
-        pagination: {
-          page: actualPage,
-          pages: Math.ceil(total / actualLimit),
-          total,
-          limit: actualLimit,
-        },
+        pagination: paginate({ total, page: actualPage, limit: actualLimit }),
       }
     }),
 })

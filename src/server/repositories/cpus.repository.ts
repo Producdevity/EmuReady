@@ -1,10 +1,6 @@
 import { PAGINATION } from '@/data/constants'
 import { ResourceError } from '@/lib/errors'
-import {
-  calculateOffset,
-  createPaginationResult,
-  type PaginationResult,
-} from '@/server/utils/pagination'
+import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
 import { Prisma } from '@orm'
 import { BaseRepository } from './base.repository'
 import type { GetCpusInput, CreateCpuInput, UpdateCpuInput } from '@/schemas/cpu'
@@ -207,7 +203,11 @@ export class CpusRepository extends BaseRepository {
       this.prisma.cpu.count({ where }),
     ])
 
-    const pagination = createPaginationResult(total, { page, offset }, limit, actualOffset)
+    const pagination = paginate({
+      total: total,
+      page: page ?? Math.floor(actualOffset / limit) + 1,
+      limit: limit,
+    })
 
     return { cpus, pagination }
   }

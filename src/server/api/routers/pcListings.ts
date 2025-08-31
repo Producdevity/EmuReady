@@ -57,7 +57,7 @@ import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifica
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
 import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
 import { listingStatsCache } from '@/server/utils/cache'
-import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
+import { paginate } from '@/server/utils/pagination'
 import { validatePagination, sanitizeInput } from '@/server/utils/security-validation'
 import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
 import { PERMISSIONS, roleIncludesRole } from '@/utils/permission-system'
@@ -87,12 +87,7 @@ export const pcListingsRouter = createTRPCRouter({
 
     return {
       pcListings: result.pcListings,
-      pagination: createPaginationResult(
-        result.pagination.total,
-        { page: result.pagination.page },
-        result.pagination.limit,
-        result.pagination.offset,
-      ),
+      pagination: result.pagination,
     }
   }),
 
@@ -474,7 +469,7 @@ export const pcListingsRouter = createTRPCRouter({
         // Developer has no assigned emulators, return empty results
         return {
           pcListings: [],
-          pagination: createPaginationResult(0, { page }, limit, (page - 1) * limit),
+          pagination: paginate({ total: 0, page: page, limit: limit }),
         }
       }
     }
@@ -491,12 +486,7 @@ export const pcListingsRouter = createTRPCRouter({
 
     return {
       pcListings: result.pcListings,
-      pagination: createPaginationResult(
-        result.pagination.total,
-        { page: result.pagination.page },
-        result.pagination.limit,
-        result.pagination.offset,
-      ),
+      pagination: result.pagination,
     }
   }),
 
@@ -656,7 +646,7 @@ export const pcListingsRouter = createTRPCRouter({
         osFilter,
       } = input
 
-      const offset = calculateOffset({ page }, limit)
+      const offset = (page - 1) * limit
 
       const baseWhere: Prisma.PcListingWhereInput = {
         ...(statusFilter ? { status: statusFilter } : {}),
@@ -699,7 +689,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       return {
         pcListings,
-        pagination: createPaginationResult(total, { page }, limit, offset),
+        pagination: paginate({ total: total, page, limit: limit }),
       }
     }),
 
@@ -1195,7 +1185,7 @@ export const pcListingsRouter = createTRPCRouter({
     .input(GetPcListingReportsSchema)
     .query(async ({ ctx, input }) => {
       const { status, page = 1, limit = 20 } = input
-      const offset = calculateOffset({ page }, limit)
+      const offset = (page - 1) * limit
 
       const where: Prisma.PcListingReportWhereInput = {}
       if (status) {
@@ -1227,7 +1217,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       return {
         reports,
-        pagination: createPaginationResult(total, { page }, limit, offset),
+        pagination: paginate({ total: total, page, limit: limit }),
       }
     }),
 

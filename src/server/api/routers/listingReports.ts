@@ -14,7 +14,7 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
-import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
+import { paginate } from '@/server/utils/pagination'
 import { batchQueries } from '@/server/utils/query-performance'
 import { validateEnum, sanitizeInput, validatePagination } from '@/server/utils/security-validation'
 import { PERMISSIONS } from '@/utils/permission-system'
@@ -55,7 +55,7 @@ export const listingReportsRouter = createTRPCRouter({
       // Sanitize search term (plain text, not markdown)
       const sanitizedSearch = search ? sanitizeInput(search) : undefined
 
-      const offset = calculateOffset({ page }, limit)
+      const offset = (page - 1) * limit
 
       // Build where clause
       const where: Prisma.ListingReportWhereInput = {}
@@ -99,7 +99,7 @@ export const listingReportsRouter = createTRPCRouter({
 
       return {
         reports,
-        pagination: createPaginationResult(total, { page }, limit, offset),
+        pagination: paginate({ total: total, page, limit: limit }),
       }
     }),
 

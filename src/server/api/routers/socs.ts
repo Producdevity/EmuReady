@@ -13,6 +13,7 @@ import {
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import { SoCsRepository } from '@/server/repositories/socs.repository'
+import { paginate } from '@/server/utils/pagination'
 import { batchQueries } from '@/server/utils/query-performance'
 
 export const socsRouter = createTRPCRouter({
@@ -21,22 +22,22 @@ export const socsRouter = createTRPCRouter({
     const { limit = 20, offset = 0, page } = input ?? {}
 
     // Calculate actual offset based on page or use provided offset
-    const actualOffset = page ? (page - 1) * limit : offset
+    const actualOffset = page ? (page - 1) * limit : (offset ?? 0)
 
     const [total, socs] = await Promise.all([
       repository.count(input ?? {}),
       repository.list({ ...input, limit, offset: actualOffset }),
     ])
 
+    const pagination = paginate({
+      total: total,
+      page: page ?? Math.floor(actualOffset / limit) + 1,
+      limit: limit,
+    })
+
     return {
       socs,
-      pagination: {
-        total,
-        pages: Math.ceil(total / limit),
-        page: page ?? Math.floor(actualOffset / limit) + 1,
-        offset: actualOffset,
-        limit: limit,
-      },
+      pagination,
     }
   }),
 

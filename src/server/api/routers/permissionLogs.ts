@@ -7,7 +7,7 @@ import {
   ExportPermissionLogsSchema,
 } from '@/schemas/permission'
 import { createTRPCRouter, permissionProcedure } from '@/server/api/trpc'
-import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
+import { paginate } from '@/server/utils/pagination'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ms } from '@/utils/time'
 
@@ -31,7 +31,7 @@ export const permissionLogsRouter = createTRPCRouter({
         dateTo,
       } = input || {}
 
-      const offset = calculateOffset({ page }, limit)
+      const offset = (page - 1) * limit
 
       // Build where clause
       const where: Record<string, unknown> = {}
@@ -67,7 +67,7 @@ export const permissionLogsRouter = createTRPCRouter({
 
       return {
         logs,
-        pagination: createPaginationResult(total, { page }, limit, offset),
+        pagination: paginate({ total: total, page, limit: limit }),
       }
     }),
 

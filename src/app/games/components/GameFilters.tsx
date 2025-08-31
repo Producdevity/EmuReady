@@ -99,7 +99,7 @@ function GameFilters(props: Props) {
             onChange={(e) => props.onHideGamesWithNoListingsChange(e.target.checked)}
             className="rounded border-gray-300 dark:border-gray-600"
           />
-          <span>Hide games with no listings</span>
+          <span>Hide games with no reports</span>
         </label>
       )}
     </div>

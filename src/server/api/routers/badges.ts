@@ -17,6 +17,7 @@ import {
   protectedProcedure,
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
+import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { hasPermission } from '@/utils/permissions'
 import { type Prisma, Role } from '@orm'
 
@@ -26,6 +27,7 @@ export const badgesRouter = createTRPCRouter({
     const {
       limit,
       offset,
+      page,
       search,
       isActive,
       sortField = 'createdAt',
@@ -52,6 +54,8 @@ export const badgesRouter = createTRPCRouter({
       [sortField]: sortDirection,
     }
 
+    const actualOffset = calculateOffset({ page, offset }, limit)
+
     const [badges, total] = await Promise.all([
       ctx.prisma.badge.findMany({
         where,
@@ -61,19 +65,20 @@ export const badgesRouter = createTRPCRouter({
         },
         orderBy,
         take: limit,
-        skip: offset,
+        skip: actualOffset,
       }),
       ctx.prisma.badge.count({ where }),
     ])
 
+    const pagination = paginate({
+      total,
+      page: page ?? Math.floor(actualOffset / limit) + 1,
+      limit,
+    })
+
     return {
       badges,
-      pagination: {
-        total,
-        limit,
-        offset,
-        hasMore: offset + limit < total,
-      },
+      pagination,
     }
   }),
 

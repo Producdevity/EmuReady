@@ -279,7 +279,7 @@ function AdminGpusPage() {
 
       {gpusQuery.data && gpusQuery.data.pagination.pages > 1 && (
         <Pagination
-          currentPage={table.page}
+          page={table.page}
           totalPages={gpusQuery.data.pagination.pages}
           totalItems={gpusQuery.data.pagination.total}
           itemsPerPage={gpusQuery.data.pagination.limit}

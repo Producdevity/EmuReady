@@ -17,7 +17,7 @@ import {
 } from '@/server/api/trpc'
 import { invalidateUser } from '@/server/cache/invalidation'
 import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
-import { buildOrderBy, calculateOffset, createPaginationResult } from '@/server/utils/pagination'
+import { buildOrderBy, paginate } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { createCountQuery } from '@/server/utils/query-performance'
 import { updateUserRole } from '@/server/utils/roleSync'
@@ -327,21 +327,11 @@ export const usersRouter = createTRPCRouter({
       ...user,
       listings: {
         items: listings,
-        pagination: {
-          total: listingsTotal,
-          pages: Math.ceil(listingsTotal / listingsLimit),
-          page: listingsPage,
-          limit: listingsLimit,
-        },
+        pagination: paginate({ total: listingsTotal, page: listingsPage, limit: listingsLimit }),
       },
       votes: {
         items: votes,
-        pagination: {
-          total: votesTotal,
-          pages: Math.ceil(votesTotal / votesLimit),
-          page: votesPage,
-          limit: votesLimit,
-        },
+        pagination: paginate({ total: votesTotal, page: votesPage, limit: votesLimit }),
       },
       filterOptions: {
         systems: [...new Set(availableSystems.map((l) => l.device.brand.name))],
@@ -418,7 +408,7 @@ export const usersRouter = createTRPCRouter({
     .input(GetAllUsersSchema)
     .query(async ({ ctx, input }) => {
       const { search, sortField, sortDirection, page = 1, limit = 20 } = input ?? {}
-      const skip = calculateOffset({ page }, limit)
+      const skip = (page - 1) * limit
 
       // Build where clause for search
       const where: Prisma.UserWhereInput = {}
@@ -465,7 +455,7 @@ export const usersRouter = createTRPCRouter({
 
       return {
         users,
-        pagination: createPaginationResult(totalUsers, { page }, limit, skip),
+        pagination: paginate({ total: totalUsers, page, limit }),
       }
     }),
 

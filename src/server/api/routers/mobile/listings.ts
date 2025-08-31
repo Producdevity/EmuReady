@@ -78,14 +78,7 @@ async function getListingsHelper(
   // Transform pagination to mobile format
   return {
     listings: result.listings,
-    pagination: {
-      total: result.pagination.total,
-      pages: result.pagination.pages,
-      currentPage: result.pagination.page,
-      limit: result.pagination.limit,
-      hasNextPage: result.pagination.page < result.pagination.pages,
-      hasPreviousPage: result.pagination.page > 1,
-    },
+    pagination: result.pagination, // Already has all fields including hasNextPage/hasPreviousPage
   }
 }
 

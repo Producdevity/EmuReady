@@ -38,7 +38,7 @@ import {
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { GamesRepository } from '@/server/repositories/games.repository'
 import { gameStatsCache } from '@/server/utils/cache'
-import { calculateOffset, createPaginationResult, buildOrderBy } from '@/server/utils/pagination'
+import { buildOrderBy, paginate } from '@/server/utils/pagination'
 import { isPrismaError, PRISMA_ERROR_CODES } from '@/server/utils/prisma-errors'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import {
@@ -489,7 +489,7 @@ export const gamesRouter = createTRPCRouter({
         { submittedAt: 'desc' },
       )
 
-      const actualOffset = calculateOffset({ limit, offset, page }, limit)
+      const actualOffset = page ? (page - 1) * limit : (offset ?? 0)
 
       const [total, games] = await Promise.all([
         ctx.prisma.game.count({ where }),
@@ -527,7 +527,11 @@ export const gamesRouter = createTRPCRouter({
         }),
       ])
 
-      const pagination = createPaginationResult(total, { limit, offset, page }, limit, actualOffset)
+      const pagination = paginate({
+        total: total,
+        page: page ?? Math.floor(actualOffset / limit) + 1,
+        limit: limit,
+      })
 
       return { games, pagination }
     }),

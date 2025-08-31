@@ -512,11 +512,11 @@ function AdminListingsPage() {
           </table>
         </div>
 
-        {pagination && pagination.totalPages > 1 && (
+        {pagination && pagination.pages > 1 && (
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
             <Pagination
-              currentPage={table.page}
-              totalPages={pagination.totalPages}
+              page={table.page}
+              totalPages={pagination.pages}
               onPageChange={table.setPage}
             />
           </div>

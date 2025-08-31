@@ -608,7 +608,7 @@ function PcListingsPage() {
 
           {listingsQuery.data?.pagination && listingsQuery.data?.pagination?.pages > 1 && (
             <Pagination
-              currentPage={listingsState.page}
+              page={listingsState.page}
               totalPages={listingsQuery.data.pagination.pages}
               totalItems={listingsQuery.data.pagination.total}
               itemsPerPage={listingsQuery.data.pagination.limit}

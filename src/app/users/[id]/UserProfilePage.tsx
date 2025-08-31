@@ -437,7 +437,7 @@ function UserDetailsPage() {
                   {user.listings.pagination.pages > 1 && (
                     <div className="mt-8 flex justify-center">
                       <Pagination
-                        currentPage={user.listings.pagination.page}
+                        page={user.listings.pagination.page}
                         totalPages={user.listings.pagination.pages}
                         totalItems={user.listings.pagination.total}
                         itemsPerPage={user.listings.pagination.limit}
@@ -512,7 +512,7 @@ function UserDetailsPage() {
                   {user.votes.pagination.pages > 1 && (
                     <div className="mt-8 flex justify-center">
                       <Pagination
-                        currentPage={user.votes.pagination.page}
+                        page={user.votes.pagination.page}
                         totalPages={user.votes.pagination.pages}
                         totalItems={user.votes.pagination.total}
                         itemsPerPage={user.votes.pagination.limit}

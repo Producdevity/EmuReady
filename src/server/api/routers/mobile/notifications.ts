@@ -1,6 +1,7 @@
 import { ResourceError } from '@/lib/errors'
 import { GetNotificationsSchema, MarkNotificationReadSchema } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobileProtectedProcedure } from '@/server/api/mobileContext'
+import { paginate } from '@/server/utils/pagination'
 
 export const mobileNotificationsRouter = createMobileTRPCRouter({
   /**
@@ -8,7 +9,7 @@ export const mobileNotificationsRouter = createMobileTRPCRouter({
    */
   get: mobileProtectedProcedure.input(GetNotificationsSchema).query(async ({ ctx, input }) => {
     const { page = 1, limit = 20, unreadOnly = false } = input ?? {}
-    const skip = (page - 1) * limit
+    const actualOffset = (page - 1) * limit
 
     const baseWhere = { userId: ctx.session.user.id }
 
@@ -17,7 +18,7 @@ export const mobileNotificationsRouter = createMobileTRPCRouter({
     const [notifications, total] = await Promise.all([
       ctx.prisma.notification.findMany({
         where: baseWhere,
-        skip,
+        skip: actualOffset,
         take: limit,
         orderBy: { createdAt: 'desc' },
         select: {
@@ -33,18 +34,11 @@ export const mobileNotificationsRouter = createMobileTRPCRouter({
       ctx.prisma.notification.count({ where: baseWhere }),
     ])
 
-    const pages = Math.ceil(total / limit)
+    const pagination = paginate({ total: total, page, limit: limit })
 
     return {
       notifications,
-      pagination: {
-        total,
-        pages,
-        currentPage: page,
-        limit,
-        hasNextPage: page < pages,
-        hasPreviousPage: page > 1,
-      },
+      pagination,
     }
   }),
 

@@ -31,7 +31,7 @@ function V2ListingsPage() {
   const [showScrollToTop, setShowScrollToTop] = useState(false)
 
   // Infinite scrolling state
-  const [currentPage, setCurrentPage] = useState(1)
+  const [page, setPage] = useState(1)
   const [hasMoreItems, setHasMoreItems] = useState(true)
   const [allListings, setAllListings] = useState<ListingType[]>([])
   const [myListingsOnly, setMyListingsOnly] = useState(false)
@@ -83,7 +83,7 @@ function V2ListingsPage() {
   // Filter params for API call
   const filterParams: RouterInput['listings']['get'] = useMemo(
     () => ({
-      page: currentPage,
+      page: page,
       limit: 15, // Increased for better mobile experience
       ...filterNullAndEmpty({
         systemIds: listingsState.systemIds.length > 0 ? listingsState.systemIds : undefined,
@@ -122,7 +122,7 @@ function V2ListingsPage() {
       shouldUseUserSocFilter,
       userDeviceIds,
       userSocIds,
-      currentPage,
+      page,
       userQuery.data?.id,
     ],
   )
@@ -139,7 +139,7 @@ function V2ListingsPage() {
     if (!listingsQuery.data) return
 
     setAllListings((prev) => {
-      if (currentPage === 1) {
+      if (page === 1) {
         return listingsQuery.data.listings
       } else {
         const existingIds = new Set(prev.map((item) => item.id))
@@ -148,8 +148,8 @@ function V2ListingsPage() {
       }
     })
 
-    setHasMoreItems(currentPage < (listingsQuery.data.pagination?.pages || 1))
-  }, [listingsQuery.data, currentPage])
+    setHasMoreItems(page < (listingsQuery.data.pagination?.pages || 1))
+  }, [listingsQuery.data, page])
 
   // Track search analytics
   useEffect(() => {
@@ -187,7 +187,7 @@ function V2ListingsPage() {
 
   const toggleMyListings = () => {
     setMyListingsOnly(!myListingsOnly)
-    setCurrentPage(1)
+    setPage(1)
     setAllListings([])
 
     if (navigator.vibrate) {
@@ -199,7 +199,7 @@ function V2ListingsPage() {
 
   const loadMoreListings = useCallback(() => {
     if (hasMoreItems && !listingsQuery.isPending && !listingsQuery.isFetching) {
-      setCurrentPage((prev) => prev + 1)
+      setPage((prev) => prev + 1)
     }
   }, [hasMoreItems, listingsQuery.isPending, listingsQuery.isFetching])
 
@@ -208,7 +208,7 @@ function V2ListingsPage() {
 
     try {
       await listingsQuery.refetch()
-      setCurrentPage(1)
+      setPage(1)
       setAllListings([])
 
       if (navigator.vibrate) {
@@ -223,7 +223,7 @@ function V2ListingsPage() {
   const handleDeviceChange = useCallback(
     (values: string[]) => {
       listingsState.setDeviceIds(values)
-      setCurrentPage(1)
+      setPage(1)
       setAllListings([])
 
       // When user manually selects devices, disable user preference filtering
@@ -244,7 +244,7 @@ function V2ListingsPage() {
   const handleSocChange = useCallback(
     (values: string[]) => {
       listingsState.setSocIds(values)
-      setCurrentPage(1)
+      setPage(1)
       setAllListings([])
 
       // When user manually selects SoCs, disable user preference filtering
@@ -265,7 +265,7 @@ function V2ListingsPage() {
   const handleSystemChange = useCallback(
     (values: string[]) => {
       listingsState.setSystemIds(values)
-      setCurrentPage(1)
+      setPage(1)
       setAllListings([])
       analytics.filter.system(values)
     },
@@ -275,7 +275,7 @@ function V2ListingsPage() {
   const handleEmulatorChange = useCallback(
     (values: string[]) => {
       listingsState.setEmulatorIds(values)
-      setCurrentPage(1)
+      setPage(1)
       setAllListings([])
       analytics.filter.emulator(values)
     },
@@ -285,7 +285,7 @@ function V2ListingsPage() {
   const handlePerformanceChange = useCallback(
     (values: number[]) => {
       listingsState.setPerformanceIds(values)
-      setCurrentPage(1)
+      setPage(1)
       setAllListings([])
       analytics.filter.performance(values)
     },
@@ -303,7 +303,7 @@ function V2ListingsPage() {
     listingsState.setSortField(null)
     listingsState.setSortDirection(null)
     setMyListingsOnly(false)
-    setCurrentPage(1)
+    setPage(1)
     setAllListings([])
     setUserDeviceFilterDisabled(false)
     setUserSocFilterDisabled(false)
@@ -407,7 +407,7 @@ function V2ListingsPage() {
               viewMode={viewMode}
               setViewMode={setViewMode}
               listingsCount={allListings.length}
-              isLoading={listingsQuery.isPending && currentPage === 1}
+              isLoading={listingsQuery.isPending && page === 1}
             />
 
             {/* Search Bar */}
@@ -478,7 +478,7 @@ function V2ListingsPage() {
             isLoading={listingsQuery.isPending}
             isFetching={listingsQuery.isFetching}
             hasMoreItems={hasMoreItems}
-            currentPage={currentPage}
+            page={page}
             loadMoreListings={loadMoreListings}
             hasActiveFilters={hasActiveFilters}
             clearAllFilters={clearAllFilters}

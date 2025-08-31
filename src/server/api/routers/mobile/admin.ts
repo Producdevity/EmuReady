@@ -23,7 +23,7 @@ import {
   mobileViewStatisticsProcedure,
 } from '@/server/api/mobileContext'
 import { listingStatsCache } from '@/server/utils/cache/instances'
-import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
+import { paginate } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { createCountQuery } from '@/server/utils/query-performance'
 import { ApprovalStatus, Prisma, ReportStatus, TrustAction } from '@orm'
@@ -105,7 +105,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
     .input(MobileAdminGetPendingListingsSchema)
     .query(async ({ ctx, input }) => {
       const { search, page = 1, limit = 20 } = input ?? {}
-      const skip = calculateOffset({ page }, limit)
+      const skip = (page - 1) * limit
 
       // Build where clause for search
       let where: Prisma.ListingWhereInput = { status: ApprovalStatus.PENDING }
@@ -140,7 +140,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
 
       return {
         listings,
-        pagination: createPaginationResult(totalListings, { page }, limit, skip),
+        pagination: paginate({ total: totalListings, page, limit: limit }),
       }
     }),
 
@@ -274,7 +274,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
     .input(MobileAdminGetPendingGamesSchema)
     .query(async ({ ctx, input }) => {
       const { search, page = 1, limit = 20 } = input ?? {}
-      const skip = calculateOffset({ page }, limit)
+      const skip = (page - 1) * limit
 
       const where: Prisma.GameWhereInput = {
         status: ApprovalStatus.PENDING,
@@ -307,7 +307,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
 
       return {
         games,
-        pagination: createPaginationResult(total, { page }, limit, skip),
+        pagination: paginate({ total: total, page, limit: limit }),
       }
     }),
 
@@ -381,7 +381,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
     .input(MobileAdminGetReportsSchema)
     .query(async ({ ctx, input }) => {
       const { status, page = 1, limit = 20 } = input ?? {}
-      const skip = calculateOffset({ page }, limit)
+      const skip = (page - 1) * limit
 
       const where: Prisma.ListingReportWhereInput = {
         ...(status && { status }),
@@ -411,7 +411,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
 
       return {
         reports,
-        pagination: createPaginationResult(total, { page }, limit, skip),
+        pagination: paginate({ total: total, page, limit: limit }),
       }
     }),
 
@@ -453,7 +453,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
     .input(MobileAdminGetUserBansSchema)
     .query(async ({ ctx, input }) => {
       const { isActive, page = 1, limit = 20 } = input ?? {}
-      const skip = calculateOffset({ page }, limit)
+      const skip = (page - 1) * limit
 
       const where: Prisma.UserBanWhereInput = {
         ...(isActive !== undefined && { isActive }),
@@ -475,7 +475,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
 
       return {
         bans,
-        pagination: createPaginationResult(total, { page }, limit, skip),
+        pagination: paginate({ total: total, page, limit: limit }),
       }
     }),
 

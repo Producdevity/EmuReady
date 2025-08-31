@@ -1,9 +1,5 @@
 import { ResourceError } from '@/lib/errors'
-import {
-  calculateOffset,
-  createPaginationResult,
-  type PaginationResult,
-} from '@/server/utils/pagination'
+import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
 import { Prisma, ApprovalStatus } from '@orm'
 import { BaseRepository } from './base.repository'
 import type { GetDevicesInput, CreateDeviceInput, UpdateDeviceInput } from '@/schemas/device'
@@ -140,10 +136,7 @@ export class DevicesRepository extends BaseRepository {
     pagination: PaginationResult
   }> {
     const limit = input.limit ?? 20
-    const actualOffset = calculateOffset(
-      { page: input.page ?? undefined, offset: input.offset ?? undefined },
-      limit,
-    )
+    const actualOffset = calculateOffset({ page: input.page, offset: input.offset }, limit)
 
     const where: Prisma.DeviceWhereInput = {}
 
@@ -166,12 +159,11 @@ export class DevicesRepository extends BaseRepository {
       }),
     ])
 
-    const pagination = createPaginationResult(
-      total,
-      { page: input.page ?? undefined, offset: input.offset ?? undefined },
-      limit,
-      actualOffset,
-    )
+    const pagination = paginate({
+      total: total,
+      page: input.page ?? Math.floor(actualOffset / limit) + 1,
+      limit: limit,
+    })
 
     return { devices, pagination }
   }
@@ -222,7 +214,7 @@ export class DevicesRepository extends BaseRepository {
   }> {
     const limit = filters.limit ?? 20
     const page = filters.page ?? 1
-    const skip = (page - 1) * limit
+    const actualOffset = calculateOffset({ page }, limit)
 
     const where: Prisma.DeviceWhereInput = {}
 
@@ -253,11 +245,13 @@ export class DevicesRepository extends BaseRepository {
           { brand: { name: this.sortOrder } },
           { modelName: this.sortOrder },
         ],
-        skip,
+        skip: actualOffset,
         take: limit,
       }),
       this.prisma.device.count({ where }),
     ])
+
+    const pagination = paginate({ total: total, page, limit: limit })
 
     return {
       devices: devices.map((device) => ({
@@ -267,12 +261,7 @@ export class DevicesRepository extends BaseRepository {
         socName: device.soc?.name ?? null,
         listingsCount: device._count.listings,
       })),
-      pagination: {
-        total,
-        pages: Math.ceil(total / limit),
-        page,
-        limit,
-      },
+      pagination,
     }
   }
 

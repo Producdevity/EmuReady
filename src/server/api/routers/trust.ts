@@ -9,6 +9,7 @@ import {
 } from '@/schemas/trust'
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { prisma } from '@/server/db'
+import { paginate } from '@/server/utils/pagination'
 import { hasPermission } from '@/utils/permissions'
 import { type Prisma, Role } from '@orm'
 
@@ -20,7 +21,7 @@ export const trustRouter = createTRPCRouter({
     }
 
     const { page, limit, sortField, sortDirection, search, action } = input
-    const offset = (page - 1) * limit
+    const actualOffset = (page - 1) * limit
 
     // Build where clause
     const where: Prisma.TrustActionLogWhereInput = {}
@@ -56,7 +57,7 @@ export const trustRouter = createTRPCRouter({
       prisma.trustActionLog.findMany({
         where,
         orderBy,
-        skip: offset,
+        skip: actualOffset,
         take: limit,
         include: {
           user: {
@@ -67,14 +68,11 @@ export const trustRouter = createTRPCRouter({
       prisma.trustActionLog.count({ where }),
     ])
 
+    const pagination = paginate({ total: total, page, limit: limit })
+
     return {
       logs,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
-      },
+      pagination,
     }
   }),
 

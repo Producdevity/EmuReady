@@ -123,7 +123,13 @@ export const UpdateProfileSchema = z.object({
 
 export const GetListingsSchema = z
   .object({
-    page: z.number().min(1).default(1).describe('Page number for pagination'),
+    page: z
+      .number()
+      .min(1)
+      .default(1)
+      .nullable()
+      .transform((val) => val ?? 1)
+      .describe('Page number for pagination'),
     limit: z.number().min(1).max(50).default(20).describe('Number of results per page (1-50)'),
     gameIds: z.array(z.string().uuid()).optional().describe('Filter by game IDs'),
     systemIds: z.array(z.string().uuid()).optional().describe('Filter by system IDs'),
@@ -145,7 +151,12 @@ export const GetGamesSchema = z
   .object({
     search: z.string().optional(),
     systemId: z.string().uuid().optional(),
-    page: z.number().min(1).default(1),
+    page: z
+      .number()
+      .min(1)
+      .default(1)
+      .nullable()
+      .transform((val) => val ?? 1),
     limit: z.number().min(1).max(50).default(20),
   })
   .optional()
@@ -173,7 +184,13 @@ export const GetEmulatorByIdSchema = z.object({
 
 export const GetNotificationsSchema = z
   .object({
-    page: z.number().min(1).default(1).describe('Page number for pagination'),
+    page: z
+      .number()
+      .min(1)
+      .default(1)
+      .nullable()
+      .transform((val) => val ?? 1)
+      .describe('Page number for pagination'),
     limit: z.number().min(1).max(50).default(20).describe('Number of results per page (1-50)'),
     unreadOnly: z.boolean().default(false).describe('Show only unread notifications'),
   })
@@ -285,7 +302,12 @@ export const UpdatePcListingSchema = z.object({
 })
 
 export const GetPcListingsSchema = z.object({
-  page: z.number().min(1).default(1),
+  page: z
+    .number()
+    .min(1)
+    .default(1)
+    .nullable()
+    .transform((val) => val ?? 1),
   limit: z.number().min(1).max(50).default(20),
   gameId: z.string().uuid().optional(),
   systemId: z.string().uuid().optional(),
@@ -344,7 +366,12 @@ export const MobileAdminGetStatsSchema = z.object({}).optional()
 export const MobileAdminGetPendingListingsSchema = z
   .object({
     search: z.string().optional(),
-    page: z.number().min(1).default(1),
+    page: z
+      .number()
+      .min(1)
+      .default(1)
+      .nullable()
+      .transform((val) => val ?? 1),
     limit: z.number().min(1).max(100).default(20),
   })
   .optional()
@@ -361,7 +388,12 @@ export const MobileAdminRejectListingSchema = z.object({
 export const MobileAdminGetPendingGamesSchema = z
   .object({
     search: z.string().optional(),
-    page: z.number().min(1).default(1),
+    page: z
+      .number()
+      .min(1)
+      .default(1)
+      .nullable()
+      .transform((val) => val ?? 1),
     limit: z.number().min(1).max(100).default(20),
   })
   .optional()
@@ -378,7 +410,12 @@ export const MobileAdminRejectGameSchema = z.object({
 export const MobileAdminGetReportsSchema = z
   .object({
     status: z.nativeEnum(ReportStatus).optional(),
-    page: z.number().min(1).default(1),
+    page: z
+      .number()
+      .min(1)
+      .default(1)
+      .nullable()
+      .transform((val) => val ?? 1),
     limit: z.number().min(1).max(100).default(20),
   })
   .optional()
@@ -392,7 +429,12 @@ export const MobileAdminUpdateReportStatusSchema = z.object({
 export const MobileAdminGetUserBansSchema = z
   .object({
     isActive: z.boolean().optional(),
-    page: z.number().min(1).default(1),
+    page: z
+      .number()
+      .min(1)
+      .default(1)
+      .nullable()
+      .transform((val) => val ?? 1),
     limit: z.number().min(1).max(100).default(20),
   })
   .optional()

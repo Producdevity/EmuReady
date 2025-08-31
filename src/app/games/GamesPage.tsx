@@ -119,7 +119,7 @@ function GamesContent() {
       hideGamesWithNoListings,
       listingFilter,
       limit,
-      offset: (page - 1) * limit,
+      page,
     }),
   )
 
@@ -186,10 +186,10 @@ function GamesContent() {
     )
   }
 
-  // Moderators can add games manually, others use search
+  // Moderators can add games manually, others use IGDB search
   const addGameHref = hasPermission(userQuery.data?.role, Role.MODERATOR)
     ? '/games/new'
-    : '/games/new/search'
+    : '/games/new/search/v2'
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 px-4">
@@ -238,7 +238,7 @@ function GamesContent() {
 
         {isDefined(pagination?.pages) && pagination.pages > 1 && (
           <Pagination
-            currentPage={page}
+            page={page}
             totalPages={pagination.pages}
             totalItems={pagination.total}
             itemsPerPage={limit}

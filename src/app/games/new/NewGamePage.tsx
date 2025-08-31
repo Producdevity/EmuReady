@@ -1,7 +1,7 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { Search, Edit } from 'lucide-react'
+import { Database, Edit, Sparkles, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, type FormEvent } from 'react'
@@ -59,10 +59,10 @@ function AddGamePage() {
     return () => clearTimeout(timer)
   }, [success, error])
 
-  // Redirect non-authors users to TGDB search page
+  // Redirect non-authors users to IGDB search page
   useEffect(() => {
     if (isLoaded && user && userQuery.data && !hasPermission(userQuery.data.role, Role.AUTHOR)) {
-      router.replace('/games/new/search')
+      router.replace('/games/new/search/v2')
     }
   }, [isLoaded, user, userQuery.data, router])
 
@@ -103,129 +103,239 @@ function AddGamePage() {
     }
   }
 
+  const searchMethods = [
+    {
+      id: 'igdb',
+      icon: Sparkles,
+      title: 'IGDB Search',
+      badge: 'RECOMMENDED',
+      badgeColor: 'bg-gradient-to-r from-purple-600 to-blue-600',
+      description:
+        'Most comprehensive database with accurate metadata, multiple images, and NSFW detection',
+      borderColor: 'border-purple-500/50',
+      bgColor:
+        'bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20',
+      iconColor: 'text-purple-600 dark:text-purple-400',
+      href: '/games/new/search/v2',
+    },
+    {
+      id: 'tgdb',
+      icon: Database,
+      title: 'TheGamesDB',
+      badge: 'CLASSIC',
+      badgeColor: 'bg-green-600',
+      description: 'Community-sourced database with classic game coverage and box art',
+      borderColor: 'border-green-500/50',
+      bgColor:
+        'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20',
+      iconColor: 'text-green-600 dark:text-green-400',
+      href: '/games/new/search',
+    },
+    {
+      id: 'manual',
+      icon: Edit,
+      title: 'Manual Entry',
+      badge: 'CURRENT',
+      badgeColor: 'bg-blue-600',
+      description: 'Type the game title manually. Quick entry for games not in databases',
+      borderColor: 'border-blue-500/50',
+      bgColor:
+        'bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20',
+      iconColor: 'text-blue-600 dark:text-blue-400',
+      isActive: true,
+    },
+  ]
+
   return (
-    <div className="w-full md:w-3xl mx-auto my-10 p-8 bg-white dark:bg-gray-800 rounded-xl shadow-xl">
-      <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
-        Add New Game (Author and Admin Only)
-      </h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 py-8 px-4">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Add New Game</h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400">
+            Choose how you want to add your game to the database
+          </p>
+        </div>
 
-      {/* Method Selection */}
-      <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-        <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Choose Method:</h2>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1 p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <Edit className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              <span className="font-medium text-blue-800 dark:text-blue-200">Manual Entry</span>
-              <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded">CURRENT</span>
-            </div>
-            <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-              Type the game title manually. Good for quick entry or games not in TGDB.
-            </p>
-          </div>
-
-          <div className="flex-1 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <Search className="h-5 w-5 text-green-600 dark:text-green-400" />
-              <span className="font-medium text-green-800 dark:text-green-200">Search TGDB</span>
-              <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">RECOMMENDED</span>
-            </div>
-            <p className="text-sm text-green-700 dark:text-green-300 mb-3">
-              Search TheGamesDB for accurate game names and images. Prevents duplicates and typos.
-            </p>
-            <Link href="/games/new/search">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-green-700 border-green-300 hover:bg-green-100"
+        {/* Method Selection Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {searchMethods.map((method) => {
+            const Icon = method.icon
+            return (
+              <div
+                key={method.id}
+                className={`relative group transition-all duration-300 ${
+                  method.isActive ? 'scale-105' : 'hover:scale-105'
+                }`}
               >
-                Try Search Method
-              </Button>
-            </Link>
+                <div
+                  className={`
+                    h-full p-6 rounded-2xl border-2 transition-all duration-300
+                    ${method.bgColor} ${method.borderColor}
+                    ${
+                      method.isActive
+                        ? 'shadow-xl border-opacity-100'
+                        : 'shadow-lg hover:shadow-xl border-opacity-30 hover:border-opacity-50'
+                    }
+                  `}
+                >
+                  {/* Badge */}
+                  <div className="absolute -top-3 right-6">
+                    <span
+                      className={`
+                      px-3 py-1 text-xs font-bold text-white rounded-full
+                      ${method.badgeColor}
+                    `}
+                    >
+                      {method.badge}
+                    </span>
+                  </div>
+
+                  {/* Icon */}
+                  <div
+                    className={`
+                    w-12 h-12 rounded-xl flex items-center justify-center mb-4
+                    bg-white/50 dark:bg-black/20 backdrop-blur-sm
+                  `}
+                  >
+                    <Icon className={`h-6 w-6 ${method.iconColor}`} />
+                  </div>
+
+                  {/* Content */}
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                    {method.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 min-h-[3rem]">
+                    {method.description}
+                  </p>
+
+                  {/* Action */}
+                  {method.href ? (
+                    <Link href={method.href}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full group-hover:bg-white dark:group-hover:bg-gray-800"
+                      >
+                        <span>Use This Method</span>
+                        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </Button>
+                    </Link>
+                  ) : (
+                    <div className="text-center text-sm font-medium text-gray-500 dark:text-gray-400 py-2">
+                      Currently Selected
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Manual Entry Form */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Edit className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Manual Entry Form
+              </h2>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400">
+              Fill in the details below to add a new game manually
+            </p>
           </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Game Title
+              </label>
+              <Input
+                value={title}
+                onChange={(ev) => setTitle(ev.target.value)}
+                placeholder="Enter game title"
+                required
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <Autocomplete<SystemOption>
+                label="System"
+                placeholder="Search for a system..."
+                value={systemId}
+                onChange={(value) => setSystemId(value ?? '')}
+                items={systemsQuery.data ?? []}
+                optionToValue={(option) => option.id}
+                optionToLabel={(option) => option.name}
+                filterKeys={['name']}
+                minCharsToTrigger={0}
+                disabled={systemsQuery.isPending}
+                className="w-full"
+              />
+            </div>
+
+            <ImageSelectorSwitcher
+              gameTitle={title}
+              systemName={selectedSystem?.name}
+              tgdbPlatformId={selectedSystem?.tgdbPlatformId ?? undefined}
+              selectedImageUrl={imageUrl}
+              onImageSelect={setImageUrl}
+              onError={setError}
+            />
+
+            <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+              <input
+                type="checkbox"
+                id="isErotic-new"
+                checked={isErotic}
+                onChange={(e) => setIsErotic(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <label
+                htmlFor="isErotic-new"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Mark as Adult Content (18+)
+              </label>
+            </div>
+
+            {error && (
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              </div>
+            )}
+
+            {success && (
+              <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <p className="text-sm text-green-600 dark:text-green-400">{success}</p>
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              isFullWidth
+              disabled={createGame.isPending}
+              isLoading={createGame.isPending}
+              className="mt-6"
+            >
+              Add Game to Database
+            </Button>
+          </form>
+        </div>
+
+        {/* Info Box */}
+        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="text-sm text-blue-800 dark:text-blue-300">
+            <strong>Note:</strong> Manual entry is restricted to authors and administrators to
+            maintain data quality. Regular users are automatically redirected to the IGDB search for
+            better accuracy and metadata.
+          </p>
         </div>
       </div>
-
-      <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-        <p className="text-sm text-amber-800 dark:text-amber-200">
-          <strong>Author Note:</strong> Manual entry is restricted to authors and administrators to
-          maintain data quality. Regular users are automatically redirected to the TGDB search
-          method.
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block mb-1 font-medium text-gray-700 dark:text-gray-300">
-            Game Title
-          </label>
-          <Input
-            value={title}
-            onChange={(ev) => setTitle(ev.target.value)}
-            placeholder="Enter game title"
-            required
-          />
-        </div>
-
-        <div>
-          <Autocomplete<SystemOption>
-            label="System"
-            placeholder="Search for a system..."
-            value={systemId}
-            onChange={(value) => setSystemId(value ?? '')}
-            items={systemsQuery.data ?? []}
-            optionToValue={(option) => option.id}
-            optionToLabel={(option) => option.name}
-            filterKeys={['name']}
-            minCharsToTrigger={0}
-            disabled={systemsQuery.isPending}
-            className="w-full"
-          />
-        </div>
-
-        <ImageSelectorSwitcher
-          gameTitle={title}
-          systemName={selectedSystem?.name}
-          tgdbPlatformId={selectedSystem?.tgdbPlatformId ?? undefined}
-          selectedImageUrl={imageUrl}
-          onImageSelect={setImageUrl}
-          onError={setError}
-        />
-
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="isErotic-new"
-            checked={isErotic}
-            onChange={(e) => setIsErotic(e.target.checked)}
-            className="h-4 w-4"
-          />
-          <label htmlFor="isErotic-new" className="text-sm text-gray-700 dark:text-gray-300">
-            Erotic 18+
-          </label>
-        </div>
-
-        {error && (
-          <div className="text-red-500  bg-white dark:bg-gray-800 border border-red-400 px-4 py-2 rounded shadow z-50">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="text-green-600  bg-white dark:bg-gray-800 border border-green-400 px-4 py-2 rounded shadow z-50">
-            {success}
-          </div>
-        )}
-        <Button
-          type="submit"
-          variant="primary"
-          size="lg"
-          isFullWidth
-          disabled={createGame.isPending}
-          isLoading={createGame.isPending}
-        >
-          Add Game
-        </Button>
-      </form>
     </div>
   )
 }
