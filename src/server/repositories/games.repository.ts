@@ -1,6 +1,6 @@
 import { PAGINATION } from '@/data/constants'
 import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
-import { buildSearchFilter, buildShadowBanFilter } from '@/server/utils/query-builders'
+import { buildShadowBanFilter } from '@/server/utils/query-builders'
 import { hasPermission } from '@/utils/permissions'
 import { Prisma, ApprovalStatus, Role } from '@orm'
 import { BaseRepository } from './base.repository'
@@ -253,8 +253,24 @@ export class GamesRepository extends BaseRepository {
     const where: Prisma.GameWhereInput = {
       status: ApprovalStatus.APPROVED,
       ...(systemId && { systemId }),
-      ...(search && { title: { contains: search, mode: Prisma.QueryMode.insensitive } }),
       ...(!showNsfw && { isErotic: false }),
+    }
+
+    // Add improved search with partial word matching
+    if (search?.trim()) {
+      const searchWords = search
+        .trim()
+        .split(/\s+/)
+        .filter((word) => word.length > 0)
+
+      if (searchWords.length === 1) {
+        where.title = { contains: search.trim(), mode: Prisma.QueryMode.insensitive }
+      } else {
+        // Multiple words: all must be present in title
+        where.AND = searchWords.map((word) => ({
+          title: { contains: word, mode: Prisma.QueryMode.insensitive },
+        }))
+      }
     }
 
     const actualOffset = calculateOffset({ page, offset }, limit ?? PAGINATION.DEFAULT_LIMIT)
@@ -323,8 +339,24 @@ export class GamesRepository extends BaseRepository {
   ): Promise<Prisma.GameGetPayload<{ select: typeof GamesRepository.selects.mobile }>[]> {
     const where: Prisma.GameWhereInput = {
       status: ApprovalStatus.APPROVED,
-      title: { contains: query, mode: this.mode },
       ...(!showNsfw && { isErotic: false }),
+    }
+
+    // Improved search with partial word matching
+    if (query?.trim()) {
+      const searchWords = query
+        .trim()
+        .split(/\s+/)
+        .filter((word) => word.length > 0)
+
+      if (searchWords.length === 1) {
+        where.title = { contains: query.trim(), mode: this.mode }
+      } else {
+        // Multiple words: all must be present in title
+        where.AND = searchWords.map((word) => ({
+          title: { contains: word, mode: this.mode },
+        }))
+      }
     }
 
     return this.prisma.game.findMany({
@@ -528,9 +560,24 @@ export class GamesRepository extends BaseRepository {
       where.status = ApprovalStatus.APPROVED
     }
 
-    // Add search conditions
-    const searchConditions = buildSearchFilter(search, ['title'])
-    if (searchConditions) where.OR = searchConditions
+    // Add search conditions with improved partial matching
+    if (search?.trim()) {
+      const searchWords = search
+        .trim()
+        .split(/\s+/)
+        .filter((word) => word.length > 0)
+
+      if (searchWords.length === 1) {
+        // Single word: simple contains search in title
+        where.title = { contains: search.trim(), mode: this.mode }
+      } else {
+        // Multiple words: all words must be present in title
+        // This allows "Super Mar" to match "Super Mario Bros"
+        where.AND = searchWords.map((word) => ({
+          title: { contains: word, mode: this.mode },
+        }))
+      }
+    }
 
     return where
   }

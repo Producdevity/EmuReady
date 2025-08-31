@@ -142,9 +142,22 @@ export class DevicesRepository extends BaseRepository {
 
     if (input.brandId) where.brandId = input.brandId
     if (input.search) {
+      const searchWords = input.search.trim().toLowerCase().split(/\s+/)
+
+      // Simple approach: search in concatenated brand + model name
       where.OR = [
+        // Try exact phrase match first
         { modelName: { contains: input.search, mode: this.mode } },
         { brand: { name: { contains: input.search, mode: this.mode } } },
+        // Then try each word separately - all must match
+        {
+          AND: searchWords.map((word) => ({
+            OR: [
+              { modelName: { contains: word, mode: this.mode } },
+              { brand: { name: { contains: word, mode: this.mode } } },
+            ],
+          })),
+        },
       ]
     }
 
@@ -220,9 +233,21 @@ export class DevicesRepository extends BaseRepository {
 
     if (filters.brandId) where.brandId = filters.brandId
     if (filters.search) {
+      const searchWords = filters.search.trim().toLowerCase().split(/\s+/)
+
       where.OR = [
+        // Exact phrase match
         { modelName: { contains: filters.search, mode: this.mode } },
         { brand: { name: { contains: filters.search, mode: this.mode } } },
+        // All words must match
+        {
+          AND: searchWords.map((word) => ({
+            OR: [
+              { modelName: { contains: word, mode: this.mode } },
+              { brand: { name: { contains: word, mode: this.mode } } },
+            ],
+          })),
+        },
       ]
     }
 
