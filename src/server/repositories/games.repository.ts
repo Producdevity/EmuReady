@@ -256,21 +256,11 @@ export class GamesRepository extends BaseRepository {
       ...(!showNsfw && { isErotic: false }),
     }
 
-    // Add improved search with partial word matching
     if (search?.trim()) {
-      const searchWords = search
-        .trim()
-        .split(/\s+/)
-        .filter((word) => word.length > 0)
-
-      if (searchWords.length === 1) {
-        where.title = { contains: search.trim(), mode: Prisma.QueryMode.insensitive }
-      } else {
-        // Multiple words: all must be present in title
-        where.AND = searchWords.map((word) => ({
-          title: { contains: word, mode: Prisma.QueryMode.insensitive },
-        }))
-      }
+      const searchWords = search.trim().split(/\s+/)
+      where.AND = searchWords.map((word) => ({
+        title: { contains: word, mode: Prisma.QueryMode.insensitive },
+      }))
     }
 
     const actualOffset = calculateOffset({ page, offset }, limit ?? PAGINATION.DEFAULT_LIMIT)
@@ -342,21 +332,11 @@ export class GamesRepository extends BaseRepository {
       ...(!showNsfw && { isErotic: false }),
     }
 
-    // Improved search with partial word matching
     if (query?.trim()) {
-      const searchWords = query
-        .trim()
-        .split(/\s+/)
-        .filter((word) => word.length > 0)
-
-      if (searchWords.length === 1) {
-        where.title = { contains: query.trim(), mode: this.mode }
-      } else {
-        // Multiple words: all must be present in title
-        where.AND = searchWords.map((word) => ({
-          title: { contains: word, mode: this.mode },
-        }))
-      }
+      const searchWords = query.trim().split(/\s+/)
+      where.AND = searchWords.map((word) => ({
+        title: { contains: word, mode: this.mode },
+      }))
     }
 
     return this.prisma.game.findMany({
@@ -560,23 +540,12 @@ export class GamesRepository extends BaseRepository {
       where.status = ApprovalStatus.APPROVED
     }
 
-    // Add search conditions with improved partial matching
+    // Search: all words must appear in title
     if (search?.trim()) {
-      const searchWords = search
-        .trim()
-        .split(/\s+/)
-        .filter((word) => word.length > 0)
-
-      if (searchWords.length === 1) {
-        // Single word: simple contains search in title
-        where.title = { contains: search.trim(), mode: this.mode }
-      } else {
-        // Multiple words: all words must be present in title
-        // This allows "Super Mar" to match "Super Mario Bros"
-        where.AND = searchWords.map((word) => ({
-          title: { contains: word, mode: this.mode },
-        }))
-      }
+      const searchWords = search.trim().split(/\s+/)
+      where.AND = searchWords.map((word) => ({
+        title: { contains: word, mode: this.mode },
+      }))
     }
 
     return where

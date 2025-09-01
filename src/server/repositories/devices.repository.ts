@@ -142,23 +142,15 @@ export class DevicesRepository extends BaseRepository {
 
     if (input.brandId) where.brandId = input.brandId
     if (input.search) {
-      const searchWords = input.search.trim().toLowerCase().split(/\s+/)
+      const searchWords = input.search.trim().split(/\s+/)
 
-      // Simple approach: search in concatenated brand + model name
-      where.OR = [
-        // Try exact phrase match first
-        { modelName: { contains: input.search, mode: this.mode } },
-        { brand: { name: { contains: input.search, mode: this.mode } } },
-        // Then try each word separately - all must match
-        {
-          AND: searchWords.map((word) => ({
-            OR: [
-              { modelName: { contains: word, mode: this.mode } },
-              { brand: { name: { contains: word, mode: this.mode } } },
-            ],
-          })),
-        },
-      ]
+      // Each word must appear in either brand or model name
+      where.AND = searchWords.map((word) => ({
+        OR: [
+          { modelName: { contains: word, mode: this.mode } },
+          { brand: { name: { contains: word, mode: this.mode } } },
+        ],
+      }))
     }
 
     const [total, devices] = await Promise.all([
@@ -233,22 +225,14 @@ export class DevicesRepository extends BaseRepository {
 
     if (filters.brandId) where.brandId = filters.brandId
     if (filters.search) {
-      const searchWords = filters.search.trim().toLowerCase().split(/\s+/)
+      const searchWords = filters.search.trim().split(/\s+/)
 
-      where.OR = [
-        // Exact phrase match
-        { modelName: { contains: filters.search, mode: this.mode } },
-        { brand: { name: { contains: filters.search, mode: this.mode } } },
-        // All words must match
-        {
-          AND: searchWords.map((word) => ({
-            OR: [
-              { modelName: { contains: word, mode: this.mode } },
-              { brand: { name: { contains: word, mode: this.mode } } },
-            ],
-          })),
-        },
-      ]
+      where.AND = searchWords.map((word) => ({
+        OR: [
+          { modelName: { contains: word, mode: this.mode } },
+          { brand: { name: { contains: word, mode: this.mode } } },
+        ],
+      }))
     }
 
     const [devices, total] = await Promise.all([
