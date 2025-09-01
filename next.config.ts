@@ -5,6 +5,13 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
   images: {
     dangerouslyAllowSVG: true,
+    qualities: [75, 85, 100],
+    localPatterns: [
+      // Allow query parameters for proxy URLs
+      { pathname: '/api/proxy-image' },
+      { pathname: '/_next/**' },
+      { pathname: '/placeholder/**' },
+    ],
     remotePatterns: [
       {
         protocol: 'https',

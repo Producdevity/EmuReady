@@ -9,16 +9,60 @@ export type ImageExtension = (typeof IMAGE_EXTENSIONS)[number]
 export const IMAGE_EXTENSION_REGEX = /\.(jpg|jpeg|png|gif|webp)$/i
 export const IMAGE_FILENAME_REGEX = /^[a-zA-Z0-9._-]+\.(png|jpg|jpeg|gif|webp)$/i
 
+// Known image CDN patterns that don't require file extensions
+const KNOWN_IMAGE_CDN_PATTERNS = [
+  /^https:\/\/images\.igdb\.com\//,
+  /^https:\/\/assets\.nintendo\.com\//,
+  /^https:\/\/cdn\.cloudflare\.steamstatic\.com\//,
+  /^https:\/\/media\.rawg\.io\//,
+  /^https:\/\/cdn\.thegamesdb\.net\//,
+  /^https:\/\/images\.launchbox-app\.com\//,
+  /^https:\/\/steamcdn-a\.akamaihd\.net\//,
+  /^https:\/\/img\.youtube\.com\//,
+  /^https:\/\/i\.imgur\.com\//,
+]
+
 /**
  * Validates if a URL is a valid image URL
- * Checks protocol (http/https) and file extension
+ * Checks protocol (http/https) and either file extension or known CDN pattern
  */
 export function isValidImageUrl(url: string, requireHttps = false): boolean {
   try {
     const urlObj = new URL(url)
     const allowedProtocols = requireHttps ? ['https:'] : ['http:', 'https:']
 
-    return allowedProtocols.includes(urlObj.protocol) && IMAGE_EXTENSION_REGEX.test(urlObj.pathname)
+    if (!allowedProtocols.includes(urlObj.protocol)) {
+      return false
+    }
+
+    // Check if URL has a valid image extension
+    if (IMAGE_EXTENSION_REGEX.test(urlObj.pathname)) {
+      return true
+    }
+
+    // Check if URL is from a known image CDN (these don't require extensions)
+    if (KNOWN_IMAGE_CDN_PATTERNS.some((pattern) => pattern.test(url))) {
+      return true
+    }
+
+    // Check if URL contains image-related paths or parameters
+    const pathLower = urlObj.pathname.toLowerCase()
+    const hasImagePath =
+      pathLower.includes('/image/') ||
+      pathLower.includes('/images/') ||
+      pathLower.includes('/img/') ||
+      pathLower.includes('/upload/') ||
+      pathLower.includes('/media/')
+
+    // Check for image format parameters in the URL
+    const hasImageParams =
+      url.includes('f_auto') ||
+      url.includes('q_auto') ||
+      url.includes('format=') ||
+      url.includes('width=') ||
+      url.includes('height=')
+
+    return hasImagePath || hasImageParams
   } catch {
     return false
   }
@@ -66,8 +110,24 @@ export function getImageValidationError(url: string, requireHttps = false): stri
       return 'Image URL must use HTTP or HTTPS protocol'
     }
 
-    if (!IMAGE_EXTENSION_REGEX.test(urlObj.pathname)) {
-      return `Image URL must end with a valid extension: ${IMAGE_EXTENSIONS.join(', ')}`
+    const hasValidExtension = IMAGE_EXTENSION_REGEX.test(urlObj.pathname)
+    const isKnownCDN = KNOWN_IMAGE_CDN_PATTERNS.some((pattern) => pattern.test(url))
+    const pathLower = urlObj.pathname.toLowerCase()
+    const hasImagePath =
+      pathLower.includes('/image/') ||
+      pathLower.includes('/images/') ||
+      pathLower.includes('/img/') ||
+      pathLower.includes('/upload/') ||
+      pathLower.includes('/media/')
+    const hasImageParams =
+      url.includes('f_auto') ||
+      url.includes('q_auto') ||
+      url.includes('format=') ||
+      url.includes('width=') ||
+      url.includes('height=')
+
+    if (!hasValidExtension && !isKnownCDN && !hasImagePath && !hasImageParams) {
+      return `Image URL must end with a valid extension (${IMAGE_EXTENSIONS.join(', ')}) or be from a recognized image service`
     }
 
     return '' // Valid

@@ -1,5 +1,45 @@
 import { z } from 'zod'
-import { ReportReason, ReportStatus, PcOs } from '@orm'
+import { ReportReason, ReportStatus, PcOs, CustomFieldType } from '@orm'
+
+// Type-safe custom field value schema using discriminated union
+const CustomFieldValueSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal(CustomFieldType.TEXT),
+    customFieldDefinitionId: z.string().uuid(),
+    value: z.string(),
+  }),
+  z.object({
+    type: z.literal(CustomFieldType.TEXTAREA),
+    customFieldDefinitionId: z.string().uuid(),
+    value: z.string(),
+  }),
+  z.object({
+    type: z.literal(CustomFieldType.URL),
+    customFieldDefinitionId: z.string().uuid(),
+    value: z.string().url(),
+  }),
+  z.object({
+    type: z.literal(CustomFieldType.BOOLEAN),
+    customFieldDefinitionId: z.string().uuid(),
+    value: z.boolean(),
+  }),
+  z.object({
+    type: z.literal(CustomFieldType.SELECT),
+    customFieldDefinitionId: z.string().uuid(),
+    value: z.string(),
+  }),
+  z.object({
+    type: z.literal(CustomFieldType.RANGE),
+    customFieldDefinitionId: z.string().uuid(),
+    value: z.number(),
+  }),
+])
+
+// For backwards compatibility, also support simple format
+const SimplifiedCustomFieldValueSchema = z.object({
+  customFieldDefinitionId: z.string().uuid(),
+  value: z.union([z.string(), z.number(), z.boolean(), z.null()]),
+})
 
 export const GetGameByIdSchema = z.object({
   id: z.string().uuid(),
@@ -62,12 +102,7 @@ export const CreateListingSchema = z.object({
   performanceId: z.number(),
   notes: z.string().optional(),
   customFieldValues: z
-    .array(
-      z.object({
-        customFieldDefinitionId: z.string().uuid(),
-        value: z.any(),
-      }),
-    )
+    .array(z.union([CustomFieldValueSchema, SimplifiedCustomFieldValueSchema]))
     .optional(),
 })
 
@@ -79,12 +114,7 @@ export const UpdateListingSchema = z.object({
   performanceId: z.number().optional(),
   notes: z.string().optional(),
   customFieldValues: z
-    .array(
-      z.object({
-        customFieldDefinitionId: z.string().uuid(),
-        value: z.any(),
-      }),
-    )
+    .array(z.union([CustomFieldValueSchema, SimplifiedCustomFieldValueSchema]))
     .optional(),
 })
 
@@ -271,12 +301,7 @@ export const CreatePcListingSchema = z.object({
   osVersion: z.string().min(1),
   notes: z.string().optional(),
   customFieldValues: z
-    .array(
-      z.object({
-        customFieldDefinitionId: z.string().uuid(),
-        value: z.any(),
-      }),
-    )
+    .array(z.union([CustomFieldValueSchema, SimplifiedCustomFieldValueSchema]))
     .optional(),
 })
 
@@ -292,12 +317,7 @@ export const UpdatePcListingSchema = z.object({
   osVersion: z.string().min(1).optional(),
   notes: z.string().optional(),
   customFieldValues: z
-    .array(
-      z.object({
-        customFieldDefinitionId: z.string().uuid(),
-        value: z.any(),
-      }),
-    )
+    .array(z.union([CustomFieldValueSchema, SimplifiedCustomFieldValueSchema]))
     .optional(),
 })
 
