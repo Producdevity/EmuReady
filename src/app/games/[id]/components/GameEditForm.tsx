@@ -55,8 +55,8 @@ export function GameEditForm(props: Props) {
     { enabled: !!props.gameData.systemId },
   )
 
-  // Determine if user is admin or owner of pending game
-  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
+  // Determine if user is moderator or owner of pending game
+  const isModerator = hasPermission(userQuery.data?.role, Role.MODERATOR)
   const isOwnerOfPendingGame =
     userQuery.data &&
     props.gameData.submittedBy === userQuery.data.id &&
@@ -126,7 +126,7 @@ export function GameEditForm(props: Props) {
     }
 
     // Use appropriate mutation based on user permissions
-    if (isAdmin) {
+    if (isModerator) {
       updateGameAdmin.mutate(updateData)
     } else if (isOwnerOfPendingGame) {
       updateGameUser.mutate(updateData)
@@ -356,7 +356,7 @@ export function GameEditForm(props: Props) {
                 </div>
 
                 {/* Only show isErotic checkbox for admins */}
-                {isAdmin && (
+                {isModerator && (
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input

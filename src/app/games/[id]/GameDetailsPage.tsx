@@ -30,7 +30,7 @@ function GameDetailsPage() {
     gameQuery.data.submittedBy === userQuery.data.id &&
     gameQuery.data.status === ApprovalStatus.PENDING
 
-  const canEdit = hasPermission(userQuery.data?.role, Role.ADMIN) || isOwnerOfPendingGame
+  const canEdit = hasPermission(userQuery.data?.role, Role.MODERATOR) || isOwnerOfPendingGame
 
   if (gameQuery.isPending) return <LoadingSpinner text="Loading game data..." />
 

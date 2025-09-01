@@ -193,6 +193,7 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
                       width={40}
                       height={60}
                       className="w-10 h-15 object-cover rounded"
+                      quality={75}
                     />
                   )}
                   <div className="flex-1 min-w-0">
@@ -257,14 +258,16 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
                 )}
                 onClick={() => handleImageSelect(image)}
               >
-                <div className="aspect-[3/4] bg-gray-100 dark:bg-gray-800">
+                <div className="aspect-[3/4] bg-gray-100 dark:bg-gray-800 relative">
                   <OptimizedImage
                     src={getImageUrl(image.url)}
                     alt={image.label}
                     width={200}
-                    height={266}
+                    height={267}
+                    className="absolute inset-0 w-full h-full"
+                    imageClassName="w-full h-full object-cover"
                     objectFit="cover"
-                    className="w-full h-full object-cover"
+                    quality={75}
                   />
 
                   {/* Overlay on hover */}
@@ -338,6 +341,7 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
               width={64}
               height={64}
               className="w-16 h-16 object-cover rounded border"
+              quality={75}
             />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 dark:text-white">
@@ -367,6 +371,7 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
                 height={600}
                 objectFit="contain"
                 className="w-full h-auto object-contain"
+                quality={75}
               />
             </div>
             <div className="flex justify-end gap-3">

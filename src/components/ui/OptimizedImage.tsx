@@ -57,7 +57,7 @@ export function OptimizedImage(props: Props) {
           props.imageClassName,
         )}
         priority={props.priority ?? false}
-        quality={props.quality ?? 85}
+        quality={props.quality ?? 75}
         onLoad={() => setIsLoading(false)}
         onError={handleError}
         unoptimized={props.unoptimized ?? false}

@@ -203,6 +203,7 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
                   objectFit="cover"
                   className="w-full h-full"
                   fallbackSrc="/placeholder/game.svg"
+                  quality={75}
                 />
               </div>
             </div>
@@ -291,6 +292,7 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
                         objectFit="cover"
                         className="w-full h-full"
                         fallbackSrc="/placeholder/game.svg"
+                        quality={75}
                       />
 
                       {/* Preview Button - Shows on hover */}
@@ -382,6 +384,7 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
                 objectFit="contain"
                 className="w-full h-auto max-h-[70vh]"
                 fallbackSrc="/placeholder/game.svg"
+                quality={75}
                 unoptimized
               />
             </div>

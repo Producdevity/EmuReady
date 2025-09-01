@@ -51,6 +51,7 @@ function GamePreviewModal(props: GamePreviewModalProps) {
                 objectFit="cover"
                 className="w-full h-full"
                 fallbackSrc="/placeholder/game.svg"
+                quality={75}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
