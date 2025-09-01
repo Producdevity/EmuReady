@@ -12,6 +12,8 @@ export interface PaginationResult {
   page: number
   offset: number
   limit: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
 }
 
 export interface PaginatedResponse<T> {
@@ -20,62 +22,56 @@ export interface PaginatedResponse<T> {
 }
 
 /**
- * Calculate the actual offset from page number or direct offset
- * @param input - Pagination input containing either page or offset
- * @param limit - Number of items per page
- * @returns Calculated offset
+ * Calculate offset for database queries from pagination input
+ * @param input - Pagination input with page or offset
+ * @param limit - Items per page
+ * @returns Calculated offset for database skip
  */
-export function calculateOffset(input: PaginationInput, limit: number): number {
+export function calculateOffset(
+  input: { page?: number | null; offset?: number | null },
+  limit: number,
+): number {
   const { page, offset = 0 } = input
-  return page ? (page - 1) * limit : offset
+  return page ? (page - 1) * limit : (offset ?? 0)
 }
 
 /**
- * Create pagination metadata from query results
- * @param total - Total number of items
- * @param input - Original pagination input
- * @param limit - Number of items per page
- * @param actualOffset - Calculated offset used in query
- * @returns Pagination metadata
+ * Create pagination metadata - clean API
+ * @param params - Pagination parameters
+ * @returns Complete pagination metadata with calculated offset
  */
-export function createPaginationResult(
-  total: number,
-  input: PaginationInput,
-  limit: number,
-  actualOffset: number,
-): PaginationResult {
+export function paginate(params: { total: number; page: number; limit: number }): PaginationResult {
+  const { total, page, limit } = params
+  const offset = (page - 1) * limit
   const pages = Math.ceil(total / limit)
-  const page = input.page ?? Math.floor(actualOffset / limit) + 1
 
   return {
     total,
-    pages,
     page,
-    offset: actualOffset,
     limit,
+    pages,
+    offset,
+    hasNextPage: page < pages,
+    hasPreviousPage: page > 1,
   }
 }
 
 /**
- * Create a paginated response with items and pagination metadata
- * @param items - Array of items
- * @param total - Total count of items
- * @param input - Pagination input
- * @param limit - Items per page
- * @returns Paginated response
+ * Create a paginated response - clean API
+ * @param params - Response parameters
+ * @returns Paginated response with items and metadata
  */
-export function createPaginatedResponse<T>(
-  items: T[],
-  total: number,
-  input: PaginationInput,
-  limit: number,
-): PaginatedResponse<T> {
-  const actualOffset = calculateOffset(input, limit)
-  const pagination = createPaginationResult(total, input, limit, actualOffset)
+export function paginatedResponse<T>(params: {
+  items: T[]
+  total: number
+  page: number
+  limit: number
+}): PaginatedResponse<T> {
+  const { items, total, page, limit } = params
 
   return {
     items,
-    pagination,
+    pagination: paginate({ total, page, limit }),
   }
 }
 
@@ -114,7 +110,14 @@ export async function paginatedQuery<T>(
     }),
   ])
 
-  return createPaginatedResponse(items, total, paginationInput, limit)
+  const { page } = paginationInput
+  const actualPage = page ?? Math.floor(actualOffset / limit) + 1
+  const pagination = paginate({ total, page: actualPage, limit })
+
+  return {
+    items,
+    pagination,
+  }
 }
 
 /**

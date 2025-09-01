@@ -383,7 +383,7 @@ CLERK_SECRET_KEY="your_clerk_secret"
 
 # External APIs
 RAWG_API_KEY="your_rawg_api_key"
-TGDB_API_KEY="your_thegamesdb_api_key"
+THE_GAMES_DB_API_KEY="your_thegamesdb_api_key"
 
 # Other configuration...
 ```

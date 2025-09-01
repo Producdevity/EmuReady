@@ -144,7 +144,7 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
       console.info(`✅ Created user: ${userData.email} (clerkId: ${clerkUser.id})`)
     } catch (error: unknown) {
       const clerkError = error as {
-        errors?: Array<{ code: string }>
+        errors?: { code: string }[]
       }
 
       if (clerkError?.errors?.[0]?.code === 'form_identifier_exists') {

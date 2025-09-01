@@ -3,12 +3,15 @@
 import { useUser } from '@clerk/nextjs'
 import { Search, AlertTriangle, ShieldOff } from 'lucide-react'
 import { useState, useRef, useEffect, type FormEvent } from 'react'
-import { Button, Modal, Badge } from '@/components/ui'
+import { Button, Modal, Badge, Input } from '@/components/ui'
+import { CHAR_LIMITS } from '@/data/constants'
 import { api } from '@/lib/api'
+import { logger } from '@/lib/logger'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
+import { formatUserRole } from '@/utils/format'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { PERMISSIONS } from '@/utils/permission-system'
+import { canBanUser, hasAllPermissions, PERMISSIONS } from '@/utils/permission-system'
 import { Role } from '@orm'
 
 interface Props {
@@ -39,41 +42,40 @@ function CreateBanModal(props: Props) {
     enabled: !!clerkUser,
   })
 
-  const currentUserRole = currentUserQuery.data?.role
-  const isSuperAdmin = currentUserRole === Role.SUPER_ADMIN
-
-  // Role hierarchy for ban permissions
-  const roleHierarchy = [
-    Role.USER,
-    Role.AUTHOR,
-    Role.DEVELOPER,
-    Role.MODERATOR,
-    Role.ADMIN,
-    Role.SUPER_ADMIN,
-  ]
-
-  // Check if current user can ban other users (must have manage_user_bans permission)
-  const canBanUsers = currentUserQuery.data?.permissions?.includes(PERMISSIONS.MANAGE_USER_BANS)
-
-  // Function to check if current user can ban a specific user
-  const canBanUser = (userRole: string): boolean => {
-    if (!currentUserRole) return false
-    if (isSuperAdmin) return true // Super admin can ban anyone
-
-    const currentRoleIndex = roleHierarchy.indexOf(currentUserRole)
-    const targetRoleIndex = roleHierarchy.indexOf(userRole as Role)
-
-    // Can only ban users with lower role hierarchy
-    return targetRoleIndex < currentRoleIndex
-  }
+  const canManageUserBans = hasAllPermissions(currentUserQuery.data?.permissions, [
+    PERMISSIONS.MANAGE_USER_BANS,
+  ])
 
   // User search query - filters out users that current user cannot ban
   const userSearchQuery = api.users.searchUsers.useQuery(
     { query: userSearch },
-    {
-      enabled: userSearch.length >= 2 && !selectedUser && !props.userId,
-    },
+    { enabled: userSearch.length >= 2 && !selectedUser && !props.userId },
   )
+
+  // Fetch user details if userId is provided
+  const preselectedUserQuery = api.users.getUserById.useQuery(
+    { userId: props.userId! },
+    { enabled: !!props.userId },
+  )
+
+  // Set pre-selected user when data is available
+  useEffect(() => {
+    if (props.userId && preselectedUserQuery.data) {
+      const user = preselectedUserQuery.data
+      // The getUserById returns a user profile object, we just need basic fields
+      // Only set the user if we have a valid id
+      if (!user || !user.id || !user.name) return
+      setSelectedUser({
+        id: user.id,
+        name: user.name || null,
+        email: '', // getUserById doesn't return email for privacy
+        profileImage: user.profileImage || null,
+        role: user.role as Role,
+        trustScore: user.trustScore || 0,
+      })
+      setUserSearch(user.name)
+    }
+  }, [props.userId, preselectedUserQuery.data])
 
   // Show dropdown when search results are available
   useEffect(() => {
@@ -90,6 +92,7 @@ function CreateBanModal(props: Props) {
     },
     onError: (err) => {
       toast.error(`Failed to ban user: ${getErrorMessage(err)}`)
+      logger.error('Failed to create user ban:', err)
     },
   })
 
@@ -120,7 +123,7 @@ function CreateBanModal(props: Props) {
     }
 
     // Double-check permission to ban this user
-    if (!canBanUser(selectedUser.role)) {
+    if (!canBanUser(currentUserQuery.data?.role, selectedUser.role)) {
       toast.error(`You cannot ban users with ${selectedUser.role} role or higher`)
       return
     }
@@ -173,13 +176,10 @@ function CreateBanModal(props: Props) {
     }
   }, [props.isOpen, props.userId])
 
-  const users = userSearchQuery.data ?? []
-  const isLoading = userSearchQuery.isPending
-
   const minDate = new Date().toISOString().split('T')[0]
 
   // Show permission error if user doesn't have the right role
-  if (props.isOpen && currentUserQuery.isSuccess && !canBanUsers) {
+  if (props.isOpen && currentUserQuery.isSuccess && !canManageUserBans) {
     return (
       <Modal isOpen={props.isOpen} onClose={props.onClose} title="Access Denied" size="sm">
         <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
@@ -188,7 +188,7 @@ function CreateBanModal(props: Props) {
             Insufficient Permissions
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-            You must have at least MODERATOR role to ban users.
+            You must have at least {formatUserRole(Role.MODERATOR)} role to ban users.
           </p>
           <Button variant="outline" onClick={props.onClose}>
             Close
@@ -225,12 +225,14 @@ function CreateBanModal(props: Props) {
           </label>
           <div className="relative" ref={dropdownRef}>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
+              <Input
                 ref={searchInputRef}
                 type="text"
                 value={userSearch}
                 onChange={(ev) => {
+                  // Don't allow changes if user is pre-selected from props
+                  if (props.userId) return
+
                   setUserSearch(ev.target.value)
                   if (!selectedUser && ev.target.value.length >= 2) {
                     setShowUserDropdown(true)
@@ -245,10 +247,12 @@ function CreateBanModal(props: Props) {
                     setSelectedUser(null)
                   }
                 }}
+                disabled={!!props.userId}
                 placeholder="Search users by name or email..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                leftIcon={<Search className="w-5 h-5" />}
+                className="w-full pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
               />
-              {isLoading && (
+              {userSearchQuery.isPending && !selectedUser && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                   <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full" />
                 </div>
@@ -256,12 +260,12 @@ function CreateBanModal(props: Props) {
             </div>
 
             {/* User Dropdown */}
-            {showUserDropdown && users.length > 0 && (
+            {showUserDropdown && userSearchQuery.data && userSearchQuery.data.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
-                {users.map((user) => {
-                  const canBan = canBanUser(user.role)
+                {userSearchQuery.data?.map((user) => {
+                  const canBan = canBanUser(currentUserQuery.data?.role, user.role)
                   return (
-                    <button
+                    <Button
                       key={user.id}
                       type="button"
                       onClick={() => canBan && handleUserSelect(user)}
@@ -290,7 +294,7 @@ function CreateBanModal(props: Props) {
                         </div>
                         <Badge>{user.role}</Badge>
                       </div>
-                    </button>
+                    </Button>
                   )
                 })}
               </div>
@@ -304,23 +308,27 @@ function CreateBanModal(props: Props) {
                     <div className="font-medium text-gray-900 dark:text-white">
                       {selectedUser.name || 'Unknown'}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {selectedUser.email}
-                    </div>
+                    {selectedUser.email && (
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        {selectedUser.email}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge>{selectedUser.role}</Badge>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedUser(null)
-                        setUserSearch('')
-                      }}
-                    >
-                      Change
-                    </Button>
+                    {!props.userId && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedUser(null)
+                          setUserSearch('')
+                        }}
+                      >
+                        Change
+                      </Button>
+                    )}
                   </div>
                 </div>
                 {/* Show warning for privileged users */}
@@ -335,11 +343,14 @@ function CreateBanModal(props: Props) {
               </div>
             )}
 
-            {showUserDropdown && userSearch.length >= 2 && users.length === 0 && !isLoading && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg p-4 text-center text-gray-500 dark:text-gray-400">
-                No users found matching &quot;{userSearch}&quot;
-              </div>
-            )}
+            {showUserDropdown &&
+              userSearch.length >= 2 &&
+              userSearchQuery.data?.length === 0 &&
+              !userSearchQuery.isPending && (
+                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg p-4 text-center text-gray-500 dark:text-gray-400">
+                  No users found matching &quot;{userSearch}&quot;
+                </div>
+              )}
           </div>
           {userSearch.length > 0 && userSearch.length < 2 && (
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -435,11 +446,11 @@ function CreateBanModal(props: Props) {
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Any additional context or notes about this ban..."
             rows={3}
-            maxLength={1000}
+            maxLength={CHAR_LIMITS.NOTES}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white resize-none"
           />
           <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-right">
-            {notes.length}/1000 characters
+            {notes.length}/{CHAR_LIMITS.NOTES} characters
           </div>
         </div>
 

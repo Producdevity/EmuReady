@@ -11,6 +11,7 @@ import {
   manageEmulatorVerifiedDevelopersProcedure,
   protectedProcedure,
 } from '@/server/api/trpc'
+import { paginate } from '@/server/utils/pagination'
 import { hasPermission } from '@/utils/permissions'
 import { Role, Prisma } from '@orm'
 
@@ -72,12 +73,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
 
       return {
         verifiedDevelopers,
-        pagination: {
-          page: actualPage,
-          pages: Math.ceil(total / actualLimit),
-          total,
-          limit: actualLimit,
-        },
+        pagination: paginate({ total, page: actualPage, limit: actualLimit }),
       }
     }),
 

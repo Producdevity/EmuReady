@@ -31,7 +31,7 @@ import {
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { listingStatsCache } from '@/server/utils/cache/instances'
 import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
-import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
+import { paginate } from '@/server/utils/pagination'
 import { hasPermission } from '@/utils/permissions'
 import { Prisma, ApprovalStatus, TrustAction, ReportStatus, Role } from '@orm'
 
@@ -42,7 +42,7 @@ const mode = Prisma.QueryMode.insensitive
 export const adminRouter = createTRPCRouter({
   getPending: developerProcedure.input(GetPendingListingsSchema).query(async ({ ctx, input }) => {
     const { search, page = 1, limit = 20, sortField, sortDirection } = input ?? {}
-    const skip = calculateOffset({ page }, limit)
+    const skip = (page - 1) * limit
 
     // Build where clause for search
     let where: Prisma.ListingWhereInput = { status: ApprovalStatus.PENDING }
@@ -61,7 +61,7 @@ export const adminRouter = createTRPCRouter({
         // Developer has no verified emulators, return empty result
         return {
           listings: [],
-          pagination: createPaginationResult(0, { page }, limit, 0),
+          pagination: paginate({ total: 0, page, limit: limit }),
         }
       }
 
@@ -173,7 +173,7 @@ export const adminRouter = createTRPCRouter({
 
     return {
       listings: listingsWithReports,
-      pagination: createPaginationResult(totalListings, { page }, limit, skip),
+      pagination: paginate({ total: totalListings, page, limit: limit }),
     }
   }),
 
@@ -392,7 +392,7 @@ export const adminRouter = createTRPCRouter({
 
   getProcessed: superAdminProcedure.input(GetProcessedSchema).query(async ({ ctx, input }) => {
     const { page, limit, filterStatus, search } = input
-    const skip = calculateOffset({ page }, limit)
+    const skip = (page - 1) * limit
 
     const baseWhere: Prisma.ListingWhereInput = {
       NOT: { status: ApprovalStatus.PENDING },
@@ -438,7 +438,7 @@ export const adminRouter = createTRPCRouter({
 
     return {
       listings,
-      pagination: createPaginationResult(totalListings, { page }, limit, skip),
+      pagination: paginate({ total: totalListings, page, limit: limit }),
     }
   }),
 
@@ -869,7 +869,7 @@ export const adminRouter = createTRPCRouter({
       systemFilter,
       emulatorFilter,
     } = input
-    const skip = calculateOffset({ page }, limit)
+    const skip = (page - 1) * limit
 
     const baseWhere: Prisma.ListingWhereInput = {
       ...(statusFilter && { status: statusFilter }),
@@ -943,14 +943,11 @@ export const adminRouter = createTRPCRouter({
       where: whereClause,
     })
 
+    const pagination = paginate({ total: totalListings, page, limit: limit })
+
     return {
       listings,
-      pagination: {
-        total: totalListings,
-        totalPages: Math.ceil(totalListings / limit),
-        currentPage: page,
-        limit,
-      },
+      pagination,
     }
   }),
 

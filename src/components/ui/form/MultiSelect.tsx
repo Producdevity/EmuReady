@@ -1,8 +1,9 @@
 'use client'
 
 import { ChevronDown, X } from 'lucide-react'
-import { useState, useRef, useEffect, type ReactNode } from 'react'
+import { useState, useRef, useEffect, useMemo, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import { searchItems } from '@/utils/simpleSearch'
 
 interface Option {
   id: string
@@ -30,19 +31,24 @@ export function MultiSelect(props: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
-  const filteredOptions = props.options.filter((option) =>
-    option.name.toLowerCase().includes(searchQuery.trim().toLowerCase()),
-  )
+  const filteredOptions = useMemo(() => {
+    return searchItems(
+      props.options,
+      searchQuery,
+      (option) => `${option.name} ${option.badgeName || ''}`,
+    )
+  }, [props.options, searchQuery])
 
-  // Sort filtered options: selected items first, then unselected
-  const sortedFilteredOptions = [...filteredOptions].sort((a, b) => {
-    const aSelected = props.value.includes(a.id)
-    const bSelected = props.value.includes(b.id)
+  const sortedFilteredOptions = useMemo(() => {
+    return [...filteredOptions].sort((a, b) => {
+      const aSelected = props.value.includes(a.id)
+      const bSelected = props.value.includes(b.id)
 
-    if (aSelected && !bSelected) return -1
-    if (!aSelected && bSelected) return 1
-    return 0
-  })
+      if (aSelected && !bSelected) return -1
+      if (!aSelected && bSelected) return 1
+      return 0
+    })
+  }, [filteredOptions, props.value])
 
   const selectedOptions = props.options.filter((option) => props.value.includes(option.id))
 

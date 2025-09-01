@@ -1,0 +1,68 @@
+# -------------------------------------
+# Build artifacts / local caches (remote builds only)
+# -------------------------------------
+.next/
+out/
+*.tsbuildinfo
+
+# -------------------------------------
+# Test / CI outputs
+# -------------------------------------
+coverage/
+test-results/
+test-results.log
+playwright-report/
+blob-report/
+playwright/.cache/
+tests/.auth/*.json
+*.trace.zip
+*.webm
+**/*.trace.zip
+**/*.webm
+**/test-results/
+**/playwright-report/
+**/blob-report/
+**/coverage/
+
+# -------------------------------------
+# Local data / backups
+# -------------------------------------
+backups/
+*.sql
+*.pgdump
+*.data.sql
+*.zip
+
+# -------------------------------------
+# Package manager / dependency cruft
+# -------------------------------------
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# -------------------------------------
+# Misc + sensitive configs
+# -------------------------------------
+.env*
+.clerk/
+.idea/
+.vscode/
+.cursor/
+.claude/
+.gemini/
+*.pem
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# -------------------------------------
+# Project-specific
+# Note: .vercel is local metadata
+.vercel/
+prisma/generated/

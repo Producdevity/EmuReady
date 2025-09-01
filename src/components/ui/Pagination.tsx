@@ -5,7 +5,7 @@ import { useCallback, useMemo, type KeyboardEvent } from 'react'
 import { cn } from '@/lib/utils'
 
 interface Props {
-  currentPage: number
+  page: number
   totalPages: number
   totalItems?: number
   itemsPerPage?: number
@@ -32,15 +32,14 @@ export function Pagination(props: Props) {
       Array.from({ length: props.totalPages }, (_, i) => i + 1).filter((pageNum) => {
         // Use 2 as default for SSR compatibility, works well on both mobile and desktop
         const range = 2
-        const isNearCurrent =
-          pageNum >= props.currentPage - range && pageNum <= props.currentPage + range
-        const isNotFirstPage = props.currentPage > range + 1 ? pageNum !== 1 : true
+        const isNearCurrent = pageNum >= props.page - range && pageNum <= props.page + range
+        const isNotFirstPage = props.page > range + 1 ? pageNum !== 1 : true
         const isNotLastPage =
-          props.currentPage < props.totalPages - range ? pageNum !== props.totalPages : true
+          props.page < props.totalPages - range ? pageNum !== props.totalPages : true
 
         return isNearCurrent && isNotFirstPage && isNotLastPage
       }),
-    [props.currentPage, props.totalPages],
+    [props.page, props.totalPages],
   )
 
   if (props.totalPages <= 1) return null
@@ -50,11 +49,9 @@ export function Pagination(props: Props) {
     props.itemsPerPage ??
     (props.totalItems && props.totalPages ? Math.ceil(props.totalItems / props.totalPages) : 10)
 
-  const itemsStart = !props.totalItems ? 0 : (props.currentPage - 1) * itemsPerPage + 1
+  const itemsStart = !props.totalItems ? 0 : (props.page - 1) * itemsPerPage + 1
 
-  const itemsEnd = !props.totalItems
-    ? 0
-    : Math.min(props.currentPage * itemsPerPage, props.totalItems)
+  const itemsEnd = !props.totalItems ? 0 : Math.min(props.page * itemsPerPage, props.totalItems)
 
   return (
     <nav className="mt-12" aria-label="Pagination navigation" role="navigation">
@@ -85,11 +82,11 @@ export function Pagination(props: Props) {
 
         <div className="flex items-center space-x-1">
           <button
-            onClick={() => props.onPageChange(Math.max(1, props.currentPage - 1))}
-            disabled={props.currentPage === 1}
+            onClick={() => props.onPageChange(Math.max(1, props.page - 1))}
+            disabled={props.page === 1}
             className={cn(
               'relative inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200',
-              props.currentPage === 1
+              props.page === 1
                 ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed bg-gray-50 dark:bg-gray-800'
                 : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow-md',
             )}
@@ -99,7 +96,7 @@ export function Pagination(props: Props) {
             <span className="hidden sm:ml-2 sm:inline">Previous</span>
           </button>
 
-          {props.currentPage > 3 && (
+          {props.page > 3 && (
             <>
               <button
                 onClick={() => props.onPageChange(1)}
@@ -109,7 +106,7 @@ export function Pagination(props: Props) {
               >
                 1
               </button>
-              {props.currentPage > 4 && (
+              {props.page > 4 && (
                 <span
                   className="flex items-center px-2 py-2 text-gray-500 dark:text-gray-400"
                   aria-hidden="true"
@@ -126,20 +123,20 @@ export function Pagination(props: Props) {
               onClick={() => props.onPageChange(pageNum)}
               onKeyDown={(e) => handleKeyDown(e, pageNum)}
               className={`relative inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                pageNum === props.currentPage
+                pageNum === props.page
                   ? 'bg-blue-600 text-white shadow-lg ring-1 ring-blue-600 hover:bg-blue-700'
                   : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 shadow-sm hover:shadow-md'
               }`}
               aria-label={`Go to page ${pageNum}`}
-              aria-current={pageNum === props.currentPage ? 'page' : undefined}
+              aria-current={pageNum === props.page ? 'page' : undefined}
             >
               {pageNum}
             </button>
           ))}
 
-          {props.currentPage < props.totalPages - 2 && (
+          {props.page < props.totalPages - 2 && (
             <>
-              {props.currentPage < props.totalPages - 3 && (
+              {props.page < props.totalPages - 3 && (
                 <span
                   className="flex items-center px-2 py-2 text-gray-500 dark:text-gray-400"
                   aria-hidden="true"
@@ -161,10 +158,10 @@ export function Pagination(props: Props) {
 
           <button
             type="button"
-            onClick={() => props.onPageChange(Math.min(props.totalPages, props.currentPage + 1))}
-            disabled={props.currentPage === props.totalPages}
+            onClick={() => props.onPageChange(Math.min(props.totalPages, props.page + 1))}
+            disabled={props.page === props.totalPages}
             className={`relative inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-              props.currentPage === props.totalPages
+              props.page === props.totalPages
                 ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed bg-gray-50 dark:bg-gray-800'
                 : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow-md'
             }`}
@@ -177,7 +174,7 @@ export function Pagination(props: Props) {
 
         {showLabel && (
           <div className="text-xs text-gray-500 dark:text-gray-400 sm:hidden">
-            Page {props.currentPage} of {props.totalPages}
+            Page {props.page} of {props.totalPages}
           </div>
         )}
       </div>

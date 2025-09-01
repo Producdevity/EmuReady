@@ -44,19 +44,22 @@ function EditListingButton(props: Props) {
   // If data is not available for some reason, don't show the button
   if (!canEditQuery.data) return null
 
-  // If it's not our listing, don't show the button at all
-  if (canEditQuery.data.isOwner === false) return null
+  // If user can't edit (not owner and not moderator), don't show the button
+  if (!canEditQuery.data.canEdit) return null
 
   const canEdit = canEditQuery.data.canEdit
+  const isOwner = canEditQuery.data.isOwner
   const remainingMinutes = canEditQuery.data.remainingMinutes ?? 0
   const timeExpired = canEditQuery.data.timeExpired ?? false
   const isPending = canEditQuery.data.isPending ?? false
   const isApproved = canEditQuery.data.isApproved ?? false
 
   const buttonTitle = canEdit
-    ? isPending
-      ? 'Edit listing (pending approval - no time limit)'
-      : `Edit listing (${remainingMinutes} minutes remaining after approval)`
+    ? !isOwner
+      ? 'Edit listing (moderator override)'
+      : isPending
+        ? 'Edit listing (pending approval - no time limit)'
+        : `Edit listing (${remainingMinutes} minutes remaining after approval)`
     : timeExpired
       ? 'Edit time expired (60 minute limit after approval)'
       : 'Cannot edit listing'

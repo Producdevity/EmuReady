@@ -12,7 +12,7 @@ import {
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
 import { pcListingInclude, buildPcListingWhere } from '@/server/api/utils/pcListingHelpers'
-import { createPaginationResult } from '@/server/utils/pagination'
+import { paginate } from '@/server/utils/pagination'
 import { isModerator } from '@/utils/permissions'
 import { Prisma, ApprovalStatus } from '@orm'
 
@@ -34,7 +34,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       minMemory,
       maxMemory,
     } = input
-    const skip = (page - 1) * limit
+    const actualOffset = (page - 1) * limit
     const mode = Prisma.QueryMode.insensitive
 
     const canSeeBannedUsers = ctx.session?.user ? isModerator(ctx.session.user.role) : false
@@ -83,7 +83,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
     const [pcListings, total] = await Promise.all([
       ctx.prisma.pcListing.findMany({
         where,
-        skip,
+        skip: actualOffset,
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: pcListingInclude,
@@ -99,11 +99,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
     }))
     return {
       listings: listingsWithStats,
-      pagination: {
-        ...createPaginationResult(total, { page }, limit, (page - 1) * limit),
-        hasNextPage: page < Math.ceil(total / limit),
-        hasPreviousPage: page > 1,
-      },
+      pagination: paginate({ total: total, page, limit: limit }),
     }
   }),
 

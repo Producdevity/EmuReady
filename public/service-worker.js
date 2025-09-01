@@ -39,7 +39,7 @@
 /* ------------------------------------------------------------------ */
 
 /** Name of the runtime cache used by this Service Worker. */
-const CACHE_NAME = 'emuready_v0.10.0'
+const CACHE_NAME = 'emuready_v0.10.3'
 
 /** URLs cached during the installation step */
 const urlsToCache = [
@@ -144,6 +144,12 @@ self.addEventListener(
     // Process only same-origin requests
     if (url.origin !== self.location.origin) return
 
+    // Special handling for API and tRPC routes - pass through without interference
+    if (url.pathname.includes('/api/') || url.pathname.includes('/trpc/')) {
+      // Let the browser handle API requests normally
+      return
+    }
+
     // Exclude HTML navigation requests from caching
     if (event.request.mode === 'navigate') return
 
@@ -152,7 +158,7 @@ self.addEventListener(
 
     const cacheDuration = getCacheDuration(url.pathname)
 
-    // Bypass cache for zero-duration resources (includes API and tRPC routes)
+    // Bypass cache for zero-duration resources
     if (cacheDuration === 0) return
 
     event.respondWith(
@@ -189,9 +195,7 @@ self.addEventListener(
         })
 
         // Implement stale-while-revalidate pattern
-        if (cached) {
-          return cached
-        }
+        if (cached) return cached
 
         // Await network response when no cache exists
         return fetchPromise

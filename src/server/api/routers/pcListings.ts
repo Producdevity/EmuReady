@@ -57,7 +57,7 @@ import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifica
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
 import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
 import { listingStatsCache } from '@/server/utils/cache'
-import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
+import { paginate } from '@/server/utils/pagination'
 import { validatePagination, sanitizeInput } from '@/server/utils/security-validation'
 import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
 import { PERMISSIONS, roleIncludesRole } from '@/utils/permission-system'
@@ -87,12 +87,7 @@ export const pcListingsRouter = createTRPCRouter({
 
     return {
       pcListings: result.pcListings,
-      pagination: createPaginationResult(
-        result.pagination.total,
-        { page: result.pagination.page },
-        result.pagination.limit,
-        result.pagination.offset,
-      ),
+      pagination: result.pagination,
     }
   }),
 
@@ -114,14 +109,6 @@ export const pcListingsRouter = createTRPCRouter({
   canEdit: protectedProcedure.input(GetPcListingForUserEditSchema).query(async ({ ctx, input }) => {
     const EDIT_TIME_LIMIT_MINUTES = 60
 
-    if (hasPermission(ctx.session.user.role, Role.MODERATOR)) {
-      return {
-        canEdit: true,
-        isOwner: true,
-        reason: 'Moderator can edit any PC listing',
-      }
-    }
-
     const pcListing = await ctx.prisma.pcListing.findUnique({
       where: { id: input.id },
       select: { authorId: true, status: true, processedAt: true },
@@ -137,6 +124,16 @@ export const pcListingsRouter = createTRPCRouter({
 
     // Check ownership
     const isOwner = pcListing.authorId === ctx.session.user.id
+
+    // Moderators and higher can always edit any PC listing (but still reflect true ownership)
+    if (hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+      return {
+        canEdit: true,
+        isOwner,
+        reason: 'Moderator can edit any PC listing',
+      }
+    }
+
     if (!isOwner) {
       return { canEdit: false, isOwner: false, reason: 'Not your PC listing' }
     }
@@ -472,7 +469,7 @@ export const pcListingsRouter = createTRPCRouter({
         // Developer has no assigned emulators, return empty results
         return {
           pcListings: [],
-          pagination: createPaginationResult(0, { page }, limit, (page - 1) * limit),
+          pagination: paginate({ total: 0, page: page, limit: limit }),
         }
       }
     }
@@ -489,12 +486,7 @@ export const pcListingsRouter = createTRPCRouter({
 
     return {
       pcListings: result.pcListings,
-      pagination: createPaginationResult(
-        result.pagination.total,
-        { page: result.pagination.page },
-        result.pagination.limit,
-        result.pagination.offset,
-      ),
+      pagination: result.pagination,
     }
   }),
 
@@ -654,7 +646,7 @@ export const pcListingsRouter = createTRPCRouter({
         osFilter,
       } = input
 
-      const offset = calculateOffset({ page }, limit)
+      const offset = (page - 1) * limit
 
       const baseWhere: Prisma.PcListingWhereInput = {
         ...(statusFilter ? { status: statusFilter } : {}),
@@ -697,7 +689,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       return {
         pcListings,
-        pagination: createPaginationResult(total, { page }, limit, offset),
+        pagination: paginate({ total: total, page, limit: limit }),
       }
     }),
 
@@ -1189,11 +1181,11 @@ export const pcListingsRouter = createTRPCRouter({
       })
     }),
 
-  getReports: permissionProcedure(PERMISSIONS.ACCESS_ADMIN_PANEL)
+  getReports: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
     .input(GetPcListingReportsSchema)
     .query(async ({ ctx, input }) => {
       const { status, page = 1, limit = 20 } = input
-      const offset = calculateOffset({ page }, limit)
+      const offset = (page - 1) * limit
 
       const where: Prisma.PcListingReportWhereInput = {}
       if (status) {
@@ -1225,11 +1217,11 @@ export const pcListingsRouter = createTRPCRouter({
 
       return {
         reports,
-        pagination: createPaginationResult(total, { page }, limit, offset),
+        pagination: paginate({ total: total, page, limit: limit }),
       }
     }),
 
-  updateReport: permissionProcedure(PERMISSIONS.ACCESS_ADMIN_PANEL)
+  updateReport: permissionProcedure(PERMISSIONS.MANAGE_USER_BANS)
     .input(UpdatePcListingReportSchema)
     .mutation(async ({ ctx, input }) => {
       const { reportId, status, reviewNotes } = input

@@ -1,8 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import {
-  calculateOffset,
-  createPaginationResult,
-  createPaginatedResponse,
+  paginate,
+  paginatedResponse,
   paginatedQuery,
   buildOrderBy,
   buildSearchConditions,
@@ -12,76 +11,75 @@ import {
 type TestOrderBy = Record<string, unknown>
 
 describe('pagination utilities', () => {
-  describe('calculateOffset', () => {
-    it('should calculate offset from page number', () => {
-      expect(calculateOffset({ page: 1 }, 10)).toBe(0)
-      expect(calculateOffset({ page: 2 }, 10)).toBe(10)
-      expect(calculateOffset({ page: 3 }, 20)).toBe(40)
-    })
-
-    it('should use direct offset when page is not provided', () => {
-      expect(calculateOffset({ offset: 0 }, 10)).toBe(0)
-      expect(calculateOffset({ offset: 25 }, 10)).toBe(25)
-      expect(calculateOffset({ offset: 100 }, 20)).toBe(100)
-    })
-
-    it('should prioritize page over offset when both are provided', () => {
-      expect(calculateOffset({ page: 2, offset: 50 }, 10)).toBe(10)
-    })
-
-    it('should default to 0 when neither page nor offset is provided', () => {
-      expect(calculateOffset({}, 10)).toBe(0)
-    })
-  })
-
-  describe('createPaginationResult', () => {
-    it('should create pagination metadata with page input', () => {
-      const result = createPaginationResult(100, { page: 3 }, 10, 20)
+  describe('paginate', () => {
+    it('should create pagination metadata with page', () => {
+      const result = paginate({ total: 100, page: 3, limit: 10 })
       expect(result).toEqual({
         total: 100,
         pages: 10,
         page: 3,
         offset: 20,
         limit: 10,
+        hasNextPage: true,
+        hasPreviousPage: true,
       })
     })
 
-    it('should calculate page from offset when page is not provided', () => {
-      const result = createPaginationResult(100, { offset: 25 }, 10, 25)
+    it('should handle first page correctly', () => {
+      const result = paginate({ total: 100, page: 1, limit: 10 })
       expect(result).toEqual({
         total: 100,
         pages: 10,
-        page: 3, // Math.floor(25 / 10) + 1
-        offset: 25,
+        page: 1,
+        offset: 0,
         limit: 10,
+        hasNextPage: true,
+        hasPreviousPage: false,
+      })
+    })
+
+    it('should handle last page correctly', () => {
+      const result = paginate({ total: 100, page: 10, limit: 10 })
+      expect(result).toEqual({
+        total: 100,
+        pages: 10,
+        page: 10,
+        offset: 90,
+        limit: 10,
+        hasNextPage: false,
+        hasPreviousPage: true,
       })
     })
 
     it('should handle edge cases correctly', () => {
       // Empty results
-      expect(createPaginationResult(0, { page: 1 }, 10, 0)).toEqual({
+      expect(paginate({ total: 0, page: 1, limit: 10 })).toEqual({
         total: 0,
         pages: 0,
         page: 1,
         offset: 0,
         limit: 10,
+        hasNextPage: false,
+        hasPreviousPage: false,
       })
 
       // Single item
-      expect(createPaginationResult(1, { page: 1 }, 10, 0)).toEqual({
+      expect(paginate({ total: 1, page: 1, limit: 10 })).toEqual({
         total: 1,
         pages: 1,
         page: 1,
         offset: 0,
         limit: 10,
+        hasNextPage: false,
+        hasPreviousPage: false,
       })
     })
   })
 
-  describe('createPaginatedResponse', () => {
+  describe('paginatedResponse', () => {
     it('should create a complete paginated response', () => {
       const items = [{ id: 1 }, { id: 2 }, { id: 3 }]
-      const response = createPaginatedResponse(items, 50, { page: 2 }, 10)
+      const response = paginatedResponse({ items, total: 50, page: 2, limit: 10 })
 
       expect(response).toEqual({
         items,
@@ -91,6 +89,8 @@ describe('pagination utilities', () => {
           page: 2,
           offset: 10,
           limit: 10,
+          hasNextPage: true,
+          hasPreviousPage: true,
         },
       })
     })

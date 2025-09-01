@@ -18,6 +18,7 @@ import { ms } from '@/utils/time'
 import { Role } from '@orm'
 import GamePreviewModal from './components/GamePreviewModal'
 import NotSignedInMessage from '../components/NotSignedInMessage'
+import { extractBoxartUrl } from './utils/boxartHelpers'
 import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
 
 // Extended TGDB game result that extends BaseGameResult
@@ -136,9 +137,12 @@ function TGDBSearchContent() {
         // Map TGDB games to our unified format
         const gameData = results.data?.games ?? []
         const mappedGames = gameData.map((game) => {
+          // Extract boxart URL from the search response
+          const boxartUrl = extractBoxartUrl(game, results)
+
           const enrichedGame: TGDBGameWithBoxart = {
             ...game,
-            boxart: 'boxart' in game && typeof game.boxart === 'string' ? game.boxart : undefined,
+            boxart: boxartUrl || undefined,
             platform_name: typeof game.platform === 'string' ? game.platform : undefined,
             genre_names:
               Array.isArray(game.genres) &&

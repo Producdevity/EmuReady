@@ -1,10 +1,6 @@
 import { PAGINATION } from '@/data/constants'
 import { ResourceError } from '@/lib/errors'
-import {
-  calculateOffset,
-  createPaginationResult,
-  type PaginationResult,
-} from '@/server/utils/pagination'
+import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
 import { type Prisma } from '@orm'
 import { BaseRepository } from './base.repository'
 
@@ -67,10 +63,7 @@ export class EmulatorsRepository extends BaseRepository {
 
     const where = this.buildWhereClause(search)
     const orderBy = this.buildOrderBy(sortField, sortDirection)
-    const actualOffset = calculateOffset(
-      { page: page ?? undefined, offset: offset ?? undefined },
-      limit ?? 20,
-    )
+    const actualOffset = calculateOffset({ page, offset }, limit ?? 20)
 
     const [total, emulators] = await Promise.all([
       this.prisma.emulator.count({ where }),
@@ -86,12 +79,11 @@ export class EmulatorsRepository extends BaseRepository {
       }),
     ])
 
-    const pagination = createPaginationResult(
-      total,
-      { page: page ?? undefined, offset: offset ?? undefined },
-      limit ?? 20,
-      actualOffset,
-    )
+    const pagination = paginate({
+      total: total,
+      page: page ?? Math.floor(actualOffset / (limit ?? 20)) + 1,
+      limit: limit ?? 20,
+    })
 
     return { emulators, pagination }
   }

@@ -67,7 +67,7 @@ export default function AdminBadgesPage() {
   // Fetch badges
   const badgesQuery = api.badges.getAll.useQuery({
     limit: table.limit,
-    offset: (table.page - 1) * table.limit,
+    page: table.page,
     search: table.search || undefined,
     isActive: statusFilter === 'all' ? undefined : statusFilter === 'active',
     sortField: table.sortField || 'createdAt',
@@ -424,11 +424,11 @@ export default function AdminBadgesPage() {
             </div>
 
             {/* Pagination */}
-            {pagination && Math.ceil(pagination.total / table.limit) > 1 && (
+            {pagination && pagination.pages > 1 && (
               <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
                 <Pagination
-                  currentPage={table.page}
-                  totalPages={Math.ceil(pagination.total / table.limit)}
+                  page={table.page}
+                  totalPages={pagination.pages}
                   totalItems={pagination.total}
                   itemsPerPage={table.limit}
                   onPageChange={table.setPage}

@@ -59,7 +59,8 @@ export const GetBadgeSchema = z.object({
 
 export const GetBadgesSchema = z.object({
   limit: z.number().min(1).max(100).default(20),
-  offset: z.number().min(0).default(0),
+  offset: z.number().min(0).optional(),
+  page: z.number().min(1).optional(),
   search: z.string().optional(),
   isActive: z.boolean().optional(),
   sortField: z.enum(['name', 'createdAt', 'updatedAt']).optional(),

@@ -176,7 +176,7 @@ function createPaginatedList(routerName: string, _procedureName: string): unknow
     pagination: {
       total: 156,
       pages: 8,
-      currentPage: 1,
+      page: 1,
       limit: 20,
       hasNextPage: true,
       hasPreviousPage: false,

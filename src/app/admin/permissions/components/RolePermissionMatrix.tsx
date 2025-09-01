@@ -17,9 +17,8 @@ export default function RolePermissionMatrix(props: Props) {
   const assignPermission = api.permissions.assignPermissionToRole.useMutation({
     onSuccess: () => {
       toast.success('Permission assigned successfully!')
-      // Invalidate both matrix and main permissions queries to refresh the UI
-      utils.permissions.getPermissionMatrix.invalidate()
-      utils.permissions.getAll.invalidate()
+      void utils.permissions.getPermissionMatrix.invalidate()
+      void utils.permissions.getAll.invalidate()
       props.onSuccess()
     },
     onError: (err) => {
@@ -30,9 +29,8 @@ export default function RolePermissionMatrix(props: Props) {
   const removePermission = api.permissions.removePermissionFromRole.useMutation({
     onSuccess: () => {
       toast.success('Permission removed successfully!')
-      // Invalidate both matrix and main permissions queries to refresh the UI
-      utils.permissions.getPermissionMatrix.invalidate()
-      utils.permissions.getAll.invalidate()
+      void utils.permissions.getPermissionMatrix.invalidate()
+      void utils.permissions.getAll.invalidate()
       props.onSuccess()
     },
     onError: (err) => {

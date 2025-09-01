@@ -512,7 +512,7 @@ function PcListingApprovalsPage() {
 
       {pagination && pagination.pages > 1 && (
         <Pagination
-          currentPage={pagination.page}
+          page={pagination.page}
           totalPages={pagination.pages}
           totalItems={pagination.total}
           onPageChange={table.setPage}

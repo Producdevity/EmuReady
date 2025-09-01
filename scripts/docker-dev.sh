@@ -40,7 +40,7 @@ check_env_file() {
         echo "  - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
         echo "  - CLERK_SECRET_KEY"
         echo "  - RAWG_API_KEY (optional)"
-        echo "  - TGDB_API_KEY (optional)"
+        echo "  - THE_GAMES_DB_API_KEY (optional)"
         echo ""
         read -pr "Press Enter once you've configured .env.docker..."
     fi

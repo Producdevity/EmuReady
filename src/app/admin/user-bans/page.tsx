@@ -1,7 +1,8 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
@@ -59,6 +60,8 @@ const getBanStatusText = (ban: { isActive: boolean; expiresAt: Date | null }) =>
 
 function AdminUserBansPage() {
   const { user: clerkUser } = useUser()
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const table = useAdminTable<BanSortField>({ defaultLimit: 20 })
   const confirm = useConfirmDialog()
   const utils = api.useUtils()
@@ -72,7 +75,20 @@ function AdminUserBansPage() {
   })
   const [createBanModal, setCreateBanModal] = useState<CreateBanModalState>({
     isOpen: false,
+    userId: undefined,
   })
+
+  // Handle query params to auto-open modal
+  useEffect(() => {
+    const action = searchParams.get('action')
+    const userId = searchParams.get('userId')
+
+    if (action === 'ban' && userId) {
+      setCreateBanModal({ isOpen: true, userId })
+      // Clean up URL after opening modal
+      router.replace('/admin/user-bans')
+    }
+  }, [searchParams, router])
 
   // Get current user data to check permissions
   const currentUserQuery = api.users.me.useQuery(undefined, {
@@ -149,9 +165,7 @@ function AdminUserBansPage() {
 
     if (!confirmed) return
 
-    deleteBan.mutate({
-      id: ban.id,
-    } satisfies RouterInput['userBans']['delete'])
+    deleteBan.mutate({ id: ban.id } satisfies RouterInput['userBans']['delete'])
   }
 
   const statsData = bansStatsQuery.data
@@ -205,8 +219,8 @@ function AdminUserBansPage() {
         <div className="flex gap-2">
           <select
             value={selectedStatus === '' ? '' : selectedStatus.toString()}
-            onChange={(e) => {
-              const value = e.target.value
+            onChange={(ev) => {
+              const value = ev.target.value
               setSelectedStatus(value === '' ? '' : value === 'true')
             }}
             className="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
@@ -382,7 +396,7 @@ function AdminUserBansPage() {
 
       {pagination && pagination.pages > 1 && (
         <Pagination
-          currentPage={table.page}
+          page={table.page}
           totalPages={pagination.pages}
           totalItems={pagination.total}
           itemsPerPage={pagination.limit}

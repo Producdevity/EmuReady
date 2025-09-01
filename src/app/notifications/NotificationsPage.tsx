@@ -43,13 +43,12 @@ function NotificationsPage() {
   const [selectedNotifications, setSelectedNotifications] = useState<Set<string>>(new Set())
 
   const limit = 20
-  const offset = (page - 1) * limit
 
   const utils = api.useUtils()
 
   const notificationsQuery = api.notifications.get.useQuery({
     limit,
-    offset,
+    page,
     category: selectedCategory === 'all' ? undefined : (selectedCategory as NotificationCategory),
   })
 
@@ -406,11 +405,11 @@ function NotificationsPage() {
         </div>
 
         {/* Pagination */}
-        {pagination && Math.ceil(pagination.total / pagination.limit) > 1 && (
+        {pagination && pagination.pages > 1 && (
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
             <Pagination
-              currentPage={page}
-              totalPages={Math.ceil(pagination.total / pagination.limit)}
+              page={page}
+              totalPages={pagination.pages}
               totalItems={pagination.total}
               itemsPerPage={pagination.limit}
               onPageChange={setPage}

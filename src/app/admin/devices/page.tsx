@@ -293,7 +293,7 @@ function AdminDevicesPage() {
 
       {devicesQuery.data && devicesQuery.data.pagination.pages > 1 && (
         <Pagination
-          currentPage={table.page}
+          page={table.page}
           totalPages={devicesQuery.data.pagination.pages}
           totalItems={devicesQuery.data.pagination.total}
           itemsPerPage={devicesQuery.data.pagination.limit}

@@ -90,6 +90,37 @@ const nextConfig: NextConfig = {
 
   serverExternalPackages: ['@prisma/client', 'jsdom', 'markdown-it', 'dompurify'],
 
+  outputFileTracingExcludes: {
+    // apply to all server routes
+    '/*': [
+      'backups/**/*',
+      'test-results/**/*',
+      'playwright-report/**/*',
+      'blob-report/**/*',
+      'coverage/**/*',
+      '**/*.sql',
+      '**/*.pgdump',
+      '**/*.data.sql',
+      '**/*.zip',
+      '**/*.trace.zip',
+      '**/*.webm',
+      '**/*.png',
+      'tsconfig.tsbuildinfo',
+      '.next/cache/**/*',
+      'node_modules/**/*.md',
+      'node_modules/**/*.txt',
+      'node_modules/**/README*',
+      'node_modules/**/CHANGELOG*',
+      'node_modules/**/LICENSE*',
+      'node_modules/**/*.test.*',
+      'node_modules/**/*.spec.*',
+      'node_modules/**/test/**/*',
+      'node_modules/**/tests/**/*',
+      'node_modules/**/examples/**/*',
+      'node_modules/**/docs/**/*',
+    ],
+  },
+
   eslint: {
     dirs: ['src', 'tests'],
   },
@@ -99,11 +130,54 @@ const nextConfig: NextConfig = {
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     })
+
+    // Improve chunk splitting for better caching
+    if (config.optimization) {
+      config.optimization.splitChunks = {
+        ...config.optimization.splitChunks,
+        cacheGroups: {
+          ...config.optimization.splitChunks?.cacheGroups,
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+            priority: 10,
+          },
+          common: {
+            name: 'common',
+            minChunks: 2,
+            chunks: 'all',
+            priority: 5,
+          },
+        },
+      }
+    }
+
     return config
   },
 
   async headers() {
     return [
+      // Static assets with hash - cache immutable
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // Images and other assets - cache with revalidation
+      {
+        source: '/favicon/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, must-revalidate',
+          },
+        ],
+      },
       {
         source: '/api/mobile/:path*',
         headers: [

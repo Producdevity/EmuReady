@@ -8,6 +8,7 @@ const authFiles = {
   moderator: path.join(__dirname, '.auth/moderator.json'),
   developer: path.join(__dirname, '.auth/developer.json'),
   admin: path.join(__dirname, '.auth/admin.json'),
+  super_admin: path.join(__dirname, '.auth/super_admin.json'),
 }
 
 // Helper function to login with specific credentials
@@ -17,13 +18,13 @@ async function authenticateUser(page: Page, email: string, password: string, rol
   try {
     // Navigate to home page
     await page.goto('/')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
 
     // Check if already authenticated by looking for user menu
     const userMenuButton = page
       .locator('.cl-userButtonTrigger, .cl-userButton, [data-clerk-user-button]')
       .first()
-    const isAlreadySignedIn = await userMenuButton.isVisible({ timeout: 3000 }).catch(() => false)
+    const isAlreadySignedIn = await userMenuButton.isVisible({ timeout: 2000 }).catch(() => false)
 
     if (isAlreadySignedIn) {
       console.log(`🔄 Already signed in, signing out first...`)
@@ -35,21 +36,20 @@ async function authenticateUser(page: Page, email: string, password: string, rol
         .or(page.getByText(/sign out/i))
       await signOutButton.click()
 
-      // Wait for sign out to complete
-      await page.waitForTimeout(2000)
-      await page.goto('/')
+      // Wait for sign out redirect
+      await page.waitForURL('/', { timeout: 5000 })
     }
 
     // Click sign in button
     const signInButton = page.getByRole('button', { name: /sign in/i }).first()
-    await signInButton.waitFor({ state: 'visible', timeout: 10000 })
+    await signInButton.waitFor({ state: 'visible', timeout: 5000 })
     await signInButton.click()
 
     // Wait for Clerk sign-in modal to load
     await page.waitForSelector(
       'input[name="identifier"], input[name="emailAddress"], input[type="email"]',
       {
-        timeout: 10000,
+        timeout: 5000,
         state: 'visible',
       },
     )
@@ -62,9 +62,12 @@ async function authenticateUser(page: Page, email: string, password: string, rol
 
     // Continue to password step
     const continueBtn = page.getByRole('button', { name: /continue/i })
-    if (await continueBtn.isVisible({ timeout: 2000 })) {
+    if (await continueBtn.isVisible({ timeout: 1000 })) {
       await continueBtn.click()
-      await page.waitForTimeout(1000)
+      // Wait for password field to appear instead of arbitrary timeout
+      await page.waitForSelector('input[name="password"], input[type="password"]', {
+        timeout: 3000,
+      })
     }
 
     // Fill password
@@ -169,7 +172,7 @@ setup.beforeAll(async () => {
   console.log('🧹 Auth setup initialized')
 })
 
-// Auth setup tests - only run the ones we have credentials for
+// Auth setup tests
 const authConfigs = [
   {
     role: 'user',
@@ -178,10 +181,16 @@ const authConfigs = [
     file: authFiles.user,
   },
   {
-    role: 'author',
-    email: process.env.TEST_AUTHOR_EMAIL,
-    password: process.env.TEST_AUTHOR_PASSWORD,
-    file: authFiles.author,
+    role: 'super_admin',
+    email: process.env.TEST_SUPER_ADMIN_EMAIL,
+    password: process.env.TEST_SUPER_ADMIN_PASSWORD,
+    file: authFiles.super_admin,
+  },
+  {
+    role: 'admin',
+    email: process.env.TEST_ADMIN_EMAIL,
+    password: process.env.TEST_ADMIN_PASSWORD,
+    file: authFiles.admin,
   },
   {
     role: 'moderator',
@@ -190,16 +199,16 @@ const authConfigs = [
     file: authFiles.moderator,
   },
   {
+    role: 'author',
+    email: process.env.TEST_AUTHOR_EMAIL,
+    password: process.env.TEST_AUTHOR_PASSWORD,
+    file: authFiles.author,
+  },
+  {
     role: 'developer',
     email: process.env.TEST_DEVELOPER_EMAIL,
     password: process.env.TEST_DEVELOPER_PASSWORD,
     file: authFiles.developer,
-  },
-  {
-    role: 'admin',
-    email: process.env.TEST_ADMIN_EMAIL,
-    password: process.env.TEST_ADMIN_PASSWORD,
-    file: authFiles.admin,
   },
 ]
 

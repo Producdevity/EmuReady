@@ -1,13 +1,13 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import Fuse from 'fuse.js'
 import { Smartphone, Search, Loader2, ChevronDown, Check } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Input } from '@/components/ui'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { searchItems, getDeviceSearchText } from '@/utils/simpleSearch'
 
 interface Device {
   id: string
@@ -29,86 +29,16 @@ interface Props {
   className?: string
 }
 
-// Create search data for fuzzy matching
-interface SearchableDevice extends Device {
-  fullName: string // "Retroid Pocket 5"
-  brandModel: string // "retroid pocket 5"
-  abbreviation: string // "rp5"
-  searchableText: string // combined searchable text
-}
-
-// TODO: this just needs to be fuzzy searching server side
-function createSearchableDevice(device: Device): SearchableDevice {
-  const fullName = `${device.brand.name} ${device.modelName}`
-  const brandModel = fullName.toLowerCase()
-
-  // Create abbreviation (first letter of brand + model words)
-  const brandWords = device.brand.name.toLowerCase().split(' ')
-  const modelWords = device.modelName.toLowerCase().split(' ')
-  const abbreviation = (brandWords[0]?.[0] || '') + modelWords.map((word) => word[0]).join('')
-
-  const searchableText = [
-    device.brand.name,
-    device.modelName,
-    fullName,
-    abbreviation,
-    device.soc?.name || '',
-    device.soc?.manufacturer || '',
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase()
-
-  return {
-    ...device,
-    fullName,
-    brandModel,
-    abbreviation,
-    searchableText,
-  }
-}
-
 function DeviceSelector(props: Props) {
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
-  // Get all devices (with high limit to get all)
-  // TODO: this needs to handled server-side for performance
   const devicesQuery = api.devices.get.useQuery({ limit: 1000 })
 
-  // Prepare searchable devices
-  const searchableDevices = useMemo(() => {
-    if (!devicesQuery.data?.devices) return []
-    return devicesQuery.data.devices.map(createSearchableDevice)
-  }, [devicesQuery.data?.devices])
-
-  // Configure Fuse.js for fuzzy search
-  const fuse = useMemo(() => {
-    if (searchableDevices.length === 0) return null
-
-    return new Fuse(searchableDevices, {
-      keys: [
-        { name: 'brand.name', weight: 0.3 },
-        { name: 'modelName', weight: 0.3 },
-        { name: 'fullName', weight: 0.2 },
-        { name: 'abbreviation', weight: 0.15 },
-        { name: 'searchableText', weight: 0.05 },
-      ],
-      threshold: 0.4, // More lenient matching
-      distance: 100,
-      includeScore: true,
-      minMatchCharLength: 1,
-    })
-  }, [searchableDevices])
-
-  // Filter devices based on search
   const filteredDevices = useMemo(() => {
-    if (!searchableDevices.length) return []
-
-    return searchQuery.trim() && fuse
-      ? fuse.search(searchQuery.trim()).map((result) => result.item)
-      : searchableDevices
-  }, [searchableDevices, searchQuery, fuse])
+    if (!devicesQuery.data?.devices) return []
+    return searchItems(devicesQuery.data.devices, searchQuery, getDeviceSearchText)
+  }, [devicesQuery.data?.devices, searchQuery])
 
   // Group devices by brand for better organization
   const devicesByBrand = useMemo(() => {

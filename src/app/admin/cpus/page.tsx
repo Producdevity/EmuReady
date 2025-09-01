@@ -290,7 +290,7 @@ function AdminCpusPage() {
 
       {cpusQuery.data && cpusQuery.data.pagination.pages > 1 && (
         <Pagination
-          currentPage={table.page}
+          page={table.page}
           totalPages={cpusQuery.data.pagination.pages}
           totalItems={cpusQuery.data.pagination.total}
           itemsPerPage={cpusQuery.data.pagination.limit}

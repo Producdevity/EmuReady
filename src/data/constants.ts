@@ -41,6 +41,7 @@ export const CHAR_LIMITS = {
   GAME_TITLE: 100,
   COMMENT: 2000,
   DESCRIPTION: 500,
+  NOTES: 1000,
   URL: 2000,
 } as const
 

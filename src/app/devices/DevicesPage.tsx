@@ -285,7 +285,7 @@ function DevicesPage() {
             showLabel
             totalItems={pagination.total}
             itemsPerPage={pagination.limit}
-            currentPage={pagination.page}
+            page={pagination.page}
             totalPages={pagination.pages}
             onPageChange={setPage}
           />

@@ -7,9 +7,8 @@ import superjson from 'superjson'
 import { ZodError } from 'zod'
 import analytics from '@/lib/analytics'
 import { AppError } from '@/lib/errors'
-import { log } from '@/lib/logger'
+import { logger } from '@/lib/logger'
 import { prisma } from '@/server/db'
-import { ensureServicesInitialized } from '@/server/init'
 import { hasDeveloperAccessToEmulator } from '@/server/utils/permissions'
 import { type Nullable } from '@/types/utils'
 import { hasPermissionInContext, PERMISSIONS } from '@/utils/permission-system'
@@ -56,7 +55,7 @@ export const createMobileTRPCContext = async (opts: CreateNextContextOptions) =>
     const webAuth = await auth()
     clerkUserId = webAuth.userId
   } catch (error) {
-    log.error('Web auth failed, try mobile JWT token', error)
+    logger.error('Web auth failed, try mobile JWT token', error)
   }
 
   // If no web auth, try mobile JWT token from Authorization header
@@ -155,9 +154,6 @@ export const createMobileTRPCContext = async (opts: CreateNextContextOptions) =>
       console.error('Database error in mobile context:', dbError)
     }
   }
-
-  // Initialize all services
-  await ensureServicesInitialized()
 
   return createInnerMobileContext({
     session,
@@ -271,9 +267,6 @@ export const createMobileTRPCFetchContext = async (opts: FetchCreateContextFnOpt
       console.error('Database error in mobile context:', dbError)
     }
   }
-
-  // Initialize all services
-  await ensureServicesInitialized()
 
   return createInnerMobileContext({
     session,

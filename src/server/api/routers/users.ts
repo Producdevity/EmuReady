@@ -17,11 +17,16 @@ import {
 } from '@/server/api/trpc'
 import { invalidateUser } from '@/server/cache/invalidation'
 import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
-import { buildOrderBy, calculateOffset, createPaginationResult } from '@/server/utils/pagination'
+import { buildOrderBy, paginate } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { createCountQuery } from '@/server/utils/query-performance'
 import { updateUserRole } from '@/server/utils/roleSync'
-import { hasPermissionInContext, PERMISSIONS, roleIncludesRole } from '@/utils/permission-system'
+import {
+  hasPermissionInContext,
+  PERMISSIONS,
+  ROLE_HIERARCHY,
+  roleIncludesRole,
+} from '@/utils/permission-system'
 import { sanitizeBio } from '@/utils/sanitization'
 import { ApprovalStatus, Role } from '@orm'
 import type { Prisma } from '@orm'
@@ -246,9 +251,7 @@ export const usersRouter = createTRPCRouter({
             id: true,
             assignedAt: true,
             color: true,
-            badge: {
-              select: { id: true, name: true, description: true, color: true, icon: true },
-            },
+            badge: { select: { id: true, name: true, description: true, color: true, icon: true } },
           },
           orderBy: { assignedAt: 'desc' },
         },
@@ -290,14 +293,9 @@ export const usersRouter = createTRPCRouter({
           listing: {
             select: {
               id: true,
-              device: {
-                select: { brand: { select: { id: true, name: true } }, modelName: true },
-              },
+              device: { select: { brand: { select: { id: true, name: true } }, modelName: true } },
               game: {
-                select: {
-                  title: true,
-                  system: { select: { id: true, name: true, key: true } },
-                },
+                select: { title: true, system: { select: { id: true, name: true, key: true } } },
               },
               emulator: { select: { name: true } },
               performance: { select: { label: true, rank: true } },
@@ -329,21 +327,11 @@ export const usersRouter = createTRPCRouter({
       ...user,
       listings: {
         items: listings,
-        pagination: {
-          total: listingsTotal,
-          pages: Math.ceil(listingsTotal / listingsLimit),
-          page: listingsPage,
-          limit: listingsLimit,
-        },
+        pagination: paginate({ total: listingsTotal, page: listingsPage, limit: listingsLimit }),
       },
       votes: {
         items: votes,
-        pagination: {
-          total: votesTotal,
-          pages: Math.ceil(votesTotal / votesLimit),
-          page: votesPage,
-          limit: votesLimit,
-        },
+        pagination: paginate({ total: votesTotal, page: votesPage, limit: votesLimit }),
       },
       filterOptions: {
         systems: [...new Set(availableSystems.map((l) => l.device.brand.name))],
@@ -406,14 +394,7 @@ export const usersRouter = createTRPCRouter({
         ...(bio !== undefined && { bio: bio ? sanitizeBio(bio) : null }),
         lastActiveAt: new Date(),
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        bio: true,
-        profileImage: true,
-        role: true,
-      },
+      select: { id: true, name: true, email: true, bio: true, profileImage: true, role: true },
     })
 
     // Invalidate SEO cache for user profile
@@ -422,12 +403,12 @@ export const usersRouter = createTRPCRouter({
     return result
   }),
 
-  // Admin-only routes
-  getAll: permissionProcedure(PERMISSIONS.MANAGE_USERS)
+  // Admin and Moderator routes
+  getAll: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
     .input(GetAllUsersSchema)
     .query(async ({ ctx, input }) => {
       const { search, sortField, sortDirection, page = 1, limit = 20 } = input ?? {}
-      const skip = calculateOffset({ page }, limit)
+      const skip = (page - 1) * limit
 
       // Build where clause for search
       const where: Prisma.UserWhereInput = {}
@@ -474,7 +455,7 @@ export const usersRouter = createTRPCRouter({
 
       return {
         users,
-        pagination: createPaginationResult(totalUsers, { page }, limit, skip),
+        pagination: paginate({ total: totalUsers, page, limit }),
       }
     }),
 
@@ -601,16 +582,14 @@ export const usersRouter = createTRPCRouter({
     .input(DeleteUserSchema)
     .mutation(async ({ ctx, input }) => {
       // Prevent self-deletion
-      if (input.userId === ctx.session.user.id) {
-        return ResourceError.user.cannotDeleteSelf()
-      }
+      if (input.userId === ctx.session.user.id) return ResourceError.user.cannotDeleteSelf()
 
       await ctx.prisma.user.delete({ where: { id: input.userId } })
 
       return { success: true }
     }),
 
-  searchUsers: permissionProcedure(PERMISSIONS.MANAGE_USERS)
+  searchUsers: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
     .input(SearchUsersSchema)
     .query(async ({ ctx, input }) => {
       const { query, limit, minRole } = input
@@ -618,22 +597,12 @@ export const usersRouter = createTRPCRouter({
       const where: Prisma.UserWhereInput = {}
 
       const searchConditions = buildSearchFilter(query, ['name', 'email'])
-      if (searchConditions) {
-        where.OR = searchConditions
-      }
+      if (searchConditions) where.OR = searchConditions
 
       // Filter by minimum role if specified
       if (minRole) {
-        const roles: Role[] = [
-          Role.USER,
-          Role.AUTHOR,
-          Role.DEVELOPER,
-          Role.MODERATOR,
-          Role.ADMIN,
-          Role.SUPER_ADMIN,
-        ]
-        const minRoleIndex = roles.indexOf(minRole)
-        const allowedRoles = roles.slice(minRoleIndex)
+        const minRoleIndex = ROLE_HIERARCHY.indexOf(minRole)
+        const allowedRoles = ROLE_HIERARCHY.slice(minRoleIndex)
         where.role = { in: allowedRoles }
       }
 
@@ -645,6 +614,7 @@ export const usersRouter = createTRPCRouter({
           email: true,
           profileImage: true,
           role: true,
+          trustScore: true,
         },
         orderBy: [{ name: 'asc' }, { email: 'asc' }],
         take: limit,

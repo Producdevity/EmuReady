@@ -50,25 +50,20 @@ async function getListingsHelper(
   const {
     page = 1,
     limit = 20,
-    gameId,
-    systemId,
+    gameIds,
     systemIds,
-    deviceId,
+    deviceIds,
+    socIds,
     emulatorIds,
     performanceIds,
     search,
   } = input ?? {}
 
-  // Handle both single systemId (deprecated) and multiple systemIds
-  const effectiveSystemIds = systemIds || (systemId ? [systemId] : undefined)
-
-  // Convert single deviceId to array format for consistency
-  const deviceIds = deviceId ? [deviceId] : undefined
-
   const result = await repository.list({
-    gameId,
-    systemIds: effectiveSystemIds,
+    gameId: gameIds?.[0], // Repository expects single gameId, take first if provided
+    systemIds,
     deviceIds,
+    socIds,
     emulatorIds,
     performanceIds,
     search,
@@ -83,14 +78,7 @@ async function getListingsHelper(
   // Transform pagination to mobile format
   return {
     listings: result.listings,
-    pagination: {
-      total: result.pagination.total,
-      pages: result.pagination.pages,
-      currentPage: result.pagination.page,
-      limit: result.pagination.limit,
-      hasNextPage: result.pagination.page < result.pagination.pages,
-      hasPreviousPage: result.pagination.page > 1,
-    },
+    pagination: result.pagination, // Already has all fields including hasNextPage/hasPreviousPage
   }
 }
 

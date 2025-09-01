@@ -10,6 +10,7 @@ import {
   roleIncludesRole,
   PERMISSIONS,
   type PermissionKey,
+  canBanUser,
 } from './permission-system'
 import type { TRPCContext } from '@/server/api/trpc'
 
@@ -332,6 +333,43 @@ describe('Permission System', () => {
     })
   })
 
+  describe('canBanUser', () => {
+    describe('happy paths', () => {
+      it('should allow SUPER_ADMIN to ban any role', () => {
+        expect(canBanUser(Role.SUPER_ADMIN, Role.USER)).toBe(true)
+        expect(canBanUser(Role.SUPER_ADMIN, Role.ADMIN)).toBe(true)
+        expect(canBanUser(Role.SUPER_ADMIN, Role.MODERATOR)).toBe(true)
+      })
+      it('should allow ADMIN to ban lower roles', () => {
+        expect(canBanUser(Role.ADMIN, Role.USER)).toBe(true)
+        expect(canBanUser(Role.ADMIN, Role.AUTHOR)).toBe(true)
+        expect(canBanUser(Role.ADMIN, Role.DEVELOPER)).toBe(true)
+        expect(canBanUser(Role.ADMIN, Role.MODERATOR)).toBe(true)
+      })
+      it('should allow MODERATOR to ban USER, AUTHOR, DEVELOPER', () => {
+        expect(canBanUser(Role.MODERATOR, Role.USER)).toBe(true)
+        expect(canBanUser(Role.MODERATOR, Role.AUTHOR)).toBe(true)
+        expect(canBanUser(Role.MODERATOR, Role.DEVELOPER)).toBe(true)
+      })
+    })
+    describe('edge cases', () => {
+      it('should prevent banning of same or higher roles', () => {
+        expect(canBanUser(Role.ADMIN, Role.ADMIN)).toBe(false)
+        expect(canBanUser(Role.ADMIN, Role.SUPER_ADMIN)).toBe(false)
+        expect(canBanUser(Role.MODERATOR, Role.MODERATOR)).toBe(false)
+        expect(canBanUser(Role.MODERATOR, Role.ADMIN)).toBe(false)
+      })
+      it('should return false for null/undefined actor role', () => {
+        expect(canBanUser(null, Role.USER)).toBe(false)
+        expect(canBanUser(undefined, Role.USER)).toBe(false)
+      })
+      it('should return false for null/undefined target role', () => {
+        expect(canBanUser(Role.ADMIN, null as any)).toBe(false)
+        expect(canBanUser(Role.ADMIN, undefined as any)).toBe(false)
+      })
+    })
+  })
+
   describe('PERMISSIONS constant', () => {
     it('should have all expected permission keys', () => {
       // Content Management
@@ -344,17 +382,6 @@ describe('Permission System', () => {
       expect(PERMISSIONS.ACCESS_ADMIN_PANEL).toBe('access_admin_panel')
       expect(PERMISSIONS.VIEW_STATISTICS).toBe('view_statistics')
       expect(PERMISSIONS.VIEW_LOGS).toBe('view_logs')
-    })
-
-    it('should be immutable', () => {
-      // In JavaScript, const objects are not deeply frozen by default
-      // The 'as const' assertion makes the TypeScript type readonly, but not the runtime object
-      // So we just verify that PERMISSIONS exists and has the expected structure
-      expect(PERMISSIONS).toBeDefined()
-      expect(typeof PERMISSIONS).toBe('object')
-
-      // We could test if it's actually frozen if we wanted to freeze it:
-      // expect(Object.isFrozen(PERMISSIONS)).toBe(true)
     })
 
     it('should have unique permission values', () => {

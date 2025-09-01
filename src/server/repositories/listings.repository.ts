@@ -1,5 +1,5 @@
 import { PAGINATION } from '@/data/constants'
-import { calculateOffset, createPaginationResult } from '@/server/utils/pagination'
+import { paginate, calculateOffset } from '@/server/utils/pagination'
 import {
   buildNsfwFilter,
   buildArrayFilter,
@@ -48,6 +48,8 @@ export interface ListingFilters {
  * - Mobile and web-optimized query methods
  */
 export class ListingsRepository extends BaseRepository {
+  protected readonly sortOrder: Prisma.SortOrder = Prisma.SortOrder.desc
+
   // Static query shapes for this repository
   static readonly includes = {
     minimal: {
@@ -198,7 +200,15 @@ export class ListingsRepository extends BaseRepository {
       filters.approvalStatus,
       'authorId',
     )
-    if (statusFilter) Object.assign(where, statusFilter)
+    if (statusFilter) {
+      if (Array.isArray(statusFilter)) {
+        where.OR = where.OR
+          ? [...(Array.isArray(where.OR) ? where.OR : [where.OR]), ...statusFilter]
+          : statusFilter
+      } else {
+        Object.assign(where, statusFilter)
+      }
+    }
 
     // NSFW filtering on games
     gameFilter = {
@@ -268,12 +278,11 @@ export class ListingsRepository extends BaseRepository {
       userVote: userVoteMap.get(listing.id) ?? null,
     }))
 
-    const pagination = createPaginationResult(
-      total,
-      { page: filters.page, offset: filters.offset },
-      limit,
-      offset,
-    )
+    const pagination = paginate({
+      total: total,
+      page: filters.page ?? Math.floor(offset / limit) + 1,
+      limit: limit,
+    })
 
     return {
       listings: listingsWithStats,
@@ -335,7 +344,7 @@ export class ListingsRepository extends BaseRepository {
         // Wilson Score already accounts for vote count in its calculation
         return [
           { successRate: direction }, // Primary sort by Wilson Score
-          { createdAt: Prisma.SortOrder.desc }, // Tie breaker for identical scores
+          { createdAt: this.sortOrder }, // Tie breaker for identical scores
         ]
       case 'createdAt':
       default:

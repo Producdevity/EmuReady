@@ -13,6 +13,7 @@ import {
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import { GpusRepository } from '@/server/repositories/gpus.repository'
+import { paginate } from '@/server/utils/pagination'
 
 export const gpusRouter = createTRPCRouter({
   get: publicProcedure.input(GetGpusSchema).query(async ({ ctx, input }) => {
@@ -22,16 +23,16 @@ export const gpusRouter = createTRPCRouter({
     if (input?.sortField === 'pcListings' && (input?.limit || 20) <= 100) {
       const gpus = await repository.listWithCounts(input.limit || 20)
       const total = await repository.count({ search: input.search, brandId: input.brandId })
+      const limit = input?.limit || 20
+      const actualOffset = input?.page ? (input?.page - 1) * limit : (input?.offset ?? 0)
 
       return {
         gpus,
-        pagination: {
-          total,
-          pages: Math.ceil(total / (input.limit || 20)),
-          page: input.page || 1,
-          offset: input.offset || 0,
-          limit: input.limit || 20,
-        },
+        pagination: paginate({
+          total: total,
+          page: input?.page ?? Math.floor(actualOffset / limit) + 1,
+          limit: limit,
+        }),
       }
     }
 

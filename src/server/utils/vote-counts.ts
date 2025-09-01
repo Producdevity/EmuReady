@@ -8,6 +8,10 @@ import { calculateWilsonScore } from './wilson-score'
  */
 async function updateVoteCounts<T extends { upvoteCount: number; downvoteCount: number }>(
   model: {
+    findUnique: (args: {
+      where: { id: string }
+      select: { upvoteCount: true; downvoteCount: true }
+    }) => Promise<{ upvoteCount: number; downvoteCount: number } | null>
     update: (args: {
       where: { id: string }
       data: {
@@ -77,22 +81,29 @@ async function updateVoteCounts<T extends { upvoteCount: number; downvoteCount: 
   // Skip update if no changes
   if (upvoteDelta === 0 && downvoteDelta === 0 && voteCountDelta === 0) return
 
-  // Update counts atomically
-  const entity = await model.update({
+  // Get current counts to calculate the new Wilson score
+  const current = await model.findUnique({
+    where: { id: entityId },
+    select: { upvoteCount: true, downvoteCount: true },
+  })
+
+  if (!current) throw new Error(`Entity ${entityId} not found`)
+
+  // Calculate new counts
+  const newUpvoteCount = current.upvoteCount + upvoteDelta
+  const newDownvoteCount = current.downvoteCount + downvoteDelta
+
+  // Calculate Wilson score based on the new counts
+  const wilsonScore = calculateWilsonScore(newUpvoteCount, newDownvoteCount)
+
+  await model.update({
     where: { id: entityId },
     data: {
       upvoteCount: { increment: upvoteDelta },
       downvoteCount: { increment: downvoteDelta },
       voteCount: { increment: voteCountDelta },
+      successRate: wilsonScore,
     },
-  })
-
-  // Calculate and update Wilson score
-  const wilsonScore = calculateWilsonScore(entity.upvoteCount, entity.downvoteCount)
-
-  await model.update({
-    where: { id: entityId },
-    data: { successRate: wilsonScore },
   })
 }
 

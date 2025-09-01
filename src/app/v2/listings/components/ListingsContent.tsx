@@ -16,7 +16,7 @@ interface Props {
   isLoading: boolean
   isFetching: boolean
   hasMoreItems: boolean
-  currentPage: number
+  page: number
   totalPages?: number
   loadMoreListings: () => void
   onPageChange?: (page: number) => void
@@ -32,7 +32,7 @@ export function ListingsContent(props: Props) {
     isLoading,
     isFetching,
     hasMoreItems,
-    currentPage,
+    page,
     totalPages,
     loadMoreListings,
     onPageChange,
@@ -44,7 +44,7 @@ export function ListingsContent(props: Props) {
   const isMobile = useMediaQuery('(max-width: 768px)')
 
   // Loading state - Skeleton Loader
-  if (isLoading && currentPage === 1) {
+  if (isLoading && page === 1) {
     return (
       <div
         className={
@@ -172,7 +172,7 @@ export function ListingsContent(props: Props) {
           {totalPages && totalPages > 1 && onPageChange && (
             <div className="flex justify-center mt-8">
               <Pagination
-                currentPage={currentPage}
+                page={page}
                 totalPages={totalPages}
                 onPageChange={onPageChange}
                 showLabel={true}
@@ -183,7 +183,7 @@ export function ListingsContent(props: Props) {
       )}
 
       {/* Loading indicator for mobile grid view only */}
-      {isMobile && viewMode === 'grid' && (isLoading || isFetching) && currentPage > 1 && (
+      {isMobile && viewMode === 'grid' && (isLoading || isFetching) && page > 1 && (
         <div className="flex justify-center py-4">
           <LoadingSpinner size="md" />
         </div>

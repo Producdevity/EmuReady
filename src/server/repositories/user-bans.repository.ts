@@ -1,4 +1,5 @@
 import { ResourceError } from '@/lib/errors'
+import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { Role } from '@orm'
 import { BaseRepository } from './base.repository'
 import type { Prisma, PrismaClient } from '@orm'
@@ -204,7 +205,7 @@ export class UserBansRepository extends BaseRepository {
       sortField = 'createdAt',
       sortDirection = 'desc',
     } = params
-    const offset = (page - 1) * limit
+    const actualOffset = calculateOffset({ page }, limit)
 
     const where: Prisma.UserBanWhereInput = {}
 
@@ -224,7 +225,7 @@ export class UserBansRepository extends BaseRepository {
     const [bans, total] = await Promise.all([
       this.prisma.userBan.findMany({
         where,
-        skip: offset,
+        skip: actualOffset,
         take: limit,
         orderBy: { [sortField]: sortDirection },
         include: UserBansRepository.includes.default,
@@ -234,12 +235,7 @@ export class UserBansRepository extends BaseRepository {
 
     return {
       bans,
-      pagination: {
-        total,
-        pages: Math.ceil(total / limit),
-        page,
-        limit,
-      },
+      pagination: paginate({ total, page, limit }),
     }
   }
 }

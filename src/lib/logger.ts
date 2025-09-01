@@ -5,7 +5,11 @@ import * as Sentry from '@sentry/nextjs'
  * Use this instead of console.log/error for better observability
  */
 
-export const log = {
+export const logger = {
+  log: (message: string, extra?: Record<string, unknown> | null, inProduction = false) => {
+    if (inProduction && process.env.NODE_ENV === 'production') return
+    console.log(`[LOG] ${message}`, extra)
+  },
   /**
    * Log debug information (only in development)
    */

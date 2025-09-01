@@ -214,6 +214,12 @@ export const moderatorNavItems: AdminNavItem[] = [
     description: 'Review and manage user reports.',
   },
   {
+    href: ADMIN_ROUTES.USERS,
+    label: 'Users',
+    exact: true,
+    description: 'View and manage all users.',
+  },
+  {
     href: ADMIN_ROUTES.USER_BANS,
     label: 'User Bans',
     exact: true,

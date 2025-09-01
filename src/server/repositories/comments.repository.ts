@@ -1,9 +1,5 @@
 import { PAGINATION } from '@/data/constants'
-import {
-  calculateOffset,
-  createPaginationResult,
-  type PaginationResult,
-} from '@/server/utils/pagination'
+import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { type Prisma, Role } from '@orm'
 import { BaseRepository } from './base.repository'
@@ -19,23 +15,6 @@ export interface CommentFilters {
   userRole?: Role
   userId?: string
 }
-
-// Export types directly without namespace
-export type CommentDefault = Prisma.CommentGetPayload<{
-  include: typeof CommentsRepository.includes.default
-}>
-
-export type CommentMinimal = Prisma.CommentGetPayload<{
-  include: typeof CommentsRepository.includes.minimal
-}>
-
-export type CommentWithListing = Prisma.CommentGetPayload<{
-  include: typeof CommentsRepository.includes.withListing
-}>
-
-export type CommentRecent = Prisma.CommentGetPayload<{
-  include: typeof CommentsRepository.includes.recent
-}>
 
 export class CommentsRepository extends BaseRepository {
   // Static query shapes for this repository
@@ -65,17 +44,14 @@ export class CommentsRepository extends BaseRepository {
    * Get comments with pagination
    */
   async list(filters: CommentFilters = {}): Promise<{
-    comments: CommentDefault[]
+    comments: Prisma.CommentGetPayload<{ include: typeof CommentsRepository.includes.default }>[]
     pagination: PaginationResult
   }> {
     const { limit = PAGINATION.DEFAULT_LIMIT, offset = 0, page, sortField, sortDirection } = filters
 
     const where = this.buildWhereClause(filters)
     const orderBy = this.buildOrderBy(sortField, sortDirection)
-    const actualOffset = calculateOffset(
-      { page: page ?? undefined, offset: offset ?? undefined },
-      limit ?? 20,
-    )
+    const actualOffset = calculateOffset({ page, offset }, limit ?? 20)
 
     const [total, comments] = await Promise.all([
       this.prisma.comment.count({ where }),
@@ -88,12 +64,11 @@ export class CommentsRepository extends BaseRepository {
       }),
     ])
 
-    const pagination = createPaginationResult(
-      total,
-      { page: page ?? undefined, offset: offset ?? undefined },
-      limit ?? 20,
-      actualOffset,
-    )
+    const pagination = paginate({
+      total: total,
+      page: page ?? Math.floor(actualOffset / (limit ?? 20)) + 1,
+      limit: limit ?? 20,
+    })
 
     return { comments, pagination }
   }
@@ -101,7 +76,10 @@ export class CommentsRepository extends BaseRepository {
   /**
    * Get comments for a listing
    */
-  async listByListing(listingId: string, userRole?: Role): Promise<CommentDefault[]> {
+  async listByListing(
+    listingId: string,
+    userRole?: Role,
+  ): Promise<Prisma.CommentGetPayload<{ include: typeof CommentsRepository.includes.default }>[]> {
     const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
 
     const where: Prisma.CommentWhereInput = {
@@ -129,7 +107,11 @@ export class CommentsRepository extends BaseRepository {
   /**
    * Get comment by ID
    */
-  async byId(id: string): Promise<CommentWithListing | null> {
+  async byId(
+    id: string,
+  ): Promise<Prisma.CommentGetPayload<{
+    include: typeof CommentsRepository.includes.withListing
+  }> | null> {
     return this.prisma.comment.findUnique({
       where: { id },
       include: CommentsRepository.includes.withListing,
@@ -139,7 +121,9 @@ export class CommentsRepository extends BaseRepository {
   /**
    * Create a new comment
    */
-  async create(data: Prisma.CommentCreateInput): Promise<CommentMinimal> {
+  async create(
+    data: Prisma.CommentCreateInput,
+  ): Promise<Prisma.CommentGetPayload<{ include: typeof CommentsRepository.includes.minimal }>> {
     return this.prisma.comment.create({
       data,
       include: CommentsRepository.includes.minimal,
@@ -149,7 +133,10 @@ export class CommentsRepository extends BaseRepository {
   /**
    * Update a comment
    */
-  async update(id: string, data: Prisma.CommentUpdateInput): Promise<CommentMinimal> {
+  async update(
+    id: string,
+    data: Prisma.CommentUpdateInput,
+  ): Promise<Prisma.CommentGetPayload<{ include: typeof CommentsRepository.includes.minimal }>> {
     return this.prisma.comment.update({
       where: { id },
       data,
@@ -194,7 +181,10 @@ export class CommentsRepository extends BaseRepository {
   /**
    * Get recent comments
    */
-  async listRecent(limit = 10, userRole?: Role): Promise<CommentRecent[]> {
+  async listRecent(
+    limit = 10,
+    userRole?: Role,
+  ): Promise<Prisma.CommentGetPayload<{ include: typeof CommentsRepository.includes.recent }>[]> {
     const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
 
     const where: Prisma.CommentWhereInput = !canSeeBannedUsers

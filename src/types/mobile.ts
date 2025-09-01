@@ -107,8 +107,11 @@ export interface MobileListingsResponse {
   pagination: {
     total: number
     pages: number
-    currentPage: number
+    page: number
     limit: number
+    offset: number
+    hasNextPage: boolean
+    hasPreviousPage: boolean
   }
 }
 
@@ -191,7 +194,7 @@ export interface MobileVoteResponse {
 export interface MobilePagination {
   total: number
   pages: number
-  currentPage: number
+  page: number
   limit: number
   hasNextPage: boolean
   hasPreviousPage: boolean
@@ -329,8 +332,11 @@ export interface MobilePcListingsResponse {
   pagination: {
     total: number
     pages: number
-    currentPage: number
+    page: number
     limit: number
+    offset: number
+    hasNextPage: boolean
+    hasPreviousPage: boolean
   }
 }
 
