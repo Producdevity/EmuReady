@@ -48,14 +48,28 @@ export function LineChart(props: Props) {
     const yMin = Math.min(...props.data.map((d) => d.y))
     const yMax = Math.max(...props.data.map((d) => d.y))
 
+    // Handle edge cases where all values are the same
+    const xRange = xMax - xMin || 1
+    const yRange = yMax - yMin || 1
+
     // Add padding to y scale
-    const yPadding = (yMax - yMin) * 0.1
+    const yPadding = yRange * 0.1
     const yMinPadded = Math.max(0, yMin - yPadding)
     const yMaxPadded = yMax + yPadding
 
-    const xScale = (x: number) => ((x - xMin) / (xMax - xMin)) * chartWidth + padding
-    const yScale = (y: number) =>
-      height - (((y - yMinPadded) / (yMaxPadded - yMinPadded)) * chartHeight + padding)
+    const xScale = (x: number) => {
+      // All x values are the same, center the point
+      return xRange === 1 && xMin === xMax
+        ? width / 2
+        : ((x - xMin) / xRange) * chartWidth + padding
+    }
+
+    const yScale = (y: number) => {
+      // All y values are the same, center the point
+      if (yRange === 1 && yMin === yMax) return height / 2
+      const adjustedRange = yMaxPadded - yMinPadded || 1
+      return height - (((y - yMinPadded) / adjustedRange) * chartHeight + padding)
+    }
 
     // Generate path data
     const pathData = props.data
@@ -73,7 +87,7 @@ export function LineChart(props: Props) {
     }
 
     return { xScale, yScale, pathData, gridLines }
-  }, [props.data, chartWidth, chartHeight, height, padding, showGrid])
+  }, [props.data, chartWidth, chartHeight, height, width, padding, showGrid])
 
   if (props.data.length === 0) {
     return (

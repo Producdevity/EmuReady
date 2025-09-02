@@ -1,7 +1,7 @@
 'use client'
 
 import { Loader2, Activity, TrendingUp, Database, Timer } from 'lucide-react'
-import { Card, DonutChart, BarChart } from '@/components/ui'
+import { Divider, Card, DonutChart, BarChart } from '@/components/ui'
 import { POLLING_INTERVALS } from '@/data/constants'
 import { api } from '@/lib/api'
 
@@ -49,7 +49,7 @@ export function CacheMetrics() {
             Real-time cache metrics and performance indicators
           </p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 xl:grid-cols-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <TrendingUp className="h-4 w-4" />
@@ -76,7 +76,11 @@ export function CacheMetrics() {
               />
             </div>
           </div>
+        </div>
 
+        <Divider />
+
+        <div className="grid gap-4 grid-cols-2 xl:grid-cols-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Timer className="h-4 w-4" />
