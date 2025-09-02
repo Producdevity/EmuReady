@@ -25,12 +25,13 @@ if ('serviceWorker' in navigator) {
 
   // Service worker registration
   const isDevelopment =
+    window.location.hostname === 'dev.emuready.com' ||
     window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1' ||
     window.location.hostname.includes('.local') ||
     (window.location.protocol === 'http:' && !window.location.hostname.includes('emuready'))
 
-  // Allow service worker on dev.emuready.com for testing PWA functionality
+  // Disable SW in development-like environments (including dev.emuready.com behind tunnels)
   if (isDevelopment) {
     console.log('Service Worker disabled in local development mode')
   } else {

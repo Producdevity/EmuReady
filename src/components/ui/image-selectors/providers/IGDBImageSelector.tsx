@@ -2,7 +2,7 @@
 
 import { Search, Eye, Image as ImageIcon, Sparkles } from 'lucide-react'
 import { useState, useEffect, type KeyboardEvent } from 'react'
-import { Button, LoadingSpinner, OptimizedImage, Modal, Input, Badge } from '@/components/ui'
+import { Button, LoadingSpinner, Modal, Input, Badge, OptimizedImage } from '@/components/ui'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -259,15 +259,12 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
                 onClick={() => handleImageSelect(image)}
               >
                 <div className="aspect-[3/4] bg-gray-100 dark:bg-gray-800 relative">
-                  <OptimizedImage
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
                     src={getImageUrl(image.url)}
                     alt={image.label}
-                    width={200}
-                    height={267}
-                    className="absolute inset-0 w-full h-full"
-                    imageClassName="w-full h-full object-cover"
-                    objectFit="cover"
-                    quality={75}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    loading="lazy"
                   />
 
                   {/* Overlay on hover */}
@@ -335,13 +332,11 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
         <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Selected:</p>
           <div className="flex items-center gap-3">
-            <OptimizedImage
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={getImageUrl(selectedImage.url)}
               alt="Selected"
-              width={64}
-              height={64}
               className="w-16 h-16 object-cover rounded border"
-              quality={75}
             />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 dark:text-white">

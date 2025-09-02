@@ -33,6 +33,16 @@ export function OptimizedImage(props: Props) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(false)
 
+  const getNormalizedSrc = (src: string): string => {
+    if (!src.startsWith('/api/proxy-image')) return src
+    const qIndex = src.indexOf('?')
+    if (qIndex === -1) return src
+    const search = src.slice(qIndex + 1)
+    const params = new URLSearchParams(search)
+    const real = params.get('url')
+    return real ?? src
+  }
+
   const handleError = () => {
     setIsLoading(false)
     setError(true)
@@ -46,7 +56,7 @@ export function OptimizedImage(props: Props) {
         </div>
       )}
       <Image
-        src={error ? (props.fallbackSrc ?? '/placeholder.svg') : props.src}
+        src={error ? (props.fallbackSrc ?? '/placeholder.svg') : getNormalizedSrc(props.src)}
         alt={props.alt}
         width={props.width ?? 300}
         height={props.height ?? 300}
@@ -60,7 +70,8 @@ export function OptimizedImage(props: Props) {
         quality={props.quality ?? 75}
         onLoad={() => setIsLoading(false)}
         onError={handleError}
-        unoptimized={props.unoptimized ?? false}
+        unoptimized={true}
+        // unoptimized={props.unoptimized ?? false}
       />
     </div>
   )

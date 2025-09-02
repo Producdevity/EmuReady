@@ -7,8 +7,8 @@ const nextConfig: NextConfig = {
     dangerouslyAllowSVG: true,
     qualities: [50, 75, 85, 100],
     localPatterns: [
-      // Allow query parameters for proxy URLs
-      { pathname: '/api/proxy-image' },
+      // Allow any query on the proxy route
+      { pathname: '/api/proxy-image', search: '?*' },
       { pathname: '/_next/**' },
       { pathname: '/placeholder/**' },
     ],
@@ -56,6 +56,11 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'ko-fi.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'files.catbox.moe',
         pathname: '/**',
       },
     ],
@@ -215,7 +220,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://static.cloudflareinsights.com https://va.vercel-scripts.com https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://challenges.cloudflare.com https://vercel.live https://*.vercel.live https://storage.ko-fi.com https://ko-fi.com https://unpkg.com",
               "style-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://storage.ko-fi.com https://fonts.googleapis.com https://unpkg.com",
-              "img-src 'self' data: https://placehold.co https://*.clerk.com https://*.clerk.accounts.dev https://img.clerk.com https://clerk.emuready.com https://cdn.thegamesdb.net https://images.igdb.com https://media.rawg.io https://www.googletagmanager.com https://assets.nintendo.com https://*.google-analytics.com https://storage.ko-fi.com https://vercel.com",
+              "img-src 'self' data: https://placehold.co https://*.clerk.com https://*.clerk.accounts.dev https://img.clerk.com https://clerk.emuready.com https://cdn.thegamesdb.net https://images.igdb.com https://media.rawg.io https://www.googletagmanager.com https://assets.nintendo.com https://*.google-analytics.com https://storage.ko-fi.com https://vercel.com https://files.catbox.moe",
               "font-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://fonts.gstatic.com https://fonts.googleapis.com https://vercel.live data:",
               "connect-src 'self' https://*.google-analytics.com https://www.googletagmanager.com https://api.mymemory.translated.net https://fonts.googleapis.com https://fonts.gstatic.com https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com wss://*.clerk.accounts.dev wss://clerk.emuready.com https://va.vercel-scripts.com https://challenges.cloudflare.com https://storage.ko-fi.com https://clerk-telemetry.com https://vercel.live https://*.vercel.live wss://ws-us3.pusher.com https://api.github.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
               "frame-src 'self' blob: https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://challenges.cloudflare.com https://vercel.live https://*.vercel.live https://ko-fi.com",

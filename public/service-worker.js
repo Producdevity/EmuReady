@@ -53,7 +53,7 @@ const urlsToCache = [
 /** Cache duration for different asset types (in seconds) */
 const CACHE_DURATIONS = {
   images: 7 * 24 * 60 * 60, // 604800 seconds
-  scripts: 24 * 60 * 60, // 86400 seconds
+  scripts: 0, // Do not cache Next.js chunks to avoid stale JS
   api: 0, // No caching
   default: 60, // 60 seconds
 }
@@ -105,7 +105,7 @@ function getCacheDuration(url) {
   // Image file extensions
   if (/\.(png|jpg|jpeg|gif|webp|svg|ico)$/i.test(url)) return CACHE_DURATIONS.images
 
-  // Next.js static assets with content hashing
+  // Next.js static assets with content hashing: bypass SW cache
   if (url.includes('/_next/static/')) return CACHE_DURATIONS.scripts
 
   // Default cache duration for unmatched resources
