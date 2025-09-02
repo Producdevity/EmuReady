@@ -44,7 +44,9 @@ function EmulatorViewModal(props: Props) {
               <div className="flex-1">
                 <h3 className="font-medium text-lg">{props.emulatorData.name}</h3>
                 {/* URLs */}
-                {(props.emulatorData.repositoryUrl || props.emulatorData.officialUrl) && (
+                {(props.emulatorData.repositoryUrl ||
+                  props.emulatorData.officialUrl ||
+                  props.emulatorData.androidGithubRepoUrl) && (
                   <div className="flex gap-2 mt-2">
                     {props.emulatorData.repositoryUrl && (
                       <a
@@ -55,6 +57,18 @@ function EmulatorViewModal(props: Props) {
                       >
                         <GitHubIcon className="w-3 h-3" />
                         Repository
+                      </a>
+                    )}
+                    {/* Android GitHub Repo */}
+                    {props.emulatorData.androidGithubRepoUrl && (
+                      <a
+                        href={props.emulatorData.androidGithubRepoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-600 rounded hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
+                      >
+                        <GitHubIcon className="w-3 h-3" />
+                        Android GitHub
                       </a>
                     )}
                     {props.emulatorData.officialUrl && (

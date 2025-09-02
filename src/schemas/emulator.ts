@@ -26,6 +26,7 @@ export const CreateEmulatorSchema = z.object({
   description: z.string().optional(),
   repositoryUrl: z.string().url().optional(),
   officialUrl: z.string().url().optional(),
+  androidGithubRepoUrl: z.string().url().optional(),
 })
 
 export const UpdateEmulatorSchema = z.object({
@@ -35,6 +36,7 @@ export const UpdateEmulatorSchema = z.object({
   description: z.string().optional(),
   repositoryUrl: z.string().url().optional(),
   officialUrl: z.string().url().optional(),
+  androidGithubRepoUrl: z.string().url().optional(),
 })
 
 export const DeleteEmulatorSchema = z.object({ id: z.string().uuid() })

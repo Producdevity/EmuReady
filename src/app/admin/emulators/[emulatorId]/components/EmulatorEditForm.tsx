@@ -101,6 +101,7 @@ function EmulatorEditForm(props: Props) {
       description: props.emulator.description ?? '',
       repositoryUrl: props.emulator.repositoryUrl ?? '',
       officialUrl: props.emulator.officialUrl ?? '',
+      androidGithubRepoUrl: props.emulator.androidGithubRepoUrl ?? '',
     },
   })
 
@@ -115,6 +116,7 @@ function EmulatorEditForm(props: Props) {
       description: data.description || undefined,
       repositoryUrl: data.repositoryUrl || undefined,
       officialUrl: data.officialUrl || undefined,
+      androidGithubRepoUrl: data.androidGithubRepoUrl || undefined,
     })
   }
 
@@ -333,6 +335,32 @@ function EmulatorEditForm(props: Props) {
               className="text-sm text-red-600 dark:text-red-400"
             >
               {formState.errors.officialUrl.message}
+            </motion.p>
+          )}
+        </div>
+
+        {/* Android GitHub Repo URL */}
+        <div className="space-y-2 md:col-span-2">
+          <label
+            htmlFor="androidGithubRepoUrl"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
+            Android GitHub Repo URL
+          </label>
+          <Input
+            id="androidGithubRepoUrl"
+            {...register('androidGithubRepoUrl')}
+            placeholder="https://github.com/owner/repo"
+            leftIcon={<GitHubIcon className="w-4 h-4" />}
+            className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
+          />
+          {formState.errors.androidGithubRepoUrl && (
+            <motion.p
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-sm text-red-600 dark:text-red-400"
+            >
+              {formState.errors.androidGithubRepoUrl.message}
             </motion.p>
           )}
         </div>

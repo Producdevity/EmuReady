@@ -301,6 +301,7 @@ model Emulator {
   description            String? // Markdown description/notes
   repositoryUrl          String? // Repository/source code URL
   officialUrl            String? // Official website URL
+  androidGithubRepoUrl   String? // GitHub repo for Android APK releases
   listings               Listing[]
   pcListings             PcListing[]
   customFieldDefinitions CustomFieldDefinition[]

@@ -21,6 +21,11 @@ const updateEmulatorSchema = z.object({
     .or(z.literal('')),
   repositoryUrl: z.string().url('Repository URL must be a valid URL').optional().or(z.literal('')),
   officialUrl: z.string().url('Official URL must be a valid URL').optional().or(z.literal('')),
+  androidGithubRepoUrl: z
+    .string()
+    .url('Android GitHub Repo URL must be a valid URL')
+    .optional()
+    .or(z.literal('')),
 })
 
 export default updateEmulatorSchema

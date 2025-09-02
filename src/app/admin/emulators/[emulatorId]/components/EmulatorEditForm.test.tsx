@@ -54,6 +54,7 @@ const mockEmulator = {
   description: null,
   repositoryUrl: null,
   officialUrl: null,
+  androidGithubRepoUrl: null,
   systems: [],
   verifiedDevelopers: [],
   customFieldDefinitions: [],
@@ -227,6 +228,7 @@ describe('EmulatorEditForm', () => {
         description: undefined,
         repositoryUrl: undefined,
         officialUrl: undefined,
+        androidGithubRepoUrl: undefined,
       })
     })
   })

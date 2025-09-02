@@ -1,6 +1,6 @@
 'use client'
 
-import { Settings } from 'lucide-react'
+import { Settings, Link as LinkIcon, Unlink as UnlinkIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import EmulatorModal from '@/app/admin/emulators/components/EmulatorModal'
@@ -23,12 +23,14 @@ import {
   DisplayToggleButton,
   EditButton,
   DeleteButton,
+  TableButton,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useEmulatorLogos, useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
+import { copyToClipboard } from '@/utils/copyToClipboard'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
@@ -42,6 +44,9 @@ const EMULATORS_COLUMNS: ColumnDefinition[] = [
   { key: 'name', label: 'Name', defaultVisible: true },
   { key: 'systemCount', label: 'Systems', defaultVisible: true },
   { key: 'listingCount', label: 'Listings', defaultVisible: true },
+  { key: 'repoUrl', label: 'Repo', defaultVisible: true },
+  { key: 'officialUrl', label: 'Official', defaultVisible: true },
+  { key: 'androidGithubRepoUrl', label: 'Android', defaultVisible: true },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
@@ -66,7 +71,6 @@ function AdminEmulatorsPage() {
     limit: table.limit,
   })
 
-  const emulators = emulatorsQuery.data?.emulators ?? []
   const pagination = emulatorsQuery.data?.pagination
 
   const deleteEmulator = api.emulators.delete.useMutation({
@@ -162,7 +166,7 @@ function AdminEmulatorsPage() {
       <AdminTableContainer>
         {emulatorsQuery.isPending ? (
           <LoadingSpinner text="Loading emulators..." />
-        ) : emulators.length === 0 ? (
+        ) : emulatorsQuery.data?.emulators.length === 0 ? (
           <AdminTableNoResults hasQuery={!!table.search} />
         ) : (
           <>
@@ -200,6 +204,21 @@ function AdminEmulatorsPage() {
                         className="px-6 py-3 text-left"
                       />
                     )}
+                    {columnVisibility.isColumnVisible('repoUrl') && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Repo
+                      </th>
+                    )}
+                    {columnVisibility.isColumnVisible('officialUrl') && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Official
+                      </th>
+                    )}
+                    {columnVisibility.isColumnVisible('androidGithubRepoUrl') && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Android
+                      </th>
+                    )}
                     {columnVisibility.isColumnVisible('actions') && (
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Actions
@@ -208,7 +227,7 @@ function AdminEmulatorsPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {emulators.map((emulator) => (
+                  {emulatorsQuery.data?.emulators?.map((emulator) => (
                     <tr key={emulator.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       {columnVisibility.isColumnVisible('name') && (
                         <td className="px-6 py-4">
@@ -232,6 +251,24 @@ function AdminEmulatorsPage() {
                       {columnVisibility.isColumnVisible('listingCount') && (
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
                           {emulator._count.listings}
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('repoUrl') && (
+                        <td className="px-6 py-4">
+                          <UrlIndicator url={emulator.repositoryUrl} label="Repository URL" />
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('officialUrl') && (
+                        <td className="px-6 py-4">
+                          <UrlIndicator url={emulator.officialUrl} label="Official URL" />
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('androidGithubRepoUrl') && (
+                        <td className="px-6 py-4">
+                          <UrlIndicator
+                            url={emulator.androidGithubRepoUrl}
+                            label="Android GitHub Repo URL"
+                          />
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('actions') && (
@@ -305,3 +342,24 @@ function AdminEmulatorsPage() {
 }
 
 export default AdminEmulatorsPage
+
+// Reusable URL indicator cell with tooltip + copy-on-click
+function UrlIndicator(props: { url?: string | null; label: string }) {
+  const isPresent = Boolean(props.url)
+  const title = isPresent ? (props.url as string) : 'No URL'
+  const Icon = isPresent ? LinkIcon : UnlinkIcon
+
+  return (
+    <div className="inline-flex">
+      <TableButton
+        title={title}
+        icon={Icon}
+        color={isPresent ? 'blue' : 'gray'}
+        disabled={!isPresent}
+        onClick={() => {
+          if (props.url) copyToClipboard(props.url, props.label)
+        }}
+      />
+    </div>
+  )
+}

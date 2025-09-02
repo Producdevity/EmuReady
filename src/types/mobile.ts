@@ -40,6 +40,9 @@ export interface MobileEmulator {
   id: string
   name: string
   logo?: string | null
+  androidGithubRepoUrl?: string | null
+  repositoryUrl?: string | null
+  officialUrl?: string | null
   systems?: MobileSystem[]
   _count: {
     listings: number

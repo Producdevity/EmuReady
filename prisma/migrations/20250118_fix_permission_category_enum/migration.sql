@@ -1,4 +1,3 @@
--- AlterTable: Convert category from text to PermissionCategory enum
 -- This migration safely converts existing string values to the enum type
 -- It checks if the table exists to handle CI environments with fresh databases
 

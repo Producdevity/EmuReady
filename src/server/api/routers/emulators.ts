@@ -180,6 +180,7 @@ export const emulatorsRouter = createTRPCRouter({
       description: input.description || null,
       repositoryUrl: input.repositoryUrl || null,
       officialUrl: input.officialUrl || null,
+      androidGithubRepoUrl: input.androidGithubRepoUrl || null,
     })
   }),
 
