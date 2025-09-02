@@ -24,7 +24,7 @@ interface Props {
   imageClassName?: string
   priority?: ImageProps['priority']
   unoptimized?: ImageProps['unoptimized']
-  quality?: number
+  quality?: 50 | 75 | 85 | 100
   fallbackSrc?: string
   objectFit?: ObjectFit
 }
