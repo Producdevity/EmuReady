@@ -97,6 +97,8 @@ const rl = readline.createInterface({
 // Promisify question for async/await
 function question(prompt: string): Promise<string> {
   return new Promise((resolve) => {
+    // Ensure stdin is resumed for readline to work
+    process.stdin.resume()
     rl.question(prompt, resolve)
   })
 }
@@ -328,9 +330,11 @@ async function deploy() {
   printStep(3, 6, 'Check environment variables')
 
   const envFile = `.env.${target}.local`
+  const vercelEnvFile = `.vercel/.env.${target}.local`
 
-  if (!fs.existsSync(envFile)) {
-    printWarning(`Environment file ${envFile} not found`)
+  // Check both root and .vercel directory for env files
+  if (!fs.existsSync(envFile) && !fs.existsSync(vercelEnvFile)) {
+    printWarning(`Environment file not found in root or .vercel directory`)
 
     const shouldPull = await confirm(
       `Do you want to pull environment variables for ${target}?`,
@@ -353,7 +357,8 @@ async function deploy() {
       }
     }
   } else {
-    printSuccess(`Environment file ${envFile} exists`)
+    const foundFile = fs.existsSync(envFile) ? envFile : vercelEnvFile
+    printSuccess(`Environment file ${foundFile} exists`)
   }
 
   // Step 4: Clean and Build the project
@@ -409,7 +414,11 @@ async function deploy() {
 
   printInfo(`${symbols.package} Deploying to ${target}...`)
 
-  const deployCommand = `vercel deploy --prebuilt --target=${target}`
+  // Use --prod flag for production, otherwise use --target flag
+  const deployCommand =
+    target === 'production'
+      ? `vercel deploy --prebuilt --prod`
+      : `vercel deploy --prebuilt --target=${target}`
 
   if (!executeCommandWithOutput(deployCommand, `Deploying to ${target}`)) {
     printError('Deployment failed')
