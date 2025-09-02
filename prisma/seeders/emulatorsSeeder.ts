@@ -167,6 +167,11 @@ const emulators: EmulatorData[] = [
     logo: 'sudachi.png',
   },
   {
+    name: 'Sumi',
+    supportedSystemNames: ['Nintendo Switch'],
+    logo: 'sumi.png',
+  },
+  {
     name: 'Torzu',
     supportedSystemNames: ['Nintendo Switch'],
     logo: 'torzu.png',
