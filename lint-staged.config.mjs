@@ -1,7 +1,7 @@
 import path from 'path'
 
 const buildEslintCommand = (filenames) =>
-  `next lint --fix --file ${filenames.map((f) => path.relative(process.cwd(), f)).join(' --file ')}`
+  `eslint --fix ${filenames.map((f) => path.relative(process.cwd(), f)).join(' ')}`
 
 /**
  * @filename: lint-staged.config.js
@@ -9,6 +9,7 @@ const buildEslintCommand = (filenames) =>
  */
 const lintStagedConfig = {
   'package.json': () => [
+    'npm install',
     'node scripts/sync-version.js',
     'git add public/service-worker.js public/sw-register.js',
   ],
