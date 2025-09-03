@@ -126,8 +126,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
    */
   byUser: mobileProtectedProcedure.input(GetUserListingsSchema).query(async ({ ctx, input }) => {
     const repository = new ListingsRepository(ctx.prisma)
-    const result = await repository.listByUserId(input.userId, false)
-    return result.listings
+    return await repository.listByUserId(input.userId, false)
   }),
 
   /**
