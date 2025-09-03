@@ -15,6 +15,7 @@ interface BaseInputProps extends InputHTMLAttributes<HTMLInputElement> {
   leftIcon?: ReactNode
   rightIcon?: ReactNode
   className?: string
+  containerClassName?: string
   as?: InputAs
 }
 
@@ -22,7 +23,10 @@ type Props = BaseInputProps &
   ({ as?: 'input' } | { as: 'select'; children?: ReactNode } | { as: 'textarea'; rows?: number })
 
 export const Input = forwardRef<HTMLElement, Props>(
-  ({ leftIcon, rightIcon, className = '', as = 'input', children, ...props }, ref) => {
+  (
+    { leftIcon, rightIcon, className, containerClassName, as = 'input', children, ...props },
+    ref,
+  ) => {
     const commonInputStyling =
       'w-full outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 bg-transparent'
 
@@ -31,7 +35,7 @@ export const Input = forwardRef<HTMLElement, Props>(
       as === 'select' && !rightIcon ? <ChevronDown className="w-4 h-4" /> : rightIcon
 
     return (
-      <div className="relative">
+      <div className={cn('relative', containerClassName)}>
         <div
           className={cn(
             'relative flex items-center bg-white/80 dark:bg-gray-800/80 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 focus-within:ring-2 focus-within:ring-blue-500 transition-all duration-200',

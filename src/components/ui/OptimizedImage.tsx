@@ -24,6 +24,7 @@ interface Props {
   imageClassName?: string
   priority?: ImageProps['priority']
   unoptimized?: ImageProps['unoptimized']
+  loading?: ImageProps['loading']
   quality?: 50 | 75 | 85 | 100
   fallbackSrc?: string
   objectFit?: ObjectFit
@@ -70,8 +71,8 @@ export function OptimizedImage(props: Props) {
         quality={props.quality ?? 75}
         onLoad={() => setIsLoading(false)}
         onError={handleError}
-        unoptimized={true}
-        // unoptimized={props.unoptimized ?? false}
+        loading={props.loading ?? undefined}
+        unoptimized={props.unoptimized ?? false}
       />
     </div>
   )

@@ -145,10 +145,11 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
         <div className="flex gap-2">
           <Input
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(ev) => setSearchTerm(ev.target.value)}
             onKeyDown={handleKeyPress}
             placeholder="Search for a game on IGDB..."
             disabled={isLoading}
+            containerClassName="flex-1"
             className="flex-1"
           />
           <Button
@@ -259,29 +260,31 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
                 onClick={() => handleImageSelect(image)}
               >
                 <div className="aspect-[3/4] bg-gray-100 dark:bg-gray-800 relative">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <OptimizedImage
                     src={getImageUrl(image.url)}
                     alt={image.label}
+                    width={250}
+                    height={300}
                     className="absolute inset-0 w-full h-full object-cover"
-                    loading="lazy"
                   />
 
                   {/* Overlay on hover */}
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity">
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setPreviewImage(image)
-                        }}
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Preview
-                      </Button>
-                    </div>
+                  <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-50 transition-opacity" />
+
+                  {/* Button container */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto"
+                      onClick={(ev) => {
+                        ev.stopPropagation()
+                        setPreviewImage(image)
+                      }}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Preview
+                    </Button>
                   </div>
                 </div>
 
@@ -332,10 +335,11 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
         <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Selected:</p>
           <div className="flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <OptimizedImage
               src={getImageUrl(selectedImage.url)}
               alt="Selected"
+              width={64}
+              height={64}
               className="w-16 h-16 object-cover rounded border"
             />
             <div className="flex-1 min-w-0">
