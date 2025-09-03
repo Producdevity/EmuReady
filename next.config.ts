@@ -58,11 +58,6 @@ const nextConfig: NextConfig = {
         hostname: 'ko-fi.com',
         pathname: '/**',
       },
-      {
-        protocol: 'https',
-        hostname: 'files.catbox.moe',
-        pathname: '/**',
-      },
     ],
   },
 
