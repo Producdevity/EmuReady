@@ -1,6 +1,6 @@
 # EmuReady Mobile API (tRPC)
 
-*Auto-generated on: 2025-09-01T01:28:33.001Z*
+*Auto-generated on: 2025-09-03T08:22:20.110Z*
 
 ## Summary
 - **Total Endpoints**: 85

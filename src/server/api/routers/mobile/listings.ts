@@ -110,8 +110,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
    */
   byGame: mobilePublicProcedure.input(GetListingsByGameSchema).query(async ({ ctx, input }) => {
     const repository = new ListingsRepository(ctx.prisma)
-    const result = await repository.listByGameId(input.gameId, ctx.session?.user?.id)
-    return result.listings
+    return await repository.listByGameId(input.gameId, ctx.session?.user?.id)
   }),
 
   /**
