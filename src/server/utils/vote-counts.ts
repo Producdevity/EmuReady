@@ -89,19 +89,27 @@ async function updateVoteCounts<T extends { upvoteCount: number; downvoteCount: 
 
   if (!current) throw new Error(`Entity ${entityId} not found`)
 
-  // Calculate new counts
-  const newUpvoteCount = current.upvoteCount + upvoteDelta
-  const newDownvoteCount = current.downvoteCount + downvoteDelta
+  // Calculate new counts and clamp at 0 to avoid negative values
+  const nextUpvoteCount = Math.max(0, current.upvoteCount + upvoteDelta)
+  const nextDownvoteCount = Math.max(0, current.downvoteCount + downvoteDelta)
+
+  // Adjust deltas to reflect clamped values
+  const adjustedUpvoteDelta = nextUpvoteCount - current.upvoteCount
+  const adjustedDownvoteDelta = nextDownvoteCount - current.downvoteCount
+  let adjustedVoteCountDelta = voteCountDelta
+  if (voteCountDelta < 0 && adjustedUpvoteDelta === 0 && adjustedDownvoteDelta === 0) {
+    adjustedVoteCountDelta = 0
+  }
 
   // Calculate Wilson score based on the new counts
-  const wilsonScore = calculateWilsonScore(newUpvoteCount, newDownvoteCount)
+  const wilsonScore = calculateWilsonScore(nextUpvoteCount, nextDownvoteCount)
 
   await model.update({
     where: { id: entityId },
     data: {
-      upvoteCount: { increment: upvoteDelta },
-      downvoteCount: { increment: downvoteDelta },
-      voteCount: { increment: voteCountDelta },
+      upvoteCount: { increment: adjustedUpvoteDelta },
+      downvoteCount: { increment: adjustedDownvoteDelta },
+      voteCount: { increment: adjustedVoteCountDelta },
       successRate: wilsonScore,
     },
   })

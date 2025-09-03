@@ -124,6 +124,8 @@ describe('pagination utilities', () => {
           page: 2,
           offset: 10,
           limit: 10,
+          hasNextPage: true,
+          hasPreviousPage: true,
         },
       })
     })

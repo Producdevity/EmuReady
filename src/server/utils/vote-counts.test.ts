@@ -5,22 +5,27 @@ import { calculateWilsonScore } from './wilson-score'
 
 type MockPrismaClient = {
   listing: {
+    findUnique: ReturnType<typeof vi.fn>
     update: ReturnType<typeof vi.fn>
   }
   pcListing?: {
+    findUnique: ReturnType<typeof vi.fn>
     update: ReturnType<typeof vi.fn>
   }
 }
 
 describe('vote-counts', () => {
   describe('updateListingVoteCounts', () => {
+    let mockFindUnique: ReturnType<typeof vi.fn>
     let mockUpdate: ReturnType<typeof vi.fn>
     let prisma: MockPrismaClient
 
     beforeEach(() => {
+      mockFindUnique = vi.fn()
       mockUpdate = vi.fn()
       prisma = {
         listing: {
+          findUnique: mockFindUnique,
           update: mockUpdate,
         },
       }
@@ -30,22 +35,7 @@ describe('vote-counts', () => {
       it('should increment upvoteCount and voteCount for upvote', async () => {
         const listingId = 'test-listing-id'
 
-        // First call returns updated counts
-        mockUpdate.mockResolvedValueOnce({
-          id: listingId,
-          upvoteCount: 1,
-          downvoteCount: 0,
-          voteCount: 1,
-          successRate: 0, // old value
-        })
-        // Second call updates Wilson score
-        mockUpdate.mockResolvedValueOnce({
-          id: listingId,
-          upvoteCount: 1,
-          downvoteCount: 0,
-          voteCount: 1,
-          successRate: calculateWilsonScore(1, 0),
-        })
+        mockFindUnique.mockResolvedValueOnce({ upvoteCount: 0, downvoteCount: 0 })
 
         await updateListingVoteCounts(
           prisma as unknown as Prisma.TransactionClient,
@@ -54,44 +44,28 @@ describe('vote-counts', () => {
           true,
         )
 
-        expect(mockUpdate).toHaveBeenCalledTimes(2)
-
-        // First call: update counts
-        expect(mockUpdate).toHaveBeenNthCalledWith(1, {
+        expect(mockFindUnique).toHaveBeenCalledWith({
+          where: { id: listingId },
+          select: { upvoteCount: true, downvoteCount: true },
+        })
+        expect(mockUpdate).toHaveBeenCalledTimes(1)
+        expect(mockUpdate).toHaveBeenCalledWith({
           where: { id: listingId },
           data: {
             upvoteCount: { increment: 1 },
             downvoteCount: { increment: 0 },
             voteCount: { increment: 1 },
+            successRate: calculateWilsonScore(1, 0),
           },
         })
-
-        // Second call: update Wilson score
         const expectedScore = calculateWilsonScore(1, 0)
-        expect(mockUpdate).toHaveBeenNthCalledWith(2, {
-          where: { id: listingId },
-          data: { successRate: expectedScore },
-        })
         expect(expectedScore).toBeCloseTo(0.95, 1) // 1 upvote gives ~95% Wilson Score
       })
 
       it('should increment downvoteCount and voteCount for downvote', async () => {
         const listingId = 'test-listing-id'
 
-        mockUpdate.mockResolvedValueOnce({
-          id: listingId,
-          upvoteCount: 0,
-          downvoteCount: 1,
-          voteCount: 1,
-          successRate: 0,
-        })
-        mockUpdate.mockResolvedValueOnce({
-          id: listingId,
-          upvoteCount: 0,
-          downvoteCount: 1,
-          voteCount: 1,
-          successRate: 0,
-        })
+        mockFindUnique.mockResolvedValueOnce({ upvoteCount: 0, downvoteCount: 0 })
 
         await updateListingVoteCounts(
           prisma as unknown as Prisma.TransactionClient,
@@ -100,22 +74,17 @@ describe('vote-counts', () => {
           false,
         )
 
-        expect(mockUpdate).toHaveBeenCalledTimes(2)
-
-        expect(mockUpdate).toHaveBeenNthCalledWith(1, {
+        expect(mockUpdate).toHaveBeenCalledTimes(1)
+        expect(mockUpdate).toHaveBeenCalledWith({
           where: { id: listingId },
           data: {
             upvoteCount: { increment: 0 },
             downvoteCount: { increment: 1 },
             voteCount: { increment: 1 },
+            successRate: calculateWilsonScore(0, 1),
           },
         })
-
         const expectedScore = calculateWilsonScore(0, 1)
-        expect(mockUpdate).toHaveBeenNthCalledWith(2, {
-          where: { id: listingId },
-          data: { successRate: expectedScore },
-        })
         expect(expectedScore).toBeCloseTo(0.05, 1) // 1 downvote gives ~5% Wilson Score
       })
     })
@@ -124,20 +93,7 @@ describe('vote-counts', () => {
       it('should decrement upvoteCount and voteCount when deleting upvote', async () => {
         const listingId = 'test-listing-id'
 
-        mockUpdate.mockResolvedValueOnce({
-          id: listingId,
-          upvoteCount: 4,
-          downvoteCount: 1,
-          voteCount: 5,
-          successRate: 0.8,
-        })
-        mockUpdate.mockResolvedValueOnce({
-          id: listingId,
-          upvoteCount: 4,
-          downvoteCount: 1,
-          voteCount: 5,
-          successRate: 0.8,
-        })
+        mockFindUnique.mockResolvedValueOnce({ upvoteCount: 5, downvoteCount: 1 })
 
         await updateListingVoteCounts(
           prisma as unknown as Prisma.TransactionClient,
@@ -147,41 +103,24 @@ describe('vote-counts', () => {
           true,
         )
 
-        expect(mockUpdate).toHaveBeenCalledTimes(2)
-
-        expect(mockUpdate).toHaveBeenNthCalledWith(1, {
+        expect(mockUpdate).toHaveBeenCalledTimes(1)
+        expect(mockUpdate).toHaveBeenCalledWith({
           where: { id: listingId },
           data: {
             upvoteCount: { increment: -1 },
             downvoteCount: { increment: 0 },
             voteCount: { increment: -1 },
+            successRate: calculateWilsonScore(4, 1),
           },
         })
-
         const expectedScore = calculateWilsonScore(4, 1)
-        expect(mockUpdate).toHaveBeenNthCalledWith(2, {
-          where: { id: listingId },
-          data: { successRate: expectedScore },
-        })
+        expect(expectedScore).toBeCloseTo(0.715, 2)
       })
 
       it('should decrement downvoteCount and voteCount when deleting downvote', async () => {
         const listingId = 'test-listing-id'
 
-        mockUpdate.mockResolvedValueOnce({
-          id: listingId,
-          upvoteCount: 3,
-          downvoteCount: 2,
-          voteCount: 5,
-          successRate: 0.6,
-        })
-        mockUpdate.mockResolvedValueOnce({
-          id: listingId,
-          upvoteCount: 3,
-          downvoteCount: 2,
-          voteCount: 5,
-          successRate: 0.6,
-        })
+        mockFindUnique.mockResolvedValueOnce({ upvoteCount: 3, downvoteCount: 3 })
 
         await updateListingVoteCounts(
           prisma as unknown as Prisma.TransactionClient,
@@ -191,22 +130,18 @@ describe('vote-counts', () => {
           false,
         )
 
-        expect(mockUpdate).toHaveBeenCalledTimes(2)
-
-        expect(mockUpdate).toHaveBeenNthCalledWith(1, {
+        expect(mockUpdate).toHaveBeenCalledTimes(1)
+        expect(mockUpdate).toHaveBeenCalledWith({
           where: { id: listingId },
           data: {
             upvoteCount: { increment: 0 },
             downvoteCount: { increment: -1 },
             voteCount: { increment: -1 },
+            successRate: calculateWilsonScore(3, 2),
           },
         })
-
         const expectedScore = calculateWilsonScore(3, 2)
-        expect(mockUpdate).toHaveBeenNthCalledWith(2, {
-          where: { id: listingId },
-          data: { successRate: expectedScore },
-        })
+        expect(expectedScore).toBeCloseTo(0.511, 3)
       })
     })
 
@@ -214,20 +149,7 @@ describe('vote-counts', () => {
       it('should change from upvote to downvote correctly', async () => {
         const listingId = 'test-listing-id'
 
-        mockUpdate.mockResolvedValueOnce({
-          id: listingId,
-          upvoteCount: 2,
-          downvoteCount: 3,
-          voteCount: 5,
-          successRate: 0.4,
-        })
-        mockUpdate.mockResolvedValueOnce({
-          id: listingId,
-          upvoteCount: 2,
-          downvoteCount: 3,
-          voteCount: 5,
-          successRate: 0.4,
-        })
+        mockFindUnique.mockResolvedValueOnce({ upvoteCount: 3, downvoteCount: 2 })
 
         await updateListingVoteCounts(
           prisma as unknown as Prisma.TransactionClient,
@@ -237,41 +159,24 @@ describe('vote-counts', () => {
           true,
         )
 
-        expect(mockUpdate).toHaveBeenCalledTimes(2)
-
-        expect(mockUpdate).toHaveBeenNthCalledWith(1, {
+        expect(mockUpdate).toHaveBeenCalledTimes(1)
+        expect(mockUpdate).toHaveBeenCalledWith({
           where: { id: listingId },
           data: {
             upvoteCount: { increment: -1 },
             downvoteCount: { increment: 1 },
             voteCount: { increment: 0 },
+            successRate: calculateWilsonScore(2, 3),
           },
         })
-
         const expectedScore = calculateWilsonScore(2, 3)
-        expect(mockUpdate).toHaveBeenNthCalledWith(2, {
-          where: { id: listingId },
-          data: { successRate: expectedScore },
-        })
+        expect(expectedScore).toBeCloseTo(0.321, 3)
       })
 
       it('should change from downvote to upvote correctly', async () => {
         const listingId = 'test-listing-id'
 
-        mockUpdate.mockResolvedValueOnce({
-          id: listingId,
-          upvoteCount: 3,
-          downvoteCount: 2,
-          voteCount: 5,
-          successRate: 0.6,
-        })
-        mockUpdate.mockResolvedValueOnce({
-          id: listingId,
-          upvoteCount: 3,
-          downvoteCount: 2,
-          voteCount: 5,
-          successRate: 0.6,
-        })
+        mockFindUnique.mockResolvedValueOnce({ upvoteCount: 2, downvoteCount: 3 })
 
         await updateListingVoteCounts(
           prisma as unknown as Prisma.TransactionClient,
@@ -281,22 +186,18 @@ describe('vote-counts', () => {
           false,
         )
 
-        expect(mockUpdate).toHaveBeenCalledTimes(2)
-
-        expect(mockUpdate).toHaveBeenNthCalledWith(1, {
+        expect(mockUpdate).toHaveBeenCalledTimes(1)
+        expect(mockUpdate).toHaveBeenCalledWith({
           where: { id: listingId },
           data: {
             upvoteCount: { increment: 1 },
             downvoteCount: { increment: -1 },
             voteCount: { increment: 0 },
+            successRate: calculateWilsonScore(3, 2),
           },
         })
-
         const expectedScore = calculateWilsonScore(3, 2)
-        expect(mockUpdate).toHaveBeenNthCalledWith(2, {
-          where: { id: listingId },
-          data: { successRate: expectedScore },
-        })
+        expect(expectedScore).toBeCloseTo(0.511, 3)
       })
 
       it('should skip update when vote value does not change', async () => {
@@ -374,13 +275,7 @@ describe('vote-counts', () => {
       it('should calculate ~0.965 for 2 upvotes, 0 downvotes', async () => {
         const listingId = 'test-2-upvotes'
 
-        mockUpdate.mockResolvedValueOnce({
-          id: listingId,
-          upvoteCount: 2,
-          downvoteCount: 0,
-          voteCount: 2,
-          successRate: 0,
-        })
+        mockFindUnique.mockResolvedValueOnce({ upvoteCount: 1, downvoteCount: 0 })
 
         await updateListingVoteCounts(
           prisma as unknown as Prisma.TransactionClient,
@@ -390,9 +285,15 @@ describe('vote-counts', () => {
         )
 
         const expectedScore = calculateWilsonScore(2, 0)
-        expect(mockUpdate).toHaveBeenNthCalledWith(2, {
+        expect(mockUpdate).toHaveBeenCalledTimes(1)
+        expect(mockUpdate).toHaveBeenCalledWith({
           where: { id: listingId },
-          data: { successRate: expectedScore },
+          data: {
+            upvoteCount: { increment: 1 },
+            downvoteCount: { increment: 0 },
+            voteCount: { increment: 1 },
+            successRate: expectedScore,
+          },
         })
         expect(expectedScore).toBeCloseTo(0.965, 2)
       })
@@ -400,13 +301,7 @@ describe('vote-counts', () => {
       it('should calculate 0.5 for no votes', async () => {
         const listingId = 'test-no-votes'
 
-        mockUpdate.mockResolvedValueOnce({
-          id: listingId,
-          upvoteCount: 0,
-          downvoteCount: 0,
-          voteCount: 0,
-          successRate: 0,
-        })
+        mockFindUnique.mockResolvedValueOnce({ upvoteCount: 0, downvoteCount: 0 })
 
         await updateListingVoteCounts(
           prisma as unknown as Prisma.TransactionClient,
@@ -416,23 +311,32 @@ describe('vote-counts', () => {
           true,
         )
 
-        expect(mockUpdate).toHaveBeenNthCalledWith(2, {
+        expect(mockUpdate).toHaveBeenCalledTimes(1)
+        expect(mockUpdate).toHaveBeenCalledWith({
           where: { id: listingId },
-          data: { successRate: 0.5 },
+          data: {
+            upvoteCount: { increment: 0 },
+            downvoteCount: { increment: 0 },
+            voteCount: { increment: 0 },
+            successRate: 0.5,
+          },
         })
       })
     })
   })
 
   describe('updatePcListingVoteCounts', () => {
+    let mockFindUnique: ReturnType<typeof vi.fn>
     let mockUpdate: ReturnType<typeof vi.fn>
     let prisma: MockPrismaClient
 
     beforeEach(() => {
+      mockFindUnique = vi.fn()
       mockUpdate = vi.fn()
       prisma = {
         listing: {} as never, // Required by type but not used in pcListing tests
         pcListing: {
+          findUnique: mockFindUnique,
           update: mockUpdate,
         },
       }
@@ -442,13 +346,7 @@ describe('vote-counts', () => {
       it('should increment upvoteCount and voteCount for upvote on PC listing', async () => {
         const pcListingId = 'test-pc-listing-id'
 
-        mockUpdate.mockResolvedValueOnce({
-          id: pcListingId,
-          upvoteCount: 3,
-          downvoteCount: 1,
-          voteCount: 4,
-          successRate: 0,
-        })
+        mockFindUnique.mockResolvedValueOnce({ upvoteCount: 2, downvoteCount: 1 })
 
         await updatePcListingVoteCounts(
           prisma as unknown as Prisma.TransactionClient,
@@ -457,22 +355,19 @@ describe('vote-counts', () => {
           true,
         )
 
-        expect(mockUpdate).toHaveBeenCalledTimes(2)
-
-        expect(mockUpdate).toHaveBeenNthCalledWith(1, {
+        expect(mockUpdate).toHaveBeenCalledTimes(1)
+        expect(mockUpdate).toHaveBeenCalledWith({
           where: { id: pcListingId },
           data: {
             upvoteCount: { increment: 1 },
             downvoteCount: { increment: 0 },
             voteCount: { increment: 1 },
+            successRate: calculateWilsonScore(3, 1),
           },
         })
 
         const expectedScore = calculateWilsonScore(3, 1)
-        expect(mockUpdate).toHaveBeenNthCalledWith(2, {
-          where: { id: pcListingId },
-          data: { successRate: expectedScore },
-        })
+        expect(expectedScore).toBeCloseTo(0.645, 3)
       })
     })
 
@@ -480,13 +375,7 @@ describe('vote-counts', () => {
       it('should switch vote correctly on PC listing', async () => {
         const pcListingId = 'test-pc-listing-id'
 
-        mockUpdate.mockResolvedValueOnce({
-          id: pcListingId,
-          upvoteCount: 5,
-          downvoteCount: 3,
-          voteCount: 8,
-          successRate: 0,
-        })
+        mockFindUnique.mockResolvedValueOnce({ upvoteCount: 4, downvoteCount: 4 })
 
         await updatePcListingVoteCounts(
           prisma as unknown as Prisma.TransactionClient,
@@ -496,14 +385,14 @@ describe('vote-counts', () => {
           false,
         )
 
-        expect(mockUpdate).toHaveBeenCalledTimes(2)
-
-        expect(mockUpdate).toHaveBeenNthCalledWith(1, {
+        expect(mockUpdate).toHaveBeenCalledTimes(1)
+        expect(mockUpdate).toHaveBeenCalledWith({
           where: { id: pcListingId },
           data: {
             upvoteCount: { increment: 1 },
             downvoteCount: { increment: -1 },
             voteCount: { increment: 0 },
+            successRate: calculateWilsonScore(5, 3),
           },
         })
       })
@@ -513,13 +402,7 @@ describe('vote-counts', () => {
       it('should decrement counts when deleting vote from PC listing', async () => {
         const pcListingId = 'test-pc-listing-id'
 
-        mockUpdate.mockResolvedValueOnce({
-          id: pcListingId,
-          upvoteCount: 10,
-          downvoteCount: 2,
-          voteCount: 12,
-          successRate: 0,
-        })
+        mockFindUnique.mockResolvedValueOnce({ upvoteCount: 10, downvoteCount: 3 })
 
         await updatePcListingVoteCounts(
           prisma as unknown as Prisma.TransactionClient,
@@ -529,22 +412,19 @@ describe('vote-counts', () => {
           false,
         )
 
-        expect(mockUpdate).toHaveBeenCalledTimes(2)
-
-        expect(mockUpdate).toHaveBeenNthCalledWith(1, {
+        expect(mockUpdate).toHaveBeenCalledTimes(1)
+        expect(mockUpdate).toHaveBeenCalledWith({
           where: { id: pcListingId },
           data: {
             upvoteCount: { increment: 0 },
             downvoteCount: { increment: -1 },
             voteCount: { increment: -1 },
+            successRate: calculateWilsonScore(10, 2),
           },
         })
 
         const expectedScore = calculateWilsonScore(10, 2)
-        expect(mockUpdate).toHaveBeenNthCalledWith(2, {
-          where: { id: pcListingId },
-          data: { successRate: expectedScore },
-        })
+        expect(expectedScore).toBeCloseTo(0.79, 2)
       })
     })
   })

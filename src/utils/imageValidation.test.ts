@@ -165,7 +165,7 @@ describe('imageValidation', () => {
 
     it('should return error for invalid extensions', () => {
       expect(getImageValidationError('https://example.com/document.pdf')).toBe(
-        'Image URL must end with a valid extension: jpg, jpeg, png, gif, webp',
+        'Image URL must end with a valid extension (jpg, jpeg, png, gif, webp) or be from a recognized image service',
       )
     })
   })
