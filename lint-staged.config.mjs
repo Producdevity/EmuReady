@@ -11,7 +11,7 @@ const lintStagedConfig = {
   'package.json': () => [
     'npm install',
     'node scripts/sync-version.js',
-    'git add public/service-worker.js public/sw-register.js',
+    'git add public/service-worker.js public/sw-register.js package-lock.json',
   ],
   '*.{json,css,md,js,jsx,ts,tsx}': ['prettier --write'],
   '*.{js,jsx,ts,tsx}': [buildEslintCommand],
