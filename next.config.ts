@@ -170,6 +170,25 @@ const nextConfig: NextConfig = {
 
   async headers() {
     return [
+      // Service worker files should never be cached by the browser
+      {
+        source: '/service-worker.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/sw-register.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate',
+          },
+        ],
+      },
       // Static assets with hash - cache immutable
       {
         source: '/_next/static/:path*',
