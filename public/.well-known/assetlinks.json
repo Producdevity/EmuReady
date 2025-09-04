@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.producdevity.emureadyapp",
+      "sha256_cert_fingerprints": [
+        "72:33:2C:36:D8:25:E4:D4:97:79:8B:D7:63:AB:2C:07:B6:6F:40:F7:7F:C8:52:AC:B8:ED:F4:F3:E8:F5:6A:85"
+      ]
+    }
+  }
+]
