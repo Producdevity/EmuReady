@@ -5,15 +5,21 @@ import * as Sentry from '@sentry/nextjs'
  * Use this instead of console.log/error for better observability
  */
 
+type LogMessage = Parameters<typeof console.log>[0]
+type LogExtra = Parameters<typeof console.log>[1]
+
 export const logger = {
-  log: (message: string, extra?: Record<string, unknown> | null, inProduction = false) => {
-    if (inProduction && process.env.NODE_ENV === 'production') return
-    console.log(`[LOG] ${message}`, extra)
+  /**
+   * General log (only in non-production)
+   */
+  log: (message: LogMessage, ...extra: LogExtra) => {
+    if (process.env.NODE_ENV === 'production') return
+    console.log(`[LOG] ${message}`, ...extra)
   },
   /**
    * Log debug information (only in development)
    */
-  debug: (message: string, extra?: Record<string, unknown>) => {
+  debug: (message: LogMessage, extra?: LogExtra) => {
     if (process.env.NODE_ENV === 'development') {
       console.log(`[DEBUG] ${message}`, extra)
     }
@@ -21,58 +27,46 @@ export const logger = {
   },
 
   /**
-   * Log general information
+   * Log general information (always)
    */
-  info: (message: string, extra?: Record<string, unknown>) => {
+  info: (message: LogMessage, extra?: LogExtra) => {
     console.log(`[INFO] ${message}`, extra)
     Sentry.logger.info(message, extra)
   },
 
   /**
-   * Log warnings
+   * Log warnings (non-critical issues)
    */
-  warn: (message: string, extra?: Record<string, unknown>) => {
+  warn: (message: LogMessage, extra?: LogExtra) => {
     console.warn(`[WARN] ${message}`, extra)
     Sentry.logger.warn(message, extra)
   },
 
   /**
-   * Log errors and capture them in Sentry
+   * Log errors and capture them in Sentry (critical issues)
    */
-  error: (message: string, error?: Error | unknown, extra?: Record<string, unknown>) => {
+  error: (message: LogMessage, error?: Error | unknown, extra?: LogExtra) => {
     console.error(`[ERROR] ${message}`, error, extra)
 
     if (error instanceof Error) {
-      Sentry.withScope((scope) => {
-        if (extra) {
-          scope.setContext('errorContext', extra)
-        }
+      return Sentry.withScope((scope) => {
+        if (extra) scope.setContext('errorContext', extra)
         scope.setLevel('error')
-        Sentry.captureException(error, {
-          tags: {
-            errorMessage: message,
-          },
-        })
-      })
-    } else {
-      Sentry.logger.error(message, {
-        ...extra,
-        error: error ? String(error) : undefined,
+        Sentry.captureException(error, { tags: { errorMessage: message } })
       })
     }
+    Sentry.logger.error(message, { ...extra, error: error ? String(error) : undefined })
   },
 
   /**
    * Log fatal errors (system-critical issues)
    */
-  fatal: (message: string, error?: Error | unknown, extra?: Record<string, unknown>) => {
+  fatal: (message: LogMessage, error?: Error | unknown, extra?: Record<string, unknown>) => {
     console.error(`[FATAL] ${message}`, error, extra)
 
     if (error instanceof Error) {
-      Sentry.withScope((scope) => {
-        if (extra) {
-          scope.setContext('fatalContext', extra)
-        }
+      return Sentry.withScope((scope) => {
+        if (extra) scope.setContext('fatalContext', extra)
         scope.setLevel('fatal')
         Sentry.captureException(error, {
           tags: {
@@ -81,12 +75,8 @@ export const logger = {
           },
         })
       })
-    } else {
-      Sentry.logger.fatal(message, {
-        ...extra,
-        error: error ? String(error) : undefined,
-      })
     }
+    Sentry.logger.fatal(message, { ...extra, error: error ? String(error) : undefined })
   },
 }
 
