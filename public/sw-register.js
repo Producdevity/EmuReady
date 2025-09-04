@@ -33,7 +33,23 @@ if ('serviceWorker' in navigator) {
 
   // Disable SW in development-like environments (including dev.emuready.com behind tunnels)
   if (isDevelopment) {
-    console.log('Service Worker disabled in local development mode')
+    console.log(
+      'Service Worker disabled in local development mode; unregistering any existing SW and clearing caches',
+    )
+    // Proactively unregister any active service workers for this origin
+    if (navigator.serviceWorker.getRegistrations) {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((regs) => Promise.all(regs.map((r) => r.unregister())))
+        .catch((err) => console.warn('SW unregister failed', err))
+    }
+    // Clear all caches to avoid stale assets/pages in dev
+    if ('caches' in window) {
+      caches
+        .keys()
+        .then((names) => Promise.all(names.map((n) => caches.delete(n))))
+        .catch((err) => console.warn('Cache clear failed', err))
+    }
   } else {
     window.addEventListener('load', async function () {
       const swUrl = '/service-worker.js'
