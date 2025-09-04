@@ -37,6 +37,15 @@ describe('translation utilities', () => {
       expect([0.1, 1]).toContain(result.confidence)
     })
 
+    it('should detect Portuguese text', () => {
+      const portugueseText =
+        'Ele é perfeito mas não consigo jogar porque quando abro o arquivo do jogo ele vai mas n entra no jogo porque n tenho conta steam pra jogar normalmente o jogo poroso eu intalo o arquivo do game mas não abre'
+      const result = detectLanguage(portugueseText)
+      expect(result.isEnglish).toBe(false)
+      expect(result.detectedLanguage).toBe('gl')
+      expect(typeof result.confidence).toBe('number')
+    })
+
     it('should detect non-English text', () => {
       const spanishText = 'Esto es un mensaje de prueba en español que es suficientemente largo.'
       const result = detectLanguage(spanishText)
@@ -110,6 +119,16 @@ describe('translation utilities', () => {
       const dutchText = 'Iets met oliebollen, pindakaas en frikandellen of zo.'
       const result = shouldShowTranslation(dutchText)
       expect(result).toBe(true)
+    })
+
+    it('should show translation for Portuguese-like text detected as Galician (glg)', () => {
+      // Some Portuguese texts are detected by franc as 'glg' (Galician).
+      // By supporting 'glg' in our map, we should offer translation for EN users.
+      vi.mocked(getUserLocale).mockReturnValue('en')
+      const text =
+        'Ele é perfeito mas não consigo jogar porque quando abro o arquivo do jogo ele vai mas n entra no jogo porque n tenho conta steam pra jogar normalmente o jogo poroso eu intalo o arquivo do game mas não abre'
+      const should = shouldShowTranslation(text)
+      expect(should).toBe(true)
     })
   })
 })
