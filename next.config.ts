@@ -1,6 +1,7 @@
 import NextBundleAnalyzer from '@next/bundle-analyzer'
 import { withSentryConfig } from '@sentry/nextjs'
 import type { NextConfig } from 'next'
+import type { Configuration as WebpackConfiguration } from 'webpack'
 
 const nextConfig: NextConfig = {
   images: {
@@ -13,51 +14,15 @@ const nextConfig: NextConfig = {
       { pathname: '/placeholder/**' },
     ],
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'placehold.co',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'media.rawg.io',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.clerk.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.clerk.accounts.dev',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.thegamesdb.net',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.igdb.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'assets.nintendo.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'storage.ko-fi.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'ko-fi.com',
-        pathname: '/**',
-      },
+      { protocol: 'https', hostname: 'placehold.co', pathname: '/**' },
+      { protocol: 'https', hostname: 'media.rawg.io', pathname: '/**' },
+      { protocol: 'https', hostname: '*.clerk.com', pathname: '/**' },
+      { protocol: 'https', hostname: '*.clerk.accounts.dev', pathname: '/**' },
+      { protocol: 'https', hostname: 'cdn.thegamesdb.net', pathname: '/**' },
+      { protocol: 'https', hostname: 'images.igdb.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'assets.nintendo.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'storage.ko-fi.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'ko-fi.com', pathname: '/**' },
     ],
   },
 
@@ -132,98 +97,53 @@ const nextConfig: NextConfig = {
     dirs: ['src', 'tests'],
   },
 
-  webpack: (config) => {
+  webpack: (config: WebpackConfiguration) => {
     config.module?.rules?.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     })
 
-    // Improve chunk splitting for better caching
-    if (config.optimization) {
-      config.optimization.splitChunks = {
-        ...config.optimization.splitChunks,
-        cacheGroups: {
-          ...config.optimization.splitChunks?.cacheGroups,
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            chunks: 'all',
-            priority: 10,
-          },
-          common: {
-            name: 'common',
-            minChunks: 2,
-            chunks: 'all',
-            priority: 5,
-          },
-        },
-      }
-    }
-
     return config
   },
 
   async headers() {
-    return [
+    const headers = [
       // Service worker files should never be cached by the browser
       {
         source: '/service-worker.js',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate',
-          },
-        ],
+        headers: [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' }],
       },
       {
         source: '/sw-register.js',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate',
-          },
-        ],
+        headers: [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' }],
       },
       // Static assets with hash - cache immutable
       {
         source: '/_next/static/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
       // Images and other assets - cache with revalidation
       {
         source: '/favicon/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=86400, must-revalidate',
-          },
-        ],
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=86400, must-revalidate' }],
       },
       {
         source: '/api/mobile/:path*',
         headers: [
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*',
-          },
-          {
-            key: 'Access-Control-Allow-Methods',
-            value: 'GET, POST, PUT, DELETE, OPTIONS',
-          },
+          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
           {
             key: 'Access-Control-Allow-Headers',
             value: 'Content-Type, Authorization, x-trpc-source',
           },
-          {
-            key: 'Access-Control-Expose-Headers',
-            value: 'x-trpc-source',
-          },
+          { key: 'Access-Control-Expose-Headers', value: 'x-trpc-source' },
         ],
+      },
+      // tRPC endpoints are dynamic; prevent intermediary/proxy caching
+      {
+        source: '/api/trpc/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' }],
       },
       {
         source: '/(.*)',
@@ -247,21 +167,26 @@ const nextConfig: NextConfig = {
               'upgrade-insecure-requests',
             ].join('; '),
           },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
-          },
+          { key: 'X-XSS-Protection', value: '1; mode=block' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
         ],
       },
     ]
+
+    // In dev disable HTML caching to avoid stale content via proxies
+    if (process.env.NODE_ENV !== 'production') {
+      headers.push({
+        // All routes except static assets and API
+        source: '/((?!_next|api|favicon|service-worker\\.js|sw-register\\.js).*)',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
+          { key: 'Pragma', value: 'no-cache' },
+        ],
+      })
+    }
+
+    return headers
   },
 }
 
