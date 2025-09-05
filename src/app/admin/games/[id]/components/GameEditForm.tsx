@@ -4,17 +4,18 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { type infer as ZodInfer } from 'zod'
 import { Button, Input, Autocomplete } from '@/components/ui'
 import { AdminImageSelectorSwitcher } from '@/components/ui/image-selectors'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
-import { type RouterOutput, type RouterInput } from '@/types/trpc'
+import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import updateGameSchema from '../form-schemas/updateGameSchema'
 
 type Game = NonNullable<RouterOutput['games']['byId']>
 
-type UpdateGameInput = Omit<RouterInput['games']['update'], 'id'>
+type UpdateGameInput = ZodInfer<typeof updateGameSchema>
 
 interface Props {
   game: Game

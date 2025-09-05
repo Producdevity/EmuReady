@@ -1,6 +1,6 @@
 import { useUser } from '@clerk/nextjs'
 import { Edit3, Image as ImageIconLucide, Copy } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, OptimizedImage, Modal } from '@/components/ui'
 import { AdminImageSelectorSwitcher } from '@/components/ui/image-selectors'
 import { api } from '@/lib/api'
@@ -29,15 +29,35 @@ export function GameBoxartImage(props: Props) {
   const { user } = useUser()
   const [activeImageType, setActiveImageType] = useState<ImageField>('imageUrl')
   const [showModal, setShowModal] = useState(false)
+  const [selectedUrl, setSelectedUrl] = useState<string>('')
+  const [displayUrls, setDisplayUrls] = useState<Record<ImageField, string>>({
+    imageUrl: props.game.imageUrl ?? '',
+    boxartUrl: props.game.boxartUrl ?? '',
+    bannerUrl: props.game.bannerUrl ?? '',
+  })
 
+  const utils = api.useUtils()
   const userQuery = api.users.me.useQuery(undefined, {
     enabled: !!user,
   })
 
   const updateGameMutation = api.games.update.useMutation({
-    onSuccess: () => {
+    onSuccess: async (updated) => {
       toast.success('Game image updated successfully')
-      setShowModal(false)
+      setSelectedUrl('')
+      if (updated) {
+        setDisplayUrls({
+          imageUrl: updated.imageUrl ?? '',
+          boxartUrl: updated.boxartUrl ?? '',
+          bannerUrl: updated.bannerUrl ?? '',
+        })
+      }
+      try {
+        await utils.games.byId.invalidate({ id: props.game.id })
+      } catch (error) {
+        console.error('Failed to invalidate game cache', error)
+      }
+      // Keep modal open for further edits
     },
     onError: (error) => {
       toast.error(`Failed to update game image: ${error.message}`)
@@ -52,24 +72,23 @@ export function GameBoxartImage(props: Props) {
 
   const canEdit = isModerator || isOwnerOfPendingGame
 
-  const handleImageSelect = (url: string, applyToAll = false) => {
+  const handleImageSelect = (url: string | null, applyToAll = false) => {
     const updateData = {
       id: props.game.id,
       title: props.game.title,
       systemId: props.game.systemId,
-      imageUrl: props.game.imageUrl || undefined,
-      boxartUrl: props.game.boxartUrl || undefined,
-      bannerUrl: props.game.bannerUrl || undefined,
+      imageUrl: displayUrls.imageUrl || null,
+      boxartUrl: displayUrls.boxartUrl || null,
+      bannerUrl: displayUrls.bannerUrl || null,
     }
 
     if (applyToAll) {
       // Apply the same image to all three fields
-      updateData.imageUrl = url || undefined
-      updateData.boxartUrl = url || undefined
-      updateData.bannerUrl = url || undefined
-      toast.success('Applied image to all fields')
+      updateData.imageUrl = url
+      updateData.boxartUrl = url
+      updateData.bannerUrl = url
     } else {
-      updateData[activeImageType] = url || undefined
+      updateData[activeImageType] = url
     }
 
     updateGameMutation.mutate(updateData)
@@ -79,9 +98,16 @@ export function GameBoxartImage(props: Props) {
     setActiveImageType(type)
   }
 
-  const getFieldValue = (field: ImageField) => {
-    return props.game[field] || ''
-  }
+  const getFieldValue = (field: ImageField) => displayUrls[field] || ''
+
+  // Sync local display when server data changes
+  useEffect(() => {
+    setDisplayUrls({
+      imageUrl: props.game.imageUrl ?? '',
+      boxartUrl: props.game.boxartUrl ?? '',
+      bannerUrl: props.game.bannerUrl ?? '',
+    })
+  }, [props.game.imageUrl, props.game.boxartUrl, props.game.bannerUrl])
 
   const getFieldLabel = (field: ImageField) => {
     const labels = {
@@ -184,7 +210,10 @@ export function GameBoxartImage(props: Props) {
       {/* Image Update Modal */}
       <Modal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={() => {
+          setSelectedUrl('')
+          setShowModal(false)
+        }}
         title={`Update ${getFieldLabel(activeImageType)}`}
         size="3xl"
       >
@@ -199,14 +228,30 @@ export function GameBoxartImage(props: Props) {
                 variant="primary"
                 size="sm"
                 onClick={() => {
-                  const currentUrl = getFieldValue(activeImageType)
-                  if (currentUrl) {
-                    handleImageSelect(currentUrl, true)
+                  const url = selectedUrl || getFieldValue(activeImageType)
+                  if (url) {
+                    handleImageSelect(url, false)
+                  } else {
+                    toast.error('No image selected to apply')
+                  }
+                }}
+                disabled={!selectedUrl && !getFieldValue(activeImageType)}
+                className="flex items-center gap-2"
+              >
+                Apply Selected to Current Field
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  const url = selectedUrl || getFieldValue(activeImageType)
+                  if (url) {
+                    handleImageSelect(url, true)
                   } else {
                     toast.error('No image selected to apply to all fields')
                   }
                 }}
-                disabled={!getFieldValue(activeImageType)}
+                disabled={!selectedUrl && !getFieldValue(activeImageType)}
                 className="flex items-center gap-2"
               >
                 <Copy className="h-4 w-4" />
@@ -248,14 +293,16 @@ export function GameBoxartImage(props: Props) {
           </div>
 
           {/* Current Image Preview */}
-          {getFieldValue(activeImageType) && (
+          {(selectedUrl || getFieldValue(activeImageType)) && (
             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Current {getFieldLabel(activeImageType)}:
+                {selectedUrl
+                  ? 'Selected (pending save):'
+                  : `Current ${getFieldLabel(activeImageType)}:`}
               </p>
               <div className="flex items-center gap-4">
                 <OptimizedImage
-                  src={getImageUrl(getFieldValue(activeImageType), props.game.title)}
+                  src={getImageUrl(selectedUrl || getFieldValue(activeImageType), props.game.title)}
                   alt="Current image"
                   width={100}
                   height={133}
@@ -263,15 +310,21 @@ export function GameBoxartImage(props: Props) {
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                    {getFieldValue(activeImageType)}
+                    {selectedUrl || getFieldValue(activeImageType)}
                   </p>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleImageSelect('', false)}
+                    onClick={() => {
+                      if (selectedUrl) {
+                        setSelectedUrl('')
+                      } else {
+                        handleImageSelect(null, false)
+                      }
+                    }}
                     className="mt-2"
                   >
-                    Remove {getFieldLabel(activeImageType)}
+                    {selectedUrl ? 'Clear Selection' : `Remove ${getFieldLabel(activeImageType)}`}
                   </Button>
                 </div>
               </div>
@@ -283,10 +336,10 @@ export function GameBoxartImage(props: Props) {
             gameTitle={props.game.title}
             systemName={props.game.system?.name}
             tgdbPlatformId={props.game.system?.tgdbPlatformId || undefined}
-            selectedImageUrl={getFieldValue(activeImageType)}
+            selectedImageUrl={selectedUrl || getFieldValue(activeImageType)}
             onImageSelect={(url) => {
-              handleImageSelect(url, false)
-              setShowModal(false)
+              // Do not auto-apply; let the user choose an action
+              setSelectedUrl(url)
             }}
             onError={(error: string) => toast.error(error)}
             placeholder={`https://example.com/${activeImageType.replace('Url', '')}.jpg`}

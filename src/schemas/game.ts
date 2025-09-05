@@ -84,9 +84,21 @@ export const UpdateGameSchema = z.object({
   id: z.string().uuid(),
   title: z.string().min(1),
   systemId: z.string().uuid(),
-  imageUrl: z.string().optional(),
-  boxartUrl: z.string().optional(),
-  bannerUrl: z.string().optional(),
+  imageUrl: z
+    .string()
+    .nullable()
+    .optional()
+    .or(z.literal('').transform(() => null)),
+  boxartUrl: z
+    .string()
+    .nullable()
+    .optional()
+    .or(z.literal('').transform(() => null)),
+  bannerUrl: z
+    .string()
+    .nullable()
+    .optional()
+    .or(z.literal('').transform(() => null)),
   tgdbGameId: z.number().optional(),
   isErotic: z.boolean().optional(),
 })

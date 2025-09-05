@@ -2,7 +2,6 @@
 
 import { useUser } from '@clerk/nextjs'
 import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
 import { notFound, useParams, useRouter } from 'next/navigation'
 import { Badge, Button, LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
@@ -20,9 +19,7 @@ function GameDetailsPage() {
 
   const gameQuery = api.games.byId.useQuery({ id: params.id as string })
 
-  const userQuery = api.users.me.useQuery(undefined, {
-    enabled: !!user,
-  })
+  const userQuery = api.users.me.useQuery(undefined, { enabled: !!user })
 
   const isOwnerOfPendingGame =
     userQuery.data &&
@@ -69,15 +66,7 @@ function GameDetailsPage() {
                     </Badge>
                   </div>
                 </div>
-                <div className="flex gap-3">
-                  {canEdit && <GameEditForm gameData={gameQuery.data} />}
-                  <Link
-                    href={`/listings/new?gameId=${gameQuery.data.id}`}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow transition-colors duration-200 text-sm font-medium"
-                  >
-                    Add Listing for this Game
-                  </Link>
-                </div>
+                <div className="flex">{canEdit && <GameEditForm gameData={gameQuery.data} />}</div>
               </div>
             </div>
           </div>

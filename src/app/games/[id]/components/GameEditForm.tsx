@@ -1,11 +1,11 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { Pencil, Image as ImageIcon, X } from 'lucide-react'
+import { ImageIcon, X } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
-import { Button, Input, Badge } from '@/components/ui'
+import { Button, Input, Badge, EditButton } from '@/components/ui'
 import { ImageSelectorSwitcher } from '@/components/ui/image-selectors'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
@@ -201,19 +201,14 @@ export function GameEditForm(props: Props) {
 
   return (
     <div className="relative">
-      <Button
-        variant="outline"
-        className="gap-2"
+      <EditButton
+        title="Edit Game"
         onClick={() => {
-          // Reset loading state when opening modal
           setIsLoading(false)
           setError('')
           setOpen(true)
         }}
-      >
-        <Pencil className="h-4 w-4" />
-        Edit Game
-      </Button>
+      />
 
       {open && (
         <div
@@ -412,7 +407,7 @@ export function GameEditForm(props: Props) {
                 onClick={handleCloseImageSelector}
                 className="h-8 w-8 p-0"
               >
-                ✕
+                <X />
               </Button>
             </div>
 

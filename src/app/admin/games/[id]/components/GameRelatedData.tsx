@@ -7,7 +7,9 @@ import {
   ViewButton,
   LocalizedDate,
 } from '@/components/ui'
+import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 
 type Game = NonNullable<RouterOutput['games']['byId']>
 
@@ -16,6 +18,7 @@ interface Props {
 }
 
 export function GameRelatedData(props: Props) {
+  const userQuery = api.users.me.useQuery()
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
       <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
@@ -76,7 +79,12 @@ export function GameRelatedData(props: Props) {
                     <LocalizedDate date={listing.createdAt} format="timeAgo" />
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <EditButton href={`/admin/listings/${listing.id}/edit`} title="Edit Listing" />
+                    {hasPermission(userQuery.data?.permissions, PERMISSIONS.EDIT_ANY_LISTING) && (
+                      <EditButton
+                        href={`/admin/listings/${listing.id}/edit`}
+                        title="Edit Listing"
+                      />
+                    )}
                     <ViewButton href={`/listings/${listing.id}`} title="View Details" />
                   </td>
                 </tr>
