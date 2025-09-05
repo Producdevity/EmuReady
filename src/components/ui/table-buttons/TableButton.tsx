@@ -42,6 +42,16 @@ const colorClassMap = {
     icon: 'text-yellow-600 dark:text-yellow-400 group-hover:text-yellow-700 dark:group-hover:text-yellow-300 drop-shadow-sm',
     glow: 'group-hover:bg-yellow-500/10 dark:group-hover:bg-yellow-400/15',
   },
+  orange: {
+    base: 'bg-gradient-to-br from-orange-500/8 to-red-500/8 dark:from-orange-400/15 dark:to-red-400/15 border border-orange-200/40 dark:border-orange-500/30 hover:border-orange-300/60 dark:hover:border-orange-400/50 hover:shadow-xl hover:shadow-orange-500/25 dark:hover:shadow-orange-400/20 backdrop-blur-sm hover:bg-gradient-to-br hover:from-orange-500/15 hover:to-red-500/15',
+    icon: 'text-orange-600 dark:text-orange-400 group-hover:text-orange-700 dark:group-hover:text-orange-300 drop-shadow-sm',
+    glow: 'group-hover:bg-orange-500/10 dark:group-hover:bg-orange-400/15',
+  },
+  indigo: {
+    base: 'bg-gradient-to-br from-indigo-500/8 to-purple-500/8 dark:from-indigo-400/15 dark:to-purple-400/15 border border-indigo-200/40 dark:border-indigo-500/30 hover:border-indigo-300/60 dark:hover:border-indigo-400/50 hover:shadow-xl hover:shadow-indigo-500/25 dark:hover:shadow-indigo-400/20 backdrop-blur-sm hover:bg-gradient-to-br hover:from-indigo-500/15 hover:to-purple-500/15',
+    icon: 'text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 drop-shadow-sm',
+    glow: 'group-hover:bg-indigo-500/10 dark:group-hover:bg-indigo-400/15',
+  },
 }
 
 interface CommonProps {

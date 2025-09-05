@@ -231,6 +231,15 @@ const permissions: PermissionDefinition[] = [
     isSystem: true,
   },
 
+  // Badges Management
+  {
+    key: 'manage_badges',
+    label: 'Manage Badges',
+    description: 'Create, edit, and assign badges',
+    category: PermissionCategory.USER_MANAGEMENT,
+    isSystem: true,
+  },
+
   // System Management
   {
     key: 'manage_systems',
@@ -316,6 +325,7 @@ const rolePermissionAssignments: RolePermissionAssignment[] = [
       'manage_trust_system',
       'view_trust_logs',
       'manage_devices',
+      'manage_badges',
       'manage_systems',
       'manage_performance_scales',
     ],
@@ -354,6 +364,7 @@ const rolePermissionAssignments: RolePermissionAssignment[] = [
       'manage_devices',
       'manage_systems',
       'manage_performance_scales',
+      'manage_badges',
     ],
   },
 ]
@@ -418,4 +429,56 @@ export default async function permissionsSeeder(prisma: PrismaClient) {
   }
 
   console.info('✅ Permissions seeded successfully!')
+}
+
+/**
+ * Safe, additive-only seeder for permissions and role assignments.
+ * - Only creates permissions that do not exist.
+ * - Does NOT update existing permission fields (label, description, category, isSystem).
+ * - Adds missing rolePermission links, does NOT remove any existing links.
+ */
+export async function permissionsSeederAddOnly(prisma: PrismaClient) {
+  console.info('🔐 Seeding permissions (add-only)...')
+
+  // Create permissions if missing
+  console.info('  Ensuring permissions exist (no updates to existing)...')
+  for (const def of permissions) {
+    try {
+      const existing = await prisma.permission.findUnique({ where: { key: def.key } })
+      if (existing) {
+        console.info(`    • exists: ${def.key}`)
+        continue
+      }
+      await prisma.permission.create({ data: def })
+      console.info(`    ✓ created: ${def.key}`)
+    } catch (error) {
+      console.error(`    ✗ Failed to ensure permission ${def.key}:`, error)
+    }
+  }
+
+  // Assign permissions to roles if missing
+  console.info('  Ensuring role-permission assignments (add-only)...')
+  for (const assignment of rolePermissionAssignments) {
+    console.info(`    Role ${assignment.role}:`)
+    for (const key of assignment.permissions) {
+      try {
+        const p = await prisma.permission.findUnique({ where: { key } })
+        if (!p) {
+          console.warn(`      ⚠️  Permission not found, skipping: ${key}`)
+          continue
+        }
+
+        await prisma.rolePermission.upsert({
+          where: { role_permissionId: { role: assignment.role, permissionId: p.id } },
+          update: {},
+          create: { role: assignment.role, permissionId: p.id },
+        })
+        console.info(`      ✓ linked: ${key}`)
+      } catch (error) {
+        console.error(`      ✗ Failed linking ${key} to ${assignment.role}:`, error)
+      }
+    }
+  }
+
+  console.info('✅ Permissions (add-only) seeding complete!')
 }

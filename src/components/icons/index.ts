@@ -1,3 +1,4 @@
+export * from './BooleanIcon'
 export * from './EmulatorIcon'
 export * from './GitHubIcon'
 export * from './LoadingIcon'

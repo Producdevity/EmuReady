@@ -1,5 +1,5 @@
 import { TRUST_ACTIONS } from '@/lib/trust/config'
-import { ApprovalStatus, Role, type TrustAction } from '@orm'
+import { ApprovalStatus, PermissionCategory, Role, type TrustAction } from '@orm'
 import type { BadgeVariant } from '@/components/ui/Badge'
 
 const approvalStatusVariantsMap: Record<ApprovalStatus, BadgeVariant> = {
@@ -57,4 +57,17 @@ export function getTrustActionBadgeColor(action: TrustAction): BadgeVariant {
   if (weight > 0) return 'info'
   if (weight < -5) return 'danger'
   return 'warning'
+}
+
+const permissionCategoryVariantMap: Record<PermissionCategory, BadgeVariant> = {
+  [PermissionCategory.CONTENT]: 'info',
+  [PermissionCategory.MODERATION]: 'warning',
+  [PermissionCategory.USER_MANAGEMENT]: 'primary',
+  [PermissionCategory.SYSTEM]: 'danger',
+}
+
+export function getPermissionCategoryBadgeVariant(
+  permissionCategory: PermissionCategory,
+): BadgeVariant {
+  return permissionCategoryVariantMap[permissionCategory] || 'default'
 }
