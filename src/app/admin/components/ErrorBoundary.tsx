@@ -2,6 +2,7 @@
 
 import { AlertTriangle } from 'lucide-react'
 import { Component, type ComponentType, type PropsWithChildren, type ErrorInfo } from 'react'
+import { logger } from '@/lib/logger'
 
 interface Props extends PropsWithChildren {
   fallback?: ComponentType<{ error: Error; reset: () => void }>
@@ -21,7 +22,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('[ErrorBoundary]: caught an error:', error, errorInfo)
+    logger.error('[ErrorBoundary]: caught an error:', error, errorInfo)
     this.props.onError?.(error, errorInfo)
   }
 
