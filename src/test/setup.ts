@@ -41,6 +41,12 @@ vi.mock('@orm', () => ({
     APPROVED: 'APPROVED',
     REJECTED: 'REJECTED',
   },
+  PermissionCategory: {
+    CONTENT: 'CONTENT',
+    MODERATION: 'MODERATION',
+    USER_MANAGEMENT: 'USER_MANAGEMENT',
+    SYSTEM: 'SYSTEM',
+  },
   Role: {
     USER: 'USER',
     AUTHOR: 'AUTHOR',
