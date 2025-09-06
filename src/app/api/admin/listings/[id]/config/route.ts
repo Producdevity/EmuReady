@@ -5,13 +5,11 @@ import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role } from '@orm'
 
-export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+export async function GET(_: NextRequest, props: { params: Promise<{ id: string }> }) {
   const { userId } = await auth()
   const params = await props.params
 
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Get user info first
   const user = await prisma.user.findUnique({
@@ -53,9 +51,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
       },
     })
 
-    if (!listing) {
-      return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
-    }
+    if (!listing) return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
 
     // Check permissions now that we have the listing and emulator info
     const isAdmin = roleIncludesRole(user.role, Role.ADMIN)

@@ -82,11 +82,11 @@ export class NotificationBatchingService {
     this.scheduleNotification(
       {
         userId,
-        type: 'FEATURE_ANNOUNCEMENT',
-        category: 'SYSTEM',
+        type: NotificationType.WEEKLY_DIGEST,
+        category: NotificationCategory.SYSTEM,
         title: 'Weekly EmuReady Digest',
         message: "Here's what happened this week in your gaming community.",
-        deliveryChannel: 'EMAIL',
+        deliveryChannel: DeliveryChannel.EMAIL,
       },
       nextWeek,
     )

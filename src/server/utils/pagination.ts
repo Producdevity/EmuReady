@@ -35,12 +35,17 @@ export function calculateOffset(
   return page ? (page - 1) * limit : (offset ?? 0)
 }
 
+interface PaginateParams {
+  total: number
+  page: number
+  limit: number
+}
 /**
  * Create pagination metadata - clean API
  * @param params - Pagination parameters
  * @returns Complete pagination metadata with calculated offset
  */
-export function paginate(params: { total: number; page: number; limit: number }): PaginationResult {
+export function paginate(params: PaginateParams): PaginationResult {
   const { total, page, limit } = params
   const offset = (page - 1) * limit
   const pages = Math.ceil(total / limit)

@@ -1,12 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { KofiFooterButton } from '@/components/footer/KofiFooterButton'
+import { FooterBetaBadge } from '@/components/footer/components/FooterBetaBadge'
+import { FooterKofiButton } from '@/components/footer/components/FooterKofiButton'
+import { FooterLink } from '@/components/footer/components/FooterLink'
+import { FooterPatreonButton } from '@/components/footer/components/FooterPatreonButton'
 import { GitHubIcon } from '@/components/icons'
 import { ThemeSelect } from '@/components/ui'
 import analytics from '@/lib/analytics'
 
 const discordUrl = process.env.NEXT_PUBLIC_DISCORD_LINK
+const patreonUrl = process.env.NEXT_PUBLIC_PATREON_LINK
 const githubUrl = process.env.NEXT_PUBLIC_GITHUB_URL
 const githubReadmeUrl = `${process.env.NEXT_PUBLIC_GITHUB_URL}/blob/master/README.md`
 const githubSupportUrl = `${process.env.NEXT_PUBLIC_GITHUB_URL}/issues/new?template=question.md`
@@ -60,7 +64,10 @@ function Footer() {
                 </a>
 
                 <div className="inline-flex">
-                  <KofiFooterButton />
+                  <FooterKofiButton />
+                </div>
+                <div className="inline-flex">
+                  <FooterPatreonButton />
                 </div>
 
                 <div className="inline-flex p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
@@ -72,50 +79,30 @@ function Footer() {
             {/* About Section */}
             <div className="group">
               <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-lg flex items-center gap-2">
-                <span className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"></span>
+                <span className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full" />
                 About
               </h4>
               <ul className="space-y-4">
                 <li>
-                  <a
+                  <FooterLink
                     href={githubReadmeUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="EmuReady Documentation"
-                    className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300"
-                    onClick={() => {
-                      analytics.contentDiscovery.externalLinkClicked({
-                        url: githubReadmeUrl,
-                        context: 'footer_about_link',
-                      })
-                    }}
-                  >
-                    <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
-                    About
-                  </a>
+                    label="About"
+                    color="blue"
+                    analyticsContextKey="footer_about_link"
+                  />
                 </li>
                 <li>
-                  <a
+                  <FooterLink
                     href={githubSupportUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="EmuReady Support"
-                    className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300"
-                    onClick={() => {
-                      analytics.contentDiscovery.externalLinkClicked({
-                        url: githubSupportUrl,
-                        context: 'footer_support_link',
-                      })
-                    }}
-                  >
-                    <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
-                    Support
-                  </a>
+                    label="Support"
+                    color="blue"
+                    analyticsContextKey="footer_support_link"
+                  />
                 </li>
                 <li>
                   <Link
                     href="/privacy"
-                    aria-label="Privacy Policy"
+                    aria-label="Visit EmuReady's Privacy Policy"
                     className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300"
                   >
                     <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -125,7 +112,7 @@ function Footer() {
                 <li>
                   <Link
                     href="/terms"
-                    aria-label="Terms of Service"
+                    aria-label="Visit EmuReady's Terms of Service"
                     className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-300"
                   >
                     <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -143,77 +130,49 @@ function Footer() {
               </h4>
               <ul className="space-y-4">
                 <li>
-                  <a
+                  <FooterLink
                     href={githubContributingUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Contribute to EmuReady"
-                    className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-300"
-                    onClick={() => {
-                      analytics.contentDiscovery.externalLinkClicked({
-                        url: githubContributingUrl,
-                        context: 'footer_contribute_link',
-                      })
-                    }}
-                  >
-                    <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
-                    Contribute
-                  </a>
+                    label="Contribute"
+                    color="purple"
+                    analyticsContextKey="footer_contribute_link"
+                  />
                 </li>
                 <li>
-                  <a
+                  <FooterLink
                     href={githubRequestEmulatorUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Add your Emulator"
-                    className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-300"
-                    onClick={() => {
-                      analytics.contentDiscovery.externalLinkClicked({
-                        url: githubRequestEmulatorUrl,
-                        context: 'footer_add_emulator_link',
-                      })
-                    }}
-                  >
-                    <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
-                    Add Your Emulator
-                  </a>
+                    label="Add Your Emulator"
+                    color="purple"
+                    analyticsContextKey="footer_add_emulator_link"
+                  />
                 </li>
-                <li>
-                  <a
-                    href={githubUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="EmuReady GitHub"
-                    className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-300"
-                    onClick={() => {
-                      analytics.contentDiscovery.externalLinkClicked({
-                        url: githubUrl || '',
-                        context: 'footer_github_community_link',
-                      })
-                    }}
-                  >
-                    <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
-                    GitHub
-                  </a>
-                </li>
+                {githubUrl && (
+                  <li>
+                    <FooterLink
+                      href={githubUrl}
+                      label="GitHub"
+                      color="purple"
+                      analyticsContextKey="footer_github_community_link"
+                    />
+                  </li>
+                )}
                 {discordUrl && (
                   <li>
-                    <a
+                    <FooterLink
                       href={discordUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label="EmuReady Discord"
-                      className="group flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-300"
-                      onClick={() => {
-                        analytics.contentDiscovery.externalLinkClicked({
-                          url: discordUrl,
-                          context: 'footer_discord_link',
-                        })
-                      }}
-                    >
-                      <span className="w-1.5 h-1.5 bg-current rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
-                      Discord
-                    </a>
+                      label="Discord"
+                      color="purple"
+                      analyticsContextKey="footer_discord_link"
+                    />
+                  </li>
+                )}
+                {patreonUrl && (
+                  <li>
+                    <FooterLink
+                      href={patreonUrl}
+                      label="Patreon"
+                      color="purple"
+                      analyticsContextKey="footer_patreon_link"
+                    />
                   </li>
                 )}
               </ul>
@@ -229,7 +188,7 @@ function Footer() {
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                 <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">
-                  Built with ❤️ for the emulation community
+                  Built with ❤️ by your mom
                 </span>
               </div>
             </div>
@@ -237,12 +196,7 @@ function Footer() {
         </div>
       </div>
 
-      {/* Beta Badge - Repositioned to prevent overlaps */}
-      <div className="fixed bottom-4 right-6 z-50 pointer-events-none">
-        <div className="px-3 py-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold rounded-full shadow-lg backdrop-blur-sm border border-orange-400/20 animate-pulse-slow">
-          BETA
-        </div>
-      </div>
+      <FooterBetaBadge />
     </footer>
   )
 }

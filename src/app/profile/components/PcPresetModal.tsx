@@ -131,7 +131,7 @@ function PcPresetModal(props: Props) {
           <Input
             id="name"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(ev) => setName(ev.target.value)}
             required
             className="w-full"
             placeholder="e.g., Gaming Rig, Work PC"

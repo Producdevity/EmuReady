@@ -47,9 +47,11 @@ export interface TemplateContext {
 
 class NotificationTemplateEngine {
   private templates: Map<NotificationType, (context: TemplateContext) => NotificationTemplate>
+  private aliases: Set<NotificationType>
 
   constructor() {
     this.templates = new Map()
+    this.aliases = new Set()
     this.initializeTemplates()
   }
 
@@ -257,6 +259,122 @@ class NotificationTemplateEngine {
         changedAt: context.changedAt,
       },
     }))
+
+    // Aliases for existing events
+    this.alias(NotificationType.COMMENT_ON_LISTING, NotificationType.LISTING_COMMENT)
+    this.alias(NotificationType.REPLY_TO_COMMENT, NotificationType.COMMENT_REPLY)
+    this.alias(NotificationType.LISTING_UPVOTED, NotificationType.LISTING_VOTE_UP)
+    this.alias(NotificationType.LISTING_DOWNVOTED, NotificationType.LISTING_VOTE_DOWN)
+
+    // Comment vote templates
+    this.templates.set(NotificationType.COMMENT_UPVOTED, (context) => ({
+      title: 'Your comment received an upvote',
+      message: `${context.userName || 'Someone'} upvoted your comment${context.commentText ? `: "${sanitizeText(context.commentText)}"` : ''}`,
+      actionUrl:
+        context.listingId && context.commentId
+          ? `/listings/${context.listingId}#comment-${context.commentId}`
+          : context.listingId
+            ? `/listings/${context.listingId}`
+            : undefined,
+      metadata: {
+        listingId: context.listingId,
+        commentId: context.commentId,
+        voteId: context.voteId,
+        voteValue: true,
+      },
+    }))
+
+    this.templates.set(NotificationType.COMMENT_DOWNVOTED, (context) => ({
+      title: 'Your comment received a downvote',
+      message: `${context.userName || 'Someone'} downvoted your comment${context.commentText ? `: "${sanitizeText(context.commentText)}"` : ''}`,
+      actionUrl:
+        context.listingId && context.commentId
+          ? `/listings/${context.listingId}#comment-${context.commentId}`
+          : context.listingId
+            ? `/listings/${context.listingId}`
+            : undefined,
+      metadata: {
+        listingId: context.listingId,
+        commentId: context.commentId,
+        voteId: context.voteId,
+        voteValue: false,
+      },
+    }))
+
+    // User moderation templates
+    this.templates.set(NotificationType.USER_BANNED, (context) => ({
+      title: 'Your account has been banned',
+      message: `Your account has been banned${context.warningReason ? `: ${context.warningReason}` : ''}${context.duration ? ` (Duration: ${context.duration})` : ''}`,
+      actionUrl: '/guidelines',
+      metadata: {
+        reason: context.warningReason,
+        duration: context.duration,
+        issuedBy: context.issuedBy,
+      },
+    }))
+
+    this.templates.set(NotificationType.USER_UNBANNED, (context) => ({
+      title: 'Your account ban has been lifted',
+      message: 'Your account access has been restored.',
+      actionUrl: '/profile',
+      metadata: {
+        changedAt: context.changedAt,
+      },
+    }))
+
+    // Report templates
+    this.templates.set(NotificationType.REPORT_CREATED, (context) => ({
+      title: 'New report submitted',
+      message: `A new report has been created${context.contentType ? ` for ${context.contentType}` : ''}.`,
+      actionUrl: context.actionUrl || '/admin/reports',
+      metadata: {
+        contentId: context.contentId,
+        contentType: context.contentType,
+        reportId: context.reportId,
+      },
+    }))
+
+    this.templates.set(NotificationType.REPORT_STATUS_CHANGED, (context) => ({
+      title: 'Your report status changed',
+      message: `The status of your report has changed${context.status ? ` to ${context.status}` : ''}.`,
+      actionUrl: context.actionUrl || '/reports',
+      metadata: {
+        reportId: context.reportId,
+        status: context.status,
+      },
+    }))
+
+    // Developer verification
+    this.templates.set(NotificationType.VERIFIED_DEVELOPER, (context) => ({
+      title: 'You were verified as a developer',
+      message: `You are now a verified developer${context.emulatorName ? ` for ${context.emulatorName}` : ''}.`,
+      actionUrl: '/profile',
+      metadata: {
+        emulatorId: context.emulatorId,
+        emulatorName: context.emulatorName,
+      },
+    }))
+
+    // Digests and activity bonuses
+    this.templates.set(NotificationType.WEEKLY_DIGEST, (context) => ({
+      title: 'Your weekly digest is ready',
+      message: context.message || "Here's your weekly summary.",
+      actionUrl: '/notifications',
+    }))
+
+    this.templates.set(NotificationType.MONTHLY_ACTIVE_BONUS, (context) => ({
+      title: 'Monthly activity bonus awarded',
+      message: context.message || 'Thanks for staying active! You received a bonus.',
+      actionUrl: '/profile',
+    }))
+  }
+
+  private alias(aliasType: NotificationType, baseType: NotificationType): void {
+    const base = this.templates.get(baseType)
+    if (base) {
+      this.templates.set(aliasType, base)
+      this.aliases.add(aliasType)
+    }
   }
 
   generateTemplate(type: NotificationType, context: TemplateContext): NotificationTemplate {
@@ -275,6 +393,12 @@ class NotificationTemplateEngine {
       [NotificationType.LISTING_VOTE_DOWN]: 'ENGAGEMENT',
       [NotificationType.COMMENT_REPLY]: 'ENGAGEMENT',
       [NotificationType.USER_MENTION]: 'ENGAGEMENT',
+      [NotificationType.COMMENT_ON_LISTING]: 'ENGAGEMENT',
+      [NotificationType.REPLY_TO_COMMENT]: 'ENGAGEMENT',
+      [NotificationType.LISTING_UPVOTED]: 'ENGAGEMENT',
+      [NotificationType.LISTING_DOWNVOTED]: 'ENGAGEMENT',
+      [NotificationType.COMMENT_UPVOTED]: 'ENGAGEMENT',
+      [NotificationType.COMMENT_DOWNVOTED]: 'ENGAGEMENT',
 
       [NotificationType.NEW_DEVICE_LISTING]: 'CONTENT',
       [NotificationType.NEW_SOC_LISTING]: 'CONTENT',
@@ -284,19 +408,27 @@ class NotificationTemplateEngine {
       [NotificationType.MAINTENANCE_NOTICE]: 'SYSTEM',
       [NotificationType.FEATURE_ANNOUNCEMENT]: 'SYSTEM',
       [NotificationType.POLICY_UPDATE]: 'SYSTEM',
+      [NotificationType.WEEKLY_DIGEST]: 'SYSTEM',
+      [NotificationType.MONTHLY_ACTIVE_BONUS]: 'SYSTEM',
 
       [NotificationType.LISTING_APPROVED]: 'MODERATION',
       [NotificationType.LISTING_REJECTED]: 'MODERATION',
       [NotificationType.CONTENT_FLAGGED]: 'MODERATION',
       [NotificationType.ACCOUNT_WARNING]: 'MODERATION',
       [NotificationType.ROLE_CHANGED]: 'MODERATION',
+      [NotificationType.USER_BANNED]: 'MODERATION',
+      [NotificationType.USER_UNBANNED]: 'MODERATION',
+      [NotificationType.REPORT_CREATED]: 'MODERATION',
+      [NotificationType.REPORT_STATUS_CHANGED]: 'MODERATION',
+      [NotificationType.VERIFIED_DEVELOPER]: 'MODERATION',
     }
 
     return categoryMap[type] || 'SYSTEM'
   }
 
   getAvailableTypes(): NotificationType[] {
-    return Array.from(this.templates.keys())
+    // Return only canonical types (exclude aliases)
+    return Array.from(this.templates.keys()).filter((t) => !this.aliases.has(t))
   }
 }
 

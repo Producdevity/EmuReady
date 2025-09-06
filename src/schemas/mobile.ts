@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ReportReason, ReportStatus, PcOs, CustomFieldType } from '@orm'
+import { ReportReason, ReportStatus, PcOs, CustomFieldType, NotificationType } from '@orm'
 
 // Type-safe custom field value schema using discriminated union
 const CustomFieldValueSchema = z.discriminatedUnion('type', [
@@ -229,6 +229,14 @@ export const GetNotificationsSchema = z
 
 export const MarkNotificationReadSchema = z.object({
   notificationId: z.string().uuid(),
+})
+
+// Mobile notification preference schemas
+
+export const UpdateNotificationPreferenceMobileSchema = z.object({
+  type: z.nativeEnum(NotificationType),
+  inAppEnabled: z.boolean().optional(),
+  emailEnabled: z.boolean().optional(),
 })
 
 export const SearchSuggestionsSchema = z.object({

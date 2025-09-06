@@ -6,14 +6,16 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 
-export function KofiFooterButton() {
+const kofiUrl = process.env.NEXT_PUBLIC_KOFI_LINK || 'https://ko-fi.com/producdevity'
+
+export function FooterKofiButton() {
   const [isHovered, setIsHovered] = useState(false)
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <a
-          href="https://ko-fi.com/producdevity"
+          href={kofiUrl}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Support us on Ko-fi"
@@ -22,7 +24,7 @@ export function KofiFooterButton() {
           onMouseLeave={() => setIsHovered(false)}
           onClick={() => {
             analytics.contentDiscovery.externalLinkClicked({
-              url: 'https://ko-fi.com/producdevity',
+              url: kofiUrl,
               context: 'footer_kofi_button',
             })
           }}

@@ -20,11 +20,16 @@ const allTypes = [
   NotificationType.LISTING_REJECTED,
   NotificationType.LISTING_VOTE_DOWN,
   NotificationType.LISTING_VOTE_UP,
+  NotificationType.COMMENT_UPVOTED,
+  NotificationType.COMMENT_DOWNVOTED,
   NotificationType.MAINTENANCE_NOTICE,
+  NotificationType.WEEKLY_DIGEST,
+  NotificationType.MONTHLY_ACTIVE_BONUS,
   NotificationType.NEW_DEVICE_LISTING,
   NotificationType.NEW_SOC_LISTING,
   NotificationType.POLICY_UPDATE,
   NotificationType.ROLE_CHANGED,
+  NotificationType.VERIFIED_DEVELOPER,
   NotificationType.USER_MENTION,
 ]
 
@@ -140,6 +145,16 @@ function NotificationPreferences(props: Props) {
           label: 'Mentions',
           description: 'When someone mentions you',
         },
+        {
+          key: NotificationType.COMMENT_UPVOTED,
+          label: 'Comment Upvotes',
+          description: 'When someone upvotes your comments',
+        },
+        {
+          key: NotificationType.COMMENT_DOWNVOTED,
+          label: 'Comment Downvotes',
+          description: 'When someone downvotes your comments',
+        },
       ],
     },
     {
@@ -187,6 +202,16 @@ function NotificationPreferences(props: Props) {
           label: 'Policy Updates',
           description: 'Terms of service and policy changes',
         },
+        {
+          key: NotificationType.WEEKLY_DIGEST,
+          label: 'Weekly Digest',
+          description: 'Weekly summary of activity',
+        },
+        {
+          key: NotificationType.MONTHLY_ACTIVE_BONUS,
+          label: 'Monthly Activity Bonus',
+          description: 'Get notified when a monthly bonus is awarded',
+        },
       ],
     },
     {
@@ -212,6 +237,31 @@ function NotificationPreferences(props: Props) {
           key: NotificationType.ACCOUNT_WARNING,
           label: 'Account Warnings',
           description: 'Account-related warnings',
+        },
+        {
+          key: NotificationType.REPORT_STATUS_CHANGED,
+          label: 'Report Status Updates',
+          description: 'When the status of your report changes',
+        },
+        {
+          key: NotificationType.REPORT_CREATED,
+          label: 'New Reports (moderators)',
+          description: 'Notify when a new report is created',
+        },
+        {
+          key: NotificationType.USER_BANNED,
+          label: 'Ban Issued (to you)',
+          description: 'When your account is banned',
+        },
+        {
+          key: NotificationType.USER_UNBANNED,
+          label: 'Ban Lifted (to you)',
+          description: 'When your account ban is lifted',
+        },
+        {
+          key: NotificationType.VERIFIED_DEVELOPER,
+          label: 'Verified Developer',
+          description: 'When you are verified as a developer for an emulator',
         },
       ],
     },

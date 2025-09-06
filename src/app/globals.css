@@ -83,6 +83,12 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Brand colors */
+  --brand-kofi: 255 94 91; /* #ff5e5b */
+  --brand-kofi-alt: 255 142 83; /* #ff8e53 */
+  --brand-patreon: 255 66 77; /* #FF424D */
+  --brand-patreon-alt: 255 138 91; /* #FF8A5B */
 }
 
 .dark {
@@ -117,6 +123,12 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Brand colors - can be tuned for dark if desired */
+  --brand-kofi: 255 94 91; /* #ff5e5b */
+  --brand-kofi-alt: 255 142 83; /* #ff8e53 */
+  --brand-patreon: 255 66 77; /* #FF424D */
+  --brand-patreon-alt: 255 138 91; /* #FF8A5B */
 }
 
 /* Keyframes defined at root level */

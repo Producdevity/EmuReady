@@ -6,7 +6,6 @@ import { ErrorBoundary, type ErrorBoundaryProps } from 'react-error-boundary'
 import { ErrorFallback } from '@/components/ui'
 import useMounted from '@/hooks/useMounted'
 import analytics from '@/lib/analytics'
-import { cn } from '@/lib/utils'
 
 function Main(props: PropsWithChildren) {
   const mounted = useMounted()
@@ -52,7 +51,7 @@ function Main(props: PropsWithChildren) {
   }
 
   return (
-    <main className={cn('flex-1 flex flex-col')}>
+    <main className="flex-1 flex flex-col pt-20">
       <ErrorBoundary FallbackComponent={ErrorFallback} onReset={handleReset} onError={handleError}>
         {props.children}
       </ErrorBoundary>

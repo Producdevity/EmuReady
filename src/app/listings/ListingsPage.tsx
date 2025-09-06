@@ -316,7 +316,7 @@ function ListingsPage() {
           {/* Desktop Header */}
           <div className="hidden lg:flex lg:justify-between lg:items-center mb-6 lg:mb-8">
             <h1 className="text-2xl lg:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-              Game Listings
+              Handheld Reports
             </h1>
 
             <div className="flex items-center gap-3">
@@ -328,11 +328,11 @@ function ListingsPage() {
                     listingsState.setMyListings(!listingsState.myListings)
                   }}
                 >
-                  {listingsState.myListings ? 'All Listings' : 'My Listings'}
+                  {listingsState.myListings ? 'All Reports' : 'My Reports'}
                 </Button>
               )}
               <Button asChild size="sm" variant="fancy">
-                <Link href="/listings/new">Add Listing</Link>
+                <Link href="/listings/new">Add Report</Link>
               </Button>
               <div className="flex items-center gap-2">
                 <DisplayToggleButton
@@ -359,7 +359,7 @@ function ListingsPage() {
 
           {/* Mobile Header - Compact */}
           <div className="flex lg:hidden items-center justify-between mb-4">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Game Listings</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Handheld Reports</h1>
 
             {/* Mobile Action Menu */}
             <div className="flex items-center gap-2">
@@ -372,7 +372,7 @@ function ListingsPage() {
                   }}
                   className="px-3 py-1.5 text-xs"
                 >
-                  {listingsState.myListings ? 'All' : 'My'} Listings
+                  {listingsState.myListings ? 'All' : 'My'} Reports
                 </Button>
               )}
               <Button asChild variant="fancy" size="sm" className="px-3 py-1.5 text-xs">
@@ -619,7 +619,12 @@ function ListingsPage() {
                       )}
                       {columnVisibility.isColumnVisible('author') && (
                         <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          {listing.author?.name ?? 'Anonymous'}
+                          <Link
+                            href={`/users/${listing.author?.id}`}
+                            className="text-blue-600 dark:text-indigo-400 hover:underline"
+                          >
+                            {listing.author?.name ?? 'Anonymous'}
+                          </Link>
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('posted') && (
@@ -633,12 +638,12 @@ function ListingsPage() {
                             {isAdmin && (
                               <EditButton
                                 href={`/admin/listings/${listing.id}/edit`}
-                                title="Edit Listing"
+                                title="Edit Report"
                               />
                             )}
                             <ViewButton
                               href={`/listings/${listing.id}`}
-                              title="View Listing Details"
+                              title="View Report Details"
                             />
                           </div>
                         </td>

@@ -29,7 +29,7 @@ export function ListingsHeader(props: Props) {
             className="flex items-center gap-2 mb-2"
           >
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-              Game Listings
+              Handheld Reports
             </h1>
             <motion.div
               initial={{ scale: 0 }}
@@ -115,7 +115,7 @@ export function ListingsHeader(props: Props) {
                 className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                Add Listing
+                Add Report
               </Button>
             </Link>
           </motion.div>

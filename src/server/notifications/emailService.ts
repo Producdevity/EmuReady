@@ -161,7 +161,7 @@ class EmailService {
                             <div style="text-align: center; margin-bottom: 20px;">
                               <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background-color: #ffffff; border-radius: 20px; border: 1px solid #e5e7eb;">
                                 <div style="width: 8px; height: 8px; background-color: #10b981; border-radius: 50%;"></div>
-                                <span style="font-size: 14px; color: #6b7280; font-weight: 500;">Built with ❤️ for the emulation community</span>
+                                <span style="font-size: 14px; color: #6b7280; font-weight: 500;">Built with ❤️ by your mom</span>
                               </div>
                             </div>
                             
@@ -221,7 +221,7 @@ You're receiving this email because you have notifications enabled for ${notific
 Manage your preferences: ${baseUrl}/profile?tab=notifications
 
 ${'-'.repeat(50)}
-Built with ❤️ for the emulation community
+Built with ❤️ by your mom
 © ${new Date().getFullYear()} EmuReady. All rights reserved.
 
 Having trouble? View this email in your browser: ${baseUrl}

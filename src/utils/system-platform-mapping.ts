@@ -10,7 +10,7 @@
  * added to both the system seeder and PLATFORM_MAPPINGS constants.
  *
  * @see {@link PLATFORM_MAPPINGS} for the complete mapping configuration
- * @see {@link src/prisma/seeders/systemsSeeder.ts} for system database records
+ * @see {@link /prisma/seeders/systemsSeeder.ts} for system database records
  */
 
 import { PLATFORM_MAPPINGS, type PlatformKey } from '@/data/constants'
