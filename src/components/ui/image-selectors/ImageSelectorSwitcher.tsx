@@ -22,6 +22,7 @@ type ImageService = 'rawg' | 'tgdb'
 const imageServiceMap: Record<ImageService, ImageService> = {
   rawg: 'rawg',
   tgdb: 'tgdb',
+  // TODO: consider adding IGDB
 }
 
 export function ImageSelectorSwitcher(props: Props) {
@@ -35,18 +36,12 @@ export function ImageSelectorSwitcher(props: Props) {
     animate: {
       x: 0,
       opacity: 1,
-      transition: {
-        stiffness: 300,
-        damping: 30,
-      },
+      transition: { stiffness: 300, damping: 30 },
     },
     exit: (direction: number) => ({
       x: direction < 0 ? 300 : -300,
       opacity: 0,
-      transition: {
-        stiffness: 300,
-        damping: 30,
-      },
+      transition: { stiffness: 300, damping: 30 },
     }),
   }
 

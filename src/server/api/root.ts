@@ -1,5 +1,6 @@
 import { createTRPCRouter } from '@/server/api/trpc'
 import { activityRouter } from './routers/admin/activity'
+import { auditLogsRouter } from './routers/auditLogs'
 import { badgesRouter } from './routers/badges'
 import { cacheRouter } from './routers/cache'
 import { cpusRouter } from './routers/cpus'
@@ -53,6 +54,7 @@ export const appRouter = createTRPCRouter({
   performanceScales: performanceScalesRouter,
   permissions: permissionsRouter,
   permissionLogs: permissionLogsRouter,
+  auditLogs: auditLogsRouter,
   trust: trustRouter,
   rawg: rawgRouter,
   tgdb: tgdbRouter,

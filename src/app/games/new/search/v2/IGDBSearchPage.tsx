@@ -141,17 +141,14 @@ function IGDBSearchContent() {
 
   const showGameCreatedConfirmation = useCallback(
     async (gameId: string) => {
-      const addHandheldListing = await confirm({
+      const confirmViewGame = await confirm({
         title: 'Game Added Successfully!',
         description: 'Would you like to add a handheld device listing or PC listing for this game?',
-        confirmText: 'Add Handheld Listing',
-        cancelText: 'Add PC Listing',
+        confirmText: 'View Game',
       })
 
-      const url = addHandheldListing
-        ? `/listings/new?gameId=${gameId}`
-        : `/pc-listings/new?gameId=${gameId}`
-      router.push(url)
+      if (!confirmViewGame) return
+      router.push(`/games/${gameId}`)
     },
     [confirm, router],
   )

@@ -25,8 +25,7 @@ export default function ApplyTemplatesModal(props: Props) {
     }
   } | null>(null)
 
-  const { data: templates, isLoading: isLoadingTemplates } =
-    api.customFieldTemplates.getAll.useQuery()
+  const { data: templates, isLoading: isLoadingTemplates } = api.customFieldTemplates.get.useQuery()
 
   const applyTemplatesMutation = api.customFieldTemplates.applyToEmulator.useMutation({
     onSuccess: (result) => {

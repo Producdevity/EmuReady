@@ -3,7 +3,8 @@
 import { useUser } from '@clerk/nextjs'
 import { ArrowLeft } from 'lucide-react'
 import { notFound, useParams, useRouter } from 'next/navigation'
-import { Badge, Button, LoadingSpinner } from '@/components/ui'
+import { GameDetailsPageSkeleton } from '@/app/games/[id]/components/GameDetailsPageSkeleton'
+import { Badge, Button } from '@/components/ui'
 import { api } from '@/lib/api'
 import { hasPermission } from '@/utils/permissions'
 import { ApprovalStatus, Role } from '@orm'
@@ -29,7 +30,7 @@ function GameDetailsPage() {
 
   const canEdit = hasPermission(userQuery.data?.role, Role.MODERATOR) || isOwnerOfPendingGame
 
-  if (gameQuery.isPending) return <LoadingSpinner text="Loading game data..." />
+  if (gameQuery.isPending) return <GameDetailsPageSkeleton />
 
   if (gameQuery.error || !gameQuery.data) notFound()
 
@@ -46,7 +47,7 @@ function GameDetailsPage() {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-8">
             <GameBoxartImage game={gameQuery.data} />
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">

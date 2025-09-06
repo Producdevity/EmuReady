@@ -40,6 +40,7 @@ const storageKeys = {
     adminVerifiedDevelopers: `${PREFIX}admin_verified_developers_column_visibility`,
     adminPermissions: `${PREFIX}admin_permissions_column_visibility`,
     adminPermissionLogs: `${PREFIX}admin_permission_logs_column_visibility`,
+    adminAuditLogs: `${PREFIX}admin_audit_logs_column_visibility`,
     adminReports: `${PREFIX}admin_reports_column_visibility`,
     adminUserBans: `${PREFIX}admin_user_bans_column_visibility`,
     adminCpus: `${PREFIX}admin_cpus_column_visibility`,

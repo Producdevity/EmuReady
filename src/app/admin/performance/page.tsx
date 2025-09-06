@@ -23,6 +23,7 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { hasPermission as hasPermKey, PERMISSIONS } from '@/utils/permission-system'
 import PerformanceScaleModal from './components/PerformanceScaleModal'
 import ReplacementSelectionModal from './components/ReplacementSelectionModal'
 import {
@@ -56,7 +57,7 @@ function AdminPerformancePage() {
     scaleToDelete: null,
   })
 
-  const performanceStatsQuery = api.performanceScales.getStats.useQuery()
+  const performanceStatsQuery = api.performanceScales.stats.useQuery()
   const performanceScalesQuery = api.performanceScales.get.useQuery({
     search: table.search || undefined,
     sortField: table.sortField ?? undefined,
@@ -64,12 +65,14 @@ function AdminPerformancePage() {
   })
 
   const performanceScales = performanceScalesQuery.data ?? []
+  const userQuery = api.users.me.useQuery()
+  const canManageScales = hasPermKey(userQuery.data?.permissions, PERMISSIONS.MANAGE_SYSTEMS)
 
   const deletePerformanceScale = api.performanceScales.delete.useMutation({
     onSuccess: () => {
       toast.success('Performance scale deleted successfully!')
       utils.performanceScales.get.invalidate().catch(console.error)
-      utils.performanceScales.getStats.invalidate().catch(console.error)
+      utils.performanceScales.stats.invalidate().catch(console.error)
     },
     onError: (err) => {
       toast.error(`Failed to delete performance scale: ${getErrorMessage(err)}`)
@@ -110,7 +113,7 @@ function AdminPerformancePage() {
             columns={PERFORMANCE_COLUMNS}
             columnVisibility={columnVisibility}
           />
-          <Button onClick={handleCreate}>Add Performance Scale</Button>
+          {canManageScales && <Button onClick={handleCreate}>Add Performance Scale</Button>}
         </>
       }
     >
@@ -220,16 +223,20 @@ function AdminPerformancePage() {
                     {columnVisibility.isColumnVisible('actions') && (
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <EditButton
-                            onClick={() => handleEdit(scale)}
-                            title="Edit Performance Scale"
-                          />
-                          <DeleteButton
-                            onClick={() => handleDelete(scale)}
-                            title="Delete Performance Scale"
-                            isLoading={deletePerformanceScale.isPending}
-                            disabled={deletePerformanceScale.isPending}
-                          />
+                          {canManageScales && (
+                            <EditButton
+                              onClick={() => handleEdit(scale)}
+                              title="Edit Performance Scale"
+                            />
+                          )}
+                          {canManageScales && (
+                            <DeleteButton
+                              onClick={() => handleDelete(scale)}
+                              title="Delete Performance Scale"
+                              isLoading={deletePerformanceScale.isPending}
+                              disabled={deletePerformanceScale.isPending}
+                            />
+                          )}
                         </div>
                       </td>
                     )}
@@ -249,7 +256,7 @@ function AdminPerformancePage() {
         onSuccess={() => {
           setPerformanceModal({ isOpen: false })
           utils.performanceScales.get.invalidate().catch(console.error)
-          utils.performanceScales.getStats.invalidate().catch(console.error)
+          utils.performanceScales.stats.invalidate().catch(console.error)
         }}
       />
 
@@ -260,7 +267,7 @@ function AdminPerformancePage() {
         onSuccess={() => {
           setReplacementModal({ isOpen: false, scaleToDelete: null })
           utils.performanceScales.get.invalidate().catch(console.error)
-          utils.performanceScales.getStats.invalidate().catch(console.error)
+          utils.performanceScales.stats.invalidate().catch(console.error)
           toast.success('Performance scale deleted successfully!')
         }}
       />

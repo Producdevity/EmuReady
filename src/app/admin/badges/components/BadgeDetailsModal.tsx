@@ -22,9 +22,9 @@ import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 
-type BadgeWithDetails = RouterOutput['badges']['getById']
+type BadgeWithDetails = RouterOutput['badges']['byId']
 
-interface BadgeDetailsModalProps {
+interface Props {
   isOpen: boolean
   onClose: () => void
   badgeId: string | null
@@ -32,23 +32,20 @@ interface BadgeDetailsModalProps {
   onDelete: (badgeId: string) => void
 }
 
-export default function BadgeDetailsModal({
-  isOpen,
-  onClose,
-  badgeId,
-  onEdit,
-  onDelete,
-}: BadgeDetailsModalProps) {
+export default function BadgeDetailsModal(props: Props) {
   const [isDeleting, setIsDeleting] = useState(false)
   const confirm = useConfirmDialog()
 
-  const badgeQuery = api.badges.getById.useQuery({ id: badgeId! }, { enabled: Boolean(badgeId) })
+  const badgeQuery = api.badges.byId.useQuery(
+    { id: props.badgeId! },
+    { enabled: Boolean(props.badgeId) },
+  )
 
   const deleteBadgeMutation = api.badges.delete.useMutation({
     onSuccess: () => {
       toast.success('Badge deleted successfully')
-      onDelete(badgeId!)
-      onClose()
+      props.onDelete(props.badgeId!)
+      props.onClose()
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, 'Failed to delete badge'))
@@ -59,7 +56,7 @@ export default function BadgeDetailsModal({
   })
 
   const handleDelete = async () => {
-    if (!badgeId) return
+    if (!props.badgeId) return
 
     const confirmed = await confirm({
       title: 'Delete Badge',
@@ -70,21 +67,21 @@ export default function BadgeDetailsModal({
     if (!confirmed) return
 
     setIsDeleting(true)
-    await deleteBadgeMutation.mutateAsync({ id: badgeId })
+    await deleteBadgeMutation.mutateAsync({ id: props.badgeId })
   }
 
   const handleEdit = () => {
     if (badgeQuery.data) {
-      onEdit(badgeQuery.data)
+      props.onEdit(badgeQuery.data)
     }
   }
 
   const badge = badgeQuery.data
 
-  if (!isOpen || !badgeId) return null
+  if (!props.isOpen || !props.badgeId) return null
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={props.isOpen} onOpenChange={(open) => !open && props.onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Badge Details</DialogTitle>
@@ -209,7 +206,7 @@ export default function BadgeDetailsModal({
         ) : null}
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={props.onClose}>
             Close
           </Button>
           {badge && (

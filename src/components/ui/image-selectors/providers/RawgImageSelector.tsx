@@ -20,6 +20,7 @@ interface Props {
 
 export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
   const [searchTerm, setSearchTerm] = useState(props.gameTitle ?? '')
+  const [isDirty, setIsDirty] = useState(false)
   const [selectedImage, setSelectedImage] = useState<GameImageOption | null>(null)
   const [allImages, setAllImages] = useState<GameImageOption[]>([])
   const [previewImage, setPreviewImage] = useState<GameImageOption | null>(null)
@@ -60,10 +61,10 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
 
   // Update search term when gameTitle prop changes
   useEffect(() => {
-    if (props.gameTitle && props.gameTitle !== searchTerm) {
+    if (!isDirty && props.gameTitle) {
       setSearchTerm(props.gameTitle)
     }
-  }, [props.gameTitle, searchTerm])
+  }, [props.gameTitle, isDirty])
 
   // Process search results and select initial image
   useEffect(() => {
@@ -216,7 +217,10 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
               <Input
                 leftIcon={<Search className="h-5 w-5" />}
                 value={searchTerm}
-                onChange={(ev) => setSearchTerm(ev.target.value)}
+                onChange={(ev) => {
+                  setIsDirty(true)
+                  setSearchTerm(ev.target.value)
+                }}
                 onKeyDown={handleKeyPress}
                 placeholder="Enter game title..."
               />

@@ -29,8 +29,7 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { hasPermission } from '@/utils/permissions'
-import { Role } from '@orm'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import GpuModal from './components/GpuModal'
 import GpuViewModal from './components/GpuViewModal'
 
@@ -76,7 +75,7 @@ function AdminGpusPage() {
   const utils = api.useUtils()
 
   const userQuery = api.users.me.useQuery()
-  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
+  const canManageDevices = hasPermission(userQuery.data?.permissions, PERMISSIONS.MANAGE_DEVICES)
 
   // TODO: Temporary fix for brands query
   // only keep 'Intel', 'AMD' and 'NVIDIA' brands
@@ -145,7 +144,7 @@ function AdminGpusPage() {
         </div>
         <div className="flex items-center gap-4">
           <ColumnVisibilityControl columns={GPUS_COLUMNS} columnVisibility={columnVisibility} />
-          <Button onClick={() => openModal()}>Add GPU</Button>
+          {canManageDevices && <Button onClick={() => openModal()}>Add GPU</Button>}
         </div>
       </div>
 
@@ -258,8 +257,10 @@ function AdminGpusPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
                         <ViewButton onClick={() => openViewModal(gpu)} title="View GPU Details" />
-                        <EditButton onClick={() => openModal(gpu)} title="Edit GPU" />
-                        {isAdmin && (
+                        {canManageDevices && (
+                          <EditButton onClick={() => openModal(gpu)} title="Edit GPU" />
+                        )}
+                        {canManageDevices && (
                           <DeleteButton
                             onClick={() => handleDelete(gpu.id)}
                             title="Delete GPU"

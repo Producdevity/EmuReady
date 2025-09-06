@@ -18,7 +18,7 @@ export default function RolePermissionMatrix(props: Props) {
     onSuccess: () => {
       toast.success('Permission assigned successfully!')
       void utils.permissions.getPermissionMatrix.invalidate()
-      void utils.permissions.getAll.invalidate()
+      void utils.permissions.get.invalidate()
       props.onSuccess()
     },
     onError: (err) => {
@@ -30,7 +30,7 @@ export default function RolePermissionMatrix(props: Props) {
     onSuccess: () => {
       toast.success('Permission removed successfully!')
       void utils.permissions.getPermissionMatrix.invalidate()
-      void utils.permissions.getAll.invalidate()
+      void utils.permissions.get.invalidate()
       props.onSuccess()
     },
     onError: (err) => {

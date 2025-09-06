@@ -126,6 +126,9 @@ model User {
   userBans                    UserBan[]                         @relation("UserBans")
   bansCreated                 UserBan[]                         @relation("BansCreated")
   bansLifted                  UserBan[]                         @relation("BansLifted")
+  // Audit log back-relations
+  auditLogsAsActor            AuditLog[]                        @relation("AuditActor")
+  auditLogsAsTarget           AuditLog[]                        @relation("AuditTargetUser")
   // Badge system relations
   userBadges                  UserBadge[]
   badgesCreated               Badge[]                           @relation("BadgesCreatedBy")
@@ -1025,4 +1028,59 @@ model UserBadge {
   @@index([assignedBy])
   @@index([assignedAt])
   @@map("user_badges")
+}
+
+// ===== Generic Audit Logging =====
+enum AuditEntityType {
+  USER
+  USER_BAN
+  LISTING
+  PC_LISTING
+  GAME
+  PERMISSION
+  COMMENT
+  REPORT
+  EMULATOR
+  OTHER
+
+  @@map("audit_entity_type")
+}
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  ARCHIVE
+  APPROVE
+  REJECT
+  ASSIGN
+  UNASSIGN
+  BAN
+  UNBAN
+
+  @@map("audit_action")
+}
+
+model AuditLog {
+  id            String      @id @default(uuid())
+  actorId       String?
+  action        AuditAction
+  entityType    AuditEntityType
+  entityId      String?
+  targetUserId  String?
+  metadata      Json?
+  ipAddress     String?
+  userAgent     String?
+  requestId     String?
+  createdAt     DateTime    @default(now())
+
+  actor       User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  targetUser  User? @relation("AuditTargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([action])
+  @@index([entityType])
+  @@index([entityType, entityId])
+  @@index([targetUserId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

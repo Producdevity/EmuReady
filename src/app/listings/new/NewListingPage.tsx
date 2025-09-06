@@ -78,7 +78,12 @@ function AddListingPage() {
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
   const customFieldDefinitionsQuery = api.customFieldDefinitions.getByEmulator.useQuery(
     { emulatorId: selectedEmulatorId },
-    { enabled: !!selectedEmulatorId && selectedEmulatorId.trim() !== '' },
+    {
+      enabled: !!selectedEmulatorId && selectedEmulatorId.trim() !== '',
+      // Avoid refetching on tab focus which could re-run schema reset logic
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    },
   )
 
   const currentUserQuery = api.users.me.useQuery()
@@ -243,6 +248,13 @@ function AddListingPage() {
         }
       },
     )
+
+    // If the parsed field definition IDs are unchanged, do not reset the form
+    const isSameAsCurrent =
+      parsedCustomFields.length === parsed.length &&
+      parsedCustomFields.every((f, i) => f.id === parsed[i]?.id)
+    if (isSameAsCurrent) return
+
     setParsedCustomFields(parsed)
 
     // Create and set the dynamic schema
@@ -273,7 +285,7 @@ function AddListingPage() {
       }
     })
     form.setValue('customFieldValues', newCustomValues)
-  }, [customFieldDefinitionsQuery.data, form])
+  }, [customFieldDefinitionsQuery.data, form, parsedCustomFields])
 
   const createListingMutation = api.listings.create.useMutation({
     onSuccess: async (data) => {

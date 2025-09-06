@@ -17,7 +17,7 @@ function CustomFieldTemplatesPage() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null)
 
-  const customFieldTemplatesQuery = api.customFieldTemplates.getAll.useQuery()
+  const customFieldTemplatesQuery = api.customFieldTemplates.get.useQuery()
 
   function handleOpenCreateModal() {
     setEditingTemplateId(null)

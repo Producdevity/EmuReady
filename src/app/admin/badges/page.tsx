@@ -28,11 +28,12 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import BadgeDetailsModal from './components/BadgeDetailsModal'
 import BadgeModal from './components/BadgeModal'
 
 type BadgeSortField = 'name' | 'createdAt' | 'updatedAt'
-type BadgeData = RouterOutput['badges']['getAll']['badges'][number]
+type BadgeData = RouterOutput['badges']['get']['badges'][number]
 
 const BADGE_COLUMNS: ColumnDefinition[] = [
   { key: 'badge', label: 'Badge', defaultVisible: true },
@@ -65,7 +66,7 @@ export default function AdminBadgesPage() {
   const confirm = useConfirmDialog()
 
   // Fetch badges
-  const badgesQuery = api.badges.getAll.useQuery({
+  const badgesQuery = api.badges.get.useQuery({
     limit: table.limit,
     page: table.page,
     search: table.search || undefined,
@@ -75,7 +76,7 @@ export default function AdminBadgesPage() {
   })
 
   // Fetch stats
-  const statsQuery = api.badges.getStats.useQuery()
+  const statsQuery = api.badges.stats.useQuery()
 
   // Mutations
   const deleteBadgeMutation = api.badges.delete.useMutation({
@@ -150,16 +151,21 @@ export default function AdminBadgesPage() {
   const pagination = badgesQuery.data?.pagination
   const stats = statsQuery.data
 
+  const userQuery = api.users.me.useQuery()
+  const canManageBadges = hasPermission(userQuery.data?.permissions, PERMISSIONS.MANAGE_BADGES)
+
   return (
     <AdminPageLayout
       title="Badge Management"
       description="Manage user badges and assignments"
       headerActions={
         <>
-          <Button onClick={() => setIsCreateModalOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Create Badge
-          </Button>
+          {canManageBadges && (
+            <Button onClick={() => setIsCreateModalOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Badge
+            </Button>
+          )}
           <ColumnVisibilityControl columns={BADGE_COLUMNS} columnVisibility={columnVisibility} />
         </>
       }
@@ -399,21 +405,28 @@ export default function AdminBadgesPage() {
                               onClick={() => handleViewBadge(badge.id)}
                               title="View Badge Details"
                             />
-                            <EditButton onClick={() => handleEditBadge(badge)} title="Edit Badge" />
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <DeleteButton
-                                  onClick={() => handleDeleteBadge(badge.id)}
-                                  disabled={badge._count.userBadges > 0}
-                                  title="Delete Badge"
-                                />
-                              </TooltipTrigger>
-                              {badge._count.userBadges > 0 && (
-                                <TooltipContent>
-                                  Cannot delete badge with active assignments
-                                </TooltipContent>
-                              )}
-                            </Tooltip>
+                            {canManageBadges && (
+                              <EditButton
+                                onClick={() => handleEditBadge(badge)}
+                                title="Edit Badge"
+                              />
+                            )}
+                            {canManageBadges && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <DeleteButton
+                                    onClick={() => handleDeleteBadge(badge.id)}
+                                    disabled={badge._count.userBadges > 0}
+                                    title="Delete Badge"
+                                  />
+                                </TooltipTrigger>
+                                {badge._count.userBadges > 0 && (
+                                  <TooltipContent>
+                                    Cannot delete badge with active assignments
+                                  </TooltipContent>
+                                )}
+                              </Tooltip>
+                            )}
                           </div>
                         </td>
                       )}
@@ -440,21 +453,25 @@ export default function AdminBadgesPage() {
       </AdminTableContainer>
 
       {/* Modals */}
-      <BadgeModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={handleRefresh}
-      />
+      {canManageBadges && (
+        <BadgeModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={handleRefresh}
+        />
+      )}
 
-      <BadgeModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false)
-          setEditingBadge(null)
-        }}
-        badge={editingBadge || undefined}
-        onSuccess={handleRefresh}
-      />
+      {canManageBadges && (
+        <BadgeModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false)
+            setEditingBadge(null)
+          }}
+          badge={editingBadge || undefined}
+          onSuccess={handleRefresh}
+        />
+      )}
 
       <BadgeDetailsModal
         isOpen={isDetailsModalOpen}

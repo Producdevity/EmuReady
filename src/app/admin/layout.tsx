@@ -36,7 +36,7 @@ function AdminLayout(props: PropsWithChildren) {
   })
 
   // Get pending games count for admin navigation
-  const gameStatsQuery = api.games.getStats.useQuery(undefined, {
+  const gameStatsQuery = api.games.stats.useQuery(undefined, {
     enabled:
       !!userQuery.data && hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
     refetchInterval: 30000, // Refetch every 30 seconds (to keep counts updated)
@@ -46,7 +46,7 @@ function AdminLayout(props: PropsWithChildren) {
   })
 
   // Get pending listings count for admin navigation
-  const listingStatsQuery = api.listings.getStats.useQuery(undefined, {
+  const listingStatsQuery = api.listings.stats.useQuery(undefined, {
     enabled:
       !!userQuery.data && hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
     refetchInterval: 30000, // Refetch every 30 seconds (to keep counts updated)
@@ -68,7 +68,7 @@ function AdminLayout(props: PropsWithChildren) {
   const isSuperAdmin = hasRolePermission(userQuery.data?.role, Role.SUPER_ADMIN)
 
   // Get pending reports count for admin navigation
-  const reportsStatsQuery = api.listingReports.getStats.useQuery(undefined, {
+  const reportsStatsQuery = api.listingReports.stats.useQuery(undefined, {
     enabled: !!userQuery.data && isSuperAdmin,
     refetchInterval: 30000, // Refetch every 30 seconds (to keep counts updated)
     staleTime: 10000, // Consider data stale after 10 seconds
@@ -149,6 +149,29 @@ function AdminLayout(props: PropsWithChildren) {
   } else if (isDeveloper && verifiedEmulatorsQuery.data) {
     const emulatorIds = verifiedEmulatorsQuery.data.map((e) => e.id)
     navItems = getDeveloperNavItems(emulatorIds)
+
+    // Add counts to developer approvals links (handheld + PC)
+    const devPendingListingsQuery = api.listings.getPending.useQuery(
+      { page: 1, limit: 1 },
+      { enabled: true },
+    )
+    const devPendingPcListingsQuery = api.pcListings.pending.useQuery(
+      { page: 1, limit: 1 },
+      { enabled: true },
+    )
+
+    const pendingHandheldCount = devPendingListingsQuery.data?.pagination.total
+    const pendingPcCount = devPendingPcListingsQuery.data?.pagination.total
+
+    navItems = navItems.map((item) => {
+      if (item.href === '/admin/approvals' && typeof pendingHandheldCount === 'number') {
+        return { ...item, count: pendingHandheldCount }
+      }
+      if (item.href === '/admin/pc-listing-approvals' && typeof pendingPcCount === 'number') {
+        return { ...item, count: pendingPcCount }
+      }
+      return item
+    })
   }
 
   return (

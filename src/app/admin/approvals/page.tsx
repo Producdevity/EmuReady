@@ -43,6 +43,7 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus } from '@orm'
 import ApprovalModal from './components/ApprovalModal'
 
@@ -92,8 +93,8 @@ function AdminApprovalsPage() {
     search: isEmpty(table.search) ? null : table.search,
   })
 
-  const gameStatsQuery = api.games.getStats.useQuery()
-  const listingStatsQuery = api.listings.getStats.useQuery()
+  const gameStatsQuery = api.games.stats.useQuery()
+  const listingStatsQuery = api.listings.stats.useQuery()
 
   const [showApprovalModal, setShowApprovalModal] = useState(false)
   const [selectedListingForApproval, setSelectedListingForApproval] =
@@ -111,11 +112,11 @@ function AdminApprovalsPage() {
       pendingListingsQuery.refetch(),
       utils.listings.getProcessed.invalidate(),
       utils.listings.get.invalidate(),
-      utils.listings.getStats.invalidate(),
-      utils.games.getStats.invalidate(),
+      utils.listings.stats.invalidate(),
+      utils.games.stats.invalidate(),
       // Force refetch the stats
-      utils.listings.getStats.refetch(),
-      utils.games.getStats.refetch(),
+      utils.listings.stats.refetch(),
+      utils.games.stats.refetch(),
     ])
   }
 
@@ -219,8 +220,7 @@ function AdminApprovalsPage() {
       const confirmed = await confirm({
         title: 'Bulk Approval Warning',
         description: `You are about to approve ${listingIds.length} listings, including ${reportedUserListings.length} from reported users.\n\nReported users in this selection:\n• ${reportedUsers.join('\n• ')}\n\nThese users have a total of ${totalReports} active reports against their listings.\n\nAre you sure you want to proceed with the bulk approval?`,
-        confirmText: 'Yes, Approve All',
-        cancelText: 'Cancel',
+        confirmText: 'Approve Selected',
       })
 
       if (!confirmed) return
@@ -228,8 +228,7 @@ function AdminApprovalsPage() {
       const confirmed = await confirm({
         title: 'Bulk Approval Confirmation',
         description: `You are about to approve ${listingIds.length} listings. Are you sure you want to proceed?`,
-        confirmText: 'Yes, Approve All',
-        cancelText: 'Cancel',
+        confirmText: 'Approve Selected',
       })
 
       if (!confirmed) return
@@ -574,15 +573,25 @@ function AdminApprovalsPage() {
                     {columnVisibility.isColumnVisible('actions') && (
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          <ApproveButton
-                            title="Approve Listing"
-                            onClick={() => openApprovalModal(listing, ApprovalStatus.APPROVED)}
-                          />
+                          {hasPermission(
+                            currentUserQuery.data?.permissions,
+                            PERMISSIONS.APPROVE_LISTINGS,
+                          ) && (
+                            <ApproveButton
+                              title="Approve Listing"
+                              onClick={() => openApprovalModal(listing, ApprovalStatus.APPROVED)}
+                            />
+                          )}
 
-                          <RejectButton
-                            onClick={() => openApprovalModal(listing, ApprovalStatus.REJECTED)}
-                            title="Reject Listing"
-                          />
+                          {hasPermission(
+                            currentUserQuery.data?.permissions,
+                            PERMISSIONS.APPROVE_LISTINGS,
+                          ) && (
+                            <RejectButton
+                              onClick={() => openApprovalModal(listing, ApprovalStatus.REJECTED)}
+                              title="Reject Listing"
+                            />
+                          )}
                           <ViewButton href={`/listings/${listing.id}`} title="View Details" />
                         </div>
                       </td>

@@ -132,6 +132,7 @@ export const PERMISSIONS = {
 
   // Device Management
   MANAGE_DEVICES: 'manage_devices',
+  MANAGE_BADGES: 'manage_badges',
 
   // System Management
   MANAGE_SYSTEMS: 'manage_systems',

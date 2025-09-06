@@ -11,7 +11,7 @@ import { PerformanceScalesRepository } from '@/server/repositories/performance-s
 import { PERMISSIONS } from '@/utils/permission-system'
 
 export const performanceScalesRouter = createTRPCRouter({
-  getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
+  stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
     const repository = new PerformanceScalesRepository(ctx.prisma)
     return repository.stats()
   }),

@@ -1,15 +1,17 @@
 'use client'
 
 import * as Sentry from '@sentry/nextjs'
-import { usePathname } from 'next/navigation'
 import { type PropsWithChildren, type ErrorInfo } from 'react'
 import { ErrorBoundary, type ErrorBoundaryProps } from 'react-error-boundary'
 import { ErrorFallback } from '@/components/ui'
+import useMounted from '@/hooks/useMounted'
 import analytics from '@/lib/analytics'
+import { cn } from '@/lib/utils'
 
 function Main(props: PropsWithChildren) {
-  const pathname = usePathname()
-  const isHomePage = pathname === '/'
+  const mounted = useMounted()
+  // Avoid using pathname at render time to keep SSR/CSR markup identical
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : undefined
 
   const handleError: ErrorBoundaryProps['onError'] = (error: Error, info: ErrorInfo) => {
     analytics.performance.errorOccurred({
@@ -28,7 +30,7 @@ function Main(props: PropsWithChildren) {
       Sentry.captureException(error)
     })
 
-    console.error('[ErrorBoundary]: ', error, info)
+    console.error('[Main] ErrorBoundary', error, info)
   }
 
   const handleReset: ErrorBoundaryProps['onReset'] = (details) => {
@@ -45,12 +47,12 @@ function Main(props: PropsWithChildren) {
       extra: { reason: details.reason },
     })
 
-    console.error('ErrorBoundary reset', details)
-    window.location.reload()
+    console.error('[Main] ErrorBoundary reset', details)
+    if (mounted) window.location.reload()
   }
 
   return (
-    <main className={`flex-1 flex flex-col ${isHomePage ? '' : 'pt-20'}`}>
+    <main className={cn('flex-1 flex flex-col')}>
       <ErrorBoundary FallbackComponent={ErrorFallback} onReset={handleReset} onError={handleError}>
         {props.children}
       </ErrorBoundary>

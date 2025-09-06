@@ -21,7 +21,7 @@ import { PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus, type Prisma, ReportStatus, TrustAction, ReportReason } from '@orm'
 
 export const listingReportsRouter = createTRPCRouter({
-  getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
+  stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
     const [pending, underReview, resolved, dismissed] = await batchQueries([
       ctx.prisma.listingReport.count({ where: { status: ReportStatus.PENDING } }),
       ctx.prisma.listingReport.count({ where: { status: ReportStatus.UNDER_REVIEW } }),
@@ -38,7 +38,7 @@ export const listingReportsRouter = createTRPCRouter({
     }
   }),
 
-  getAll: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
+  get: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
     .input(GetListingReportsSchema)
     .query(async ({ ctx, input }) => {
       const {
@@ -103,7 +103,7 @@ export const listingReportsRouter = createTRPCRouter({
       }
     }),
 
-  getById: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
+  byId: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
     .input(GetReportByIdSchema)
     .query(async ({ ctx, input }) => {
       const report = await ctx.prisma.listingReport.findUnique({

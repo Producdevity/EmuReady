@@ -26,6 +26,7 @@ export const ADMIN_ROUTES = {
   USER_BANS: '/admin/user-bans',
   PERMISSIONS: '/admin/permissions',
   PERMISSION_LOGS: '/admin/permission-logs',
+  AUDIT_LOGS: '/admin/audit-logs',
   VERIFIED_DEVELOPERS: '/admin/verified-developers',
   BADGES: '/admin/badges',
 

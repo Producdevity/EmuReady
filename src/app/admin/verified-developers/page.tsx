@@ -24,6 +24,7 @@ import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import EditVerifiedDeveloperModal from './components/EditVerifiedDeveloperModal'
 import VerifyDeveloperModal from './components/VerifyDeveloperModal'
 
@@ -92,6 +93,12 @@ function AdminVerifiedDevelopersPage() {
     emulatorFilter: emulatorFilter || null,
   })
 
+  const userQuery = api.users.me.useQuery()
+  const canManageVD = hasPermission(
+    userQuery.data?.permissions,
+    PERMISSIONS.MANAGE_EMULATOR_VERIFIED_DEVELOPERS,
+  )
+
   const removeVerifiedDeveloperMutation =
     api.verifiedDevelopers.removeVerifiedDeveloper.useMutation({
       onSuccess: (result) => {
@@ -159,10 +166,12 @@ function AdminVerifiedDevelopersPage() {
             columns={VERIFIED_DEVELOPERS_COLUMNS}
             columnVisibility={columnVisibility}
           />
-          <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-2">
-            <UserCheck className="w-4 h-4" />
-            Verify Developer
-          </Button>
+          {canManageVD && (
+            <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-2">
+              <UserCheck className="w-4 h-4" />
+              Verify Developer
+            </Button>
+          )}
         </div>
       </div>
 
@@ -344,16 +353,20 @@ function AdminVerifiedDevelopersPage() {
                   {columnVisibility.isColumnVisible('actions') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
-                        <EditButton
-                          onClick={() => handleEdit(verifiedDev)}
-                          title="Edit Verified Developer"
-                        />
-                        <DeleteButton
-                          onClick={() => handleRemove(verifiedDev.id)}
-                          title="Remove Verification"
-                          isLoading={removeVerifiedDeveloperMutation.isPending}
-                          disabled={removeVerifiedDeveloperMutation.isPending}
-                        />
+                        {canManageVD && (
+                          <EditButton
+                            onClick={() => handleEdit(verifiedDev)}
+                            title="Edit Verified Developer"
+                          />
+                        )}
+                        {canManageVD && (
+                          <DeleteButton
+                            onClick={() => handleRemove(verifiedDev.id)}
+                            title="Remove Verification"
+                            isLoading={removeVerifiedDeveloperMutation.isPending}
+                            disabled={removeVerifiedDeveloperMutation.isPending}
+                          />
+                        )}
                       </div>
                     </td>
                   )}

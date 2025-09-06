@@ -404,7 +404,7 @@ export const usersRouter = createTRPCRouter({
   }),
 
   // Admin and Moderator routes
-  getAll: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
+  get: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
     .input(GetAllUsersSchema)
     .query(async ({ ctx, input }) => {
       const { search, sortField, sortDirection, page = 1, limit = 20 } = input ?? {}
@@ -459,7 +459,7 @@ export const usersRouter = createTRPCRouter({
       }
     }),
 
-  getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
+  stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
     const [
       userCount,
       authorCount,

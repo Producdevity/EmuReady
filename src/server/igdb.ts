@@ -124,7 +124,10 @@ export function buildImageUrl(
   return `${IGDB_IMAGE_BASE_URL}/t_${size}/${imageId}.jpg`
 }
 
-// Check if a game has adult/NSFW content
+/**
+ * Determine if a game contains NSFW content based on its themes and age ratings
+ * @param game
+ */
 export function isAdultContent(game: IGDBGame): boolean {
   // Check if game has adult themes
   if (game.themes?.some((theme) => IGDB_ADULT_THEME_IDS.includes(theme.id))) return true
@@ -135,7 +138,10 @@ export function isAdultContent(game: IGDBGame): boolean {
   return false
 }
 
-// Extract best images for our database fields
+/**
+ * Extract best image URLs for a game from its IGDB data
+ * @param game
+ */
 export function extractGameImages(game: IGDBGame): {
   imageUrl: string | null
   boxartUrl: string | null
@@ -194,9 +200,7 @@ export async function searchGames(
   limit = 20,
   includeAllCategories = false,
 ): Promise<IGDBSearchResponse> {
-  if (!query.trim()) {
-    throw new IGDBError('Search query cannot be empty')
-  }
+  if (!query.trim()) throw new IGDBError('Search query cannot be empty')
 
   // Build the query
   let igdbQuery = `search "${query.trim()}";`
@@ -207,21 +211,16 @@ export async function searchGames(
   const whereConditions: string[] = []
 
   // Filter by platform if specified
-  if (platformId) {
-    whereConditions.push(`platforms = (${platformId})`)
-  }
+  if (platformId) whereConditions.push(`platforms = [${platformId}]`)
 
   // Filter to only main games by default (exclude DLCs, expansions, etc.)
-  if (!includeAllCategories) {
-    whereConditions.push(`category = ${IGDBGameCategory.MAIN_GAME}`)
-  }
+  if (!includeAllCategories) whereConditions.push(`game_type = ${IGDBGameCategory.MAIN_GAME}`)
 
   // Add where clause if we have conditions
-  if (whereConditions.length > 0) {
-    igdbQuery += ` where ${whereConditions.join(' & ')};`
-  }
+  if (whereConditions.length > 0) igdbQuery += ` where ${whereConditions.join(' & ')};`
 
   igdbQuery += ` limit ${limit};`
+  console.log('\n\n\n IGDB Query:\n', igdbQuery, '\n\n\n')
 
   const games = await makeRequest<IGDBGame[]>('/games', igdbQuery)
 
@@ -231,7 +230,10 @@ export async function searchGames(
   }
 }
 
-// Get game details by ID
+/**
+ * Fetch detailed game information by its IGDB ID
+ * @param gameId
+ */
 export async function getGameById(gameId: number): Promise<IGDBGame | null> {
   const query = `fields *,cover.*,artworks.*,screenshots.*,platforms.*,genres.*,themes.*; where id = ${gameId};`
 
@@ -240,7 +242,10 @@ export async function getGameById(gameId: number): Promise<IGDBGame | null> {
   return games.length > 0 ? games[0] : null
 }
 
-// Get all available images for a game (for image selector)
+/**
+ * Fetch all images for a game by its IGDB ID
+ * @param gameId
+ */
 export async function getGameImages(gameId: number): Promise<GameImageOption[]> {
   const game = await getGameById(gameId)
 
@@ -297,7 +302,11 @@ export interface IGDBPlatform {
   category?: IGDBPlatformCategory
 }
 
-// Search for platforms (useful for mapping to our system)
+/**
+ * Search IGDB platforms by name, optionally filtering by category
+ * @param query
+ * @param category
+ */
 export async function searchPlatforms(
   query: string,
   category?: IGDBPlatformCategory,

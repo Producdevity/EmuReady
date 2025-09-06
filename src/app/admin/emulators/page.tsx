@@ -1,6 +1,6 @@
 'use client'
 
-import { Settings, Link as LinkIcon, Unlink as UnlinkIcon } from 'lucide-react'
+import { LinkIcon, UnlinkIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import EmulatorModal from '@/app/admin/emulators/components/EmulatorModal'
@@ -24,6 +24,8 @@ import {
   EditButton,
   DeleteButton,
   TableButton,
+  QuickEditButton,
+  SettingsButton,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useEmulatorLogos, useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -32,11 +34,9 @@ import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import { copyToClipboard } from '@/utils/copyToClipboard'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { hasPermission } from '@/utils/permissions'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
+import { hasPermission as hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
-
-const actionButtonClasses =
-  'inline-flex items-center justify-center font-medium transition-colors rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none px-3 py-1.5 text-sm border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 focus-visible:ring-gray-500 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800'
 
 type EmulatorSortField = 'name' | 'systemCount' | 'listingCount'
 
@@ -60,9 +60,17 @@ function AdminEmulatorsPage() {
 
   // Get current user to check permissions
   const userQuery = api.users.me.useQuery()
-  const canDeleteEmulators = userQuery.data && hasPermission(userQuery.data.role, Role.MODERATOR)
+  {
+    /* TODO: validate this permission*/
+  }
+  const currentUserRole = userQuery.data?.role
+  const currentUserId = userQuery.data?.id
+  const userPermissions = userQuery.data?.permissions
+  const isAdmin = hasRolePermission(currentUserRole, Role.ADMIN)
+  const isModeratorOrHigher = hasRolePermission(currentUserRole, Role.MODERATOR)
+  const canDeleteEmulators = isAdmin && hasPermission(userPermissions, PERMISSIONS.MANAGE_EMULATORS)
 
-  const emulatorsStatsQuery = api.emulators.getStats.useQuery()
+  const emulatorsStatsQuery = api.emulators.stats.useQuery()
   const emulatorsQuery = api.emulators.getForAdmin.useQuery({
     search: table.search ?? undefined,
     sortField: table.sortField ?? undefined,
@@ -77,7 +85,7 @@ function AdminEmulatorsPage() {
     onSuccess: () => {
       toast.success('Emulator deleted successfully!')
       utils.emulators.getForAdmin.invalidate().catch(console.error)
-      utils.emulators.getStats.invalidate().catch(console.error)
+      utils.emulators.stats.invalidate().catch(console.error)
     },
     onError: (err) => {
       toast.error(`Failed to delete emulator: ${getErrorMessage(err)}`)
@@ -231,16 +239,40 @@ function AdminEmulatorsPage() {
                     <tr key={emulator.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       {columnVisibility.isColumnVisible('name') && (
                         <td className="px-6 py-4">
-                          <Link
-                            href={`/admin/emulators/${emulator.id}`}
-                            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center gap-2"
-                          >
-                            <EmulatorIcon
-                              name={emulator.name}
-                              logo={emulator.logo}
-                              showLogo={emulatorLogos.isHydrated && emulatorLogos.showEmulatorLogos}
-                            />
-                          </Link>
+                          {(() => {
+                            const isVerified = emulator.verifiedDevelopers?.some(
+                              (vd) => vd.userId === currentUserId || vd.user?.id === currentUserId,
+                            )
+                            const canManage = hasPermission(
+                              userPermissions,
+                              PERMISSIONS.MANAGE_EMULATORS,
+                            )
+                            const canEdit = canManage && (isModeratorOrHigher || isVerified)
+                            return canEdit
+                          })() ? (
+                            <Link
+                              href={`/admin/emulators/${emulator.id}`}
+                              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center gap-2"
+                            >
+                              <EmulatorIcon
+                                name={emulator.name}
+                                logo={emulator.logo}
+                                showLogo={
+                                  emulatorLogos.isHydrated && emulatorLogos.showEmulatorLogos
+                                }
+                              />
+                            </Link>
+                          ) : (
+                            <div className="font-medium flex items-center gap-2">
+                              <EmulatorIcon
+                                name={emulator.name}
+                                logo={emulator.logo}
+                                showLogo={
+                                  emulatorLogos.isHydrated && emulatorLogos.showEmulatorLogos
+                                }
+                              />
+                            </div>
+                          )}
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('systemCount') && (
@@ -274,29 +306,66 @@ function AdminEmulatorsPage() {
                       {columnVisibility.isColumnVisible('actions') && (
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Link
-                              href={`/admin/emulators/${emulator.id}/custom-fields`}
-                              className={actionButtonClasses}
-                            >
-                              <Settings className="mr-2 h-4 w-4" /> Custom Fields
-                            </Link>
-                            <EditButton
-                              href={`/admin/emulators/${emulator.id}`}
-                              title="Edit Emulator"
-                            />
-                            {canDeleteEmulators && (
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => openModal(emulator)}
-                              >
-                                Quick Edit
-                              </Button>
+                            {/* Manage Custom Fields (permission + verified for developers) */}
+                            {(() => {
+                              const isVerified = emulator.verifiedDevelopers?.some(
+                                (vd) =>
+                                  vd.userId === currentUserId || vd.user?.id === currentUserId,
+                              )
+                              const canManageCF = hasPermission(
+                                userPermissions,
+                                PERMISSIONS.MANAGE_CUSTOM_FIELDS,
+                              )
+                              return canManageCF && (isModeratorOrHigher || isVerified)
+                            })() && (
+                              <SettingsButton
+                                href={`/admin/emulators/${emulator.id}/custom-fields`}
+                                disabled={deleteEmulator.isPending}
+                                title={`Manage Custom Fields for ${emulator.name}`}
+                              />
                             )}
+
+                            {/* Edit and Quick Edit based on MANAGE_EMULATORS + verified for developers */}
+                            {(() => {
+                              const isVerified = emulator.verifiedDevelopers?.some(
+                                (vd) =>
+                                  vd.userId === currentUserId || vd.user?.id === currentUserId,
+                              )
+                              const canManage = hasPermission(
+                                userPermissions,
+                                PERMISSIONS.MANAGE_EMULATORS,
+                              )
+                              return canManage && (isModeratorOrHigher || isVerified)
+                            })() && (
+                              <EditButton
+                                href={`/admin/emulators/${emulator.id}`}
+                                disabled={deleteEmulator.isPending}
+                                title={`Edit Emulator ${emulator.name}`}
+                              />
+                            )}
+                            {(() => {
+                              const isVerified = emulator.verifiedDevelopers?.some(
+                                (vd) =>
+                                  vd.userId === currentUserId || vd.user?.id === currentUserId,
+                              )
+                              const canManage = hasPermission(
+                                userPermissions,
+                                PERMISSIONS.MANAGE_EMULATORS,
+                              )
+                              return canManage && (isModeratorOrHigher || isVerified)
+                            })() && (
+                              <QuickEditButton
+                                title={`Quick Edit Emulator ${emulator.name}`}
+                                disabled={deleteEmulator.isPending || modalOpen}
+                                onClick={() => openModal(emulator)}
+                              />
+                            )}
+
+                            {/* Delete (Admin + Super Admin) */}
                             {canDeleteEmulators && (
                               <DeleteButton
                                 onClick={() => handleDelete(emulator.id)}
-                                title="Delete Emulator"
+                                title={`Delete Emulator ${emulator.name}`}
                                 isLoading={deleteEmulator.isPending}
                                 disabled={deleteEmulator.isPending}
                               />
@@ -332,7 +401,7 @@ function AdminEmulatorsPage() {
           onClose={closeModal}
           onSuccess={() => {
             utils.emulators.getForAdmin.invalidate().catch(console.error)
-            utils.emulators.getStats.invalidate().catch(console.error)
+            utils.emulators.stats.invalidate().catch(console.error)
             closeModal()
           }}
         />

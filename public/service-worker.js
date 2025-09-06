@@ -39,7 +39,7 @@
 /* ------------------------------------------------------------------ */
 
 /** Name of the runtime cache used by this Service Worker. */
-const CACHE_NAME = 'emuready_v0.10.10'
+const CACHE_NAME = 'emuready_v0.10.11'
 
 /** URLs cached during the installation step */
 const urlsToCache = [

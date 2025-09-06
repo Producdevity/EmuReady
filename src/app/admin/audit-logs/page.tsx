@@ -1,6 +1,6 @@
 'use client'
 
-import { FileText } from 'lucide-react'
+import { Shield } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { ADMIN_ROUTES } from '@/app/admin/config/routes'
@@ -13,92 +13,115 @@ import {
 } from '@/components/admin'
 import {
   ColumnVisibilityControl,
+  Button,
   LoadingSpinner,
   SortableHeader,
   Badge,
   Pagination,
   LocalizedDate,
-  Button,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
-import { PermissionActionType, Role } from '@orm'
+import { formatEnumLabel } from '@/utils/format'
+import { AuditAction, AuditEntityType } from '@orm'
 
-type PermissionLogSortField = 'createdAt' | 'action' | 'userId' | 'targetRole'
+type AuditLogSortField = 'createdAt' | 'action' | 'entityType' | 'actorId' | 'targetUserId'
 
-const PERMISSION_LOG_COLUMNS: ColumnDefinition[] = [
+const AUDIT_LOG_COLUMNS: ColumnDefinition[] = [
   { key: 'id', label: 'ID', defaultVisible: false },
   { key: 'createdAt', label: 'Date', defaultVisible: true },
   { key: 'action', label: 'Action', defaultVisible: true },
-  { key: 'user', label: 'User', defaultVisible: true },
-  { key: 'targetRole', label: 'Target Role', defaultVisible: true },
-  { key: 'permission', label: 'Permission', defaultVisible: true },
+  { key: 'entityType', label: 'Entity Type', defaultVisible: true },
+  { key: 'entityId', label: 'Entity ID', defaultVisible: false },
+  { key: 'actor', label: 'Actor', defaultVisible: true },
+  { key: 'targetUser', label: 'Target User', defaultVisible: false },
+  { key: 'ipAddress', label: 'IP', defaultVisible: false },
+  { key: 'userAgent', label: 'User Agent', defaultVisible: false },
+  { key: 'requestId', label: 'Request ID', defaultVisible: false },
   { key: 'metadata', label: 'Details', defaultVisible: false },
 ]
 
-const PERMISSION_ACTIONS = [
+const ACTION_OPTIONS = [
   { value: '', label: 'All Actions' },
-  {
-    value: PermissionActionType.PERMISSION_CREATED,
-    label: 'Permission Created',
-  },
-  {
-    value: PermissionActionType.PERMISSION_UPDATED,
-    label: 'Permission Updated',
-  },
-  {
-    value: PermissionActionType.PERMISSION_DELETED,
-    label: 'Permission Deleted',
-  },
-  {
-    value: PermissionActionType.ROLE_PERMISSION_ASSIGNED,
-    label: 'Permission Assigned',
-  },
-  {
-    value: PermissionActionType.ROLE_PERMISSION_REMOVED,
-    label: 'Permission Removed',
-  },
-  { value: PermissionActionType.USER_ROLE_CHANGED, label: 'User Role Changed' },
-] as const
+  { value: AuditAction.CREATE, label: 'Create' },
+  { value: AuditAction.UPDATE, label: 'Update' },
+  { value: AuditAction.DELETE, label: 'Delete' },
+  { value: AuditAction.ARCHIVE, label: 'Archive' },
+  { value: AuditAction.APPROVE, label: 'Approve' },
+  { value: AuditAction.REJECT, label: 'Reject' },
+  { value: AuditAction.ASSIGN, label: 'Assign' },
+  { value: AuditAction.UNASSIGN, label: 'Unassign' },
+  { value: AuditAction.BAN, label: 'Ban' },
+  { value: AuditAction.UNBAN, label: 'Unban' },
+]
 
-const ROLES = [
-  { value: '', label: 'All Roles' },
-  { value: Role.USER, label: 'User' },
-  { value: Role.AUTHOR, label: 'Author' },
-  { value: Role.DEVELOPER, label: 'Developer' },
-  { value: Role.MODERATOR, label: 'Moderator' },
-  { value: Role.ADMIN, label: 'Admin' },
-  { value: Role.SUPER_ADMIN, label: 'Super Admin' },
-] as const
+const ENTITY_OPTIONS = [
+  { value: '', label: 'All Entities' },
+  { value: AuditEntityType.USER, label: 'User' },
+  { value: AuditEntityType.USER_BAN, label: 'User Ban' },
+  { value: AuditEntityType.LISTING, label: 'Listing' },
+  { value: AuditEntityType.PC_LISTING, label: 'PC Listing' },
+  { value: AuditEntityType.GAME, label: 'Game' },
+  { value: AuditEntityType.PERMISSION, label: 'Permission' },
+  { value: AuditEntityType.COMMENT, label: 'Comment' },
+  { value: AuditEntityType.REPORT, label: 'Report' },
+  { value: AuditEntityType.EMULATOR, label: 'Emulator' },
+  { value: AuditEntityType.OTHER, label: 'Other' },
+]
 
-function AdminPermissionLogsPage() {
-  const table = useAdminTable<PermissionLogSortField>({
+function getActionBadgeVariant(action: AuditAction) {
+  switch (action) {
+    case AuditAction.CREATE:
+      return 'success' as const
+    case AuditAction.UPDATE:
+      return 'info' as const
+    case AuditAction.DELETE:
+    case AuditAction.ARCHIVE:
+      return 'danger' as const
+    case AuditAction.APPROVE:
+      return 'primary' as const
+    case AuditAction.REJECT:
+      return 'warning' as const
+    case AuditAction.ASSIGN:
+      return 'success' as const
+    case AuditAction.UNASSIGN:
+      return 'default' as const
+    case AuditAction.BAN:
+      return 'danger' as const
+    case AuditAction.UNBAN:
+      return 'info' as const
+    default:
+      return 'default' as const
+  }
+}
+
+function AdminAuditLogsPage() {
+  const table = useAdminTable<AuditLogSortField>({
     defaultLimit: 50,
     defaultSortField: 'createdAt',
     defaultSortDirection: 'desc',
   })
 
   const [selectedAction, setSelectedAction] = useState('')
-  const [selectedRole, setSelectedRole] = useState('')
+  const [selectedEntity, setSelectedEntity] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
 
-  const columnVisibility = useColumnVisibility(PERMISSION_LOG_COLUMNS, {
-    storageKey: storageKeys.columnVisibility.adminPermissionLogs,
+  const columnVisibility = useColumnVisibility(AUDIT_LOG_COLUMNS, {
+    storageKey: storageKeys.columnVisibility.adminAuditLogs,
   })
 
-  // Get permission logs stats
-  const statsQuery = api.permissionLogs.stats.useQuery()
+  const statsQuery = api.auditLogs.stats.useQuery()
 
-  // Get permission logs
-  const logsQuery = api.permissionLogs.get.useQuery({
+  const logsQuery = api.auditLogs.get.useQuery({
     page: table.page,
     limit: table.limit,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
-    action: (selectedAction as PermissionActionType) || undefined,
-    targetRole: (selectedRole as Role) || undefined,
+    search: table.debouncedSearch || undefined,
+    action: (selectedAction as unknown as AuditAction) || undefined,
+    entityType: (selectedEntity as unknown as AuditEntityType) || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
   })
@@ -106,47 +129,21 @@ function AdminPermissionLogsPage() {
   const logs = logsQuery.data?.logs ?? []
   const pagination = logsQuery.data?.pagination
 
-  const getActionBadgeColor = (action: PermissionActionType) => {
-    switch (action) {
-      case PermissionActionType.PERMISSION_CREATED:
-        return 'success'
-      case PermissionActionType.PERMISSION_UPDATED:
-        return 'warning'
-      case PermissionActionType.PERMISSION_DELETED:
-        return 'danger'
-      case PermissionActionType.ROLE_PERMISSION_ASSIGNED:
-        return 'info'
-      case PermissionActionType.ROLE_PERMISSION_REMOVED:
-        return 'default'
-      case PermissionActionType.USER_ROLE_CHANGED:
-        return 'primary'
-      default:
-        return 'default'
-    }
-  }
-
-  const formatActionLabel = (action: PermissionActionType) => {
-    return action
-      .replace(/_/g, ' ')
-      .toLowerCase()
-      .replace(/\b\w/g, (l) => l.toUpperCase())
-  }
-
   if (logsQuery.isPending) return <LoadingSpinner />
 
   return (
     <AdminPageLayout
-      title="Permission Logs"
-      description="Monitor permission changes and system audit trail"
+      title="Audit Logs"
+      description="System-wide audit trail for sensitive operations"
       headerActions={
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" asChild>
-            <Link href={ADMIN_ROUTES.AUDIT_LOGS}>
-              <FileText className="w-4 h-4" /> Audit Logs
+            <Link href={ADMIN_ROUTES.PERMISSION_LOGS}>
+              <Shield className="w-4 h-4" /> Permission Logs
             </Link>
           </Button>
           <ColumnVisibilityControl
-            columns={PERMISSION_LOG_COLUMNS}
+            columns={AUDIT_LOG_COLUMNS}
             columnVisibility={columnVisibility}
           />
         </div>
@@ -178,9 +175,9 @@ function AdminPermissionLogsPage() {
         isLoading={statsQuery.isPending}
       />
 
-      <AdminSearchFilters<PermissionLogSortField>
+      <AdminSearchFilters<AuditLogSortField>
         table={table}
-        searchPlaceholder="Search by user name, email, or permission..."
+        searchPlaceholder="Search by actor, target, entity ID, request, IP, user agent..."
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
           <select
@@ -188,21 +185,27 @@ function AdminPermissionLogsPage() {
             onChange={(e) => setSelectedAction(e.target.value)}
             className="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
           >
-            {PERMISSION_ACTIONS.map((action) => (
-              <option key={action.value} value={action.value}>
-                {action.label}
+            {ACTION_OPTIONS.map((opt) => (
+              <option
+                key={opt.value ? String(opt.value) : 'all'}
+                value={opt.value as unknown as string}
+              >
+                {opt.label}
               </option>
             ))}
           </select>
 
           <select
-            value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value)}
+            value={selectedEntity}
+            onChange={(e) => setSelectedEntity(e.target.value)}
             className="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
           >
-            {ROLES.map((role) => (
-              <option key={role.value} value={role.value}>
-                {role.label}
+            {ENTITY_OPTIONS.map((opt) => (
+              <option
+                key={opt.value ? String(opt.value) : 'all'}
+                value={opt.value as unknown as string}
+              >
+                {opt.label}
               </option>
             ))}
           </select>
@@ -211,27 +214,27 @@ function AdminPermissionLogsPage() {
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            placeholder="From date"
             className="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            placeholder="From date"
           />
 
           <input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            placeholder="To date"
             className="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            placeholder="To date"
           />
         </div>
       </AdminSearchFilters>
 
       <AdminTableContainer>
         {logs.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="py-12 text-center">
             <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search || selectedAction || selectedRole || dateFrom || dateTo
-                ? 'No permission logs found matching your criteria.'
-                : 'No permission logs found.'}
+              {table.search || selectedAction || selectedEntity || dateFrom || dateTo
+                ? 'No audit logs found matching your criteria.'
+                : 'No audit logs found.'}
             </p>
           </div>
         ) : (
@@ -264,29 +267,54 @@ function AdminPermissionLogsPage() {
                       className="px-6 py-3 text-left"
                     />
                   )}
-                  {columnVisibility.isColumnVisible('user') && (
+                  {columnVisibility.isColumnVisible('entityType') && (
                     <SortableHeader
-                      label="User"
-                      field="userId"
+                      label="Entity Type"
+                      field="entityType"
                       currentSortField={table.sortField}
                       currentSortDirection={table.sortDirection}
                       onSort={table.handleSort}
                       className="px-6 py-3 text-left"
                     />
                   )}
-                  {columnVisibility.isColumnVisible('targetRole') && (
-                    <SortableHeader
-                      label="Target Role"
-                      field="targetRole"
-                      currentSortField={table.sortField}
-                      currentSortDirection={table.sortDirection}
-                      onSort={table.handleSort}
-                      className="px-6 py-3 text-left"
-                    />
-                  )}
-                  {columnVisibility.isColumnVisible('permission') && (
+                  {columnVisibility.isColumnVisible('entityId') && (
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Permission
+                      Entity ID
+                    </th>
+                  )}
+                  {columnVisibility.isColumnVisible('actor') && (
+                    <SortableHeader
+                      label="Actor"
+                      field="actorId"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                      className="px-6 py-3 text-left"
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('targetUser') && (
+                    <SortableHeader
+                      label="Target User"
+                      field="targetUserId"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                      className="px-6 py-3 text-left"
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('ipAddress') && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      IP
+                    </th>
+                  )}
+                  {columnVisibility.isColumnVisible('userAgent') && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      User Agent
+                    </th>
+                  )}
+                  {columnVisibility.isColumnVisible('requestId') && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Request ID
                     </th>
                   )}
                   {columnVisibility.isColumnVisible('metadata') && (
@@ -323,38 +351,57 @@ function AdminPermissionLogsPage() {
                     )}
                     {columnVisibility.isColumnVisible('action') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <Badge variant={getActionBadgeColor(log.action)}>
-                          {formatActionLabel(log.action)}
+                        <Badge variant={getActionBadgeVariant(log.action)}>
+                          {formatEnumLabel(log.action)}
                         </Badge>
                       </td>
                     )}
-                    {columnVisibility.isColumnVisible('user') && (
+                    {columnVisibility.isColumnVisible('entityType') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                        {formatEnumLabel(log.entityType)}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('entityId') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">
+                        {log.entityId?.slice(0, 8) || ''}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('actor') && (
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                         <div>
-                          <div className="font-medium">{log.user?.name || 'Unknown'}</div>
+                          <div className="font-medium">{log.actor?.name || 'Unknown'}</div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {log.user?.email}
+                            {log.actor?.email}
                           </div>
                         </div>
                       </td>
                     )}
-                    {columnVisibility.isColumnVisible('targetRole') && (
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {log.targetRole && <Badge>{log.targetRole}</Badge>}
+                    {columnVisibility.isColumnVisible('targetUser') && (
+                      <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                        <div>
+                          <div className="font-medium">{log.targetUser?.name || ''}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {log.targetUser?.email || ''}
+                          </div>
+                        </div>
                       </td>
                     )}
-                    {columnVisibility.isColumnVisible('permission') && (
-                      <td className="px-6 py-4 text-sm">
-                        {log.permission && (
-                          <div>
-                            <div className="font-medium text-gray-900 dark:text-white">
-                              {log.permission.label}
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
-                              {log.permission.key}
-                            </div>
-                          </div>
-                        )}
+                    {columnVisibility.isColumnVisible('ipAddress') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {log.ipAddress || ''}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('userAgent') && (
+                      <td
+                        className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate"
+                        title={log.userAgent || ''}
+                      >
+                        {log.userAgent || ''}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('requestId') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">
+                        {log.requestId || ''}
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('metadata') && (
@@ -379,7 +426,6 @@ function AdminPermissionLogsPage() {
         )}
       </AdminTableContainer>
 
-      {/* Pagination */}
       {pagination && pagination.pages > 1 && (
         <Pagination
           page={table.page}
@@ -393,4 +439,4 @@ function AdminPermissionLogsPage() {
   )
 }
 
-export default AdminPermissionLogsPage
+export default AdminAuditLogsPage

@@ -1,6 +1,6 @@
 'use client'
 
-import { Undo, ExternalLink } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { useState, type ChangeEvent } from 'react'
 import { useAdminTable } from '@/app/admin/hooks'
@@ -13,7 +13,6 @@ import {
 } from '@/components/admin'
 import {
   ApproveButton,
-  Button,
   ColumnVisibilityControl,
   EditButton,
   LoadingSpinner,
@@ -21,6 +20,7 @@ import {
   RejectButton,
   SelectInput,
   LocalizedDate,
+  UndoButton,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -30,6 +30,7 @@ import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import { getApprovalStatusColor } from '@/utils/badgeColors'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus } from '@orm'
 import OverrideStatusModal from './components/OverrideStatusModal'
 
@@ -66,7 +67,7 @@ function ProcessedListingsPage() {
 
   const [filterStatus, setFilterStatus] = useState<ApprovalStatus | null>(null)
 
-  const listingStatsQuery = api.listings.getStats.useQuery()
+  const listingStatsQuery = api.listings.stats.useQuery()
   const processedListingsQuery = api.listings.getProcessed.useQuery({
     page: table.page,
     limit: table.limit,
@@ -76,6 +77,7 @@ function ProcessedListingsPage() {
 
   const processedListings = processedListingsQuery.data?.listings ?? []
   const paginationData = processedListingsQuery.data?.pagination
+  const userQuery = api.users.me.useQuery()
 
   const [showOverrideModal, setShowOverrideModal] = useState(false)
   const [selectedListingForOverride, setSelectedListingForOverride] =
@@ -286,31 +288,32 @@ function ProcessedListingsPage() {
                   )}
                   {columnVisibility.isColumnVisible('actions') && (
                     <td className="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-1">
-                      {listing.status === ApprovalStatus.APPROVED && (
-                        <RejectButton
-                          title="Override to Rejected"
-                          onClick={() => openOverrideModal(listing, ApprovalStatus.REJECTED)}
+                      {hasPermission(userQuery.data?.permissions, PERMISSIONS.EDIT_ANY_LISTING) && (
+                        <EditButton
+                          href={`/admin/listings/${listing.id}/edit`}
+                          title="Edit Listing"
                         />
                       )}
-                      {listing.status === ApprovalStatus.REJECTED && (
-                        <ApproveButton
-                          title="Override to Approved"
-                          onClick={() => openOverrideModal(listing, ApprovalStatus.APPROVED)}
+                      {hasPermission(userQuery.data?.permissions, PERMISSIONS.APPROVE_LISTINGS) && (
+                        <UndoButton
+                          title="Revert to Pending"
+                          onClick={() => openOverrideModal(listing, ApprovalStatus.PENDING)}
                         />
                       )}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => openOverrideModal(listing, ApprovalStatus.PENDING)}
-                        title="Revert to Pending"
-                        className="text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700"
-                      >
-                        <Undo className="mr-1 h-4 w-4" /> Revert
-                      </Button>
-                      <EditButton
-                        href={`/admin/listings/${listing.id}/edit`}
-                        title="Edit Listing (Admin)"
-                      />
+                      {hasPermission(userQuery.data?.permissions, PERMISSIONS.APPROVE_LISTINGS) &&
+                        listing.status === ApprovalStatus.APPROVED && (
+                          <RejectButton
+                            title="Override to Rejected"
+                            onClick={() => openOverrideModal(listing, ApprovalStatus.REJECTED)}
+                          />
+                        )}
+                      {hasPermission(userQuery.data?.permissions, PERMISSIONS.APPROVE_LISTINGS) &&
+                        listing.status === ApprovalStatus.REJECTED && (
+                          <ApproveButton
+                            title="Override to Approved"
+                            onClick={() => openOverrideModal(listing, ApprovalStatus.APPROVED)}
+                          />
+                        )}
                     </td>
                   )}
                 </tr>

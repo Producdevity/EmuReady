@@ -1,9 +1,12 @@
 'use client'
 
-import { Copy, ExternalLink } from 'lucide-react'
-import { useState } from 'react'
-import { Button, Modal, Badge, LocalizedDate } from '@/components/ui'
+import { Copy, ExternalLink, ShieldOff } from 'lucide-react'
+import { useRef, useMemo, useState } from 'react'
+import { Button, Modal, Badge, LocalizedDate, useConfirmDialog } from '@/components/ui'
+import { api } from '@/lib/api'
 import toast from '@/lib/toast'
+import { type RouterOutput } from '@/types/trpc'
+import getErrorMessage from '@/utils/getErrorMessage'
 import { type UserBanWithDetails } from '../types'
 
 interface Props {
@@ -13,47 +16,65 @@ interface Props {
 }
 
 function BanDetailsModal(props: Props) {
+  return (
+    <Modal isOpen={props.isOpen} onClose={props.onClose} title="Ban Details" size="lg">
+      {props.ban ? <BanDetailsContent ban={props.ban} onClose={props.onClose} /> : null}
+    </Modal>
+  )
+}
+
+function BanDetailsContent(props: { ban: UserBanWithDetails; onClose: () => void }) {
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const confirm = useConfirmDialog()
+  const utils = api.useUtils()
+  const unbanNotesRef = useRef<string>('')
 
-  if (!props.ban) return null
+  const reportsQuery = api.userBans.getUserReports.useQuery(
+    { userId: props.ban.user.id },
+    { enabled: true },
+  )
 
-  const { ban } = props
+  const liftBan = api.userBans.lift.useMutation({
+    onSuccess: () => {
+      utils.userBans.get.invalidate().catch(console.error)
+      utils.userBans.stats.invalidate().catch(console.error)
+    },
+  })
 
-  const copyToClipboard = async (text: string, label: string) => {
+  const copyToClipboard = async (text?: string, label?: string) => {
+    if (!text) return toast.warning('No value to copy')
     try {
       await navigator.clipboard.writeText(text)
       setCopiedId(text)
-      toast.success(`${label} copied to clipboard`)
+      toast.success(`${label ?? text} copied to clipboard`)
       setTimeout(() => setCopiedId(null), 2000)
     } catch {
       toast.error('Failed to copy to clipboard')
     }
   }
 
-  const getBanStatusBadgeVariant = () => {
-    if (!ban.isActive) return 'default'
-    if (ban.expiresAt && new Date(ban.expiresAt) <= new Date()) return 'warning'
-    return 'danger'
-  }
+  const banBadge = useMemo(() => {
+    if (!props.ban.isActive) return { label: 'Lifted', variant: 'default' as const }
 
-  const getBanStatusText = () => {
-    if (!ban.isActive) return 'Lifted'
-    if (ban.expiresAt && new Date(ban.expiresAt) <= new Date()) return 'Expired'
-    if (ban.expiresAt) return 'Temporary'
-    return 'Permanent'
-  }
+    if (props.ban.expiresAt && new Date(props.ban.expiresAt) <= new Date()) {
+      return { label: 'Expired', variant: 'warning' as const }
+    }
+    if (props.ban.expiresAt) return { label: 'Temporary', variant: 'danger' as const }
+
+    return { label: 'Permanent', variant: 'danger' as const }
+  }, [props.ban])
 
   return (
-    <Modal isOpen={props.isOpen} onClose={props.onClose} title="Ban Details" size="lg">
+    <div className="space-y-6">
       <div className="space-y-6">
         {/* Ban Status */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Ban Status</h3>
           <div className="flex items-center gap-2">
-            <Badge variant={getBanStatusBadgeVariant()}>{getBanStatusText()}</Badge>
-            {ban.isActive && ban.expiresAt && (
+            <Badge variant={banBadge.variant}>{banBadge.label}</Badge>
+            {props.ban.isActive && props.ban.expiresAt && (
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                Expires: <LocalizedDate date={ban.expiresAt} format="date" />
+                Expires: <LocalizedDate date={props.ban.expiresAt} format="date" />
               </span>
             )}
           </div>
@@ -69,20 +90,20 @@ function BanDetailsModal(props: Props) {
                   Name
                 </label>
                 <p className="text-sm text-gray-900 dark:text-white">
-                  {ban.user.name || 'Unknown'}
+                  {props.ban.user.name || 'Unknown'}
                 </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Email
                 </label>
-                <p className="text-sm text-gray-900 dark:text-white">{ban.user.email}</p>
+                <p className="text-sm text-gray-900 dark:text-white">{props.ban.user.email}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Role
                 </label>
-                <Badge>{ban.user.role}</Badge>
+                <Badge>{props.ban.user.role}</Badge>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -90,27 +111,27 @@ function BanDetailsModal(props: Props) {
                 </label>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-mono text-gray-600 dark:text-gray-400">
-                    {ban.user.id.slice(0, 8)}...
+                    {props.ban.user.id.slice(0, 8)}...
                   </span>
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => copyToClipboard(ban.user.id, 'User ID')}
+                    onClick={() => copyToClipboard(props.ban.user.id, 'User ID')}
                     className="p-1 h-6 w-6"
                   >
                     <Copy
-                      className={`w-3 h-3 ${copiedId === ban.user.id ? 'text-green-600' : ''}`}
+                      className={`w-3 h-3 ${copiedId === props.ban.user.id ? 'text-green-600' : ''}`}
                     />
                   </Button>
                 </div>
               </div>
-              {ban.user.createdAt && (
+              {props.ban.user.createdAt && (
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Member Since
                   </label>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    <LocalizedDate date={ban.user.createdAt} format="date" />
+                    <LocalizedDate date={props.ban.user.createdAt} format="date" />
                   </p>
                 </div>
               )}
@@ -120,7 +141,7 @@ function BanDetailsModal(props: Props) {
                 size="sm"
                 variant="outline"
                 onClick={() => {
-                  window.open(`/admin/users?search=${ban.user.email}`, '_blank')
+                  window.open(`/admin/users?search=${props.ban.user.email}`, '_blank')
                 }}
               >
                 <ExternalLink className="w-4 h-4 mr-1" />
@@ -139,16 +160,16 @@ function BanDetailsModal(props: Props) {
                 Reason
               </label>
               <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-3 rounded">
-                {ban.reason}
+                {props.ban.reason}
               </p>
             </div>
-            {ban.notes && (
+            {props.ban.notes && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Additional Notes
                 </label>
                 <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-3 rounded">
-                  {ban.notes}
+                  {props.ban.notes}
                 </p>
               </div>
             )}
@@ -158,21 +179,112 @@ function BanDetailsModal(props: Props) {
                   Duration
                 </label>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {ban.expiresAt ? 'Temporary' : 'Permanent'}
+                  {props.ban.expiresAt ? 'Temporary' : 'Permanent'}
                 </p>
               </div>
-              {ban.expiresAt && (
+              {props.ban.expiresAt && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Expires On
                   </label>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    <LocalizedDate date={ban.expiresAt} format="dateTime" />
+                    <LocalizedDate date={props.ban.expiresAt} format="dateTime" />
                   </p>
                 </div>
               )}
             </div>
           </div>
+        </div>
+
+        {/* Related Reports */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+            Reports Against User’s Content
+          </h3>
+          {reportsQuery.isPending ? (
+            <p className="text-sm text-gray-600 dark:text-gray-400">Loading reports…</p>
+          ) : reportsQuery.error ? (
+            <p className="text-sm text-red-600 dark:text-red-400">
+              Failed to load reports: {getErrorMessage(reportsQuery.error)}
+            </p>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">
+                  Listing Reports
+                </h4>
+                {reportsQuery.data && reportsQuery.data.listingReports.length > 0 ? (
+                  <ul className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {reportsQuery.data.listingReports.map(
+                      (r: RouterOutput['userBans']['getUserReports']['listingReports'][0]) => (
+                        <li
+                          key={r.id}
+                          className="p-3 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Badge variant="info">{r.status}</Badge>
+                              <span className="font-medium">{r.reason}</span>
+                              <span className="text-gray-500 dark:text-gray-400">
+                                for game “{r.listing.game.title}”
+                              </span>
+                            </div>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              <LocalizedDate date={r.createdAt} format="dateTime" />
+                            </span>
+                          </div>
+                          {r.description && (
+                            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                              {r.description}
+                            </p>
+                          )}
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-600 dark:text-gray-400">No listing reports.</p>
+                )}
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-800 dark:text-gray-200 mb-2">
+                  PC Listing Reports
+                </h4>
+                {reportsQuery.data && reportsQuery.data.pcListingReports.length > 0 ? (
+                  <ul className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {reportsQuery.data.pcListingReports.map(
+                      (r: RouterOutput['userBans']['getUserReports']['pcListingReports'][0]) => (
+                        <li
+                          key={r.id}
+                          className="p-3 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Badge variant="info">{r.status}</Badge>
+                              <span className="font-medium">{r.reason}</span>
+                              <span className="text-gray-500 dark:text-gray-400">
+                                for game “{r.pcListing.game.title}”
+                              </span>
+                            </div>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              <LocalizedDate date={r.createdAt} format="dateTime" />
+                            </span>
+                          </div>
+                          {r.description && (
+                            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                              {r.description}
+                            </p>
+                          )}
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-600 dark:text-gray-400">No PC listing reports.</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Administrative Info */}
@@ -186,7 +298,7 @@ function BanDetailsModal(props: Props) {
                 Banned By
               </label>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {ban.bannedBy?.name || 'Unknown'}
+                {props.ban.bannedBy?.name || 'Unknown'}
               </p>
             </div>
             <div>
@@ -194,17 +306,17 @@ function BanDetailsModal(props: Props) {
                 Banned On
               </label>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                <LocalizedDate date={ban.bannedAt} format="dateTime" />
+                <LocalizedDate date={props.ban.bannedAt} format="dateTime" />
               </p>
             </div>
-            {ban.unbannedBy && (
+            {props.ban.unbannedBy && (
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Unbanned By
                   </label>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {ban.unbannedBy.name || 'Unknown'}
+                    {props.ban.unbannedBy.name || 'Unknown'}
                   </p>
                 </div>
                 <div>
@@ -212,8 +324,8 @@ function BanDetailsModal(props: Props) {
                     Unbanned On
                   </label>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {ban.unbannedAt ? (
-                      <LocalizedDate date={ban.unbannedAt} format="dateTime" />
+                    {props.ban.unbannedAt ? (
+                      <LocalizedDate date={props.ban.unbannedAt} format="dateTime" />
                     ) : (
                       'N/A'
                     )}
@@ -227,15 +339,17 @@ function BanDetailsModal(props: Props) {
               </label>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-mono text-gray-600 dark:text-gray-400">
-                  {ban.id.slice(0, 8)}...
+                  {props.ban.id.slice(0, 8)}...
                 </span>
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => copyToClipboard(ban.id, 'Ban ID')}
+                  onClick={() => copyToClipboard(props.ban.id, 'Ban ID')}
                   className="p-1 h-6 w-6"
                 >
-                  <Copy className={`w-3 h-3 ${copiedId === ban.id ? 'text-green-600' : ''}`} />
+                  <Copy
+                    className={`w-3 h-3 ${copiedId === props.ban.id ? 'text-green-600' : ''}`}
+                  />
                 </Button>
               </div>
             </div>
@@ -243,12 +357,49 @@ function BanDetailsModal(props: Props) {
         </div>
       </div>
 
-      <div className="flex justify-end mt-6">
-        <Button variant="outline" onClick={props.onClose}>
-          Close
-        </Button>
+      <div className="flex justify-between mt-6">
+        <div className="flex-1 max-w-sm">
+          {props.ban.isActive && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Unban Notes (optional)
+              </label>
+              <textarea
+                className="w-full rounded border border-gray-300 dark:border-gray-600 bg-transparent p-2 text-sm"
+                placeholder="Reason for lifting this ban…"
+                rows={3}
+                onChange={(e) => (unbanNotesRef.current = e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+        <div className="flex gap-2">
+          {props.ban.isActive && (
+            <Button
+              variant="default"
+              onClick={async () => {
+                const ok = await confirm({
+                  title: 'Lift this ban?',
+                  description: 'This will mark the ban as inactive and record the unban time.',
+                  confirmText: 'Lift Ban',
+                })
+                if (!ok) return
+                liftBan
+                  .mutateAsync({ id: props.ban.id, notes: unbanNotesRef.current || undefined })
+                  .then(() => props.onClose())
+                  .catch((err) => toast.error(`Failed to lift ban: ${getErrorMessage(err)}`))
+              }}
+              isLoading={liftBan.isPending}
+            >
+              <ShieldOff className="w-4 h-4 mr-1" /> Lift Ban
+            </Button>
+          )}
+          <Button variant="outline" onClick={props.onClose}>
+            Close
+          </Button>
+        </div>
       </div>
-    </Modal>
+    </div>
   )
 }
 

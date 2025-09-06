@@ -38,8 +38,8 @@ import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import { type Nullable } from '@/types/utils'
 import getErrorMessage from '@/utils/getErrorMessage'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
-import { hasPermission } from '@/utils/permissions'
-import { ApprovalStatus, Role } from '@orm'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
+import { ApprovalStatus } from '@orm'
 
 type Game = RouterOutput['games']['get']['games'][number] & {
   system?: {
@@ -102,7 +102,7 @@ function AdminGamesPage() {
     listingFilter: 'all',
   })
 
-  const gameStatsQuery = api.games.getStats.useQuery()
+  const gameStatsQuery = api.games.stats.useQuery()
 
   const deleteGame = api.games.delete.useMutation({
     onSuccess: () => {
@@ -497,10 +497,13 @@ function AdminGamesPage() {
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <ViewButton href={`/games/${game.id}`} title="View Game" />
-                            {hasPermission(userQuery.data?.role, Role.MODERATOR) && (
+                            {hasPermission(userQuery.data?.permissions, PERMISSIONS.EDIT_GAMES) && (
                               <EditButton href={`/admin/games/${game.id}`} title="Edit Game" />
                             )}
-                            {hasPermission(userQuery.data?.role, Role.ADMIN) &&
+                            {hasPermission(
+                              userQuery.data?.permissions,
+                              PERMISSIONS.APPROVE_GAMES,
+                            ) &&
                               game.status === ApprovalStatus.REJECTED && (
                                 <ApproveButton
                                   onClick={() => handleApproveGame(game)}
@@ -511,7 +514,10 @@ function AdminGamesPage() {
                                   disabled={processingGameId === game.id}
                                 />
                               )}
-                            {hasPermission(userQuery.data?.role, Role.ADMIN) &&
+                            {hasPermission(
+                              userQuery.data?.permissions,
+                              PERMISSIONS.APPROVE_GAMES,
+                            ) &&
                               game.status === ApprovalStatus.APPROVED && (
                                 <RejectButton
                                   onClick={() => handleRejectGame(game)}
@@ -522,7 +528,10 @@ function AdminGamesPage() {
                                   disabled={processingGameId === game.id}
                                 />
                               )}
-                            {hasPermission(userQuery.data?.role, Role.ADMIN) && (
+                            {hasPermission(
+                              userQuery.data?.permissions,
+                              PERMISSIONS.DELETE_GAMES,
+                            ) && (
                               <DeleteButton
                                 onClick={() => handleDelete(game)}
                                 title="Delete Game"

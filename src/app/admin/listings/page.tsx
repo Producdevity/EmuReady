@@ -35,6 +35,7 @@ import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus } from '@orm'
 
 type Listing = RouterOutput['listings']['getAllListings']['listings'][number]
@@ -110,9 +111,10 @@ function AdminListingsPage() {
     emulatorFilter: emulatorFilter || null,
   })
 
-  const listingStatsQuery = api.listings.getStats.useQuery()
+  const listingStatsQuery = api.listings.stats.useQuery()
   const systemsQuery = api.systems.get.useQuery()
   const emulatorsQuery = api.emulators.get.useQuery()
+  const userQuery = api.users.me.useQuery()
 
   const clearFilters = () => {
     table.setSearch('')
@@ -479,10 +481,15 @@ function AdminListingsPage() {
                     {columnVisibility.isColumnVisible('actions') && (
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <EditButton
-                            href={`/admin/listings/${listing.id}/edit`}
-                            title="Edit Listing"
-                          />
+                          {hasPermission(
+                            userQuery.data?.permissions,
+                            PERMISSIONS.EDIT_ANY_LISTING,
+                          ) && (
+                            <EditButton
+                              href={`/admin/listings/${listing.id}/edit`}
+                              title="Edit Listing"
+                            />
+                          )}
                           <ViewButton
                             onClick={() => {
                               analytics.contentDiscovery.externalLinkClicked({
@@ -498,10 +505,15 @@ function AdminListingsPage() {
                             }}
                             title="View Details"
                           />
-                          <DeleteButton
-                            title="Delete Listing"
-                            onClick={() => handleDelete(listing.id)}
-                          />
+                          {hasPermission(
+                            userQuery.data?.permissions,
+                            PERMISSIONS.DELETE_ANY_LISTING,
+                          ) && (
+                            <DeleteButton
+                              title="Delete Listing"
+                              onClick={() => handleDelete(listing.id)}
+                            />
+                          )}
                         </div>
                       </td>
                     )}

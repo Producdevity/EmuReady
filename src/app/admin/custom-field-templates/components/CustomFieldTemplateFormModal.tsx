@@ -49,7 +49,7 @@ function CustomFieldTemplateFormModal(props: Props) {
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const customFieldTemplateQuery = api.customFieldTemplates.getById.useQuery(
+  const customFieldTemplateQuery = api.customFieldTemplates.byId.useQuery(
     { id: props.templateIdToEdit! },
     { enabled: !!props.templateIdToEdit },
   )
@@ -58,8 +58,8 @@ function CustomFieldTemplateFormModal(props: Props) {
 
   const createMutation = api.customFieldTemplates.create.useMutation({
     onSuccess: () => {
-      utils.customFieldTemplates.getAll.invalidate().catch(console.error)
-      utils.customFieldTemplates.getById
+      utils.customFieldTemplates.get.invalidate().catch(console.error)
+      utils.customFieldTemplates.byId
         .invalidate({ id: props.templateIdToEdit! })
         .catch(console.error)
       resetForm()
@@ -73,8 +73,8 @@ function CustomFieldTemplateFormModal(props: Props) {
 
   const updateMutation = api.customFieldTemplates.update.useMutation({
     onSuccess: () => {
-      utils.customFieldTemplates.getAll.invalidate().catch(console.error)
-      utils.customFieldTemplates.getById
+      utils.customFieldTemplates.get.invalidate().catch(console.error)
+      utils.customFieldTemplates.byId
         .invalidate({ id: props.templateIdToEdit! })
         .catch(console.error)
       resetForm()

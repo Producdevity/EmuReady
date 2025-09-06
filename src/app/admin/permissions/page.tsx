@@ -9,6 +9,7 @@ import {
   AdminTableContainer,
   AdminTableNoResults,
 } from '@/components/admin'
+import { BooleanIcon } from '@/components/icons'
 import {
   Button,
   ColumnVisibilityControl,
@@ -28,8 +29,10 @@ import { api } from '@/lib/api'
 import { RolePermissionMatrix } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
+import { getPermissionCategoryBadgeVariant, getRoleVariant } from '@/utils/badgeColors'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { type Role, PermissionCategory } from '@orm'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
+import { PermissionCategory } from '@orm'
 import PermissionModal from './components/PermissionModal'
 
 type PermissionSortField = 'label' | 'key' | 'category' | 'createdAt' | 'updatedAt'
@@ -76,7 +79,7 @@ function AdminPermissionsPage() {
   })
 
   // Get permissions stats
-  const permissionsQuery = api.permissions.getAll.useQuery({
+  const permissionsQuery = api.permissions.get.useQuery({
     search: table.debouncedSearch || undefined,
     category: (selectedCategory as PermissionCategory) || undefined,
     sortField: table.sortField ?? undefined,
@@ -91,7 +94,7 @@ function AdminPermissionsPage() {
   const deletePermission = api.permissions.delete.useMutation({
     onSuccess: () => {
       toast.success('Permission deleted successfully!')
-      utils.permissions.getAll.invalidate().catch(console.error)
+      utils.permissions.get.invalidate().catch(console.error)
     },
     onError: (err) => {
       toast.error(`Failed to delete permission: ${getErrorMessage(err)}`)
@@ -133,8 +136,14 @@ function AdminPermissionsPage() {
 
   const handleModalSuccess = () => {
     setPermissionModal({ isOpen: false, permission: null })
-    utils.permissions.getAll.invalidate().catch(console.error)
+    utils.permissions.get.invalidate().catch(console.error)
   }
+
+  const userQuery = api.users.me.useQuery()
+  const canManagePermissions = hasPermission(
+    userQuery.data?.permissions,
+    PERMISSIONS.MANAGE_PERMISSIONS,
+  )
 
   return (
     <AdminPageLayout
@@ -152,7 +161,7 @@ function AdminPermissionsPage() {
             columns={PERMISSION_COLUMNS}
             columnVisibility={columnVisibility}
           />
-          <Button onClick={handleCreate}>Add Permission</Button>
+          {canManagePermissions && <Button onClick={handleCreate}>Add Permission</Button>}
         </>
       }
     >
@@ -180,7 +189,7 @@ function AdminPermissionsPage() {
       {showMatrix && (
         <RolePermissionMatrix
           onSuccess={() => {
-            utils.permissions.getAll.invalidate().catch(console.error)
+            utils.permissions.get.invalidate().catch(console.error)
           }}
         />
       )}
@@ -308,21 +317,27 @@ function AdminPermissionsPage() {
                   )}
                   {columnVisibility.isColumnVisible('category') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {permission.category && <Badge>{permission.category}</Badge>}
+                      {permission.category && (
+                        <Badge variant={getPermissionCategoryBadgeVariant(permission.category)}>
+                          {permission.category}
+                        </Badge>
+                      )}
                     </td>
                   )}
                   {columnVisibility.isColumnVisible('roles') && (
                     <td className="px-6 py-4 text-sm">
                       <div className="flex flex-wrap gap-1">
-                        {permission.assignedRoles.map((role: Role) => (
-                          <Badge key={role}>{role}</Badge>
+                        {permission.assignedRoles.map((role) => (
+                          <Badge key={role} variant={getRoleVariant(role)}>
+                            {role}
+                          </Badge>
                         ))}
                       </div>
                     </td>
                   )}
                   {columnVisibility.isColumnVisible('isSystem') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {permission.isSystem && <Badge>System</Badge>}
+                      <BooleanIcon value={permission.isSystem} />
                     </td>
                   )}
                   {columnVisibility.isColumnVisible('createdAt') && (
@@ -333,13 +348,15 @@ function AdminPermissionsPage() {
                   {columnVisibility.isColumnVisible('actions') && (
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <EditButton
-                          onClick={() =>
-                            handleEdit({ ...permission, category: permission.category })
-                          }
-                          title="Edit Permission"
-                        />
-                        {!permission.isSystem && (
+                        {canManagePermissions && (
+                          <EditButton
+                            onClick={() =>
+                              handleEdit({ ...permission, category: permission.category })
+                            }
+                            title="Edit Permission"
+                          />
+                        )}
+                        {canManagePermissions && !permission.isSystem && (
                           <DeleteButton
                             onClick={() =>
                               handleDelete({ ...permission, category: permission.category })

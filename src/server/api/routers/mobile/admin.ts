@@ -1,4 +1,4 @@
-import { ResourceError } from '@/lib/errors'
+import { ResourceError, AppError } from '@/lib/errors'
 import { applyTrustAction } from '@/lib/trust/service'
 import {
   MobileAdminApproveGameSchema,
@@ -22,11 +22,20 @@ import {
   mobileManageUsersProcedure,
   mobileViewStatisticsProcedure,
 } from '@/server/api/mobileContext'
+import { logAudit } from '@/server/services/audit.service'
 import { listingStatsCache } from '@/server/utils/cache/instances'
 import { paginate } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { createCountQuery } from '@/server/utils/query-performance'
-import { ApprovalStatus, Prisma, ReportStatus, TrustAction } from '@orm'
+import { canBanUser } from '@/utils/permission-system'
+import {
+  ApprovalStatus,
+  Prisma,
+  ReportStatus,
+  TrustAction,
+  AuditAction,
+  AuditEntityType,
+} from '@orm'
 
 const LISTING_STATS_CACHE_KEY = 'listing-stats'
 const mode = Prisma.QueryMode.insensitive
@@ -188,7 +197,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
           },
         })
 
-        ResourceError.listing.cannotApproveBannedUser(banReason)
+        return ResourceError.listing.cannotApproveBannedUser(banReason)
       }
 
       const updatedListing = await ctx.prisma.listing.update({
@@ -276,14 +285,10 @@ export const mobileAdminRouter = createMobileTRPCRouter({
       const { search, page = 1, limit = 20 } = input ?? {}
       const skip = (page - 1) * limit
 
-      const where: Prisma.GameWhereInput = {
-        status: ApprovalStatus.PENDING,
-      }
+      const where: Prisma.GameWhereInput = { status: ApprovalStatus.PENDING }
 
       const searchConditions = buildSearchFilter(search, ['title', 'system.name'])
-      if (searchConditions) {
-        where.OR = searchConditions
-      }
+      if (searchConditions) where.OR = searchConditions
 
       const [total, games] = await Promise.all([
         createCountQuery(ctx.prisma.game, where),
@@ -307,7 +312,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
 
       return {
         games,
-        pagination: paginate({ total: total, page, limit: limit }),
+        pagination: paginate({ total, page, limit }),
       }
     }),
 
@@ -324,9 +329,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
 
       if (!game) return ResourceError.game.notFound()
 
-      if (game.status !== ApprovalStatus.PENDING) {
-        return ResourceError.game.alreadyProcessed()
-      }
+      if (game.status !== ApprovalStatus.PENDING) return ResourceError.game.alreadyProcessed()
 
       return await ctx.prisma.game.update({
         where: { id: gameId },
@@ -355,9 +358,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
 
       if (!game) return ResourceError.game.notFound()
 
-      if (game.status !== ApprovalStatus.PENDING) {
-        return ResourceError.game.alreadyProcessed()
-      }
+      if (game.status !== ApprovalStatus.PENDING) return ResourceError.game.alreadyProcessed()
 
       return await ctx.prisma.game.update({
         where: { id: gameId },
@@ -383,9 +384,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
       const { status, page = 1, limit = 20 } = input ?? {}
       const skip = (page - 1) * limit
 
-      const where: Prisma.ListingReportWhereInput = {
-        ...(status && { status }),
-      }
+      const where: Prisma.ListingReportWhereInput = { ...(status && { status }) }
 
       const [total, reports] = await Promise.all([
         createCountQuery(ctx.prisma.listingReport, where),
@@ -411,7 +410,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
 
       return {
         reports,
-        pagination: paginate({ total: total, page, limit: limit }),
+        pagination: paginate({ total, page, limit }),
       }
     }),
 
@@ -507,7 +506,22 @@ export const mobileAdminRouter = createMobileTRPCRouter({
 
       if (existingBan) return ResourceError.userBan.alreadyBanned()
 
-      return await ctx.prisma.userBan.create({
+      // Role hierarchy check
+      const target = await ctx.prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true },
+      })
+      if (!target) return ResourceError.user.notFound()
+      if (!canBanUser(ctx.session.user.role, target.role)) {
+        return ResourceError.userBan.cannotBanHigherRole()
+      }
+
+      // expiresAt must be in the future if present
+      if (expiresAt && new Date(expiresAt) <= new Date()) {
+        return AppError.badRequest('Expiration date must be in the future')
+      }
+
+      const created = await ctx.prisma.userBan.create({
         data: {
           userId,
           reason,
@@ -520,6 +534,16 @@ export const mobileAdminRouter = createMobileTRPCRouter({
           bannedBy: { select: { id: true, name: true } },
         },
       })
+      void logAudit(ctx.prisma, {
+        actorId: adminUserId,
+        action: AuditAction.BAN,
+        entityType: AuditEntityType.USER_BAN,
+        entityId: created.id,
+        targetUserId: userId,
+        metadata: { reason, expiresAt },
+        headers: ctx.headers,
+      })
+      return created
     }),
 
   /**
@@ -532,14 +556,28 @@ export const mobileAdminRouter = createMobileTRPCRouter({
 
       const ban = await ctx.prisma.userBan.findUnique({
         where: { id: banId },
+        include: { user: { select: { role: true } } },
       })
 
       if (!ban) return ResourceError.userBan.notFound()
 
-      return await ctx.prisma.userBan.update({
+      // Hierarchy check
+      if (!canBanUser(ctx.session.user.role, ban.user.role)) {
+        return ResourceError.userBan.insufficientPermissions()
+      }
+
+      // Disallow status change via update
+      if (typeof isActive !== 'undefined') {
+        return AppError.operationNotAllowed('Use lift endpoint to change ban status')
+      }
+
+      if (expiresAt && new Date(expiresAt) <= new Date()) {
+        return AppError.badRequest('Expiration date must be in the future')
+      }
+
+      const updated = await ctx.prisma.userBan.update({
         where: { id: banId },
         data: {
-          isActive,
           expiresAt: expiresAt ? new Date(expiresAt) : undefined,
         },
         include: {
@@ -547,5 +585,15 @@ export const mobileAdminRouter = createMobileTRPCRouter({
           bannedBy: { select: { id: true, name: true } },
         },
       })
+      void logAudit(ctx.prisma, {
+        actorId: ctx.session.user.id,
+        action: AuditAction.UPDATE,
+        entityType: AuditEntityType.USER_BAN,
+        entityId: banId,
+        targetUserId: updated.user.id,
+        metadata: { fieldsUpdated: ['expiresAt'] },
+        headers: ctx.headers,
+      })
+      return updated
     }),
 })

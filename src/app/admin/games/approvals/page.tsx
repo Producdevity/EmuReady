@@ -107,7 +107,7 @@ function GameApprovalsPage() {
     search: isEmpty(table.search) ? undefined : table.search,
   })
 
-  const gameStatsQuery = api.games.getStats.useQuery()
+  const gameStatsQuery = api.games.stats.useQuery()
 
   const userQuery = api.users.me.useQuery()
   const isSuperAdmin = hasPermission(userQuery.data?.role, Role.SUPER_ADMIN)
@@ -127,7 +127,7 @@ function GameApprovalsPage() {
       }
 
       await pendingGamesQuery.refetch()
-      await utils.games.getStats.invalidate()
+      await utils.games.stats.invalidate()
       await utils.games.get.invalidate()
       setIsModalOpen(false)
       setSelectedGameId(null)
@@ -145,7 +145,7 @@ function GameApprovalsPage() {
     onSuccess: async (result) => {
       toast.success(result.message)
       await pendingGamesQuery.refetch()
-      await utils.games.getStats.invalidate()
+      await utils.games.stats.invalidate()
       await utils.games.get.invalidate()
       setSelectedGameIds([])
     },
@@ -159,7 +159,7 @@ function GameApprovalsPage() {
     onSuccess: async (result) => {
       toast.success(result.message)
       await pendingGamesQuery.refetch()
-      await utils.games.getStats.invalidate()
+      await utils.games.stats.invalidate()
       await utils.games.get.invalidate()
       setSelectedGameIds([])
     },
@@ -188,7 +188,7 @@ function GameApprovalsPage() {
       description: `Are you sure you want to approve ${selectedGames.length} game${
         selectedGames.length > 1 ? 's' : ''
       }? This action cannot be undone.`,
-      confirmText: 'Approve All',
+      confirmText: 'Approve Selected',
     })
 
     if (!confirmed) return

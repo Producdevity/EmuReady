@@ -103,7 +103,7 @@ export const customFieldTemplateRouter = createTRPCRouter({
       })
     }),
 
-  getAll: protectedProcedure.query(async ({ ctx }) => {
+  get: protectedProcedure.query(async ({ ctx }) => {
     await requireAdminPermission(ctx)
 
     return ctx.prisma.customFieldTemplate.findMany({
@@ -112,16 +112,14 @@ export const customFieldTemplateRouter = createTRPCRouter({
     })
   }),
 
-  getById: protectedProcedure
-    .input(GetCustomFieldTemplateByIdSchema)
-    .query(async ({ ctx, input }) => {
-      await requireAdminPermission(ctx)
+  byId: protectedProcedure.input(GetCustomFieldTemplateByIdSchema).query(async ({ ctx, input }) => {
+    await requireAdminPermission(ctx)
 
-      return ctx.prisma.customFieldTemplate.findUnique({
-        where: { id: input.id },
-        include: FIELDS_INCLUDE,
-      })
-    }),
+    return ctx.prisma.customFieldTemplate.findUnique({
+      where: { id: input.id },
+      include: FIELDS_INCLUDE,
+    })
+  }),
 
   update: protectedProcedure
     .input(UpdateCustomFieldTemplateSchema)

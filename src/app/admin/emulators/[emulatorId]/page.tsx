@@ -4,6 +4,9 @@ import { ArrowLeft } from 'lucide-react'
 import { notFound, useParams, useRouter } from 'next/navigation'
 import { Button, PageSkeletonLoading } from '@/components/ui'
 import { api } from '@/lib/api'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
+import { hasPermission as hasRolePermission } from '@/utils/permissions'
+import { Role } from '@orm'
 import EmulatorEditForm from './components/EmulatorEditForm'
 import ManageSupportedSystems from './components/ManageSupportedSystems'
 
@@ -13,6 +16,25 @@ function EditEmulatorPage() {
   const emulatorId = params.emulatorId as string
 
   const emulatorsQuery = api.emulators.byId.useQuery({ id: emulatorId }, { enabled: !!emulatorId })
+  const currentUser = api.users.me.useQuery()
+
+  // Gate access using permission + verified for developers
+  if (currentUser.data) {
+    const role = currentUser.data.role
+    const perms = currentUser.data.permissions
+    const canManage = hasPermission(perms, PERMISSIONS.MANAGE_EMULATORS)
+    const isModeratorOrHigher = hasRolePermission(role, Role.MODERATOR)
+    if (!canManage) {
+      router.replace('/admin/emulators')
+      return null
+    }
+    if (!isModeratorOrHigher) {
+      // Developers need to be verified for this emulator; reuse API: getVerifiedDeveloper
+      // We can’t await here; rely on the Custom Fields page for developer flow
+      router.replace(`/admin/emulators/${emulatorId}/custom-fields`)
+      return null
+    }
+  }
 
   const systemsQuery = api.systems.get.useQuery({})
 

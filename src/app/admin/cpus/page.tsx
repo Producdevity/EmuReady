@@ -29,8 +29,7 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { hasPermission } from '@/utils/permissions'
-import { Role } from '@orm'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import CpuModal from './components/CpuModal'
 import CpuViewModal from './components/CpuViewModal'
 
@@ -76,7 +75,7 @@ function AdminCpusPage() {
   const utils = api.useUtils()
 
   const userQuery = api.users.me.useQuery()
-  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
+  const canManageDevices = hasPermission(userQuery.data?.permissions, PERMISSIONS.MANAGE_DEVICES)
 
   // TODO: Temporary fix for brands query
   // only keep 'Intel', 'AMD', and 'Apple' brands
@@ -144,7 +143,7 @@ function AdminCpusPage() {
         </div>
         <div className="flex items-center gap-4">
           <ColumnVisibilityControl columns={CPUS_COLUMNS} columnVisibility={columnVisibility} />
-          <Button onClick={() => openModal()}>Add CPU</Button>
+          {canManageDevices && <Button onClick={() => openModal()}>Add CPU</Button>}
         </div>
       </div>
 
@@ -257,8 +256,10 @@ function AdminCpusPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
                         <ViewButton onClick={() => openViewModal(cpu)} title="View CPU Details" />
-                        <EditButton onClick={() => openModal(cpu)} title="Edit CPU" />
-                        {isAdmin && (
+                        {canManageDevices && (
+                          <EditButton onClick={() => openModal(cpu)} title="Edit CPU" />
+                        )}
+                        {canManageDevices && (
                           <DeleteButton
                             onClick={() => handleDelete(cpu.id)}
                             title="Delete CPU"

@@ -2,28 +2,28 @@
 
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { type TailwindColor } from '@orm'
+import { TailwindColor } from '@orm'
 
 const TAILWIND_COLORS: TailwindColor[] = [
-  'yellow',
-  'lime',
-  'green',
-  'emerald',
-  'teal',
-  'cyan',
-  'sky',
-  'blue',
-  'indigo',
-  'violet',
-  'purple',
-  'fuchsia',
-  'pink',
-  'rose',
-  'slate',
-  'gray',
-  'zinc',
-  'neutral',
-  'stone',
+  TailwindColor.yellow,
+  TailwindColor.lime,
+  TailwindColor.green,
+  TailwindColor.emerald,
+  TailwindColor.teal,
+  TailwindColor.cyan,
+  TailwindColor.sky,
+  TailwindColor.blue,
+  TailwindColor.indigo,
+  TailwindColor.violet,
+  TailwindColor.purple,
+  TailwindColor.fuchsia,
+  TailwindColor.pink,
+  TailwindColor.rose,
+  TailwindColor.slate,
+  TailwindColor.gray,
+  TailwindColor.zinc,
+  TailwindColor.neutral,
+  TailwindColor.stone,
 ] as const
 
 // Color to CSS class mapping for visual representation

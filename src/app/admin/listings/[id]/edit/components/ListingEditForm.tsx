@@ -161,7 +161,7 @@ function ListingEditForm(props: Props) {
     value: cfv.value,
   }))
 
-  const { register, handleSubmit, formState, setValue, watch, control } =
+  const { register, handleSubmit, formState, setValue, watch, control, getValues } =
     useForm<UpdateListingFormData>({
       resolver: zodResolver(UpdateListingAdminSchema),
       defaultValues: {
@@ -179,24 +179,31 @@ function ListingEditForm(props: Props) {
   const selectedEmulatorId = watch('emulatorId')
   const customFieldsQuery = api.customFieldDefinitions.getByEmulator.useQuery(
     { emulatorId: selectedEmulatorId },
-    { enabled: !!selectedEmulatorId },
+    { enabled: !!selectedEmulatorId, refetchOnWindowFocus: false, refetchOnReconnect: false },
   )
 
   useEffect(() => {
-    if (customFieldsQuery.data && customFieldsQuery.data.length > 0) {
-      // Preserve existing custom field values or set defaults for new fields
-      const existingValues = defaultCustomFieldValues
-      const newCustomFieldValues = customFieldsQuery.data.map((field) => {
-        const existingValue = existingValues.find((v) => v.customFieldDefinitionId === field.id)
-        return {
-          customFieldDefinitionId: field.id,
-          value: existingValue?.value ?? null,
-        }
-      })
+    if (!customFieldsQuery.data || customFieldsQuery.data.length === 0) return
 
-      setValue('customFieldValues', newCustomFieldValues)
-    }
-  }, [customFieldsQuery.data, setValue, defaultCustomFieldValues])
+    // Compare current custom field definition IDs with incoming
+    const current = getValues('customFieldValues') ?? []
+    const currentIds = current.map((v) => v.customFieldDefinitionId)
+    const incomingIds = customFieldsQuery.data.map((f) => f.id)
+    const sameIds =
+      currentIds.length === incomingIds.length && currentIds.every((id, i) => id === incomingIds[i])
+    if (sameIds) return
+
+    // Preserve in-progress values when possible
+    const newCustomFieldValues = customFieldsQuery.data.map((field) => {
+      const existingValue = current.find((v) => v.customFieldDefinitionId === field.id)
+      return {
+        customFieldDefinitionId: field.id,
+        value: existingValue?.value ?? null,
+      }
+    })
+
+    setValue('customFieldValues', newCustomFieldValues)
+  }, [customFieldsQuery.data, setValue, getValues])
 
   const onSubmit = (data: UpdateListingFormData) => {
     setIsSubmitting(true)

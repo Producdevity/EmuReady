@@ -151,6 +151,12 @@ export const superAdminNavItems: AdminNavItem[] = [
     description: 'Monitor permission changes and audit trail.',
   },
   {
+    href: ADMIN_ROUTES.AUDIT_LOGS,
+    label: 'Audit Logs',
+    exact: true,
+    description: 'System-wide audit trail for sensitive actions.',
+  },
+  {
     href: ADMIN_ROUTES.BADGES,
     label: 'Badges',
     exact: true,
@@ -244,23 +250,31 @@ export function getDeveloperNavItems(emulatorIds: string[]): AdminNavItem[] {
     description: 'Review and approve listings for your verified emulators.',
   })
 
-  // If multiple emulators, show the main emulators page
-  if (emulatorIds.length > 1) {
-    navItems.push({
-      href: ADMIN_ROUTES.EMULATORS,
-      label: 'My Emulators',
-      exact: false,
-      description: 'Manage your emulators.',
-    })
-  } else {
-    // If single emulator, direct link to that emulator
-    navItems.push({
-      href: `${ADMIN_ROUTES.EMULATORS}/${emulatorIds[0]}`,
-      label: 'My Emulator',
-      exact: true,
-      description: 'Manage your emulator.',
-    })
-  }
+  // Include PC listing approvals for developers as well
+  navItems.push({
+    href: ADMIN_ROUTES.PC_LISTING_APPROVALS,
+    label: 'My PC Approvals',
+    exact: true,
+    description: 'Review and approve PC listings for your verified emulators.',
+  })
+
+  // If multiple emulators, link to general emulators page; if single, link directly to that emulator's fields
+  const emulatorNavItem: AdminNavItem =
+    emulatorIds.length > 1
+      ? {
+          href: ADMIN_ROUTES.EMULATORS,
+          label: 'My Emulators',
+          exact: false,
+          description: 'Manage your emulators.',
+        }
+      : {
+          href: `${ADMIN_ROUTES.EMULATORS}/${emulatorIds[0]}/custom-fields`,
+          label: 'My Emulator Fields',
+          exact: false,
+          description: 'Manage custom fields for your emulator.',
+        }
+
+  navItems.push(emulatorNavItem)
 
   return navItems
 }

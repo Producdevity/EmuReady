@@ -27,8 +27,7 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { hasPermission } from '@/utils/permissions'
-import { Role } from '@orm'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import DeviceModal from './components/DeviceModal'
 import DeviceViewModal from './components/DeviceViewModal'
 
@@ -75,7 +74,7 @@ function AdminDevicesPage() {
   const utils = api.useUtils()
 
   const userQuery = api.users.me.useQuery()
-  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
+  const canManageDevices = hasPermission(userQuery.data?.permissions, PERMISSIONS.MANAGE_DEVICES)
 
   const openModal = (device?: DeviceData) => {
     setEditId(device?.id ?? null)
@@ -133,7 +132,7 @@ function AdminDevicesPage() {
       headerActions={
         <>
           <ColumnVisibilityControl columns={DEVICES_COLUMNS} columnVisibility={columnVisibility} />
-          <Button onClick={() => openModal()}>Add Device</Button>
+          {canManageDevices && <Button onClick={() => openModal()}>Add Device</Button>}
         </>
       }
     >
@@ -260,8 +259,10 @@ function AdminDevicesPage() {
                           onClick={() => openViewModal(device)}
                           title="View Device Details"
                         />
-                        <EditButton onClick={() => openModal(device)} title="Edit Device" />
-                        {isAdmin && (
+                        {canManageDevices && (
+                          <EditButton onClick={() => openModal(device)} title="Edit Device" />
+                        )}
+                        {canManageDevices && (
                           <DeleteButton
                             onClick={() => handleDelete(device.id)}
                             title="Delete Device"

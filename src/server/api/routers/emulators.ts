@@ -23,7 +23,7 @@ import { hasPermission } from '@/utils/permissions'
 import { type Prisma, Role } from '@orm'
 
 export const emulatorsRouter = createTRPCRouter({
-  getStats: viewStatisticsProcedure.query(async ({ ctx }) => {
+  stats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const repository = new EmulatorsRepository(ctx.prisma)
     return repository.stats()
   }),
@@ -185,17 +185,15 @@ export const emulatorsRouter = createTRPCRouter({
   }),
 
   delete: manageEmulatorsProcedure.input(DeleteEmulatorSchema).mutation(async ({ ctx, input }) => {
-    // Developers can NEVER delete emulators
-    if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+    // Developers or Moderators can NEVER delete emulators
+    if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
       return ResourceError.emulator.requiresPermissionToDelete()
     }
 
     const repository = new EmulatorsRepository(ctx.prisma)
 
     // Check if emulator is used in any listings
-    const listingsCount = await ctx.prisma.listing.count({
-      where: { emulatorId: input.id },
-    })
+    const listingsCount = await ctx.prisma.listing.count({ where: { emulatorId: input.id } })
 
     if (listingsCount > 0) return ResourceError.emulator.inUse(listingsCount)
 

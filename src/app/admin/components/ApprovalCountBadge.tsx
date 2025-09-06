@@ -27,7 +27,7 @@ export default function ApprovalCountBadge(props: Props) {
 
   const canViewStats = hasPermission(userQuery.data?.permissions, PERMISSIONS.VIEW_STATISTICS)
 
-  const gameStatsQuery = api.games.getStats.useQuery(undefined, {
+  const gameStatsQuery = api.games.stats.useQuery(undefined, {
     enabled: canViewStats && props.href === '/admin/games/approvals',
     refetchInterval: 30000,
     staleTime: 10000,
@@ -35,7 +35,7 @@ export default function ApprovalCountBadge(props: Props) {
     refetchOnWindowFocus: true,
   })
 
-  const listingStatsQuery = api.listings.getStats.useQuery(undefined, {
+  const listingStatsQuery = api.listings.stats.useQuery(undefined, {
     enabled: canViewStats && props.href === '/admin/approvals',
     refetchInterval: 30000,
     staleTime: 10000,

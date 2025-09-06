@@ -12,172 +12,183 @@ import {
   UpdateBadgeSchema,
 } from '@/schemas/badge'
 import {
-  adminProcedure,
   createTRPCRouter,
   protectedProcedure,
   viewStatisticsProcedure,
+  permissionProcedure,
 } from '@/server/api/trpc'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
+import { PERMISSIONS } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { type Prisma, Role } from '@orm'
 
 export const badgesRouter = createTRPCRouter({
   // Get all badges (admin only)
-  getAll: adminProcedure.input(GetBadgesSchema).query(async ({ ctx, input }) => {
-    const {
-      limit,
-      offset,
-      page,
-      search,
-      isActive,
-      sortField = 'createdAt',
-      sortDirection = 'desc',
-    } = input
+  get: permissionProcedure(PERMISSIONS.MANAGE_BADGES)
+    .input(GetBadgesSchema)
+    .query(async ({ ctx, input }) => {
+      const {
+        limit,
+        offset,
+        page,
+        search,
+        isActive,
+        sortField = 'createdAt',
+        sortDirection = 'desc',
+      } = input
 
-    const where: Prisma.BadgeWhereInput = {}
+      const where: Prisma.BadgeWhereInput = {}
 
-    // Apply search filter
-    if (search && search.trim() !== '') {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-      ]
-    }
+      // Apply search filter
+      if (search && search.trim() !== '') {
+        where.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+        ]
+      }
 
-    // Apply active filter
-    if (isActive !== undefined) {
-      where.isActive = isActive
-    }
+      // Apply active filter
+      if (isActive !== undefined) {
+        where.isActive = isActive
+      }
 
-    // Build order by
-    const orderBy: Prisma.BadgeOrderByWithRelationInput = {
-      [sortField]: sortDirection,
-    }
+      // Build order by
+      const orderBy: Prisma.BadgeOrderByWithRelationInput = {
+        [sortField]: sortDirection,
+      }
 
-    const actualOffset = calculateOffset({ page, offset }, limit)
+      const actualOffset = calculateOffset({ page, offset }, limit)
 
-    const [badges, total] = await Promise.all([
-      ctx.prisma.badge.findMany({
-        where,
+      const [badges, total] = await Promise.all([
+        ctx.prisma.badge.findMany({
+          where,
+          include: {
+            creator: { select: { id: true, name: true, email: true } },
+            _count: { select: { userBadges: true } },
+          },
+          orderBy,
+          take: limit,
+          skip: actualOffset,
+        }),
+        ctx.prisma.badge.count({ where }),
+      ])
+
+      const pagination = paginate({
+        total,
+        page: page ?? Math.floor(actualOffset / limit) + 1,
+        limit,
+      })
+
+      return {
+        badges,
+        pagination,
+      }
+    }),
+
+  // Get badge by ID (admin only)
+  byId: permissionProcedure(PERMISSIONS.MANAGE_BADGES)
+    .input(GetBadgeSchema)
+    .query(async ({ ctx, input }) => {
+      const badge = await ctx.prisma.badge.findUnique({
+        where: { id: input.id },
+        include: {
+          creator: { select: { id: true, name: true, email: true } },
+          userBadges: {
+            include: {
+              user: { select: { id: true, name: true, email: true } },
+              assignedByUser: { select: { id: true, name: true, email: true } },
+            },
+            orderBy: { assignedAt: 'desc' },
+          },
+          _count: { select: { userBadges: true } },
+        },
+      })
+
+      return badge || ResourceError.badge.notFound()
+    }),
+
+  // Create badge (admin only)
+  create: permissionProcedure(PERMISSIONS.MANAGE_BADGES)
+    .input(CreateBadgeSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Check if badge name already exists
+      const existingBadge = await ctx.prisma.badge.findUnique({
+        where: { name: input.name },
+        select: { id: true },
+      })
+
+      if (existingBadge) return ResourceError.badge.alreadyExists(input.name)
+
+      return await ctx.prisma.badge.create({
+        data: {
+          ...input,
+          createdBy: ctx.session.user.id,
+        },
         include: {
           creator: { select: { id: true, name: true, email: true } },
           _count: { select: { userBadges: true } },
         },
-        orderBy,
-        take: limit,
-        skip: actualOffset,
-      }),
-      ctx.prisma.badge.count({ where }),
-    ])
-
-    const pagination = paginate({
-      total,
-      page: page ?? Math.floor(actualOffset / limit) + 1,
-      limit,
-    })
-
-    return {
-      badges,
-      pagination,
-    }
-  }),
-
-  // Get badge by ID (admin only)
-  getById: adminProcedure.input(GetBadgeSchema).query(async ({ ctx, input }) => {
-    const badge = await ctx.prisma.badge.findUnique({
-      where: { id: input.id },
-      include: {
-        creator: { select: { id: true, name: true, email: true } },
-        userBadges: {
-          include: {
-            user: { select: { id: true, name: true, email: true } },
-            assignedByUser: { select: { id: true, name: true, email: true } },
-          },
-          orderBy: { assignedAt: 'desc' },
-        },
-        _count: { select: { userBadges: true } },
-      },
-    })
-
-    return badge || ResourceError.badge.notFound()
-  }),
-
-  // Create badge (admin only)
-  create: adminProcedure.input(CreateBadgeSchema).mutation(async ({ ctx, input }) => {
-    // Check if badge name already exists
-    const existingBadge = await ctx.prisma.badge.findUnique({
-      where: { name: input.name },
-      select: { id: true },
-    })
-
-    if (existingBadge) return ResourceError.badge.alreadyExists(input.name)
-
-    return await ctx.prisma.badge.create({
-      data: {
-        ...input,
-        createdBy: ctx.session.user.id,
-      },
-      include: {
-        creator: { select: { id: true, name: true, email: true } },
-        _count: { select: { userBadges: true } },
-      },
-    })
-  }),
+      })
+    }),
 
   // Update badge (admin only)
-  update: adminProcedure.input(UpdateBadgeSchema).mutation(async ({ ctx, input }) => {
-    const { id, ...updateData } = input
+  update: permissionProcedure(PERMISSIONS.MANAGE_BADGES)
+    .input(UpdateBadgeSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...updateData } = input
 
-    // Check if badge exists
-    const existingBadge = await ctx.prisma.badge.findUnique({
-      where: { id },
-      select: { id: true, name: true },
-    })
-
-    if (!existingBadge) return ResourceError.badge.notFound()
-
-    // Check if name is being updated and conflicts with another badge
-    if (updateData.name && updateData.name !== existingBadge.name) {
-      const exists = await ctx.prisma.badge.findUnique({
-        where: { name: updateData.name },
-        select: { id: true },
+      // Check if badge exists
+      const existingBadge = await ctx.prisma.badge.findUnique({
+        where: { id },
+        select: { id: true, name: true },
       })
 
-      if (exists) return ResourceError.badge.alreadyExists(updateData.name)
-    }
+      if (!existingBadge) return ResourceError.badge.notFound()
 
-    return await ctx.prisma.badge.update({
-      where: { id },
-      data: updateData,
-      include: {
-        creator: { select: { id: true, name: true, email: true } },
-        _count: { select: { userBadges: true } },
-      },
-    })
-  }),
+      // Check if name is being updated and conflicts with another badge
+      if (updateData.name && updateData.name !== existingBadge.name) {
+        const exists = await ctx.prisma.badge.findUnique({
+          where: { name: updateData.name },
+          select: { id: true },
+        })
+
+        if (exists) return ResourceError.badge.alreadyExists(updateData.name)
+      }
+
+      return await ctx.prisma.badge.update({
+        where: { id },
+        data: updateData,
+        include: {
+          creator: { select: { id: true, name: true, email: true } },
+          _count: { select: { userBadges: true } },
+        },
+      })
+    }),
 
   // Delete badge (admin only)
-  delete: adminProcedure.input(DeleteBadgeSchema).mutation(async ({ ctx, input }) => {
-    // Check if badge exists
-    const existingBadge = await ctx.prisma.badge.findUnique({
-      where: { id: input.id },
-      select: { id: true, _count: { select: { userBadges: true } } },
-    })
+  delete: permissionProcedure(PERMISSIONS.MANAGE_BADGES)
+    .input(DeleteBadgeSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Check if badge exists
+      const existingBadge = await ctx.prisma.badge.findUnique({
+        where: { id: input.id },
+        select: { id: true, _count: { select: { userBadges: true } } },
+      })
 
-    if (!existingBadge) return ResourceError.badge.notFound()
+      if (!existingBadge) return ResourceError.badge.notFound()
 
-    // Check if badge is assigned to any users
-    if (existingBadge._count.userBadges > 0) {
-      return ResourceError.badge.inUse(existingBadge._count.userBadges)
-    }
+      // Check if badge is assigned to any users
+      if (existingBadge._count.userBadges > 0) {
+        return ResourceError.badge.inUse(existingBadge._count.userBadges)
+      }
 
-    await ctx.prisma.badge.delete({ where: { id: input.id } })
+      await ctx.prisma.badge.delete({ where: { id: input.id } })
 
-    return { success: true }
-  }),
+      return { success: true }
+    }),
 
   // Get badge stats (admin only)
-  getStats: viewStatisticsProcedure.query(async ({ ctx }) => {
+  stats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const [total, active, inactive, totalAssignments] = await Promise.all([
       ctx.prisma.badge.count(),
       ctx.prisma.badge.count({ where: { isActive: true } }),
@@ -194,53 +205,55 @@ export const badgesRouter = createTRPCRouter({
   }),
 
   // Assign badge to user (admin only)
-  assignToUser: adminProcedure.input(AssignBadgeToUserSchema).mutation(async ({ ctx, input }) => {
-    const { userId, badgeId, notes, color } = input
+  assignToUser: permissionProcedure(PERMISSIONS.MANAGE_BADGES)
+    .input(AssignBadgeToUserSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { userId, badgeId, notes, color } = input
 
-    // Check if user exists
-    const user = await ctx.prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, name: true },
-    })
+      // Check if user exists
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true },
+      })
 
-    if (!user) return ResourceError.user.notInDatabase(userId)
+      if (!user) return ResourceError.user.notInDatabase(userId)
 
-    // Check if badge exists and is active
-    const badge = await ctx.prisma.badge.findUnique({
-      where: { id: badgeId },
-      select: { id: true, name: true, isActive: true },
-    })
+      // Check if badge exists and is active
+      const badge = await ctx.prisma.badge.findUnique({
+        where: { id: badgeId },
+        select: { id: true, name: true, isActive: true },
+      })
 
-    if (!badge) return ResourceError.badge.notFound()
+      if (!badge) return ResourceError.badge.notFound()
 
-    if (!badge.isActive) return ResourceError.badge.inactive()
+      if (!badge.isActive) return ResourceError.badge.inactive()
 
-    // Check if user already has this badge
-    const existingAssignment = await ctx.prisma.userBadge.findUnique({
-      where: { userId_badgeId: { userId, badgeId } },
-      select: { id: true },
-    })
+      // Check if user already has this badge
+      const existingAssignment = await ctx.prisma.userBadge.findUnique({
+        where: { userId_badgeId: { userId, badgeId } },
+        select: { id: true },
+      })
 
-    if (existingAssignment) return ResourceError.badge.alreadyAssigned()
+      if (existingAssignment) return ResourceError.badge.alreadyAssigned()
 
-    return await ctx.prisma.userBadge.create({
-      data: {
-        userId,
-        badgeId,
-        assignedBy: ctx.session.user.id,
-        notes,
-        color,
-      },
-      include: {
-        badge: true,
-        user: { select: { id: true, name: true, email: true } },
-        assignedByUser: { select: { id: true, name: true, email: true } },
-      },
-    })
-  }),
+      return await ctx.prisma.userBadge.create({
+        data: {
+          userId,
+          badgeId,
+          assignedBy: ctx.session.user.id,
+          notes,
+          color,
+        },
+        include: {
+          badge: true,
+          user: { select: { id: true, name: true, email: true } },
+          assignedByUser: { select: { id: true, name: true, email: true } },
+        },
+      })
+    }),
 
   // Remove badge from user (admin only)
-  removeFromUser: adminProcedure
+  removeFromUser: permissionProcedure(PERMISSIONS.MANAGE_BADGES)
     .input(RemoveBadgeFromUserSchema)
     .mutation(async ({ ctx, input }) => {
       const { userId, userBadgeId } = input
@@ -285,71 +298,75 @@ export const badgesRouter = createTRPCRouter({
   }),
 
   // Bulk assign badges (admin only)
-  bulkAssign: adminProcedure.input(BulkAssignBadgesSchema).mutation(async ({ ctx, input }) => {
-    const { userIds, badgeId, notes } = input
+  bulkAssign: permissionProcedure(PERMISSIONS.MANAGE_BADGES)
+    .input(BulkAssignBadgesSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { userIds, badgeId, notes } = input
 
-    // Check if badge exists and is active
-    const badge = await ctx.prisma.badge.findUnique({
-      where: { id: badgeId },
-      select: { id: true, name: true, isActive: true },
-    })
+      // Check if badge exists and is active
+      const badge = await ctx.prisma.badge.findUnique({
+        where: { id: badgeId },
+        select: { id: true, name: true, isActive: true },
+      })
 
-    if (!badge) return ResourceError.badge.notFound()
+      if (!badge) return ResourceError.badge.notFound()
 
-    if (!badge.isActive) return ResourceError.badge.inactive()
+      if (!badge.isActive) return ResourceError.badge.inactive()
 
-    // Check if users exist
-    const users = await ctx.prisma.user.findMany({
-      where: { id: { in: userIds } },
-      select: { id: true },
-    })
+      // Check if users exist
+      const users = await ctx.prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true },
+      })
 
-    if (users.length !== userIds.length) {
-      return AppError.badRequest('One or more users not found')
-    }
+      if (users.length !== userIds.length) {
+        return AppError.badRequest('One or more users not found')
+      }
 
-    // Get existing assignments to avoid duplicates
-    const existingAssignments = await ctx.prisma.userBadge.findMany({
-      where: {
-        userId: { in: userIds },
-        badgeId,
-      },
-      select: { userId: true },
-    })
+      // Get existing assignments to avoid duplicates
+      const existingAssignments = await ctx.prisma.userBadge.findMany({
+        where: {
+          userId: { in: userIds },
+          badgeId,
+        },
+        select: { userId: true },
+      })
 
-    const existingUserIds = new Set(existingAssignments.map((a) => a.userId))
-    const newUserIds = userIds.filter((id) => !existingUserIds.has(id))
+      const existingUserIds = new Set(existingAssignments.map((a) => a.userId))
+      const newUserIds = userIds.filter((id) => !existingUserIds.has(id))
 
-    if (newUserIds.length === 0) {
-      return AppError.badRequest('All selected users already have this badge')
-    }
+      if (newUserIds.length === 0) {
+        return AppError.badRequest('All selected users already have this badge')
+      }
 
-    // Create assignments
-    const assignments = await ctx.prisma.userBadge.createMany({
-      data: newUserIds.map((userId) => ({
-        userId,
-        badgeId,
-        assignedBy: ctx.session.user.id,
-        notes,
-      })),
-    })
+      // Create assignments
+      const assignments = await ctx.prisma.userBadge.createMany({
+        data: newUserIds.map((userId) => ({
+          userId,
+          badgeId,
+          assignedBy: ctx.session.user.id,
+          notes,
+        })),
+      })
 
-    return {
-      success: true,
-      assignedCount: assignments.count,
-      skippedCount: userIds.length - assignments.count,
-    }
-  }),
+      return {
+        success: true,
+        assignedCount: assignments.count,
+        skippedCount: userIds.length - assignments.count,
+      }
+    }),
 
   // Bulk remove badges (admin only)
-  bulkRemove: adminProcedure.input(BulkRemoveBadgesSchema).mutation(async ({ ctx, input }) => {
-    const { userIds, badgeId } = input
+  bulkRemove: permissionProcedure(PERMISSIONS.MANAGE_BADGES)
+    .input(BulkRemoveBadgesSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { userIds, badgeId } = input
 
-    // Remove assignments
-    const result = await ctx.prisma.userBadge.deleteMany({
-      where: { userId: { in: userIds }, badgeId },
-    })
+      // Remove assignments
+      const result = await ctx.prisma.userBadge.deleteMany({
+        where: { userId: { in: userIds }, badgeId },
+      })
 
-    return { success: true, removedCount: result.count }
-  }),
+      return { success: true, removedCount: result.count }
+    }),
 })

@@ -37,7 +37,7 @@ import UserBadgeModal from './components/UserBadgeModal'
 import UserDetailsModal from './components/UserDetailsModal'
 import UserRoleModal from './components/UserRoleModal'
 
-type AdminUser = RouterOutput['users']['getAll']['users'][number]
+type AdminUser = RouterOutput['users']['get']['users'][number]
 type UserSortField =
   | 'name'
   | 'email'
@@ -87,13 +87,16 @@ function AdminUsersPage() {
   // Get current user permissions
   const currentUserQuery = api.users.me.useQuery()
   const canManageUsers = currentUserQuery.data?.permissions?.includes(PERMISSIONS.MANAGE_USERS)
+  const canManageBadges = currentUserQuery.data?.permissions?.includes(PERMISSIONS.MANAGE_BADGES)
   const canChangeRoles = currentUserQuery.data?.permissions?.includes(PERMISSIONS.CHANGE_USER_ROLES)
   const isModerator =
     hasPermission(currentUserQuery.data?.role, RoleEnum.MODERATOR) &&
     !hasPermission(currentUserQuery.data?.role, RoleEnum.ADMIN)
-  const canBanUsers = hasPermission(currentUserQuery.data?.role, RoleEnum.MODERATOR)
+  const canBanUsers =
+    hasPermission(currentUserQuery.data?.role, RoleEnum.MODERATOR) &&
+    currentUserQuery.data?.permissions?.includes(PERMISSIONS.MANAGE_USER_BANS)
 
-  const usersQuery = api.users.getAll.useQuery({
+  const usersQuery = api.users.get.useQuery({
     search: isEmpty(table.search) ? null : table.search,
     sortField: table.sortField ?? null,
     sortDirection: table.sortDirection ?? null,
@@ -101,7 +104,7 @@ function AdminUsersPage() {
     limit: table.limit,
   })
 
-  const usersStatsQuery = api.users.getStats.useQuery()
+  const usersStatsQuery = api.users.stats.useQuery()
 
   const users = usersQuery.data?.users ?? []
   const pagination = usersQuery.data?.pagination
@@ -370,7 +373,7 @@ function AdminUsersPage() {
                             color="yellow"
                           />
                         )}
-                        {!isModerator && canManageUsers && (
+                        {!isModerator && canManageBadges && (
                           <TableButton
                             onClick={() => openBadgeModal(user)}
                             title="Manage Badges"

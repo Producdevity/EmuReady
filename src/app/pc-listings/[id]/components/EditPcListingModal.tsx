@@ -44,7 +44,11 @@ function EditPcListingModal(props: Props) {
 
   const pcListingQuery = api.pcListings.getForUserEdit.useQuery(
     { id: props.pcListingId },
-    { enabled: props.isOpen && props.canEdit },
+    {
+      enabled: props.isOpen && props.canEdit,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    },
   )
 
   const performanceScalesQuery = api.listings.performanceScales.useQuery(undefined, {

@@ -1,18 +1,20 @@
 'use client'
 
 import { PlusCircle, Copy } from 'lucide-react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from '@/components/ui'
 import { api } from '@/lib/api'
 import { CustomFieldList } from '@/lib/dynamic-imports'
-import { hasPermission } from '@/utils/permissions'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
+import { hasPermission as hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import ApplyTemplatesModal from './components/ApplyTemplatesModal'
 import CustomFieldFormModal from './components/CustomFieldFormModal'
 
 export default function EmulatorCustomFieldsPage() {
   const params = useParams()
+  const router = useRouter()
   const emulatorId = params.emulatorId as string
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
@@ -20,6 +22,10 @@ export default function EmulatorCustomFieldsPage() {
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null)
 
   const { data: currentUser } = api.users.me.useQuery()
+  const { data: verifiedDev } = api.emulators.getVerifiedDeveloper.useQuery(
+    { emulatorId },
+    { enabled: !!emulatorId && !!currentUser },
+  )
 
   const {
     data: emulator,
@@ -34,8 +40,26 @@ export default function EmulatorCustomFieldsPage() {
     refetch: refetchCustomFields,
   } = api.customFieldDefinitions.getByEmulator.useQuery({ emulatorId }, { enabled: !!emulatorId })
 
+  // Redirect access using permission + verified for developers
+  if (currentUser) {
+    const perms = currentUser.permissions
+    const canManageCF = hasPermission(perms, PERMISSIONS.MANAGE_CUSTOM_FIELDS)
+    if (!canManageCF) {
+      router.replace('/admin/emulators')
+      return null
+    }
+    const isAdminOrHigher = hasRolePermission(currentUser.role, Role.ADMIN)
+    if (!isAdminOrHigher) {
+      const isVerified = Boolean(verifiedDev)
+      if (!isVerified) {
+        router.replace('/admin/emulators')
+        return null
+      }
+    }
+  }
+
   // Check if user can see Apply Templates button (only SUPER_ADMIN)
-  const canApplyTemplates = currentUser && hasPermission(currentUser.role, Role.SUPER_ADMIN)
+  const canApplyTemplates = currentUser && hasRolePermission(currentUser.role, Role.SUPER_ADMIN)
 
   function handleOpenCreateModal() {
     setEditingFieldId(null)

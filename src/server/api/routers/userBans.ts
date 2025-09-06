@@ -1,4 +1,5 @@
-import { ResourceError } from '@/lib/errors'
+import { z } from 'zod'
+import { ResourceError, AppError } from '@/lib/errors'
 import {
   CheckUserBanStatusSchema,
   CreateUserBanSchema,
@@ -16,12 +17,13 @@ import {
   protectedProcedure,
 } from '@/server/api/trpc'
 import { UserBansRepository } from '@/server/repositories/user-bans.repository'
+import { logAudit, buildDiff } from '@/server/services/audit.service'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
-import { Role } from '@orm'
+import { AuditAction, AuditEntityType, Role } from '@orm'
 
 export const userBansRouter = createTRPCRouter({
-  getStats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
+  stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
     const repository = new UserBansRepository(ctx.prisma)
     const stats = await repository.stats()
 
@@ -34,7 +36,7 @@ export const userBansRouter = createTRPCRouter({
     }
   }),
 
-  getAll: viewUserBansProcedure.input(GetUserBansSchema).query(async ({ ctx, input }) => {
+  get: viewUserBansProcedure.input(GetUserBansSchema).query(async ({ ctx, input }) => {
     const repository = new UserBansRepository(ctx.prisma)
 
     return await repository.list({
@@ -62,6 +64,7 @@ export const userBansRouter = createTRPCRouter({
 
     const repository = new UserBansRepository(ctx.prisma)
     const { userId, reason, notes, expiresAt } = input
+    if (userId === ctx.session.user.id) return ResourceError.userBan.insufficientPermissions()
     const bannedById = ctx.session.user.id
 
     // Check if user exists and get their role
@@ -77,13 +80,28 @@ export const userBansRouter = createTRPCRouter({
     const { isBanned } = await repository.checkBanStatus(userId)
     if (isBanned) return ResourceError.userBan.alreadyBanned()
 
-    return await repository.create({
+    if (expiresAt && expiresAt <= new Date()) {
+      return AppError.badRequest('Expiration date must be in the future')
+    }
+
+    const created = await repository.create({
       userId,
       bannedById,
       reason,
       notes,
       expiresAt,
     })
+    // Fire-and-forget audit log
+    void logAudit(ctx.prisma, {
+      actorId: ctx.session.user.id,
+      action: AuditAction.BAN,
+      entityType: AuditEntityType.USER_BAN,
+      entityId: created.id,
+      targetUserId: userId,
+      metadata: { reason, expiresAt },
+      headers: ctx.headers,
+    })
+    return created
   }),
 
   update: protectedProcedure.input(UpdateUserBanSchema).mutation(async ({ ctx, input }) => {
@@ -98,7 +116,53 @@ export const userBansRouter = createTRPCRouter({
     const ban = await repository.byId(id)
     if (!ban) return ResourceError.userBan.notFound()
 
-    return await repository.update(id, data)
+    // Enforce hierarchy: actor must be higher than target user
+    const targetRole = await repository.getUserRole(ban.userId)
+    // repository.canBanUser expects (bannerRole, targetRole)
+    if (!targetRole || !repository.canBanUser(ctx.session.user.role, targetRole)) {
+      return ResourceError.userBan.insufficientPermissions()
+    }
+
+    // Do not allow changing isActive here
+    if (typeof (data as { isActive?: boolean }).isActive !== 'undefined') {
+      return AppError.operationNotAllowed('Use lift endpoint to change ban status')
+    }
+
+    if (
+      (data as { expiresAt?: Date }).expiresAt &&
+      (data as { expiresAt: Date }).expiresAt <= new Date()
+    ) {
+      return AppError.badRequest('Expiration date must be in the future')
+    }
+
+    const prev = {
+      reason: ban.reason,
+      notes: ban.notes ?? null,
+      expiresAt: ban.expiresAt,
+      isActive: ban.isActive,
+    }
+
+    const updated = await repository.update(id, data)
+    const next = {
+      reason: updated.reason,
+      notes: updated.notes ?? null,
+      expiresAt: updated.expiresAt,
+      isActive: updated.isActive,
+    }
+
+    void logAudit(ctx.prisma, {
+      actorId: ctx.session.user.id,
+      action: AuditAction.UPDATE,
+      entityType: AuditEntityType.USER_BAN,
+      entityId: id,
+      targetUserId: updated.user.id,
+      metadata: {
+        fieldsUpdated: Object.keys(data as Record<string, unknown>),
+        diff: buildDiff(prev, next),
+      },
+      headers: ctx.headers,
+    })
+    return updated
   }),
 
   lift: protectedProcedure.input(LiftUserBanSchema).mutation(async ({ ctx, input }) => {
@@ -115,7 +179,39 @@ export const userBansRouter = createTRPCRouter({
     if (!ban) return ResourceError.userBan.notFound()
     if (!ban.isActive) return ResourceError.userBan.alreadyInactive()
 
-    return await repository.lift(id, unbannedById, notes)
+    // Hierarchy check for lifting
+    {
+      const targetRole = await repository.getUserRole(ban.userId)
+      if (!targetRole || !repository.canBanUser(ctx.session.user.role, targetRole)) {
+        return ResourceError.userBan.insufficientPermissions()
+      }
+    }
+
+    const prev = {
+      reason: ban.reason,
+      notes: ban.notes ?? null,
+      expiresAt: ban.expiresAt,
+      isActive: ban.isActive,
+    }
+
+    const lifted = await repository.lift(id, unbannedById, notes)
+    const next = {
+      reason: lifted.reason,
+      notes: lifted.notes ?? null,
+      expiresAt: lifted.expiresAt,
+      isActive: lifted.isActive,
+    }
+
+    void logAudit(ctx.prisma, {
+      actorId: ctx.session.user.id,
+      action: AuditAction.UNBAN,
+      entityType: AuditEntityType.USER_BAN,
+      entityId: id,
+      targetUserId: lifted.user.id,
+      metadata: { notes: notes || undefined, diff: buildDiff(prev, next) },
+      headers: ctx.headers,
+    })
+    return lifted
   }),
 
   checkUserBanStatus: publicProcedure
@@ -126,8 +222,8 @@ export const userBansRouter = createTRPCRouter({
     }),
 
   delete: protectedProcedure.input(DeleteUserBanSchema).mutation(async ({ ctx, input }) => {
-    // Allow moderators and above to delete bans
-    if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+    // Only ADMIN and SUPER_ADMIN can archive (soft-delete) bans
+    if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
       return ResourceError.userBan.requiresModeratorToDelete()
     }
 
@@ -136,6 +232,89 @@ export const userBansRouter = createTRPCRouter({
 
     if (!ban) return ResourceError.userBan.notFound()
 
-    return await repository.delete(input.id)
+    // Enforce hierarchy: actor must outrank target
+    const targetRole = await repository.getUserRole(ban.userId)
+    if (!targetRole || !repository.canBanUser(ctx.session.user.role, targetRole)) {
+      return ResourceError.userBan.insufficientPermissions()
+    }
+
+    // Mark as archived: keep the record, ensure it's inactive, append archive note
+    const archiveNote = `Archived by ${ctx.session.user.id} on ${new Date().toISOString()}`
+
+    const prev = {
+      reason: ban.reason,
+      notes: ban.notes ?? null,
+      expiresAt: ban.expiresAt,
+      isActive: ban.isActive,
+    }
+
+    const archived = await repository.update(input.id, {
+      isActive: false,
+      unbannedAt: ban.unbannedAt ?? new Date(),
+      unbannedBy: ban.unbannedById
+        ? undefined
+        : {
+            connect: { id: ctx.session.user.id },
+          },
+      notes: ban.notes ? `${ban.notes}\n\n${archiveNote}` : archiveNote,
+    })
+    const next = {
+      reason: archived.reason,
+      notes: archived.notes ?? null,
+      expiresAt: archived.expiresAt,
+      isActive: archived.isActive,
+    }
+    void logAudit(ctx.prisma, {
+      actorId: ctx.session.user.id,
+      action: AuditAction.ARCHIVE,
+      entityType: AuditEntityType.USER_BAN,
+      entityId: input.id,
+      targetUserId: archived.user.id,
+      metadata: { archived: true, diff: buildDiff(prev, next) },
+      headers: ctx.headers,
+    })
+    return archived
   }),
+
+  // Detailed related reports for the banned user's authored content
+  getUserReports: viewUserBansProcedure
+    .input(z.object({ userId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const { userId } = input
+
+      const [listingReports, pcListingReports] = await Promise.all([
+        ctx.prisma.listingReport.findMany({
+          where: { listing: { authorId: userId } },
+          include: {
+            reportedBy: { select: { id: true, name: true, email: true } },
+            reviewedBy: { select: { id: true, name: true, email: true } },
+            listing: {
+              select: {
+                id: true,
+                game: { select: { id: true, title: true } },
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 200,
+        }),
+        ctx.prisma.pcListingReport.findMany({
+          where: { pcListing: { authorId: userId } },
+          include: {
+            reportedBy: { select: { id: true, name: true, email: true } },
+            reviewedBy: { select: { id: true, name: true, email: true } },
+            pcListing: {
+              select: {
+                id: true,
+                game: { select: { id: true, title: true } },
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 200,
+        }),
+      ])
+
+      return { listingReports, pcListingReports }
+    }),
 })

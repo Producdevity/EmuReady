@@ -1,80 +1,60 @@
-import { type NextRequest, NextResponse } from 'next/server'
+import { type NextRequest } from 'next/server'
+import { logger } from '@/lib/logger'
 
-// Common image extensions and their corresponding MIME types
-const IMAGE_EXTENSIONS = {
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.png': 'image/png',
-  '.gif': 'image/gif',
-  '.webp': 'image/webp',
-  '.svg': 'image/svg+xml',
-  '.bmp': 'image/bmp',
-  '.ico': 'image/x-icon',
-  '.tiff': 'image/tiff',
-  '.tif': 'image/tiff',
-}
+export const dynamic = 'force-dynamic'
 
-function isImageUrl(url: string): boolean {
-  const urlLower = url.toLowerCase()
-  return Object.keys(IMAGE_EXTENSIONS).some((ext) => urlLower.includes(ext))
-}
-
-function getContentTypeFromUrl(url: string): string | null {
-  const urlLower = url.toLowerCase()
-  for (const [ext, mimeType] of Object.entries(IMAGE_EXTENSIONS)) {
-    if (urlLower.includes(ext)) {
-      return mimeType
-    }
+/**
+ * Only allow http and https URLs to prevent SSRF attacks
+ * @param raw
+ */
+function isAllowedUrl(raw?: string | null): URL | null {
+  if (!raw) return null
+  try {
+    const u = new URL(raw)
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null
+    return u
+  } catch {
+    return null
   }
-  return null
 }
 
-export async function GET(request: NextRequest) {
-  const url = request.nextUrl.searchParams.get('url')
-
-  if (!url) {
-    return new NextResponse('Missing URL parameter', { status: 400 })
-  }
+export async function GET(req: NextRequest) {
+  const src = req.nextUrl.searchParams.get('url')
+  const url = isAllowedUrl(src)
+  if (!url) return new Response('Invalid or missing url parameter', { status: 400 })
 
   try {
-    new URL(url) // Validate URL
-
-    const response = await fetch(url, {
+    const upstream = await fetch(url.toString(), {
+      // In dev, always bypass caches to avoid stale images; in prod let CDN cache images
+      cache: process.env.NODE_ENV !== 'production' ? 'no-store' : 'force-cache',
+      redirect: 'follow',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; YourApp/1.0)',
+        'User-Agent': 'EmuReadyImageProxy/1.0 (+https://emuready.com)',
       },
     })
 
-    if (!response.ok) {
-      return new NextResponse('Failed to fetch image', { status: 502 })
+    if (!upstream.ok || !upstream.body) {
+      return new Response('Upstream fetch failed', { status: upstream.status || 502 })
     }
 
-    const contentType = response.headers.get('content-type')
+    const contentType = upstream.headers.get('content-type') || 'application/octet-stream'
+    const cacheControl =
+      process.env.NODE_ENV !== 'production'
+        ? 'no-store, no-cache, must-revalidate'
+        : 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=600'
 
-    // Check if it's an image by content-type OR by file extension
-    const isImageByContentType = contentType && contentType.startsWith('image/')
-    const isImageByUrl = isImageUrl(url)
-
-    if (!isImageByContentType && !isImageByUrl) {
-      return new NextResponse('Not an image', { status: 400 })
-    }
-
-    const imageData = await response.arrayBuffer()
-
-    // Use the proper content-type from the response, or determine it from the URL
-    let finalContentType = contentType
-    if (!isImageByContentType && isImageByUrl) {
-      finalContentType = getContentTypeFromUrl(url) || 'image/jpeg'
-    }
-
-    return new NextResponse(imageData, {
+    return new Response(upstream.body, {
+      status: 200,
       headers: {
-        'Content-Type': finalContentType || 'image/jpeg',
-        'Cache-Control': 'public, max-age=86400',
+        'Content-Type': contentType,
+        'Cache-Control': cacheControl,
+        // Help common CDNs respect our intent
+        'CDN-Cache-Control': cacheControl,
+        'Vercel-CDN-Cache-Control': cacheControl,
       },
     })
   } catch (error) {
-    console.error('Image proxy error:', error)
-    return new NextResponse('Invalid URL or server error', { status: 400 })
+    logger.error('[proxy-image] Error fetching image:', error)
+    return new Response('Bad Gateway', { status: 502 })
   }
 }

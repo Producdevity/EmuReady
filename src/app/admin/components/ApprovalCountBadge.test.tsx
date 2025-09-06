@@ -7,15 +7,15 @@ import ApprovalCountBadge from './ApprovalCountBadge'
 vi.mock('@/lib/api', () => ({
   api: {
     users: { me: { useQuery: vi.fn() } },
-    games: { getStats: { useQuery: vi.fn() } },
-    listings: { getStats: { useQuery: vi.fn() } },
+    games: { stats: { useQuery: vi.fn() } },
+    listings: { stats: { useQuery: vi.fn() } },
     pcListings: { stats: { useQuery: vi.fn() } },
   },
 }))
 
 const mockUserQuery = vi.mocked(api.users.me.useQuery)
-const mockGamesStatsQuery = vi.mocked(api.games.getStats.useQuery)
-const mockListingsStatsQuery = vi.mocked(api.listings.getStats.useQuery)
+const mockGamesStatsQuery = vi.mocked(api.games.stats.useQuery)
+const mockListingsStatsQuery = vi.mocked(api.listings.stats.useQuery)
 const mockPcListingsStatsQuery = vi.mocked(api.pcListings.stats.useQuery)
 
 describe('ApprovalCountBadge', () => {

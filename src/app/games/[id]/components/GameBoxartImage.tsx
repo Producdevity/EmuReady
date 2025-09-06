@@ -127,7 +127,9 @@ export function GameBoxartImage(props: Props) {
   const availableImageTypes: ImageField[] = ['imageUrl', 'boxartUrl', 'bannerUrl']
 
   return (
-    <div className={cn('w-full md:w-1/4 flex-shrink-0', props.className)}>
+    <div
+      className={cn('w-full md:w-1/4 md:min-w-[300px] md:flex-none flex-shrink-0', props.className)}
+    >
       <div className="space-y-4">
         {/* Image Type Selector */}
         {canEdit && (

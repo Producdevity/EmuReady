@@ -1,6 +1,6 @@
 import { type RouterOutput } from '@/types/trpc'
 
-export type UserBanWithDetails = RouterOutput['userBans']['getAll']['bans'][0]
+export type UserBanWithDetails = RouterOutput['userBans']['get']['bans'][0]
 
 export interface BanModalState {
   isOpen: boolean

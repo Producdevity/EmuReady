@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils'
 import { getRoleVariant, getTrustActionBadgeColor } from '@/utils/badgeColors'
 import { copyToClipboard } from '@/utils/copyToClipboard'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { canBanUser } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { Role } from '@orm'
 
@@ -51,6 +52,10 @@ function UserDetailsModal(props: Props) {
   const currentUserQuery = api.users.me.useQuery()
   const isSuperAdmin = hasPermission(currentUserQuery.data?.role, Role.SUPER_ADMIN)
   const isModerator = hasPermission(currentUserQuery.data?.role, Role.MODERATOR)
+  const canBanTarget =
+    isModerator &&
+    userQuery.data?.role != null &&
+    canBanUser(currentUserQuery.data?.role ?? null, userQuery.data.role)
 
   // Get ban status and report statistics
   const banStatusQuery = api.userBans.checkUserBanStatus.useQuery(
@@ -726,11 +731,16 @@ function UserDetailsModal(props: Props) {
                 <ExternalLink className="w-4 h-4" />
                 View Public Profile
               </Link>
+              {!canBanTarget && hasPermission(currentUserQuery.data?.role, Role.MODERATOR) && (
+                <span className="text-xs text-gray-600 dark:text-gray-400">
+                  You cannot ban users with {userQuery.data.role} role or higher.
+                </span>
+              )}
             </div>
 
             {/* Action Buttons */}
             <div className="flex justify-between items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-              {isModerator && !banStatusQuery.data?.isBanned && (
+              {canBanTarget && !banStatusQuery.data?.isBanned && (
                 <Button
                   variant="danger"
                   onClick={() => {

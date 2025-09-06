@@ -19,8 +19,7 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { hasPermission } from '@/utils/permissions'
-import { Role } from '@orm'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import BrandModal from './components/BrandModal'
 
 type DeviceBrandSortField = 'name' | 'devicesCount'
@@ -48,7 +47,7 @@ function AdminBrandsPage() {
   const confirm = useConfirmDialog()
 
   const userQuery = api.users.me.useQuery()
-  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
+  const canManageDevices = hasPermission(userQuery.data?.permissions, PERMISSIONS.MANAGE_DEVICES)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -105,7 +104,7 @@ function AdminBrandsPage() {
         </div>
         <div className="flex items-center gap-4">
           <ColumnVisibilityControl columns={BRANDS_COLUMNS} columnVisibility={columnVisibility} />
-          <Button onClick={() => openModal()}>Add Brand</Button>
+          {canManageDevices && <Button onClick={() => openModal()}>Add Brand</Button>}
         </div>
       </div>
 
@@ -188,8 +187,10 @@ function AdminBrandsPage() {
                   {columnVisibility.isColumnVisible('actions') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
-                        <EditButton onClick={() => openModal(brand)} title="Edit Brand" />
-                        {isAdmin && (
+                        {canManageDevices && (
+                          <EditButton onClick={() => openModal(brand)} title="Edit Brand" />
+                        )}
+                        {canManageDevices && (
                           <DeleteButton
                             onClick={() => handleDelete(brand.id)}
                             title="Delete Brand"

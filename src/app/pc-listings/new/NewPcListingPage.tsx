@@ -187,7 +187,11 @@ function AddPcListingPage() {
   const selectedEmulatorId = form.watch('emulatorId')
   const customFieldDefinitionsQuery = api.customFieldDefinitions.getByEmulator.useQuery(
     { emulatorId: selectedEmulatorId },
-    { enabled: !!selectedEmulatorId && selectedEmulatorId.trim() !== '' },
+    {
+      enabled: !!selectedEmulatorId && selectedEmulatorId.trim() !== '',
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    },
   )
 
   // Handle pre-selected game from URL parameter
@@ -221,6 +225,13 @@ function AddPcListingPage() {
         }
       },
     )
+
+    // If emulator's custom field IDs are unchanged, skip reset to preserve input values
+    const isSameAsCurrent =
+      parsedCustomFields.length === parsed.length &&
+      parsedCustomFields.every((f, i) => f.id === parsed[i]?.id)
+    if (isSameAsCurrent) return
+
     setParsedCustomFields(parsed)
 
     // Create and set the dynamic schema
@@ -251,7 +262,7 @@ function AddPcListingPage() {
       }
     })
     form.setValue('customFieldValues', newCustomValues)
-  }, [customFieldDefinitionsQuery.data, form])
+  }, [customFieldDefinitionsQuery.data, form, parsedCustomFields])
 
   // Clear emulator when game changes and load initial emulators
   useEffect(() => {

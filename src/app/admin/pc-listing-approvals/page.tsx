@@ -181,8 +181,7 @@ function PcListingApprovalsPage() {
       const confirmed = await confirm({
         title: 'Bulk Approval Confirmation',
         description: `You are about to approve ${selectedRows.size} listings. Are you sure you want to proceed?`,
-        confirmText: 'Yes, Approve All',
-        cancelText: 'Cancel',
+        confirmText: 'Approve Selected',
       })
 
       if (!confirmed) return
@@ -197,8 +196,7 @@ function PcListingApprovalsPage() {
     const confirmed = await confirm({
       title: 'Bulk Reject Confirmation',
       description: `You are about to reject ${selectedRows.size} listings. Are you sure you want to proceed?`,
-      confirmText: 'Yes, Reject All',
-      cancelText: 'Cancel',
+      confirmText: 'Reject Selected',
     })
     if (!confirmed) return
 

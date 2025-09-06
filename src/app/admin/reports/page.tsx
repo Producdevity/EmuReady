@@ -29,6 +29,7 @@ import toast from '@/lib/toast'
 import { type ReportReasonType, type ReportStatusType } from '@/schemas/listingReport'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import { ReportReason, ReportStatus } from '@orm'
 import ReportDetailsModal from './components/ReportDetailsModal'
 import ReportStatusModal from './components/ReportStatusModal'
@@ -106,6 +107,7 @@ const getStatusBadgeVariant = (status: ReportStatusType) => {
 function AdminReportsPage() {
   const table = useAdminTable<ReportSortField>({ defaultLimit: 20 })
   const confirm = useConfirmDialog()
+  const userQuery = api.users.me.useQuery()
   const utils = api.useUtils()
   const columnVisibility = useColumnVisibility(REPORT_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminReports,
@@ -119,8 +121,8 @@ function AdminReportsPage() {
   })
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
-  const reportsStatsQuery = api.listingReports.getStats.useQuery()
-  const reportsQuery = api.listingReports.getAll.useQuery({
+  const reportsStatsQuery = api.listingReports.stats.useQuery()
+  const reportsQuery = api.listingReports.get.useQuery({
     search: table.debouncedSearch || undefined,
     reason: selectedReason || undefined,
     status: selectedStatus || undefined,
@@ -136,8 +138,8 @@ function AdminReportsPage() {
   const deleteReport = api.listingReports.delete.useMutation({
     onSuccess: () => {
       toast.success('Report deleted successfully!')
-      utils.listingReports.getAll.invalidate().catch(console.error)
-      utils.listingReports.getStats.invalidate().catch(console.error)
+      utils.listingReports.get.invalidate().catch(console.error)
+      utils.listingReports.stats.invalidate().catch(console.error)
     },
     onError: (err) => {
       toast.error(`Failed to delete report: ${getErrorMessage(err)}`)
@@ -147,8 +149,8 @@ function AdminReportsPage() {
   const updateStatus = api.listingReports.updateStatus.useMutation({
     onSuccess: () => {
       toast.success('Report status updated successfully!')
-      utils.listingReports.getAll.invalidate().catch(console.error)
-      utils.listingReports.getStats.invalidate().catch(console.error)
+      utils.listingReports.get.invalidate().catch(console.error)
+      utils.listingReports.stats.invalidate().catch(console.error)
     },
     onError: (err) => {
       toast.error(`Failed to update report status: ${getErrorMessage(err)}`)
@@ -410,7 +412,11 @@ function AdminReportsPage() {
                             onClick={() => handleViewDetails(report)}
                             title="View Report Details"
                           />
-                          {report.status !== ReportStatus.RESOLVED &&
+                          {hasPermission(
+                            userQuery.data?.permissions,
+                            PERMISSIONS.MANAGE_USER_BANS,
+                          ) &&
+                            report.status !== ReportStatus.RESOLVED &&
                             report.status !== ReportStatus.DISMISSED && (
                               <ApproveButton
                                 onClick={() => handleMarkResolved(report)}
@@ -419,16 +425,26 @@ function AdminReportsPage() {
                                 disabled={updateStatus.isPending}
                               />
                             )}
-                          <EditButton
-                            onClick={() => handleUpdateStatus(report)}
-                            title="Update Status"
-                          />
-                          <DeleteButton
-                            onClick={() => handleDelete(report)}
-                            title="Delete Report"
-                            isLoading={deleteReport.isPending}
-                            disabled={deleteReport.isPending}
-                          />
+                          {hasPermission(
+                            userQuery.data?.permissions,
+                            PERMISSIONS.MANAGE_USER_BANS,
+                          ) && (
+                            <EditButton
+                              onClick={() => handleUpdateStatus(report)}
+                              title="Update Status"
+                            />
+                          )}
+                          {hasPermission(
+                            userQuery.data?.permissions,
+                            PERMISSIONS.MANAGE_USER_BANS,
+                          ) && (
+                            <DeleteButton
+                              onClick={() => handleDelete(report)}
+                              title="Delete Report"
+                              isLoading={deleteReport.isPending}
+                              disabled={deleteReport.isPending}
+                            />
+                          )}
                         </div>
                       </td>
                     )}
@@ -462,8 +478,8 @@ function AdminReportsPage() {
         onClose={() => setReportStatusModal({ isOpen: false })}
         onSuccess={() => {
           setReportStatusModal({ isOpen: false })
-          utils.listingReports.getAll.invalidate().catch(console.error)
-          utils.listingReports.getStats.invalidate().catch(console.error)
+          utils.listingReports.get.invalidate().catch(console.error)
+          utils.listingReports.stats.invalidate().catch(console.error)
         }}
       />
 

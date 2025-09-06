@@ -24,6 +24,7 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import SystemModal from './components/SystemModal'
 
 type SystemSortField = 'name' | 'key' | 'gamesCount'
@@ -53,6 +54,8 @@ function AdminSystemsPage() {
   const systemsStatsQuery = api.systems.stats.useQuery()
   const deleteSystem = api.systems.delete.useMutation()
   const confirm = useConfirmDialog()
+  const userQuery = api.users.me.useQuery()
+  const canManageSystems = hasPermission(userQuery.data?.permissions, PERMISSIONS.MANAGE_SYSTEMS)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -111,7 +114,7 @@ function AdminSystemsPage() {
         </div>
         <div className="flex items-center gap-4">
           <ColumnVisibilityControl columns={SYSTEMS_COLUMNS} columnVisibility={columnVisibility} />
-          <Button onClick={() => openModal()}>Add System</Button>
+          {canManageSystems && <Button onClick={() => openModal()}>Add System</Button>}
         </div>
       </div>
 
@@ -208,13 +211,17 @@ function AdminSystemsPage() {
                     {columnVisibility.isColumnVisible('actions') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center gap-2">
-                          <EditButton onClick={() => openModal(system)} title="Edit System" />
-                          <DeleteButton
-                            onClick={() => handleDelete(system.id)}
-                            title="Delete System"
-                            isLoading={deleteSystem.isPending}
-                            disabled={deleteSystem.isPending}
-                          />
+                          {canManageSystems && (
+                            <EditButton onClick={() => openModal(system)} title="Edit System" />
+                          )}
+                          {canManageSystems && (
+                            <DeleteButton
+                              onClick={() => handleDelete(system.id)}
+                              title="Delete System"
+                              isLoading={deleteSystem.isPending}
+                              disabled={deleteSystem.isPending}
+                            />
+                          )}
                         </div>
                       </td>
                     )}

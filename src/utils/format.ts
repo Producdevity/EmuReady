@@ -21,3 +21,14 @@ export function formatUserRole(role: Role) {
     join(' '),
   )
 }
+
+/**
+ * Formats an enum label
+ * @param val
+ */
+export function formatEnumLabel(val: string) {
+  return val
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (l) => l.toUpperCase())
+}

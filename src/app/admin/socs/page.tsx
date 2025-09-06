@@ -26,8 +26,7 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { hasPermission } from '@/utils/permissions'
-import { Role } from '@orm'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import SocModal from './components/SocModal'
 import SocViewModal from './components/SocViewModal'
 
@@ -52,7 +51,7 @@ function AdminSoCsPage() {
   })
 
   const userQuery = api.users.me.useQuery()
-  const isAdmin = hasPermission(userQuery.data?.role, Role.ADMIN)
+  const canManageDevices = hasPermission(userQuery.data?.permissions, PERMISSIONS.MANAGE_DEVICES)
 
   const socsQuery = api.socs.get.useQuery({
     search: isEmpty(table.debouncedSearch) ? undefined : table.debouncedSearch,
@@ -133,7 +132,7 @@ function AdminSoCsPage() {
         </div>
         <div className="flex items-center gap-4">
           <ColumnVisibilityControl columns={SOCS_COLUMNS} columnVisibility={columnVisibility} />
-          <Button onClick={() => openModal()}>Add SoC</Button>
+          {canManageDevices && <Button onClick={() => openModal()}>Add SoC</Button>}
         </div>
       </div>
 
@@ -228,8 +227,10 @@ function AdminSoCsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
                         <ViewButton onClick={() => openViewModal(soc)} title="View SoC Details" />
-                        <EditButton onClick={() => openModal(soc)} title="Edit SoC" />
-                        {isAdmin && (
+                        {canManageDevices && (
+                          <EditButton onClick={() => openModal(soc)} title="Edit SoC" />
+                        )}
+                        {canManageDevices && (
                           <DeleteButton
                             onClick={() => handleDelete(soc.id, soc.name)}
                             title="Delete SoC"

@@ -19,7 +19,7 @@ import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 
-type Badge = RouterOutput['badges']['getAll']['badges'][number]
+type Badge = RouterOutput['badges']['get']['badges'][number]
 
 const badgeSchema = z.object({
   name: z.string().min(1, 'Name is required').max(50, 'Name must be 50 characters or less'),

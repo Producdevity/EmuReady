@@ -13,14 +13,16 @@ import {
 import {
   Button,
   ColumnVisibilityControl,
-  DeleteButton,
   LoadingSpinner,
   SortableHeader,
   useConfirmDialog,
   Badge,
   Pagination,
   LocalizedDate,
+  Modal,
+  Input,
 } from '@/components/ui'
+import { ViewButton, DeleteButton, UndoButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
@@ -28,6 +30,8 @@ import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { PERMISSIONS } from '@/utils/permission-system'
+import { hasPermission } from '@/utils/permissions'
+import { Role } from '@orm'
 import BanDetailsModal from './components/BanDetailsModal'
 import CreateBanModal from './components/CreateBanModal'
 import { type BanModalState, type CreateBanModalState } from './types'
@@ -96,11 +100,12 @@ function AdminUserBansPage() {
   })
 
   const currentUserPermissions = currentUserQuery.data?.permissions
+  const currentUserRole = currentUserQuery.data?.role
   const canCreateBans =
     currentUserPermissions && currentUserPermissions.includes(PERMISSIONS.MANAGE_USER_BANS)
 
-  const bansStatsQuery = api.userBans.getStats.useQuery()
-  const bansQuery = api.userBans.getAll.useQuery({
+  const bansStatsQuery = api.userBans.stats.useQuery()
+  const bansQuery = api.userBans.get.useQuery({
     search: table.debouncedSearch || undefined,
     isActive: selectedStatus === '' ? undefined : selectedStatus,
     sortField: table.sortField ?? undefined,
@@ -114,20 +119,20 @@ function AdminUserBansPage() {
 
   const deleteBan = api.userBans.delete.useMutation({
     onSuccess: () => {
-      toast.success('Ban deleted successfully!')
-      utils.userBans.getAll.invalidate().catch(console.error)
-      utils.userBans.getStats.invalidate().catch(console.error)
+      toast.success('Ban archived successfully!')
+      utils.userBans.get.invalidate().catch(console.error)
+      utils.userBans.stats.invalidate().catch(console.error)
     },
     onError: (err) => {
-      toast.error(`Failed to delete ban: ${getErrorMessage(err)}`)
+      toast.error(`Failed to archive ban: ${getErrorMessage(err)}`)
     },
   })
 
   const liftBan = api.userBans.lift.useMutation({
     onSuccess: () => {
       toast.success('Ban lifted successfully!')
-      utils.userBans.getAll.invalidate().catch(console.error)
-      utils.userBans.getStats.invalidate().catch(console.error)
+      utils.userBans.get.invalidate().catch(console.error)
+      utils.userBans.stats.invalidate().catch(console.error)
     },
     onError: (err) => {
       toast.error(`Failed to lift ban: ${getErrorMessage(err)}`)
@@ -157,15 +162,20 @@ function AdminUserBansPage() {
     } satisfies RouterInput['userBans']['lift'])
   }
 
-  const handleDelete = async (ban: (typeof bans)[0]) => {
-    const confirmed = await confirm({
-      title: 'Delete Ban',
-      description: `Are you sure you want to permanently delete this ban record? This action cannot be undone.`,
-    })
-
-    if (!confirmed) return
-
-    deleteBan.mutate({ id: ban.id } satisfies RouterInput['userBans']['delete'])
+  const [archiveModal, setArchiveModal] = useState<{
+    isOpen: boolean
+    ban?: (typeof bans)[0]
+    typed: string
+  }>({ isOpen: false, ban: undefined, typed: '' })
+  const openArchiveModal = (ban: (typeof bans)[0]) =>
+    setArchiveModal({ isOpen: true, ban, typed: '' })
+  const closeArchiveModal = () => setArchiveModal({ isOpen: false, ban: undefined, typed: '' })
+  const confirmArchive = () => {
+    if (!archiveModal.ban) return
+    deleteBan
+      .mutateAsync({ id: archiveModal.ban.id } satisfies RouterInput['userBans']['delete'])
+      .then(() => closeArchiveModal())
+      .catch((err) => toast.error(`Failed to archive ban: ${getErrorMessage(err)}`))
   }
 
   const statsData = bansStatsQuery.data
@@ -360,29 +370,23 @@ function AdminUserBansPage() {
                     {columnVisibility.isColumnVisible('actions') && (
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleViewDetails(ban)}
-                          >
-                            View
-                          </Button>
+                          <ViewButton title="View" onClick={() => handleViewDetails(ban)} />
                           {ban.isActive && (
-                            <Button
-                              size="sm"
-                              variant="default"
+                            <UndoButton
+                              title="Lift Ban"
                               onClick={() => handleLiftBan(ban)}
+                              isLoading={liftBan.isPending}
                               disabled={liftBan.isPending}
-                            >
-                              Lift Ban
-                            </Button>
+                            />
                           )}
-                          <DeleteButton
-                            onClick={() => handleDelete(ban)}
-                            title="Delete Ban Record"
-                            isLoading={deleteBan.isPending}
-                            disabled={deleteBan.isPending}
-                          />
+                          {hasPermission(currentUserRole, Role.ADMIN) && (
+                            <DeleteButton
+                              title="Archive"
+                              onClick={() => openArchiveModal(ban)}
+                              isLoading={deleteBan.isPending}
+                              disabled={deleteBan.isPending}
+                            />
+                          )}
                         </div>
                       </td>
                     )}
@@ -416,12 +420,56 @@ function AdminUserBansPage() {
         onClose={() => setCreateBanModal({ isOpen: false })}
         userId={createBanModal.userId}
         onSuccess={() => {
-          utils.userBans.getAll.invalidate().catch(console.error)
-          utils.userBans.getStats.invalidate().catch(console.error)
+          utils.userBans.get.invalidate().catch(console.error)
+          utils.userBans.stats.invalidate().catch(console.error)
         }}
       />
+
+      <Modal
+        isOpen={archiveModal.isOpen}
+        onClose={closeArchiveModal}
+        title="Archive Ban Record"
+        size="sm"
+      >
+        {archiveModal.ban && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              To archive this ban record, type the user’s{' '}
+              {archiveModal.ban.user.email ? 'email' : 'name'} below.
+            </p>
+            <Input
+              value={archiveModal.typed}
+              onChange={(e) => setArchiveModal((s) => ({ ...s, typed: e.target.value }))}
+              placeholder={archiveModal.ban.user.email || archiveModal.ban.user.name || ''}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={closeArchiveModal}>
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                onClick={confirmArchive}
+                isLoading={deleteBan.isPending}
+                disabled={deleteBan.isPending || !matchesConfirm(archiveModal)}
+              >
+                Archive
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </AdminPageLayout>
   )
 }
 
 export default AdminUserBansPage
+
+function matchesConfirm(state: {
+  ban?: { user: { email: string | null; name: string | null } }
+  typed: string
+}) {
+  if (!state.ban) return false
+  const expected = state.ban.user.email || state.ban.user.name || ''
+  if (!expected) return false
+  return state.typed.trim().toLowerCase() === expected.trim().toLowerCase()
+}

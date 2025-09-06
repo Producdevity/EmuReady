@@ -33,7 +33,11 @@ function EditListingModal(props: Props) {
 
   const listingQuery = api.listings.getForUserEdit.useQuery(
     { id: props.listingId },
-    { enabled: props.isOpen && props.canEdit },
+    {
+      enabled: props.isOpen && props.canEdit,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    },
   )
 
   const performanceScalesQuery = api.performanceScales.get.useQuery(undefined, {

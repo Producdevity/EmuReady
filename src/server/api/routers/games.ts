@@ -157,7 +157,7 @@ export const gamesRouter = createTRPCRouter({
     return repository.list(filters)
   }),
 
-  getStats: viewStatisticsProcedure.query(async ({ ctx }) => {
+  stats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const cached = gameStatsCache.get(GAME_STATS_CACHE_KEY)
     if (cached) return cached
 

@@ -24,7 +24,7 @@ export const permissionsRouter = createTRPCRouter({
   /**
    * Get all permissions with filtering and pagination
    */
-  getAll: accessAdminPanelProcedure.input(GetAllPermissionsSchema).query(async ({ ctx, input }) => {
+  get: accessAdminPanelProcedure.input(GetAllPermissionsSchema).query(async ({ ctx, input }) => {
     const {
       search,
       category,
@@ -84,29 +84,27 @@ export const permissionsRouter = createTRPCRouter({
   /**
    * Get permission by ID
    */
-  getById: accessAdminPanelProcedure
-    .input(GetPermissionByIdSchema)
-    .query(async ({ ctx, input }) => {
-      const permission = await ctx.prisma.permission.findUnique({
-        where: { id: input.id },
-        include: {
-          rolePermissions: {
-            select: {
-              role: true,
-              assignedAt: true,
-              assignedByUser: { select: { id: true, name: true, email: true } },
-            },
+  byId: accessAdminPanelProcedure.input(GetPermissionByIdSchema).query(async ({ ctx, input }) => {
+    const permission = await ctx.prisma.permission.findUnique({
+      where: { id: input.id },
+      include: {
+        rolePermissions: {
+          select: {
+            role: true,
+            assignedAt: true,
+            assignedByUser: { select: { id: true, name: true, email: true } },
           },
         },
-      })
+      },
+    })
 
-      if (!permission) return AppError.notFound('Permission')
+    if (!permission) return AppError.notFound('Permission')
 
-      return {
-        ...permission,
-        assignedRoles: permission.rolePermissions,
-      }
-    }),
+    return {
+      ...permission,
+      assignedRoles: permission.rolePermissions,
+    }
+  }),
 
   /**
    * Create new permission

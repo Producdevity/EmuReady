@@ -3,6 +3,9 @@ import { type NextRequest } from 'next/server'
 import { appRouter } from '@/server/api/root'
 import { createAppRouterTRPCContext } from '@/server/api/trpc'
 
+// Ensure this route is always treated as dynamic and never cached by Next
+export const dynamic = 'force-dynamic'
+
 const handler = async (req: NextRequest) => {
   return fetchRequestHandler({
     endpoint: '/api/trpc',

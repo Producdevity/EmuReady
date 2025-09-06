@@ -15,7 +15,7 @@ export const permissionLogsRouter = createTRPCRouter({
   /**
    * Get permission action logs with filtering and pagination
    */
-  getAll: permissionProcedure(PERMISSIONS.VIEW_PERMISSION_LOGS)
+  get: permissionProcedure(PERMISSIONS.VIEW_PERMISSION_LOGS)
     .input(GetPermissionLogsSchema)
     .query(async ({ ctx, input }) => {
       const {
@@ -74,7 +74,7 @@ export const permissionLogsRouter = createTRPCRouter({
   /**
    * Get permission log statistics
    */
-  getStats: permissionProcedure(PERMISSIONS.VIEW_PERMISSION_LOGS).query(async ({ ctx }) => {
+  stats: permissionProcedure(PERMISSIONS.VIEW_PERMISSION_LOGS).query(async ({ ctx }) => {
     const now = new Date()
     const last24Hours = new Date(now.getTime() - ms.days(1))
     const last7Days = new Date(now.getTime() - ms.days(7))
@@ -157,7 +157,7 @@ export const permissionLogsRouter = createTRPCRouter({
   /**
    * Get log details by ID
    */
-  getById: permissionProcedure(PERMISSIONS.VIEW_PERMISSION_LOGS)
+  byId: permissionProcedure(PERMISSIONS.VIEW_PERMISSION_LOGS)
     .input(GetPermissionLogByIdSchema)
     .query(async ({ ctx, input }) => {
       const log = await ctx.prisma.permissionActionLog.findUnique({
@@ -182,7 +182,7 @@ export const permissionLogsRouter = createTRPCRouter({
   /**
    * Get permission activity timeline for a specific permission
    */
-  getPermissionTimeline: permissionProcedure(PERMISSIONS.VIEW_PERMISSION_LOGS)
+  timeline: permissionProcedure(PERMISSIONS.VIEW_PERMISSION_LOGS)
     .input(GetPermissionTimelineSchema)
     .query(
       async ({ ctx, input }) =>
@@ -197,7 +197,7 @@ export const permissionLogsRouter = createTRPCRouter({
   /**
    * Get user activity for permission management
    */
-  getUserActivity: permissionProcedure(PERMISSIONS.VIEW_PERMISSION_LOGS)
+  userActivity: permissionProcedure(PERMISSIONS.VIEW_PERMISSION_LOGS)
     .input(GetUserPermissionActivitySchema)
     .query(
       async ({ ctx, input }) =>

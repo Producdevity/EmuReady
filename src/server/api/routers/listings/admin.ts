@@ -842,7 +842,7 @@ export const adminRouter = createTRPCRouter({
       }
     }),
 
-  getStats: viewStatisticsProcedure.query(async ({ ctx }) => {
+  stats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const [pending, approved, rejected] = await Promise.all([
       ctx.prisma.listing.count({ where: { status: ApprovalStatus.PENDING } }),
       ctx.prisma.listing.count({ where: { status: ApprovalStatus.APPROVED } }),
@@ -858,7 +858,7 @@ export const adminRouter = createTRPCRouter({
   }),
 
   // Super admin procedures for listing management
-  getAll: superAdminProcedure.input(GetAllListingsAdminSchema).query(async ({ ctx, input }) => {
+  get: superAdminProcedure.input(GetAllListingsAdminSchema).query(async ({ ctx, input }) => {
     const {
       page,
       limit,

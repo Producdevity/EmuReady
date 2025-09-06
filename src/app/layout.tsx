@@ -40,8 +40,13 @@ export default function RootLayout(props: PropsWithChildren) {
     <ClerkProvider appearance={{ baseTheme: shadesOfPurple }}>
       <html lang="en" suppressHydrationWarning>
         <head>
-          {/* Service Worker Registration */}
-          {ENABLE_SW && <Script src="/sw-register.js" strategy="afterInteractive" />}
+          {/* Service Worker Registration / Unregister in dev
+           * - In dev (not production), always load to proactively unregister any SW and clear caches
+           * - In prod, only load when explicitly enabled via NEXT_PUBLIC_ENABLE_SW
+           */}
+          {(ENABLE_SW || !IS_PRODUCTION) && (
+            <Script src="/sw-register.js" strategy="afterInteractive" />
+          )}
 
           {/* Initialize dataLayer for Google Analytics */}
           {IS_PRODUCTION && GA_ID && (

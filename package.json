@@ -1,6 +1,6 @@
 {
   "name": "emuready",
-  "version": "0.10.10",
+  "version": "0.10.11",
   "private": false,
   "license": "GPL-3.0-or-later",
   "author": "Producdevity",
@@ -8,7 +8,7 @@
     "analyze": "ANALYZE=true next build",
     "analyze:turbo": "ANALYZE=true next build --turbopack",
     "build": "next build",
-    "build:turbo": "next build  --turbopack",
+    "build:turbo": "next build --turbopack",
     "check": "npm run lint:fix && npm run types",
     "clean": "rm -rf .next && rm -rf node_modules/.cache && rm -rf .eslintcache && rm -rf tsconfig.tsbuildinfo",
     "clean:all": "npm run clean && rm -rf node_modules",

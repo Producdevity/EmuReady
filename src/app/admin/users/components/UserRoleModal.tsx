@@ -40,7 +40,7 @@ function UserRoleModal(props: Props) {
     onSuccess: () => {
       toast.success(`Role updated to ${role}`)
       // Refetch both the users list and current user data
-      utils.users.getAll.invalidate().catch(console.error)
+      utils.users.get.invalidate().catch(console.error)
       utils.users.me.invalidate().catch(console.error)
       props.onClose()
     },

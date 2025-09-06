@@ -51,6 +51,7 @@ function getImageTypeIcon(imageType: string) {
 
 export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
   const [searchTerm, setSearchTerm] = useState(props.gameTitle ?? '')
+  const [isDirty, setIsDirty] = useState(false)
   const [selectedImage, setSelectedImage] = useState<IGDBImage | null>(null)
   const [allImages, setAllImages] = useState<IGDBImage[]>([])
   const [previewImage, setPreviewImage] = useState<IGDBImage | null>(null)
@@ -77,12 +78,12 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
     },
   )
 
-  // Update search term when gameTitle prop changes
+  // Initialize from prop, but don't override user edits
   useEffect(() => {
-    if (props.gameTitle && props.gameTitle !== searchTerm) {
+    if (!isDirty && props.gameTitle) {
       setSearchTerm(props.gameTitle)
     }
-  }, [props.gameTitle, searchTerm])
+  }, [props.gameTitle, isDirty])
 
   // Update selected game ID when prop changes
   useEffect(() => {
@@ -145,7 +146,10 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
         <div className="flex gap-2">
           <Input
             value={searchTerm}
-            onChange={(ev) => setSearchTerm(ev.target.value)}
+            onChange={(ev) => {
+              setIsDirty(true)
+              setSearchTerm(ev.target.value)
+            }}
             onKeyDown={handleKeyPress}
             placeholder="Search for a game on IGDB..."
             disabled={isLoading}
