@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import {
   convertToGameNativeConfig,
   serializeGameNativeConfig,
-  getMissingImportantFields,
   type GameNativeConfigInput,
 } from './gamenative-converter'
 
@@ -676,25 +675,6 @@ describe('GameNative Converter', () => {
 
       expect(parsed).toBeDefined()
       expect(parsed.screenSize).toBe('854x480')
-    })
-  })
-
-  describe('getMissingImportantFields', () => {
-    it('should return list of missing important fields', () => {
-      const missing = getMissingImportantFields()
-
-      expect(missing).toBeInstanceOf(Array)
-      expect(missing.length).toBeGreaterThan(0)
-
-      // Check for some important missing fields
-      expect(missing.some((f) => f.includes('box86_version'))).toBe(true)
-      expect(missing.some((f) => f.includes('wincomponents'))).toBe(true)
-      expect(missing.some((f) => f.includes('cpuList'))).toBe(true)
-      expect(missing.some((f) => f.includes('wow64Mode'))).toBe(true)
-      expect(missing.some((f) => f.includes('showFPS'))).toBe(true)
-      expect(missing.some((f) => f.includes('sdlControllerAPI'))).toBe(true)
-      expect(missing.some((f) => f.includes('csmt'))).toBe(true)
-      expect(missing.some((f) => f.includes('videoMemorySize'))).toBe(true)
     })
   })
 

@@ -14,6 +14,7 @@ import type {
   Box64Version,
   Box86_64Preset,
   ScreenSize,
+  DxvkVersion,
 } from '../types/gamenative'
 
 // Default environment variables for GameNative
@@ -50,6 +51,9 @@ export const GRAPHICS_DRIVER_MAPPING: Record<string, GraphicsDriver> = {
 
 // Default DX wrapper
 export const DEFAULT_DX_WRAPPER: DxWrapper = 'dxvk'
+
+// Default DXVK version
+export const DEFAULT_DXVK_VERSION = '2.6.1-gplasync'
 
 // Default audio driver
 export const DEFAULT_AUDIO_DRIVER: AudioDriver = 'alsa'
@@ -159,6 +163,16 @@ export const BOX86_PRESET_MAPPING: Record<string, Box86_64Preset> = {
   'Other/Custom': 'COMPATIBILITY',
 }
 
+const VALID_DXVK_VERSIONS: DxvkVersion[] = [
+  '2.6.1-gplasync',
+  '1.10.3',
+  '1.10.9-sarek',
+  '1.9.2',
+  '2.3.1',
+  '2.4-gplasync',
+  'async-1.10.3',
+]
+
 // Helper functions for validation
 export const GameNativeDefaults = {
   // Environment variables
@@ -170,6 +184,7 @@ export const GameNativeDefaults = {
   // Graphics
   getDefaultGraphicsDriver: (): GraphicsDriver => DEFAULT_GRAPHICS_DRIVER,
   getDefaultDxWrapper: (): DxWrapper => DEFAULT_DX_WRAPPER,
+  getDefaultDxvkVersion: (): DxvkVersion => DEFAULT_DXVK_VERSION,
 
   // Audio
   getDefaultAudioDriver: (): AudioDriver => DEFAULT_AUDIO_DRIVER,
@@ -201,19 +216,17 @@ export const GameNativeDefaults = {
   isValidUseGlsl: (value: string): boolean => VALID_USE_GLSL_VALUES.includes(value.toLowerCase()),
   isValidBox64Version: (version: string): boolean => version === '0.3.6' || version === '0.3.4',
   isValidBox86Version: (version: string): boolean => version === '0.3.2' || version === '0.3.7',
+  isValidDxvkVersion: (version: string): boolean =>
+    VALID_DXVK_VERSIONS.includes(version as DxvkVersion),
 
   // Graphics driver detection with smart fallback for legacy TEXT values
   detectGraphicsDriver: (value: string): GraphicsDriver => {
-    if (!value) {
-      return DEFAULT_GRAPHICS_DRIVER
-    }
+    if (!value) return DEFAULT_GRAPHICS_DRIVER
 
     const cleanValue = value.trim()
 
     // First try exact match for new SELECT values (these are reliable)
-    if (GRAPHICS_DRIVER_MAPPING[cleanValue]) {
-      return GRAPHICS_DRIVER_MAPPING[cleanValue]
-    }
+    if (GRAPHICS_DRIVER_MAPPING[cleanValue]) return GRAPHICS_DRIVER_MAPPING[cleanValue]
 
     // For legacy TEXT values, normalize by trimming whitespace and converting to lowercase
     const normalizedValue = cleanValue.toLowerCase()

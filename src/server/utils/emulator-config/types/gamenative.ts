@@ -125,9 +125,6 @@ export type EnvVars = string
 // CPU list format
 export type CpuList = string
 
-// Drive mappings
-export type Drives = string
-
 /**
  * Complete container configuration interface
  */
@@ -153,23 +150,20 @@ export interface ContainerConfig {
   /** DirectX wrapper configuration */
   dxwrapperConfig?: string
 
+  /** DXVK version */
+  dxvkVersion?: DxvkVersion
+
   /** Audio driver */
   audioDriver?: AudioDriver
 
   /** Windows components configuration */
   wincomponents?: WinComponents
 
-  /** Drive mappings */
-  drives?: Drives
-
   /** Execution arguments */
   execArgs?: string
 
   /** Executable path */
   executablePath?: string
-
-  /** Installation path */
-  installPath?: string
 
   /** Show FPS overlay */
   showFPS?: boolean
@@ -277,14 +271,13 @@ export const DEFAULT_CONFIG: Required<ContainerConfig> = {
   graphicsDriver: 'vortek',
   graphicsDriverVersion: '',
   dxwrapper: 'dxvk',
+  dxvkVersion: '2.6.1-gplasync',
   dxwrapperConfig: '',
   audioDriver: 'alsa',
   wincomponents:
     'direct3d=1,directsound=1,directmusic=0,directshow=0,directplay=0,vcrun2010=1,wmdecoder=1',
-  drives: '',
   execArgs: '',
   executablePath: '',
-  installPath: '',
   showFPS: false,
   launchRealSteam: false,
   cpuList: '0,1,2,3,4,5,6,7', // Dynamic: matches Runtime.getRuntime().availableProcessors()

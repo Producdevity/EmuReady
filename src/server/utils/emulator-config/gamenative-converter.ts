@@ -11,17 +11,16 @@ import {
   BOX64_PRESET_MAPPING,
   BOX86_PRESET_MAPPING,
 } from './defaults/gamenative'
-import { DEFAULT_CONFIG } from './types/gamenative'
-import type {
-  ContainerConfig,
-  ScreenSize,
-  GraphicsDriver,
-  DxWrapper,
-  AudioDriver,
-  StartupSelection,
-  Box86Version,
-  Box64Version,
-  Box86_64Preset,
+import { DEFAULT_CONFIG, type DxvkVersion ,
+  type ContainerConfig,
+  type ScreenSize,
+  type GraphicsDriver,
+  type DxWrapper,
+  type AudioDriver,
+  type StartupSelection,
+  type Box86Version,
+  type Box64Version,
+  type Box86_64Preset,
 } from './types/gamenative'
 import type { Prisma } from '@orm'
 
@@ -81,18 +80,15 @@ const FIELD_MAPPINGS: Record<
   // Graphics driver - handles both new SELECT values and legacy TEXT values
   graphics_driver: {
     key: 'graphicsDriver',
-    transform: (value): GraphicsDriver => {
-      return GameNativeDefaults.detectGraphicsDriver(String(value))
-    },
+    transform: (value): GraphicsDriver => GameNativeDefaults.detectGraphicsDriver(String(value)),
     defaultIfEmpty: GameNativeDefaults.getDefaultGraphicsDriver(),
   },
 
   // DX Wrapper
   dx_wrapper: {
     key: 'dxwrapper',
-    transform: (value): DxWrapper => {
-      return DX_WRAPPER_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultDxWrapper()
-    },
+    transform: (value): DxWrapper =>
+      DX_WRAPPER_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultDxWrapper(),
   },
 
   // DX Wrapper Config
@@ -102,12 +98,22 @@ const FIELD_MAPPINGS: Record<
     defaultIfEmpty: '',
   },
 
+  // DXVK version
+  dxvk_version: {
+    key: 'dxvkVersion',
+    transform: (value): DxvkVersion => {
+      const version = String(value || GameNativeDefaults.getDefaultDxvkVersion()).trim()
+      return GameNativeDefaults.isValidDxvkVersion(version)
+        ? (version as DxvkVersion)
+        : GameNativeDefaults.getDefaultDxvkVersion()
+    },
+  },
+
   // Audio driver
   audio_driver: {
     key: 'audioDriver',
-    transform: (value): AudioDriver => {
-      return AUDIO_DRIVER_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultAudioDriver()
-    },
+    transform: (value): AudioDriver =>
+      AUDIO_DRIVER_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultAudioDriver(),
   },
 
   // Execution arguments
@@ -120,21 +126,18 @@ const FIELD_MAPPINGS: Record<
   // Startup selection
   startup_selection: {
     key: 'startupSelection',
-    transform: (value): StartupSelection => {
-      return (
-        STARTUP_SELECTION_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultStartupSelection()
-      )
-    },
+    transform: (value): StartupSelection =>
+      STARTUP_SELECTION_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultStartupSelection(),
   },
 
   // Box64 version
   box64_version: {
     key: 'box64Version',
     transform: (value): Box64Version => {
-      const v = String(value || GameNativeDefaults.getDefaultBox64Version())
+      const version = String(value || GameNativeDefaults.getDefaultBox64Version()).trim()
       // Validate against known versions using centralized validation
-      return GameNativeDefaults.isValidBox64Version(v)
-        ? (v as Box64Version)
+      return GameNativeDefaults.isValidBox64Version(version)
+        ? (version as Box64Version)
         : GameNativeDefaults.getDefaultBox64Version()
     },
     defaultIfEmpty: GameNativeDefaults.getDefaultBox64Version(),
@@ -144,10 +147,10 @@ const FIELD_MAPPINGS: Record<
   box86_version: {
     key: 'box86Version',
     transform: (value): Box86Version => {
-      const v = String(value || GameNativeDefaults.getDefaultBox86Version())
+      const version = String(value || GameNativeDefaults.getDefaultBox86Version()).trim()
       // Validate against known versions using centralized validation
-      return GameNativeDefaults.isValidBox86Version(v)
-        ? (v as Box86Version)
+      return GameNativeDefaults.isValidBox86Version(version)
+        ? (version as Box86Version)
         : GameNativeDefaults.getDefaultBox86Version()
     },
     defaultIfEmpty: GameNativeDefaults.getDefaultBox86Version(),
@@ -164,9 +167,8 @@ const FIELD_MAPPINGS: Record<
   // Box86 preset (not in example but needed)
   box86_preset: {
     key: 'box86Preset',
-    transform: (value): Box86_64Preset => {
-      return BOX86_PRESET_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultBoxPreset()
-    },
+    transform: (value): Box86_64Preset =>
+      BOX86_PRESET_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultBoxPreset(),
   },
 
   // Windows Components - Critical missing field
@@ -183,7 +185,7 @@ const FIELD_MAPPINGS: Record<
   video_memory_size: {
     key: 'videoMemorySize',
     transform: (value) => {
-      const sizeStr = String(value || GameNativeDefaults.getDefaultVideoMemorySize())
+      const sizeStr = String(value || GameNativeDefaults.getDefaultVideoMemorySize()).trim()
       // Validate against known sizes using centralized validation
       return GameNativeDefaults.isValidVideoMemorySize(sizeStr)
         ? sizeStr
@@ -413,38 +415,4 @@ export function convertToGameNativeConfig(input: GameNativeConfigInput): GameNat
  */
 export function serializeGameNativeConfig(config: GameNativeConfig): string {
   return JSON.stringify(config, null, 2)
-}
-
-/**
- * Get fields that are missing from custom fields but important for GameNative
- */
-export function getMissingImportantFields(): string[] {
-  return [
-    // Critical for compatibility
-    'wincomponents - Windows components config (direct3d, directsound, etc.)',
-    'wow64Mode - WoW64 mode for 32-bit apps (default: true)',
-    'box86_version - Box86 version (default: 0.3.2)',
-    'box86_preset - Box86 preset (default: COMPATIBILITY)',
-
-    // Performance impacting
-    'videoMemorySize - Video memory in MB (default: 2048)',
-    'csmt - Command stream multi-threading (default: true)',
-    'cpuList - CPU core affinity (default: 0-7)',
-
-    // Input/Controller
-    'sdlControllerAPI - SDL controller support (default: true)',
-    'enableXInput - XInput support (default: true)',
-    'enableDInput - DirectInput support (default: true)',
-    'dinputMapperType - DirectInput mapper (default: 1 for XInput)',
-
-    // Graphics/Rendering
-    'videoPciDeviceID - Emulated GPU ID (default: 1728 - GTX 480)',
-    'offScreenRenderingMode - Rendering mode (default: fbo)',
-    'strictShaderMath - Shader math precision (default: true)',
-    'mouseWarpOverride - Mouse warp behavior (default: disable)',
-
-    // User Experience
-    'showFPS - FPS overlay (default: false)',
-    'desktopTheme - Wine desktop theme (default: LIGHT,IMAGE,#0277bd)',
-  ]
 }
