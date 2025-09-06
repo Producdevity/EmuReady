@@ -144,6 +144,15 @@ self.addEventListener(
     // Process only same-origin requests
     if (url.origin !== self.location.origin) return
 
+    // Bypass all Next.js internals and RSC/flight requests to avoid UI staleness
+    const accept = event.request.headers.get('accept') || ''
+    // - React Server Components / Flight payloads
+    if (accept.includes('text/x-component')) return
+    // - Next data requests (used by App Router)
+    if (url.searchParams.has('__nextDataReq')) return
+    // - Any Next internal asset or runtime path (not only /_next/static)
+    if (url.pathname.startsWith('/_next/')) return
+
     // Special handling for API and tRPC routes - pass through without interference
     if (url.pathname.includes('/api/') || url.pathname.includes('/trpc/')) {
       // Let the browser handle API requests normally
