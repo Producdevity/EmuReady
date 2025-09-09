@@ -7,10 +7,10 @@ import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { api } from '@/lib/api'
 import { getImageDisplayName, getImageTypeDisplayName } from '@/lib/tgdb-utils'
 import { cn } from '@/lib/utils'
-import { type GameImageOption, type GameImageType } from '@/types/tgdb'
+import { type GameImageOption, type TGDBGameImageType } from '@/types/tgdb'
 import getImageUrl from '@/utils/getImageUrl'
 
-function getImageTypeClassName(imageType: GameImageType) {
+function getImageTypeClassName(imageType: TGDBGameImageType) {
   return imageType === 'boxart'
     ? 'bg-blue-600'
     : imageType === 'fanart'

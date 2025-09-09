@@ -269,7 +269,7 @@ function SocModal(props: Props) {
         )}
 
         <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
-          <Button type="button" variant="outline" onClick={props.onClose}>
+          <Button type="button" variant="ghost" onClick={props.onClose}>
             Cancel
           </Button>
           <Button

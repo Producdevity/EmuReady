@@ -462,12 +462,7 @@ function CustomFieldTemplateFormModal(props: Props) {
               <h3 className="text-lg font-medium">
                 Template Fields <span className="text-red-500">*</span>
               </h3>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={addField}
-                disabled={fields.length >= 50}
-              >
+              <Button variant="ghost" onClick={addField} disabled={fields.length >= 50}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Field
               </Button>
@@ -487,12 +482,7 @@ function CustomFieldTemplateFormModal(props: Props) {
                       <GripVertical className="h-5 w-5 text-gray-400 mr-2" />
                       <span className="font-medium">Field {fieldIndex + 1}</span>
                     </div>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeField(fieldIndex)}
-                    >
+                    <Button variant="destructive" size="sm" onClick={() => removeField(fieldIndex)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -865,8 +855,7 @@ function CustomFieldTemplateFormModal(props: Props) {
                           Options <span className="text-red-500">*</span>
                         </label>
                         <Button
-                          type="button"
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
                           onClick={() => addOptionToField(fieldIndex)}
                           disabled={field.options.length >= 50}
@@ -960,7 +949,7 @@ function CustomFieldTemplateFormModal(props: Props) {
           </div>
 
           <div className="flex justify-end space-x-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={props.onClose} disabled={isSubmitting}>
+            <Button variant="ghost" onClick={props.onClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button

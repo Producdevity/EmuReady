@@ -173,7 +173,7 @@ function ApprovalModal(props: Props) {
         )}
         <div className="flex justify-end space-x-3 pt-4 border-t dark:border-gray-700 mt-6">
           <Button
-            variant="outline"
+            variant="ghost"
             onClick={props.closeApprovalModal}
             disabled={props.approveMutation.isPending || props.rejectMutation.isPending}
           >

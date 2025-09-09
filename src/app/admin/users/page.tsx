@@ -340,7 +340,7 @@ function AdminUsersPage() {
                     )}
                     {columnVisibility.isColumnVisible('trustScore') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {user.trustScore}
+                        <Badge pill>{user.trustScore}</Badge>
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('createdAt') && (

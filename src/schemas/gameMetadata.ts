@@ -31,15 +31,11 @@ export function getTgdbGameId(game: {
   metadata?: unknown
 }): number | null {
   // First check the direct tgdbGameId field - use explicit number type checking
-  if (typeof game.tgdbGameId === 'number') {
-    return game.tgdbGameId
-  }
+  if (typeof game.tgdbGameId === 'number') return game.tgdbGameId
 
   // Fallback to metadata.tgdbId for backward compatibility
   const metadata = parseGameMetadata(game.metadata)
-  if (typeof metadata?.tgdbId === 'number') {
-    return metadata.tgdbId
-  }
+  if (typeof metadata?.tgdbId === 'number') return metadata.tgdbId
 
   return null
 }

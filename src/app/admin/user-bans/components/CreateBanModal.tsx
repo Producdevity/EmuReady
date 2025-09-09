@@ -364,17 +364,18 @@ function CreateBanModal(props: Props) {
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Reason for Ban *
           </label>
-          <textarea
+          <Input
+            as="textarea"
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
+            onChange={(ev) => setReason(ev.target.value)}
             placeholder="Provide a clear reason for banning this user..."
             rows={3}
-            maxLength={500}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white resize-none"
+            maxLength={CHAR_LIMITS.BAN_NOTES}
+            inputClassName="resize-none"
             required
           />
           <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-right">
-            {reason.length}/500 characters
+            {reason.length}/{CHAR_LIMITS.BAN_NOTES} characters
           </div>
         </div>
 
@@ -441,13 +442,14 @@ function CreateBanModal(props: Props) {
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Additional Notes (Optional)
           </label>
-          <textarea
+          <Input
+            as="textarea"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Any additional context or notes about this ban..."
             rows={3}
             maxLength={CHAR_LIMITS.NOTES}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white resize-none"
+            inputClassName="resize-none"
           />
           <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-right">
             {notes.length}/{CHAR_LIMITS.NOTES} characters
@@ -458,7 +460,7 @@ function CreateBanModal(props: Props) {
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             onClick={handleClose}
             disabled={createBanMutation.isPending}
           >

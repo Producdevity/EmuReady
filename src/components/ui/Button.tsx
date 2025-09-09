@@ -82,6 +82,7 @@ export function Button({
   className,
   variant,
   size,
+  type = 'button',
   asChild = false,
   isLoading = false,
   isFullWidth = false,
@@ -105,6 +106,7 @@ export function Button({
         (isLoading || disabled) && 'cursor-not-allowed',
       )}
       disabled={isLoading || disabled}
+      type={type}
       {...props}
     >
       <span className="flex items-center gap-2">

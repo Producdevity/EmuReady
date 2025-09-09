@@ -206,7 +206,7 @@ export default function BadgeDetailsModal(props: Props) {
         ) : null}
 
         <DialogFooter>
-          <Button variant="outline" onClick={props.onClose}>
+          <Button variant="ghost" onClick={props.onClose}>
             Close
           </Button>
           {badge && (

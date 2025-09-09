@@ -15,6 +15,7 @@ interface BaseInputProps extends InputHTMLAttributes<HTMLInputElement> {
   leftIcon?: ReactNode
   rightIcon?: ReactNode
   className?: string
+  inputClassName?: string
   containerClassName?: string
   as?: InputAs
 }
@@ -24,7 +25,16 @@ type Props = BaseInputProps &
 
 export const Input = forwardRef<HTMLElement, Props>(
   (
-    { leftIcon, rightIcon, className, containerClassName, as = 'input', children, ...props },
+    {
+      leftIcon,
+      rightIcon,
+      inputClassName,
+      className,
+      containerClassName,
+      as = 'input',
+      children,
+      ...props
+    },
     ref,
   ) => {
     const commonInputStyling =
@@ -56,6 +66,7 @@ export const Input = forwardRef<HTMLElement, Props>(
                 'py-2 px-3',
                 leftIcon ? 'pl-10' : '',
                 rightIcon ? 'pr-10' : '',
+                inputClassName,
               )}
               {...props}
             />
@@ -69,6 +80,7 @@ export const Input = forwardRef<HTMLElement, Props>(
                 'py-2 px-3',
                 leftIcon ? 'pl-10' : '',
                 selectRightIcon ? 'pr-10' : '',
+                inputClassName,
               )}
               {...(props as SelectHTMLAttributes<HTMLSelectElement>)}
             >
@@ -83,6 +95,7 @@ export const Input = forwardRef<HTMLElement, Props>(
                 'py-2 px-3 resize-vertical',
                 leftIcon ? 'pl-10' : '',
                 rightIcon ? 'pr-10' : '',
+                inputClassName,
               )}
               {...(props as TextareaHTMLAttributes<HTMLTextAreaElement>)}
             />

@@ -129,7 +129,11 @@ function GpuModal(props: Props) {
         )}
 
         <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
-          <Button type="button" variant="outline" onClick={props.onClose}>
+          <Button
+            variant="ghost"
+            onClick={props.onClose}
+            disabled={createGpu.isPending || updateGpu.isPending}
+          >
             Cancel
           </Button>
           <Button

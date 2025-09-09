@@ -95,7 +95,7 @@ export interface TGDBPlatformsResponse extends TGDBBaseApiResponse {
   }
 }
 
-export type GameImageType =
+export type TGDBGameImageType =
   | 'boxart'
   | 'fanart'
   | 'banner'
@@ -106,7 +106,7 @@ export type GameImageType =
 export interface GameImageOption {
   id: string
   url: string
-  type: GameImageType
+  type: TGDBGameImageType
   source: 'tgdb' | 'custom'
   gameId: number
   gameName: string

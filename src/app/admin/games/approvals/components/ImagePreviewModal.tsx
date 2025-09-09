@@ -4,52 +4,60 @@ import { useState } from 'react'
 import { Modal, Button } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { cn } from '@/lib/utils'
+import { type GameImageType } from '@/types/models'
 import { type RouterOutput } from '@/types/trpc'
+import { type Nullable } from '@/types/utils'
 import getImageUrl from '@/utils/getImageUrl'
 
 type Game = RouterOutput['games']['getPendingGames']['games'][number]
-type ImageTabType = 'boxart' | 'banner' | 'imageUrl'
 
-const tabLabelMap: Record<ImageTabType, string> = {
+const DEFAULT_IMAGE_ERROR_STATE: Record<GameImageType, boolean> = {
+  boxart: false,
+  banner: false,
+  main: false,
+} as const
+
+const tabLabelMap: Record<GameImageType, string> = {
   boxart: 'Box Art',
   banner: 'Banner',
-  imageUrl: 'Main Image',
+  main: 'Main Image',
 }
 
 interface Props {
   isOpen: boolean
   onClose: () => void
-  game: Game | null
-  initialImageType?: ImageTabType
+  game: Nullable<Game>
+  initialImageType?: GameImageType
 }
 
 function ImagePreviewModal(props: Props) {
-  const [activeTab, setActiveTab] = useState<ImageTabType>(props.initialImageType || 'boxart')
-  const [imageError, setImageError] = useState<Record<string, boolean>>({})
+  const [activeTab, setActiveTab] = useState<GameImageType>(props.initialImageType || 'boxart')
+  const [imageError, setImageError] =
+    useState<Record<GameImageType, boolean>>(DEFAULT_IMAGE_ERROR_STATE)
 
   if (!props.game) return null
 
-  const getImageUrlByType = (type: ImageTabType): string | null => {
+  const getImageUrlByType = (type: GameImageType): Nullable<string> => {
     switch (type) {
       case 'boxart':
         return props.game?.boxartUrl && !imageError.boxart ? props.game.boxartUrl : null
       case 'banner':
         return props.game?.bannerUrl && !imageError.banner ? props.game.bannerUrl : null
-      case 'imageUrl':
-        return props.game?.imageUrl && !imageError.imageUrl ? props.game.imageUrl : null
+      case 'main':
+        return props.game?.imageUrl && !imageError.main ? props.game.imageUrl : null
       default:
         return null
     }
   }
 
-  const handleImageError = (type: string) => {
+  const handleImageError = (type: GameImageType) => {
     setImageError((prev) => ({ ...prev, [type]: true }))
   }
 
-  const availableImageTypes: ImageTabType[] = [
+  const availableImageTypes: GameImageType[] = [
     ...(props.game.boxartUrl && !imageError.boxart ? ['boxart' as const] : []),
     ...(props.game.bannerUrl && !imageError.banner ? ['banner' as const] : []),
-    ...(props.game.imageUrl && !imageError.imageUrl ? ['imageUrl' as const] : []),
+    ...(props.game.imageUrl && !imageError.main ? ['main' as const] : []),
   ]
 
   const currentImageUrl = getImageUrlByType(activeTab)
@@ -129,7 +137,7 @@ function ImagePreviewModal(props: Props) {
 
         {/* Action Buttons */}
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <Button variant="outline" onClick={props.onClose}>
+          <Button variant="ghost" onClick={props.onClose}>
             Close
           </Button>
         </div>

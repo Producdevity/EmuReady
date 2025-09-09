@@ -145,7 +145,7 @@ export default function UserBadgeModal(props: Props) {
                       </div>
                     </div>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       onClick={() => handleRemoveBadge(userBadge.id)}
                       disabled={removeBadgeMutation.isPending}
@@ -238,7 +238,12 @@ export default function UserBadgeModal(props: Props) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={props.onClose}>
+          <Button
+            variant="ghost"
+            onClick={props.onClose}
+            isLoading={assignBadgeMutation.isPending}
+            disabled={assignBadgeMutation.isPending}
+          >
             Close
           </Button>
         </DialogFooter>

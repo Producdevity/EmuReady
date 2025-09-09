@@ -200,7 +200,7 @@ export default function BadgeModal({ isOpen, onClose, badge, onSuccess }: BadgeM
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
+            <Button variant="ghost" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting} isLoading={isSubmitting}>
