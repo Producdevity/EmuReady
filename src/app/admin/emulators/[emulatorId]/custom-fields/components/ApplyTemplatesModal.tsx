@@ -1,11 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import { Button, Modal } from '@/components/ui'
+import { getFieldTypeDisplayName } from '@/app/admin/emulators/[emulatorId]/custom-fields/utils/getFieldTypeDisplayName'
+import { Button, LoadingSpinner, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import { CustomFieldType } from '@orm'
+import { type Nullable } from '@/types/utils'
 
+interface ApplyResultState {
+  success: boolean
+  message: string
+  details?: {
+    createdFields: number
+    skippedFields: number
+    templateNames: string[]
+  }
+}
 interface Props {
   emulatorId: string
   isOpen: boolean
@@ -15,17 +25,9 @@ interface Props {
 
 export default function ApplyTemplatesModal(props: Props) {
   const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>([])
-  const [applyResult, setApplyResult] = useState<{
-    success: boolean
-    message: string
-    details?: {
-      createdFields: number
-      skippedFields: number
-      templateNames: string[]
-    }
-  } | null>(null)
+  const [applyResult, setApplyResult] = useState<Nullable<ApplyResultState>>(null)
 
-  const { data: templates, isLoading: isLoadingTemplates } = api.customFieldTemplates.get.useQuery()
+  const customFieldTemplatesQuery = api.customFieldTemplates.get.useQuery()
 
   const applyTemplatesMutation = api.customFieldTemplates.applyToEmulator.useMutation({
     onSuccess: (result) => {
@@ -34,9 +36,7 @@ export default function ApplyTemplatesModal(props: Props) {
         message: `Successfully applied ${result.createdFields} field${result.createdFields !== 1 ? 's' : ''} from ${result.templateNames.join(', ')}`,
         details: result,
       })
-      if (result.createdFields > 0) {
-        props.onSuccess()
-      }
+      if (result.createdFields > 0) props.onSuccess()
     },
     onError: (error) => {
       setApplyResult({
@@ -68,23 +68,6 @@ export default function ApplyTemplatesModal(props: Props) {
     props.onClose()
   }
 
-  function getFieldTypeDisplayName(type: CustomFieldType) {
-    switch (type) {
-      case CustomFieldType.TEXT:
-        return 'Text'
-      case CustomFieldType.TEXTAREA:
-        return 'Long Text'
-      case CustomFieldType.URL:
-        return 'URL'
-      case CustomFieldType.BOOLEAN:
-        return 'Yes/No'
-      case CustomFieldType.SELECT:
-        return 'Dropdown'
-      default:
-        return type
-    }
-  }
-
   return (
     <Modal
       isOpen={props.isOpen}
@@ -114,9 +97,9 @@ export default function ApplyTemplatesModal(props: Props) {
           </div>
         )}
 
-        {isLoadingTemplates ? (
-          <div>Loading templates...</div>
-        ) : !templates || templates.length === 0 ? (
+        {customFieldTemplatesQuery.isLoading ? (
+          <LoadingSpinner text="Loading templates..." />
+        ) : !customFieldTemplatesQuery.data || customFieldTemplatesQuery.data.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-500 dark:text-gray-400">No custom field templates available.</p>
             <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
@@ -134,7 +117,7 @@ export default function ApplyTemplatesModal(props: Props) {
             </div>
 
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {templates.map((template) => (
+              {customFieldTemplatesQuery.data.map((template) => (
                 <div
                   key={template.id}
                   className={cn(
@@ -187,7 +170,7 @@ export default function ApplyTemplatesModal(props: Props) {
         )}
 
         <div className="flex justify-end space-x-3 pt-4 border-t">
-          <Button variant="outline" onClick={handleClose}>
+          <Button variant="ghost" onClick={handleClose} disabled={applyTemplatesMutation.isPending}>
             {applyResult?.success ? 'Close' : 'Cancel'}
           </Button>
           {!applyResult?.success && (
