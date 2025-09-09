@@ -202,7 +202,7 @@ model System {
   id             String     @id @default(uuid())
   name           String     @unique
   key            String?    @unique
-  tgdbPlatformId Int? // TheGamesDB platform ID for image searching
+  tgdbPlatformId Int? // @deprecated TheGamesDB platform ID for image searching
   games          Game[]
   emulators      Emulator[]
 }
@@ -212,8 +212,8 @@ model Game {
   title       String
   systemId    String
   imageUrl    String? // Fallback image URL
-  boxartUrl   String? // TGDB boxart image URL
-  bannerUrl   String? // TGDB banner image URL
+  boxartUrl   String? // boxart image URL
+  bannerUrl   String? // banner image URL
   tgdbGameId  Int? // TheGamesDB game ID for reliable duplicate detection
   metadata    Json? // External provider IDs: { tgdbId?: number, rawgId?: number, igdbId?: number }
   isErotic    Boolean        @default(false)
@@ -604,14 +604,14 @@ model TrustActionLog {
 
 // Permission System Models
 model Permission {
-  id          String   @id @default(uuid())
-  key         String   @unique // Unique identifier like "approve_listings"
+  id          String              @id @default(uuid())
+  key         String              @unique // Unique identifier like "approve_listings"
   label       String // Display name like "Approve Listings"
   description String? // Detailed explanation of what this permission does
   category    PermissionCategory? // Category for organizing permissions
-  isSystem    Boolean  @default(false) // System permissions that cannot be deleted
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isSystem    Boolean             @default(false) // System permissions that cannot be deleted
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
 
   rolePermissions RolePermission[]
   actionLogs      PermissionActionLog[]
@@ -1060,6 +1060,7 @@ enum AuditEntityType {
 
   @@map("audit_entity_type")
 }
+
 enum AuditAction {
   CREATE
   UPDATE
@@ -1076,20 +1077,20 @@ enum AuditAction {
 }
 
 model AuditLog {
-  id            String      @id @default(uuid())
-  actorId       String?
-  action        AuditAction
-  entityType    AuditEntityType
-  entityId      String?
-  targetUserId  String?
-  metadata      Json?
-  ipAddress     String?
-  userAgent     String?
-  requestId     String?
-  createdAt     DateTime    @default(now())
+  id           String          @id @default(uuid())
+  actorId      String?
+  action       AuditAction
+  entityType   AuditEntityType
+  entityId     String?
+  targetUserId String?
+  metadata     Json?
+  ipAddress    String?
+  userAgent    String?
+  requestId    String?
+  createdAt    DateTime        @default(now())
 
-  actor       User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
-  targetUser  User? @relation("AuditTargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
+  actor      User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  targetUser User? @relation("AuditTargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
 
   @@index([actorId])
   @@index([action])
