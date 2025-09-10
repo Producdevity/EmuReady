@@ -1,5 +1,5 @@
 import { sanitizeText } from '@/utils/sanitization'
-import { NotificationType, type NotificationCategory } from '@orm'
+import { NotificationType, NotificationCategory } from '@orm'
 import type { NotificationTemplate } from './types'
 
 export interface TemplateContext {
@@ -388,42 +388,42 @@ class NotificationTemplateEngine {
 
   getCategory(type: NotificationType): NotificationCategory {
     const categoryMap: Record<string, NotificationCategory> = {
-      [NotificationType.LISTING_COMMENT]: 'ENGAGEMENT',
-      [NotificationType.LISTING_VOTE_UP]: 'ENGAGEMENT',
-      [NotificationType.LISTING_VOTE_DOWN]: 'ENGAGEMENT',
-      [NotificationType.COMMENT_REPLY]: 'ENGAGEMENT',
-      [NotificationType.USER_MENTION]: 'ENGAGEMENT',
-      [NotificationType.COMMENT_ON_LISTING]: 'ENGAGEMENT',
-      [NotificationType.REPLY_TO_COMMENT]: 'ENGAGEMENT',
-      [NotificationType.LISTING_UPVOTED]: 'ENGAGEMENT',
-      [NotificationType.LISTING_DOWNVOTED]: 'ENGAGEMENT',
-      [NotificationType.COMMENT_UPVOTED]: 'ENGAGEMENT',
-      [NotificationType.COMMENT_DOWNVOTED]: 'ENGAGEMENT',
+      [NotificationType.LISTING_COMMENT]: NotificationCategory.ENGAGEMENT,
+      [NotificationType.LISTING_VOTE_UP]: NotificationCategory.ENGAGEMENT,
+      [NotificationType.LISTING_VOTE_DOWN]: NotificationCategory.ENGAGEMENT,
+      [NotificationType.COMMENT_REPLY]: NotificationCategory.ENGAGEMENT,
+      [NotificationType.USER_MENTION]: NotificationCategory.ENGAGEMENT,
+      [NotificationType.COMMENT_ON_LISTING]: NotificationCategory.ENGAGEMENT,
+      [NotificationType.REPLY_TO_COMMENT]: NotificationCategory.ENGAGEMENT,
+      [NotificationType.LISTING_UPVOTED]: NotificationCategory.ENGAGEMENT,
+      [NotificationType.LISTING_DOWNVOTED]: NotificationCategory.ENGAGEMENT,
+      [NotificationType.COMMENT_UPVOTED]: NotificationCategory.ENGAGEMENT,
+      [NotificationType.COMMENT_DOWNVOTED]: NotificationCategory.ENGAGEMENT,
 
-      [NotificationType.NEW_DEVICE_LISTING]: 'CONTENT',
-      [NotificationType.NEW_SOC_LISTING]: 'CONTENT',
-      [NotificationType.GAME_ADDED]: 'CONTENT',
-      [NotificationType.EMULATOR_UPDATED]: 'CONTENT',
+      [NotificationType.NEW_DEVICE_LISTING]: NotificationCategory.CONTENT,
+      [NotificationType.NEW_SOC_LISTING]: NotificationCategory.CONTENT,
+      [NotificationType.GAME_ADDED]: NotificationCategory.CONTENT,
+      [NotificationType.EMULATOR_UPDATED]: NotificationCategory.CONTENT,
 
-      [NotificationType.MAINTENANCE_NOTICE]: 'SYSTEM',
-      [NotificationType.FEATURE_ANNOUNCEMENT]: 'SYSTEM',
-      [NotificationType.POLICY_UPDATE]: 'SYSTEM',
-      [NotificationType.WEEKLY_DIGEST]: 'SYSTEM',
-      [NotificationType.MONTHLY_ACTIVE_BONUS]: 'SYSTEM',
+      [NotificationType.MAINTENANCE_NOTICE]: NotificationCategory.SYSTEM,
+      [NotificationType.FEATURE_ANNOUNCEMENT]: NotificationCategory.SYSTEM,
+      [NotificationType.POLICY_UPDATE]: NotificationCategory.SYSTEM,
+      [NotificationType.WEEKLY_DIGEST]: NotificationCategory.SYSTEM,
+      [NotificationType.MONTHLY_ACTIVE_BONUS]: NotificationCategory.SYSTEM,
 
-      [NotificationType.LISTING_APPROVED]: 'MODERATION',
-      [NotificationType.LISTING_REJECTED]: 'MODERATION',
-      [NotificationType.CONTENT_FLAGGED]: 'MODERATION',
-      [NotificationType.ACCOUNT_WARNING]: 'MODERATION',
-      [NotificationType.ROLE_CHANGED]: 'MODERATION',
-      [NotificationType.USER_BANNED]: 'MODERATION',
-      [NotificationType.USER_UNBANNED]: 'MODERATION',
-      [NotificationType.REPORT_CREATED]: 'MODERATION',
-      [NotificationType.REPORT_STATUS_CHANGED]: 'MODERATION',
-      [NotificationType.VERIFIED_DEVELOPER]: 'MODERATION',
+      [NotificationType.LISTING_APPROVED]: NotificationCategory.MODERATION,
+      [NotificationType.LISTING_REJECTED]: NotificationCategory.MODERATION,
+      [NotificationType.CONTENT_FLAGGED]: NotificationCategory.MODERATION,
+      [NotificationType.ACCOUNT_WARNING]: NotificationCategory.MODERATION,
+      [NotificationType.ROLE_CHANGED]: NotificationCategory.MODERATION,
+      [NotificationType.USER_BANNED]: NotificationCategory.MODERATION,
+      [NotificationType.USER_UNBANNED]: NotificationCategory.MODERATION,
+      [NotificationType.REPORT_CREATED]: NotificationCategory.MODERATION,
+      [NotificationType.REPORT_STATUS_CHANGED]: NotificationCategory.MODERATION,
+      [NotificationType.VERIFIED_DEVELOPER]: NotificationCategory.MODERATION,
     }
 
-    return categoryMap[type] || 'SYSTEM'
+    return categoryMap[type] || NotificationCategory.SYSTEM
   }
 
   getAvailableTypes(): NotificationType[] {
