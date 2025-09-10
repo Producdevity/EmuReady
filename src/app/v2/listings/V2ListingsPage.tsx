@@ -4,11 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { User, ArrowUp } from 'lucide-react'
 import { Suspense, useState, useEffect, useMemo, useCallback } from 'react'
 import useListingsState from '@/app/listings/hooks/useListingsState'
+import { usePreferredHardwareFilters } from '@/app/listings/shared/hooks/usePreferredHardwareFilters'
 import { LoadingSpinner, PullToRefresh, Button } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { filterNullAndEmpty } from '@/utils/filter'
+import { systemOptions, deviceOptions, emulatorOptions, socOptionsParens } from '@/utils/options'
 import { ListingFilters } from './components/ListingFilters'
 import { ListingsContent } from './components/ListingsContent'
 import { ListingsHeader } from './components/ListingsHeader'
@@ -45,40 +47,11 @@ function V2ListingsPage() {
     gcTime: 5 * 60 * 1000,
   })
 
-  const [userDeviceFilterDisabled, setUserDeviceFilterDisabled] = useState(false)
-  const [userSocFilterDisabled, setUserSocFilterDisabled] = useState(false)
-
-  // Get user's preferred device IDs if defaultToUserDevices is enabled
-  const userDeviceIds = useMemo(
-    () =>
-      userPreferencesQuery.data?.defaultToUserDevices && userPreferencesQuery.data.devicePreferences
-        ? userPreferencesQuery.data.devicePreferences.map((pref) => pref.deviceId)
-        : [],
-    [userPreferencesQuery.data],
-  )
-
-  // Get user's preferred SoC IDs if defaultToUserSocs is enabled
-  const userSocIds = useMemo(
-    () =>
-      userPreferencesQuery.data?.defaultToUserSocs && userPreferencesQuery.data.socPreferences
-        ? userPreferencesQuery.data.socPreferences.map((pref) => pref.socId)
-        : [],
-    [userPreferencesQuery.data],
-  )
-
-  // Apply user device filter if enabled and no manual device filter is set
-  const shouldUseUserDeviceFilter =
-    userPreferencesQuery.data?.defaultToUserDevices &&
-    listingsState.deviceIds.length === 0 &&
-    userDeviceIds.length > 0 &&
-    !userDeviceFilterDisabled
-
-  // Apply user SoC filter if enabled and no manual SoC filter is set
-  const shouldUseUserSocFilter =
-    userPreferencesQuery.data?.defaultToUserSocs &&
-    listingsState.socIds.length === 0 &&
-    userSocIds.length > 0 &&
-    !userSocFilterDisabled
+  const preferred = usePreferredHardwareFilters({
+    userPreferences: userPreferencesQuery.data,
+    deviceIds: listingsState.deviceIds,
+    socIds: listingsState.socIds,
+  })
 
   // Filter params for API call
   const filterParams: RouterInput['listings']['get'] = useMemo(
@@ -87,18 +60,8 @@ function V2ListingsPage() {
       limit: 15, // Increased for better mobile experience
       ...filterNullAndEmpty({
         systemIds: listingsState.systemIds.length > 0 ? listingsState.systemIds : undefined,
-        deviceIds:
-          listingsState.deviceIds.length > 0
-            ? listingsState.deviceIds
-            : shouldUseUserDeviceFilter
-              ? userDeviceIds
-              : undefined,
-        socIds:
-          listingsState.socIds.length > 0
-            ? listingsState.socIds
-            : shouldUseUserSocFilter
-              ? userSocIds
-              : undefined,
+        deviceIds: preferred.appliedDeviceIds,
+        socIds: preferred.appliedSocIds,
         emulatorIds: listingsState.emulatorIds.length > 0 ? listingsState.emulatorIds : undefined,
         performanceIds:
           listingsState.performanceIds.length > 0 ? listingsState.performanceIds : undefined,
@@ -110,18 +73,14 @@ function V2ListingsPage() {
     }),
     [
       listingsState.systemIds,
-      listingsState.deviceIds,
-      listingsState.socIds,
       listingsState.emulatorIds,
       listingsState.performanceIds,
       listingsState.search,
       listingsState.sortField,
       listingsState.sortDirection,
       myListingsOnly,
-      shouldUseUserDeviceFilter,
-      shouldUseUserSocFilter,
-      userDeviceIds,
-      userSocIds,
+      preferred.appliedDeviceIds,
+      preferred.appliedSocIds,
       page,
       userQuery.data?.id,
     ],
@@ -228,17 +187,17 @@ function V2ListingsPage() {
 
       // When user manually selects devices, disable user preference filtering
       if (values.length > 0) {
-        setUserDeviceFilterDisabled(true)
-        setUserSocFilterDisabled(true)
+        preferred.setUserDeviceFilterDisabled(true)
+        preferred.setUserSocFilterDisabled(true)
       }
       // When clearing device selections, ensure user preferences are disabled
       if (values.length === 0) {
-        setUserDeviceFilterDisabled(true)
+        preferred.setUserDeviceFilterDisabled(true)
       }
 
       analytics.filter.device(values)
     },
-    [listingsState],
+    [listingsState, preferred],
   )
 
   const handleSocChange = useCallback(
@@ -249,17 +208,17 @@ function V2ListingsPage() {
 
       // When user manually selects SoCs, disable user preference filtering
       if (values.length > 0) {
-        setUserSocFilterDisabled(true)
-        setUserDeviceFilterDisabled(true)
+        preferred.setUserSocFilterDisabled(true)
+        preferred.setUserDeviceFilterDisabled(true)
       }
       // When clearing SOC selections, ensure user preferences are disabled
       if (values.length === 0) {
-        setUserSocFilterDisabled(true)
+        preferred.setUserSocFilterDisabled(true)
       }
 
       analytics.filter.soc(values)
     },
-    [listingsState],
+    [listingsState, preferred],
   )
 
   const handleSystemChange = useCallback(
@@ -305,10 +264,10 @@ function V2ListingsPage() {
     setMyListingsOnly(false)
     setPage(1)
     setAllListings([])
-    setUserDeviceFilterDisabled(false)
-    setUserSocFilterDisabled(false)
+    preferred.setUserDeviceFilterDisabled(false)
+    preferred.setUserSocFilterDisabled(false)
     analytics.filter.clearAll()
-  }, [listingsState])
+  }, [listingsState, preferred])
 
   // Check if any filters are active
   const hasActiveFilters =
@@ -333,39 +292,23 @@ function V2ListingsPage() {
   const socsQuery = api.socs.get.useQuery({ limit: 500, offset: 0 })
 
   // Transform preloaded data into options format
-  const systemOptions = useMemo(
-    () =>
-      systemsQuery.data?.map((system) => ({
-        id: system.id,
-        name: system.name,
-      })),
+  const systemOpts = useMemo(
+    () => (systemsQuery.data ? systemOptions(systemsQuery.data) : undefined),
     [systemsQuery.data],
   )
 
-  const deviceOptions = useMemo(
-    () =>
-      devicesQuery.data?.devices.map((device) => ({
-        id: device.id,
-        name: `${device.brand.name} ${device.modelName}`,
-      })),
+  const deviceOpts = useMemo(
+    () => (devicesQuery.data ? deviceOptions(devicesQuery.data.devices) : undefined),
     [devicesQuery.data],
   )
 
-  const emulatorOptions = useMemo(
-    () =>
-      emulatorsQuery.data?.emulators.map((emulator) => ({
-        id: emulator.id,
-        name: emulator.name,
-      })),
+  const emulatorOpts = useMemo(
+    () => (emulatorsQuery.data ? emulatorOptions(emulatorsQuery.data.emulators) : undefined),
     [emulatorsQuery.data],
   )
 
-  const socOptions = useMemo(
-    () =>
-      socsQuery.data?.socs.map((soc) => ({
-        id: soc.id,
-        name: `${soc.name} (${soc.manufacturer})`,
-      })),
+  const socOpts = useMemo(
+    () => (socsQuery.data ? socOptionsParens(socsQuery.data.socs) : undefined),
     [socsQuery.data],
   )
 
@@ -455,19 +398,19 @@ function V2ListingsPage() {
             clearAllFilters={clearAllFilters}
             systemIds={listingsState.systemIds}
             handleSystemChange={handleSystemChange}
-            systemOptions={systemOptions}
+            systemOptions={systemOpts}
             performanceIds={listingsState.performanceIds.map(String)}
             handlePerformanceChange={(values) => handlePerformanceChange(values.map(Number))}
             performanceScales={performanceScalesQuery.data}
             deviceIds={listingsState.deviceIds}
             handleDeviceChange={handleDeviceChange}
-            deviceOptions={deviceOptions}
+            deviceOptions={deviceOpts}
             emulatorIds={listingsState.emulatorIds}
             handleEmulatorChange={handleEmulatorChange}
-            emulatorOptions={emulatorOptions}
+            emulatorOptions={emulatorOpts}
             socIds={listingsState.socIds}
             handleSocChange={handleSocChange}
-            socOptions={socOptions}
+            socOptions={socOpts}
           />
 
           {/* Listings Content */}

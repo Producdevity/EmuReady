@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
+import { useAdminFilters } from '@/app/admin/hooks/useAdminFilters'
 import { AdminPageLayout, AdminTableContainer, AdminStatsDisplay } from '@/components/admin'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
@@ -88,9 +89,25 @@ function AdminListingsPage() {
   const emulatorLogos = useEmulatorLogos()
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = useState<ApprovalStatus | ''>('')
-  const [systemFilter, setSystemFilter] = useState('')
-  const [emulatorFilter, setEmulatorFilter] = useState('')
+
+  const { filters, setFilter, clearAll } = useAdminFilters<{
+    status: ApprovalStatus | ''
+    systemId: string
+    emulatorId: string
+  }>(table, {
+    status: {
+      parse: (s) =>
+        s === ApprovalStatus.APPROVED ||
+        s === ApprovalStatus.PENDING ||
+        s === ApprovalStatus.REJECTED
+          ? (s as ApprovalStatus)
+          : '',
+      serialize: (v) => (v ? (v as string) : ''),
+      defaultValue: '',
+    },
+    systemId: { parse: (s) => s || '', serialize: (v) => v || '', defaultValue: '' },
+    emulatorId: { parse: (s) => s || '', serialize: (v) => v || '', defaultValue: '' },
+  })
 
   const deleteListing = api.listings.delete.useMutation({
     onSuccess: () => {
@@ -106,9 +123,9 @@ function AdminListingsPage() {
     sortField: table.sortField ?? null,
     sortDirection: table.sortDirection ?? null,
     search: isEmpty(table.search) ? null : table.search,
-    statusFilter: statusFilter || null,
-    systemFilter: systemFilter || null,
-    emulatorFilter: emulatorFilter || null,
+    statusFilter: filters.status || null,
+    systemFilter: filters.systemId || null,
+    emulatorFilter: filters.emulatorId || null,
   })
 
   const listingStatsQuery = api.listings.stats.useQuery()
@@ -118,9 +135,7 @@ function AdminListingsPage() {
 
   const clearFilters = () => {
     table.setSearch('')
-    setStatusFilter('')
-    setSystemFilter('')
-    setEmulatorFilter('')
+    clearAll()
     table.setPage(1)
   }
 
@@ -227,11 +242,8 @@ function AdminListingsPage() {
               hideLabel
               label="Status Filter"
               options={statusOptions}
-              value={statusFilter}
-              onChange={(ev) => {
-                setStatusFilter(ev.target.value as ApprovalStatus | '')
-                table.setPage(1)
-              }}
+              value={filters.status}
+              onChange={(ev) => setFilter('status', ev.target.value as ApprovalStatus | '')}
               className="min-w-[140px]"
             />
             <SelectInput
@@ -244,11 +256,8 @@ function AdminListingsPage() {
                   name: system.name,
                 })) ?? []),
               ]}
-              value={systemFilter}
-              onChange={(ev) => {
-                setSystemFilter(ev.target.value)
-                table.setPage(1)
-              }}
+              value={filters.systemId}
+              onChange={(ev) => setFilter('systemId', ev.target.value)}
               className="min-w-[140px]"
             />
             <SelectInput
@@ -261,11 +270,8 @@ function AdminListingsPage() {
                   name: emulator.name,
                 })) ?? []),
               ]}
-              value={emulatorFilter}
-              onChange={(ev) => {
-                setEmulatorFilter(ev.target.value)
-                table.setPage(1)
-              }}
+              value={filters.emulatorId}
+              onChange={(ev) => setFilter('emulatorId', ev.target.value)}
               className="min-w-[140px]"
             />
             <Button variant="outline" onClick={clearFilters}>
@@ -374,7 +380,7 @@ function AdminListingsPage() {
               ) : listings.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-600 dark:text-gray-400 text-lg">
-                    {table.search || statusFilter || systemFilter || emulatorFilter
+                    {table.search || filters.status || filters.systemId || filters.emulatorId
                       ? 'No listings found matching your filters.'
                       : 'No listings found.'}
                   </p>

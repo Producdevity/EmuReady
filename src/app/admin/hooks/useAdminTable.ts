@@ -45,16 +45,13 @@ export interface UseAdminTableReturn<TSortField extends string> {
   resetFilters: () => void
 }
 
-const DEFAULT_LIMIT = PAGINATION.ADMIN_TABLE_LIMIT
-const DEFAULT_SEARCH_DEBOUNCE = UI_CONSTANTS.DEBOUNCE_DELAY
-
 export function useAdminTable<TSortField extends string>(
   opts: UseAdminTableOptions<TSortField> = {},
 ): UseAdminTableReturn<TSortField> {
   const searchParams = useSearchParams()
   const router = useRouter()
   const enableUrlState = opts.enableUrlState ?? true
-  const searchDebounceMs = opts.searchDebounceMs ?? DEFAULT_SEARCH_DEBOUNCE
+  const searchDebounceMs = opts.searchDebounceMs ?? UI_CONSTANTS.DEBOUNCE_DELAY
 
   // Initialize state from URL params or defaults with validation
   const getValidatedParams = () => {
@@ -95,12 +92,7 @@ export function useAdminTable<TSortField extends string>(
 
   // Initialize additional parameters from URL
   const [additionalParams, setAdditionalParams] = useState<Record<string, string>>(() => {
-    const initialParams: Record<string, string> = {}
-
-    // First, set from defaults if provided
-    if (opts.additionalParams) {
-      Object.assign(initialParams, opts.additionalParams)
-    }
+    const initialParams: Record<string, string> = { ...(opts.additionalParams ?? {}) }
 
     // Then override with URL params if present
     if (enableUrlState) {
@@ -150,9 +142,7 @@ export function useAdminTable<TSortField extends string>(
     setPageState(1) // Reset to first page when searching
   }
 
-  const setPage = (newPage: number) => {
-    setPageState(newPage)
-  }
+  const setPage = (newPage: number) => setPageState(newPage)
 
   const setSortField = (field: TSortField | null) => {
     setSortFieldState(field)
@@ -222,7 +212,7 @@ export function useAdminTable<TSortField extends string>(
     isSearching,
     page: page ?? 1,
     setPage,
-    limit: opts.defaultLimit ?? DEFAULT_LIMIT,
+    limit: opts.defaultLimit ?? PAGINATION.ADMIN_TABLE_LIMIT,
     sortField,
     setSortField,
     sortDirection,

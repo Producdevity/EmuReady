@@ -16,9 +16,12 @@ import {
   User,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState, useEffect, type ChangeEvent } from 'react'
-import { MultiSelect, Input, Button } from '@/components/ui'
+import { useState, useEffect } from 'react'
+import FilterField from '@/app/listings/shared/components/FilterField'
+import { ListingsSearchBar } from '@/app/listings/shared/components/ListingsSearchBar'
+import { MultiSelect, Button } from '@/components/ui'
 import analytics from '@/lib/analytics'
+import { deviceOptions, performanceOptions, socOptions } from '@/utils/options'
 import type { AppRouter } from '@/types/trpc'
 
 type RouterOutput = inferRouterOutputs<AppRouter>
@@ -514,21 +517,14 @@ function ListingFilters(props: FiltersProps) {
                     <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">
                       Search
                     </label>
-                    <div className="relative">
-                      <Input
-                        leftIcon={<Search className="w-5 h-5" />}
-                        type="text"
-                        placeholder="Search games, notes, emulators..."
-                        value={props.searchTerm}
-                        onChange={(ev: ChangeEvent<HTMLInputElement>) =>
-                          props.onSearchChange(ev.target.value)
-                        }
-                        className="transition-all duration-200 focus:scale-[1.02]"
-                      />
-                    </div>
+                    <ListingsSearchBar
+                      value={props.searchTerm}
+                      onChange={props.onSearchChange}
+                      className="transition-all duration-200 focus:scale-[1.02]"
+                    />
                   </div>
 
-                  <MultiSelect
+                  <FilterField
                     label="Systems"
                     leftIcon={<Joystick className="w-5 h-5" />}
                     value={props.systemIds}
@@ -538,16 +534,12 @@ function ListingFilters(props: FiltersProps) {
                     maxDisplayed={1}
                   />
 
-                  <MultiSelect
+                  <FilterField
                     label="Devices"
                     leftIcon={<MonitorSmartphone className="w-5 h-5" />}
                     value={props.deviceIds}
                     onChange={handleDeviceChange}
-                    options={props.devices.map((device) => ({
-                      id: device.id,
-                      name: `${device.brand.name} ${device.modelName}`,
-                      badgeName: device.modelName,
-                    }))}
+                    options={deviceOptions(props.devices)}
                     placeholder="All devices"
                     maxDisplayed={1}
                   />
@@ -630,11 +622,7 @@ function ListingFilters(props: FiltersProps) {
                     leftIcon={<Cpu className="w-5 h-5" />}
                     value={props.socIds}
                     onChange={handleSocChange}
-                    options={props.socs.map((soc) => ({
-                      id: soc.id,
-                      name: `${soc.manufacturer} ${soc.name}`,
-                      badgeName: soc.name,
-                    }))}
+                    options={socOptions(props.socs)}
                     placeholder="All SoCs"
                     maxDisplayed={1}
                   />
@@ -712,7 +700,7 @@ function ListingFilters(props: FiltersProps) {
                       </motion.div>
                     )}
 
-                  <MultiSelect
+                  <FilterField
                     label="Emulators"
                     leftIcon={<Gamepad className="w-5 h-5" />}
                     value={props.emulatorIds}
@@ -727,10 +715,7 @@ function ListingFilters(props: FiltersProps) {
                     leftIcon={<Rocket className="w-5 h-5" />}
                     value={props.performanceIds.map(String)}
                     onChange={handlePerformanceChange}
-                    options={props.performanceScales.map(({ id, label }) => ({
-                      id: id.toString(),
-                      name: label,
-                    }))}
+                    options={performanceOptions(props.performanceScales)}
                     placeholder="All performance levels"
                     maxDisplayed={1}
                   />

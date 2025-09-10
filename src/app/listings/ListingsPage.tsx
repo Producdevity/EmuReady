@@ -38,6 +38,7 @@ import { ms } from '@/utils/time'
 import { Role, ApprovalStatus } from '@orm'
 import ListingFilters from './components/ListingFilters'
 import useListingsState from './hooks/useListingsState'
+import { usePreferredHardwareFilters } from './shared/hooks/usePreferredHardwareFilters'
 
 const LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'game', label: 'Game', defaultVisible: true },
@@ -61,8 +62,7 @@ function ListingsPage() {
     true,
   )
 
-  const [userDeviceFilterDisabled, setUserDeviceFilterDisabled] = useState(false)
-  const [userSocFilterDisabled, setUserSocFilterDisabled] = useState(false)
+  // Preferred hardware filters (devices/SoCs)
 
   const {
     showEmulatorLogos,
@@ -84,31 +84,11 @@ function ListingsPage() {
   const isAdmin = userRole ? hasPermission(userRole, Role.ADMIN) : false
   const isModerator = userRole ? roleIncludesRole(userRole, Role.MODERATOR) : false
 
-  // Get user's preferred device IDs if defaultToUserDevices is enabled
-  const userDeviceIds =
-    userPreferencesQuery.data?.defaultToUserDevices && userPreferencesQuery.data.devicePreferences
-      ? userPreferencesQuery.data.devicePreferences.map((pref) => pref.deviceId)
-      : []
-
-  // Get user's preferred SoC IDs if defaultToUserSocs is enabled
-  const userSocIds =
-    userPreferencesQuery.data?.defaultToUserSocs && userPreferencesQuery.data.socPreferences
-      ? userPreferencesQuery.data.socPreferences.map((pref) => pref.socId)
-      : []
-
-  // Apply user device filter if enabled and no manual device filter is set and not explicitly disabled
-  const shouldUseUserDeviceFilter =
-    userPreferencesQuery.data?.defaultToUserDevices &&
-    listingsState.deviceIds.length === 0 &&
-    userDeviceIds.length > 0 &&
-    !userDeviceFilterDisabled
-
-  // Apply user SoC filter if enabled and no manual SoC filter is set and not explicitly disabled
-  const shouldUseUserSocFilter =
-    userPreferencesQuery.data?.defaultToUserSocs &&
-    listingsState.socIds.length === 0 &&
-    userSocIds.length > 0 &&
-    !userSocFilterDisabled
+  const preferred = usePreferredHardwareFilters({
+    userPreferences: userPreferencesQuery.data,
+    deviceIds: listingsState.deviceIds,
+    socIds: listingsState.socIds,
+  })
 
   const systemsQuery = api.systems.get.useQuery()
   // TODO: find a better alternative to hardcoding 10000 for devices (AsyncMultiselect)
@@ -123,18 +103,8 @@ function ListingsPage() {
     limit: 10,
     ...filterNullAndEmpty({
       systemIds: listingsState.systemIds.length > 0 ? listingsState.systemIds : undefined,
-      deviceIds:
-        listingsState.deviceIds.length > 0
-          ? listingsState.deviceIds
-          : shouldUseUserDeviceFilter
-            ? userDeviceIds
-            : undefined,
-      socIds:
-        listingsState.socIds.length > 0
-          ? listingsState.socIds
-          : shouldUseUserSocFilter
-            ? userSocIds
-            : undefined,
+      deviceIds: preferred.appliedDeviceIds,
+      socIds: preferred.appliedSocIds,
       emulatorIds: listingsState.emulatorIds.length > 0 ? listingsState.emulatorIds : undefined,
       performanceIds:
         listingsState.performanceIds.length > 0 ? listingsState.performanceIds : undefined,
@@ -155,14 +125,14 @@ function ListingsPage() {
     listingsState.setDeviceIds(values)
     // When user manually selects devices, disable user preference filtering
     if (values.length > 0) {
-      setUserDeviceFilterDisabled(true)
+      preferred.setUserDeviceFilterDisabled(true)
       // Also disable SoC preferences when manually selecting devices
-      setUserSocFilterDisabled(true)
+      preferred.setUserSocFilterDisabled(true)
     }
     // When clearing device selections (Show all devices), ensure user preferences are disabled
     // so we show ALL devices, not filtered by user preferences
     if (values.length === 0) {
-      setUserDeviceFilterDisabled(true)
+      preferred.setUserDeviceFilterDisabled(true)
     }
   }
 
@@ -170,14 +140,14 @@ function ListingsPage() {
     listingsState.setSocIds(values)
     // When user manually selects SoCs, disable user preference filtering
     if (values.length > 0) {
-      setUserSocFilterDisabled(true)
+      preferred.setUserSocFilterDisabled(true)
       // Also disable device preferences when manually selecting SoCs
-      setUserDeviceFilterDisabled(true)
+      preferred.setUserDeviceFilterDisabled(true)
     }
     // When clearing SOC selections (Show all SOCs), ensure user preferences are disabled
     // so we show ALL listings, not filtered by user preferences
     if (values.length === 0) {
-      setUserSocFilterDisabled(true)
+      preferred.setUserSocFilterDisabled(true)
     }
   }
 
@@ -194,13 +164,13 @@ function ListingsPage() {
   }
 
   const handleEnableUserDeviceFilter = () => {
-    setUserDeviceFilterDisabled(false)
+    preferred.enableUserDeviceFilter()
     // Clear any manual device selections to allow user preferences to take effect
     listingsState.setDeviceIds([])
   }
 
   const handleEnableUserSocFilter = () => {
-    setUserSocFilterDisabled(false)
+    preferred.enableUserSocFilter()
     // Clear any manual SoC selections to allow user preferences to take effect
     listingsState.setSocIds([])
   }
@@ -235,14 +205,14 @@ function ListingsPage() {
             isCollapsed={isMobileSidebarOpen}
             onToggleCollapse={() => setIsMobileSidebarOpen((prevState) => !prevState)}
             userPreferences={userPreferencesQuery.data}
-            shouldUseUserDeviceFilter={shouldUseUserDeviceFilter}
-            userDeviceIds={userDeviceIds}
-            shouldUseUserSocFilter={shouldUseUserSocFilter}
-            userSocIds={userSocIds}
+            shouldUseUserDeviceFilter={preferred.shouldUseUserDeviceFilter}
+            userDeviceIds={preferred.userDeviceIds}
+            shouldUseUserSocFilter={preferred.shouldUseUserSocFilter}
+            userSocIds={preferred.userSocIds}
             onEnableUserDeviceFilter={handleEnableUserDeviceFilter}
             onEnableUserSocFilter={handleEnableUserSocFilter}
-            userDeviceFilterDisabled={userDeviceFilterDisabled}
-            userSocFilterDisabled={userSocFilterDisabled}
+            userDeviceFilterDisabled={preferred.userDeviceFilterDisabled}
+            userSocFilterDisabled={preferred.userSocFilterDisabled}
           />
         </div>
 
@@ -296,14 +266,14 @@ function ListingsPage() {
                     isCollapsed={false}
                     onToggleCollapse={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
                     userPreferences={userPreferencesQuery.data}
-                    shouldUseUserDeviceFilter={shouldUseUserDeviceFilter}
-                    userDeviceIds={userDeviceIds}
-                    shouldUseUserSocFilter={shouldUseUserSocFilter}
-                    userSocIds={userSocIds}
+                    shouldUseUserDeviceFilter={preferred.shouldUseUserDeviceFilter}
+                    userDeviceIds={preferred.userDeviceIds}
+                    shouldUseUserSocFilter={preferred.shouldUseUserSocFilter}
+                    userSocIds={preferred.userSocIds}
                     onEnableUserDeviceFilter={handleEnableUserDeviceFilter}
                     onEnableUserSocFilter={handleEnableUserSocFilter}
-                    userDeviceFilterDisabled={userDeviceFilterDisabled}
-                    userSocFilterDisabled={userSocFilterDisabled}
+                    userDeviceFilterDisabled={preferred.userDeviceFilterDisabled}
+                    userSocFilterDisabled={preferred.userSocFilterDisabled}
                   />
                 </div>
               </div>

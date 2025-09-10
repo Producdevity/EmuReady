@@ -8,6 +8,7 @@ import { isEmpty, isNullish } from 'remeda'
 import ImageIndicators from '@/app/admin/components/ImageIndicators'
 import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
 import { useAdminTable } from '@/app/admin/hooks'
+import { useAdminFilters } from '@/app/admin/hooks/useAdminFilters'
 import { AdminTableContainer } from '@/components/admin'
 import {
   ApprovalStatusBadge,
@@ -70,8 +71,6 @@ const GAMES_COLUMNS: ColumnDefinition[] = [
 ]
 
 function AdminGamesPage() {
-  const [systemId, setSystemId] = useState('')
-  const [statusFilter, setStatusFilter] = useState<Nullable<ApprovalStatus>>(null)
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false)
   const [selectedGameForImagePreview, setSelectedGameForImagePreview] = useState<Game | null>(null)
   const [processingGameId, setProcessingGameId] = useState<string | null>(null)
@@ -79,6 +78,26 @@ function AdminGamesPage() {
   const confirm = useConfirmDialog()
 
   const table = useAdminTable<GameSortField>({ defaultLimit: 20 })
+  const { filters, setFilter, clearAll } = useAdminFilters<{
+    systemId: string
+    status: Nullable<ApprovalStatus>
+  }>(table, {
+    systemId: {
+      parse: (s) => s || '',
+      serialize: (v) => v || '',
+      defaultValue: '',
+    },
+    status: {
+      parse: (s) =>
+        s === ApprovalStatus.APPROVED ||
+        s === ApprovalStatus.PENDING ||
+        s === ApprovalStatus.REJECTED
+          ? (s as ApprovalStatus)
+          : null,
+      serialize: (v) => v ?? '',
+      defaultValue: null,
+    },
+  })
 
   const columnVisibility = useColumnVisibility(GAMES_COLUMNS, {
     storageKey: storageKeys.columnVisibility.adminGames,
@@ -86,19 +105,17 @@ function AdminGamesPage() {
 
   const { user } = useUser()
 
-  const userQuery = api.users.me.useQuery(undefined, {
-    enabled: !!user,
-  })
+  const userQuery = api.users.me.useQuery(undefined, { enabled: !!user })
 
   const systemsQuery = api.systems.get.useQuery()
   const gamesQuery = api.games.get.useQuery({
     search: isEmpty(table.search) ? null : table.search,
-    systemId: isEmpty(systemId) ? null : systemId,
+    systemId: isEmpty(filters.systemId) ? null : filters.systemId,
     page: table.page,
     limit: table.limit,
     sortField: table.sortField ?? null,
     sortDirection: table.sortDirection ?? null,
-    status: isNullish(statusFilter) ? null : statusFilter,
+    status: isNullish(filters.status) ? null : filters.status,
     listingFilter: 'all',
   })
 
@@ -146,22 +163,10 @@ function AdminGamesPage() {
     deleteGame.mutate({ id: game.id } satisfies RouterInput['games']['delete'])
   }
 
-  const handleSystemChange = (value: string) => {
-    setSystemId(value === '' ? '' : value)
-    table.setPage(1)
-  }
+  const handleSystemChange = (value: string) => setFilter('systemId', value)
 
-  const handleStatusFilterChange = (value: string) => {
-    if (
-      value === '' ||
-      value === ApprovalStatus.PENDING ||
-      value === ApprovalStatus.APPROVED ||
-      value === ApprovalStatus.REJECTED
-    ) {
-      setStatusFilter(value === '' ? null : value)
-    }
-    table.setPage(1)
-  }
+  const handleStatusFilterChange = (value: string) =>
+    setFilter('status', value === '' ? null : (value as ApprovalStatus))
 
   const handleImageClick = (game: Game) => {
     setSelectedGameForImagePreview(game)
@@ -282,14 +287,14 @@ function AdminGamesPage() {
             <SelectInput
               label="System Filter"
               hideLabel={true}
-              value={systemId}
+              value={filters.systemId}
               onChange={(ev) => handleSystemChange(ev.target.value)}
               options={systemOptions}
             />
             <SelectInput
               label="Status Filter"
               hideLabel={true}
-              value={statusFilter ?? ''}
+              value={filters.status ?? ''}
               onChange={(ev) => handleStatusFilterChange(ev.target.value)}
               options={statusOptions}
             />
@@ -298,8 +303,7 @@ function AdminGamesPage() {
               className="h-full"
               onClick={() => {
                 table.setSearch('')
-                setSystemId('')
-                setStatusFilter(null)
+                clearAll()
                 table.setPage(1)
               }}
             >
@@ -317,7 +321,7 @@ function AdminGamesPage() {
         ) : gamesQuery.data?.games.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search || systemId || statusFilter
+              {table.search || filters.systemId || filters.status
                 ? 'No games found matching your criteria.'
                 : 'No games found.'}
             </p>

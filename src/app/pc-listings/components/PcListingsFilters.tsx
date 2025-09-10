@@ -1,18 +1,18 @@
 'use client'
 
-import {
-  Search,
-  Cpu,
-  HardDrive,
-  Rocket,
-  Filter,
-  MonitorSpeaker,
-  Gamepad2,
-  MemoryStick,
-} from 'lucide-react'
+import { Cpu, HardDrive, Rocket, Filter, MonitorSpeaker, Gamepad2, MemoryStick } from 'lucide-react'
 import { type ChangeEvent } from 'react'
+import FilterField from '@/app/listings/shared/components/FilterField'
+import { ListingsSearchBar } from '@/app/listings/shared/components/ListingsSearchBar'
 import { MultiSelect, Input } from '@/components/ui'
 import analytics from '@/lib/analytics'
+import {
+  cpuOptions,
+  emulatorOptions,
+  gpuOptions,
+  performanceOptions,
+  systemOptions,
+} from '@/utils/options'
 import { type System, type PerformanceScale, type Emulator } from '@orm'
 
 type CpuWithBrand = {
@@ -173,26 +173,20 @@ export default function PcListingsFilters({
             <label className="block mb-2 font-medium text-gray-700 dark:text-gray-300">
               Search
             </label>
-            <Input
-              leftIcon={<Search className="w-5 h-5" />}
-              type="text"
-              placeholder="Search games, notes, emulators..."
+            <ListingsSearchBar
               value={searchTerm}
-              onChange={(ev: ChangeEvent<HTMLInputElement>) => onSearchChange(ev.target.value)}
+              onChange={onSearchChange}
               className="transition-all duration-200 focus:scale-[1.02]"
             />
           </div>
 
           {/* Systems */}
-          <MultiSelect
+          <FilterField
             label="Systems"
             leftIcon={<MonitorSpeaker className="w-5 h-5" />}
             value={systemIds}
             onChange={handleSystemChange}
-            options={systems.map((system) => ({
-              id: system.id,
-              name: system.name,
-            }))}
+            options={systemOptions(systems)}
             placeholder="All systems"
             maxDisplayed={2}
           />
@@ -203,11 +197,7 @@ export default function PcListingsFilters({
             leftIcon={<Cpu className="w-5 h-5" />}
             value={cpuIds}
             onChange={handleCpuChange}
-            options={cpus.map((cpu) => ({
-              id: cpu.id,
-              name: `${cpu.brand.name} ${cpu.modelName}`,
-              badgeName: cpu.modelName,
-            }))}
+            options={cpuOptions(cpus)}
             placeholder="All CPUs"
             maxDisplayed={2}
           />
@@ -218,11 +208,7 @@ export default function PcListingsFilters({
             leftIcon={<HardDrive className="w-5 h-5" />}
             value={gpuIds}
             onChange={handleGpuChange}
-            options={gpus.map((gpu) => ({
-              id: gpu.id,
-              name: `${gpu.brand.name} ${gpu.modelName}`,
-              badgeName: gpu.modelName,
-            }))}
+            options={gpuOptions(gpus)}
             placeholder="All GPUs"
             maxDisplayed={2}
           />
@@ -233,10 +219,7 @@ export default function PcListingsFilters({
             leftIcon={<Gamepad2 className="w-5 h-5" />}
             value={emulatorIds}
             onChange={handleEmulatorChange}
-            options={emulators.map((emulator) => ({
-              id: emulator.id,
-              name: emulator.name,
-            }))}
+            options={emulatorOptions(emulators)}
             placeholder="All emulators"
             maxDisplayed={2}
           />
@@ -276,10 +259,7 @@ export default function PcListingsFilters({
             leftIcon={<Rocket className="w-5 h-5" />}
             value={performanceIds.map(String)}
             onChange={handlePerformanceChange}
-            options={performanceScales.map(({ id, label }) => ({
-              id: id.toString(),
-              name: label,
-            }))}
+            options={performanceOptions(performanceScales)}
             placeholder="All performance levels"
             maxDisplayed={2}
           />
