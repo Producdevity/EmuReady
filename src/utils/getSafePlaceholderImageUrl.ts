@@ -9,6 +9,7 @@ function getSafePlaceholderImageUrl(title?: string | null): string {
     .replace(/[%<>(){}[\]\\/=+]/g, '') // remove potentially dangerous characters
     .trim()
     .substring(0, 15) // limit length
+    .trimEnd() // ensure we do not end with a space after truncation
 
   // Directly encode the string to prevent any potential XSS in URL
   return `/api/proxy-image?url=https://placehold.co/400x300/9ca3af/1e293b?text=${encodeURIComponent(safeTitle)}`
