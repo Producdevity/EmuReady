@@ -10,9 +10,7 @@ export async function POST(_request: NextRequest) {
     // Check if user is authenticated and is an admin
     const { userId } = await auth()
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     // Find user in database to check role
     const user = await prisma.user.findUnique({
