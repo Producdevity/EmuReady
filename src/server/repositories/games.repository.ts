@@ -41,11 +41,7 @@ export class GamesRepository extends BaseRepository {
     } satisfies Prisma.GameInclude,
 
     full: {
-      system: {
-        include: {
-          emulators: true,
-        },
-      },
+      system: { include: { emulators: true } },
       submitter: true,
       listings: {
         where: { status: ApprovalStatus.APPROVED },
@@ -512,11 +508,11 @@ export class GamesRepository extends BaseRepository {
 
     if (systemId) where.systemId = systemId
 
-    // Handle listing filter
+    // Handle listing filter (consider both handheld and PC listings)
     if (listingFilter === 'withListings') {
-      where.listings = { some: {} }
+      where.OR = [{ listings: { some: {} } }, { pcListings: { some: {} } }]
     } else if (listingFilter === 'noListings') {
-      where.listings = { none: {} }
+      where.AND = [{ listings: { none: {} } }, { pcListings: { none: {} } }]
     }
 
     // Handle game approval status filtering
