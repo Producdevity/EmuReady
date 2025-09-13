@@ -1,4 +1,7 @@
 import { PAGINATION } from '@/data/constants'
+import { AppError, ResourceError } from '@/lib/errors'
+import { canUserAutoApprove } from '@/lib/trust/service'
+import { validateCustomFields } from '@/server/api/routers/listings/validation'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
 import {
   buildNsfwFilter,
@@ -6,7 +9,8 @@ import {
   buildShadowBanFilter,
   buildApprovalStatusFilter,
 } from '@/server/utils/query-builders'
-import { Prisma, ApprovalStatus, type Role } from '@orm'
+import { roleIncludesRole } from '@/utils/permission-system'
+import { Prisma, ApprovalStatus, Role } from '@orm'
 import { BaseRepository } from './base.repository'
 
 export interface ListingFilters {
@@ -67,28 +71,6 @@ export class ListingsRepository extends BaseRepository {
       author: { select: { id: true, name: true, profileImage: true } },
     } satisfies Prisma.ListingInclude,
 
-    withVotes: {
-      game: { select: { id: true, title: true, systemId: true } },
-      device: { include: { brand: true, soc: true } },
-      emulator: { select: { id: true, name: true, logo: true } },
-      performance: true,
-      author: { select: { id: true, name: true, profileImage: true } },
-      votes: true,
-      _count: { select: { votes: true, comments: true } },
-    } satisfies Prisma.ListingInclude,
-
-    full: {
-      game: { include: { system: { select: { id: true, name: true, key: true } } } },
-      device: { include: { brand: true, soc: true } },
-      emulator: true,
-      performance: true,
-      author: true,
-      votes: true,
-      comments: { include: { user: { select: { id: true, name: true, profileImage: true } } } },
-      customFieldValues: { include: { customFieldDefinition: true } },
-      developerVerifications: { include: { developer: { select: { id: true, name: true } } } },
-    } satisfies Prisma.ListingInclude,
-
     forList: {
       game: { include: { system: { select: { id: true, name: true, key: true } } } },
       device: { include: { brand: true, soc: true } },
@@ -103,8 +85,7 @@ export class ListingsRepository extends BaseRepository {
       device: { include: { brand: true, soc: true } },
       emulator: { include: { customFieldDefinitions: true } },
       performance: true,
-      author: true,
-      votes: true,
+      author: { select: { id: true, name: true, profileImage: true, verifiedDeveloperBy: true } },
       comments: { include: { user: { select: { id: true, name: true, profileImage: true } } } },
       customFieldValues: { include: { customFieldDefinition: true } },
       developerVerifications: { include: { developer: { select: { id: true, name: true } } } },
@@ -269,6 +250,17 @@ export class ListingsRepository extends BaseRepository {
     const userVoteMap = new Map(userVotes.map((v) => [v.listingId, v.value]))
 
     // Add user vote info and use materialized stats
+    // Compute verified developer flags for authors per emulator
+    const verifiedPairs = listings.length
+      ? await this.prisma.verifiedDeveloper.findMany({
+          where: {
+            OR: listings.map((l) => ({ userId: l.authorId, emulatorId: l.emulatorId })),
+          },
+          select: { userId: true, emulatorId: true },
+        })
+      : []
+    const verifiedSet = new Set(verifiedPairs.map((v) => `${v.userId}_${v.emulatorId}`))
+
     const listingsWithStats = listings.map((listing) => ({
       ...listing,
       upVotes: listing.upvoteCount,
@@ -276,6 +268,7 @@ export class ListingsRepository extends BaseRepository {
       totalVotes: listing.voteCount,
       successRate: listing.successRate,
       userVote: userVoteMap.get(listing.id) ?? null,
+      isVerifiedDeveloper: verifiedSet.has(`${listing.authorId}_${listing.emulatorId}`),
     }))
 
     const pagination = paginate({
@@ -310,6 +303,10 @@ export class ListingsRepository extends BaseRepository {
       : null
 
     // Use materialized stats
+    const isVerifiedDeveloper =
+      listing.author.verifiedDeveloperBy?.some((vd) => vd.emulatorId === listing.emulatorId) ||
+      false
+
     return {
       ...listing,
       upVotes: listing.upvoteCount,
@@ -317,6 +314,62 @@ export class ListingsRepository extends BaseRepository {
       totalVotes: listing.voteCount,
       successRate: listing.successRate,
       userVote: userVote?.value ?? null,
+      isVerifiedDeveloper,
+    }
+  }
+
+  /**
+   * Get a single listing by ID with full details and optional access control.
+   * When canSeeBannedUsers is false, hides listings from banned authors and REJECTED listings.
+   */
+  async byIdWithAccess(id: string, userId?: string, canSeeBannedUsers: boolean = false) {
+    const where: Prisma.ListingWhereInput = {
+      id,
+      ...(canSeeBannedUsers
+        ? {}
+        : {
+            author: {
+              userBans: {
+                none: {
+                  isActive: true,
+                  OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+                },
+              },
+            },
+            NOT: { status: ApprovalStatus.REJECTED },
+          }),
+    }
+
+    const listing = await this.prisma.listing.findFirst({
+      where,
+      include: ListingsRepository.includes.forById,
+    })
+
+    if (!listing) {
+      const exists = await this.prisma.listing.count({ where: { id } })
+      if (exists > 0) throw ResourceError.listing.notAccessible()
+      throw ResourceError.listing.notFound()
+    }
+
+    const userVote = userId
+      ? await this.prisma.vote.findUnique({
+          where: { userId_listingId: { userId, listingId: listing.id } },
+          select: { value: true },
+        })
+      : null
+
+    const isVerifiedDeveloper =
+      listing.author.verifiedDeveloperBy?.some((vd) => vd.emulatorId === listing.emulatorId) ||
+      false
+
+    return {
+      ...listing,
+      upVotes: listing.upvoteCount,
+      downVotes: listing.downvoteCount,
+      totalVotes: listing.voteCount,
+      successRate: listing.successRate,
+      userVote: userVote?.value ?? null,
+      isVerifiedDeveloper,
     }
   }
 
@@ -374,6 +427,17 @@ export class ListingsRepository extends BaseRepository {
       include: ListingsRepository.includes.forFeatured,
     })
 
+    // Compute verified developer flags
+    const verifiedPairs = listings.length
+      ? await this.prisma.verifiedDeveloper.findMany({
+          where: {
+            OR: listings.map((l) => ({ userId: l.authorId, emulatorId: l.emulatorId })),
+          },
+          select: { userId: true, emulatorId: true },
+        })
+      : []
+    const verifiedSet = new Set(verifiedPairs.map((v) => `${v.userId}_${v.emulatorId}`))
+
     // Use materialized stats
     return listings.map((listing) => ({
       ...listing,
@@ -382,6 +446,7 @@ export class ListingsRepository extends BaseRepository {
       totalVotes: listing.voteCount,
       successRate: listing.successRate,
       userVote: null, // Featured listings don't need user vote info
+      isVerifiedDeveloper: verifiedSet.has(`${listing.authorId}_${listing.emulatorId}`),
     }))
   }
 
@@ -412,5 +477,93 @@ export class ListingsRepository extends BaseRepository {
     if (!includeUnapproved) filters.approvalStatus = ApprovalStatus.APPROVED
 
     return this.list(filters)
+  }
+
+  /**
+   * Create a new listing with validation and auto-approval logic.
+   * Returns the created listing row.
+   */
+  async create(input: {
+    authorId: string
+    userRole: Role
+    gameId: string
+    deviceId: string
+    emulatorId: string
+    performanceId: number
+    notes?: string | null
+    customFieldValues?: { customFieldDefinitionId: string; value: unknown }[] | null
+  }) {
+    const {
+      authorId,
+      userRole,
+      gameId,
+      deviceId,
+      emulatorId,
+      performanceId,
+      notes,
+      customFieldValues,
+    } = input
+
+    return this.prisma.$transaction(async (tx) => {
+      // Validate custom fields
+      await validateCustomFields(tx, emulatorId, customFieldValues)
+
+      // Check game system compatibility with emulator
+      const gameForValidation = await tx.game.findUnique({
+        where: { id: gameId },
+        select: { systemId: true },
+      })
+      if (!gameForValidation) throw ResourceError.game.notFound()
+
+      const emulator = await tx.emulator.findUnique({
+        where: { id: emulatorId },
+        include: { systems: { select: { id: true } } },
+      })
+      if (!emulator) throw ResourceError.emulator.notFound()
+
+      const isSystemCompatible = emulator.systems.some((s) => s.id === gameForValidation.systemId)
+      if (!isSystemCompatible)
+        throw AppError.badRequest("The selected emulator does not support this game's system")
+
+      // Determine approval
+      const canAutoApprove = await canUserAutoApprove(authorId)
+      const isAuthorOrHigher = roleIncludesRole(userRole, Role.AUTHOR)
+      const status: ApprovalStatus =
+        canAutoApprove || isAuthorOrHigher ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING
+
+      // Create listing
+      const newListing = await tx.listing.create({
+        data: {
+          gameId,
+          deviceId,
+          emulatorId,
+          performanceId,
+          notes,
+          authorId,
+          status,
+          ...((canAutoApprove || isAuthorOrHigher) && {
+            processedByUserId: authorId,
+            processedAt: new Date(),
+            processedNotes:
+              isAuthorOrHigher && !canAutoApprove
+                ? 'Auto-approved (Author or higher role)'
+                : 'Auto-approved (Trusted user)',
+          }),
+        },
+      })
+
+      // Create custom field values
+      if (customFieldValues && customFieldValues.length > 0) {
+        await tx.listingCustomFieldValue.createMany({
+          data: customFieldValues.map((cfv) => ({
+            listingId: newListing.id,
+            customFieldDefinitionId: cfv.customFieldDefinitionId,
+            value: cfv.value === null || cfv.value === undefined ? Prisma.JsonNull : cfv.value,
+          })),
+        })
+      }
+
+      return newListing
+    })
   }
 }

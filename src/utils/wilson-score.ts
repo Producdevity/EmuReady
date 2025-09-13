@@ -52,14 +52,10 @@ export function calculateWilsonScore(upvotes: number, downvotes: number): number
 /**
  * Update listing vote counts and Wilson score
  */
-export function calculateVoteStats(upvotes: number, downvotes: number) {
-  const voteCount = upvotes + downvotes
-  const wilsonScore = calculateWilsonScore(upvotes, downvotes)
-
-  return {
-    upvoteCount: upvotes,
-    downvoteCount: downvotes,
-    voteCount,
-    successRate: wilsonScore, // We'll keep the column name but use Wilson score
-  }
+/**
+ * Convenience: percentage based on Wilson score
+ * Returns an integer 0-100 where 0 votes → 50
+ */
+export function wilsonPercent(upvotes: number, downvotes: number): number {
+  return Math.round(calculateWilsonScore(upvotes, downvotes) * 100)
 }

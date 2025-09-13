@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { calculateWilsonScore } from '@/utils/wilson-score'
 import { type Prisma } from '@orm'
 import { updateListingVoteCounts, updatePcListingVoteCounts } from './vote-counts'
-import { calculateWilsonScore } from './wilson-score'
 
 type MockPrismaClient = {
   listing: {

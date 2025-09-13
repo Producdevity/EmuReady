@@ -17,6 +17,7 @@ export const GetDevicesSchema = z
   .optional()
 
 export const GetDeviceByIdSchema = z.object({ id: z.string().uuid() })
+export const GetDevicesByIdsSchema = z.object({ ids: z.array(z.string().uuid()).min(1).max(100) })
 
 export const CreateDeviceSchema = z.object({
   brandId: z.string().uuid(),
@@ -37,3 +38,4 @@ export const DeleteDeviceSchema = z.object({ id: z.string().uuid() })
 export type GetDevicesInput = z.input<typeof GetDevicesSchema>
 export type CreateDeviceInput = z.infer<typeof CreateDeviceSchema>
 export type UpdateDeviceInput = z.infer<typeof UpdateDeviceSchema>
+export type GetDevicesByIdsInput = z.infer<typeof GetDevicesByIdsSchema>

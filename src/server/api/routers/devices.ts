@@ -1,15 +1,16 @@
 import { ResourceError } from '@/lib/errors'
 import {
-  GetDevicesSchema,
-  GetDeviceByIdSchema,
   CreateDeviceSchema,
-  UpdateDeviceSchema,
   DeleteDeviceSchema,
+  GetDeviceByIdSchema,
+  GetDevicesByIdsSchema,
+  GetDevicesSchema,
+  UpdateDeviceSchema,
 } from '@/schemas/device'
 import {
   createTRPCRouter,
-  publicProcedure,
   manageDevicesProcedure,
+  publicProcedure,
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import { DevicesRepository } from '@/server/repositories/devices.repository'
@@ -24,6 +25,11 @@ export const devicesRouter = createTRPCRouter({
     const repository = new DevicesRepository(ctx.prisma)
     const device = await repository.byIdWithCounts(input.id)
     return device ?? ResourceError.device.notFound()
+  }),
+
+  getByIds: publicProcedure.input(GetDevicesByIdsSchema).query(async ({ ctx, input }) => {
+    const repository = new DevicesRepository(ctx.prisma)
+    return await repository.listByIds(input.ids)
   }),
 
   create: manageDevicesProcedure.input(CreateDeviceSchema).mutation(async ({ ctx, input }) => {

@@ -4,6 +4,7 @@
 
 /**
  * Get the color class for the success rate bar based on the rate
+ * TODO: probably move this to badgeColors.ts
  * @param rate - Success rate percentage (0-100)
  * @returns Tailwind CSS background color class
  */

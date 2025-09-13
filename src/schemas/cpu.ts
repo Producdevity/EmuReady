@@ -16,6 +16,7 @@ export const GetCpusSchema = z
   .optional()
 
 export const GetCpuByIdSchema = z.object({ id: z.string().uuid() })
+export const GetCpusByIdsSchema = z.object({ ids: z.array(z.string().uuid()).min(1).max(100) })
 
 export const CreateCpuSchema = z.object({
   brandId: z.string().uuid(),
@@ -34,3 +35,4 @@ export const DeleteCpuSchema = z.object({ id: z.string().uuid() })
 export type GetCpusInput = z.input<typeof GetCpusSchema>
 export type CreateCpuInput = z.infer<typeof CreateCpuSchema>
 export type UpdateCpuInput = z.infer<typeof UpdateCpuSchema>
+export type GetCpusByIdsInput = z.infer<typeof GetCpusByIdsSchema>

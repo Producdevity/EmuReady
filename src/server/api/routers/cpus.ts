@@ -1,15 +1,16 @@
 import { ResourceError } from '@/lib/errors'
 import {
-  GetCpusSchema,
-  GetCpuByIdSchema,
   CreateCpuSchema,
-  UpdateCpuSchema,
   DeleteCpuSchema,
+  GetCpuByIdSchema,
+  GetCpusByIdsSchema,
+  GetCpusSchema,
+  UpdateCpuSchema,
 } from '@/schemas/cpu'
 import {
   createTRPCRouter,
-  publicProcedure,
   manageDevicesProcedure,
+  publicProcedure,
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import { CpusRepository } from '@/server/repositories/cpus.repository'
@@ -26,9 +27,13 @@ export const cpusRouter = createTRPCRouter({
     return cpu ?? ResourceError.cpu.notFound()
   }),
 
+  getByIds: publicProcedure.input(GetCpusByIdsSchema).query(async ({ ctx, input }) => {
+    const repository = new CpusRepository(ctx.prisma)
+    return await repository.listByIds(input.ids)
+  }),
+
   create: manageDevicesProcedure.input(CreateCpuSchema).mutation(async ({ ctx, input }) => {
     const repository = new CpusRepository(ctx.prisma)
-
     const created = await repository.create(input)
     return repository.byIdWithCounts(created.id)
   }),

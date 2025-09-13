@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calculateWilsonScore } from './wilson-score'
+import { calculateWilsonScore } from '@/utils/wilson-score'
 
 describe('calculateWilsonScore', () => {
   describe('edge cases', () => {

@@ -162,6 +162,17 @@ export class CpusRepository extends BaseRepository {
   }
 
   /**
+   * Get CPUs by a list of IDs (limited include)
+   */
+  async listByIds(ids: string[]) {
+    if (ids.length === 0) return []
+    return this.prisma.cpu.findMany({
+      where: { id: { in: ids } },
+      include: CpusRepository.includes.limited,
+    })
+  }
+
+  /**
    * Get CPUs with pagination metadata
    * Supports both web and mobile usage via options
    */

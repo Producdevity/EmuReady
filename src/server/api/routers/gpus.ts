@@ -1,42 +1,23 @@
 import { ResourceError } from '@/lib/errors'
 import {
-  GetGpusSchema,
-  GetGpuByIdSchema,
   CreateGpuSchema,
-  UpdateGpuSchema,
   DeleteGpuSchema,
+  GetGpuByIdSchema,
+  GetGpusByIdsSchema,
+  GetGpusSchema,
+  UpdateGpuSchema,
 } from '@/schemas/gpu'
 import {
   createTRPCRouter,
-  publicProcedure,
   manageDevicesProcedure,
+  publicProcedure,
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import { GpusRepository } from '@/server/repositories/gpus.repository'
-import { paginate } from '@/server/utils/pagination'
 
 export const gpusRouter = createTRPCRouter({
   get: publicProcedure.input(GetGpusSchema).query(async ({ ctx, input }) => {
     const repository = new GpusRepository(ctx.prisma)
-
-    // For web, we need counts - use getWithListingCounts for pcListings sort TODO: clean this up
-    if (input?.sortField === 'pcListings' && (input?.limit || 20) <= 100) {
-      const gpus = await repository.listWithCounts(input.limit || 20)
-      const total = await repository.count({ search: input.search, brandId: input.brandId })
-      const limit = input?.limit || 20
-      const actualOffset = input?.page ? (input?.page - 1) * limit : (input?.offset ?? 0)
-
-      return {
-        gpus,
-        pagination: paginate({
-          total: total,
-          page: input?.page ?? Math.floor(actualOffset / limit) + 1,
-          limit: limit,
-        }),
-      }
-    }
-
-    // Regular paginated query
     return repository.list(input ?? {})
   }),
 
@@ -44,6 +25,11 @@ export const gpusRouter = createTRPCRouter({
     const repository = new GpusRepository(ctx.prisma)
     const gpu = await repository.byIdWithCounts(input.id)
     return gpu ?? ResourceError.gpu.notFound()
+  }),
+
+  getByIds: publicProcedure.input(GetGpusByIdsSchema).query(async ({ ctx, input }) => {
+    const repository = new GpusRepository(ctx.prisma)
+    return await repository.listByIds(input.ids)
   }),
 
   create: manageDevicesProcedure.input(CreateGpuSchema).mutation(async ({ ctx, input }) => {

@@ -14,6 +14,10 @@ export class DevicesRepository extends BaseRepository {
       soc: true,
     } satisfies Prisma.DeviceInclude,
 
+    limited: {
+      brand: { select: { id: true, name: true } },
+    } satisfies Prisma.DeviceInclude,
+
     withCounts: {
       brand: true,
       soc: true,
@@ -33,6 +37,17 @@ export class DevicesRepository extends BaseRepository {
     return this.prisma.device.findUnique({
       where: { id },
       include: DevicesRepository.includes.default,
+    })
+  }
+
+  /**
+   * Get Devices by a list of IDs (limited include)
+   */
+  async listByIds(ids: string[]) {
+    if (ids.length === 0) return []
+    return this.prisma.device.findMany({
+      where: { id: { in: ids } },
+      include: DevicesRepository.includes.limited,
     })
   }
 

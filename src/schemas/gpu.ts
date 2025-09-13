@@ -16,6 +16,7 @@ export const GetGpusSchema = z
   .optional()
 
 export const GetGpuByIdSchema = z.object({ id: z.string().uuid() })
+export const GetGpusByIdsSchema = z.object({ ids: z.array(z.string().uuid()).min(1).max(100) })
 
 export const CreateGpuSchema = z.object({
   brandId: z.string().uuid(),
@@ -37,3 +38,4 @@ export const DeleteGpuSchema = z.object({ id: z.string().uuid() })
 export type GetGpusInput = z.input<typeof GetGpusSchema>
 export type CreateGpuInput = z.infer<typeof CreateGpuSchema>
 export type UpdateGpuInput = z.infer<typeof UpdateGpuSchema>
+export type GetGpusByIdsInput = z.infer<typeof GetGpusByIdsSchema>

@@ -17,7 +17,7 @@ export const UpdateNotificationPreferenceSchema = z.object({
 })
 
 export const UpdateListingNotificationPreferenceSchema = z.object({
-  listingId: z.string(),
+  listingId: z.string().uuid(),
   isEnabled: z.boolean(),
 })
 
@@ -42,5 +42,5 @@ export const DeleteNotificationSchema = z.object({
 })
 
 export const GetListingPreferencesSchema = z.object({
-  listingId: z.string(),
+  listingId: z.string().uuid(),
 })

@@ -103,6 +103,7 @@ export interface MobileListing {
   }
   successRate: number
   userVote?: boolean | null // Only present when authenticated
+  isVerifiedDeveloper?: boolean // Whether the author is a verified developer for this emulator
 }
 
 export interface MobileListingsResponse {
@@ -328,6 +329,7 @@ export interface MobilePcListing {
   }
   successRate: number
   userVote?: boolean | null // Only present when authenticated
+  isVerifiedDeveloper?: boolean // Whether the author is a verified developer for this emulator
 }
 
 export interface MobilePcListingsResponse {

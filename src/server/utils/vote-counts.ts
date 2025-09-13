@@ -1,29 +1,36 @@
+import { calculateWilsonScore } from '@/utils/wilson-score'
 import { type Prisma } from '@orm'
-import { calculateWilsonScore } from './wilson-score'
+
+type UpdateVoteOperation = 'create' | 'update' | 'delete'
+
+type VoteCounts = { upvoteCount: number; downvoteCount: number }
+
+type VoteUpdateData = {
+  upvoteCount?: { increment: number }
+  downvoteCount?: { increment: number }
+  voteCount?: { increment: number }
+  successRate?: number
+}
+
+type VoteModelDelegate = {
+  findUnique: (args: {
+    where: { id: string }
+    select: { upvoteCount: true; downvoteCount: true }
+  }) => Promise<VoteCounts | null>
+  update: (args: { where: { id: string }; data: VoteUpdateData }) => Promise<unknown>
+}
+
+const UPDATE_VOTE_OPERATIONS: UpdateVoteOperation[] = ['create', 'update', 'delete']
 
 /**
  * Generic function to update vote counts on any voteable entity
  * Maintains materialized vote statistics for efficient sorting
  * Uses Wilson Score for confidence-weighted ranking
  */
-async function updateVoteCounts<T extends { upvoteCount: number; downvoteCount: number }>(
-  model: {
-    findUnique: (args: {
-      where: { id: string }
-      select: { upvoteCount: true; downvoteCount: true }
-    }) => Promise<{ upvoteCount: number; downvoteCount: number } | null>
-    update: (args: {
-      where: { id: string }
-      data: {
-        upvoteCount?: { increment: number }
-        downvoteCount?: { increment: number }
-        voteCount?: { increment: number }
-        successRate?: number
-      }
-    }) => Promise<T>
-  },
+async function updateVoteCounts(
+  model: VoteModelDelegate,
   entityId: string,
-  operation: 'create' | 'update' | 'delete',
+  operation: UpdateVoteOperation,
   newValue?: boolean,
   oldValue?: boolean,
 ): Promise<void> {
@@ -37,7 +44,7 @@ async function updateVoteCounts<T extends { upvoteCount: number; downvoteCount: 
   if (operation === 'update' && (newValue === undefined || oldValue === undefined)) {
     throw new Error('Update operation requires both newValue and oldValue')
   }
-  if (!['create', 'update', 'delete'].includes(operation)) {
+  if (!UPDATE_VOTE_OPERATIONS.includes(operation)) {
     throw new Error(`Invalid operation: ${operation}`)
   }
 
@@ -101,16 +108,13 @@ async function updateVoteCounts<T extends { upvoteCount: number; downvoteCount: 
     adjustedVoteCountDelta = 0
   }
 
-  // Calculate Wilson score based on the new counts
-  const wilsonScore = calculateWilsonScore(nextUpvoteCount, nextDownvoteCount)
-
   await model.update({
     where: { id: entityId },
     data: {
       upvoteCount: { increment: adjustedUpvoteDelta },
       downvoteCount: { increment: adjustedDownvoteDelta },
       voteCount: { increment: adjustedVoteCountDelta },
-      successRate: wilsonScore,
+      successRate: calculateWilsonScore(nextUpvoteCount, nextDownvoteCount),
     },
   })
 }
@@ -121,7 +125,7 @@ async function updateVoteCounts<T extends { upvoteCount: number; downvoteCount: 
 export async function updateListingVoteCounts(
   tx: Prisma.TransactionClient,
   listingId: string,
-  operation: 'create' | 'update' | 'delete',
+  operation: UpdateVoteOperation,
   newValue?: boolean,
   oldValue?: boolean,
 ): Promise<void> {
@@ -134,7 +138,7 @@ export async function updateListingVoteCounts(
 export async function updatePcListingVoteCounts(
   tx: Prisma.TransactionClient,
   pcListingId: string,
-  operation: 'create' | 'update' | 'delete',
+  operation: UpdateVoteOperation,
   newValue?: boolean,
   oldValue?: boolean,
 ): Promise<void> {

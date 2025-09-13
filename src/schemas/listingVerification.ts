@@ -2,16 +2,16 @@ import { z } from 'zod'
 import { PAGINATION } from '@/data/constants'
 
 export const VerifyListingSchema = z.object({
-  listingId: z.string(),
+  listingId: z.string().uuid(),
   notes: z.string().optional(),
 })
 
 export const RemoveVerificationSchema = z.object({
-  verificationId: z.string(),
+  verificationId: z.string().uuid(),
 })
 
 export const GetListingVerificationsSchema = z.object({
-  listingId: z.string(),
+  listingId: z.string().uuid(),
 })
 
 export const GetMyVerificationsSchema = z

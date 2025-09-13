@@ -146,11 +146,24 @@ export class GpusRepository extends BaseRepository {
    */
   async listWithCounts(
     limit: number = 10,
+    offset: number = 0,
   ): Promise<Prisma.GpuGetPayload<{ include: typeof GpusRepository.includes.withCounts }>[]> {
     return this.prisma.gpu.findMany({
       include: GpusRepository.includes.withCounts,
       orderBy: { pcListings: { _count: Prisma.SortOrder.desc } },
       take: limit,
+      skip: offset,
+    })
+  }
+
+  /**
+   * Get GPUs by a list of IDs (limited include)
+   */
+  async listByIds(ids: string[]) {
+    if (ids.length === 0) return []
+    return this.prisma.gpu.findMany({
+      where: { id: { in: ids } },
+      include: GpusRepository.includes.limited,
     })
   }
 
