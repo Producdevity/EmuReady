@@ -11,15 +11,9 @@ export class SoCsRepository extends BaseRepository {
   // Static query shapes for this repository
   static readonly includes = {
     default: {} satisfies Prisma.SoCInclude,
-
-    withCounts: {
-      _count: { select: { devices: true } },
-    } satisfies Prisma.SoCInclude,
-
+    withCounts: { _count: { select: { devices: true } } } satisfies Prisma.SoCInclude,
     withDevices: {
-      devices: {
-        select: { id: true, modelName: true, brand: { select: { name: true } } },
-      },
+      devices: { select: { id: true, modelName: true, brand: { select: { name: true } } } },
     } satisfies Prisma.SoCInclude,
   } as const
 
@@ -55,6 +49,17 @@ export class SoCsRepository extends BaseRepository {
       orderBy,
       take: limit,
       skip: offset,
+    })
+  }
+
+  /**
+   * Get SoCs by a list of IDs (basic fields)
+   */
+  async listByIds(ids: string[]) {
+    if (ids.length === 0) return []
+    return this.prisma.soC.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, name: true, manufacturer: true },
     })
   }
 
@@ -117,9 +122,7 @@ export class SoCsRepository extends BaseRepository {
     })
 
     if (!soc) throw ResourceError.soc.notFound()
-    if (soc._count.devices > 0) {
-      throw ResourceError.soc.inUse(soc._count.devices)
-    }
+    if (soc._count.devices > 0) throw ResourceError.soc.inUse(soc._count.devices)
 
     await this.handleDatabaseOperation(() => this.prisma.soC.delete({ where: { id } }), 'SoC')
   }

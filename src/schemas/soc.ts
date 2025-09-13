@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const SoCBasicSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
   name: z.string(),
   manufacturer: z.string(),
   architecture: z.string().nullable(),
@@ -9,12 +9,6 @@ export const SoCBasicSchema = z.object({
   cpuCores: z.number().int().nullable(),
   gpuModel: z.string().nullable(),
   createdAt: z.date(),
-})
-
-export const SoCWithDevicesCountSchema = SoCBasicSchema.extend({
-  _count: z.object({
-    devices: z.number(),
-  }),
 })
 
 export const SoCSortField = z.enum(['name', 'manufacturer', 'devicesCount'])
@@ -32,7 +26,7 @@ export const GetSoCsSchema = z
   .optional()
 
 export const GetSoCByIdSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
 })
 
 export const CreateSoCSchema = z.object({
@@ -45,7 +39,7 @@ export const CreateSoCSchema = z.object({
 })
 
 export const UpdateSoCSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
   name: z.string().min(1).max(255),
   manufacturer: z.string().min(1).max(255),
   architecture: z.string().max(50).optional(),
@@ -55,8 +49,10 @@ export const UpdateSoCSchema = z.object({
 })
 
 export const DeleteSoCSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid(),
 })
+
+export const GetSoCsByIdsSchema = z.object({ ids: z.array(z.string().uuid()).min(1).max(100) })
 
 // Type exports for repository use
 export type GetSoCsInput = z.input<typeof GetSoCsSchema>

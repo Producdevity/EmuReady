@@ -1,15 +1,16 @@
 import { ResourceError } from '@/lib/errors'
 import {
-  GetSoCsSchema,
-  GetSoCByIdSchema,
   CreateSoCSchema,
-  UpdateSoCSchema,
   DeleteSoCSchema,
+  GetSoCByIdSchema,
+  GetSoCsSchema,
+  UpdateSoCSchema,
+  GetSoCsByIdsSchema,
 } from '@/schemas/soc'
 import {
   createTRPCRouter,
-  publicProcedure,
   manageDevicesProcedure,
+  publicProcedure,
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import { SoCsRepository } from '@/server/repositories/socs.repository'
@@ -45,6 +46,11 @@ export const socsRouter = createTRPCRouter({
     const repository = new SoCsRepository(ctx.prisma)
     const soc = await repository.byId(input.id)
     return soc ?? ResourceError.soc.notFound()
+  }),
+
+  getByIds: publicProcedure.input(GetSoCsByIdsSchema).query(async ({ ctx, input }) => {
+    const repository = new SoCsRepository(ctx.prisma)
+    return await repository.listByIds(input.ids)
   }),
 
   create: manageDevicesProcedure.input(CreateSoCSchema).mutation(async ({ ctx, input }) => {
