@@ -1,60 +1,49 @@
 import { z } from 'zod'
+import storageKeys from '@/data/storageKeys'
+import { type AnalyticsCategory } from '@/lib/analytics/analytics.types'
 import { safeParseJSON } from '@/utils/client-validation'
 
 interface LocalPreferences {
   analytics?: boolean
   performance?: boolean
-  marketing?: boolean
 }
 
 const LocalPreferencesSchema = z.object({
   analytics: z.boolean().optional(),
   performance: z.boolean().optional(),
-  marketing: z.boolean().optional(),
 })
 
 /**
  * Check if analytics tracking is allowed based on cookie consent
  * Only applies to client-side tracking
  */
-export function isTrackingAllowed(category: string): boolean {
-  // Server-side: always allow (no cookie consent needed)
+export function isTrackingAllowed(category: AnalyticsCategory): boolean {
+  // Server-side: allow (no access to localStorage; events are not user-identifiable here)
   if (typeof window === 'undefined') return true
 
-  // Client-side: check cookie consent
-  const necessaryCategories = ['performance'] as const
-
   try {
-    // Check if user has given consent
-    const hasConsented = localStorage.getItem('cookieConsent')
-    if (!hasConsented) {
-      // No consent given, only allow necessary events
-      return necessaryCategories.includes(category as 'performance')
-    }
+    // Must have explicit consent
+    const hasConsented = localStorage.getItem(storageKeys.cookies.consent)
+    if (!hasConsented) return false
 
-    // Get actual preferences
-    const preferencesString = localStorage.getItem('cookiePreferences')
-    if (preferencesString) {
-      const preferences = safeParseJSON(
-        preferencesString,
-        LocalPreferencesSchema,
-        {} as LocalPreferences,
-      )
+    // Read stored preferences
+    const preferencesString = localStorage.getItem(storageKeys.cookies.preferences)
+    if (!preferencesString) return false
 
-      // Always allow necessary performance events
-      if (necessaryCategories.includes(category as 'performance')) {
-        return true
-      }
+    const preferences = safeParseJSON<LocalPreferences>(
+      preferencesString,
+      LocalPreferencesSchema,
+      {},
+    )
 
-      // Check analytics consent for other categories
-      return preferences.analytics === true
-    } else {
-      // Consent given but no preferences found, only allow the necessary events
-      return necessaryCategories.includes(category as 'performance')
-    }
+    // Gate by banner categories: performance controls only the 'performance' event category;
+    // all other analytics events require analytics consent.
+    return category === 'performance'
+      ? preferences.performance === true
+      : preferences.analytics === true
   } catch (error) {
     console.error('Error checking cookie consent:', error)
-    // Fail safely - only allow the necessary events
-    return necessaryCategories.includes(category as 'performance')
+    // Fail closed: block analytics when uncertain
+    return false
   }
 }

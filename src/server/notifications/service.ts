@@ -525,6 +525,17 @@ export class NotificationService {
     const userIds: string[] = []
 
     switch (eventData.eventType) {
+      case 'listing.verified': {
+        // Notify listing author (exclude actor via global filter below)
+        if (eventData.payload?.listingId) {
+          const listing = await prisma.listing.findUnique({
+            where: { id: eventData.payload.listingId },
+            select: { authorId: true },
+          })
+          if (listing?.authorId) userIds.push(listing.authorId)
+        }
+        break
+      }
       case 'listing.commented':
       case 'listing.voted':
         // Get listing author (but not the person who triggered the event)
@@ -633,15 +644,21 @@ export class NotificationService {
         }
         break
 
+      case 'comment.deleted':
+        // Do not notify anyone for deletes (avoid moderator spam)
+        break
+
       default:
-        // For system events, only notify moderators and above
-        const systemUsers = await prisma.user.findMany({
-          where: {
-            role: { in: this.systemRoles },
-          },
-          select: { id: true },
-        })
-        userIds.push(...systemUsers.map((u) => u.id))
+        // Unknown events: do not notify anyone by default
+        break
+    }
+
+    // Exclude the actor from recipients universally (no self-notifications)
+    if (eventData.triggeredBy) {
+      const actorId = eventData.triggeredBy
+      for (let i = userIds.length - 1; i >= 0; i--) {
+        if (userIds[i] === actorId) userIds.splice(i, 1)
+      }
     }
 
     // Filter out banned users - they should not receive notifications
@@ -655,22 +672,11 @@ export class NotificationService {
       notifyOnNewListings: true,
     }
 
-    if (payload.deviceId) {
-      where.devicePreferences = {
-        some: { deviceId: payload.deviceId },
-      }
-    }
+    if (payload.deviceId) where.devicePreferences = { some: { deviceId: payload.deviceId } }
 
-    if (payload.socId) {
-      where.socPreferences = {
-        some: { socId: payload.socId },
-      }
-    }
+    if (payload.socId) where.socPreferences = { some: { socId: payload.socId } }
 
-    return prisma.user.findMany({
-      where,
-      select: { id: true },
-    })
+    return prisma.user.findMany({ where, select: { id: true } })
   }
 
   /**

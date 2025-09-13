@@ -1,16 +1,13 @@
 import { sendGAEvent } from '@next/third-parties/google'
 import { track } from '@vercel/analytics'
 import { type AnalyticsEventData } from '@/lib/analytics/analytics.types'
+import { logger } from '@/lib/logger'
 import { isTrackingAllowed } from './isTrackingAllowed'
 /**
  * Send analytics event with proper consent checking and environment handling
  */
 export function sendAnalyticsEvent(params: AnalyticsEventData) {
-  // Check if tracking is allowed (handles client/server-side logic)
-  if (!isTrackingAllowed(params.category)) {
-    console.warn('Analytics event blocked by cookie consent:', params.category, params.action)
-    return
-  }
+  if (!isTrackingAllowed(params.category)) return
 
   // Build event data with proper typing
   const eventData: Record<string, string | number | boolean> = {
@@ -52,7 +49,7 @@ export function sendAnalyticsEvent(params: AnalyticsEventData) {
   // Log in development, send it to external service in production
   if (process.env.NODE_ENV === 'development') {
     const context = typeof window !== 'undefined' ? 'CLIENT' : 'SERVER'
-    return console.info(`📊 Analytics Event [${context}]:`, {
+    return logger.log(`📊 Analytics Event [${context}]:`, {
       category: params.category,
       action: params.action,
       data: eventData,

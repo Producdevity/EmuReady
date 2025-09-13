@@ -1,10 +1,11 @@
-import { type ENGAGEMENT_ACTIONS } from './actions'
+import { type ANALYTICS_CATEGORIES, type ENGAGEMENT_ACTIONS } from './actions'
 
 export type EngagementAction = (typeof ENGAGEMENT_ACTIONS)[keyof typeof ENGAGEMENT_ACTIONS]
+export type AnalyticsCategory = (typeof ANALYTICS_CATEGORIES)[keyof typeof ANALYTICS_CATEGORIES]
 
 // Analytics event data interface
 export interface AnalyticsEventData {
-  category: string
+  category: AnalyticsCategory
   action: string
   value?: string | number
   metadata?: Record<string, string | number | boolean>

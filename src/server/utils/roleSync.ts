@@ -1,4 +1,5 @@
 import { clerkClient } from '@clerk/nextjs/server'
+import { logger } from '@/lib/logger'
 import { prisma } from '@/server/db'
 import type { Role } from '@orm'
 
@@ -16,18 +17,16 @@ export async function syncRoleToClerk(userId: string, role: Role): Promise<void>
       select: { clerkId: true },
     })
 
-    if (!user) {
-      throw new Error(`User with id ${userId} not found`)
-    }
+    if (!user) throw new Error(`User with id ${userId} not found`)
 
     // Update Clerk publicMetadata with the role
     await clerk.users.updateUserMetadata(user.clerkId, {
       publicMetadata: { role },
     })
 
-    console.info(`Synced role ${role} to Clerk for user ${user.clerkId}`)
+    logger.log(`Synced role ${role} to Clerk for user ${user.clerkId}`)
   } catch (error) {
-    console.error('Failed to sync role to Clerk:', error)
+    logger.error('Failed to sync role to Clerk:', error)
     throw error
   }
 }
@@ -46,7 +45,7 @@ export async function updateUserRole(userId: string, newRole: Role): Promise<voi
     // Then sync to Clerk
     await syncRoleToClerk(userId, newRole)
   } catch (error) {
-    console.error('Failed to update user role:', error)
+    logger.error('Failed to update user role:', error)
     throw error
   }
 }
@@ -61,26 +60,22 @@ export async function syncAllRolesToClerk(): Promise<void> {
       select: { id: true, clerkId: true, role: true },
     })
 
-    console.info(`Syncing ${users.length} user roles to Clerk...`)
+    logger.log(`Syncing ${users.length} user roles to Clerk...`)
 
     const clerk = await clerkClient()
 
     for (const user of users) {
       try {
-        await clerk.users.updateUserMetadata(user.clerkId, {
-          publicMetadata: {
-            role: user.role,
-          },
-        })
-        console.info(`Synced role ${user.role} for user ${user.clerkId}`)
+        await clerk.users.updateUserMetadata(user.clerkId, { publicMetadata: { role: user.role } })
+        logger.log(`Synced role ${user.role} for user ${user.clerkId}`)
       } catch (error) {
-        console.error(`Failed to sync role for user ${user.clerkId}:`, error)
+        logger.error(`Failed to sync role for user ${user.clerkId}:`, error)
       }
     }
 
-    console.info('Finished syncing all roles to Clerk')
+    logger.log('Finished syncing all roles to Clerk')
   } catch (error) {
-    console.error('Failed to sync all roles to Clerk:', error)
+    logger.error('Failed to sync all roles to Clerk:', error)
     throw error
   }
 }
