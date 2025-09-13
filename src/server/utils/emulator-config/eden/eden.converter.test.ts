@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { convertToEdenConfig, serializeEdenConfig, type EdenConfigInput } from './eden-converter'
+import { convertToEdenConfig, serializeEdenConfig, type EdenConfigInput } from './eden.converter'
 import type {
   EdenConfigSection,
   BooleanConfigValue,
   IntConfigValue,
   StringConfigValue,
-} from './types/eden'
+} from './eden.types'
 
 describe('Eden Converter', () => {
   describe('GPU Driver Edge Cases', () => {

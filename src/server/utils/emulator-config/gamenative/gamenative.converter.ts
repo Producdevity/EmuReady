@@ -4,14 +4,16 @@
  */
 
 import {
+  DEFAULT_CONFIG,
   GameNativeDefaults,
   DX_WRAPPER_MAPPING,
   AUDIO_DRIVER_MAPPING,
   STARTUP_SELECTION_MAPPING,
   BOX64_PRESET_MAPPING,
   BOX86_PRESET_MAPPING,
-} from './defaults/gamenative'
-import { DEFAULT_CONFIG, type DxvkVersion ,
+} from './gamenative.defaults'
+import {
+  type DxvkVersion,
   type ContainerConfig,
   type ScreenSize,
   type GraphicsDriver,
@@ -21,7 +23,7 @@ import { DEFAULT_CONFIG, type DxvkVersion ,
   type Box86Version,
   type Box64Version,
   type Box86_64Preset,
-} from './types/gamenative'
+} from './gamenative.types'
 import type { Prisma } from '@orm'
 
 export interface CustomFieldValue {

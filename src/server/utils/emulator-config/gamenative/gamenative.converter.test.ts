@@ -3,7 +3,7 @@ import {
   convertToGameNativeConfig,
   serializeGameNativeConfig,
   type GameNativeConfigInput,
-} from './gamenative-converter'
+} from './gamenative.converter'
 
 describe('GameNative Converter', () => {
   describe('convertToGameNativeConfig', () => {

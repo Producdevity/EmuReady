@@ -21,7 +21,8 @@ import type {
   DynamicState,
   OptimizeSpirvOutput,
   MaxAnisotropy,
-} from '../types/eden'
+  EdenConfig,
+} from './eden.types'
 
 // Default CPU settings
 export const DEFAULT_CPU_BACKEND: CpuBackend = 0 // Dynarmic
@@ -195,6 +196,108 @@ export const NO_DRIVER_VALUES = [
 
 // Common driver names for path construction
 export const COMMON_DRIVER_NAMES = ['turnip', 'freedreno', 'mesa', 'qualcomm']
+
+/**
+ * Default configuration values for Eden
+ */
+export const DEFAULT_CONFIG: Required<EdenConfig> = {
+  Controls: {
+    vibration_enabled: { use_global: true, value: true },
+    enable_accurate_vibrations: { use_global: true, value: false },
+    motion_enabled: { use_global: true, value: true },
+  },
+  Core: {
+    use_multi_core: { use_global: true, value: true },
+    memory_layout_mode: { use_global: true, value: 0 }, // 4GB
+    use_speed_limit: { use_global: true, value: true },
+    speed_limit: { use_global: true, value: 100 },
+    sync_core_speed: { use_global: true, value: false },
+  },
+  Cpu: {
+    cpu_backend: { use_global: true, value: 0 }, // Dynarmic
+    cpu_accuracy: { use_global: true, value: 0 }, // Auto
+    use_fast_cpu_time: { use_global: true, value: false },
+    fast_cpu_time: { use_global: true, value: 50 },
+    cpu_debug_mode: { use_global: true, value: false },
+    cpuopt_fastmem: { use_global: true, value: true },
+    cpuopt_fastmem_exclusives: { use_global: true, value: true },
+    cpuopt_unsafe_unfuse_fma: { use_global: true, value: false },
+    cpuopt_unsafe_reduce_fp_error: { use_global: true, value: false },
+    cpuopt_unsafe_ignore_standard_fpcr: { use_global: true, value: false },
+    cpuopt_unsafe_inaccurate_nan: { use_global: true, value: false },
+    cpuopt_unsafe_fastmem_check: { use_global: true, value: false },
+    cpuopt_unsafe_ignore_global_monitor: { use_global: true, value: false },
+    skip_cpu_inner_invalidation: { use_global: true, value: false },
+    use_custom_cpu_ticks: { use_global: true, value: false },
+    cpu_ticks: { use_global: true, value: 0 },
+  },
+  Renderer: {
+    backend: { use_global: true, value: 1 }, // Vulkan
+    shader_backend: { use_global: true, value: 2 }, // SPIRV
+    vulkan_device: { use_global: true, value: 0 },
+    frame_interpolation: { use_global: true, value: false },
+    frame_skipping: { use_global: true, value: false },
+    use_disk_shader_cache: { use_global: true, value: true },
+    optimize_spirv_output: { use_global: true, value: 0 },
+    use_asynchronous_gpu_emulation: { use_global: true, value: true },
+    accelerate_astc: { use_global: true, value: 0 }, // CPU
+    use_vsync: { use_global: true, value: 2 }, // FIFO
+    nvdec_emulation: { use_global: true, value: 1 }, // CPU decoding
+    fullscreen_mode: { use_global: true, value: 0 },
+    aspect_ratio: { use_global: true, value: 0 }, // Default 16:9
+    resolution_setup: { use_global: true, value: 2 }, // 1x
+    scaling_filter: { use_global: true, value: 1 }, // Bilinear
+    anti_aliasing: { use_global: true, value: 0 }, // None
+    fsr_sharpening_slider: { use_global: true, value: 80 },
+    bg_red: { use_global: true, value: 0 },
+    bg_green: { use_global: true, value: 0 },
+    bg_blue: { use_global: true, value: 0 },
+    gpu_accuracy: { use_global: true, value: 0 }, // Normal
+    max_anisotropy: { use_global: true, value: 0 },
+    astc_recompression: { use_global: true, value: 2 }, // BC3
+    vram_usage_mode: { use_global: true, value: 1 }, // Aggressive
+    async_presentation: { use_global: true, value: false },
+    force_max_clock: { use_global: true, value: false },
+    use_reactive_flushing: { use_global: true, value: true },
+    use_asynchronous_shaders: { use_global: true, value: false },
+    use_fast_gpu_time: { use_global: true, value: false },
+    fast_gpu_time: { use_global: true, value: 50 },
+    use_vulkan_driver_pipeline_cache: { use_global: true, value: true },
+    enable_compute_pipelines: { use_global: true, value: false },
+    use_video_framerate: { use_global: true, value: false },
+    barrier_feedback_loops: { use_global: true, value: true },
+    dyna_state: { use_global: true, value: 0 },
+    provoking_vertex: { use_global: true, value: false },
+    descriptor_indexing: { use_global: true, value: false },
+    sample_shading: { use_global: true, value: false },
+    disable_buffer_reorder: { use_global: true, value: false },
+  },
+  Audio: {
+    output_engine: { use_global: true, value: 0 }, // Auto
+    output_device: { use_global: true, value: 'auto' },
+    input_device: { use_global: true, value: 'auto' },
+    volume: { use_global: true, value: 100 },
+    audio_muted: { use_global: true, value: false },
+  },
+  System: {
+    use_lru_cache: { use_global: true, value: true },
+    language_index: { use_global: true, value: -1 }, // Auto
+    region_index: { use_global: true, value: -1 }, // Auto
+    time_zone_index: { use_global: true, value: 0 },
+    custom_rtc_enabled: { use_global: true, value: false },
+    custom_rtc_offset: { use_global: true, value: 0 },
+    rng_seed_enabled: { use_global: true, value: false },
+    rng_seed: { use_global: true, value: 0 },
+    use_docked_mode: { use_global: true, value: true },
+    sound_index: { use_global: true, value: 0 },
+  },
+  Linux: {
+    enable_gamemode: { use_global: true, value: false },
+  },
+  GpuDriver: {
+    driver_path: { use_global: true, value: '' },
+  },
+}
 
 // Helper functions for validation and defaults
 export const EdenDefaults = {

@@ -15,7 +15,8 @@ import type {
   Box86_64Preset,
   ScreenSize,
   DxvkVersion,
-} from '../types/gamenative'
+  ContainerConfig,
+} from './gamenative.types'
 
 // Default environment variables for GameNative
 export const DEFAULT_ENV_VARS =
@@ -172,6 +173,50 @@ const VALID_DXVK_VERSIONS: DxvkVersion[] = [
   '2.4-gplasync',
   'async-1.10.3',
 ]
+
+/**
+ * Default configuration values (from GameNative)
+ */
+export const DEFAULT_CONFIG: Required<ContainerConfig> = {
+  name: '',
+  screenSize: '854x480',
+  envVars:
+    'ZINK_DESCRIPTORS=lazy ZINK_DEBUG=compact MESA_SHADER_CACHE_DISABLE=false MESA_SHADER_CACHE_MAX_SIZE=512MB mesa_glthread=true WINEESYNC=1 MESA_VK_WSI_PRESENT_MODE=mailbox TU_DEBUG=noconform',
+  graphicsDriver: 'vortek',
+  graphicsDriverVersion: '',
+  dxwrapper: 'dxvk',
+  dxvkVersion: '2.6.1-gplasync',
+  dxwrapperConfig: '',
+  audioDriver: 'alsa',
+  wincomponents:
+    'direct3d=1,directsound=1,directmusic=0,directshow=0,directplay=0,vcrun2010=1,wmdecoder=1',
+  execArgs: '',
+  executablePath: '',
+  showFPS: false,
+  launchRealSteam: false,
+  cpuList: '0,1,2,3,4,5,6,7', // Dynamic: matches Runtime.getRuntime().availableProcessors()
+  cpuListWoW64: '0,1,2,3,4,5,6,7', // Same as cpuList
+  wow64Mode: true,
+  startupSelection: 1, // STARTUP_SELECTION_ESSENTIAL
+  box86Version: '0.3.2',
+  box64Version: '0.3.6',
+  box86Preset: 'COMPATIBILITY',
+  box64Preset: 'COMPATIBILITY',
+  desktopTheme: 'LIGHT,IMAGE,#0277bd',
+  sdlControllerAPI: true,
+  enableXInput: true,
+  enableDInput: true,
+  dinputMapperType: 1,
+  disableMouseInput: false,
+  csmt: true,
+  videoPciDeviceID: 1728,
+  offScreenRenderingMode: 'fbo',
+  strictShaderMath: true,
+  videoMemorySize: '2048',
+  mouseWarpOverride: 'disable',
+  shaderBackend: 'glsl',
+  useGLSL: 'enabled',
+}
 
 // Helper functions for validation
 export const GameNativeDefaults = {

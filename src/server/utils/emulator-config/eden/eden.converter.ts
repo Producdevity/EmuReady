@@ -5,6 +5,7 @@
 
 import {
   EdenDefaults,
+  DEFAULT_CONFIG,
   CPU_BACKEND_MAPPING,
   CPU_ACCURACY_MAPPING,
   GPU_BACKEND_MAPPING,
@@ -19,8 +20,7 @@ import {
   SCALING_FILTER_MAPPING,
   OPTIMIZE_SPIRV_OUTPUT_MAPPING,
   AUDIO_OUTPUT_ENGINE_MAPPING,
-} from './defaults/eden'
-import { DEFAULT_CONFIG } from './types/eden'
+} from './eden.defaults'
 import type {
   EdenConfig,
   EdenConfigSection,
@@ -42,7 +42,7 @@ import type {
   DynamicState,
   OptimizeSpirvOutput,
   MaxAnisotropy,
-} from './types/eden'
+} from './eden.types'
 import type { Prisma } from '@orm'
 
 // Constants
@@ -106,9 +106,8 @@ const FIELD_MAPPINGS: Record<
   gpu_api: {
     section: 'Renderer',
     key: 'backend',
-    transform: (value): GpuBackend => {
-      return GPU_BACKEND_MAPPING[String(value)] ?? EdenDefaults.getDefaultGpuBackend()
-    },
+    transform: (value): GpuBackend =>
+      GPU_BACKEND_MAPPING[String(value)] ?? EdenDefaults.getDefaultGpuBackend(),
   },
   disk_shader_cache: {
     section: 'Renderer',

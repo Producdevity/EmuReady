@@ -5,8 +5,11 @@
  */
 
 import { EMULATOR_CONFIG_TYPES, ConfigTypeUtils, type EmulatorConfigType } from './constants'
-import { convertToEdenConfig, serializeEdenConfig } from './eden-converter'
-import { convertToGameNativeConfig, serializeGameNativeConfig } from './gamenative-converter'
+import { convertToEdenConfig, serializeEdenConfig } from './eden/eden.converter'
+import {
+  convertToGameNativeConfig,
+  serializeGameNativeConfig,
+} from './gamenative/gamenative.converter'
 import type { Prisma } from '@orm'
 
 export interface EmulatorConfigResult {
@@ -21,12 +24,12 @@ export interface EmulatorConfigResult {
  * Only supported emulators are included - unsupported emulators will throw errors
  */
 const EMULATOR_CONFIG_MAPPING: Record<string, EmulatorConfigType> = {
+  Azahar: EMULATOR_CONFIG_TYPES.AZAHAR,
   Eden: EMULATOR_CONFIG_TYPES.EDEN,
   GameNative: EMULATOR_CONFIG_TYPES.GAMENATIVE,
 
   // APS3E: EMULATOR_CONFIG_TYPES.APS3E,
   // AetherSX2: EMULATOR_CONFIG_TYPES.AETHER_SX2,
-  // Azahar: EMULATOR_CONFIG_TYPES.AZAHAR,
   // Cemu: EMULATOR_CONFIG_TYPES.CEMU,
   // Citron: EMULATOR_CONFIG_TYPES.CITRON,
   // Cxbx: EMULATOR_CONFIG_TYPES.CXBX_RELOADED,
