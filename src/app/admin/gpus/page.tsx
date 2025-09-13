@@ -9,6 +9,7 @@ import {
   AdminSearchFilters,
   AdminStatsDisplay,
   AdminTableNoResults,
+  AdminPageLayout,
 } from '@/components/admin'
 import {
   Badge,
@@ -132,22 +133,17 @@ function AdminGpusPage() {
     }
   }
 
-  // TODO: use AdminPageLayout like all the other admin pages
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">GPUs</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage all GPU models for PC compatibility listings
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
+    <AdminPageLayout
+      title="GPUs"
+      description="Manage all GPU models for PC compatibility listings"
+      headerActions={
+        <>
           <ColumnVisibilityControl columns={GPUS_COLUMNS} columnVisibility={columnVisibility} />
           {canManageDevices && <Button onClick={() => openModal()}>Add GPU</Button>}
-        </div>
-      </div>
-
+        </>
+      }
+    >
       <AdminStatsDisplay
         stats={[
           {
@@ -297,7 +293,7 @@ function AdminGpusPage() {
       />
 
       <GpuViewModal isOpen={viewModalOpen} onClose={closeViewModal} gpuData={gpuData} />
-    </div>
+    </AdminPageLayout>
   )
 }
 
