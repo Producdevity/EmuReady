@@ -57,7 +57,7 @@ export function Pagination(props: Props) {
     : Math.min(props.currentPage * itemsPerPage, props.totalItems)
 
   return (
-    <nav className="mt-12" aria-label="Pagination navigation" role="navigation">
+    <nav className="mt-4" aria-label="Pagination navigation" role="navigation">
       <div className="flex flex-col items-center space-y-4">
         {showLabel && props.totalItems && (
           <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
