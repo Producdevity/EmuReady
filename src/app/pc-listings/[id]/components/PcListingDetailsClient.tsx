@@ -5,32 +5,33 @@ import { ArrowLeft, ExternalLink, Monitor, Cpu, HardDrive } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { isNullish, isNumber } from 'remeda'
+import { useRef } from 'react'
+import { VoteReminderBanner } from '@/app/listings/[id]/components/vote-reminder/VoteReminderBanner'
+import { CustomFieldsSection } from '@/app/listings/components/shared/CustomFieldsSection'
+import { NotesSection } from '@/app/listings/components/shared/NotesSection'
 import {
   Card,
   Badge,
   PerformanceBadge,
   Button,
-  TranslatableMarkdown,
   ApprovalStatusBadge,
   LocalizedDate,
   GameImage,
 } from '@/components/ui'
 import { api } from '@/lib/api'
+import { logger } from '@/lib/logger'
+import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
+import getErrorMessage from '@/utils/getErrorMessage'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { CustomFieldType, PcOs, Role } from '@orm'
+import { PcOs, Role } from '@orm'
 import EditPcListingButton from './EditPcListingButton'
 import PcCommentThread from './PcCommentThread'
 import PcReportListingButton from './PcReportListingButton'
 import PcVoteButtons from './PcVoteButtons'
 import VerifyPcListingButton from './VerifyPcListingButton'
 
-export type PcListing = NonNullable<RouterOutput['pcListings']['byId']> & {
-  userVote?: boolean | null
-  upvotes?: number
-  downvotes?: number
-}
+export type PcListing = NonNullable<RouterOutput['pcListings']['byId']>
 
 interface Props {
   pcListing: PcListing
@@ -46,73 +47,39 @@ const osLabels: Record<PcOs | 'UNKNOWN', string> = {
 function PcListingDetailsClient(props: Props) {
   const router = useRouter()
   const utils = api.useUtils()
-  const pcListingId = props.pcListing.id
+  const voteSectionRef = useRef<HTMLDivElement>(null)
 
   // Get current user to check if they can see banned user indicators
   const currentUserQuery = api.users.me.useQuery()
   const canViewBannedUsers = roleIncludesRole(currentUserQuery.data?.role, Role.MODERATOR)
 
   const refreshData = () => {
-    utils.pcListings.byId.invalidate({ id: pcListingId }).catch(console.error)
+    utils.pcListings.byId.invalidate({ id: props.pcListing.id }).catch(console.error)
   }
 
-  const renderCustomFieldValue = (
-    fieldValue: NonNullable<Props['pcListing']['customFieldValues']>[0],
-  ) => {
-    switch (fieldValue.customFieldDefinition.type) {
-      case CustomFieldType.BOOLEAN:
-        return (
-          <Badge variant={fieldValue.value ? 'success' : 'default'}>
-            {fieldValue.value ? 'Yes' : 'No'}
-          </Badge>
-        )
-      case CustomFieldType.SELECT:
-        // For select fields, try to find the label from options
-        if (Array.isArray(fieldValue.customFieldDefinition.options)) {
-          const option = (
-            fieldValue.customFieldDefinition.options as {
-              value: string
-              label: string
-            }[]
-          ).find((opt) => opt.value === String(fieldValue.value))
-          return option?.label ?? String(fieldValue.value)
-        }
-        return String(fieldValue.value)
-      case CustomFieldType.RANGE:
-        // For range fields, format the number with unit and proper decimals
-        if (isNumber(fieldValue.value)) {
-          const decimals = fieldValue.customFieldDefinition.rangeDecimals ?? 0
-          const unit = fieldValue.customFieldDefinition.rangeUnit ?? ''
-          const formatted =
-            decimals > 0
-              ? fieldValue.value.toFixed(decimals)
-              : Math.round(fieldValue.value).toString()
-          return (
-            <Badge>
-              {formatted}
-              {unit}
-            </Badge>
-          )
-        }
-        return String(fieldValue.value ?? '')
-      case CustomFieldType.URL:
-        if (typeof fieldValue.value === 'string' && fieldValue.value.trim()) {
-          return (
-            <a
-              href={fieldValue.value}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              {fieldValue.value}
-            </a>
-          )
-        }
-        return String(fieldValue.value)
-      case CustomFieldType.TEXT:
-      case CustomFieldType.TEXTAREA:
-      default:
-        return String(fieldValue.value ?? '')
+  const scrollToVoteSection = () => {
+    voteSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
+  const voteMutation = api.pcListings.vote.useMutation({
+    onSuccess: refreshData,
+    onError: (error) => {
+      logger.error('[PcListingDetailsClient] handleVoting:', error)
+      toast.error(`Failed to vote: ${getErrorMessage(error)}`)
+    },
+  })
+
+  const handleVote = async (value: boolean | null) => {
+    if (value !== null) {
+      // Normal vote - send the value directly, API handles toggle logic
+      await voteMutation.mutateAsync({ pcListingId: props.pcListing.id, value })
+    } else if (props.pcListing.userVote !== null) {
+      // For vote removal, we need to know what the current vote is and send that same value
+      // The API handles toggle logic - if same value is sent, it removes the vote
+      await voteMutation.mutateAsync({
+        pcListingId: props.pcListing.id,
+        value: props.pcListing.userVote, // Send current vote value to toggle it off
+      })
     }
   }
 
@@ -247,56 +214,13 @@ function PcListingDetailsClient(props: Props) {
                 </div>
               </div>
 
-              <div className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-1">
-                  Notes
-                </h2>
-                {props.pcListing?.notes ? (
-                  <TranslatableMarkdown
-                    content={props.pcListing.notes}
-                    className="text-gray-600 dark:text-gray-300 text-base leading-relaxed"
-                    preserveWhitespace={true}
-                  />
-                ) : (
-                  <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed">
-                    No notes provided.
-                  </p>
-                )}
-              </div>
+              <NotesSection content={props.pcListing?.notes ?? ''} />
 
-              {/* Custom Fields Section */}
-              {props.pcListing?.customFieldValues &&
-                props.pcListing.customFieldValues.length > 0 && (
-                  <div className="mb-6">
-                    <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-3">
-                      Emulator-Specific Details
-                    </h2>
-                    <div className="space-y-3">
-                      {props.pcListing.customFieldValues
-                        .filter(
-                          (fieldValue: NonNullable<Props['pcListing']['customFieldValues']>[0]) =>
-                            !isNullish(fieldValue.value) && fieldValue.value !== '',
-                        )
-                        .map(
-                          (fieldValue: NonNullable<Props['pcListing']['customFieldValues']>[0]) => (
-                            <div
-                              key={fieldValue.id}
-                              className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3"
-                            >
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                                <span className="font-medium text-gray-700 dark:text-gray-300 min-w-[120px]">
-                                  {fieldValue.customFieldDefinition.label}:
-                                </span>
-                                <span className="text-gray-600 dark:text-gray-400">
-                                  {renderCustomFieldValue(fieldValue)}
-                                </span>
-                              </div>
-                            </div>
-                          ),
-                        )}
-                    </div>
-                  </div>
-                )}
+              <CustomFieldsSection
+                title="Emulator-Specific Details"
+                fieldValues={props.pcListing?.customFieldValues ?? []}
+                alignItems="center"
+              />
             </div>
 
             {/* Author Info */}
@@ -386,6 +310,7 @@ function PcListingDetailsClient(props: Props) {
           <div
             className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700"
             id="vote-section"
+            ref={voteSectionRef}
           >
             <PcVoteButtons
               pcListingId={props.pcListing.id}
@@ -412,6 +337,14 @@ function PcListingDetailsClient(props: Props) {
           </div>
         </Card>
       </motion.div>
+
+      {/* Vote Reminder Banner */}
+      <VoteReminderBanner
+        listingId={props.pcListing.id}
+        onVoteClick={scrollToVoteSection}
+        currentVote={props.pcListing.userVote ?? null}
+        onVote={handleVote}
+      />
     </div>
   )
 }

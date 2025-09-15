@@ -1,22 +1,49 @@
 import { ResourceError } from '@/lib/errors'
 import {
-  CreatePcListingSchema,
   GetCpusSchema,
   GetGpusSchema,
   GetPcListingsSchema,
   UpdatePcListingSchema,
 } from '@/schemas/mobile'
+import { CreatePcListingSchema, GetPcListingByIdSchema } from '@/schemas/pcListing'
 import {
   createMobileTRPCRouter,
   mobileProtectedProcedure,
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
 import { pcListingInclude, buildPcListingWhere } from '@/server/api/utils/pcListingHelpers'
+import {
+  invalidateListPages,
+  invalidateSitemap,
+  revalidateByTag,
+} from '@/server/cache/invalidation'
+import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
+import { listingStatsCache } from '@/server/utils/cache'
 import { paginate } from '@/server/utils/pagination'
 import { isModerator } from '@/utils/permissions'
 import { Prisma, ApprovalStatus } from '@orm'
 
 export const mobilePcListingsRouter = createMobileTRPCRouter({
+  /**
+   * Get a single PC listing by ID (mobile)
+   * Matches web visibility rules and returns materialized stats + userVote
+   */
+  byId: mobilePublicProcedure.input(GetPcListingByIdSchema).query(async ({ ctx, input }) => {
+    const canSeeBannedUsers = ctx.session?.user ? isModerator(ctx.session.user.role) : false
+
+    const repository = new PcListingsRepository(ctx.prisma)
+    const pcListing = await repository.getByIdWithDetails(
+      input.id,
+      canSeeBannedUsers,
+      ctx.session?.user?.id,
+    )
+
+    if (!pcListing) return ResourceError.pcListing.notFound()
+
+    // Return as-is; forDetails include already provides _count with votes/comments and successRate.
+    // We expose userVote from repository computation, no raw votes array here.
+    return pcListing
+  }),
   /**
    * Get PC listings with pagination and filtering
    */
@@ -91,11 +118,25 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       ctx.prisma.pcListing.count({ where }),
     ])
 
-    // PC listings don't have votes, just return as is (search filtering now done at database level)
+    // Compute verified developer flags
+    const verifiedPairs = pcListings.length
+      ? await ctx.prisma.verifiedDeveloper.findMany({
+          where: {
+            OR: pcListings.map((l) => ({ userId: l.authorId, emulatorId: l.emulatorId })),
+          },
+          select: { userId: true, emulatorId: true },
+        })
+      : []
+    const verifiedSet = new Set(verifiedPairs.map((v) => `${v.userId}_${v.emulatorId}`))
+
+    // PC listings don't have votes array in mobile; add derived fields
     const listingsWithStats = pcListings.map((listing) => ({
       ...listing,
-      verificationCount: 0, // PC listings use developer verifications differently
+      verificationCount: 0,
       reportCount: listing._count.reports,
+      isVerifiedDeveloper: verifiedSet.has(`${listing.authorId}_${listing.emulatorId}`),
+      upVotes: listing.upvoteCount,
+      downVotes: listing.downvoteCount,
     }))
     return {
       listings: listingsWithStats,
@@ -107,42 +148,35 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
    * Create a new PC listing
    */
   create: mobileProtectedProcedure.input(CreatePcListingSchema).mutation(async ({ ctx, input }) => {
-    return await ctx.prisma.pcListing.create({
-      data: {
-        gameId: input.gameId,
-        cpuId: input.cpuId,
-        gpuId: input.gpuId,
-        emulatorId: input.emulatorId,
-        performanceId: input.performanceId,
-        memorySize: input.memorySize,
-        os: input.os,
-        osVersion: input.osVersion,
-        notes: input.notes,
-        authorId: ctx.session.user.id,
-        status: ApprovalStatus.PENDING,
-        customFieldValues: input.customFieldValues
-          ? {
-              create: input.customFieldValues.map((cfv) => ({
-                customFieldDefinitionId: cfv.customFieldDefinitionId,
-                value: cfv.value === null || cfv.value === undefined ? Prisma.JsonNull : cfv.value,
-              })),
-            }
-          : undefined,
-      },
-      include: {
-        game: {
-          include: {
-            system: { select: { id: true, name: true, key: true } },
-          },
-        },
-        cpu: { include: { brand: { select: { id: true, name: true } } } },
-        gpu: { include: { brand: { select: { id: true, name: true } } } },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true } },
-        author: { select: { id: true, name: true } },
-        _count: { select: { reports: true, developerVerifications: true } },
-      },
+    const repository = new PcListingsRepository(ctx.prisma)
+    const created = await repository.create({
+      authorId: ctx.session.user.id,
+      userRole: ctx.session.user.role,
+      gameId: input.gameId,
+      cpuId: input.cpuId,
+      gpuId: input.gpuId ?? null,
+      emulatorId: input.emulatorId,
+      performanceId: input.performanceId,
+      memorySize: input.memorySize,
+      os: input.os,
+      osVersion: input.osVersion,
+      notes: input.notes ?? null,
+      customFieldValues: (input.customFieldValues
+        ? (input.customFieldValues as { customFieldDefinitionId: string; value: unknown }[])
+        : null) as { customFieldDefinitionId: string; value: unknown }[] | null,
     })
+
+    // Invalidate stats cache
+    listingStatsCache.delete('pc-listing-stats')
+
+    // Invalidate pages if approved
+    if (created.status === ApprovalStatus.APPROVED) {
+      await invalidateListPages()
+      await invalidateSitemap()
+      await revalidateByTag('pc-listings')
+    }
+
+    return created
   }),
 
   /**

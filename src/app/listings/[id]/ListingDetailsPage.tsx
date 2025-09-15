@@ -23,15 +23,7 @@ function ListingDetailsPage() {
 
   if (listingQuery.error || !listingQuery.data) return notFound()
 
-  return (
-    <ListingDetailsClient
-      listing={sanitizeForClient(listingQuery.data)}
-      successRate={listingQuery.data.successRate}
-      upVotes={Math.round(listingQuery.data.successRate * listingQuery.data._count.votes)}
-      totalVotes={listingQuery.data._count.votes}
-      userVote={listingQuery.data.userVote}
-    />
-  )
+  return <ListingDetailsClient listing={sanitizeForClient(listingQuery.data)} />
 }
 
 export default ListingDetailsPage

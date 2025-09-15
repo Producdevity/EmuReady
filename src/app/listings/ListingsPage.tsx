@@ -1,10 +1,11 @@
 'use client'
 
-import { Clock, GamepadIcon, CpuIcon, X, FunnelIcon } from 'lucide-react'
+import { Clock, GamepadIcon, CpuIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Suspense, useState } from 'react'
 import NoListingsFound from '@/app/listings/components/NoListingsFound'
+import { MobileFilterSheet, MobileFiltersFab } from '@/app/listings/shared/components'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -36,7 +37,8 @@ import { roleIncludesRole } from '@/utils/permission-system'
 import { hasPermission } from '@/utils/permissions'
 import { ms } from '@/utils/time'
 import { Role, ApprovalStatus } from '@orm'
-import ListingFilters from './components/ListingFilters'
+import ListingsFiltersContent from './components/ListingsFiltersContent'
+import ListingsFiltersSidebar from './components/ListingsFiltersSidebar'
 import useListingsState from './hooks/useListingsState'
 import { usePreferredHardwareFilters } from './shared/hooks/usePreferredHardwareFilters'
 
@@ -184,7 +186,7 @@ function ListingsPage() {
       <div className="lg:flex">
         {/* Desktop Sidebar */}
         <div className="hidden lg:block">
-          <ListingFilters
+          <ListingsFiltersSidebar
             systemIds={listingsState.systemIds}
             deviceIds={listingsState.deviceIds}
             socIds={listingsState.socIds}
@@ -218,67 +220,27 @@ function ListingsPage() {
 
         {/* Mobile Sidebar Overlay */}
         {isMobileSidebarOpen && (
-          <div className="lg:hidden fixed inset-0 z-50 flex">
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-fadeIn"
-              onClick={() => setIsMobileSidebarOpen(false)}
+          <MobileFilterSheet title="Filters" onClose={() => setIsMobileSidebarOpen(false)}>
+            <ListingsFiltersContent
+              systemIds={listingsState.systemIds}
+              deviceIds={listingsState.deviceIds}
+              socIds={listingsState.socIds}
+              emulatorIds={listingsState.emulatorIds}
+              performanceIds={listingsState.performanceIds}
+              searchTerm={listingsState.searchInput}
+              systems={systemsQuery.data ?? []}
+              devices={devicesQuery.data?.devices ?? []}
+              socs={socsQuery.data?.socs ?? []}
+              emulators={emulatorsQuery.data?.emulators ?? []}
+              performanceScales={performanceScalesQuery.data ?? []}
+              onSystemChange={handleSystemChange}
+              onDeviceChange={handleDeviceChange}
+              onSocChange={handleSocChange}
+              onEmulatorChange={handleEmulatorChange}
+              onPerformanceChange={(values) => handlePerformanceChange(values.map(Number))}
+              onSearchChange={handleSearchChange}
             />
-
-            {/* Sidebar Content - Full width on mobile */}
-            <div className="relative w-full flex">
-              <div className="w-full bg-white dark:bg-gray-900 shadow-xl transform animate-slide-up">
-                {/* Close button header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    <FunnelIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    Filters
-                  </h2>
-                  <button
-                    type="button"
-                    aria-label="Close filters sidebar"
-                    onClick={() => setIsMobileSidebarOpen(false)}
-                    className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-
-                <div className="h-full overflow-y-auto">
-                  <ListingFilters
-                    systemIds={listingsState.systemIds}
-                    deviceIds={listingsState.deviceIds}
-                    socIds={listingsState.socIds}
-                    emulatorIds={listingsState.emulatorIds}
-                    performanceIds={listingsState.performanceIds}
-                    searchTerm={listingsState.searchInput}
-                    systems={systemsQuery.data ?? []}
-                    devices={devicesQuery.data?.devices ?? []}
-                    socs={socsQuery.data?.socs ?? []}
-                    emulators={emulatorsQuery.data?.emulators ?? []}
-                    performanceScales={performanceScalesQuery.data ?? []}
-                    onSystemChange={handleSystemChange}
-                    onDeviceChange={handleDeviceChange}
-                    onSocChange={handleSocChange}
-                    onEmulatorChange={handleEmulatorChange}
-                    onPerformanceChange={handlePerformanceChange}
-                    onSearchChange={handleSearchChange}
-                    isCollapsed={false}
-                    onToggleCollapse={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-                    userPreferences={userPreferencesQuery.data}
-                    shouldUseUserDeviceFilter={preferred.shouldUseUserDeviceFilter}
-                    userDeviceIds={preferred.userDeviceIds}
-                    shouldUseUserSocFilter={preferred.shouldUseUserSocFilter}
-                    userSocIds={preferred.userSocIds}
-                    onEnableUserDeviceFilter={handleEnableUserDeviceFilter}
-                    onEnableUserSocFilter={handleEnableUserSocFilter}
-                    userDeviceFilterDisabled={preferred.userDeviceFilterDisabled}
-                    userSocFilterDisabled={preferred.userSocFilterDisabled}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          </MobileFilterSheet>
         )}
 
         {/* Main Content - Listings */}
@@ -644,38 +606,18 @@ function ListingsPage() {
       </div>
 
       {/* Floating Action Button for Filters - Mobile Only */}
-      <div className="lg:hidden fixed bottom-14 right-6 z-40">
-        <button
-          type="button"
-          onClick={() => setIsMobileSidebarOpen(true)}
-          className="group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-4 rounded-full shadow-2xl hover:shadow-blue-500/25 transform hover:scale-110 transition-all duration-300 ease-out"
-          aria-label="Open Filters"
-        >
-          {/* Active filter count badge */}
-          {(listingsState.systemIds.length > 0 ||
-            listingsState.deviceIds.length > 0 ||
-            listingsState.socIds.length > 0 ||
-            listingsState.emulatorIds.length > 0 ||
-            listingsState.performanceIds.length > 0 ||
-            listingsState.search) && (
-            <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold shadow-lg">
-              {[
-                listingsState.systemIds.length,
-                listingsState.deviceIds.length,
-                listingsState.socIds.length,
-                listingsState.emulatorIds.length,
-                listingsState.performanceIds.length,
-                listingsState.search ? 1 : 0,
-              ].reduce((sum, count) => sum + count, 0)}
-            </div>
-          )}
-
-          <FunnelIcon className="w-6 h-6" />
-
-          {/* Ripple effect */}
-          <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-20 group-hover:animate-ping" />
-        </button>
-      </div>
+      <MobileFiltersFab
+        ariaLabel="Open Filters"
+        onClick={() => setIsMobileSidebarOpen(true)}
+        activeCount={[
+          listingsState.systemIds.length,
+          listingsState.deviceIds.length,
+          listingsState.socIds.length,
+          listingsState.emulatorIds.length,
+          listingsState.performanceIds.length,
+          listingsState.search ? 1 : 0,
+        ].reduce((sum, count) => sum + count, 0)}
+      />
     </main>
   )
 }

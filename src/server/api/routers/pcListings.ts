@@ -1,6 +1,6 @@
 import analytics from '@/lib/analytics'
 import { AppError, ResourceError } from '@/lib/errors'
-import { canUserAutoApprove, TrustService } from '@/lib/trust/service'
+import { TrustService } from '@/lib/trust/service'
 import {
   ApprovePcListingSchema,
   BulkApprovePcListingsSchema,
@@ -46,7 +46,6 @@ import {
   buildPcListingWhere,
   pcListingAdminInclude,
   pcListingDetailInclude,
-  pcListingInclude,
 } from '@/server/api/utils/pcListingHelpers'
 import {
   invalidateListPages,
@@ -58,7 +57,7 @@ import { PcListingsRepository } from '@/server/repositories/pc-listings.reposito
 import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
 import { listingStatsCache } from '@/server/utils/cache'
 import { paginate } from '@/server/utils/pagination'
-import { validatePagination, sanitizeInput } from '@/server/utils/security-validation'
+import { validatePagination } from '@/server/utils/security-validation'
 import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
 import { PERMISSIONS, roleIncludesRole } from '@/utils/permission-system'
 import { canDeleteComment, canEditComment, hasPermission, isModerator } from '@/utils/permissions'
@@ -227,87 +226,22 @@ export const pcListingsRouter = createTRPCRouter({
 
   create: protectedProcedure.input(CreatePcListingSchema).mutation(async ({ ctx, input }) => {
     const authorId = ctx.session.user.id
-    // Check for existing PC listing with same combination
-    const existingPcListing = await ctx.prisma.pcListing.findFirst({
-      where: {
-        gameId: input.gameId,
-        cpuId: input.cpuId,
-        ...(input.gpuId ? { gpuId: input.gpuId } : { gpuId: null }),
-        emulatorId: input.emulatorId,
-        authorId,
-      },
-    })
-
-    if (existingPcListing) return ResourceError.pcListing.alreadyExists()
-
-    // Validate referenced entities exist
-    const [game, cpu, gpu, emulator, performance] = await Promise.all([
-      ctx.prisma.game.findUnique({
-        where: { id: input.gameId },
-        select: { id: true, systemId: true },
-      }),
-      ctx.prisma.cpu.findUnique({ where: { id: input.cpuId } }),
-      input.gpuId ? ctx.prisma.gpu.findUnique({ where: { id: input.gpuId } }) : null,
-      ctx.prisma.emulator.findUnique({
-        where: { id: input.emulatorId },
-        include: { systems: { select: { id: true } } },
-      }),
-      ctx.prisma.performanceScale.findUnique({
-        where: { id: input.performanceId },
-      }),
-    ])
-
-    if (!game) return ResourceError.game.notFound()
-    if (!cpu) return ResourceError.cpu.notFound()
-    if (input.gpuId && !gpu) return ResourceError.gpu.notFound() // Only check GPU if provided
-    if (!emulator) return ResourceError.emulator.notFound()
-    if (!performance) return ResourceError.performanceScale.notFound()
-
-    // Validate that the game's system is compatible with the chosen emulator
-    const isSystemCompatible = emulator.systems.some((system) => system.id === game.systemId)
-
-    if (!isSystemCompatible) {
-      return AppError.badRequest("The selected emulator does not support this game's system")
-    }
-
-    // Check if user can auto-approve
-    const canAutoApprove = await canUserAutoApprove(authorId)
-    const isAuthorOrHigher = roleIncludesRole(ctx.session.user.role, Role.AUTHOR)
-    const listingStatus =
-      canAutoApprove || isAuthorOrHigher ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING
-
-    // Create PC listing with custom field values
-    const newListing = await ctx.prisma.pcListing.create({
-      data: {
-        gameId: input.gameId,
-        cpuId: input.cpuId,
-        ...(input.gpuId ? { gpuId: input.gpuId } : {}), // Handle optional GPU
-        emulatorId: input.emulatorId,
-        performanceId: input.performanceId,
-        memorySize: input.memorySize,
-        os: input.os,
-        osVersion: input.osVersion,
-        notes: input.notes ? sanitizeInput(input.notes) : input.notes,
-        authorId: ctx.session.user.id,
-        status: listingStatus,
-        ...((canAutoApprove || isAuthorOrHigher) && {
-          processedByUserId: authorId,
-          processedAt: new Date(),
-          processedNotes:
-            isAuthorOrHigher && !canAutoApprove
-              ? 'Auto-approved (Author or higher role)'
-              : 'Auto-approved (Trusted user)',
-        }),
-        customFieldValues: input.customFieldValues?.length
-          ? {
-              create: input.customFieldValues.map((cfv) => ({
-                customFieldDefinitionId: cfv.customFieldDefinitionId,
-                value: cfv.value,
-              })),
-            }
-          : undefined,
-      },
-      include: pcListingInclude,
+    const repository = new PcListingsRepository(ctx.prisma)
+    const newListing = await repository.create({
+      authorId,
+      userRole: ctx.session.user.role,
+      gameId: input.gameId,
+      cpuId: input.cpuId,
+      gpuId: input.gpuId ?? null,
+      emulatorId: input.emulatorId,
+      performanceId: input.performanceId,
+      memorySize: input.memorySize,
+      os: input.os,
+      osVersion: input.osVersion,
+      notes: input.notes ?? null,
+      customFieldValues: (input.customFieldValues
+        ? (input.customFieldValues as { customFieldDefinitionId: string; value: unknown }[])
+        : null) as { customFieldDefinitionId: string; value: unknown }[] | null,
     })
 
     // Invalidate stats cache when PC listing is created

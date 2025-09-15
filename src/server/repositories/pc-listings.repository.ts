@@ -4,11 +4,15 @@
  */
 
 import { PAGINATION } from '@/data/constants'
+import { AppError, ResourceError } from '@/lib/errors'
+import { canUserAutoApprove } from '@/lib/trust/service'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
-import { Prisma, ApprovalStatus, type PcOs, type Role } from '@orm'
+import { sanitizeInput } from '@/server/utils/security-validation'
+import { roleIncludesRole } from '@/utils/permission-system'
+import { calculateWilsonScore } from '@/utils/wilson-score'
+import { Prisma, ApprovalStatus, type PcOs, Role } from '@orm'
 import { BaseRepository } from './base.repository'
 import { buildShadowBanFilter } from '../utils/query-builders'
-import { calculateWilsonScore } from '../utils/wilson-score'
 
 export interface PcListingFilters {
   gameId?: string
@@ -54,22 +58,6 @@ export class PcListingsRepository extends BaseRepository {
       gpu: { include: { brand: true } },
     } satisfies Prisma.PcListingInclude,
 
-    withVotes: {
-      game: { select: { id: true, title: true, systemId: true } },
-      emulator: { select: { id: true, name: true, logo: true } },
-      performance: true,
-      author: { select: { id: true, name: true, profileImage: true } },
-      cpu: { include: { brand: true } },
-      gpu: { include: { brand: true } },
-      votes: true,
-      _count: {
-        select: {
-          votes: true,
-          comments: true,
-        },
-      },
-    } satisfies Prisma.PcListingInclude,
-
     forList: {
       game: { include: { system: true } },
       cpu: { include: { brand: true } },
@@ -77,59 +65,32 @@ export class PcListingsRepository extends BaseRepository {
       emulator: true,
       performance: true,
       author: true,
-      _count: {
-        select: {
-          reports: true,
-          votes: true,
-          comments: { where: { deletedAt: null } },
-        },
-      },
+      _count: { select: { reports: true, votes: true, comments: { where: { deletedAt: null } } } },
     } satisfies Prisma.PcListingInclude,
 
     forGetById: {
       game: { include: { system: true } },
       emulator: { select: { id: true, name: true, logo: true } },
-      performance: {
-        select: {
-          id: true,
-          label: true,
-          rank: true,
-          description: true,
-        },
-      },
+      performance: { select: { id: true, label: true, rank: true, description: true } },
       author: { select: { id: true, name: true, profileImage: true } },
       cpu: { include: { brand: true } },
       gpu: { include: { brand: true } },
-      _count: {
-        select: {
-          comments: true,
-          votes: true,
-        },
-      },
+      _count: { select: { comments: true, votes: true } },
     } satisfies Prisma.PcListingInclude,
 
     forDetails: {
       game: { include: { system: true } },
       cpu: { include: { brand: true } },
       gpu: { include: { brand: true } },
-      emulator: {
-        include: { customFieldDefinitions: { orderBy: { displayOrder: 'asc' } } },
-      },
+      emulator: { include: { customFieldDefinitions: { orderBy: { displayOrder: 'asc' } } } },
       performance: true,
       author: true,
       developerVerifications: {
         include: { developer: { select: { id: true, name: true } } },
       },
       customFieldValues: { include: { customFieldDefinition: true } },
-      _count: {
-        select: {
-          votes: true,
-          comments: { where: { deletedAt: null } },
-          reports: true,
-        },
-      },
+      _count: { select: { votes: true, comments: { where: { deletedAt: null } }, reports: true } },
     } satisfies Prisma.PcListingInclude,
-
     forTopBySuccessRate: {
       game: { include: { system: true } },
       emulator: { select: { id: true, name: true, logo: true } },
@@ -144,34 +105,17 @@ export class PcListingsRepository extends BaseRepository {
       author: { select: { id: true, name: true, profileImage: true } },
       cpu: { include: { brand: true } },
       gpu: { include: { brand: true } },
-      _count: {
-        select: {
-          comments: true,
-          votes: true,
-        },
-      },
+      _count: { select: { comments: true, votes: true } },
     } satisfies Prisma.PcListingInclude,
 
     forFeatured: {
       game: { include: { system: true } },
       emulator: { select: { id: true, name: true, logo: true } },
-      performance: {
-        select: {
-          id: true,
-          label: true,
-          rank: true,
-          description: true,
-        },
-      },
+      performance: { select: { id: true, label: true, rank: true, description: true } },
       author: { select: { id: true, name: true, profileImage: true } },
       cpu: { include: { brand: true } },
       gpu: { include: { brand: true } },
-      _count: {
-        select: {
-          comments: true,
-          votes: true,
-        },
-      },
+      _count: { select: { comments: true, votes: true } },
     } satisfies Prisma.PcListingInclude,
   } as const
 
@@ -328,9 +272,7 @@ export class PcListingsRepository extends BaseRepository {
   /**
    * Get a single PC listing by ID with all relations
    */
-  async getById(
-    id: string,
-  ): Promise<Prisma.PcListingGetPayload<{
+  async getById(id: string): Promise<Prisma.PcListingGetPayload<{
     include: typeof PcListingsRepository.includes.forGetById
   }> | null> {
     return this.prisma.pcListing.findUnique({
@@ -351,6 +293,9 @@ export class PcListingsRepository extends BaseRepository {
         userVote: boolean | null
         upvotes: number
         downvotes: number
+        isVerifiedDeveloper: boolean
+        upVotes: number
+        downVotes: number
       })
     | null
   > {
@@ -391,11 +336,21 @@ export class PcListingsRepository extends BaseRepository {
       }),
     ])
 
+    // Compute verified developer for author/emulator
+    const verified = await this.prisma.verifiedDeveloper.findFirst({
+      where: { userId: pcListing.authorId, emulatorId: pcListing.emulatorId },
+      select: { id: true },
+    })
+
     return {
       ...pcListing,
       userVote: userVoteResult ? userVoteResult.value : null,
       upvotes,
       downvotes,
+      // Add camelCase duplicates for API consumers that expect upVotes/downVotes
+      upVotes: upvotes,
+      downVotes: downvotes,
+      isVerifiedDeveloper: !!verified,
     }
   }
 
@@ -526,15 +481,119 @@ export class PcListingsRepository extends BaseRepository {
   /**
    * Create a PC listing
    */
-  async create(
-    data: Prisma.PcListingCreateInput,
-  ): Promise<
-    Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.default }>
+  async create(input: {
+    authorId: string
+    userRole: Role
+    gameId: string
+    cpuId: string
+    gpuId?: string | null
+    emulatorId: string
+    performanceId: number
+    memorySize: number
+    os: PcOs
+    osVersion: string
+    notes?: string | null
+    customFieldValues?: { customFieldDefinitionId: string; value: unknown }[] | null
+  }): Promise<
+    Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.forList }>
   > {
-    return this.prisma.pcListing.create({
-      data,
-      include: PcListingsRepository.includes.default,
+    const {
+      authorId,
+      userRole,
+      gameId,
+      cpuId,
+      gpuId,
+      emulatorId,
+      performanceId,
+      memorySize,
+      os,
+      osVersion,
+      notes,
+      customFieldValues,
+    } = input
+
+    // Check for existing PC listing with same combination
+    const existing = await this.prisma.pcListing.findFirst({
+      where: {
+        gameId,
+        cpuId,
+        ...(gpuId ? { gpuId } : { gpuId: null }),
+        emulatorId,
+        authorId,
+      },
     })
+    if (existing) throw ResourceError.pcListing.alreadyExists()
+
+    // Validate referenced entities and compatibility
+    const [game, cpu, gpu, emulator, performance] = await Promise.all([
+      this.prisma.game.findUnique({ where: { id: gameId }, select: { id: true, systemId: true } }),
+      this.prisma.cpu.findUnique({ where: { id: cpuId } }),
+      gpuId ? this.prisma.gpu.findUnique({ where: { id: gpuId } }) : Promise.resolve(null),
+      this.prisma.emulator.findUnique({
+        where: { id: emulatorId },
+        include: { systems: { select: { id: true } } },
+      }),
+      this.prisma.performanceScale.findUnique({ where: { id: performanceId } }),
+    ])
+
+    if (!game) throw ResourceError.game.notFound()
+    if (!cpu) throw ResourceError.cpu.notFound()
+    if (gpuId && !gpu) throw ResourceError.gpu.notFound()
+    if (!emulator) throw ResourceError.emulator.notFound()
+    if (!performance) throw ResourceError.performanceScale.notFound()
+
+    const isSystemCompatible = emulator.systems.some((s) => s.id === game.systemId)
+    if (!isSystemCompatible)
+      return AppError.badRequest("The selected emulator does not support this game's system")
+
+    const canAutoApprove = await canUserAutoApprove(authorId)
+    const isAuthorOrHigher = roleIncludesRole(userRole, Role.AUTHOR)
+    const status: ApprovalStatus =
+      canAutoApprove || isAuthorOrHigher ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING
+
+    // Create
+    const created = await this.prisma.pcListing.create({
+      data: {
+        gameId,
+        cpuId,
+        ...(gpuId ? { gpuId } : {}),
+        emulatorId,
+        performanceId,
+        memorySize,
+        os,
+        osVersion,
+        notes: notes ? sanitizeInput(notes) : (notes ?? null),
+        authorId,
+        status,
+        ...((canAutoApprove || isAuthorOrHigher) && {
+          processedByUserId: authorId,
+          processedAt: new Date(),
+          processedNotes:
+            isAuthorOrHigher && !canAutoApprove
+              ? 'Auto-approved (Author or higher role)'
+              : 'Auto-approved (Trusted user)',
+        }),
+      },
+    })
+
+    if (customFieldValues && customFieldValues.length > 0) {
+      await this.prisma.pcListingCustomFieldValue.createMany({
+        data: customFieldValues.map((cfv) => ({
+          pcListingId: created.id,
+          customFieldDefinitionId: cfv.customFieldDefinitionId,
+          value: cfv.value as Prisma.InputJsonValue,
+        })),
+      })
+    }
+
+    // Return with standard include
+    const result = await this.prisma.pcListing.findUnique({
+      where: { id: created.id },
+      include: PcListingsRepository.includes.forList,
+    })
+
+    if (!result) throw new Error('Failed to load created PC listing')
+    return result
   }
 
   /**

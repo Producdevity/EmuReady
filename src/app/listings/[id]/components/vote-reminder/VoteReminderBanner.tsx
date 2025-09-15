@@ -17,7 +17,7 @@ interface Props {
   onVote: (value: boolean | null) => void
 }
 
-function VoteReminderBanner(props: Props) {
+export function VoteReminderBanner(props: Props) {
   const [isVisible, setIsVisible] = useState(false)
   const [hasBeenDismissed, setHasBeenDismissed] = useLocalStorage(
     storageKeys.popups.voteReminderDismissed,
@@ -180,5 +180,3 @@ function VoteReminderBanner(props: Props) {
     </>
   )
 }
-
-export default VoteReminderBanner

@@ -80,6 +80,7 @@ export const GetListingCommentsSchema = z.object({
 export const CreateCommentSchema = z.object({
   listingId: z.string().uuid(),
   content: z.string().min(1),
+  parentId: z.string().uuid().nullable().optional(),
 })
 
 export const VoteListingSchema = z.object({

@@ -18,7 +18,7 @@ interface Props {
   deviceId?: string
 }
 
-function VoteButtons(props: Props) {
+export function VoteButtons(props: Props) {
   const { executeForVote, isCaptchaEnabled } = useRecaptchaForVote()
 
   const voteMutation = api.listings.vote.useMutation({
@@ -60,5 +60,3 @@ function VoteButtons(props: Props) {
     />
   )
 }
-
-export default VoteButtons

@@ -7,6 +7,7 @@
 
 // Emulator config type constants
 export const EMULATOR_CONFIG_TYPES = {
+  AZAHAR: 'azahar',
   EDEN: 'eden',
   GAMENATIVE: 'gamenative',
 } as const
@@ -16,24 +17,28 @@ export type EmulatorConfigType = (typeof EMULATOR_CONFIG_TYPES)[keyof typeof EMU
 
 // File extensions for each config type
 export const CONFIG_FILE_EXTENSIONS: Record<EmulatorConfigType, string> = {
+  [EMULATOR_CONFIG_TYPES.AZAHAR]: '.ini',
   [EMULATOR_CONFIG_TYPES.EDEN]: '.ini',
   [EMULATOR_CONFIG_TYPES.GAMENATIVE]: '.json',
 } as const
 
 // MIME types for each config type
 export const CONFIG_MIME_TYPES: Record<EmulatorConfigType, string> = {
+  [EMULATOR_CONFIG_TYPES.AZAHAR]: 'text/plain',
   [EMULATOR_CONFIG_TYPES.EDEN]: 'text/plain',
   [EMULATOR_CONFIG_TYPES.GAMENATIVE]: 'application/json',
 } as const
 
 // Syntax highlighting languages for each config type
 export const CONFIG_SYNTAX_LANGUAGES: Record<EmulatorConfigType, string> = {
+  [EMULATOR_CONFIG_TYPES.AZAHAR]: 'ini',
   [EMULATOR_CONFIG_TYPES.EDEN]: 'ini',
   [EMULATOR_CONFIG_TYPES.GAMENATIVE]: 'json',
 } as const
 
 // Display names for each config type
 export const CONFIG_TYPE_DISPLAY_NAMES: Record<EmulatorConfigType, string> = {
+  [EMULATOR_CONFIG_TYPES.AZAHAR]: 'Azahar Configuration',
   [EMULATOR_CONFIG_TYPES.EDEN]: 'Eden Configuration',
   [EMULATOR_CONFIG_TYPES.GAMENATIVE]: 'GameNative Configuration',
 } as const

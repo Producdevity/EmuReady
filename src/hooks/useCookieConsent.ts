@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
 import { z } from 'zod'
+import storageKeys from '@/data/storageKeys'
 import { safeParseJSON } from '@/utils/client-validation'
 
 export interface CookiePreferences {
@@ -35,8 +36,8 @@ export function useCookieConsent() {
     if (typeof window === 'undefined') return
 
     try {
-      const savedPreferences = localStorage.getItem('cookiePreferences')
-      const consentGiven = localStorage.getItem('cookieConsent')
+      const savedPreferences = localStorage.getItem(storageKeys.cookies.preferences)
+      const consentGiven = localStorage.getItem(storageKeys.cookies.consent)
       const dismissed = localStorage.getItem('cookieDismissed')
 
       if (savedPreferences && consentGiven) {
@@ -59,7 +60,7 @@ export function useCookieConsent() {
 
     const handleRouteChange = () => {
       const dismissed = localStorage.getItem('cookieDismissed')
-      const consentGiven = localStorage.getItem('cookieConsent')
+      const consentGiven = localStorage.getItem(storageKeys.cookies.consent)
 
       // If user dismissed but didn't give consent, show banner again on navigation
       if (dismissed && !consentGiven) {
@@ -78,9 +79,9 @@ export function useCookieConsent() {
 
   const savePreferences = useCallback((newPreferences: CookiePreferences) => {
     try {
-      localStorage.setItem('cookiePreferences', JSON.stringify(newPreferences))
-      localStorage.setItem('cookieConsent', 'true')
-      localStorage.setItem('cookieConsentDate', new Date().toISOString())
+      localStorage.setItem(storageKeys.cookies.preferences, JSON.stringify(newPreferences))
+      localStorage.setItem(storageKeys.cookies.consent, 'true')
+      localStorage.setItem(storageKeys.cookies.consentDate, new Date().toISOString())
 
       setPreferences(newPreferences)
       setHasConsented(true)
@@ -98,9 +99,9 @@ export function useCookieConsent() {
 
   const resetConsent = useCallback(() => {
     try {
-      localStorage.removeItem('cookiePreferences')
-      localStorage.removeItem('cookieConsent')
-      localStorage.removeItem('cookieConsentDate')
+      localStorage.removeItem(storageKeys.cookies.preferences)
+      localStorage.removeItem(storageKeys.cookies.consent)
+      localStorage.removeItem(storageKeys.cookies.consentDate)
       localStorage.removeItem('cookieDismissed')
 
       setPreferences(DEFAULT_PREFERENCES)

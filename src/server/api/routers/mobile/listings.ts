@@ -1,23 +1,25 @@
+import analytics from '@/lib/analytics'
 import { AppError, ResourceError } from '@/lib/errors'
+import { TrustService } from '@/lib/trust/service'
+import { CreateListingSchema } from '@/schemas/listing'
 import {
   CreateCommentSchema,
-  CreateListingSchema,
   DeleteCommentSchema,
   DeleteListingSchema,
   GetListingByIdSchema,
   GetListingCommentsSchema,
   GetListingEmulatorConfigSchema,
   GetListingsByGameSchema,
-  GetListingsSchema,
   type GetListingsInput,
+  GetListingsSchema,
   GetUserListingsSchema,
   GetUserVoteSchema,
+  GetUserVotesSchema,
+  ReportCommentSchema,
   UpdateCommentSchema,
   UpdateListingSchema,
   VoteCommentSchema,
   VoteListingSchema,
-  GetUserVotesSchema,
-  ReportCommentSchema,
 } from '@/schemas/mobile'
 import {
   createMobileTRPCRouter,
@@ -29,13 +31,14 @@ import { ListingsRepository } from '@/server/repositories/listings.repository'
 import {
   convertToEdenConfig,
   serializeEdenConfig,
-} from '@/server/utils/emulator-config/eden-converter'
+} from '@/server/utils/emulator-config/eden/eden.converter'
 import {
   convertToGameNativeConfig,
   serializeGameNativeConfig,
-} from '@/server/utils/emulator-config/gamenative-converter'
+} from '@/server/utils/emulator-config/gamenative/gamenative.converter'
 import { updateListingVoteCounts } from '@/server/utils/vote-counts'
-import { ApprovalStatus, type PrismaClient, Prisma, type Role } from '@orm'
+import { isModerator } from '@/utils/permissions'
+import { ApprovalStatus, Prisma, TrustAction, type PrismaClient, type Role } from '@orm'
 
 // Helper for getting listings using the repository
 async function getListingsHelper(
@@ -118,7 +121,8 @@ export const mobileListingsRouter = createMobileTRPCRouter({
    */
   byId: mobilePublicProcedure.input(GetListingByIdSchema).query(async ({ ctx, input }) => {
     const repository = new ListingsRepository(ctx.prisma)
-    return await repository.byId(input.id, ctx.session?.user?.id)
+    const canSeeBannedUsers = ctx.session?.user ? isModerator(ctx.session.user.role) : false
+    return await repository.byIdWithAccess(input.id, ctx.session?.user?.id, canSeeBannedUsers)
   }),
 
   /**
@@ -133,32 +137,17 @@ export const mobileListingsRouter = createMobileTRPCRouter({
    * Create a new listing
    */
   create: mobileProtectedProcedure.input(CreateListingSchema).mutation(async ({ ctx, input }) => {
-    return await ctx.prisma.listing.create({
-      data: {
-        gameId: input.gameId,
-        deviceId: input.deviceId,
-        emulatorId: input.emulatorId,
-        performanceId: input.performanceId,
-        notes: input.notes,
-        authorId: ctx.session.user.id,
-        status: ApprovalStatus.PENDING,
-        customFieldValues: input.customFieldValues
-          ? {
-              create: input.customFieldValues.map((cfv) => ({
-                customFieldDefinitionId: cfv.customFieldDefinitionId,
-                value: cfv.value === null || cfv.value === undefined ? Prisma.JsonNull : cfv.value,
-              })),
-            }
-          : undefined,
-      },
-      include: {
-        game: { include: { system: { select: { id: true, name: true, key: true } } } },
-        device: { include: { brand: { select: { id: true, name: true } } } },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true } },
-        author: { select: { id: true, name: true } },
-        _count: { select: { votes: true, comments: true } },
-      },
+    const { ...payload } = input
+    const repository = new ListingsRepository(ctx.prisma)
+
+    return await repository.create({
+      authorId: ctx.session.user.id,
+      userRole: ctx.session.user.role,
+      ...payload,
+      notes: payload.notes ?? null,
+      customFieldValues: (payload.customFieldValues
+        ? (payload.customFieldValues as { customFieldDefinitionId: string; value: unknown }[])
+        : null) as { customFieldDefinitionId: string; value: unknown }[] | null,
     })
   }),
 
@@ -176,9 +165,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
 
     if (!existing) return ResourceError.listing.notFound()
 
-    if (existing.authorId !== ctx.session.user.id) {
-      return ResourceError.listing.canOnlyEditOwn()
-    }
+    if (existing.authorId !== ctx.session.user.id) return ResourceError.listing.canOnlyEditOwn()
 
     return await ctx.prisma.listing.update({
       where: { id },
@@ -195,11 +182,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
           : undefined,
       },
       include: {
-        game: {
-          include: {
-            system: { select: { id: true, name: true, key: true } },
-          },
-        },
+        game: { include: { system: { select: { id: true, name: true, key: true } } } },
         device: { include: { brand: { select: { id: true, name: true } } } },
         emulator: { select: { id: true, name: true, logo: true } },
         performance: { select: { id: true, label: true, rank: true } },
@@ -320,11 +303,26 @@ export const mobileListingsRouter = createMobileTRPCRouter({
   createComment: mobileProtectedProcedure
     .input(CreateCommentSchema)
     .mutation(async ({ ctx, input }) => {
+      const { listingId, content, parentId } = input
+
+      // If replying to a comment, validate parent existence and ownership
+      if (parentId) {
+        const parent = await ctx.prisma.comment.findUnique({
+          where: { id: parentId },
+          select: { id: true, listingId: true },
+        })
+
+        if (!parent) return ResourceError.comment.parentNotFound()
+        if (parent.listingId !== listingId)
+          return AppError.badRequest('Parent comment does not belong to this listing')
+      }
+
       return await ctx.prisma.comment.create({
         data: {
-          content: input.content,
-          listingId: input.listingId,
-          userId: ctx.session.user.id,
+          content,
+          listing: { connect: { id: listingId } },
+          user: { connect: { id: ctx.session.user.id } },
+          ...(parentId ? { parent: { connect: { id: parentId } } } : {}),
         },
         include: { user: { select: { id: true, name: true } } },
       })
@@ -477,41 +475,150 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     .input(VoteCommentSchema)
     .mutation(async ({ ctx, input }) => {
       const { commentId, value } = input
+      const userId = ctx.session.user.id
 
-      // Check if comment exists
-      const comment = await ctx.prisma.comment.findUnique({
-        where: { id: commentId },
-        select: { userId: true },
-      })
-
+      const comment = await ctx.prisma.comment.findUnique({ where: { id: commentId } })
       if (!comment) return ResourceError.comment.notFound()
 
-      // Check for existing vote
       const existingVote = await ctx.prisma.commentVote.findUnique({
-        where: { userId_commentId: { userId: ctx.session.user.id, commentId } },
+        where: { userId_commentId: { userId, commentId } },
       })
 
-      // Remove vote if value is null or same as existing
-      if (value === null || (existingVote && existingVote.value === value)) {
-        if (existingVote) {
-          await ctx.prisma.commentVote.delete({
-            where: { userId_commentId: { userId: ctx.session.user.id, commentId } },
-          })
-        }
-        return { message: 'Vote removed' }
-      }
+      return ctx.prisma.$transaction(async (tx) => {
+        let voteResult: unknown
+        let scoreChange = 0
+        let trustActionNeeded: 'upvote' | 'downvote' | 'change' | 'remove' | null = null
 
-      // Update or create vote
-      if (existingVote) {
-        return await ctx.prisma.commentVote.update({
-          where: { userId_commentId: { userId: ctx.session.user.id, commentId } },
-          data: { value },
+        if (existingVote) {
+          if (value === null || existingVote.value === value) {
+            // Remove vote
+            await tx.commentVote.delete({ where: { userId_commentId: { userId, commentId } } })
+            scoreChange = existingVote.value ? -1 : 1
+            voteResult = { message: 'Vote removed' }
+            trustActionNeeded = 'remove'
+          } else {
+            // Change vote
+            voteResult = await tx.commentVote.update({
+              where: { userId_commentId: { userId, commentId } },
+              data: { value },
+            })
+            scoreChange = value ? 2 : -2
+            trustActionNeeded = 'change'
+          }
+        } else {
+          // New vote
+          voteResult = await tx.commentVote.create({ data: { userId, commentId, value: !!value } })
+          scoreChange = value ? 1 : -1
+          trustActionNeeded = value ? 'upvote' : 'downvote'
+        }
+
+        // Update the comment score
+        const updatedComment = await tx.comment.update({
+          where: { id: commentId },
+          data: { score: { increment: scoreChange } },
         })
-      } else {
-        return await ctx.prisma.commentVote.create({
-          data: { value, userId: ctx.session.user.id, commentId },
+
+        // Award trust points to the comment author (not the voter)
+        if (comment && comment.userId !== userId) {
+          const trustService = new TrustService(tx)
+
+          if (trustActionNeeded === 'upvote') {
+            await trustService.logAction({
+              userId: comment.userId,
+              action: TrustAction.COMMENT_RECEIVED_UPVOTE,
+              targetUserId: userId,
+              metadata: { commentId, voterId: userId, listingId: comment.listingId },
+            })
+          } else if (trustActionNeeded === 'downvote') {
+            await trustService.logAction({
+              userId: comment.userId,
+              action: TrustAction.COMMENT_RECEIVED_DOWNVOTE,
+              targetUserId: userId,
+              metadata: { commentId, voterId: userId, listingId: comment.listingId },
+            })
+          } else if (trustActionNeeded === 'change') {
+            if (value) {
+              await trustService.logAction({
+                userId: comment.userId,
+                action: TrustAction.COMMENT_RECEIVED_DOWNVOTE,
+                targetUserId: userId,
+                metadata: {
+                  commentId,
+                  voterId: userId,
+                  listingId: comment.listingId,
+                  reversed: true,
+                },
+              })
+              await trustService.logAction({
+                userId: comment.userId,
+                action: TrustAction.COMMENT_RECEIVED_UPVOTE,
+                targetUserId: userId,
+                metadata: { commentId, voterId: userId, listingId: comment.listingId },
+              })
+            } else {
+              await trustService.logAction({
+                userId: comment.userId,
+                action: TrustAction.COMMENT_RECEIVED_UPVOTE,
+                targetUserId: userId,
+                metadata: {
+                  commentId,
+                  voterId: userId,
+                  listingId: comment.listingId,
+                  reversed: true,
+                },
+              })
+              await trustService.logAction({
+                userId: comment.userId,
+                action: TrustAction.COMMENT_RECEIVED_DOWNVOTE,
+                targetUserId: userId,
+                metadata: { commentId, voterId: userId, listingId: comment.listingId },
+              })
+            }
+          } else if (trustActionNeeded === 'remove' && existingVote) {
+            const action = existingVote.value
+              ? TrustAction.COMMENT_RECEIVED_UPVOTE
+              : TrustAction.COMMENT_RECEIVED_DOWNVOTE
+            await trustService.logAction({
+              userId: comment.userId,
+              action,
+              targetUserId: userId,
+              metadata: {
+                commentId,
+                voterId: userId,
+                listingId: comment.listingId,
+                reversed: true,
+              },
+            })
+          }
+
+          // Helpful threshold bonus
+          const HELPFUL_THRESHOLD = 5
+          const previousScore = updatedComment.score - scoreChange
+          if (previousScore < HELPFUL_THRESHOLD && updatedComment.score >= HELPFUL_THRESHOLD) {
+            await trustService.logAction({
+              userId: comment.userId,
+              action: TrustAction.HELPFUL_COMMENT,
+              metadata: {
+                commentId,
+                listingId: comment.listingId,
+                score: updatedComment.score,
+                threshold: HELPFUL_THRESHOLD,
+              },
+            })
+          }
+        }
+
+        // Analytics
+        const finalVoteValue = existingVote?.value === value || value === null ? null : value
+        analytics.engagement.commentVote({
+          commentId,
+          voteValue: finalVoteValue,
+          previousVote: existingVote?.value,
+          listingId: comment.listingId,
         })
-      }
+
+        return voteResult
+      })
     }),
 
   /**

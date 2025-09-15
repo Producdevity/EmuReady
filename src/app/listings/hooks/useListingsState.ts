@@ -69,7 +69,6 @@ function useListingsState() {
   const setSearch = useCallback(
     (value: string) => {
       setSearchInternal(value)
-      analytics.filter.search(value)
     },
     [setSearchInternal],
   )
@@ -77,7 +76,6 @@ function useListingsState() {
   const setSystemIds = useCallback(
     (values: string[]) => {
       updateFilters({ systemIds: values })
-      analytics.filter.system(values)
     },
     [updateFilters],
   )
@@ -93,7 +91,6 @@ function useListingsState() {
   const setDeviceIds = useCallback(
     (values: string[]) => {
       updateFilters({ deviceIds: values })
-      analytics.filter.device(values)
     },
     [updateFilters],
   )
@@ -101,7 +98,6 @@ function useListingsState() {
   const setSocIds = useCallback(
     (values: string[]) => {
       updateFilters({ socIds: values })
-      analytics.filter.soc(values)
     },
     [updateFilters],
   )
@@ -109,7 +105,6 @@ function useListingsState() {
   const setEmulatorIds = useCallback(
     (values: string[]) => {
       updateFilters({ emulatorIds: values })
-      analytics.filter.emulator(values)
     },
     [updateFilters],
   )
@@ -117,7 +112,6 @@ function useListingsState() {
   const setPerformanceIds = useCallback(
     (values: number[]) => {
       updateFilters({ performanceIds: values })
-      analytics.filter.performance(values)
     },
     [updateFilters],
   )

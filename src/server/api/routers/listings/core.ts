@@ -1,17 +1,17 @@
 import analytics from '@/lib/analytics'
 import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
 import { getClientIP, verifyRecaptcha } from '@/lib/captcha/verify'
-import { ResourceError, AppError } from '@/lib/errors'
-import { applyTrustAction, canUserAutoApprove } from '@/lib/trust/service'
+import { AppError, ResourceError } from '@/lib/errors'
+import { applyTrustAction } from '@/lib/trust/service'
 import {
   CreateListingSchema,
   CreateVoteSchema,
   GetListingByIdSchema,
-  GetListingsSchema,
-  UpdateListingUserSchema,
   GetListingForUserEditSchema,
-  VerifyListingSchema,
+  GetListingsSchema,
   UnverifyListingSchema,
+  UpdateListingUserSchema,
+  VerifyListingSchema,
 } from '@/schemas/listing'
 import {
   authorProcedure,
@@ -25,9 +25,9 @@ import {
   invalidateSitemap,
   revalidateByTag,
 } from '@/server/cache/invalidation'
-import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
+import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
-import { validatePagination, sanitizeInput } from '@/server/utils/security-validation'
+import { sanitizeInput, validatePagination } from '@/server/utils/security-validation'
 import { withSavepoint } from '@/server/utils/transactions'
 import { updateListingVoteCounts } from '@/server/utils/vote-counts'
 import { roleIncludesRole } from '@/utils/permission-system'
@@ -75,19 +75,9 @@ export const coreRouter = createTRPCRouter({
 
     // Batch fetch additional data to avoid N+1 queries
     const listingIds = result.listings.map((l) => l.id)
-    const authorEmulatorPairs = result.listings.map((l) => ({
-      userId: l.authorId,
-      emulatorId: l.emulatorId,
-    }))
     const authorIds = [...new Set(result.listings.map((l) => l.authorId))]
 
-    const [verifiedDevelopers, developerVerifications, userBans] = await Promise.all([
-      // Batch fetch verified developers
-      authorEmulatorPairs.length > 0
-        ? ctx.prisma.verifiedDeveloper.findMany({
-            where: { OR: authorEmulatorPairs },
-          })
-        : [],
+    const [developerVerifications, userBans] = await Promise.all([
       // Batch fetch developer verifications
       listingIds.length > 0
         ? ctx.prisma.listingDeveloperVerification.findMany({
@@ -109,7 +99,6 @@ export const coreRouter = createTRPCRouter({
     ])
 
     // Create lookup maps for efficient access
-    const verifiedDevMap = new Set(verifiedDevelopers.map((vd) => `${vd.userId}_${vd.emulatorId}`))
     const devVerificationMap = new Map<string, typeof developerVerifications>()
     developerVerifications.forEach((dv) => {
       const existing = devVerificationMap.get(dv.listingId) || []
@@ -124,7 +113,8 @@ export const coreRouter = createTRPCRouter({
     // Enhance listings with batched data
     const enhancedListings = result.listings.map((listing) => ({
       ...listing,
-      isVerifiedDeveloper: verifiedDevMap.has(`${listing.authorId}_${listing.emulatorId}`),
+      // isVerifiedDeveloper already provided by repository.list
+      isVerifiedDeveloper: listing.isVerifiedDeveloper,
       developerVerifications: devVerificationMap.get(listing.id) || [],
       author: {
         ...listing.author,
@@ -139,112 +129,15 @@ export const coreRouter = createTRPCRouter({
   }),
 
   byId: publicProcedure.input(GetListingByIdSchema).query(async ({ ctx, input }) => {
-    // Shadow ban logic: Check user permissions before fetching
     const userRole = ctx.session?.user?.role
     const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
 
-    const listing = await ctx.prisma.listing.findUnique({
-      where: { id: input.id },
-      include: {
-        game: { include: { system: true } },
-        device: { include: { brand: true, soc: true } },
-        emulator: true,
-        performance: true,
-        author: {
-          select: {
-            id: true,
-            name: true,
-            profileImage: true,
-            verifiedDeveloperBy: true,
-            // Include ban status for moderators to show banned user indication
-            ...(canSeeBannedUsers && {
-              userBans: {
-                where: {
-                  isActive: true,
-                  OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-                },
-                select: { id: true, reason: true, expiresAt: true },
-              },
-            }),
-          },
-        },
-        developerVerifications: { include: { developer: { select: { id: true, name: true } } } },
-        customFieldValues: {
-          include: { customFieldDefinition: true },
-          orderBy: { customFieldDefinition: { name: 'asc' } },
-        },
-        comments: {
-          where: { parentId: null },
-          include: {
-            user: { select: { id: true, name: true } },
-            replies: {
-              include: { user: { select: { id: true, name: true } } },
-              orderBy: { createdAt: 'asc' },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-        },
-        _count: { select: { votes: true } },
-        votes: ctx.session ? { where: { userId: ctx.session.user.id } } : undefined,
-      },
-    })
-
-    if (!listing) return ResourceError.listing.notFound()
-
-    // CRITICAL: Check if the listing author is banned and if current user can access it
-    if (!canSeeBannedUsers) {
-      const authorBanStatus = await ctx.prisma.userBan.findFirst({
-        where: {
-          userId: listing.authorId,
-          isActive: true,
-          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-        },
-        select: { id: true },
-      })
-
-      if (authorBanStatus) return ResourceError.listing.notAccessible()
-    }
-
-    // CRITICAL: Check approval status - REJECTED listings should NEVER be visible to regular users
-    if (!canSeeBannedUsers && listing.status === ApprovalStatus.REJECTED) {
-      return ResourceError.listing.notAccessible()
-    }
-
-    // Use materialized vote counts
-    const upVotes = listing.upvoteCount
-    const downVotes = listing.downvoteCount
-    const totalVotes = listing.voteCount
-    const successRate = listing.successRate
-
-    const userVote = ctx.session && listing.votes.length > 0 ? listing.votes[0].value : null
-
-    // Check if the author is a verified developer for this emulator
-    const isVerifiedDeveloper =
-      listing.author.verifiedDeveloperBy?.some((vd) => vd.emulatorId === listing.emulatorId) ||
-      false
-
-    return {
-      ...listing,
-      successRate,
-      upVotes,
-      downVotes,
-      totalVotes,
-      userVote,
-      isVerifiedDeveloper,
-      votes: undefined, // Remove the raw votes array from the response
-    }
+    const repository = new ListingsRepository(ctx.prisma)
+    return await repository.byIdWithAccess(input.id, ctx.session?.user?.id, canSeeBannedUsers)
   }),
 
   create: createListingProcedure.input(CreateListingSchema).mutation(async ({ ctx, input }) => {
-    const {
-      gameId,
-      deviceId,
-      emulatorId,
-      performanceId,
-      notes,
-      customFieldValues,
-      recaptchaToken,
-    } = input
+    const { recaptchaToken, ...payload } = input
     const authorId = ctx.session.user.id
 
     // Verify CAPTCHA if token is provided
@@ -263,7 +156,6 @@ export const coreRouter = createTRPCRouter({
       where: { id: authorId },
       select: { id: true },
     })
-
     if (!userExists) {
       analytics.user.notInDatabase({
         userId: authorId,
@@ -272,135 +164,65 @@ export const coreRouter = createTRPCRouter({
       return ResourceError.user.notInDatabase(authorId)
     }
 
-    return ctx.prisma.$transaction(async (tx) => {
-      // Validate custom fields
-      await validateCustomFields(tx, emulatorId, customFieldValues)
-
-      // Check if user's listing can be auto-approved
-      const canAutoApprove = await canUserAutoApprove(authorId)
-      const isAuthorOrHigher = roleIncludesRole(ctx.session.user.role, Role.AUTHOR)
-      const listingStatus =
-        canAutoApprove || isAuthorOrHigher ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING
-
-      // Validate that the game's system is compatible with the chosen emulator
-      const gameForValidation = await tx.game.findUnique({
-        where: { id: gameId },
-        select: { systemId: true },
-      })
-
-      if (!gameForValidation) return ResourceError.game.notFound()
-
-      const emulator = await tx.emulator.findUnique({
-        where: { id: emulatorId },
-        include: { systems: { select: { id: true } } },
-      })
-
-      if (!emulator) return ResourceError.emulator.notFound()
-
-      const isSystemCompatible = emulator.systems.some(
-        (system) => system.id === gameForValidation.systemId,
-      )
-
-      if (!isSystemCompatible) {
-        return AppError.badRequest("The selected emulator does not support this game's system")
-      }
-
-      const newListing = await tx.listing.create({
-        data: {
-          gameId,
-          deviceId,
-          emulatorId,
-          performanceId,
-          notes,
-          authorId,
-          status: listingStatus,
-          ...((canAutoApprove || isAuthorOrHigher) && {
-            processedByUserId: authorId,
-            processedAt: new Date(),
-            processedNotes:
-              isAuthorOrHigher && !canAutoApprove
-                ? 'Auto-approved (Author or higher role)'
-                : 'Auto-approved (Trusted user)',
-          }),
-        },
-      })
-
-      // Create custom field values
-      if (customFieldValues && customFieldValues.length > 0) {
-        await tx.listingCustomFieldValue.createMany({
-          data: customFieldValues.map((cfv) => ({
-            listingId: newListing.id,
-            customFieldDefinitionId: cfv.customFieldDefinitionId,
-            value: cfv.value === null || cfv.value === undefined ? Prisma.JsonNull : cfv.value,
-          })),
-        })
-      }
-
-      // Apply trust action for creating a listing
-      await applyTrustAction({
-        userId: authorId,
-        action: TrustAction.LISTING_CREATED,
-        context: { listingId: newListing.id },
-      })
-
-      // Emit notification event
-      notificationEventEmitter.emitNotificationEvent({
-        eventType: NOTIFICATION_EVENTS.LISTING_CREATED,
-        entityType: 'listing',
-        entityId: newListing.id,
-        triggeredBy: authorId,
-        payload: {
-          listingId: newListing.id,
-          gameId: gameId,
-          deviceId: deviceId,
-          emulatorId: emulatorId,
-          performanceId: performanceId,
-          notes: notes,
-          customFieldValues: customFieldValues,
-        },
-      })
-
-      // Get game system ID for analytics
-      const game = await tx.game.findUnique({
-        where: { id: gameId },
-        select: { systemId: true },
-      })
-
-      analytics.listing.created({
-        listingId: newListing.id,
-        gameId: gameId,
-        systemId: game?.systemId || 'unknown',
-        emulatorId: emulatorId,
-        deviceId: deviceId,
-        performanceId: performanceId,
-        hasCustomFields: (customFieldValues?.length || 0) > 0,
-        customFieldCount: customFieldValues?.length || 0,
-      })
-
-      // Check if this is user's first listing for journey analytics
-      const userListingCount = await tx.listing.count({
-        where: { authorId: authorId },
-      })
-
-      if (userListingCount === 1) {
-        analytics.userJourney.firstTimeAction({
-          userId: authorId,
-          action: 'first_listing',
-        })
-      }
-
-      // Invalidate SEO cache if listing is approved
-      if (newListing.status === ApprovalStatus.APPROVED) {
-        await invalidateListPages()
-        await invalidateSitemap()
-        await revalidateByTag('listings')
-        await revalidateByTag(`game-${gameId}`)
-        await revalidateByTag(`device-${deviceId}`)
-        await revalidateByTag(`emulator-${emulatorId}`)
-      }
-
-      return newListing
+    const repository = new ListingsRepository(ctx.prisma)
+    const newListing = await repository.create({
+      authorId,
+      userRole: ctx.session.user.role,
+      ...payload,
+      notes: payload.notes ?? null,
+      customFieldValues: (payload.customFieldValues
+        ? (payload.customFieldValues as { customFieldDefinitionId: string; value: unknown }[])
+        : null) as { customFieldDefinitionId: string; value: unknown }[] | null,
     })
+
+    // Post-create side effects (trust, notifications, analytics, cache)
+    await applyTrustAction({
+      userId: authorId,
+      action: TrustAction.LISTING_CREATED,
+      context: { listingId: newListing.id },
+    })
+
+    notificationEventEmitter.emitNotificationEvent({
+      eventType: NOTIFICATION_EVENTS.LISTING_CREATED,
+      entityType: 'listing',
+      entityId: newListing.id,
+      triggeredBy: authorId,
+      payload: {
+        listingId: newListing.id,
+        gameId: payload.gameId,
+        deviceId: payload.deviceId,
+        emulatorId: payload.emulatorId,
+        performanceId: payload.performanceId,
+        notes: payload.notes,
+        customFieldValues: payload.customFieldValues,
+      },
+    })
+
+    const game = await ctx.prisma.game.findUnique({
+      where: { id: payload.gameId },
+      select: { systemId: true },
+    })
+    analytics.listing.created({
+      listingId: newListing.id,
+      gameId: payload.gameId,
+      systemId: game?.systemId || 'unknown',
+      emulatorId: payload.emulatorId,
+      deviceId: payload.deviceId,
+      performanceId: payload.performanceId,
+      hasCustomFields: (payload.customFieldValues?.length || 0) > 0,
+      customFieldCount: payload.customFieldValues?.length || 0,
+    })
+
+    if (newListing.status === ApprovalStatus.APPROVED) {
+      await invalidateListPages()
+      await invalidateSitemap()
+      await revalidateByTag('listings')
+      await revalidateByTag(`game-${payload.gameId}`)
+      await revalidateByTag(`device-${payload.deviceId}`)
+      await revalidateByTag(`emulator-${payload.emulatorId}`)
+    }
+
+    return newListing
   }),
 
   vote: protectedProcedure.input(CreateVoteSchema).mutation(async ({ ctx, input }) => {
