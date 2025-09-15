@@ -474,47 +474,50 @@ export const mobileListingsRouter = createMobileTRPCRouter({
   voteComment: mobileProtectedProcedure
     .input(VoteCommentSchema)
     .mutation(async ({ ctx, input }) => {
-      const { commentId, value } = input
       const userId = ctx.session.user.id
 
-      const comment = await ctx.prisma.comment.findUnique({ where: { id: commentId } })
+      const comment = await ctx.prisma.comment.findUnique({ where: { id: input.commentId } })
       if (!comment) return ResourceError.comment.notFound()
 
       const existingVote = await ctx.prisma.commentVote.findUnique({
-        where: { userId_commentId: { userId, commentId } },
+        where: { userId_commentId: { userId, commentId: input.commentId } },
       })
 
       return ctx.prisma.$transaction(async (tx) => {
         let voteResult: unknown
-        let scoreChange = 0
-        let trustActionNeeded: 'upvote' | 'downvote' | 'change' | 'remove' | null = null
+        let scoreChange: number
+        let trustActionNeeded: 'upvote' | 'downvote' | 'change' | 'remove' | null
 
         if (existingVote) {
-          if (value === null || existingVote.value === value) {
+          if (input.value === null || existingVote.value === input.value) {
             // Remove vote
-            await tx.commentVote.delete({ where: { userId_commentId: { userId, commentId } } })
+            await tx.commentVote.delete({
+              where: { userId_commentId: { userId, commentId: input.commentId } },
+            })
             scoreChange = existingVote.value ? -1 : 1
             voteResult = { message: 'Vote removed' }
             trustActionNeeded = 'remove'
           } else {
             // Change vote
             voteResult = await tx.commentVote.update({
-              where: { userId_commentId: { userId, commentId } },
-              data: { value },
+              where: { userId_commentId: { userId, commentId: input.commentId } },
+              data: { value: input.value },
             })
-            scoreChange = value ? 2 : -2
+            scoreChange = input.value ? 2 : -2
             trustActionNeeded = 'change'
           }
         } else {
           // New vote
-          voteResult = await tx.commentVote.create({ data: { userId, commentId, value: !!value } })
-          scoreChange = value ? 1 : -1
-          trustActionNeeded = value ? 'upvote' : 'downvote'
+          voteResult = await tx.commentVote.create({
+            data: { userId, commentId: input.commentId, value: !!input.value },
+          })
+          scoreChange = input.value ? 1 : -1
+          trustActionNeeded = input.value ? 'upvote' : 'downvote'
         }
 
         // Update the comment score
         const updatedComment = await tx.comment.update({
-          where: { id: commentId },
+          where: { id: input.commentId },
           data: { score: { increment: scoreChange } },
         })
 
@@ -527,23 +530,31 @@ export const mobileListingsRouter = createMobileTRPCRouter({
               userId: comment.userId,
               action: TrustAction.COMMENT_RECEIVED_UPVOTE,
               targetUserId: userId,
-              metadata: { commentId, voterId: userId, listingId: comment.listingId },
+              metadata: {
+                commentId: input.commentId,
+                voterId: userId,
+                listingId: comment.listingId,
+              },
             })
           } else if (trustActionNeeded === 'downvote') {
             await trustService.logAction({
               userId: comment.userId,
               action: TrustAction.COMMENT_RECEIVED_DOWNVOTE,
               targetUserId: userId,
-              metadata: { commentId, voterId: userId, listingId: comment.listingId },
+              metadata: {
+                commentId: input.commentId,
+                voterId: userId,
+                listingId: comment.listingId,
+              },
             })
           } else if (trustActionNeeded === 'change') {
-            if (value) {
+            if (input.value) {
               await trustService.logAction({
                 userId: comment.userId,
                 action: TrustAction.COMMENT_RECEIVED_DOWNVOTE,
                 targetUserId: userId,
                 metadata: {
-                  commentId,
+                  commentId: input.commentId,
                   voterId: userId,
                   listingId: comment.listingId,
                   reversed: true,
@@ -553,7 +564,11 @@ export const mobileListingsRouter = createMobileTRPCRouter({
                 userId: comment.userId,
                 action: TrustAction.COMMENT_RECEIVED_UPVOTE,
                 targetUserId: userId,
-                metadata: { commentId, voterId: userId, listingId: comment.listingId },
+                metadata: {
+                  commentId: input.commentId,
+                  voterId: userId,
+                  listingId: comment.listingId,
+                },
               })
             } else {
               await trustService.logAction({
@@ -561,7 +576,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
                 action: TrustAction.COMMENT_RECEIVED_UPVOTE,
                 targetUserId: userId,
                 metadata: {
-                  commentId,
+                  commentId: input.commentId,
                   voterId: userId,
                   listingId: comment.listingId,
                   reversed: true,
@@ -571,7 +586,11 @@ export const mobileListingsRouter = createMobileTRPCRouter({
                 userId: comment.userId,
                 action: TrustAction.COMMENT_RECEIVED_DOWNVOTE,
                 targetUserId: userId,
-                metadata: { commentId, voterId: userId, listingId: comment.listingId },
+                metadata: {
+                  commentId: input.commentId,
+                  voterId: userId,
+                  listingId: comment.listingId,
+                },
               })
             }
           } else if (trustActionNeeded === 'remove' && existingVote) {
@@ -583,7 +602,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
               action,
               targetUserId: userId,
               metadata: {
-                commentId,
+                commentId: input.commentId,
                 voterId: userId,
                 listingId: comment.listingId,
                 reversed: true,
@@ -599,7 +618,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
               userId: comment.userId,
               action: TrustAction.HELPFUL_COMMENT,
               metadata: {
-                commentId,
+                commentId: input.commentId,
                 listingId: comment.listingId,
                 score: updatedComment.score,
                 threshold: HELPFUL_THRESHOLD,
@@ -609,9 +628,10 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         }
 
         // Analytics
-        const finalVoteValue = existingVote?.value === value || value === null ? null : value
+        const finalVoteValue =
+          existingVote?.value === input.value || input.value === null ? null : input.value
         analytics.engagement.commentVote({
-          commentId,
+          commentId: input.commentId,
           voteValue: finalVoteValue,
           previousVote: existingVote?.value,
           listingId: comment.listingId,
