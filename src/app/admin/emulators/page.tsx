@@ -7,36 +7,38 @@ import EmulatorModal from '@/app/admin/emulators/components/EmulatorModal'
 import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
-  AdminStatsDisplay,
   AdminSearchFilters,
+  AdminStatsDisplay,
   AdminTableContainer,
   AdminTableNoResults,
 } from '@/components/admin'
 import { EmulatorIcon } from '@/components/icons'
 import {
   Button,
-  LoadingSpinner,
   ColumnVisibilityControl,
-  SortableHeader,
-  Pagination,
-  useConfirmDialog,
+  DeleteButton,
   DisplayToggleButton,
   EditButton,
-  DeleteButton,
-  TableButton,
+  LoadingSpinner,
+  Pagination,
   QuickEditButton,
   SettingsButton,
+  SortableHeader,
+  TableButton,
+  useConfirmDialog,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
-import { useEmulatorLogos, useColumnVisibility, type ColumnDefinition } from '@/hooks'
+import { type ColumnDefinition, useColumnVisibility, useEmulatorLogos } from '@/hooks'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
-import { type RouterInput } from '@/types/trpc'
+import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import { copyToClipboard } from '@/utils/copyToClipboard'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission as hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
+
+type AdminEmulator = RouterOutput['emulators']['getForAdmin']['emulators'][number]
 
 type EmulatorSortField = 'name' | 'systemCount' | 'listingCount'
 
@@ -121,6 +123,24 @@ function AdminEmulatorsPage() {
       id,
     } satisfies RouterInput['emulators']['delete'])
   }
+
+  const isVerifiedForEmulator = (emulator: AdminEmulator) =>
+    emulator.verifiedDevelopers?.some(
+      (vd) => vd.userId === currentUserId || vd.user?.id === currentUserId,
+    ) ?? false
+
+  const hasScopedPermission = (
+    emulator: AdminEmulator,
+    permission: (typeof PERMISSIONS)[keyof typeof PERMISSIONS],
+  ) =>
+    hasPermission(userPermissions, permission) &&
+    (isModeratorOrHigher || isVerifiedForEmulator(emulator))
+
+  const canEditEmulator = (emulator: AdminEmulator) =>
+    hasScopedPermission(emulator, PERMISSIONS.MANAGE_EMULATORS)
+
+  const canManageCustomFields = (emulator: AdminEmulator) =>
+    hasScopedPermission(emulator, PERMISSIONS.MANAGE_CUSTOM_FIELDS)
 
   return (
     <AdminPageLayout
@@ -239,17 +259,7 @@ function AdminEmulatorsPage() {
                     <tr key={emulator.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       {columnVisibility.isColumnVisible('name') && (
                         <td className="px-6 py-4">
-                          {(() => {
-                            const isVerified = emulator.verifiedDevelopers?.some(
-                              (vd) => vd.userId === currentUserId || vd.user?.id === currentUserId,
-                            )
-                            const canManage = hasPermission(
-                              userPermissions,
-                              PERMISSIONS.MANAGE_EMULATORS,
-                            )
-                            const canEdit = canManage && (isModeratorOrHigher || isVerified)
-                            return canEdit
-                          })() ? (
+                          {canEditEmulator(emulator) ? (
                             <Link
                               href={`/admin/emulators/${emulator.id}`}
                               className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center gap-2"
@@ -307,17 +317,7 @@ function AdminEmulatorsPage() {
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             {/* Manage Custom Fields (permission + verified for developers) */}
-                            {(() => {
-                              const isVerified = emulator.verifiedDevelopers?.some(
-                                (vd) =>
-                                  vd.userId === currentUserId || vd.user?.id === currentUserId,
-                              )
-                              const canManageCF = hasPermission(
-                                userPermissions,
-                                PERMISSIONS.MANAGE_CUSTOM_FIELDS,
-                              )
-                              return canManageCF && (isModeratorOrHigher || isVerified)
-                            })() && (
+                            {canManageCustomFields(emulator) && (
                               <SettingsButton
                                 href={`/admin/emulators/${emulator.id}/custom-fields`}
                                 disabled={deleteEmulator.isPending}
@@ -326,34 +326,14 @@ function AdminEmulatorsPage() {
                             )}
 
                             {/* Edit and Quick Edit based on MANAGE_EMULATORS + verified for developers */}
-                            {(() => {
-                              const isVerified = emulator.verifiedDevelopers?.some(
-                                (vd) =>
-                                  vd.userId === currentUserId || vd.user?.id === currentUserId,
-                              )
-                              const canManage = hasPermission(
-                                userPermissions,
-                                PERMISSIONS.MANAGE_EMULATORS,
-                              )
-                              return canManage && (isModeratorOrHigher || isVerified)
-                            })() && (
+                            {canEditEmulator(emulator) && (
                               <EditButton
                                 href={`/admin/emulators/${emulator.id}`}
                                 disabled={deleteEmulator.isPending}
                                 title={`Edit Emulator ${emulator.name}`}
                               />
                             )}
-                            {(() => {
-                              const isVerified = emulator.verifiedDevelopers?.some(
-                                (vd) =>
-                                  vd.userId === currentUserId || vd.user?.id === currentUserId,
-                              )
-                              const canManage = hasPermission(
-                                userPermissions,
-                                PERMISSIONS.MANAGE_EMULATORS,
-                              )
-                              return canManage && (isModeratorOrHigher || isVerified)
-                            })() && (
+                            {canEditEmulator(emulator) && (
                               <QuickEditButton
                                 title={`Quick Edit Emulator ${emulator.name}`}
                                 disabled={deleteEmulator.isPending || modalOpen}
