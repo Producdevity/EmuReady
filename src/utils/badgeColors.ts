@@ -33,7 +33,8 @@ const roleVariantsMap: Record<Role, BadgeVariant> = {
   [Role.USER]: 'default',
 }
 
-export function getRoleVariant(role: Role): BadgeVariant {
+export function getRoleVariant(role?: Role): BadgeVariant {
+  if (!role) return 'default'
   return roleVariantsMap[role] || 'default'
 }
 
