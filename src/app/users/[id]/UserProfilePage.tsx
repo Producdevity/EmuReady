@@ -5,7 +5,6 @@ import {
   GamepadIcon,
   Grid3X3,
   List,
-  Medal,
   Star,
   ThumbsDown,
   ThumbsUp,
@@ -26,12 +25,14 @@ import {
   PerformanceBadge,
   Pagination,
   LocalizedDate,
+  TrustLevelBadge,
 } from '@/components/ui'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { api } from '@/lib/api'
-import { TRUST_LEVELS } from '@/lib/trust/config'
 import { cn } from '@/lib/utils'
+import { getRoleVariant } from '@/utils/badgeColors'
 import { validateClientData } from '@/utils/client-validation'
+import { formatUserRole } from '@/utils/format'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role } from '@orm'
 import UserDetailsPageError from './components/UserDetailsPageError'
@@ -123,13 +124,7 @@ function UserDetailsPage() {
     return <UserDetailsPageError errorMessage={userQuery.error?.message} />
   }
 
-  const user = userQuery.data
-  const userTrustLevel =
-    TRUST_LEVELS.find((level) => (user.trustScore ?? 0) >= level.minScore) || TRUST_LEVELS[0]
-
-  const currentListings = user.listings.items
-  const currentVotes = user.votes.items
-  const upvoteCount = currentVotes.filter((vote) => vote.value).length
+  const upvoteCount = userQuery.data.votes.items.filter((vote) => vote.value).length
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -144,8 +139,8 @@ function UserDetailsPage() {
                   <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000" />
                   <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white dark:border-gray-700 shadow-lg">
                     <Image
-                      src={user.profileImage ?? '/placeholder/profile.svg'}
-                      alt={`${user.name}'s profile picture`}
+                      src={userQuery.data.profileImage ?? '/placeholder/profile.svg'}
+                      alt={`${userQuery.data.name}'s profile picture`}
                       fill
                       sizes="128px"
                       className="object-cover transform transition-transform duration-300 group-hover:scale-105"
@@ -156,38 +151,33 @@ function UserDetailsPage() {
 
                 <div className="mt-4 text-center lg:text-left">
                   <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                    {user.name || 'Anonymous User'}
+                    {userQuery.data.name || 'Anonymous User'}
                   </h1>
                   <div className="flex items-center gap-2 justify-center lg:justify-start mb-3">
-                    <Badge variant="default" className="text-sm">
-                      {user.role}
+                    <Badge variant={getRoleVariant(userQuery.data.role)} className="text-sm">
+                      {formatUserRole(userQuery.data.role)}
                     </Badge>
                     {canViewBannedUsers &&
-                      'userBans' in user &&
-                      Array.isArray(user.userBans) &&
-                      user.userBans.length > 0 && (
+                      'userBans' in userQuery.data &&
+                      Array.isArray(userQuery.data.userBans) &&
+                      userQuery.data.userBans.length > 0 && (
                         <Badge variant="danger" className="text-sm font-bold">
                           BANNED USER
                         </Badge>
                       )}
-                    <Badge
-                      variant={userTrustLevel.name === 'New' ? 'default' : 'success'}
-                      className="text-sm flex items-center gap-1"
-                    >
-                      <Medal className="w-3 h-3" />
-                      {userTrustLevel.name}
-                    </Badge>
+                    <TrustLevelBadge trustScore={userQuery.data.trustScore} size="sm" />
                   </div>
                   <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 justify-center lg:justify-start mb-3">
                     <Calendar className="w-4 h-4" />
                     <span className="text-sm">
-                      Joined <LocalizedDate date={user.createdAt ?? new Date()} format="date" />
+                      Joined{' '}
+                      <LocalizedDate date={userQuery.data.createdAt ?? new Date()} format="date" />
                     </span>
                   </div>
                   {/* User Badges */}
-                  {user.userBadges && user.userBadges.length > 0 && (
+                  {userQuery.data.userBadges && userQuery.data.userBadges.length > 0 && (
                     <div className="flex flex-wrap gap-2 justify-center lg:justify-start mt-3">
-                      {user.userBadges.map((userBadge) => (
+                      {userQuery.data.userBadges.map((userBadge) => (
                         <div
                           key={userBadge.id}
                           className="flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-gray-700 rounded-full shadow-sm border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow duration-200"
@@ -222,7 +212,7 @@ function UserDetailsPage() {
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                        {user._count?.listings ?? 0}
+                        {userQuery.data._count?.listings ?? 0}
                       </p>
                       <p className="text-sm text-blue-700 dark:text-blue-300">Listings</p>
                     </div>
@@ -250,7 +240,7 @@ function UserDetailsPage() {
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
-                        {user.trustScore}
+                        {userQuery.data.trustScore}
                       </p>
                       <p className="text-sm text-orange-700 dark:text-orange-300">Trust Score</p>
                     </div>
@@ -264,7 +254,7 @@ function UserDetailsPage() {
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                        {user._count?.votes ?? 0}
+                        {userQuery.data._count?.votes ?? 0}
                       </p>
                       <p className="text-sm text-purple-700 dark:text-purple-300">Total Votes</p>
                     </div>
@@ -285,14 +275,14 @@ function UserDetailsPage() {
                     onClick={() => handleTabChange('listings')}
                     className="transition-all duration-200"
                   >
-                    Listings ({user._count?.listings ?? 0})
+                    Listings ({userQuery.data._count?.listings ?? 0})
                   </Button>
                   <Button
                     variant={activeTab === 'votes' ? 'default' : 'outline'}
                     onClick={() => handleTabChange('votes')}
                     className="transition-all duration-200"
                   >
-                    Votes ({user._count?.votes ?? 0})
+                    Votes ({userQuery.data._count?.votes ?? 0})
                   </Button>
                 </div>
 
@@ -312,7 +302,7 @@ function UserDetailsPage() {
                         className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
                       >
                         <option value="">All Systems</option>
-                        {user.filterOptions.systems.map((system) => (
+                        {userQuery.data.filterOptions.systems.map((system) => (
                           <option key={system} value={system}>
                             {system}
                           </option>
@@ -325,7 +315,7 @@ function UserDetailsPage() {
                         className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
                       >
                         <option value="">All Emulators</option>
-                        {user.filterOptions.emulators.map((emulator) => (
+                        {userQuery.data.filterOptions.emulators.map((emulator) => (
                           <option key={emulator} value={emulator}>
                             {emulator}
                           </option>
@@ -360,7 +350,7 @@ function UserDetailsPage() {
             <div className="p-6">
               {activeTab === 'listings' ? (
                 <>
-                  {currentListings.length > 0 ? (
+                  {userQuery.data.listings.items.length > 0 ? (
                     <div
                       className={cn(
                         'gap-6',
@@ -369,7 +359,7 @@ function UserDetailsPage() {
                           : 'flex flex-col space-y-4',
                       )}
                     >
-                      {currentListings.map((listing, index) => (
+                      {userQuery.data.listings.items.map((listing, index) => (
                         <Link
                           key={listing.id}
                           href={`/listings/${listing.id}`}
@@ -434,13 +424,13 @@ function UserDetailsPage() {
                   )}
 
                   {/* Listings Pagination */}
-                  {user.listings.pagination.pages > 1 && (
+                  {userQuery.data.listings.pagination.pages > 1 && (
                     <div className="mt-8 flex justify-center">
                       <Pagination
-                        page={user.listings.pagination.page}
-                        totalPages={user.listings.pagination.pages}
-                        totalItems={user.listings.pagination.total}
-                        itemsPerPage={user.listings.pagination.limit}
+                        page={userQuery.data.listings.pagination.page}
+                        totalPages={userQuery.data.listings.pagination.pages}
+                        totalItems={userQuery.data.listings.pagination.total}
+                        itemsPerPage={userQuery.data.listings.pagination.limit}
                         onPageChange={(page) => updateUrlParams({ listingsPage: page })}
                       />
                     </div>
@@ -448,7 +438,7 @@ function UserDetailsPage() {
                 </>
               ) : (
                 <>
-                  {currentVotes.length > 0 ? (
+                  {userQuery.data.votes.items.length > 0 ? (
                     <div
                       className={cn(
                         'gap-4',
@@ -457,7 +447,7 @@ function UserDetailsPage() {
                           : 'flex flex-col space-y-3',
                       )}
                     >
-                      {currentVotes.map((vote, index) => (
+                      {userQuery.data.votes.items.map((vote, index) => (
                         <Link
                           key={vote.id}
                           href={`/listings/${vote.listing.id}`}
@@ -509,13 +499,13 @@ function UserDetailsPage() {
                   )}
 
                   {/* Votes Pagination */}
-                  {user.votes.pagination.pages > 1 && (
+                  {userQuery.data.votes.pagination.pages > 1 && (
                     <div className="mt-8 flex justify-center">
                       <Pagination
-                        page={user.votes.pagination.page}
-                        totalPages={user.votes.pagination.pages}
-                        totalItems={user.votes.pagination.total}
-                        itemsPerPage={user.votes.pagination.limit}
+                        page={userQuery.data.votes.pagination.page}
+                        totalPages={userQuery.data.votes.pagination.pages}
+                        totalItems={userQuery.data.votes.pagination.total}
+                        itemsPerPage={userQuery.data.votes.pagination.limit}
                         onPageChange={(page) => updateUrlParams({ votesPage: page })}
                       />
                     </div>

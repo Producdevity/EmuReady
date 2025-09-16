@@ -1,25 +1,14 @@
+import { findLast } from 'remeda'
 import { ms } from '@/utils/time'
 import { TrustAction } from '@orm'
 
 export const TRUST_ACTIONS = {
   [TrustAction.UPVOTE]: { weight: 1, description: 'Upvoted a listing' },
   [TrustAction.DOWNVOTE]: { weight: 1, description: 'Downvoted a listing' },
-  [TrustAction.LISTING_CREATED]: {
-    weight: 1,
-    description: 'Created a listing',
-  },
-  [TrustAction.LISTING_APPROVED]: {
-    weight: 6,
-    description: 'Listing was approved',
-  },
-  [TrustAction.LISTING_REJECTED]: {
-    weight: -8,
-    description: 'Listing was rejected',
-  },
-  [TrustAction.MONTHLY_ACTIVE_BONUS]: {
-    weight: 10,
-    description: 'Monthly active user bonus',
-  },
+  [TrustAction.LISTING_CREATED]: { weight: 1, description: 'Created a listing' },
+  [TrustAction.LISTING_APPROVED]: { weight: 6, description: 'Listing was approved' },
+  [TrustAction.LISTING_REJECTED]: { weight: -8, description: 'Listing was rejected' },
+  [TrustAction.MONTHLY_ACTIVE_BONUS]: { weight: 10, description: 'Monthly active user bonus' },
   [TrustAction.LISTING_RECEIVED_UPVOTE]: {
     weight: 2,
     description: 'Received an upvote on a listing',
@@ -71,7 +60,7 @@ export const TRUST_ACTIONS = {
 } as const
 
 export const TRUST_LEVELS = [
-  { name: 'New', minScore: 0 },
+  { name: null, minScore: 0 },
   { name: 'Contributor', minScore: 100 },
   { name: 'Trusted', minScore: 250 },
   { name: 'Verified', minScore: 500 },
@@ -101,12 +90,10 @@ export const TRUST_CONFIG = {
   },
 } as const
 
-export function getTrustLevel(score: number): TrustLevel {
-  // Find the highest level the user qualifies for
-  for (let i = TRUST_LEVELS.length - 1; i >= 0; i--) {
-    if (score >= TRUST_LEVELS[i].minScore) return TRUST_LEVELS[i]
-  }
-  return TRUST_LEVELS[0] // Default to 'New' level
+export function getTrustLevel(score?: number): TrustLevel {
+  const userTrustScore = score ?? 0
+
+  return findLast(TRUST_LEVELS, (level) => userTrustScore >= level.minScore) ?? TRUST_LEVELS[0]
 }
 
 export function getNextTrustLevel(currentScore: number): TrustLevel | null {

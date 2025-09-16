@@ -11,7 +11,8 @@ import { type Role } from '@orm'
  * @param role - The user role to format.
  * @returns The formatted role string.
  */
-export function formatUserRole(role: Role) {
+export function formatUserRole(role?: Role) {
+  if (!role) return ''
   return pipe(
     role,
     (r: string) => r.replace('_', ' '),

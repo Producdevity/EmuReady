@@ -6,13 +6,17 @@ import {
   BulkUpdateDevicePreferencesSchema,
   BulkUpdateSocPreferencesSchema,
 } from '@/schemas/userPreferences'
-import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/api/trpc'
 import { sanitizeBio } from '@/utils/sanitization'
 
 export const userPreferencesRouter = createTRPCRouter({
-  get: protectedProcedure.query(async ({ ctx }) => {
+  get: publicProcedure.query(async ({ ctx }) => {
+    const sessionUser = ctx.session?.user
+
+    if (!sessionUser) return null
+
     const user = await ctx.prisma.user.findUnique({
-      where: { id: ctx.session.user.id },
+      where: { id: sessionUser.id },
       select: {
         id: true,
         bio: true,

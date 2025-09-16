@@ -1,5 +1,5 @@
 import analytics from '@/lib/analytics'
-import { AppError, ResourceError } from '@/lib/errors'
+import { ResourceError } from '@/lib/errors'
 import {
   DeleteUserSchema,
   GetAllUsersSchema,
@@ -32,15 +32,17 @@ import { ApprovalStatus, Role } from '@orm'
 import type { Prisma } from '@orm'
 
 export const usersRouter = createTRPCRouter({
-  me: protectedProcedure.query(({ ctx }) => {
-    if (!ctx.session?.user) return AppError.notAuthenticated()
+  me: publicProcedure.query(({ ctx }) => {
+    const sessionUser = ctx.session?.user
+
+    if (!sessionUser) return null
 
     return {
-      id: ctx.session.user.id,
-      email: ctx.session.user.email,
-      name: ctx.session.user.name,
-      role: ctx.session.user.role,
-      permissions: ctx.session.user.permissions,
+      id: sessionUser.id,
+      email: sessionUser.email,
+      name: sessionUser.name,
+      role: sessionUser.role,
+      permissions: sessionUser.permissions,
     }
   }),
 

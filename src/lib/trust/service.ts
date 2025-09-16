@@ -5,6 +5,12 @@ import { validateData } from '@/server/utils/validation'
 import { TrustAction, type Prisma, type PrismaClient } from '@orm'
 import { TRUST_ACTIONS, TRUST_CONFIG, getTrustLevel, hasTrustLevel } from './config'
 
+const UNKNOWN_TRUST_LEVEL_NAME = 'Unranked'
+
+function resolveTrustLevelName(level: ReturnType<typeof getTrustLevel> | null): string {
+  return level?.name ?? UNKNOWN_TRUST_LEVEL_NAME
+}
+
 interface TrustActionContext {
   listingId?: string
   targetUserId?: string
@@ -71,11 +77,14 @@ export async function applyTrustAction(params: ApplyTrustActionParams): Promise<
       weight,
     })
 
-    if (currentTrustLevel && currentTrustLevel.name !== newTrustLevel.name) {
+    const previousLevel = currentTrustLevel?.name ?? null
+    const nextLevel = newTrustLevel.name ?? null
+
+    if (previousLevel !== nextLevel) {
       analytics.trust.trustLevelChanged({
         userId,
-        oldLevel: currentTrustLevel.name,
-        newLevel: newTrustLevel.name,
+        oldLevel: resolveTrustLevelName(currentTrustLevel),
+        newLevel: resolveTrustLevelName(newTrustLevel),
         score: newTrustScore,
       })
     }
@@ -316,11 +325,11 @@ export async function applyManualTrustAdjustment(params: {
     })
 
     // Track trust level achievement if level changed
-    if (currentTrustLevel.name !== newTrustLevel.name) {
+    if ((currentTrustLevel.name ?? null) !== (newTrustLevel.name ?? null)) {
       analytics.trust.trustLevelChanged({
         userId,
-        oldLevel: currentTrustLevel.name,
-        newLevel: newTrustLevel.name,
+        oldLevel: resolveTrustLevelName(currentTrustLevel),
+        newLevel: resolveTrustLevelName(newTrustLevel),
         score: newTrustScore,
       })
     }
@@ -420,11 +429,14 @@ export class TrustService {
         weight,
       })
 
-      if (currentTrustLevel && currentTrustLevel.name !== newTrustLevel.name) {
+      const previousLevel = currentTrustLevel?.name ?? null
+      const nextLevel = newTrustLevel.name ?? null
+
+      if (previousLevel !== nextLevel) {
         analytics.trust.trustLevelChanged({
           userId,
-          oldLevel: currentTrustLevel.name,
-          newLevel: newTrustLevel.name,
+          oldLevel: resolveTrustLevelName(currentTrustLevel),
+          newLevel: resolveTrustLevelName(newTrustLevel),
           score: newTrustScore,
         })
       }

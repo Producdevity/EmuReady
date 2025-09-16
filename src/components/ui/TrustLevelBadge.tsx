@@ -1,12 +1,20 @@
 'use client'
 
 import { UserCheck, Users, Shield, Crown, Star, Award, type LucideIcon } from 'lucide-react'
+import { type JSX } from 'react'
 import { Badge } from '@/components/ui'
-import { getTrustLevel, getNextTrustLevel, getProgressToNextLevel } from '@/lib/trust/config'
+import {
+  getTrustLevel,
+  getNextTrustLevel,
+  getProgressToNextLevel,
+  type TrustLevel,
+} from '@/lib/trust/config'
 import { cn } from '@/lib/utils'
 
-const TRUST_LEVEL_ICONS: Record<string, LucideIcon> = {
-  New: Users,
+type TrustLevelName = Exclude<TrustLevel['name'], null>
+
+const TRUST_LEVEL_ICONS: Record<TrustLevelName | 'default', LucideIcon> = {
+  default: Users,
   Contributor: UserCheck,
   Trusted: Shield,
   Verified: Award,
@@ -15,10 +23,10 @@ const TRUST_LEVEL_ICONS: Record<string, LucideIcon> = {
 }
 
 const TRUST_LEVEL_COLORS: Record<
-  string,
+  TrustLevelName | 'default',
   'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info'
 > = {
-  New: 'default',
+  default: 'default',
   Contributor: 'primary',
   Trusted: 'success',
   Verified: 'info',
@@ -39,43 +47,45 @@ const iconSizes = {
 }
 
 interface Props {
-  trustScore: number
+  trustScore?: number
   showProgress?: boolean
   className?: string
   size?: 'sm' | 'md' | 'lg'
 }
 
-export function TrustLevelBadge(props: Props) {
-  const trustLevel = getTrustLevel(props.trustScore)
-  const nextLevel = getNextTrustLevel(props.trustScore)
-  const progress = getProgressToNextLevel(props.trustScore)
+export function TrustLevelBadge(props: Props): JSX.Element {
+  const trustScore = props.trustScore ?? 0
+  const trustLevel = getTrustLevel(trustScore)
+  const nextLevel = getNextTrustLevel(trustScore)
+  const progress = getProgressToNextLevel(trustScore)
 
-  const Icon = TRUST_LEVEL_ICONS[trustLevel.name] || Users
-  const color = TRUST_LEVEL_COLORS[trustLevel.name] || 'default'
-
+  const levelName = trustLevel.name
+  const iconKey: TrustLevelName | 'default' = levelName ?? 'default'
+  const Icon = TRUST_LEVEL_ICONS[iconKey]
+  const color = TRUST_LEVEL_COLORS[iconKey]
   const size = props.size ?? 'md'
 
   return (
     <div className={cn('flex flex-col gap-2', props.className)}>
       <Badge variant={color} className={cn('flex items-center gap-1.5 w-fit', sizeClasses[size])}>
         <Icon className={iconSizes[size]} />
-        <span className="font-medium">{trustLevel.name}</span>
+        {levelName ? <span className="font-medium">{levelName}</span> : null}
       </Badge>
 
       {props.showProgress && nextLevel && (
         <div className="flex flex-col gap-1">
           <div className="flex justify-between items-center text-xs text-gray-600 dark:text-gray-400">
             <span>Progress to {nextLevel.name}</span>
-            <span>{Math.round(progress)}%</span>
+            <span>{Math.round(progress * 100)}%</span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div
               className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
+              style={{ width: `${Math.min(Math.max(progress, 0), 1) * 100}%` }}
             />
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
-            {nextLevel.minScore - props.trustScore} points needed
+            {nextLevel.minScore - trustScore} points needed
           </div>
         </div>
       )}
