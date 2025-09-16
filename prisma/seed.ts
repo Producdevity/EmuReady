@@ -1,4 +1,5 @@
 import { PrismaClient } from '@orm'
+import azaharCustomFieldsSeeder from './seeders/azaharCustomFieldsSeeder'
 import clearTestDataSeeder from './seeders/clearTestDataSeeder'
 import cpuSeeder from './seeders/cpuSeeder'
 import customFieldTemplatesSeeder from './seeders/customFieldTemplatesSeeder'
@@ -125,6 +126,7 @@ async function main() {
     console.info('🌱 Seeding custom fields only...')
     try {
       await customFieldTemplatesSeeder(prisma)
+      await azaharCustomFieldsSeeder(prisma)
       console.info('✅ Custom fields seeded successfully!')
     } catch (error) {
       console.error('❌ Error seeding custom fields:', error)
@@ -182,6 +184,7 @@ async function main() {
     await systemsSeeder(prisma)
     await usersSeeder(prisma)
     await emulatorsSeeder(prisma)
+    await azaharCustomFieldsSeeder(prisma)
     await customFieldTemplatesSeeder(prisma)
     await socSeeder(prisma)
     await cpuSeeder(prisma)
