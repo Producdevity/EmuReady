@@ -15,9 +15,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
   const user = await getUserForSEO(params.id)
 
-  if (!user) {
-    return generatePageMetadata('User Not Found')
-  }
+  if (!user) return generatePageMetadata('User Not Found')
 
   const displayName = user.name || 'Anonymous User'
   const description = `View ${displayName}'s compatibility reports and contributions on EmuReady.`
@@ -34,9 +32,7 @@ export default async function Page(props: Props) {
   const params = await props.params
   const user = await getUserForSEO(params.id)
 
-  if (!user) {
-    notFound()
-  }
+  if (!user) notFound()
 
   return <UserProfilePage />
 }
