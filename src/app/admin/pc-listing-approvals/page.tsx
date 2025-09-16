@@ -460,6 +460,11 @@ function PcListingApprovalsPage() {
                       className="rounded border-gray-300 dark:border-gray-600"
                     />
                   </th>
+                  {columnVisibility.isColumnVisible('thumbnail') && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Thumbnail
+                    </th>
+                  )}
                   {columnVisibility.isColumnVisible('game') && (
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Game
