@@ -27,12 +27,6 @@ interface ApplyTrustActionParams {
   context?: TrustActionContext
 }
 
-interface ReverseTrustActionParams {
-  userId: string
-  action: TrustAction
-  context?: TrustActionContext
-}
-
 export async function applyTrustAction(params: ApplyTrustActionParams): Promise<void> {
   const { userId, action, context = {} } = params
 
@@ -89,94 +83,6 @@ export async function applyTrustAction(params: ApplyTrustActionParams): Promise<
       })
     }
   })
-}
-
-export async function reverseTrustAction(params: ReverseTrustActionParams): Promise<void> {
-  const { userId, action, context = {} } = params
-
-  // Validate action exists
-  if (!TRUST_ACTIONS[action]) {
-    // TODO: consider using a more specific error type
-    throw new Error(`Invalid trust action: ${action}`)
-  }
-
-  // Apply the negative weight to reverse the action
-  const weight = -TRUST_ACTIONS[action].weight
-
-  try {
-    // Use a transaction to ensure atomicity
-    await prisma.$transaction(async (tx) => {
-      // Update user's trust score
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          trustScore: { increment: weight },
-          lastActiveAt: new Date(),
-        },
-      })
-
-      // Create audit log entry with negative weight
-      await tx.trustActionLog.create({
-        data: {
-          userId,
-          action,
-          weight,
-          metadata: validateData(z.record(z.unknown()), context || {}) as Prisma.InputJsonValue,
-        },
-      })
-    })
-  } catch (error) {
-    console.error('Failed to reverse trust action:', error)
-    throw new Error('Failed to update trust score')
-  }
-}
-
-export async function validateTrustActionRate(
-  userId: string,
-  action: TrustAction,
-): Promise<boolean> {
-  // Check daily action limit
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  const todayActionsCount = await prisma.trustActionLog.count({
-    where: { userId, createdAt: { gte: today } },
-  })
-
-  if (todayActionsCount >= TRUST_CONFIG.MAX_ACTIONS_PER_USER_PER_DAY) {
-    return false
-  }
-
-  // Special rate limiting for voting actions
-  if (action === TrustAction.UPVOTE || action === TrustAction.DOWNVOTE) {
-    const rateLimitWindow = new Date(Date.now() - TRUST_CONFIG.VOTE_RATE_LIMIT.windowMs)
-
-    const recentVotes = await prisma.trustActionLog.count({
-      where: {
-        userId,
-        action: { in: [TrustAction.UPVOTE, TrustAction.DOWNVOTE] },
-        createdAt: { gte: rateLimitWindow },
-      },
-    })
-
-    if (recentVotes >= TRUST_CONFIG.VOTE_RATE_LIMIT.maxVotes) return false
-  }
-
-  return true
-}
-
-export async function getUserTrustLevel(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { trustScore: true },
-  })
-
-  if (!user) {
-    // TODO: use proper error later, there are no lives on the line
-    throw new Error('User not found')
-  }
-
-  return getTrustLevel(user.trustScore)
 }
 
 export async function canUserAutoApprove(userId: string): Promise<boolean> {
@@ -339,34 +245,6 @@ export async function applyManualTrustAdjustment(params: {
   }
 }
 
-export async function getTrustActionStats(userId?: string) {
-  const whereClause = userId ? { userId } : {}
-
-  const [totalActions, actionBreakdown, recentActions] = await Promise.all([
-    prisma.trustActionLog.count({
-      where: whereClause,
-    }),
-    prisma.trustActionLog.groupBy({
-      by: ['action'],
-      where: whereClause,
-      _count: { action: true },
-      _sum: { weight: true },
-    }),
-    prisma.trustActionLog.findMany({
-      where: whereClause,
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-      include: { user: { select: { id: true, name: true, email: true } } },
-    }),
-  ])
-
-  return {
-    totalActions,
-    actionBreakdown,
-    recentActions,
-  }
-}
-
 type PrismaTransaction = Omit<
   PrismaClient,
   '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
@@ -440,53 +318,6 @@ export class TrustService {
           score: newTrustScore,
         })
       }
-    }
-
-    // If already in a transaction, use it; otherwise create a new one
-    if ('$transaction' in this.prisma) {
-      await this.prisma.$transaction(executeInTransaction)
-    } else {
-      await executeInTransaction(this.prisma)
-    }
-  }
-
-  async reverseAction(params: {
-    userId: string
-    action: TrustAction
-    metadata?: Record<string, unknown>
-  }): Promise<void> {
-    const { userId, action, metadata } = params
-
-    if (!TRUST_ACTIONS[action]) {
-      throw new Error(`Invalid trust action: ${action}`)
-    }
-
-    const weight = -TRUST_ACTIONS[action].weight // Reverse the weight
-
-    const executeInTransaction = async (prismaCtx: PrismaTransaction) => {
-      const currentUser = await prismaCtx.user.findUnique({
-        where: { id: userId },
-        select: { trustScore: true },
-      })
-
-      const newTrustScore = Math.max(0, (currentUser?.trustScore || 0) + weight)
-
-      await prismaCtx.user.update({
-        where: { id: userId },
-        data: {
-          trustScore: newTrustScore,
-          lastActiveAt: new Date(),
-        },
-      })
-
-      await prismaCtx.trustActionLog.create({
-        data: {
-          userId,
-          action,
-          weight,
-          metadata: metadata as Prisma.InputJsonValue,
-        },
-      })
     }
 
     // If already in a transaction, use it; otherwise create a new one
