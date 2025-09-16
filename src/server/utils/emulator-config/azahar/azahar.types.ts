@@ -60,6 +60,11 @@ export type InitClock = 0 | 1 // SystemTime(0), FixedTime(1)
 export type InitTicks = 0 | 1 // Random(0), Fixed(1)
 export type StereoscopyFactor = number // u32, implementation-defined range
 export type ScreenGap = number // s32, implementation-defined range
+export type PerformanceOverlayPosition = 0 | 1 | 2 | 3 | 4 | 5
+export type ScreenOrientation = 0 | 1 | 2 | 8 | 9
+export type CameraFlip = 0 | 1 | 2 | 3
+export type AudioOutputType = 0 | 1 | 2 | 3 | 4
+export type AudioInputType = 0 | 1 | 2 | 3 | 4
 
 // Generic config value wrapper (optional; mirrors "use_global" concepts if needed later)
 export interface ConfigValue<T> {
@@ -69,6 +74,21 @@ export interface ConfigValue<T> {
 export type BoolValue = ConfigValue<boolean>
 export type IntValue = ConfigValue<number>
 export type StringValue = ConfigValue<string>
+
+/**
+ * Controls section (INI: [Controls])
+ */
+export interface ControlsSection {
+  use_artic_base_controller?: BoolValue
+}
+
+/**
+ * Core section (INI: [Core])
+ */
+export interface CoreSection {
+  use_cpu_jit?: BoolValue
+  cpu_clock_percentage?: IntValue
+}
 
 /**
  * Renderer section (INI: [Renderer])
@@ -111,6 +131,10 @@ export interface AudioSection {
   volume?: ConfigValue<NormalizedFloat01> // 0.0..1.0
   enable_audio_stretching?: BoolValue
   enable_realtime_audio?: BoolValue
+  output_type?: ConfigValue<AudioOutputType>
+  output_device?: StringValue
+  input_type?: ConfigValue<AudioInputType>
+  input_device?: StringValue
 }
 
 /**
@@ -139,6 +163,16 @@ export interface LayoutSection {
   upright_screen?: BoolValue
   swap_screen?: BoolValue
   secondary_display_layout?: ConfigValue<SecondaryDisplayLayout>
+  performance_overlay_position?: ConfigValue<PerformanceOverlayPosition>
+  expand_to_cutout_area?: BoolValue
+  screen_orientation?: ConfigValue<ScreenOrientation>
+  overlay_show_fps?: BoolValue
+  overlay_show_frame_time?: BoolValue
+  overlay_show_speed?: BoolValue
+  overlay_show_app_ram_usage?: BoolValue
+  overlay_show_available_ram?: BoolValue
+  overlay_show_battery_temp?: BoolValue
+  overlay_background?: BoolValue
   // Landscape custom
   custom_top_x?: ConfigValue<PixelsU16>
   custom_top_y?: ConfigValue<PixelsU16>
@@ -180,13 +214,49 @@ export interface LayoutSection {
 export type SmallScreenPosition = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
 
 /**
+ * Data Storage section (INI: [Data Storage])
+ */
+export interface DataStorageSection {
+  use_virtual_sd?: BoolValue
+  use_custom_storage?: BoolValue
+}
+
+/**
+ * Camera section (INI: [Camera])
+ */
+export interface CameraSection {
+  camera_outer_right_name?: StringValue
+  camera_outer_right_config?: StringValue
+  camera_outer_right_flip?: ConfigValue<CameraFlip>
+  camera_outer_left_name?: StringValue
+  camera_outer_left_config?: StringValue
+  camera_outer_left_flip?: ConfigValue<CameraFlip>
+  camera_inner_name?: StringValue
+  camera_inner_config?: StringValue
+  camera_inner_flip?: ConfigValue<CameraFlip>
+}
+
+/**
+ * WebService section (INI: [WebService])
+ */
+export interface WebServiceSection {
+  web_api_url?: StringValue
+  citra_username?: StringValue
+  citra_token?: StringValue
+}
+
+/**
  * Complete Azahar configuration interface (per-game overrides)
  */
 export interface AzaharConfig {
+  Controls?: ControlsSection
+  Core?: CoreSection
   Renderer?: RendererSection
   Audio?: AudioSection
   System?: SystemSection
   Layout?: LayoutSection
+  DataStorage?: DataStorageSection
+  Camera?: CameraSection
   // Optional additional groups
   Utility?: {
     dump_textures?: BoolValue
@@ -204,11 +274,14 @@ export interface AzaharConfig {
     gdbstub_port?: IntValue
     instant_debug_log?: BoolValue
     enable_rpc_server?: BoolValue
+    delay_start_for_lle_modules?: BoolValue
+    deterministic_async_operations?: BoolValue
   }
   Miscellaneous?: {
     log_filter?: StringValue
     log_regex_filter?: StringValue
   }
+  WebService?: WebServiceSection
 }
 
 export type AzaharConfigSection = keyof AzaharConfig

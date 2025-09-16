@@ -4,6 +4,7 @@
  * Maps emulator names from the database to appropriate configuration generators
  */
 
+import { convertToAzaharConfig, serializeAzaharConfig } from './azahar/azahar.converter'
 import { EMULATOR_CONFIG_TYPES, ConfigTypeUtils, type EmulatorConfigType } from './constants'
 import { convertToEdenConfig, serializeEdenConfig } from './eden/eden.converter'
 import {
@@ -131,6 +132,25 @@ export function generateEmulatorConfig(input: {
       }
     }
 
+    case EMULATOR_CONFIG_TYPES.AZAHAR: {
+      const config = convertToAzaharConfig({
+        listingId: input.listingId,
+        gameId: input.gameId,
+        customFieldValues: input.customFieldValues,
+      })
+
+      const serialized = serializeAzaharConfig(config)
+      const extension = ConfigTypeUtils.getFileExtension(EMULATOR_CONFIG_TYPES.AZAHAR)
+      const filename = `${input.emulatorName.toLowerCase()}-${input.listingId}${extension}`
+
+      return {
+        type: EMULATOR_CONFIG_TYPES.AZAHAR,
+        config,
+        serialized,
+        filename,
+      }
+    }
+
     case EMULATOR_CONFIG_TYPES.GAMENATIVE: {
       const config = convertToGameNativeConfig({
         listingId: input.listingId,
@@ -161,14 +181,19 @@ export function generateEmulatorConfig(input: {
  * Get list of supported emulators for config generation
  */
 export function getSupportedEmulators(): {
+  azahar: string[]
   eden: string[]
   gamenative: string[]
 } {
+  const azahar: string[] = []
   const eden: string[] = []
   const gamenative: string[] = []
 
   for (const [name, type] of Object.entries(EMULATOR_CONFIG_MAPPING)) {
     switch (type) {
+      case 'azahar':
+        azahar.push(name)
+        break
       case 'eden':
         eden.push(name)
         break
@@ -178,7 +203,7 @@ export function getSupportedEmulators(): {
     }
   }
 
-  return { eden, gamenative }
+  return { azahar, eden, gamenative }
 }
 
 /**

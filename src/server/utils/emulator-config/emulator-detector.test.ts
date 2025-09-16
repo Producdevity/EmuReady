@@ -18,6 +18,10 @@ describe('Emulator Detector', () => {
       expect(detectEmulatorConfigType('Eden')).toBe('eden')
     })
 
+    it('should detect Azahar-compatible emulators', () => {
+      expect(detectEmulatorConfigType('Azahar')).toBe('azahar')
+    })
+
     it('should detect GameNative-compatible emulators', () => {
       expect(detectEmulatorConfigType('GameNative')).toBe('gamenative')
     })
@@ -48,6 +52,8 @@ describe('Emulator Detector', () => {
       expect(detectEmulatorConfigType('EDEN')).toBe('eden')
       expect(detectEmulatorConfigType('GAMENATIVE')).toBe('gamenative')
       expect(detectEmulatorConfigType('gamenative')).toBe('gamenative')
+      expect(detectEmulatorConfigType('AZAHAR')).toBe('azahar')
+      expect(detectEmulatorConfigType('azahar')).toBe('azahar')
     })
 
     it('should throw error for unknown emulators', () => {
@@ -131,6 +137,41 @@ describe('Emulator Detector', () => {
       expect(typeof result.config).toBe('object')
     })
 
+    it('should generate Azahar config for Azahar emulator', () => {
+      const azaharFields = [
+        {
+          customFieldDefinition: {
+            name: 'graphics_api',
+            label: 'Graphics API',
+            type: 'SELECT',
+          },
+          value: 'OpenGLES',
+        },
+        {
+          customFieldDefinition: {
+            name: 'swap_screen',
+            label: 'Swap Screen',
+            type: 'BOOLEAN',
+          },
+          value: true,
+        },
+      ]
+
+      const result = generateEmulatorConfig({
+        listingId: 'test-listing-azahar',
+        gameId: 'test-game-azahar',
+        emulatorName: 'Azahar',
+        customFieldValues: azaharFields,
+      })
+
+      expect(result.type).toBe('azahar')
+      expect(result.filename).toBe('azahar-test-listing-azahar.ini')
+      expect(result.serialized).toContain('[Renderer]')
+      expect(result.serialized).toContain('graphics_api=1')
+      expect(result.serialized).toContain('[Layout]')
+      expect(result.serialized).toContain('swap_screen=true')
+    })
+
     it('should throw error for unsupported emulators', () => {
       expect(() => {
         generateEmulatorConfig({
@@ -158,15 +199,16 @@ describe('Emulator Detector', () => {
     it('should return categorized list of emulators', () => {
       const supported = getSupportedEmulators()
 
+      expect(supported.azahar).toContain('Azahar')
       expect(supported.eden).toContain('Eden')
       expect(supported.gamenative).toContain('GameNative')
 
-      // Only these two are currently supported
+      expect(supported.azahar).toHaveLength(1)
       expect(supported.eden).toHaveLength(1)
       expect(supported.gamenative).toHaveLength(1)
 
       // Ensure no overlap
-      const allEmulators = [...supported.eden, ...supported.gamenative]
+      const allEmulators = [...supported.azahar, ...supported.eden, ...supported.gamenative]
       const uniqueEmulators = [...new Set(allEmulators)]
       expect(allEmulators.length).toBe(uniqueEmulators.length)
     })
@@ -175,6 +217,7 @@ describe('Emulator Detector', () => {
   describe('isConfigGenerationSupported', () => {
     it('should return true for supported emulators', () => {
       expect(isConfigGenerationSupported('Eden')).toBe(true)
+      expect(isConfigGenerationSupported('Azahar')).toBe(true)
       expect(isConfigGenerationSupported('GameNative')).toBe(true)
     })
 
@@ -188,6 +231,7 @@ describe('Emulator Detector', () => {
 
     it('should handle case-insensitive input', () => {
       expect(isConfigGenerationSupported('eden')).toBe(true)
+      expect(isConfigGenerationSupported('azahar')).toBe(true)
       expect(isConfigGenerationSupported('GAMENATIVE')).toBe(true)
       expect(isConfigGenerationSupported('ppsspp')).toBe(false)
     })
@@ -195,6 +239,7 @@ describe('Emulator Detector', () => {
 
   describe('getConfigFileExtension', () => {
     it('should return correct extensions for config types', () => {
+      expect(getConfigFileExtension('azahar')).toBe('.ini')
       expect(getConfigFileExtension('eden')).toBe('.ini')
       expect(getConfigFileExtension('gamenative')).toBe('.json')
     })
