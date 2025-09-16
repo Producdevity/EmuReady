@@ -7,7 +7,7 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import UserRoleButton from './UserRoleButton'
 
@@ -29,7 +29,7 @@ function UserRoleModal(props: Props) {
   const userQuery = api.users.me.useQuery()
   const utils = api.useUtils()
 
-  const isSuperAdmin = hasPermission(userQuery.data?.role, Role.SUPER_ADMIN)
+  const isSuperAdmin = hasRolePermission(userQuery.data?.role, Role.SUPER_ADMIN)
 
   const [role, setRole] = useState<Role>(
     props.user.role === Role.SUPER_ADMIN && !isSuperAdmin ? Role.ADMIN : props.user.role,

@@ -3,7 +3,7 @@
 import { useUser, SignInButton } from '@clerk/nextjs'
 import { motion } from 'framer-motion'
 import { CheckCircle, XCircle, HelpCircle } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type ComponentType } from 'react'
 import analytics from '@/lib/analytics'
 import toast from '@/lib/toast'
 import { getBarColor, getBarWidth } from '@/utils/vote'
@@ -23,7 +23,7 @@ interface VoteButtonsProps {
     emulatorId?: string
     deviceId?: string
   }
-  VotingHelpModal: React.ComponentType<{
+  VotingHelpModal: ComponentType<{
     isOpen: boolean
     onClose: () => void
   }>

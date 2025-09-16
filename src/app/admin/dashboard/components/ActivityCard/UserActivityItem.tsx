@@ -3,7 +3,7 @@
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
 import { type ActivityTypes } from '@/server/services/activity.service'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 
 interface Props {
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function UserActivityItem(props: Props) {
-  const canViewAdminProfile = hasPermission(props.userRole, Role.ADMIN)
+  const canViewAdminProfile = hasRolePermission(props.userRole, Role.ADMIN)
   const href = canViewAdminProfile
     ? `/admin/users?search=${props.user.email}`
     : `/users/${props.user.id}`

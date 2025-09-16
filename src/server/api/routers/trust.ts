@@ -10,13 +10,13 @@ import {
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { prisma } from '@/server/db'
 import { paginate } from '@/server/utils/pagination'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { type Prisma, Role } from '@orm'
 
 export const trustRouter = createTRPCRouter({
   // Get trust logs for admin dashboard (SUPER_ADMIN only)
   getTrustLogs: protectedProcedure.input(GetTrustLogsSchema).query(async ({ ctx, input }) => {
-    if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
+    if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
       AppError.insufficientRole(Role.SUPER_ADMIN)
     }
 
@@ -78,7 +78,7 @@ export const trustRouter = createTRPCRouter({
 
   // Get trust system statistics (SUPER_ADMIN only)
   getTrustStats: protectedProcedure.input(GetTrustStatsSchema).query(async ({ ctx }) => {
-    if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
+    if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
       AppError.insufficientRole(Role.SUPER_ADMIN)
     }
 
@@ -126,7 +126,7 @@ export const trustRouter = createTRPCRouter({
   runMonthlyActiveBonus: protectedProcedure
     .input(RunMonthlyActiveBonusSchema)
     .mutation(async ({ ctx }) => {
-      if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
+      if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
         AppError.insufficientRole(Role.SUPER_ADMIN)
       }
 
@@ -137,7 +137,7 @@ export const trustRouter = createTRPCRouter({
   adjustTrustScore: protectedProcedure
     .input(ManualTrustAdjustmentSchema)
     .mutation(async ({ ctx, input }) => {
-      if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
+      if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
         AppError.insufficientRole(Role.SUPER_ADMIN)
       }
 

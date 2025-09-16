@@ -12,7 +12,7 @@ import {
   Zap,
   Search,
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import { MultiSelect, Button, Input, Badge } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { cn } from '@/lib/utils'
@@ -27,7 +27,7 @@ interface PerformanceScale {
 interface FilterSection {
   id: string
   title: string
-  icon: React.ReactNode
+  icon: ReactNode
   isAdvanced?: boolean
 }
 

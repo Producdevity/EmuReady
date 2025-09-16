@@ -1,7 +1,7 @@
 import { PAGINATION } from '@/data/constants'
 import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
 import { buildShadowBanFilter } from '@/server/utils/query-builders'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Prisma, ApprovalStatus, Role } from '@orm'
 import { BaseRepository } from './base.repository'
 // Monitoring will be integrated after fixing TypeScript issues
@@ -197,7 +197,7 @@ export class GamesRepository extends BaseRepository {
     const orderBy = this.buildOrderBy(sortField, sortDirection)
     const actualOffset = calculateOffset({ page, offset }, limit ?? PAGINATION.DEFAULT_LIMIT)
 
-    const includeSubmitter = hasPermission(userRole, Role.ADMIN)
+    const includeSubmitter = hasRolePermission(userRole, Role.ADMIN)
 
     const [total, games] = await Promise.all([
       this.prisma.game.count({ where }),
@@ -516,7 +516,7 @@ export class GamesRepository extends BaseRepository {
     }
 
     // Handle game approval status filtering
-    if (hasPermission(userRole, Role.ADMIN)) {
+    if (hasRolePermission(userRole, Role.ADMIN)) {
       // Admins can see all games
       if (status) where.status = status
       if (submittedBy) where.submittedBy = submittedBy

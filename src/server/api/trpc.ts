@@ -9,7 +9,7 @@ import { prisma } from '@/server/db'
 import { hasDeveloperAccessToEmulator } from '@/server/utils/permissions'
 import { type Nullable } from '@/types/utils'
 import { hasPermissionInContext, PERMISSIONS } from '@/utils/permission-system'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 
 type User = {
@@ -217,7 +217,7 @@ export const authorProcedure = t.procedure.use(performanceMiddleware).use(({ ctx
   if (!ctx.session?.user) return AppError.unauthorized()
 
   // For now, we consider User as Author
-  if (!hasPermission(ctx.session.user.role, Role.USER)) {
+  if (!hasRolePermission(ctx.session.user.role, Role.USER)) {
     AppError.forbidden()
   }
 
@@ -237,7 +237,7 @@ export const moderatorProcedure = t.procedure.use(performanceMiddleware).use(({ 
     AppError.unauthorized()
   }
 
-  if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+  if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
     AppError.insufficientRole(Role.MODERATOR)
   }
 
@@ -256,7 +256,7 @@ export const developerProcedure = t.procedure.use(performanceMiddleware).use(({ 
     AppError.unauthorized()
   }
 
-  if (!hasPermission(ctx.session.user.role, Role.DEVELOPER)) {
+  if (!hasRolePermission(ctx.session.user.role, Role.DEVELOPER)) {
     AppError.insufficientRole(Role.DEVELOPER)
   }
 
@@ -273,7 +273,7 @@ export const developerProcedure = t.procedure.use(performanceMiddleware).use(({ 
 export const adminProcedure = t.procedure.use(performanceMiddleware).use(({ ctx, next }) => {
   if (!ctx.session?.user) return AppError.unauthorized()
 
-  if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
+  if (!hasRolePermission(ctx.session.user.role, Role.ADMIN)) {
     AppError.insufficientRole(Role.ADMIN)
   }
 
@@ -288,7 +288,7 @@ export const adminProcedure = t.procedure.use(performanceMiddleware).use(({ ctx,
 export const superAdminProcedure = t.procedure.use(performanceMiddleware).use(({ ctx, next }) => {
   if (!ctx.session?.user) return AppError.unauthorized()
 
-  if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
+  if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
     AppError.insufficientRole(Role.SUPER_ADMIN)
   }
 

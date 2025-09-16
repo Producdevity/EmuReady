@@ -10,7 +10,7 @@ import {
 import { createTRPCRouter, protectedProcedure, permissionProcedure } from '@/server/api/trpc'
 import { prisma } from '@/server/db'
 import { PERMISSIONS } from '@/utils/permission-system'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { CustomFieldType, Prisma, Role } from '@orm'
 
 type CustomFieldOptionArray = {
@@ -25,7 +25,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
     .input(CreateCustomFieldDefinitionSchema)
     .mutation(async ({ ctx, input }) => {
       // For developers, verify they can manage this emulator
-      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+      if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
         const verifiedDeveloper = await prisma.verifiedDeveloper.findUnique({
           where: {
             userId_emulatorId: { userId: ctx.session.user.id, emulatorId: input.emulatorId },
@@ -95,7 +95,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
   byId: protectedProcedure
     .input(GetCustomFieldDefinitionByIdSchema)
     .query(async ({ ctx, input }) => {
-      if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
+      if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
         return AppError.insufficientRole(Role.SUPER_ADMIN)
       }
       const field = await prisma.customFieldDefinition.findUnique({
@@ -115,7 +115,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       if (!fieldToUpdate) return ResourceError.customField.notFound()
 
       // For developers, verify they can manage this emulator
-      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+      if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
         const verifiedDeveloper = await prisma.verifiedDeveloper.findUnique({
           where: {
             userId_emulatorId: {
@@ -198,7 +198,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       if (!fieldToDelete) return ResourceError.customField.notFound()
 
       // For developers, verify they can manage this emulator
-      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+      if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
         const verifiedDeveloper = await prisma.verifiedDeveloper.findUnique({
           where: {
             userId_emulatorId: {
@@ -217,7 +217,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
   updateOrder: protectedProcedure
     .input(UpdateCustomFieldDefinitionOrderSchema)
     .mutation(async ({ ctx, input }) => {
-      if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
+      if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
         return AppError.insufficientRole(Role.SUPER_ADMIN)
       }
 

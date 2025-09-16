@@ -12,7 +12,7 @@ import {
   protectedProcedure,
 } from '@/server/api/trpc'
 import { paginate } from '@/server/utils/pagination'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role, Prisma } from '@orm'
 
 export const verifiedDevelopersRouter = createTRPCRouter({
@@ -91,7 +91,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
       if (!user) return ResourceError.user.notFound()
 
       // Check if user has DEVELOPER role or higher
-      if (!hasPermission(user.role, Role.DEVELOPER)) {
+      if (!hasRolePermission(user.role, Role.DEVELOPER)) {
         return ResourceError.verifiedDeveloper.userMustBeDeveloper(
           user.name || user.email,
           user.role,
@@ -192,7 +192,7 @@ export const verifiedDevelopersRouter = createTRPCRouter({
       if (!verifiedDeveloper) return ResourceError.verifiedDeveloper.notFound()
 
       // Re-check user role when updating (in case their role was downgraded)
-      if (!hasPermission(verifiedDeveloper.user.role, Role.DEVELOPER)) {
+      if (!hasRolePermission(verifiedDeveloper.user.role, Role.DEVELOPER)) {
         return ResourceError.verifiedDeveloper.userMustBeDeveloperToRemove(
           verifiedDeveloper.user.name || verifiedDeveloper.user.email,
           verifiedDeveloper.user.role,

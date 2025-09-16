@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useRef } from 'react'
+import { useRef, type ReactNode } from 'react'
 import { CustomFieldsSection } from '@/app/listings/components/shared/CustomFieldsSection'
 import { ActionButtonsStack } from '@/app/listings/components/shared/details/ActionButtonsStack'
 import { AuthorPanel } from '@/app/listings/components/shared/details/AuthorPanel'
@@ -166,7 +166,7 @@ function ListingDetailsClient(props: Props) {
                     canViewBannedUsers ? (
                       <ApprovalStatusBadge key="as" status={props.listing.status} />
                     ) : undefined,
-                  ].filter(Boolean) as React.ReactNode[]
+                  ].filter(Boolean) as ReactNode[]
                 }
               />
 

@@ -34,7 +34,7 @@ import { cn } from '@/lib/utils'
 import { type RouterInput } from '@/types/trpc'
 import { filterNullAndEmpty } from '@/utils/filter'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { ms } from '@/utils/time'
 import { Role, ApprovalStatus } from '@orm'
 import ListingsFiltersContent from './components/ListingsFiltersContent'
@@ -83,7 +83,7 @@ function ListingsPage() {
   })
 
   const userRole = userQuery?.data?.role
-  const isAdmin = userRole ? hasPermission(userRole, Role.ADMIN) : false
+  const isAdmin = userRole ? hasRolePermission(userRole, Role.ADMIN) : false
   const isModerator = userRole ? roleIncludesRole(userRole, Role.MODERATOR) : false
 
   const preferred = usePreferredHardwareFilters({

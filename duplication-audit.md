@@ -39,22 +39,6 @@ This document catalogs notable duplication across the codebase, with concrete fi
 
 ---
 
-**2) User Preference Device/SoC Filter Logic**
-
-- Files:
-  - `src/app/listings/ListingsPage.tsx` (booleans: `shouldUseUserDeviceFilter`, `shouldUseUserSocFilter`, disable flags, and toggles)
-  - `src/app/v2/listings/V2ListingsPage.tsx` (same logic duplicated with `useMemo`)
-- Duplication:
-  - Repeated logic to derive user-filter defaults and disable/enable behavior when user manually selects devices/SoCs.
-- Proposal:
-  - Abstraction: `usePreferredHardwareFilters()`
-    - Responsibilities: given user prefs + current selections, return computed deviceIds/socIds to apply, booleans for active/available state, and handlers to enable/disable/reset preferences.
-    - Inputs: userPreferences, current `deviceIds`, `socIds`.
-    - Output: `{ shouldUseUserDeviceFilter, shouldUseUserSocFilter, derivedDeviceIds, derivedSocIds, handlers }`.
-  - Wins: single source for preference semantics across classic/v2 listings; easier to test.
-
----
-
 **3) Filter Panels and Option Mapping**
 
 - Files:
@@ -70,24 +54,6 @@ This document catalogs notable duplication across the codebase, with concrete fi
     - `FilterSection` component primitives (label, icon, MultiSelect wiring) that can be composed into classic or v2 layouts.
   - Abstraction: unify search input to a shared `ListingsSearchInput` (or reuse v2 `SearchBar` across pages) with consistent analytics and debounce.
   - Wins: reduce per-page boilerplate; consistent UX and analytics across pages.
-
----
-
-**4) Mobile Filter Sheet / Sidebar Overlay Pattern**
-
-- Files:
-  - `src/app/listings/ListingsPage.tsx` (mobile overlay + sidebar content)
-  - `src/app/pc-listings/PcListingsPage.tsx` (mobile overlay + sidebar content)
-  - `src/app/v2/listings/components/ListingFilters.tsx` (mobile bottom sheet logic)
-- Duplication:
-  - Similar overlay divs, close buttons, animation classes, and container shells.
-- Proposal:
-  - Abstraction: `MobileFilterSheet`
-    - Props: `isOpen`, `onClose`, `title`, `children`.
-    - Handles backdrop, close button, transitions.
-  - Wins: eliminates repeated markup/animation logic and simplifies pages.
-
----
 
 **5) Table Structure, Headers, and Sorting**
 
@@ -151,33 +117,7 @@ This document catalogs notable duplication across the codebase, with concrete fi
 
 ---
 
-**9) Option Mapping Utilities**
-
-- Files:
-  - Devices in classic filters: `src/app/listings/components/ListingFilters.tsx` (mapping brand + model)
-  - Performance scales mapping across classic/pc/v2 filters.
-- Duplication:
-  - Converting domain shapes to a shared `{ id, name }` shape for UI.
-- Proposal:
-  - Abstraction: `toOption()` helpers per domain entity under `src/app/listings/components/shared/options.ts` (or `src/utils/options.ts`).
-  - Wins: consistent labeling and central place to tweak names (e.g., include brand or manufacturer consistently).
-
----
-
-**10) Search UX Components**
-
-- Files:
-  - Classic: search `Input` within `ListingFilters.tsx`.
-  - v2: dedicated `SearchBar.tsx`.
-- Duplication:
-  - Two different search input implementations with overlapping behavior and analytics requirements.
-- Proposal:
-  - Abstraction: unify on one `ListingsSearchBar` component with props for placeholder/size/analytics, and hook into `useUrlSearch` for debounce + URL sync.
-  - Wins: consistent behavior (including debounce) and accessibility.
-
----
-
-**11) Pagination Wiring**
+**10) Pagination Wiring**
 
 - Files:
   - `src/app/listings/ListingsPage.tsx` and `src/app/pc-listings/PcListingsPage.tsx` use `<Pagination>` with similar `onPageChange` (to URL state) flows.
@@ -189,7 +129,7 @@ This document catalogs notable duplication across the codebase, with concrete fi
 
 ---
 
-**12) Row Rendering (Badges, Tooltips, Status, Verification)**
+**11) Row Rendering (Badges, Tooltips, Status, Verification)**
 
 - Files:
   - Both listings tables render `ApprovalStatus.PENDING` with a clock + tooltip, show verification badges, and author ban badges.
@@ -205,13 +145,9 @@ This document catalogs notable duplication across the codebase, with concrete fi
 **Implementation Sketch (Non‑code)**
 
 - New shared modules (suggested locations):
-  - `src/app/listings/shared/hooks/usePreferredHardwareFilters.ts`
   - `src/app/listings/shared/hooks/useFilterParams.ts`
-  - `src/app/listings/shared/components/MobileFilterSheet.tsx`
   - `src/app/listings/shared/components/ListingsTable.tsx`
   - `src/app/listings/shared/components/ListingsHeader.tsx`
-  - `src/app/listings/shared/components/ListingsSearchBar.tsx` (or reuse v2 `SearchBar`)
-  - `src/app/listings/shared/options.ts` (option mappers)
   - `src/lib/analytics/filterAnalytics.ts` (adapter)
 
 Each abstraction is small and composable (SOLID): single-responsibility primitives that pages compose, keeping page components thin and declarative.
@@ -229,24 +165,15 @@ Each abstraction is small and composable (SOLID): single-responsibility primitiv
 
 **Next Steps (Suggested Order)**
 
-1. Extract `usePreferredHardwareFilters` and swap in classic + v2 listings pages.
-2. Unify search via a single `ListingsSearchBar` using `useUrlSearch`.
-3. Add `filters/options.ts` for option mapping; adopt in all filter components.
-4. Introduce `MobileFilterSheet`; replace duplicated mobile overlay code.
-5. Extract `ListingsTable` and `ListingsHeader`; refactor both listings pages.
-6. Centralize analytics calls via `filterAnalytics` adapter.
-7. Optional: create `useFilterParams` and `useUrlPagination` adapters to reduce per-page param assembly.
+1. Extract `ListingsTable` and `ListingsHeader`; refactor both listings pages.
+2. Centralize analytics calls via `filterAnalytics` adapter (align v2 components).
+3. Optional: create `useFilterParams` and `useUrlPagination` adapters to reduce per-page param assembly.
 
 ---
 
 ## Implementation TODOs (Per Item)
 
 Below are concrete, low-risk TODOs for items we plan to implement, with acceptance checks and rollout notes. Items already completed are noted as such.
-
-### 2) Preferred Hardware Filters — Status: COMPLETED
-
-- Done: Added `usePreferredHardwareFilters` and integrated in classic + v2 listings.
-- Verify: Device/SoC defaults apply only when user hasn’t selected filters; manual selections disable prefs; URL/state remain stable.
 
 ### 3) Filter Panels and Option Mapping — Status: PARTIALLY COMPLETED
 
@@ -412,6 +339,13 @@ This sequencing minimizes risk (start with hooks and leaf components) and yields
   - Abstraction: `useActiveFilterCount(filters)` and a `FilterCountBadge` component.
   - Eliminates counting logic duplication, normalizes what “active” means across pages.
 
+Status: Partially Implemented
+
+- Collapsed sidebar badges unified via `src/app/listings/shared/components/CollapsedBadges.tsx`.
+- Adopted in: `ListingsFiltersSidebar` and `PcFiltersSidebar`.
+- Mobile FAB badge count remains page-specific and is not changed.
+  - Note: The FAB is shared; each page computes its count to preserve semantics (PC includes memory).
+
 18. “My Listings” Toggle
 
 - Files:
@@ -435,23 +369,12 @@ This sequencing minimizes risk (start with hooks and leaf components) and yields
 - Proposal:
   - Centralize in `src/data/constants.ts` (e.g., `OPTION_FETCH_LIMITS`), or move to Async data-selectors with server-side search + pagination to drop these limits.
 
-21. Option Fetchers and Async MultiSelects
+21. Performance Scales Fetch + Mapping
 
 - Files:
-  - Repeated fetching for devices, SoCs, CPUs, GPUs, Emulators.
-- Duplication:
-  - Each page fetches and maps options; TODO notes signal need for async select.
+  - Classic/v2 listings and PC listings fetch `performanceScales` and map to options.
 - Proposal:
-  - Abstraction: `createAsyncOptionSource(fetcher)` and `AsyncEntitySelect` components per entity.
-  - Add virtualization, debounced server-side search, and empty/error states, consolidating mapping logic.
-
-22. Animation Patterns with framer-motion
-
-- Files:
-  - Filter sheets (classic and v2), icon badges, count chips, and section transitions reuse similar motion props.
-- Proposal:
-  - Abstraction: motion variants/utilities module (`motionPresets.ts`) with named presets (e.g., `fadeInUp`, `scaleIn`, `slideUpSheet`).
-  - Increases consistency and reduces verbose inline animation configs.
+  - Abstraction: `usePerformanceScales()` hook returning memoized option lists and a map by id/rank, reducing duplicated mapping.
 
 23. Performance Scales Fetch + Mapping
 

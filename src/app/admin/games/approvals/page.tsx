@@ -38,7 +38,7 @@ import { type RouterOutput } from '@/types/trpc'
 import { type Nullable } from '@/types/utils'
 import getErrorMessage from '@/utils/getErrorMessage'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { ApprovalStatus, Role } from '@orm'
 import ConfirmationModal from './components/ConfirmationModal'
 import GameDetailsModal from './components/GameDetailsModal'
@@ -110,7 +110,7 @@ function GameApprovalsPage() {
   const gameStatsQuery = api.games.stats.useQuery()
 
   const userQuery = api.users.me.useQuery()
-  const isSuperAdmin = hasPermission(userQuery.data?.role, Role.SUPER_ADMIN)
+  const isSuperAdmin = hasRolePermission(userQuery.data?.role, Role.SUPER_ADMIN)
 
   // Mutation for approving/rejecting games
   const utils = api.useUtils()

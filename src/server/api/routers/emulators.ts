@@ -19,7 +19,7 @@ import {
 import { EmulatorsRepository } from '@/server/repositories/emulators.repository'
 import { paginate } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { type Prisma, Role } from '@orm'
 
 export const emulatorsRouter = createTRPCRouter({
@@ -63,7 +63,7 @@ export const emulatorsRouter = createTRPCRouter({
     // If user is a developer (not moderator+), only show their assigned emulators
     if (
       ctx.session.user.role === Role.DEVELOPER &&
-      !hasPermission(ctx.session.user.role, Role.MODERATOR)
+      !hasRolePermission(ctx.session.user.role, Role.MODERATOR)
     ) {
       const developerFilter: Prisma.EmulatorWhereInput = {
         verifiedDevelopers: {
@@ -149,7 +149,7 @@ export const emulatorsRouter = createTRPCRouter({
 
   update: manageEmulatorsProcedure.input(UpdateEmulatorSchema).mutation(async ({ ctx, input }) => {
     // For developers, verify they can manage this emulator
-    if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+    if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
       const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
         where: {
           userId_emulatorId: {
@@ -186,7 +186,7 @@ export const emulatorsRouter = createTRPCRouter({
 
   delete: manageEmulatorsProcedure.input(DeleteEmulatorSchema).mutation(async ({ ctx, input }) => {
     // Developers or Moderators can NEVER delete emulators
-    if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
+    if (!hasRolePermission(ctx.session.user.role, Role.ADMIN)) {
       return ResourceError.emulator.requiresPermissionToDelete()
     }
 

@@ -13,7 +13,7 @@ import {
 import { LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { ms } from '@/utils/time'
 import { Role } from '@orm'
 import GamePreviewModal from './components/GamePreviewModal'
@@ -251,11 +251,11 @@ function TGDBSearchContent() {
   )
 
   const isModeratorOrHigher = useMemo(() => {
-    return userQuery.data ? hasPermission(userQuery.data.role, Role.MODERATOR) : false
+    return userQuery.data ? hasRolePermission(userQuery.data.role, Role.MODERATOR) : false
   }, [userQuery.data])
 
   const isAdmin = useMemo(() => {
-    return userQuery.data ? hasPermission(userQuery.data.role, Role.ADMIN) : false
+    return userQuery.data ? hasRolePermission(userQuery.data.role, Role.ADMIN) : false
   }, [userQuery.data])
 
   if (!isLoaded) {

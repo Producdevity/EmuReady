@@ -31,7 +31,7 @@ import { getRoleVariant, getTrustActionBadgeColor } from '@/utils/badgeColors'
 import { copyToClipboard } from '@/utils/copyToClipboard'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { canBanUser } from '@/utils/permission-system'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 
 interface Props {
@@ -50,8 +50,8 @@ function UserDetailsModal(props: Props) {
 
   // Get current user to check if they're SUPER_ADMIN
   const currentUserQuery = api.users.me.useQuery()
-  const isSuperAdmin = hasPermission(currentUserQuery.data?.role, Role.SUPER_ADMIN)
-  const isModerator = hasPermission(currentUserQuery.data?.role, Role.MODERATOR)
+  const isSuperAdmin = hasRolePermission(currentUserQuery.data?.role, Role.SUPER_ADMIN)
+  const isModerator = hasRolePermission(currentUserQuery.data?.role, Role.MODERATOR)
   const canBanTarget =
     isModerator &&
     userQuery.data?.role != null &&
@@ -731,7 +731,7 @@ function UserDetailsModal(props: Props) {
                 <ExternalLink className="w-4 h-4" />
                 View Public Profile
               </Link>
-              {!canBanTarget && hasPermission(currentUserQuery.data?.role, Role.MODERATOR) && (
+              {!canBanTarget && hasRolePermission(currentUserQuery.data?.role, Role.MODERATOR) && (
                 <span className="text-xs text-gray-600 dark:text-gray-400">
                   You cannot ban users with {userQuery.data.role} role or higher.
                 </span>

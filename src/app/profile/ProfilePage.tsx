@@ -7,7 +7,7 @@ import { useState, Suspense, useEffect } from 'react'
 import { PageSkeletonLoading } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import DeviceAndSocPreferences from './components/DeviceAndSocPreferences'
 import NotificationPreferences from './components/NotificationPreferences'
@@ -119,7 +119,7 @@ function ProfilePage() {
 
   // Filter tabs based on user permissions
   const visibleTabs = tabs.filter((tab) =>
-    tab.id === 'settings' ? hasPermission(userQuery.data?.role, Role.MODERATOR) : true,
+    tab.id === 'settings' ? hasRolePermission(userQuery.data?.role, Role.MODERATOR) : true,
   )
 
   return (
@@ -144,7 +144,7 @@ function ProfilePage() {
             <NotificationPreferences notificationPreferencesQuery={notificationPreferencesQuery} />
           )}
 
-          {activeTab === 'settings' && hasPermission(userQuery.data?.role, Role.MODERATOR) && (
+          {activeTab === 'settings' && hasRolePermission(userQuery.data?.role, Role.MODERATOR) && (
             <SettingsSection
               title="Admin Settings"
               description="Administrative tools and configuration options"

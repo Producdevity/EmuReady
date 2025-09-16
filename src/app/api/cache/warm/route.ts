@@ -6,7 +6,7 @@ import {
   warmRecentListings,
   warmSitemapData,
 } from '@/server/cache/warming'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 
 /**
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   const metadata = sessionClaims?.metadata as { role?: Role } | undefined
   const userRole = metadata?.role
 
-  if (!userRole || !hasPermission(userRole, Role.ADMIN)) {
+  if (!userRole || !hasRolePermission(userRole, Role.ADMIN)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

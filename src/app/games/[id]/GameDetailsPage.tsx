@@ -6,7 +6,7 @@ import { notFound, useParams, useRouter } from 'next/navigation'
 import { GameDetailsPageSkeleton } from '@/app/games/[id]/components/GameDetailsPageSkeleton'
 import { Badge, Button } from '@/components/ui'
 import { api } from '@/lib/api'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { ApprovalStatus, Role } from '@orm'
 import { GameBoxartImage } from './components/GameBoxartImage'
 import { GameEditForm } from './components/GameEditForm'
@@ -28,7 +28,7 @@ function GameDetailsPage() {
     gameQuery.data.submittedBy === userQuery.data.id &&
     gameQuery.data.status === ApprovalStatus.PENDING
 
-  const canEdit = hasPermission(userQuery.data?.role, Role.MODERATOR) || isOwnerOfPendingGame
+  const canEdit = hasRolePermission(userQuery.data?.role, Role.MODERATOR) || isOwnerOfPendingGame
 
   if (gameQuery.isPending) return <GameDetailsPageSkeleton />
 
@@ -76,7 +76,7 @@ function GameDetailsPage() {
         <GameListingsSection
           gameId={gameQuery.data.id}
           listings={gameQuery.data?.listings}
-          hasPermission={hasPermission(userQuery.data?.role, Role.ADMIN)}
+          hasPermission={hasRolePermission(userQuery.data?.role, Role.ADMIN)}
           userRole={userQuery.data?.role}
         />
 
@@ -84,7 +84,7 @@ function GameDetailsPage() {
           <GamePcListingsSection
             gameId={gameQuery.data.id}
             pcListings={gameQuery.data?.pcListings}
-            hasPermission={hasPermission(userQuery.data?.role, Role.ADMIN)}
+            hasPermission={hasRolePermission(userQuery.data?.role, Role.ADMIN)}
             userRole={userQuery.data?.role}
           />
         </div>

@@ -1,4 +1,4 @@
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { type Prisma, ApprovalStatus, Role } from '@orm'
 
 /**
@@ -10,7 +10,7 @@ export function buildShadowBanFilter(
   _userId?: string | null,
 ): Prisma.UserWhereInput | undefined {
   // Moderators and above can see all content
-  if (userRole && hasPermission(userRole, Role.MODERATOR)) {
+  if (userRole && hasRolePermission(userRole, Role.MODERATOR)) {
     return undefined
   }
 
@@ -42,7 +42,7 @@ export function buildApprovalStatusFilter<_T extends { status: ApprovalStatus }>
   authorField = 'authorId',
 ): ApprovalStatusFilterObject[] | ApprovalStatusFilter {
   // Mods can see everything
-  if (userRole && hasPermission(userRole, Role.MODERATOR)) {
+  if (userRole && hasRolePermission(userRole, Role.MODERATOR)) {
     return requestedStatus ? { status: requestedStatus } : undefined
   }
 

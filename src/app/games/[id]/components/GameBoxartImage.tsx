@@ -8,7 +8,7 @@ import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import getImageUrl from '@/utils/getImageUrl'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { ApprovalStatus, Role, type Game } from '@orm'
 
 interface Props {
@@ -64,7 +64,7 @@ export function GameBoxartImage(props: Props) {
     },
   })
 
-  const isModerator = hasPermission(userQuery.data?.role, Role.MODERATOR)
+  const isModerator = hasRolePermission(userQuery.data?.role, Role.MODERATOR)
   const isOwnerOfPendingGame =
     userQuery.data &&
     props.game.submittedBy === userQuery.data.id &&

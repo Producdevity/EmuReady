@@ -4,7 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse, type NextRequest } from 'next/server'
 import { prisma } from '@/server/db'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 
 function isImage(file: File) {
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       select: { role: true },
     })
 
-    if (!user || !hasPermission(user.role, Role.USER)) {
+    if (!user || !hasRolePermission(user.role, Role.USER)) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 

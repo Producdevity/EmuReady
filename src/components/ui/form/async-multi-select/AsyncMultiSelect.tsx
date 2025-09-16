@@ -1,7 +1,7 @@
 'use client'
 
 import { ChevronDown, X } from 'lucide-react'
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, type UIEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 export type Option = { id: string; name: string; badgeName?: string }
@@ -90,7 +90,7 @@ export default function AsyncMultiSelect(props: Props) {
   const handleClearAll = () => props.onChange([])
   const handleRemoveOption = (id: string) => props.onChange(props.value.filter((v) => v !== id))
 
-  const onScrollList = (e: React.UIEvent<HTMLDivElement>) => {
+  const onScrollList = (e: UIEvent<HTMLDivElement>) => {
     if (!props.onLoadMore) return
     const el = e.currentTarget
     if (

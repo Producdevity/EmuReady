@@ -10,7 +10,7 @@ import {
 } from '@/schemas/notification'
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { notificationService } from '@/server/notifications/service'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { DeliveryChannel, NotificationCategory, Role } from '@orm'
 
 export const notificationsRouter = createTRPCRouter({
@@ -88,7 +88,7 @@ export const notificationsRouter = createTRPCRouter({
     .input(CreateSystemNotificationSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if user is admin
-      if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
+      if (!hasRolePermission(ctx.session.user.role, Role.ADMIN)) {
         return AppError.insufficientRole()
       }
 
@@ -148,7 +148,7 @@ export const notificationsRouter = createTRPCRouter({
 
   // Admin endpoint for monitoring batching queue
   getBatchingStatus: protectedProcedure.query(async ({ ctx }) => {
-    return hasPermission(ctx.session.user.role, Role.ADMIN)
+    return hasRolePermission(ctx.session.user.role, Role.ADMIN)
       ? notificationService.getBatchingQueueStatus()
       : AppError.insufficientRole()
   }),

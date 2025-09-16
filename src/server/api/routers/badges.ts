@@ -19,7 +19,7 @@ import {
 } from '@/server/api/trpc'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { PERMISSIONS } from '@/utils/permission-system'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { type Prisma, Role } from '@orm'
 
 export const badgesRouter = createTRPCRouter({
@@ -282,7 +282,7 @@ export const badgesRouter = createTRPCRouter({
     const { userId } = input
 
     // Check permissions - users can only see their own badges
-    if (userId !== ctx.session.user.id && !hasPermission(ctx.session.user.role, Role.ADMIN)) {
+    if (userId !== ctx.session.user.id && !hasRolePermission(ctx.session.user.role, Role.ADMIN)) {
       return AppError.insufficientRole()
     }
 

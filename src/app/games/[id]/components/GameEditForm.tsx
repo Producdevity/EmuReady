@@ -13,7 +13,7 @@ import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import { type RouterOutput } from '@/types/trpc'
 import getImageUrl from '@/utils/getImageUrl'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { sanitizeString } from '@/utils/validation'
 import { ApprovalStatus, Role } from '@orm'
 
@@ -56,7 +56,7 @@ export function GameEditForm(props: Props) {
   )
 
   // Determine if user is moderator or owner of pending game
-  const isModerator = hasPermission(userQuery.data?.role, Role.MODERATOR)
+  const isModerator = hasRolePermission(userQuery.data?.role, Role.MODERATOR)
   const isOwnerOfPendingGame =
     userQuery.data &&
     props.gameData.submittedBy === userQuery.data.id &&

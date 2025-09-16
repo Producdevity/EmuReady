@@ -1,16 +1,17 @@
 'use client'
 
-import { PlusCircle, Copy } from 'lucide-react'
+import { PlusCircle, Copy, FileJson } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from '@/components/ui'
 import { api } from '@/lib/api'
 import { CustomFieldList } from '@/lib/dynamic-imports'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
-import { hasPermission as hasRolePermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import ApplyTemplatesModal from './components/ApplyTemplatesModal'
 import CustomFieldFormModal from './components/CustomFieldFormModal'
+import CustomFieldsJsonModal from './components/CustomFieldsJsonModal'
 
 export default function EmulatorCustomFieldsPage() {
   const params = useParams()
@@ -19,47 +20,40 @@ export default function EmulatorCustomFieldsPage() {
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [isApplyTemplatesModalOpen, setIsApplyTemplatesModalOpen] = useState(false)
+  const [isJsonModalOpen, setIsJsonModalOpen] = useState(false)
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null)
 
-  const { data: currentUser } = api.users.me.useQuery()
-  const { data: verifiedDev } = api.emulators.getVerifiedDeveloper.useQuery(
+  const userQuery = api.users.me.useQuery()
+  const verifiedDeveloperQuery = api.emulators.getVerifiedDeveloper.useQuery(
     { emulatorId },
-    { enabled: !!emulatorId && !!currentUser },
+    { enabled: !!emulatorId && !!userQuery.data },
   )
 
-  const {
-    data: emulator,
-    isLoading: isLoadingEmulator,
-    error: emulatorError,
-  } = api.emulators.byId.useQuery({ id: emulatorId }, { enabled: !!emulatorId })
+  const emulatorQuery = api.emulators.byId.useQuery({ id: emulatorId }, { enabled: !!emulatorId })
 
-  const {
-    data: customFields,
-    isLoading: isLoadingCustomFields,
-    error: customFieldsError,
-    refetch: refetchCustomFields,
-  } = api.customFieldDefinitions.getByEmulator.useQuery({ emulatorId }, { enabled: !!emulatorId })
+  const customFieldDefinitionsQuery = api.customFieldDefinitions.getByEmulator.useQuery(
+    { emulatorId },
+    { enabled: !!emulatorId },
+  )
 
   // Redirect access using permission + verified for developers
-  if (currentUser) {
-    const perms = currentUser.permissions
+  if (userQuery.data) {
+    const perms = userQuery.data.permissions
+    const isVerifiedDeveloper = Boolean(verifiedDeveloperQuery.data)
     const canManageCF = hasPermission(perms, PERMISSIONS.MANAGE_CUSTOM_FIELDS)
     if (!canManageCF) {
       router.replace('/admin/emulators')
       return null
     }
-    const isAdminOrHigher = hasRolePermission(currentUser.role, Role.ADMIN)
-    if (!isAdminOrHigher) {
-      const isVerified = Boolean(verifiedDev)
-      if (!isVerified) {
-        router.replace('/admin/emulators')
-        return null
-      }
+    const isAdminOrHigher = hasRolePermission(userQuery.data.role, Role.ADMIN)
+    if (!isAdminOrHigher || isVerifiedDeveloper) {
+      router.replace('/admin/emulators')
+      return null
     }
   }
 
   // Check if user can see Apply Templates button (only SUPER_ADMIN)
-  const canApplyTemplates = currentUser && hasRolePermission(currentUser.role, Role.SUPER_ADMIN)
+  const canApplyTemplates = hasRolePermission(userQuery.data?.role, Role.SUPER_ADMIN)
 
   function handleOpenCreateModal() {
     setEditingFieldId(null)
@@ -74,44 +68,35 @@ export default function EmulatorCustomFieldsPage() {
   function handleCloseModal() {
     setIsFormModalOpen(false)
     setEditingFieldId(null)
-    refetchCustomFields()
+    void customFieldDefinitionsQuery.refetch()
   }
 
-  function handleOpenApplyTemplatesModal() {
-    setIsApplyTemplatesModalOpen(true)
-  }
-
-  function handleCloseApplyTemplatesModal() {
-    setIsApplyTemplatesModalOpen(false)
-  }
-
-  function handleTemplateApplySuccess() {
-    refetchCustomFields()
-  }
-
-  if (isLoadingEmulator || isLoadingCustomFields) {
+  if (emulatorQuery.isLoading || customFieldDefinitionsQuery.isLoading) {
     return <div>Loading...</div>
   }
 
-  if (emulatorError) {
-    return <div>Error loading emulator: {emulatorError.message}</div>
+  if (emulatorQuery.error) {
+    return <div>Error loading emulator: {emulatorQuery.error.message}</div>
   }
 
-  if (customFieldsError) {
-    return <div>Error loading custom fields: {customFieldsError.message}</div>
+  if (customFieldDefinitionsQuery.error) {
+    return <div>Error loading custom fields: {customFieldDefinitionsQuery.error.message}</div>
   }
 
-  if (!emulator) {
+  if (!emulatorQuery.data) {
     return <div>Emulator not found.</div>
   }
 
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Custom Fields for {emulator.name}</h1>
+        <h1 className="text-3xl font-bold">Custom Fields for {emulatorQuery.data.name}</h1>
         <div className="flex space-x-3">
+          <Button variant="outline" onClick={() => setIsJsonModalOpen(true)}>
+            <FileJson className="mr-2 h-4 w-4" /> View JSON
+          </Button>
           {canApplyTemplates && (
-            <Button variant="outline" onClick={handleOpenApplyTemplatesModal}>
+            <Button variant="outline" onClick={() => setIsApplyTemplatesModalOpen(true)}>
               <Copy className="mr-2 h-4 w-4" /> Apply Templates
             </Button>
           )}
@@ -121,11 +106,11 @@ export default function EmulatorCustomFieldsPage() {
         </div>
       </div>
 
-      {customFields && customFields.length > 0 ? (
+      {customFieldDefinitionsQuery.data && customFieldDefinitionsQuery.data.length > 0 ? (
         <CustomFieldList
-          customFields={customFields}
+          customFields={customFieldDefinitionsQuery.data}
           onEdit={handleOpenEditModal}
-          onDeleteSuccess={refetchCustomFields}
+          onDeleteSuccess={customFieldDefinitionsQuery.refetch}
           emulatorId={emulatorId}
         />
       ) : (
@@ -135,7 +120,7 @@ export default function EmulatorCustomFieldsPage() {
           </p>
           <div className="mt-4 flex justify-center space-x-3">
             {canApplyTemplates && (
-              <Button variant="outline" onClick={handleOpenApplyTemplatesModal}>
+              <Button variant="outline" onClick={() => setIsApplyTemplatesModalOpen(true)}>
                 <Copy className="mr-2 h-4 w-4" /> Apply Templates
               </Button>
             )}
@@ -159,8 +144,17 @@ export default function EmulatorCustomFieldsPage() {
         <ApplyTemplatesModal
           emulatorId={emulatorId}
           isOpen={isApplyTemplatesModalOpen}
-          onClose={handleCloseApplyTemplatesModal}
-          onSuccess={handleTemplateApplySuccess}
+          onClose={() => setIsApplyTemplatesModalOpen(false)}
+          onSuccess={() => customFieldDefinitionsQuery.refetch()}
+        />
+      )}
+
+      {isJsonModalOpen && emulatorQuery.data && customFieldDefinitionsQuery.data && (
+        <CustomFieldsJsonModal
+          isOpen={isJsonModalOpen}
+          onClose={() => setIsJsonModalOpen(false)}
+          emulator={{ id: emulatorQuery.data.id, name: emulatorQuery.data.name }}
+          customFields={customFieldDefinitionsQuery.data}
         />
       )}
     </div>

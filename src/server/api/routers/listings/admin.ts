@@ -32,7 +32,7 @@ import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifica
 import { listingStatsCache } from '@/server/utils/cache/instances'
 import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
 import { paginate } from '@/server/utils/pagination'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Prisma, ApprovalStatus, TrustAction, ReportStatus, Role } from '@orm'
 
 const LISTING_STATS_CACHE_KEY = 'listing-stats'
@@ -48,7 +48,7 @@ export const adminRouter = createTRPCRouter({
     let where: Prisma.ListingWhereInput = { status: ApprovalStatus.PENDING }
 
     // For developers, only show listings for their verified emulators
-    if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+    if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
       // Get user's verified emulators
       const verifiedEmulators = await ctx.prisma.verifiedDeveloper.findMany({
         where: { userId: ctx.session.user.id },
@@ -180,8 +180,8 @@ export const adminRouter = createTRPCRouter({
   approve: protectedProcedure.input(ApproveListingSchema).mutation(async ({ ctx, input }) => {
     // Check if user has permission to approve listings
     // Either through APPROVE_LISTINGS permission or being a verified developer
-    const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
-    const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+    const isModerator = hasRolePermission(ctx.session.user.role, Role.MODERATOR)
+    const isDeveloper = hasRolePermission(ctx.session.user.role, Role.DEVELOPER)
 
     if (!isModerator && !isDeveloper) {
       return ResourceError.listing.requiresDeveloperToApprove()
@@ -219,7 +219,7 @@ export const adminRouter = createTRPCRouter({
     }
 
     // For developers, verify they can approve this emulator's listings
-    if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+    if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
       const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
         where: {
           userId_emulatorId: {
@@ -306,8 +306,8 @@ export const adminRouter = createTRPCRouter({
   reject: protectedProcedure.input(RejectListingSchema).mutation(async ({ ctx, input }) => {
     // Check if user has permission to reject listings
     // Either through APPROVE_LISTINGS permission or being a verified developer
-    const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
-    const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+    const isModerator = hasRolePermission(ctx.session.user.role, Role.MODERATOR)
+    const isDeveloper = hasRolePermission(ctx.session.user.role, Role.DEVELOPER)
 
     if (!isModerator && !isDeveloper) {
       return ResourceError.listing.requiresDeveloperToReject()
@@ -332,7 +332,7 @@ export const adminRouter = createTRPCRouter({
     }
 
     // For developers, verify they can reject this emulator's listings
-    if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+    if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
       const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
         where: {
           userId_emulatorId: {
@@ -506,8 +506,8 @@ export const adminRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Check if user has permission to approve listings
       // Either through APPROVE_LISTINGS permission or being a verified developer
-      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
-      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+      const isModerator = hasRolePermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasRolePermission(ctx.session.user.role, Role.DEVELOPER)
 
       if (!isModerator && !isDeveloper) {
         return ResourceError.listing.requiresDeveloperToApprove()
@@ -547,7 +547,7 @@ export const adminRouter = createTRPCRouter({
         })
 
         // For developers, verify they can approve these emulator listings
-        if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
           const userVerifiedEmulators = await tx.verifiedDeveloper.findMany({
             where: { userId: adminUserId },
             select: { emulatorId: true },
@@ -705,8 +705,8 @@ export const adminRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Check if user has permission to reject listings
       // Either through APPROVE_LISTINGS permission or being a verified developer
-      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
-      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+      const isModerator = hasRolePermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasRolePermission(ctx.session.user.role, Role.DEVELOPER)
 
       if (!isModerator && !isDeveloper) {
         return ResourceError.listing.requiresDeveloperToReject()
@@ -730,7 +730,7 @@ export const adminRouter = createTRPCRouter({
         })
 
         // For developers, verify they can reject these emulator listings
-        if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
           const userVerifiedEmulators = await tx.verifiedDeveloper.findMany({
             where: { userId: adminUserId },
             select: { emulatorId: true },
@@ -953,7 +953,7 @@ export const adminRouter = createTRPCRouter({
 
   getForEdit: protectedProcedure.input(GetListingForEditSchema).query(async ({ ctx, input }) => {
     // Allow moderators and above to edit listings
-    if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+    if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
       return ResourceError.listing.requiresModeratorToEdit()
     }
     const listing = await ctx.prisma.listing.findUnique({
@@ -979,7 +979,7 @@ export const adminRouter = createTRPCRouter({
     .input(UpdateListingAdminSchema)
     .mutation(async ({ ctx, input }) => {
       // Allow moderators and above to update listings
-      if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+      if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
         return ResourceError.listing.requiresModeratorToUpdate()
       }
       const { id, customFieldValues, ...updateData } = input
@@ -1031,8 +1031,8 @@ export const adminRouter = createTRPCRouter({
 
   getListingConfig: protectedProcedure.input(GetListingByIdSchema).query(async ({ ctx, input }) => {
     // Check if user has admin permissions or is a verified developer for this emulator
-    const isAdmin = hasPermission(ctx.session.user.role, Role.ADMIN)
-    const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+    const isAdmin = hasRolePermission(ctx.session.user.role, Role.ADMIN)
+    const isDeveloper = hasRolePermission(ctx.session.user.role, Role.DEVELOPER)
 
     if (!isAdmin && !isDeveloper) {
       return ResourceError.listing.requiresAdminOrDeveloper()

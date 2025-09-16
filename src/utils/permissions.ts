@@ -8,7 +8,7 @@ import { Role } from '@orm'
  * @param userRole - The role of the user attempting to perform the action
  * @param requiredRole - The minimum role required to perform the action
  */
-export function hasPermission(userRole?: Role | null, requiredRole?: Role): boolean {
+export function hasRolePermission(userRole?: Role | null, requiredRole?: Role): boolean {
   if (!userRole) return false
   if (!requiredRole) return true
 
@@ -40,7 +40,7 @@ export function canEditComment(
 ): boolean {
   if (!currentUserId || !commentUserId) return false
   // Moderators and above can edit any comment
-  if (hasPermission(userRole, Role.MODERATOR)) return true
+  if (hasRolePermission(userRole, Role.MODERATOR)) return true
   // Users can edit their own comments
   return commentUserId === currentUserId
 }
@@ -59,7 +59,7 @@ export function canDeleteComment(
 ): boolean {
   if (!currentUserId || !commentUserId) return false
   // Moderators and above can delete any comment (for offensive/inappropriate content)
-  if (hasPermission(userRole, Role.MODERATOR)) return true
+  if (hasRolePermission(userRole, Role.MODERATOR)) return true
   // Users can delete their own comments
   return commentUserId === currentUserId
 }
@@ -71,5 +71,5 @@ export function canDeleteComment(
  */
 export function isModerator(userRole?: Role | null): boolean {
   if (!userRole) return false
-  return hasPermission(userRole, Role.MODERATOR)
+  return hasRolePermission(userRole, Role.MODERATOR)
 }

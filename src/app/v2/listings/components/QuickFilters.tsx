@@ -15,7 +15,7 @@ import {
   User,
   type LucideIcon,
 } from 'lucide-react'
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { Badge, Button, PerformanceBadge } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { cn } from '@/lib/utils'
@@ -36,7 +36,7 @@ interface SortOption {
   field: SortField | null
   direction: SortDirection | null
   label: string
-  icon: React.ReactNode
+  icon: ReactNode
 }
 
 interface QuickFilter {

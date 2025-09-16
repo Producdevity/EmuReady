@@ -30,7 +30,7 @@ import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { PERMISSIONS } from '@/utils/permission-system'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import BanDetailsModal from './components/BanDetailsModal'
 import CreateBanModal from './components/CreateBanModal'
@@ -379,7 +379,7 @@ function AdminUserBansPage() {
                               disabled={liftBan.isPending}
                             />
                           )}
-                          {hasPermission(currentUserRole, Role.ADMIN) && (
+                          {hasRolePermission(currentUserRole, Role.ADMIN) && (
                             <DeleteButton
                               title="Archive"
                               onClick={() => openArchiveModal(ban)}

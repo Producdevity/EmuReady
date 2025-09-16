@@ -31,7 +31,7 @@ import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import { getRoleVariant } from '@/utils/badgeColors'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { PERMISSIONS } from '@/utils/permission-system'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { type Role, Role as RoleEnum } from '@orm'
 import UserBadgeModal from './components/UserBadgeModal'
 import UserDetailsModal from './components/UserDetailsModal'
@@ -90,10 +90,10 @@ function AdminUsersPage() {
   const canManageBadges = currentUserQuery.data?.permissions?.includes(PERMISSIONS.MANAGE_BADGES)
   const canChangeRoles = currentUserQuery.data?.permissions?.includes(PERMISSIONS.CHANGE_USER_ROLES)
   const isModerator =
-    hasPermission(currentUserQuery.data?.role, RoleEnum.MODERATOR) &&
-    !hasPermission(currentUserQuery.data?.role, RoleEnum.ADMIN)
+    hasRolePermission(currentUserQuery.data?.role, RoleEnum.MODERATOR) &&
+    !hasRolePermission(currentUserQuery.data?.role, RoleEnum.ADMIN)
   const canBanUsers =
-    hasPermission(currentUserQuery.data?.role, RoleEnum.MODERATOR) &&
+    hasRolePermission(currentUserQuery.data?.role, RoleEnum.MODERATOR) &&
     currentUserQuery.data?.permissions?.includes(PERMISSIONS.MANAGE_USER_BANS)
 
   const usersQuery = api.users.get.useQuery({

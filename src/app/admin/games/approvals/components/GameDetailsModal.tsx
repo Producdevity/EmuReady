@@ -27,7 +27,7 @@ import { type RouterOutput } from '@/types/trpc'
 import { type Maybe, type Nullable } from '@/types/utils'
 import { copyToClipboard } from '@/utils/copyToClipboard'
 import getImageUrl from '@/utils/getImageUrl'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import ImagePreviewModal from './ImagePreviewModal'
 
@@ -60,7 +60,7 @@ export default function GameDetailsModal(props: Props) {
   // Get current user to check permissions
   const currentUserQuery = api.users.me.useQuery()
   const isSuperAdmin = currentUserQuery.data?.role
-    ? hasPermission(currentUserQuery.data.role, Role.SUPER_ADMIN)
+    ? hasRolePermission(currentUserQuery.data.role, Role.SUPER_ADMIN)
     : false
 
   if (!props.selectedGame) return null

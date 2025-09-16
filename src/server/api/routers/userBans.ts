@@ -19,7 +19,7 @@ import {
 import { UserBansRepository } from '@/server/repositories/user-bans.repository'
 import { logAudit, buildDiff } from '@/server/services/audit.service'
 import { PERMISSIONS } from '@/utils/permission-system'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { AuditAction, AuditEntityType, Role } from '@orm'
 
 export const userBansRouter = createTRPCRouter({
@@ -58,7 +58,7 @@ export const userBansRouter = createTRPCRouter({
 
   create: protectedProcedure.input(CreateUserBanSchema).mutation(async ({ ctx, input }) => {
     // Allow moderators and above to create bans
-    if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+    if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
       return ResourceError.userBan.requiresModerator()
     }
 
@@ -106,7 +106,7 @@ export const userBansRouter = createTRPCRouter({
 
   update: protectedProcedure.input(UpdateUserBanSchema).mutation(async ({ ctx, input }) => {
     // Allow moderators and above to update bans
-    if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+    if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
       return ResourceError.userBan.requiresModeratorToUpdate()
     }
 
@@ -167,7 +167,7 @@ export const userBansRouter = createTRPCRouter({
 
   lift: protectedProcedure.input(LiftUserBanSchema).mutation(async ({ ctx, input }) => {
     // Allow moderators and above to lift bans
-    if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+    if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
       return ResourceError.userBan.requiresModeratorToLift()
     }
 
@@ -223,7 +223,7 @@ export const userBansRouter = createTRPCRouter({
 
   delete: protectedProcedure.input(DeleteUserBanSchema).mutation(async ({ ctx, input }) => {
     // Only ADMIN and SUPER_ADMIN can archive (soft-delete) bans
-    if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
+    if (!hasRolePermission(ctx.session.user.role, Role.ADMIN)) {
       return ResourceError.userBan.requiresModeratorToDelete()
     }
 

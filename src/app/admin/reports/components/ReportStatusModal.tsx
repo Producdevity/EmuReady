@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react'
 import { Button, Input, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type ReportStatusType } from '@/schemas/listingReport'
@@ -49,7 +49,7 @@ function ReportStatusModal(props: Props) {
     }
   }, [props.isOpen, props.report])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!props.report) return
 
@@ -139,7 +139,7 @@ function ReportStatusModal(props: Props) {
             as="textarea"
             id="reviewNotes"
             value={reviewNotes}
-            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+            onChange={(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
               setReviewNotes(e.target.value)
             }
             rows={4}

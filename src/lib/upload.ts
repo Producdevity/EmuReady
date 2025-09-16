@@ -2,7 +2,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { prisma } from '@/server/db'
 import { IMAGE_EXTENSIONS, type ImageExtension } from '@/utils/imageValidation'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 
 // File size limit in bytes (5MB)
@@ -81,7 +81,7 @@ export async function checkUploadPermissions(
 
   if (!user) return { success: false, error: 'User not found', status: 404 }
 
-  if (!hasPermission(user.role, config.requiredRole)) {
+  if (!hasRolePermission(user.role, config.requiredRole)) {
     return {
       success: false,
       error: 'Insufficient permissions',

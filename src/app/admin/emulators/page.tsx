@@ -35,7 +35,7 @@ import { type RouterInput } from '@/types/trpc'
 import { copyToClipboard } from '@/utils/copyToClipboard'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
-import { hasPermission as hasRolePermission } from '@/utils/permissions'
+import { hasRolePermission as hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 
 type EmulatorSortField = 'name' | 'systemCount' | 'listingCount'

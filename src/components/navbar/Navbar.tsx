@@ -9,7 +9,7 @@ import { LogoIcon, LoadingIcon } from '@/components/icons'
 import NotificationCenter from '@/components/notifications/NotificationCenter'
 import { ThemeToggle } from '@/components/ui'
 import analytics from '@/lib/analytics'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import { navbarItems } from './data'
 
@@ -124,7 +124,7 @@ function Navbar() {
               <>
                 {user ? (
                   <div className="flex items-center space-x-3">
-                    {hasPermission(userRole, Role.DEVELOPER) && (
+                    {hasRolePermission(userRole, Role.DEVELOPER) && (
                       <Link
                         href="/admin"
                         className="px-4 py-2.5 bg-gradient-to-r
@@ -136,7 +136,7 @@ function Navbar() {
                         Admin
                       </Link>
                     )}
-                    {hasPermission(userRole, Role.MODERATOR) && (
+                    {hasRolePermission(userRole, Role.MODERATOR) && (
                       <Link
                         href="/v2/listings"
                         className="px-4 py-2.5 bg-gradient-to-r
@@ -253,7 +253,7 @@ function Navbar() {
                   >
                     Profile
                   </Link>
-                  {hasPermission(userRole, Role.AUTHOR) && (
+                  {hasRolePermission(userRole, Role.AUTHOR) && (
                     <Link
                       href="/listings/new"
                       className="block px-4 py-3 rounded-xl font-semibold text-base bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg"
@@ -262,7 +262,7 @@ function Navbar() {
                       Create Listing
                     </Link>
                   )}
-                  {hasPermission(userRole, Role.DEVELOPER) && (
+                  {hasRolePermission(userRole, Role.DEVELOPER) && (
                     <Link
                       href="/admin"
                       className="block px-4 py-3 rounded-xl font-semibold text-base bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg"

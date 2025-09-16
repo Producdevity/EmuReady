@@ -4,7 +4,7 @@ import { Joystick, Search, Filter, Eye, EyeOff, List } from 'lucide-react'
 import { type ChangeEvent } from 'react'
 import { Input, Autocomplete, ThreeWayToggle, type ThreeWayToggleOption } from '@/components/ui'
 import { api } from '@/lib/api'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import type { AutocompleteOptionBase } from '@/components/ui/form/Autocomplete'
 
@@ -29,7 +29,7 @@ interface Props {
 
 function GameFilters(props: Props) {
   const userQuery = api.users.me.useQuery()
-  const isModerator = hasPermission(userQuery.data?.role, Role.MODERATOR)
+  const isModerator = hasRolePermission(userQuery.data?.role, Role.MODERATOR)
 
   const listingFilterOptions: [
     ThreeWayToggleOption<ListingFilterValue>,

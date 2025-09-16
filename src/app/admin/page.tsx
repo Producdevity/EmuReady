@@ -1,7 +1,7 @@
 import { RedirectToSignIn } from '@clerk/nextjs'
 import { type Metadata } from 'next'
 import { getCurrentUser } from '@/server/utils/auth'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import { AdminDashboard } from './dashboard/AdminDashboard'
 import {
@@ -20,7 +20,7 @@ async function AdminDashboardPage() {
 
   if (!user) return <RedirectToSignIn />
 
-  if (!hasPermission(user.role, Role.DEVELOPER)) {
+  if (!hasRolePermission(user.role, Role.DEVELOPER)) {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Access Denied</h2>
@@ -31,8 +31,8 @@ async function AdminDashboardPage() {
     )
   }
 
-  const isSuperAdmin = hasPermission(user.role, Role.SUPER_ADMIN)
-  const isAdmin = hasPermission(user.role, Role.ADMIN)
+  const isSuperAdmin = hasRolePermission(user.role, Role.SUPER_ADMIN)
+  const isAdmin = hasRolePermission(user.role, Role.ADMIN)
   const isModerator = user.role === Role.MODERATOR
   const isDeveloper = user.role === Role.DEVELOPER
 

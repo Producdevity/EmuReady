@@ -12,7 +12,7 @@ import { prisma } from '@/server/db'
 import { hasDeveloperAccessToEmulator } from '@/server/utils/permissions'
 import { type Nullable } from '@/types/utils'
 import { hasPermissionInContext, PERMISSIONS } from '@/utils/permission-system'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 
 // ===== Mobile Permission Procedure Shortcuts =====
@@ -391,7 +391,7 @@ export const mobileAuthorProcedure = mt.procedure
     if (!ctx.session?.user) return AppError.unauthorized()
 
     // For now, we consider User as Author
-    if (!hasPermission(ctx.session.user.role, Role.USER)) {
+    if (!hasRolePermission(ctx.session.user.role, Role.USER)) {
       AppError.forbidden()
     }
 
@@ -412,7 +412,7 @@ export const mobileDeveloperProcedure = mt.procedure
       AppError.unauthorized()
     }
 
-    if (!hasPermission(ctx.session.user.role, Role.DEVELOPER)) {
+    if (!hasRolePermission(ctx.session.user.role, Role.DEVELOPER)) {
       AppError.insufficientRole(Role.DEVELOPER)
     }
 
@@ -431,7 +431,7 @@ export const mobileSuperAdminProcedure = mt.procedure
   .use(({ ctx, next }) => {
     if (!ctx.session?.user) return AppError.unauthorized()
 
-    if (!hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
+    if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
       AppError.insufficientRole(Role.SUPER_ADMIN)
     }
 

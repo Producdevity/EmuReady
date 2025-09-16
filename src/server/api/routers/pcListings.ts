@@ -60,7 +60,12 @@ import { paginate } from '@/server/utils/pagination'
 import { validatePagination } from '@/server/utils/security-validation'
 import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
 import { PERMISSIONS, roleIncludesRole } from '@/utils/permission-system'
-import { canDeleteComment, canEditComment, hasPermission, isModerator } from '@/utils/permissions'
+import {
+  canDeleteComment,
+  canEditComment,
+  hasRolePermission,
+  isModerator,
+} from '@/utils/permissions'
 import { type Prisma, ApprovalStatus, Role, ReportStatus, TrustAction } from '@orm'
 
 export const pcListingsRouter = createTRPCRouter({
@@ -125,7 +130,7 @@ export const pcListingsRouter = createTRPCRouter({
     const isOwner = pcListing.authorId === ctx.session.user.id
 
     // Moderators and higher can always edit any PC listing (but still reflect true ownership)
-    if (hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+    if (hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
       return {
         canEdit: true,
         isOwner,
@@ -298,7 +303,7 @@ export const pcListingsRouter = createTRPCRouter({
     // Only allow owners or moderators to edit
     if (
       pcListing.authorId !== ctx.session.user.id &&
-      !hasPermission(ctx.session.user.role, Role.MODERATOR)
+      !hasRolePermission(ctx.session.user.role, Role.MODERATOR)
     ) {
       return ResourceError.pcListing.canOnlyEditOwn()
     }
@@ -307,14 +312,14 @@ export const pcListingsRouter = createTRPCRouter({
     switch (pcListing.status) {
       case ApprovalStatus.REJECTED:
         // Moderators can edit rejected listings
-        if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+        if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
           return ResourceError.pcListing.cannotEditRejected()
         }
         break
 
       case ApprovalStatus.APPROVED: {
         // Moderators can always edit approved listings
-        if (hasPermission(ctx.session.user.role, Role.MODERATOR)) break
+        if (hasRolePermission(ctx.session.user.role, Role.MODERATOR)) break
 
         // Regular users have a time limit for editing approved listings
         if (!pcListing.processedAt) return ResourceError.pcListing.approvalTimeNotFound()
@@ -384,8 +389,8 @@ export const pcListingsRouter = createTRPCRouter({
   // Admin procedures
   pending: protectedProcedure.input(GetPendingPcListingsSchema).query(async ({ ctx, input }) => {
     // Check if user has permission to view pending listings
-    const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
-    const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+    const isModerator = hasRolePermission(ctx.session.user.role, Role.MODERATOR)
+    const isDeveloper = hasRolePermission(ctx.session.user.role, Role.DEVELOPER)
 
     if (!isModerator && !isDeveloper) {
       return ResourceError.pcListing.requiresDeveloperToView()
@@ -427,8 +432,8 @@ export const pcListingsRouter = createTRPCRouter({
   approve: protectedProcedure.input(ApprovePcListingSchema).mutation(async ({ ctx, input }) => {
     // Check if user has permission to approve listings
     // Either through MODERATOR role or being a verified developer
-    const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
-    const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+    const isModerator = hasRolePermission(ctx.session.user.role, Role.MODERATOR)
+    const isDeveloper = hasRolePermission(ctx.session.user.role, Role.DEVELOPER)
 
     if (!isModerator && !isDeveloper) {
       return ResourceError.pcListing.requiresDeveloperToApprove()
@@ -466,8 +471,8 @@ export const pcListingsRouter = createTRPCRouter({
   reject: protectedProcedure.input(RejectPcListingSchema).mutation(async ({ ctx, input }) => {
     // Check if user has permission to reject listings
     // Either through MODERATOR role or being a verified developer
-    const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
-    const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+    const isModerator = hasRolePermission(ctx.session.user.role, Role.MODERATOR)
+    const isDeveloper = hasRolePermission(ctx.session.user.role, Role.DEVELOPER)
 
     if (!isModerator && !isDeveloper) {
       return ResourceError.pcListing.requiresDeveloperToReject()
@@ -511,8 +516,8 @@ export const pcListingsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Check if user has permission to approve listings
       // Either through MODERATOR role or being a verified developer
-      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
-      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+      const isModerator = hasRolePermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasRolePermission(ctx.session.user.role, Role.DEVELOPER)
 
       if (!isModerator && !isDeveloper) {
         return ResourceError.pcListing.requiresDeveloperToApprove()
@@ -540,8 +545,8 @@ export const pcListingsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       // Check if user has permission to reject listings
       // Either through MODERATOR role or being a verified developer
-      const isModerator = hasPermission(ctx.session.user.role, Role.MODERATOR)
-      const isDeveloper = hasPermission(ctx.session.user.role, Role.DEVELOPER)
+      const isModerator = hasRolePermission(ctx.session.user.role, Role.MODERATOR)
+      const isDeveloper = hasRolePermission(ctx.session.user.role, Role.DEVELOPER)
 
       if (!isModerator && !isDeveloper) {
         return ResourceError.pcListing.requiresDeveloperToReject()

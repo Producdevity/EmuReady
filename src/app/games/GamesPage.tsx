@@ -9,7 +9,7 @@ import { Pagination, LoadingSpinner, Button } from '@/components/ui'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { api } from '@/lib/api'
 import { filterNullAndEmpty } from '@/utils/filter'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import GameCard from './components/GameCard'
 import GameFilters from './components/GameFilters'
@@ -187,7 +187,7 @@ function GamesContent() {
   }
 
   // Moderators can add games manually, others use IGDB search
-  const addGameHref = hasPermission(userQuery.data?.role, Role.MODERATOR)
+  const addGameHref = hasRolePermission(userQuery.data?.role, Role.MODERATOR)
     ? '/games/new'
     : '/games/new/search/v2'
 

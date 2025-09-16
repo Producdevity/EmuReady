@@ -37,7 +37,7 @@ import { cn } from '@/lib/utils'
 import { type RouterInput } from '@/types/trpc'
 import { filterNullAndEmpty } from '@/utils/filter'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role, ApprovalStatus } from '@orm'
 import PcFiltersContent from './components/PcFiltersContent'
 import PcFiltersSidebar from './components/PcFiltersSidebar'
@@ -82,7 +82,7 @@ function PcListingsPage() {
   const userQuery = api.users.me.useQuery()
 
   const userRole = userQuery?.data?.role
-  const isAdmin = userRole ? hasPermission(userRole, Role.ADMIN) : false
+  const isAdmin = userRole ? hasRolePermission(userRole, Role.ADMIN) : false
   const isModerator = userRole ? roleIncludesRole(userRole, Role.MODERATOR) : false
 
   // TODO: handle MultiSelect async instead of fetching 1000 items

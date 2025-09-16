@@ -1,5 +1,5 @@
 import { prisma } from '@/server/db'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { type PrismaClient, Role } from '@orm'
 
 /**
@@ -27,7 +27,7 @@ export async function hasDeveloperAccessToEmulator(
   if (!user) return false
 
   // If user is ADMIN or SUPER_ADMIN, they automatically have access to all emulators
-  if (hasPermission(user.role, Role.ADMIN)) return true
+  if (hasRolePermission(user.role, Role.ADMIN)) return true
 
   // For DEVELOPER role, check if they are verified for this specific emulator
   if (user.role === Role.DEVELOPER) {

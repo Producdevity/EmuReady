@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { getCacheMetrics } from '@/lib/cache/seo-cache'
 import { exportMetrics, seoMetrics } from '@/lib/monitoring/seo-metrics'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 
 /**
@@ -21,7 +21,7 @@ export async function GET() {
   const metadata = sessionClaims?.metadata as { role?: Role } | undefined
   const userRole = metadata?.role
 
-  if (!userRole || !hasPermission(userRole, Role.MODERATOR)) {
+  if (!userRole || !hasRolePermission(userRole, Role.MODERATOR)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

@@ -3,7 +3,7 @@ import { prisma } from '@/server/db'
 import { notificationAnalyticsService } from '@/server/notifications/analyticsService'
 import { notificationBatchingService } from '@/server/notifications/batchingService'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { ms } from '@/utils/time'
 import {
   DeliveryChannel,
@@ -291,7 +291,7 @@ export class NotificationService {
           select: { role: true },
         })
         // Only send system notifications to moderators and above
-        return user ? hasPermission(user.role, Role.MODERATOR) : false
+        return user ? hasRolePermission(user.role, Role.MODERATOR) : false
       }
       return true // Default to enabled for other notification types
     }

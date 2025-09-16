@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { Filter, Search, X } from 'lucide-react'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, type KeyboardEvent } from 'react'
 import { Button, Input } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
@@ -44,7 +44,7 @@ export function SearchBar(props: Props) {
     inputRef.current?.blur()
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = (e: KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSearchSubmit()
     }

@@ -7,7 +7,7 @@ import {
 } from '@/schemas/igdb'
 import { createTRPCRouter, publicProcedure, protectedProcedure } from '@/server/api/trpc'
 import * as igdb from '@/server/igdb'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 
 export const igdbRouter = createTRPCRouter({
@@ -99,7 +99,7 @@ export const igdbRouter = createTRPCRouter({
   // For moderator image selector
   getGameImages: protectedProcedure.input(GetGameImagesSchema).query(async ({ ctx, input }) => {
     // Check if user is a moderator
-    if (!hasPermission(ctx.session.user.role, Role.MODERATOR)) {
+    if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
       return AppError.insufficientRole(Role.MODERATOR)
     }
 
@@ -118,7 +118,7 @@ export const igdbRouter = createTRPCRouter({
   // Search for platforms (useful for admin platform mapping)
   searchPlatforms: protectedProcedure.input(SearchPlatformsSchema).query(async ({ ctx, input }) => {
     // Check if user is an admin
-    if (!hasPermission(ctx.session.user.role, Role.ADMIN)) {
+    if (!hasRolePermission(ctx.session.user.role, Role.ADMIN)) {
       return AppError.insufficientRole(Role.ADMIN)
     }
 

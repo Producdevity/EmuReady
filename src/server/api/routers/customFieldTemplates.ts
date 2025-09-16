@@ -7,7 +7,7 @@ import {
   ApplyCustomFieldTemplateSchema,
 } from '@/schemas/customFieldTemplate'
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { CustomFieldType, Prisma, Role } from '@orm'
 import type { TRPCContext } from '@/server/api/trpc'
 
@@ -59,13 +59,13 @@ function createFieldData(field: TemplateField, index: number) {
 }
 
 async function requireSuperAdminPermission(ctx: TRPCContext) {
-  if (!ctx.session?.user?.role || !hasPermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
+  if (!ctx.session?.user?.role || !hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
     AppError.insufficientRole(Role.SUPER_ADMIN)
   }
 }
 
 async function requireAdminPermission(ctx: TRPCContext) {
-  if (!ctx.session?.user?.role || !hasPermission(ctx.session.user.role, Role.ADMIN)) {
+  if (!ctx.session?.user?.role || !hasRolePermission(ctx.session.user.role, Role.ADMIN)) {
     AppError.insufficientRole(Role.ADMIN)
   }
 }

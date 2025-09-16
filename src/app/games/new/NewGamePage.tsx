@@ -16,7 +16,7 @@ import {
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { hasPermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import NotSignedInMessage from './components/NotSignedInMessage'
 
@@ -62,7 +62,12 @@ function AddGamePage() {
 
   // Redirect non-authors users to IGDB search page
   useEffect(() => {
-    if (isLoaded && user && userQuery.data && !hasPermission(userQuery.data.role, Role.AUTHOR)) {
+    if (
+      isLoaded &&
+      user &&
+      userQuery.data &&
+      !hasRolePermission(userQuery.data.role, Role.AUTHOR)
+    ) {
       router.replace('/games/new/search/v2')
     }
   }, [isLoaded, user, userQuery.data, router])
@@ -71,7 +76,7 @@ function AddGamePage() {
 
   if (!user || !userQuery.data) return <NotSignedInMessage />
 
-  const isAuthor = hasPermission(userQuery.data.role, Role.AUTHOR)
+  const isAuthor = hasRolePermission(userQuery.data.role, Role.AUTHOR)
 
   // If not author, show loading while redirecting
   if (!isAuthor) return <LoadingSpinner />

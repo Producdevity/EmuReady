@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FormEvent, useEffect } from 'react'
+import { useState, type FormEvent, type ChangeEvent, useEffect } from 'react'
 import { Button, Input, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterInput } from '@/types/trpc'
@@ -137,7 +137,7 @@ function PerformanceScaleModal(props: Props) {
             as="textarea"
             id="description"
             value={description}
-            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+            onChange={(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
               setDescription(e.target.value)
             }
             className="w-full"
