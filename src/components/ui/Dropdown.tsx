@@ -1,5 +1,6 @@
 'use client'
 
+import { ChevronDown } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 
@@ -44,39 +45,35 @@ export function Dropdown(props: Props) {
         </label>
       )}
       <button
-        className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600
-          rounded-md py-2 px-3 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+        className="relative w-full inline-flex items-center justify-between gap-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 py-2 px-3 text-left shadow-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500"
         onClick={() => setIsOpen(!isOpen)}
         type="button"
       >
         <span
-          className={`block truncate ${!selectedOption ? 'text-gray-500' : 'text-gray-900 dark:text-white'}`}
+          className={cn(
+            'flex-1 truncate text-sm',
+            selectedOption ? 'text-gray-900 dark:text-gray-50' : 'text-gray-500 dark:text-gray-400',
+          )}
         >
           {selectedOption ? selectedOption.label : (props.placeholder ?? 'Select an option')}
         </span>
-        <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-          <svg
-            className="h-5 w-5 text-gray-400"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </span>
+        <ChevronDown
+          className="h-4 w-4 flex-shrink-0 text-gray-500 dark:text-gray-400"
+          aria-hidden
+        />
       </button>
 
       {isOpen && (
-        <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto max-h-60">
+        <div className="absolute z-20 mt-2 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-gray-700 dark:bg-gray-800">
           {props.options.map((option) => (
             <div
               key={option.value}
-              className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-100 dark:hover:bg-gray-700
-                ${option.value === props.value ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200' : 'text-gray-900 dark:text-white'}`}
+              className={cn(
+                'cursor-pointer select-none px-3 py-2 text-sm transition',
+                option.value === props.value
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-100'
+                  : 'text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-700',
+              )}
               onClick={() => {
                 props.onChange(option.value)
                 setIsOpen(false)
