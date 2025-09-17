@@ -10,6 +10,7 @@ import { logger } from '@/lib/logger'
 import { ms } from '@/utils/time'
 import { initializeNotificationService } from './notifications/init'
 import { initializeSwitchGameService } from './utils/switchGameInit'
+import { initializeThreeDsGameService } from './utils/threeDsGameInit'
 
 interface ServiceStatus {
   initialized: boolean
@@ -26,7 +27,12 @@ const globalForServices = globalThis as unknown as {
 const serviceStatus: Record<string, ServiceStatus> = globalForServices.serviceStatus ?? {
   notification: { initialized: false, lastAttempt: null, failureCount: 0 },
   switchGame: { initialized: false, lastAttempt: null, failureCount: 0 },
+  threeDsGame: { initialized: false, lastAttempt: null, failureCount: 0 },
 }
+
+serviceStatus.notification ??= { initialized: false, lastAttempt: null, failureCount: 0 }
+serviceStatus.switchGame ??= { initialized: false, lastAttempt: null, failureCount: 0 }
+serviceStatus.threeDsGame ??= { initialized: false, lastAttempt: null, failureCount: 0 }
 
 if (process.env.NODE_ENV !== 'production') globalForServices.serviceStatus = serviceStatus
 
@@ -115,19 +121,56 @@ async function initSwitchGameServiceWithRetry(): Promise<boolean> {
 }
 
 /**
+ * Initialize 3DS game service with retry logic
+ */
+async function initThreeDsGameServiceWithRetry(): Promise<boolean> {
+  const status = serviceStatus.threeDsGame
+
+  if (status.initialized) return true
+
+  if (status.failureCount >= MAX_RETRY_ATTEMPTS) {
+    const timeSinceLastAttempt = status.lastAttempt
+      ? Date.now() - status.lastAttempt.getTime()
+      : Infinity
+
+    if (timeSinceLastAttempt < RETRY_DELAY_MS) return false
+
+    status.failureCount = 0
+  }
+
+  status.lastAttempt = new Date()
+
+  try {
+    await initializeThreeDsGameService()
+    status.initialized = true
+    status.failureCount = 0
+    logger.info('✅ 3DS game service initialized successfully')
+    return true
+  } catch (error) {
+    status.failureCount++
+    logger.error(
+      `❌ Failed to initialize 3DS game service (attempt ${status.failureCount}/${MAX_RETRY_ATTEMPTS}):`,
+      error,
+    )
+    return false
+  }
+}
+
+/**
  * Main initialization function that handles all services
  */
 export async function initializeServer(): Promise<void> {
   logger.info('🚀 Initializing server services...')
 
   // Initialize services in parallel with individual error handling
-  const [notificationSuccess, switchGameSuccess] = await Promise.all([
+  const [notificationSuccess, switchGameSuccess, threeDsGameSuccess] = await Promise.all([
     initNotificationServiceWithRetry(),
     initSwitchGameServiceWithRetry(),
+    initThreeDsGameServiceWithRetry(),
   ])
 
   // Log overall status
-  const allSuccess = notificationSuccess && switchGameSuccess
+  const allSuccess = notificationSuccess && switchGameSuccess && threeDsGameSuccess
   if (allSuccess) {
     logger.info('✅ All server services initialized successfully')
   } else {
@@ -145,6 +188,8 @@ export async function ensureServicesInitialized(): Promise<void> {
 
   if (!serviceStatus.switchGame.initialized) promises.push(initSwitchGameServiceWithRetry())
 
+  if (!serviceStatus.threeDsGame.initialized) promises.push(initThreeDsGameServiceWithRetry())
+
   if (promises.length > 0) await Promise.all(promises)
 }
 
@@ -155,6 +200,7 @@ export function getServiceStatus() {
   return {
     notification: { ...serviceStatus.notification },
     switchGame: { ...serviceStatus.switchGame },
+    threeDsGame: { ...serviceStatus.threeDsGame },
   }
 }
 

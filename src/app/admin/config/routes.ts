@@ -30,6 +30,9 @@ export const ADMIN_ROUTES = {
   VERIFIED_DEVELOPERS: '/admin/verified-developers',
   BADGES: '/admin/badges',
 
+  // Tools
+  TITLE_ID_TOOLS: '/admin/title-id-tools',
+
   // Reports & Monitoring
   REPORTS: '/admin/reports',
   TRUST_LOGS: '/admin/trust-logs',

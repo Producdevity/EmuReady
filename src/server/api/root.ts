@@ -1,5 +1,6 @@
 import { createTRPCRouter } from '@/server/api/trpc'
 import { activityRouter } from './routers/admin/activity'
+import { titleIdToolsRouter } from './routers/admin/titleIdTools'
 import { auditLogsRouter } from './routers/auditLogs'
 import { badgesRouter } from './routers/badges'
 import { cacheRouter } from './routers/cache'
@@ -63,6 +64,7 @@ export const appRouter = createTRPCRouter({
   verifiedDevelopers: verifiedDevelopersRouter,
   listingVerifications: listingVerificationsRouter,
   listingReports: listingReportsRouter,
+  titleIdTools: titleIdToolsRouter,
 })
 
 export type AppRouter = typeof appRouter

@@ -15,6 +15,9 @@ import {
   FindSwitchTitleIdSchema,
   GetBestSwitchTitleIdSchema,
   GetSwitchGamesStatsSchema,
+  FindThreeDsTitleIdSchema,
+  GetBestThreeDsTitleIdSchema,
+  GetThreeDsGamesStatsSchema,
   OverrideGameStatusSchema,
 } from '@/schemas/game'
 import { createGameMetadata, getTgdbGameId } from '@/schemas/gameMetadata'
@@ -51,6 +54,11 @@ import {
   getBestTitleIdMatch,
   getSwitchGamesStats,
 } from '@/server/utils/switchGameSearch'
+import {
+  findThreeDsTitleIdForGameName,
+  getBestThreeDsTitleIdMatch,
+  getThreeDsGamesStats,
+} from '@/server/utils/threeDsGameSearch'
 import { transactionalBatch } from '@/server/utils/transactions'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { ApprovalStatus, Role, TrustAction } from '@orm'
@@ -795,6 +803,56 @@ export const gamesRouter = createTRPCRouter({
     } catch (error) {
       console.error('Error getting Switch games stats:', error)
       return AppError.internalError('Failed to get Switch games statistics')
+    }
+  }),
+
+  // Nintendo 3DS Title ID lookup endpoints
+  findThreeDsTitleId: publicProcedure.input(FindThreeDsTitleIdSchema).query(async ({ input }) => {
+    const { gameName, maxResults } = input
+
+    try {
+      const results = await findThreeDsTitleIdForGameName(gameName, maxResults)
+      return {
+        success: true,
+        results,
+        query: gameName,
+        totalResults: results.length,
+      }
+    } catch (error) {
+      console.error('Error finding 3DS title ID:', error)
+      return AppError.internalError('Failed to search for 3DS title ID')
+    }
+  }),
+
+  getBestThreeDsTitleId: publicProcedure
+    .input(GetBestThreeDsTitleIdSchema)
+    .query(async ({ input }) => {
+      const { gameName } = input
+
+      try {
+        const titleId = await getBestThreeDsTitleIdMatch(gameName)
+        return {
+          success: true,
+          titleId,
+          query: gameName,
+          found: titleId !== null,
+        }
+      } catch (error) {
+        console.error('Error getting 3DS title ID match:', error)
+        return AppError.internalError('Failed to find 3DS title ID match')
+      }
+    }),
+
+  getThreeDsGamesStats: publicProcedure.input(GetThreeDsGamesStatsSchema).query(async () => {
+    try {
+      const stats = await getThreeDsGamesStats()
+      return {
+        success: true,
+        ...stats,
+      }
+    } catch (error) {
+      console.error('Error getting 3DS games stats:', error)
+      return AppError.internalError('Failed to get 3DS games statistics')
     }
   }),
 

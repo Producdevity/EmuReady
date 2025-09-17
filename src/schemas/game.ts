@@ -75,7 +75,7 @@ export const CreateGameSchema = z.object({
   imageUrl: z.string().nullable().optional(),
   boxartUrl: z.string().nullable().optional(),
   bannerUrl: z.string().nullable().optional(),
-  tgdbGameId: z.number().nullable().optional(),
+  tgdbGameId: z.number().nullable().optional(), // TODO: store in metadata
   igdbGameId: z.number().nullable().optional(), // TODO: For IGDB game creation (stored in metadata for now)
   isErotic: z.boolean().optional(),
 })
@@ -148,6 +148,18 @@ export const GetBestSwitchTitleIdSchema = z.object({
 })
 
 export const GetSwitchGamesStatsSchema = z.object({}).optional()
+
+// Nintendo 3DS Title ID lookup schemas
+export const FindThreeDsTitleIdSchema = z.object({
+  gameName: z.string().min(2, 'Game name must be at least 2 characters'),
+  maxResults: z.number().min(1).max(20).default(5),
+})
+
+export const GetBestThreeDsTitleIdSchema = z.object({
+  gameName: z.string().min(2, 'Game name must be at least 2 characters'),
+})
+
+export const GetThreeDsGamesStatsSchema = z.object({}).optional()
 
 // Type exports for repository use
 export type GetGamesInput = z.input<typeof GetGamesSchema>
