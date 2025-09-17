@@ -14,6 +14,7 @@ interface Props extends PropsWithChildren {
   onTimeRangeChange: (range: TimeRange) => void
   onRefresh: () => void
   isLoading?: boolean
+  isRefreshing?: boolean
   viewAllHref?: AdminRoute | string
   className?: string
 }
@@ -62,12 +63,12 @@ export function ActivityCard(props: Props) {
             {/* Refresh Button */}
             <button
               onClick={props.onRefresh}
-              disabled={props.isLoading}
+              disabled={props.isLoading || props.isRefreshing}
               className={cn(
                 'p-1.5 rounded-md transition-colors',
                 'hover:bg-gray-100 dark:hover:bg-gray-700',
                 'text-gray-500 dark:text-gray-400',
-                props.isLoading && 'animate-spin',
+                (props.isLoading || props.isRefreshing) && 'animate-spin',
               )}
               aria-label="Refresh"
             >
@@ -78,7 +79,12 @@ export function ActivityCard(props: Props) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-4">
+      <div
+        className={cn(
+          'flex-1 p-4 transition-opacity',
+          props.isRefreshing && !props.isLoading && 'opacity-60',
+        )}
+      >
         {props.isLoading ? (
           <div className="space-y-3">
             {[...Array(3)].map((_, i) => (

@@ -81,6 +81,12 @@ export const adminNavItems: AdminNavItem[] = [
     exact: true,
     description: 'Manage verified developers for emulators.',
   },
+  {
+    href: ADMIN_ROUTES.TITLE_ID_TOOLS,
+    label: 'Title ID Tools',
+    exact: true,
+    description: 'Test title ID provider lookups.',
+  },
 ]
 
 export const superAdminNavItems: AdminNavItem[] = [
@@ -214,6 +220,12 @@ export const moderatorNavItems: AdminNavItem[] = [
     description: 'Manage System on Chip specifications.',
   },
   {
+    href: ADMIN_ROUTES.TITLE_ID_TOOLS,
+    label: 'Title ID Tools',
+    exact: true,
+    description: 'Test handheld title ID lookups.',
+  },
+  {
     href: ADMIN_ROUTES.REPORTS,
     label: 'Reports',
     exact: true,
@@ -275,6 +287,13 @@ export function getDeveloperNavItems(emulatorIds: string[]): AdminNavItem[] {
         }
 
   navItems.push(emulatorNavItem)
+
+  navItems.push({
+    href: ADMIN_ROUTES.TITLE_ID_TOOLS,
+    label: 'Title ID Tools',
+    exact: true,
+    description: 'Test handheld title ID lookups.',
+  })
 
   return navItems
 }
