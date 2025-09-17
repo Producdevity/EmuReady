@@ -261,10 +261,23 @@ export class PcListingsRepository extends BaseRepository {
       }),
     ])
 
-    const pagination = paginate({ total: total, page, limit: limit })
+    const pagination = paginate({ total, page, limit })
+
+    const transformedListings = pcListings.map((listing) => {
+      const upVotes = listing.upvoteCount
+      const downVotes = listing.downvoteCount
+
+      return {
+        ...listing,
+        upVotes,
+        downVotes,
+        totalVotes: listing.voteCount,
+        successRate: calculateWilsonScore(upVotes, downVotes),
+      }
+    })
 
     return {
-      pcListings,
+      pcListings: transformedListings,
       pagination,
     }
   }
@@ -350,6 +363,7 @@ export class PcListingsRepository extends BaseRepository {
       // Add camelCase duplicates for API consumers that expect upVotes/downVotes
       upVotes: upvotes,
       downVotes: downvotes,
+      successRate: calculateWilsonScore(upvotes, downvotes),
       isVerifiedDeveloper: !!verified,
     }
   }
@@ -434,7 +448,7 @@ export class PcListingsRepository extends BaseRepository {
   ): Promise<
     Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.forGetById }>[]
   > {
-    return this.prisma.pcListing.findMany({
+    const listings = await this.prisma.pcListing.findMany({
       where: {
         status: ApprovalStatus.APPROVED,
         voteCount: { gte: 2 },
@@ -443,6 +457,19 @@ export class PcListingsRepository extends BaseRepository {
       include: PcListingsRepository.includes.forFeatured,
       orderBy: { createdAt: this.sortOrder },
       take: limit,
+    })
+
+    return listings.map((listing) => {
+      const upVotes = listing.upvoteCount
+      const downVotes = listing.downvoteCount
+
+      return {
+        ...listing,
+        upVotes,
+        downVotes,
+        totalVotes: listing.voteCount,
+        successRate: calculateWilsonScore(upVotes, downVotes),
+      }
     })
   }
 
@@ -565,6 +592,7 @@ export class PcListingsRepository extends BaseRepository {
         notes: notes ? sanitizeInput(notes) : (notes ?? null),
         authorId,
         status,
+        successRate: calculateWilsonScore(0, 0),
         ...((canAutoApprove || isAuthorOrHigher) && {
           processedByUserId: authorId,
           processedAt: new Date(),

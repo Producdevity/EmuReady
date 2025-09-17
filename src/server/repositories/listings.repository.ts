@@ -10,6 +10,7 @@ import {
   buildApprovalStatusFilter,
 } from '@/server/utils/query-builders'
 import { roleIncludesRole } from '@/utils/permission-system'
+import { calculateWilsonScore } from '@/utils/wilson-score'
 import { Prisma, ApprovalStatus, Role } from '@orm'
 import { BaseRepository } from './base.repository'
 
@@ -261,15 +262,20 @@ export class ListingsRepository extends BaseRepository {
       : []
     const verifiedSet = new Set(verifiedPairs.map((v) => `${v.userId}_${v.emulatorId}`))
 
-    const listingsWithStats = listings.map((listing) => ({
-      ...listing,
-      upVotes: listing.upvoteCount,
-      downVotes: listing.downvoteCount,
-      totalVotes: listing.voteCount,
-      successRate: listing.successRate,
-      userVote: userVoteMap.get(listing.id) ?? null,
-      isVerifiedDeveloper: verifiedSet.has(`${listing.authorId}_${listing.emulatorId}`),
-    }))
+    const listingsWithStats = listings.map((listing) => {
+      const upVotes = listing.upvoteCount
+      const downVotes = listing.downvoteCount
+
+      return {
+        ...listing,
+        upVotes,
+        downVotes,
+        totalVotes: listing.voteCount,
+        successRate: calculateWilsonScore(upVotes, downVotes),
+        userVote: userVoteMap.get(listing.id) ?? null,
+        isVerifiedDeveloper: verifiedSet.has(`${listing.authorId}_${listing.emulatorId}`),
+      }
+    })
 
     const pagination = paginate({
       total: total,
@@ -307,12 +313,15 @@ export class ListingsRepository extends BaseRepository {
       listing.author.verifiedDeveloperBy?.some((vd) => vd.emulatorId === listing.emulatorId) ||
       false
 
+    const upVotes = listing.upvoteCount
+    const downVotes = listing.downvoteCount
+
     return {
       ...listing,
-      upVotes: listing.upvoteCount,
-      downVotes: listing.downvoteCount,
+      upVotes,
+      downVotes,
       totalVotes: listing.voteCount,
-      successRate: listing.successRate,
+      successRate: calculateWilsonScore(upVotes, downVotes),
       userVote: userVote?.value ?? null,
       isVerifiedDeveloper,
     }
@@ -362,12 +371,15 @@ export class ListingsRepository extends BaseRepository {
       listing.author.verifiedDeveloperBy?.some((vd) => vd.emulatorId === listing.emulatorId) ||
       false
 
+    const upVotes = listing.upvoteCount
+    const downVotes = listing.downvoteCount
+
     return {
       ...listing,
-      upVotes: listing.upvoteCount,
-      downVotes: listing.downvoteCount,
+      upVotes,
+      downVotes,
       totalVotes: listing.voteCount,
-      successRate: listing.successRate,
+      successRate: calculateWilsonScore(upVotes, downVotes),
       userVote: userVote?.value ?? null,
       isVerifiedDeveloper,
     }
@@ -439,15 +451,20 @@ export class ListingsRepository extends BaseRepository {
     const verifiedSet = new Set(verifiedPairs.map((v) => `${v.userId}_${v.emulatorId}`))
 
     // Use materialized stats
-    return listings.map((listing) => ({
-      ...listing,
-      upVotes: listing.upvoteCount,
-      downVotes: listing.downvoteCount,
-      totalVotes: listing.voteCount,
-      successRate: listing.successRate,
-      userVote: null, // Featured listings don't need user vote info
-      isVerifiedDeveloper: verifiedSet.has(`${listing.authorId}_${listing.emulatorId}`),
-    }))
+    return listings.map((listing) => {
+      const upVotes = listing.upvoteCount
+      const downVotes = listing.downvoteCount
+
+      return {
+        ...listing,
+        upVotes,
+        downVotes,
+        totalVotes: listing.voteCount,
+        successRate: calculateWilsonScore(upVotes, downVotes),
+        userVote: null, // Featured listings don't need user vote info
+        isVerifiedDeveloper: verifiedSet.has(`${listing.authorId}_${listing.emulatorId}`),
+      }
+    })
   }
 
   /**
@@ -541,6 +558,7 @@ export class ListingsRepository extends BaseRepository {
           notes,
           authorId,
           status,
+          successRate: calculateWilsonScore(0, 0),
           ...((canAutoApprove || isAuthorOrHigher) && {
             processedByUserId: authorId,
             processedAt: new Date(),
