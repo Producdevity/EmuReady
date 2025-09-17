@@ -23,11 +23,13 @@ interface Props {
   timeRange: TimeRange
   onRefresh: () => void
   isLoading?: boolean
+  isRefreshing?: boolean
   className?: string
 }
 
 export function PlatformStats(props: Props) {
   const isLoading = props.isLoading ?? false
+  const isRefreshing = props.isRefreshing ?? false
 
   const stats_data = [
     {
@@ -94,12 +96,12 @@ export function PlatformStats(props: Props) {
             </span>
             <button
               onClick={props.onRefresh}
-              disabled={isLoading}
+              disabled={isLoading || isRefreshing}
               className={cn(
                 'p-1.5 rounded-md transition-colors',
                 'hover:bg-gray-100 dark:hover:bg-gray-700',
                 'text-gray-500 dark:text-gray-400',
-                isLoading && 'animate-spin',
+                (isLoading || isRefreshing) && 'animate-spin',
               )}
               aria-label="Refresh stats"
             >
@@ -110,7 +112,12 @@ export function PlatformStats(props: Props) {
       </div>
 
       {/* Stats Grid */}
-      <div className="p-4 space-y-4">
+      <div
+        className={cn(
+          'p-4 space-y-4 transition-opacity',
+          isRefreshing && !isLoading && 'opacity-60',
+        )}
+      >
         {/* Growth Stats */}
         <div className="space-y-3">
           {stats_data.map((stat) => (
