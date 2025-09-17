@@ -33,16 +33,42 @@ interface MotionProps extends PropsWithChildren {
   initial?: unknown
   animate?: unknown
   transition?: unknown
+  exit?: unknown
+  variants?: unknown
+  layout?: unknown
+  custom?: unknown
   [key: string]: unknown
+}
+
+function stripMotionProps(props: MotionProps) {
+  const {
+    whileHover,
+    whileTap,
+    initial,
+    animate,
+    transition,
+    exit,
+    variants,
+    layout,
+    custom,
+    ...rest
+  } = props
+  return rest
 }
 
 // Mock framer-motion to properly handle all motion props
 vi.mock('framer-motion', () => ({
   motion: {
-    form: ({ children, ...props }: MotionProps) => <form {...props}>{children}</form>,
-    p: ({ children, ...props }: MotionProps) => <p {...props}>{children}</p>,
-    button: ({ children, ...props }: MotionProps) => <button {...props}>{children}</button>,
-    div: ({ children, ...props }: MotionProps) => <div {...props}>{children}</div>,
+    form: ({ children, ...props }: MotionProps) => (
+      <form {...stripMotionProps(props)}>{children}</form>
+    ),
+    p: ({ children, ...props }: MotionProps) => <p {...stripMotionProps(props)}>{children}</p>,
+    button: ({ children, ...props }: MotionProps) => (
+      <button {...stripMotionProps(props)}>{children}</button>
+    ),
+    div: ({ children, ...props }: MotionProps) => (
+      <div {...stripMotionProps(props)}>{children}</div>
+    ),
   },
   AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</>,
 }))
