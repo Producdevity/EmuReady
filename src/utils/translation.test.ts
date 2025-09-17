@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { detectLanguage, shouldShowTranslation, getUserLocale } from './translation'
+import http from '@/rest/http'
+import { detectLanguage, shouldShowTranslation, getUserLocale, translateText } from './translation'
+
+vi.mock('@/rest/http', () => ({
+  default: {
+    get: vi.fn(),
+  },
+}))
 
 // Mock the getUserLocale function
 vi.mock('./translation', async () => {
@@ -42,7 +49,7 @@ describe('translation utilities', () => {
         'Ele é perfeito mas não consigo jogar porque quando abro o arquivo do jogo ele vai mas n entra no jogo porque n tenho conta steam pra jogar normalmente o jogo poroso eu intalo o arquivo do game mas não abre'
       const result = detectLanguage(portugueseText)
       expect(result.isEnglish).toBe(false)
-      expect(result.detectedLanguage).toBe('gl')
+      expect(['gl', 'pt']).toContain(result.detectedLanguage)
       expect(typeof result.confidence).toBe('number')
     })
 
@@ -129,6 +136,75 @@ describe('translation utilities', () => {
         'Ele é perfeito mas não consigo jogar porque quando abro o arquivo do jogo ele vai mas n entra no jogo porque n tenho conta steam pra jogar normalmente o jogo poroso eu intalo o arquivo do game mas não abre'
       const should = shouldShowTranslation(text)
       expect(should).toBe(true)
+    })
+
+    it('should show translation when text mixes Portuguese and English segments', () => {
+      vi.mocked(getUserLocale).mockReturnValue('en')
+      const mixedText = `Mipmapping: completo (PS2 Mips)
+Filtragem Trilinear: Habilitado (PS2)
+Filtragem Anisotrópica: Desativado (PS2)
+Precisão da Mesclagem das texturas: Básicos (Padrão)
+Pré-carregamento de texturas: Completo (Hash Cache)
+Modo de Downlaodde Hardware: Desicronizado (Não-Determinístico)
+
+o desempenho da versão Europe (SLES-53702) foi pior que a versão USA (SLUS-21134), e a unica coisa que tive que mudar foi a resolução, mas a versão nether 2.0-4248 teve um desempenho melho(mesmo que não foi muito) que a versão 2.0-3668
+
+Mipmapping: Full (PS2 Mips)
+Trilinear Filtering: Enabled (PS2)
+Anisotropic Filtering: Disabled (Default)
+Blending Accuracy: Basic (Default)
+Texture Preloading: Full (Hash Cache)
+Downlaod Hardware Mode: Unsynchronized (Non-Dterministic)
+
+The performance of the Europe version (SLES-53702) was worse than the USA version (SLUS-21134), and the only thing I had to change was the resolution, but the nether 2.0-4248 version performed better (even if not by much) than version 2.0-3668.`
+      const should = shouldShowTranslation(mixedText)
+      expect(should).toBe(true)
+    })
+  })
+
+  describe('translateText', () => {
+    const mockedHttp = http as unknown as { get: ReturnType<typeof vi.fn> }
+
+    beforeEach(() => {
+      mockedHttp.get.mockReset()
+    })
+
+    it('falls back to segment translations when bulk translation returns original text', async () => {
+      const text = `Filtragem Trilinear: Habilitado (PS2)\nTrilinear Filtering: Enabled (PS2)`
+
+      mockedHttp.get.mockResolvedValueOnce({
+        data: {
+          responseStatus: 200,
+          responseData: {
+            translatedText: text,
+          },
+        },
+      })
+
+      mockedHttp.get.mockResolvedValueOnce({
+        data: {
+          responseStatus: 200,
+          responseData: {
+            translatedText: 'Trilinear Filtering: Enabled (PS2)',
+          },
+        },
+      })
+
+      mockedHttp.get.mockResolvedValueOnce({
+        data: {
+          responseStatus: 200,
+          responseData: {
+            translatedText: 'Trilinear Filtering: Enabled (PS2)',
+          },
+        },
+      })
+
+      const result = await translateText(text)
+
+      expect(result.translatedText).not.toContain('Filtragem')
+      expect(result.translatedText).toContain('Trilinear Filtering: Enabled (PS2)')
+      expect(result.targetLanguage).toBe('en')
+      expect(mockedHttp.get.mock.calls.length).toBeGreaterThanOrEqual(2)
     })
   })
 })

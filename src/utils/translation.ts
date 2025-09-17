@@ -1,4 +1,4 @@
-import { franc } from 'franc'
+import { franc, francAll } from 'franc'
 import http from '@/rest/http'
 import type {
   MyMemoryTranslationResponse,
@@ -53,6 +53,95 @@ const SUPPORTED_LANGUAGES: Record<string, { code: string; name: string }> = {
 
 // Set of supported ISO 639-1 language codes for quick lookup
 const SUPPORTED_LANGUAGE_CODES = new Set(Object.values(SUPPORTED_LANGUAGES).map(({ code }) => code))
+const LINE_SPLIT_REGEX = /(\r?\n+)/
+
+interface TranslationRequest {
+  text: string
+  source: string
+  target: string
+}
+
+function normalizeForComparison(value: string): string {
+  return value.replace(/\s+/g, ' ').trim().toLowerCase()
+}
+
+function isMeaningfullyDifferent(original: string, translated: string): boolean {
+  return normalizeForComparison(original) !== normalizeForComparison(translated)
+}
+
+async function requestTranslation({ text, source, target }: TranslationRequest) {
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${source}|${target}`
+
+  try {
+    const { data } = await http.get<MyMemoryTranslationResponse>(url, {
+      timeout: 10_000,
+      headers: {
+        Accept: 'application/json',
+      },
+    })
+
+    if (data.responseStatus === 200 && data.responseData) {
+      return data.responseData.translatedText
+    }
+  } catch (err) {
+    console.error('Translation request failed:', err)
+  }
+
+  return null
+}
+
+async function translateBySegments({
+  text,
+  target,
+}: {
+  text: string
+  target: string
+}): Promise<string | null> {
+  const segments = text.split(LINE_SPLIT_REGEX)
+  const translatedSegments: string[] = []
+  let anyTranslated = false
+
+  for (const segment of segments) {
+    if (segment === '') {
+      translatedSegments.push(segment)
+      continue
+    }
+
+    if (/^(?:\r?\n)+$/.test(segment)) {
+      translatedSegments.push(segment)
+      continue
+    }
+
+    const trimmed = segment.trim()
+    if (!trimmed) {
+      translatedSegments.push(segment)
+      continue
+    }
+
+    const detection = detectLanguage(trimmed)
+    if (detection.isEnglish || detection.detectedLanguage === target) {
+      translatedSegments.push(segment)
+      continue
+    }
+
+    const partialTranslation = await requestTranslation({
+      text: trimmed,
+      source: detection.detectedLanguage,
+      target,
+    })
+
+    if (partialTranslation && isMeaningfullyDifferent(trimmed, partialTranslation)) {
+      const leadingWhitespace = segment.match(/^\s*/)?.[0] ?? ''
+      const trailingWhitespace = segment.match(/\s*$/)?.[0] ?? ''
+      translatedSegments.push(`${leadingWhitespace}${partialTranslation}${trailingWhitespace}`)
+      anyTranslated = true
+    } else {
+      translatedSegments.push(segment)
+    }
+  }
+
+  return anyTranslated ? translatedSegments.join('') : null
+}
 
 /**
  * Get the user's locale.
@@ -68,15 +157,25 @@ export function getUserLocale(): string {
  * @param text - The text to detect the language of.
  * @return {LanguageDetectionResult} The language detection result.
  */
+const FRANC_MIN_LENGTH = 10
+const MIN_ALTERNATIVE_CONFIDENCE = 0.4
+
 export function detectLanguage(text: string): LanguageDetectionResult {
   if (text.trim().length < 10) {
     return { isEnglish: true, detectedLanguage: 'en', confidence: 0 }
   }
 
-  const francCode = franc(text)
+  const francOptions = { minLength: FRANC_MIN_LENGTH }
+  const francCode = franc(text, francOptions)
+  const candidates = francAll(text, francOptions)
+
   const languageData = SUPPORTED_LANGUAGES[francCode]
   const iso = languageData?.code ?? 'und'
-  const isEnglish = iso === 'en'
+  const confidence = 1
+
+  if (languageData && iso !== 'en') {
+    return { isEnglish: false, detectedLanguage: iso, confidence }
+  }
 
   // If franc returns 'und' (undetermined), treat as English with low confidence
   // Only offer translation for clearly detected non-English languages
@@ -84,10 +183,30 @@ export function detectLanguage(text: string): LanguageDetectionResult {
     return { isEnglish: true, detectedLanguage: 'en', confidence: 0.1 }
   }
 
+  const alternative = candidates.find(([code, score]) => {
+    if (code === francCode) return false
+    const data = SUPPORTED_LANGUAGES[code]
+    if (!data) return false
+    if (data.code === 'en') return false
+    return score >= MIN_ALTERNATIVE_CONFIDENCE
+  })
+
+  if (alternative) {
+    const [altCode, score] = alternative
+    const altData = SUPPORTED_LANGUAGES[altCode]
+    if (altData) {
+      return {
+        isEnglish: false,
+        detectedLanguage: altData.code,
+        confidence: Math.max(0.9, score),
+      }
+    }
+  }
+
   return {
-    isEnglish,
-    detectedLanguage: iso,
-    confidence: isEnglish ? 1 : 0.9, // High confidence for detected languages
+    isEnglish: true,
+    detectedLanguage: 'en',
+    confidence: 1,
   }
 }
 
@@ -116,35 +235,38 @@ export async function translateText(
   }
 
   const safeTarget = SUPPORTED_LANGUAGE_CODES.has(target) ? target : 'en'
-  // Use MyMemory API (free tier: 1000 requests/day)
-  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${source}|${safeTarget}`
 
-  try {
-    const { data } = await http.get<MyMemoryTranslationResponse>(url, {
-      timeout: 10_000,
-      headers: {
-        Accept: 'application/json',
-      },
-    })
+  const initialTranslation = await requestTranslation({
+    text,
+    source,
+    target: safeTarget,
+  })
 
-    if (data.responseStatus === 200 && data.responseData) {
-      return {
-        translatedText: data.responseData.translatedText,
-        originalLanguage: source,
-        targetLanguage: safeTarget,
-      }
+  if (initialTranslation && isMeaningfullyDifferent(text, initialTranslation)) {
+    return {
+      translatedText: initialTranslation,
+      originalLanguage: source,
+      targetLanguage: safeTarget,
     }
-
-    // Non-200 or malformed: fall through to return-original
-  } catch (err) {
-    console.error('Translation request failed:', err)
   }
 
-  // Fallback – return original text unchanged
+  const segmentedTranslation = await translateBySegments({
+    text,
+    target: safeTarget,
+  })
+
+  if (segmentedTranslation) {
+    return {
+      translatedText: segmentedTranslation,
+      originalLanguage: source,
+      targetLanguage: safeTarget,
+    }
+  }
+
   return {
-    translatedText: text,
+    translatedText: initialTranslation ?? text,
     originalLanguage: source,
-    targetLanguage: target,
+    targetLanguage: safeTarget,
   }
 }
 
