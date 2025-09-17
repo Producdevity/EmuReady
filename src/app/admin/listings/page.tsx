@@ -133,6 +133,14 @@ function AdminListingsPage() {
   const emulatorsQuery = api.emulators.get.useQuery()
   const userQuery = api.users.me.useQuery()
 
+  const visibleColumnCount = Math.max(
+    1,
+    LISTINGS_COLUMNS.reduce(
+      (count, column) => (columnVisibility.isColumnVisible(column.key) ? count + 1 : count),
+      0,
+    ),
+  )
+
   const clearFilters = () => {
     table.setSearch('')
     clearAll()
@@ -376,15 +384,23 @@ function AdminListingsPage() {
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {listingsQuery.isPending ? (
-                <LoadingSpinner text="Loading Listings..." />
+                <tr>
+                  <td colSpan={visibleColumnCount} className="py-12">
+                    <LoadingSpinner text="Loading Listings..." />
+                  </td>
+                </tr>
               ) : listings.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-600 dark:text-gray-400 text-lg">
-                    {table.search || filters.status || filters.systemId || filters.emulatorId
-                      ? 'No listings found matching your filters.'
-                      : 'No listings found.'}
-                  </p>
-                </div>
+                <tr>
+                  <td colSpan={visibleColumnCount} className="py-12">
+                    <div className="text-center">
+                      <p className="text-gray-600 dark:text-gray-400 text-lg">
+                        {table.search || filters.status || filters.systemId || filters.emulatorId
+                          ? 'No listings found matching your filters.'
+                          : 'No listings found.'}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
               ) : (
                 listings.map((listing: Listing) => (
                   <tr
