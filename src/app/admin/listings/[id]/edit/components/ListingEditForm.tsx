@@ -24,7 +24,7 @@ import toast from '@/lib/toast'
 import { UpdateListingAdminSchema } from '@/schemas/listing'
 import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { ApprovalStatus } from '@orm'
+import { ApprovalStatus, CustomFieldType } from '@orm'
 
 type ListingForEdit = NonNullable<RouterOutput['listings']['getForEdit']>
 type UpdateListingFormData = z.infer<typeof UpdateListingAdminSchema>
@@ -67,9 +67,7 @@ function ListingEditForm(props: Props) {
     async (query: string): Promise<GameOption[]> => {
       try {
         // If query is empty, don't call the API since it requires min 1 character
-        if (!query || query.trim().length === 0) {
-          return []
-        }
+        if (!query || query.trim().length === 0) return []
         const result = await utils.client.games.get.query({
           search: query,
           limit: 50,
@@ -165,6 +163,7 @@ function ListingEditForm(props: Props) {
     useForm<UpdateListingFormData>({
       resolver: zodResolver(UpdateListingAdminSchema),
       defaultValues: {
+        id: props.listing.id,
         gameId: props.listing.gameId,
         deviceId: props.listing.deviceId,
         emulatorId: props.listing.emulatorId,
@@ -196,9 +195,22 @@ function ListingEditForm(props: Props) {
     // Preserve in-progress values when possible
     const newCustomFieldValues = customFieldsQuery.data.map((field) => {
       const existingValue = current.find((v) => v.customFieldDefinitionId === field.id)
+
+      let value: unknown = existingValue?.value
+
+      if (value === null || value === undefined) {
+        if (field.defaultValue !== null && field.defaultValue !== undefined) {
+          value = field.defaultValue
+        } else if (field.type === CustomFieldType.BOOLEAN) {
+          value = false
+        } else {
+          value = null
+        }
+      }
+
       return {
         customFieldDefinitionId: field.id,
-        value: existingValue?.value ?? null,
+        value,
       }
     })
 
@@ -218,6 +230,22 @@ function ListingEditForm(props: Props) {
     { id: ApprovalStatus.APPROVED, name: 'Approved' },
     { id: ApprovalStatus.REJECTED, name: 'Rejected' },
   ]
+
+  const customFieldDefinitionsForSummary =
+    customFieldsQuery.data?.map((field) => ({
+      id: field.id,
+      label: field.label,
+      name: field.name,
+    })) ?? []
+
+  const fieldLabels: Record<string, string> = {
+    gameId: 'Game',
+    deviceId: 'Device',
+    emulatorId: 'Emulator',
+    performanceId: 'Performance scale',
+    status: 'Status',
+    notes: 'Notes',
+  }
 
   return (
     <div className="max-w-4xl">
@@ -244,6 +272,8 @@ function ListingEditForm(props: Props) {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <input type="hidden" {...register('id')} />
+
           {/* Game Selection */}
           <div>
             <Controller
@@ -418,7 +448,11 @@ function ListingEditForm(props: Props) {
             </div>
           )}
 
-          <FormValidationSummary errors={formState.errors} />
+          <FormValidationSummary
+            errors={formState.errors}
+            customFieldDefinitions={customFieldDefinitionsForSummary}
+            fieldLabels={fieldLabels}
+          />
 
           {/* Form Actions */}
           <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">

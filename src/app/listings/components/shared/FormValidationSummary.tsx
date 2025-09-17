@@ -12,6 +12,7 @@ interface CustomFieldDefinition {
 interface Props<TFieldValues extends FieldValues = FieldValues> {
   errors: FieldErrors<TFieldValues>
   customFieldDefinitions?: CustomFieldDefinition[]
+  fieldLabels?: Record<string, string>
 }
 
 function FormValidationSummary<TFieldValues extends FieldValues = FieldValues>(
@@ -22,48 +23,85 @@ function FormValidationSummary<TFieldValues extends FieldValues = FieldValues>(
   if (!hasErrors) return null
 
   // Collect all error messages
-  const errorMessages: string[] = []
+  type ErrorEntry = { path: string[]; message: string }
 
-  // Add basic field errors
-  Object.entries(props.errors).forEach(([key, error]) => {
-    if (key === 'customFieldValues') {
-      // Handle custom field errors
-      if (Array.isArray(error)) {
-        error.forEach((fieldError, index) => {
-          if (fieldError?.value?.message) {
-            errorMessages.push(fieldError.value.message)
-          } else if (fieldError?.value) {
-            // Try to get field name from definitions if available
-            const fieldName =
-              props.customFieldDefinitions?.[index]?.label || `Custom field ${index + 1}`
-            errorMessages.push(`${fieldName} has an error`)
-          }
-        })
-      } else if (error && typeof error === 'object' && 'message' in error && error.message) {
-        errorMessages.push(error.message as string)
-      } else if (error && typeof error === 'object' && 'root' in error) {
-        // Handle root-level custom field errors
-        const rootError = (error as { root?: { message?: string } }).root
-        if (rootError?.message) errorMessages.push(rootError.message)
-      }
-    } else if (error && typeof error === 'object' && 'message' in error && error.message) {
-      errorMessages.push(error.message as string)
+  function formatFieldKey(key: string): string {
+    if (!key) return 'Field'
+    const spaced = key
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      .replace(/_/g, ' ')
+      .trim()
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1)
+  }
+
+  function collectErrorEntries(node: unknown, path: string[] = []): ErrorEntry[] {
+    if (!node) return []
+
+    if (Array.isArray(node)) {
+      return node.flatMap((child, index) => collectErrorEntries(child, [...path, String(index)]))
     }
+
+    if (typeof node !== 'object') return []
+
+    const entries: ErrorEntry[] = []
+    const errorNode = node as Record<string, unknown>
+
+    const message = errorNode.message
+    if (typeof message === 'string' && message.length > 0) {
+      entries.push({ path, message })
+    }
+
+    Object.entries(errorNode).forEach(([key, value]) => {
+      if (key === 'message' || key === 'type' || key === 'ref' || key === 'types') return
+      entries.push(...collectErrorEntries(value, [...path, key]))
+    })
+
+    return entries
+  }
+
+  const errorEntries = Object.entries(props.errors).flatMap(([key, value]) =>
+    collectErrorEntries(value, [key]),
+  )
+
+  const filteredEntries = errorEntries.filter(
+    (entry, index, array) =>
+      !array.some(
+        (other, otherIndex) =>
+          otherIndex !== index &&
+          other.path.length > entry.path.length &&
+          entry.path.every((segment, segmentIndex) => segment === other.path[segmentIndex]),
+      ),
+  )
+
+  function resolveStandardFieldMessage(fieldKey: string, message: string): string {
+    const label = props.fieldLabels?.[fieldKey] ?? formatFieldKey(fieldKey)
+    if (message === 'Required') return `${label} is required`
+    return `${label}: ${message}`
+  }
+
+  function resolveCustomFieldFromPath(path: string[], message: string): string | null {
+    if (path[0] !== 'customFieldValues') return null
+
+    if (path.length === 1 || path[1] === 'root' || !Number.isFinite(Number(path[1]))) {
+      if (message === 'Required') return 'Custom fields are required'
+      return `Custom fields: ${message}`
+    }
+
+    const index = Number(path[1])
+    const label = props.customFieldDefinitions?.[index]?.label ?? `Custom field ${index + 1}`
+    if (message === 'Required') return `${label} is required`
+    return `${label}: ${message}`
+  }
+
+  const errorMessages = filteredEntries.map((entry) => {
+    const customFieldMessage = resolveCustomFieldFromPath(entry.path, entry.message)
+    if (customFieldMessage) return customFieldMessage
+
+    return resolveStandardFieldMessage(entry.path[0], entry.message)
   })
 
-  // If we have errors but no messages, check for specific field types
-  if (hasErrors && errorMessages.length === 0) {
-    // Check if there are custom field errors without messages
-    const customFieldErrors = props.errors.customFieldValues
-    if (customFieldErrors && Array.isArray(customFieldErrors)) {
-      const hasEmptyRequiredFields = customFieldErrors.some((fieldError) => fieldError?.value)
-      if (hasEmptyRequiredFields) errorMessages.push('Please fill in all required custom fields')
-    }
-
-    // Generic fallback
-    if (errorMessages.length === 0) {
-      errorMessages.push('Please check all required fields are filled in correctly')
-    }
+  if (errorMessages.length === 0) {
+    errorMessages.push('Please check all required fields are filled in correctly')
   }
 
   return (

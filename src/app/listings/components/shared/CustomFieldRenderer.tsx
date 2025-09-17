@@ -38,6 +38,18 @@ export interface ValidationRules {
   validate?: (value: unknown) => boolean | string
 }
 
+export function isCustomFieldValueEmpty(value: unknown): boolean {
+  if (value === null || value === undefined) return true
+  if (typeof value === 'boolean') return false
+  if (typeof value === 'number') return Number.isNaN(value)
+  if (isString(value)) return value.trim().length === 0
+  if (Array.isArray(value)) return value.length === 0
+  if (value instanceof Date) return false
+  if (typeof value === 'object') return Object.keys(value as Record<string, unknown>).length === 0
+
+  return false
+}
+
 interface Props<TFieldValues extends FieldValues = FieldValues> {
   fieldDef: CustomFieldDefinitionWithOptions
   fieldName: FieldPath<TFieldValues>
@@ -60,13 +72,7 @@ function CustomFieldRenderer<TFieldValues extends FieldValues = FieldValues>(
             if (props.fieldDef.type === CustomFieldType.BOOLEAN) return true
 
             // Check if value is empty
-            const isValueEmpty =
-              !value ||
-              (isString(value) && value.trim() === '') ||
-              (Array.isArray(value) && value.length === 0) ||
-              (typeof value === 'object' && Object.keys(value).length === 0)
-
-            return isValueEmpty ? `${props.fieldDef.label} is required` : true
+            return isCustomFieldValueEmpty(value) ? `${props.fieldDef.label} is required` : true
           }
         : undefined,
     }

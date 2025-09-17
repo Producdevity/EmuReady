@@ -69,7 +69,16 @@ export function renderCustomField<TFieldValues extends FieldValues = FieldValues
         name={`${fieldNamePrefix}.${index}.customFieldDefinitionId` as FieldPath<TFieldValues>}
         control={control}
         defaultValue={fieldDef.id as TFieldValues[FieldPath<TFieldValues>]}
-        render={() => <input type="hidden" />}
+        rules={{ required: true }}
+        render={({ field }) => (
+          <input
+            type="hidden"
+            name={field.name}
+            value={(field.value ?? fieldDef.id) as string}
+            onChange={field.onChange}
+            ref={field.ref}
+          />
+        )}
       />
       <CustomFieldRenderer
         fieldDef={transformedFieldDef}
@@ -81,5 +90,3 @@ export function renderCustomField<TFieldValues extends FieldValues = FieldValues
     </div>
   )
 }
-
-export type { CustomFieldDefinitionWithOptions }
