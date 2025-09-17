@@ -54,7 +54,7 @@ export function Pagination(props: Props) {
   const itemsEnd = !props.totalItems ? 0 : Math.min(props.page * itemsPerPage, props.totalItems)
 
   return (
-    <nav className="mt-12" aria-label="Pagination navigation" role="navigation">
+    <nav className="mt-4" aria-label="Pagination navigation" role="navigation">
       <div className="flex flex-col items-center space-y-4">
         {showLabel && props.totalItems && (
           <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
