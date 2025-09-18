@@ -5,7 +5,6 @@ import { notFound, useParams, useRouter } from 'next/navigation'
 import { Button, PageSkeletonLoading } from '@/components/ui'
 import { api } from '@/lib/api'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
-import { hasRolePermission as hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import EmulatorEditForm from './components/EmulatorEditForm'
 import ManageSupportedSystems from './components/ManageSupportedSystems'
@@ -17,28 +16,41 @@ function EditEmulatorPage() {
 
   const emulatorsQuery = api.emulators.byId.useQuery({ id: emulatorId }, { enabled: !!emulatorId })
   const currentUser = api.users.me.useQuery()
+  const verifiedDeveloperQuery = api.emulators.getVerifiedDeveloper.useQuery(
+    { emulatorId },
+    {
+      enabled: !!emulatorId && currentUser.data?.role === Role.DEVELOPER,
+    },
+  )
 
-  // Gate access using permission + verified for developers
-  if (currentUser.data) {
-    const role = currentUser.data.role
-    const perms = currentUser.data.permissions
-    const canManage = hasPermission(perms, PERMISSIONS.MANAGE_EMULATORS)
-    const isModeratorOrHigher = hasRolePermission(role, Role.MODERATOR)
-    if (!canManage) {
-      router.replace('/admin/emulators')
-      return null
-    }
-    if (!isModeratorOrHigher) {
-      // Developers need to be verified for this emulator; reuse API: getVerifiedDeveloper
-      // We can’t await here; rely on the Custom Fields page for developer flow
-      router.replace(`/admin/emulators/${emulatorId}/custom-fields`)
-      return null
-    }
+  const user = currentUser.data
+  const isLoading =
+    currentUser.isPending || emulatorsQuery.isLoading || verifiedDeveloperQuery.isLoading
+
+  const hasManagePermission = hasPermission(user?.permissions, PERMISSIONS.MANAGE_CUSTOM_FIELDS)
+  const isDeveloper = user?.role === Role.DEVELOPER
+  const isVerifiedDeveloper = Boolean(verifiedDeveloperQuery.data)
+  const hasAccess = Boolean(user && hasManagePermission && (!isDeveloper || isVerifiedDeveloper))
+
+  if (isLoading) return <PageSkeletonLoading />
+
+  if (!user || !hasAccess) {
+    return (
+      <div className="container mx-auto p-8">
+        <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6">
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+        <p className="text-lg text-gray-700 dark:text-gray-200">
+          You do not have permission to manage this emulator.
+        </p>
+      </div>
+    )
   }
 
   const systemsQuery = api.systems.get.useQuery({})
 
-  if (emulatorsQuery.isPending || systemsQuery.isPending) return <PageSkeletonLoading />
+  if (systemsQuery.isPending) return <PageSkeletonLoading />
 
   if (emulatorsQuery.error || systemsQuery.error) {
     return (

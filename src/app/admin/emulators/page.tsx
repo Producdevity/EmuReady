@@ -68,9 +68,14 @@ function AdminEmulatorsPage() {
   const currentUserRole = userQuery.data?.role
   const currentUserId = userQuery.data?.id
   const userPermissions = userQuery.data?.permissions
-  const isAdmin = hasRolePermission(currentUserRole, Role.ADMIN)
-  const isModeratorOrHigher = hasRolePermission(currentUserRole, Role.MODERATOR)
-  const canDeleteEmulators = isAdmin && hasPermission(userPermissions, PERMISSIONS.MANAGE_EMULATORS)
+  const isAdminOrHigher = hasRolePermission(currentUserRole, Role.ADMIN)
+  const isDeveloper = currentUserRole === Role.DEVELOPER
+  const hasManageEmulatorsPermission = hasPermission(userPermissions, PERMISSIONS.MANAGE_EMULATORS)
+  const hasManageCustomFieldsPermission = hasPermission(
+    userPermissions,
+    PERMISSIONS.MANAGE_CUSTOM_FIELDS,
+  )
+  const canDeleteEmulators = isAdminOrHigher && hasManageEmulatorsPermission
 
   const emulatorsStatsQuery = api.emulators.stats.useQuery()
   const emulatorsQuery = api.emulators.getForAdmin.useQuery({
@@ -129,18 +134,12 @@ function AdminEmulatorsPage() {
       (vd) => vd.userId === currentUserId || vd.user?.id === currentUserId,
     ) ?? false
 
-  const hasScopedPermission = (
-    emulator: AdminEmulator,
-    permission: (typeof PERMISSIONS)[keyof typeof PERMISSIONS],
-  ) =>
-    hasPermission(userPermissions, permission) &&
-    (isModeratorOrHigher || isVerifiedForEmulator(emulator))
-
   const canEditEmulator = (emulator: AdminEmulator) =>
-    hasScopedPermission(emulator, PERMISSIONS.MANAGE_EMULATORS)
+    hasManageEmulatorsPermission &&
+    (isAdminOrHigher || (isDeveloper && isVerifiedForEmulator(emulator)))
 
   const canManageCustomFields = (emulator: AdminEmulator) =>
-    hasScopedPermission(emulator, PERMISSIONS.MANAGE_CUSTOM_FIELDS)
+    hasManageCustomFieldsPermission && (!isDeveloper || isVerifiedForEmulator(emulator))
 
   return (
     <AdminPageLayout

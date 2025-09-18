@@ -1,9 +1,10 @@
 'use client'
 
 import { PlusCircle, Copy, FileJson } from 'lucide-react'
-import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
 import { useState } from 'react'
-import { Button } from '@/components/ui'
+import { Button, LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
 import { CustomFieldList } from '@/lib/dynamic-imports'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
@@ -12,10 +13,10 @@ import { Role } from '@orm'
 import ApplyTemplatesModal from './components/ApplyTemplatesModal'
 import CustomFieldFormModal from './components/CustomFieldFormModal'
 import CustomFieldsJsonModal from './components/CustomFieldsJsonModal'
+import FeedbackCard from './components/FeedbackCard'
 
 export default function EmulatorCustomFieldsPage() {
   const params = useParams()
-  const router = useRouter()
   const emulatorId = params.emulatorId as string
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
@@ -24,11 +25,6 @@ export default function EmulatorCustomFieldsPage() {
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null)
 
   const userQuery = api.users.me.useQuery()
-  const verifiedDeveloperQuery = api.emulators.getVerifiedDeveloper.useQuery(
-    { emulatorId },
-    { enabled: !!emulatorId && !!userQuery.data },
-  )
-
   const emulatorQuery = api.emulators.byId.useQuery({ id: emulatorId }, { enabled: !!emulatorId })
 
   const customFieldDefinitionsQuery = api.customFieldDefinitions.getByEmulator.useQuery(
@@ -36,24 +32,41 @@ export default function EmulatorCustomFieldsPage() {
     { enabled: !!emulatorId },
   )
 
-  // Redirect access using permission + verified for developers
-  if (userQuery.data) {
-    const perms = userQuery.data.permissions
-    const isVerifiedDeveloper = Boolean(verifiedDeveloperQuery.data)
-    const canManageCF = hasPermission(perms, PERMISSIONS.MANAGE_CUSTOM_FIELDS)
-    if (!canManageCF) {
-      router.replace('/admin/emulators')
-      return null
-    }
-    const isAdminOrHigher = hasRolePermission(userQuery.data.role, Role.ADMIN)
-    if (!isAdminOrHigher || isVerifiedDeveloper) {
-      router.replace('/admin/emulators')
-      return null
-    }
+  const user = userQuery.data
+  const isLoading = userQuery.isPending || emulatorQuery.isLoading
+  const hasManagePermission = hasPermission(user?.permissions, PERMISSIONS.MANAGE_CUSTOM_FIELDS)
+  const isDeveloper = user?.role === Role.DEVELOPER
+  const isVerifiedDeveloper = Boolean(
+    emulatorQuery.data?.verifiedDevelopers?.some((developer) => developer.userId === user?.id),
+  )
+  const canAccess = Boolean(user && hasManagePermission && (!isDeveloper || isVerifiedDeveloper))
+
+  const backToEmulatorsAction = (
+    <Link href="/admin/emulators" className="inline-flex">
+      <Button variant="outline">Back to Emulators</Button>
+    </Link>
+  )
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <LoadingSpinner text="Loading custom fields…" />
+      </div>
+    )
+  }
+
+  if (!user || !canAccess) {
+    return (
+      <FeedbackCard
+        title="Access Denied"
+        description="You do not have permission to manage custom fields for this emulator."
+        actions={backToEmulatorsAction}
+      />
+    )
   }
 
   // Check if user can see Apply Templates button (only SUPER_ADMIN)
-  const canApplyTemplates = hasRolePermission(userQuery.data?.role, Role.SUPER_ADMIN)
+  const canApplyTemplates = hasRolePermission(user.role, Role.SUPER_ADMIN)
 
   function handleOpenCreateModal() {
     setEditingFieldId(null)
@@ -71,20 +84,42 @@ export default function EmulatorCustomFieldsPage() {
     void customFieldDefinitionsQuery.refetch()
   }
 
-  if (emulatorQuery.isLoading || customFieldDefinitionsQuery.isLoading) {
-    return <div>Loading...</div>
+  if (customFieldDefinitionsQuery.isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <LoadingSpinner text="Loading custom fields…" />
+      </div>
+    )
   }
 
   if (emulatorQuery.error) {
-    return <div>Error loading emulator: {emulatorQuery.error.message}</div>
+    return (
+      <FeedbackCard
+        title="Failed to load emulator"
+        description={emulatorQuery.error.message ?? 'Please try again later.'}
+        actions={backToEmulatorsAction}
+      />
+    )
   }
 
   if (customFieldDefinitionsQuery.error) {
-    return <div>Error loading custom fields: {customFieldDefinitionsQuery.error.message}</div>
+    return (
+      <FeedbackCard
+        title="Failed to load custom fields"
+        description={customFieldDefinitionsQuery.error.message ?? 'Please try again later.'}
+        actions={backToEmulatorsAction}
+      />
+    )
   }
 
   if (!emulatorQuery.data) {
-    return <div>Emulator not found.</div>
+    return (
+      <FeedbackCard
+        title="Emulator not found"
+        description="The emulator you are trying to manage was not found or you no longer have access to it."
+        actions={backToEmulatorsAction}
+      />
+    )
   }
 
   return (
