@@ -27,6 +27,7 @@ import {
 } from '@/server/cache/invalidation'
 import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
+import { getDriverVersions } from '@/server/utils/driver-versions'
 import { sanitizeInput, validatePagination } from '@/server/utils/security-validation'
 import { withSavepoint } from '@/server/utils/transactions'
 import { updateListingVoteCounts } from '@/server/utils/vote-counts'
@@ -127,6 +128,8 @@ export const coreRouter = createTRPCRouter({
       pagination: result.pagination,
     }
   }),
+
+  driverVersions: publicProcedure.query(async () => getDriverVersions()),
 
   byId: publicProcedure.input(GetListingByIdSchema).query(async ({ ctx, input }) => {
     const userRole = ctx.session?.user?.role

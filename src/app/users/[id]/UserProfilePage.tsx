@@ -1,5 +1,6 @@
 'use client'
 
+import { formatDistanceToNow } from 'date-fns'
 import {
   Calendar,
   GamepadIcon,
@@ -9,6 +10,8 @@ import {
   ThumbsDown,
   ThumbsUp,
   TrendingUp,
+  Monitor,
+  Award,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -36,6 +39,14 @@ import { formatUserRole } from '@/utils/format'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role } from '@orm'
 import UserDetailsPageError from './components/UserDetailsPageError'
+import type { ReactNode } from 'react'
+
+interface ContributionHighlight {
+  label: string
+  value: number
+  icon: ReactNode
+  accent: string
+}
 
 function UserDetailsPage() {
   const params = useParams()
@@ -124,7 +135,37 @@ function UserDetailsPage() {
     return <UserDetailsPageError errorMessage={userQuery.error?.message} />
   }
 
+  const contributionSummary = userQuery.data.contributionSummary
+  const totalVotes = userQuery.data._count?.votes ?? 0
   const upvoteCount = userQuery.data.votes.items.filter((vote) => vote.value).length
+  const positiveVoteRatio = totalVotes > 0 ? Math.round((upvoteCount / totalVotes) * 100) : 0
+
+  const contributionStats: ContributionHighlight[] = [
+    {
+      label: 'Total Contributions',
+      value: contributionSummary.total,
+      icon: <Award className="h-5 w-5" />,
+      accent: 'from-yellow-400 to-amber-500',
+    },
+    {
+      label: 'Handheld Reports',
+      value: contributionSummary.listings,
+      icon: <GamepadIcon className="h-5 w-5" />,
+      accent: 'from-blue-500 to-blue-600',
+    },
+    {
+      label: 'PC Reports',
+      value: contributionSummary.pcListings,
+      icon: <Monitor className="h-5 w-5" />,
+      accent: 'from-purple-500 to-purple-600',
+    },
+    {
+      label: 'Trust Score',
+      value: userQuery.data.trustScore ?? 0,
+      icon: <TrendingUp className="h-5 w-5" />,
+      accent: 'from-emerald-500 to-emerald-600',
+    },
+  ] satisfies { label: string; value: number; icon: ReactNode; accent: string }[]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -203,60 +244,68 @@ function UserDetailsPage() {
                 </div>
               </div>
 
-              {/* Stats Cards */}
-              <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-6 rounded-xl border border-blue-200 dark:border-blue-800 transform transition-all duration-300 hover:scale-105 hover:shadow-lg">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-blue-600 rounded-lg">
-                      <GamepadIcon className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                        {userQuery.data._count?.listings ?? 0}
+              {/* Contribution Overview */}
+              <div className="flex-1 w-full space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {contributionStats.map((stat) => (
+                    <div
+                      key={stat.label}
+                      className="rounded-2xl border border-gray-200 bg-white/80 p-5 shadow-sm transition-transform duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-gray-700 dark:bg-gray-900/70"
+                    >
+                      <div
+                        className={`mb-4 inline-flex items-center justify-center rounded-xl bg-gradient-to-br ${stat.accent} p-2 text-white shadow-md`}
+                      >
+                        {stat.icon}
+                      </div>
+                      <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                        {stat.value.toLocaleString()}
+                      </div>
+                      <p className="mt-1 text-sm font-medium text-gray-600 dark:text-gray-300">
+                        {stat.label}
                       </p>
-                      <p className="text-sm text-blue-700 dark:text-blue-300">Listings</p>
+                      {stat.label === 'Total Contributions' &&
+                        contributionSummary.lastContributionAt && (
+                          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                            Last contribution{' '}
+                            {formatDistanceToNow(contributionSummary.lastContributionAt, {
+                              addSuffix: true,
+                            })}
+                          </p>
+                        )}
                     </div>
-                  </div>
+                  ))}
                 </div>
 
-                <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-6 rounded-xl border border-green-200 dark:border-green-800 transform transition-all duration-300 hover:scale-105 hover:shadow-lg">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-green-600 rounded-lg">
-                      <ThumbsUp className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-green-900 dark:text-green-100">
-                        {upvoteCount}
-                      </p>
-                      <p className="text-sm text-green-700 dark:text-green-300">Upvotes</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 p-6 rounded-xl border border-orange-200 dark:border-orange-800 transform transition-all duration-300 hover:scale-105 hover:shadow-lg">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-orange-600 rounded-lg">
-                      <TrendingUp className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
-                        {userQuery.data.trustScore}
-                      </p>
-                      <p className="text-sm text-orange-700 dark:text-orange-300">Trust Score</p>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-indigo-200 bg-indigo-50/80 p-5 shadow-sm dark:border-indigo-700 dark:bg-indigo-900/40">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-xl bg-indigo-600 p-2 text-white shadow-md">
+                        <ThumbsUp className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-indigo-900 dark:text-indigo-100">
+                          {totalVotes.toLocaleString()}
+                        </p>
+                        <p className="text-sm font-medium text-indigo-700 dark:text-indigo-200">
+                          Votes Cast
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-6 rounded-xl border border-purple-200 dark:border-purple-800 transform transition-all duration-300 hover:scale-105 hover:shadow-lg">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-purple-600 rounded-lg">
-                      <Star className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                        {userQuery.data._count?.votes ?? 0}
-                      </p>
-                      <p className="text-sm text-purple-700 dark:text-purple-300">Total Votes</p>
+                  <div className="rounded-2xl border border-pink-200 bg-pink-50/80 p-5 shadow-sm dark:border-pink-700 dark:bg-pink-900/40">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-xl bg-pink-600 p-2 text-white shadow-md">
+                        <Star className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-pink-900 dark:text-pink-100">
+                          {positiveVoteRatio}%
+                        </p>
+                        <p className="text-sm font-medium text-pink-700 dark:text-pink-200">
+                          Upvote Ratio
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -282,7 +331,7 @@ function UserDetailsPage() {
                     onClick={() => handleTabChange('votes')}
                     className="transition-all duration-200"
                   >
-                    Votes ({userQuery.data._count?.votes ?? 0})
+                    Votes ({totalVotes})
                   </Button>
                 </div>
 

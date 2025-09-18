@@ -63,3 +63,9 @@ export const SearchUsersSchema = z.object({
 export const IsVerifiedDeveloperSchema = z.object({
   emulatorId: z.string().uuid(),
 })
+
+export const TopContributorsTimeframeSchema = z.enum(['all_time', 'this_month', 'this_week'])
+
+export const GetTopContributorsSummarySchema = z.object({
+  limit: z.number().int().min(1).max(20).default(5),
+})

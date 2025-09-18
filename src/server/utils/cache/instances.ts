@@ -11,6 +11,7 @@ import type {
   UserEngagementMetrics,
   TimeSeriesData,
 } from '@/server/notifications/analyticsService'
+import type { DriverVersionsResponse } from '@/types/driver-versions'
 import type {
   TGDBGamesByNameResponse,
   TGDBGamesImagesResponse,
@@ -92,4 +93,10 @@ export const tgdbGameImagesCache = new MemoryCache<Record<string, GameImageOptio
 export const legacyCache = new MemoryCache<unknown>({
   ttl: 10 * 60 * 1000, // 10 minutes
   maxSize: 500,
+})
+
+// Driver version cache to avoid hitting GitHub rate limits
+export const driverVersionsCache = new MemoryCache<DriverVersionsResponse>({
+  ttl: 30 * 60 * 1000, // 30 minutes
+  maxSize: 1,
 })

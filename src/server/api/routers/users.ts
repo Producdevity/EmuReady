@@ -8,6 +8,7 @@ import {
   UpdateUserRoleSchema,
   UpdateUserSchema,
   IsVerifiedDeveloperSchema,
+  GetTopContributorsSummarySchema,
 } from '@/schemas/user'
 import {
   createTRPCRouter,
@@ -17,6 +18,13 @@ import {
 } from '@/server/api/trpc'
 import { invalidateUser } from '@/server/cache/invalidation'
 import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
+import {
+  getTopContributorsRaw,
+  getUserContributionBreakdown,
+  getActiveBanFilter,
+  type ContributionBreakdown,
+  type ContributorTimeframe,
+} from '@/server/services/contributors.service'
 import { buildOrderBy, paginate } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { createCountQuery } from '@/server/utils/query-performance'
@@ -46,6 +54,99 @@ export const usersRouter = createTRPCRouter({
     }
   }),
 
+  topContributorsSummary: publicProcedure
+    .input(GetTopContributorsSummarySchema)
+    .query(async ({ ctx, input }) => {
+      const limit = input.limit
+      const timeframes: ContributorTimeframe[] = ['all_time', 'this_month', 'this_week']
+
+      let rawResults: { userId: string; breakdown: ContributionBreakdown }[][] = [[], [], []]
+
+      try {
+        rawResults = await Promise.all(
+          timeframes.map((timeframe) => getTopContributorsRaw(ctx.prisma, timeframe, limit * 3)),
+        )
+      } catch (error) {
+        console.error('Failed to load top contributors summary', error)
+        return {
+          allTime: [],
+          thisMonth: [],
+          thisWeek: [],
+        }
+      }
+
+      const candidateIds = Array.from(
+        new Set(rawResults.flatMap((list) => list.map((item) => item.userId))),
+      )
+
+      if (candidateIds.length === 0) {
+        return {
+          allTime: [],
+          thisMonth: [],
+          thisWeek: [],
+        }
+      }
+
+      const users = await ctx.prisma.user.findMany({
+        where: {
+          id: { in: candidateIds },
+          userBans: { none: getActiveBanFilter(new Date()) },
+        },
+        select: {
+          id: true,
+          name: true,
+          profileImage: true,
+          role: true,
+          trustScore: true,
+          bio: true,
+          createdAt: true,
+        },
+      })
+
+      const userMap = new Map(users.map((user) => [user.id, user]))
+
+      const mapContributors = (entries: { userId: string; breakdown: ContributionBreakdown }[]) => {
+        const formatted: {
+          rank: number
+          id: string
+          name: string | null
+          profileImage: string | null
+          role: Role
+          trustScore: number
+          bio: string | null
+          joinedAt: Date
+          contributions: ContributionBreakdown
+        }[] = []
+
+        for (const entry of entries) {
+          const user = userMap.get(entry.userId)
+          if (!user) continue
+
+          formatted.push({
+            rank: formatted.length + 1,
+            id: user.id,
+            name: user.name,
+            profileImage: user.profileImage,
+            role: user.role,
+            trustScore: user.trustScore,
+            bio: user.bio,
+            joinedAt: user.createdAt,
+            contributions: entry.breakdown,
+          })
+
+          if (formatted.length === limit) break
+        }
+
+        return formatted
+      }
+
+      return {
+        allTime: mapContributors(rawResults[0] ?? []),
+        thisMonth: mapContributors(rawResults[1] ?? []),
+        thisWeek: mapContributors(rawResults[2] ?? []),
+      }
+    }),
+
   getProfile: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.prisma.user.findUnique({
       where: { id: ctx.session.user.id },
@@ -62,12 +163,7 @@ export const usersRouter = createTRPCRouter({
           select: {
             id: true,
             createdAt: true,
-            device: {
-              select: {
-                brand: { select: { id: true, name: true } },
-                modelName: true,
-              },
-            },
+            device: { select: { brand: { select: { id: true, name: true } }, modelName: true } },
             game: { select: { title: true } },
             emulator: { select: { name: true } },
             performance: { select: { label: true } },
@@ -98,10 +194,7 @@ export const usersRouter = createTRPCRouter({
               select: {
                 id: true,
                 device: {
-                  select: {
-                    brand: { select: { id: true, name: true } },
-                    modelName: true,
-                  },
+                  select: { brand: { select: { id: true, name: true } }, modelName: true },
                 },
                 game: { select: { title: true } },
                 emulator: { select: { name: true } },
@@ -112,21 +205,11 @@ export const usersRouter = createTRPCRouter({
           take: 10, // Limit to 10 most recent votes
         },
         userBadges: {
-          where: {
-            badge: { isActive: true },
-          },
+          where: { badge: { isActive: true } },
           select: {
             id: true,
             assignedAt: true,
-            badge: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
-                color: true,
-                icon: true,
-              },
-            },
+            badge: { select: { id: true, name: true, description: true, color: true, icon: true } },
           },
           orderBy: { assignedAt: 'desc' },
         },
@@ -222,6 +305,7 @@ export const usersRouter = createTRPCRouter({
       select: {
         id: true,
         name: true,
+        bio: true,
         profileImage: true,
         role: true,
         trustScore: true,
@@ -257,7 +341,7 @@ export const usersRouter = createTRPCRouter({
           },
           orderBy: { assignedAt: 'desc' },
         },
-        _count: { select: { listings: true, votes: true } },
+        _count: { select: { listings: true, pcListings: true, submittedGames: true, votes: true } },
       },
     })
 
@@ -312,7 +396,7 @@ export const usersRouter = createTRPCRouter({
     ])
 
     // Get filter options (for frontend dropdowns)
-    const [availableSystems, availableEmulators] = await Promise.all([
+    const [availableSystems, availableEmulators, contributionSummary] = await Promise.all([
       ctx.prisma.listing.findMany({
         where: { authorId: userId },
         select: { device: { select: { brand: { select: { name: true } } } } },
@@ -323,6 +407,7 @@ export const usersRouter = createTRPCRouter({
         select: { emulator: { select: { name: true } } },
         distinct: ['emulatorId'],
       }),
+      getUserContributionBreakdown(ctx.prisma, userId),
     ])
 
     return {
@@ -339,6 +424,7 @@ export const usersRouter = createTRPCRouter({
         systems: [...new Set(availableSystems.map((l) => l.device.brand.name))],
         emulators: [...new Set(availableEmulators.map((l) => l.emulator?.name).filter(Boolean))],
       },
+      contributionSummary,
     }
   }),
 
