@@ -559,12 +559,17 @@ function PcListingsPage() {
                       )}
                       {columnVisibility.isColumnVisible('author') && (
                         <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          <Link
-                            href={`/users/${listing.author?.id}`}
-                            className="text-blue-600 dark:text-indigo-400 hover:underline"
-                          >
-                            {listing.author?.name ?? 'Anonymous'}
-                          </Link>
+                          {listing.author?.id ? (
+                            <Link
+                              href={`/users/${listing.author.id}`}
+                              className="text-blue-600 dark:text-indigo-400 hover:underline"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              {listing.author.name ?? 'Anonymous'}
+                            </Link>
+                          ) : (
+                            <span>{listing.author?.name ?? 'Anonymous'}</span>
+                          )}
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('posted') && (
