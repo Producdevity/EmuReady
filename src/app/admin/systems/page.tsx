@@ -11,6 +11,7 @@ import {
 } from '@/components/admin'
 import {
   Button,
+  Code,
   ColumnVisibilityControl,
   DeleteButton,
   EditButton,
@@ -200,7 +201,7 @@ function AdminSystemsPage() {
                     )}
                     {columnVisibility.isColumnVisible('key') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">
-                        {system.key || '-'}
+                        <Code label={system.key ?? '-'} />
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('gamesCount') && (
