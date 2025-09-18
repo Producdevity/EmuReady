@@ -59,8 +59,8 @@ function UserProfilePageSkeleton() {
       <div className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-6xl space-y-8">
           <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-xl dark:border-gray-700 dark:bg-gray-800">
-            <div className="flex flex-col gap-8 lg:flex-row lg:flex-wrap lg:items-start xl:flex-nowrap">
-              <div className="flex w-full flex-col items-center lg:max-w-2xl lg:items-start xl:max-w-none">
+            <div className="grid gap-8 lg:grid-cols-3">
+              <div className="flex flex-col items-center lg:col-span-1 lg:items-start">
                 <div className="h-32 w-32 rounded-full border-4 border-white bg-gray-200 shadow-lg animate-pulse dark:border-gray-700 dark:bg-gray-700" />
                 <div className="mt-4 w-full space-y-3 text-center lg:text-left">
                   <div className="mx-auto h-8 w-48 rounded bg-gray-200 dark:bg-gray-700 animate-pulse lg:mx-0" />
@@ -81,8 +81,8 @@ function UserProfilePageSkeleton() {
                 </div>
               </div>
 
-              <div className="flex w-full min-w-0 flex-1 flex-col space-y-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="flex flex-col space-y-4 lg:col-span-2">
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                   {[...Array(4)].map((_, index) => (
                     <StatSkeleton key={index} />
                   ))}
@@ -92,18 +92,18 @@ function UserProfilePageSkeleton() {
                   <div className="rounded-2xl border border-indigo-200 bg-indigo-50/80 p-5 dark:border-indigo-700 dark:bg-indigo-900/40">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-xl bg-indigo-200 dark:bg-indigo-700 animate-pulse" />
-                      <div className="space-y-2">
-                        <div className="h-6 w-16 max-w-full rounded bg-indigo-200 dark:bg-indigo-600 animate-pulse" />
-                        <div className="h-4 w-24 max-w-full rounded bg-indigo-200 dark:bg-indigo-600 animate-pulse" />
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="h-6 w-full rounded bg-indigo-200 dark:bg-indigo-600 animate-pulse" />
+                        <div className="h-4 w-4/5 rounded bg-indigo-200 dark:bg-indigo-600 animate-pulse" />
                       </div>
                     </div>
                   </div>
                   <div className="rounded-2xl border border-pink-200 bg-pink-50/80 p-5 dark:border-pink-700 dark:bg-pink-900/40">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-xl bg-pink-200 dark:bg-pink-700 animate-pulse" />
-                      <div className="space-y-2">
-                        <div className="h-6 w-16 max-w-full rounded bg-pink-200 dark:bg-pink-600 animate-pulse" />
-                        <div className="h-4 w-28 max-w-full rounded bg-pink-200 dark:bg-pink-600 animate-pulse" />
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="h-6 w-full rounded bg-pink-200 dark:bg-pink-600 animate-pulse" />
+                        <div className="h-4 w-4/5 rounded bg-pink-200 dark:bg-pink-600 animate-pulse" />
                       </div>
                     </div>
                   </div>

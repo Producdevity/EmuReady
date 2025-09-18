@@ -173,9 +173,9 @@ function UserDetailsPage() {
         <div className="max-w-6xl mx-auto">
           {/* Profile Header */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8 border border-gray-100 dark:border-gray-700 transform transition-all duration-300 hover:shadow-2xl">
-            <div className="flex flex-col gap-8 lg:flex-row lg:flex-wrap lg:items-start xl:flex-nowrap">
+            <div className="grid gap-8 lg:grid-cols-3">
               {/* Profile Image & Basic Info */}
-              <div className="flex w-full flex-col items-center lg:max-w-2xl lg:items-start xl:max-w-none">
+              <div className="flex flex-col items-center lg:col-span-1 lg:items-start">
                 <div className="relative group">
                   <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000" />
                   <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white dark:border-gray-700 shadow-lg">
@@ -250,8 +250,8 @@ function UserDetailsPage() {
               </div>
 
               {/* Contribution Overview */}
-              <div className="flex-1 w-full min-w-0 space-y-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="flex w-full flex-col space-y-4 lg:col-span-2">
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                   {contributionStats.map((stat) => (
                     <div
                       key={stat.label}
