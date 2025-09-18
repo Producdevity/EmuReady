@@ -423,7 +423,7 @@ function Home() {
         <section className="mb-16">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              Latest Compatibility Listings
+              Latest Compatibility Reports
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Discover what&apos;s working well across different devices and emulators
