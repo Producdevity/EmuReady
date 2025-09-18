@@ -125,7 +125,7 @@ function AdminPerformancePage() {
             color: 'blue',
           },
           {
-            label: 'Used in Listings',
+            label: 'Used in Reports',
             value: performanceStatsQuery.data?.withListings,
             color: 'green',
           },
