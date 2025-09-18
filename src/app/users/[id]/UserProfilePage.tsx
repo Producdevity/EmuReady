@@ -24,7 +24,6 @@ import {
   Badge,
   Button,
   Input,
-  PageSkeletonLoading,
   PerformanceBadge,
   Pagination,
   LocalizedDate,
@@ -39,6 +38,7 @@ import { formatUserRole } from '@/utils/format'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role } from '@orm'
 import UserDetailsPageError from './components/UserDetailsPageError'
+import UserProfilePageSkeleton from './components/UserProfilePageSkeleton'
 import type { ReactNode } from 'react'
 
 interface ContributionHighlight {
@@ -129,16 +129,16 @@ function UserDetailsPage() {
     updateUrlParams({ emulator: value, listingsPage: 1 })
   }
 
-  if (userQuery.isPending) return <PageSkeletonLoading />
+  if (userQuery.isPending) return <UserProfilePageSkeleton />
 
   if (userQuery.error || !userQuery.data) {
     return <UserDetailsPageError errorMessage={userQuery.error?.message} />
   }
 
   const contributionSummary = userQuery.data.contributionSummary
-  const totalVotes = userQuery.data._count?.votes ?? 0
-  const upvoteCount = userQuery.data.votes.items.filter((vote) => vote.value).length
-  const positiveVoteRatio = totalVotes > 0 ? Math.round((upvoteCount / totalVotes) * 100) : 0
+  const voteSummary = userQuery.data.voteSummary ?? { total: 0, upvotes: 0, downvotes: 0 }
+  const positiveVoteRatio =
+    voteSummary.total > 0 ? Math.round((voteSummary.upvotes / voteSummary.total) * 100) : 0
 
   const contributionStats: ContributionHighlight[] = [
     {
@@ -173,9 +173,9 @@ function UserDetailsPage() {
         <div className="max-w-6xl mx-auto">
           {/* Profile Header */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8 border border-gray-100 dark:border-gray-700 transform transition-all duration-300 hover:shadow-2xl">
-            <div className="flex flex-col lg:flex-row gap-8 items-start">
+            <div className="flex flex-col gap-8 lg:flex-row lg:flex-wrap lg:items-start xl:flex-nowrap">
               {/* Profile Image & Basic Info */}
-              <div className="flex flex-col items-center lg:items-start">
+              <div className="flex w-full flex-col items-center lg:max-w-2xl lg:items-start xl:max-w-none">
                 <div className="relative group">
                   <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000" />
                   <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white dark:border-gray-700 shadow-lg">
@@ -241,12 +241,17 @@ function UserDetailsPage() {
                       ))}
                     </div>
                   )}
+                  {userQuery.data.bio ? (
+                    <p className="mt-4 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
+                      {userQuery.data.bio}
+                    </p>
+                  ) : null}
                 </div>
               </div>
 
               {/* Contribution Overview */}
-              <div className="flex-1 w-full space-y-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="flex-1 w-full min-w-0 space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   {contributionStats.map((stat) => (
                     <div
                       key={stat.label}
@@ -284,7 +289,7 @@ function UserDetailsPage() {
                       </div>
                       <div>
                         <p className="text-2xl font-bold text-indigo-900 dark:text-indigo-100">
-                          {totalVotes.toLocaleString()}
+                          {voteSummary.total.toLocaleString()}
                         </p>
                         <p className="text-sm font-medium text-indigo-700 dark:text-indigo-200">
                           Votes Cast
@@ -324,14 +329,14 @@ function UserDetailsPage() {
                     onClick={() => handleTabChange('listings')}
                     className="transition-all duration-200"
                   >
-                    Listings ({userQuery.data._count?.listings ?? 0})
+                    Reports ({userQuery.data._count?.listings ?? 0})
                   </Button>
                   <Button
                     variant={activeTab === 'votes' ? 'default' : 'outline'}
                     onClick={() => handleTabChange('votes')}
                     className="transition-all duration-200"
                   >
-                    Votes ({totalVotes})
+                    Votes ({voteSummary.total})
                   </Button>
                 </div>
 
@@ -462,12 +467,12 @@ function UserDetailsPage() {
                     <div className="text-center py-12">
                       <GamepadIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                        No listings found
+                        No Compatibility Reports found
                       </h3>
                       <p className="text-gray-600 dark:text-gray-400">
                         {searchFilter || systemFilter || emulatorFilter
                           ? 'Try adjusting your filters'
-                          : "This user hasn't submitted any listings yet"}
+                          : "This user hasn't submitted any Compatibility Reports yet"}
                       </p>
                     </div>
                   )}
@@ -542,7 +547,7 @@ function UserDetailsPage() {
                       <p className="text-gray-600 dark:text-gray-400">
                         {searchFilter
                           ? 'Try adjusting your search'
-                          : "This user hasn't voted on any listings yet"}
+                          : "This user hasn't voted on any Compatibility Reports yet"}
                       </p>
                     </div>
                   )}
