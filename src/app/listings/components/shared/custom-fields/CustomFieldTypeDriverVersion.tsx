@@ -2,12 +2,15 @@ import { type ReactNode } from 'react'
 import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import { useDriverVersions } from './hooks/useDriverVersions'
+import { type DriverRelease, useDriverVersions } from './hooks/useDriverVersions'
 
-interface DriverReleaseOption extends AutocompleteOptionBase {
+interface DriverPlaceholderOption extends AutocompleteOptionBase {
   label: string
   value: string
+  name?: string
 }
+
+type DriverReleaseOption = DriverRelease | DriverPlaceholderOption
 
 interface CustomFieldDefinitionWithOptions {
   id: string
@@ -36,13 +39,29 @@ function CustomFieldTypeDriverVersion<TFieldValues extends FieldValues = FieldVa
   props: Props<TFieldValues>,
 ) {
   const driverVersions = useDriverVersions()
-  const selectOptions: DriverReleaseOption[] = driverVersions?.data
-    ? [
-        { label: 'Select for Non-Android Device', value: 'N/A' },
-        { label: 'Default System Driver', value: 'Default System Driver' },
-        ...(driverVersions?.data ?? []),
-      ]
-    : []
+
+  const baseOptions: DriverReleaseOption[] = [
+    {
+      label: 'Select for Non-Android Device',
+      value: 'N/A',
+      name: 'Select for Non-Android Device',
+    },
+    {
+      label: 'Default System Driver',
+      value: 'Default System Driver',
+      name: 'Default System Driver',
+    },
+  ]
+
+  const selectOptions: DriverReleaseOption[] = driverVersions.data
+    ? [...baseOptions, ...driverVersions.data]
+    : baseOptions
+
+  const helperMessage = driverVersions.errorMessage
+    ? driverVersions.errorMessage
+    : driverVersions.rateLimited
+      ? 'GitHub rate limit exceeded. Please try again in a few minutes or select a default option.'
+      : null
 
   return (
     <div key={props.fieldDef.id} className="mb-4">
@@ -74,9 +93,16 @@ function CustomFieldTypeDriverVersion<TFieldValues extends FieldValues = FieldVa
                 'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500',
             )}
             filterKeys={['name', 'label', 'value']}
+            disabled={driverVersions.loading && !driverVersions.data}
           />
         )}
       />
+      {driverVersions.loading && !driverVersions.data && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Loading driver versions…</p>
+      )}
+      {helperMessage && (
+        <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">{helperMessage}</p>
+      )}
       {props.errorMessage && <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>}
     </div>
   )

@@ -1,30 +1,24 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { type DriverRelease, fetchDriverVersions } from '../utils/fetchDriverVersions'
+import { api } from '@/lib/api'
+import { type RouterOutput } from '@/types/trpc'
+import { ms } from '@/utils/time'
+
+export type DriverVersionsResponse = RouterOutput['listings']['driverVersions']
+export type DriverRelease = DriverVersionsResponse['releases'][number]
 
 export function useDriverVersions() {
-  const cache = useRef<DriverRelease[] | null>(null)
-  const [data, setData] = useState<DriverRelease[] | null>(null)
-  const [error, setError] = useState<unknown>(null)
-  const [loading, setLoading] = useState(false)
+  const query = api.listings.driverVersions.useQuery(undefined, {
+    staleTime: ms.minutes(30),
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  })
 
-  const load = useCallback(async () => {
-    if (cache.current) {
-      setData(cache.current)
-      return
-    }
-    try {
-      setLoading(true)
-      const versions = await fetchDriverVersions()
-      cache.current = versions
-      setData(versions)
-    } catch (e) {
-      setError(e)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => void load(), [load])
-
-  return { data, error, loading, reload: load }
+  return {
+    data: query.data?.releases ?? null,
+    rateLimited: query.data?.rateLimited ?? false,
+    errorMessage: query.data?.errorMessage ?? null,
+    loading: query.isLoading,
+    reload: () => {
+      void query.refetch()
+    },
+  }
 }
