@@ -297,7 +297,7 @@ function AdminPermissionsPage() {
                 >
                   {columnVisibility.isColumnVisible('id') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {permission.id.slice(0, 8)}
+                      <Code label={permission.id} maxLength={8} />
                     </td>
                   )}
                   {columnVisibility.isColumnVisible('key') && (
