@@ -1,6 +1,7 @@
 'use client'
 
 import { X, Copy, Download, Check } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import { useState } from 'react'
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter'
 import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash'
@@ -8,7 +9,7 @@ import ini from 'react-syntax-highlighter/dist/esm/languages/prism/ini'
 import javascript from 'react-syntax-highlighter/dist/esm/languages/prism/javascript'
 import json from 'react-syntax-highlighter/dist/esm/languages/prism/json'
 import xml from 'react-syntax-highlighter/dist/esm/languages/prism/xml-doc'
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { solarizedDarkAtom, solarizedlight } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Button } from '@/components/ui'
 import toast from '@/lib/toast'
 import { ConfigTypeUtils, type EmulatorConfigType } from '@/server/utils/emulator-config/constants'
@@ -38,6 +39,7 @@ interface Props {
 }
 
 function ViewConfigModal(props: Props) {
+  const { resolvedTheme } = useTheme()
   const [copied, setCopied] = useState(false)
 
   if (!props.isOpen) return null
@@ -153,7 +155,7 @@ function ViewConfigModal(props: Props) {
           <div className="relative">
             <SyntaxHighlighter
               language={getLanguage()}
-              style={oneDark}
+              style={resolvedTheme === 'dark' ? solarizedDarkAtom : solarizedlight}
               customStyle={{
                 margin: 0,
                 padding: '1rem',

@@ -334,7 +334,7 @@ export class ActivityService {
       id: c.id,
       content:
         c.content.substring(0, CONTENT_PREVIEW_LENGTH) +
-        (c.content.length > CONTENT_PREVIEW_LENGTH ? '...' : ''),
+        (c.content.length > CONTENT_PREVIEW_LENGTH ? '…' : ''),
       listingId: c.listingId,
       listingType: 'handheld' as const,
       gameTitle: c.listing.game.title,

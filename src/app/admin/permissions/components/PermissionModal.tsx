@@ -217,7 +217,7 @@ export default function PermissionModal(props: Props) {
               {isSubmitting ? (
                 <>
                   <LoadingSpinner size="sm" />
-                  {isEditing ? 'Updating...' : 'Creating...'}
+                  {isEditing ? 'Updating…' : 'Creating…'}
                 </>
               ) : isEditing ? (
                 'Update Permission'

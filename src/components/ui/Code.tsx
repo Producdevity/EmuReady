@@ -17,7 +17,7 @@ export function Code(props: Props) {
 
   const label = props.maxLength
     ? stringifiedLabel.length > props.maxLength
-      ? `${stringifiedLabel.slice(0, props.maxLength)}...`
+      ? `${stringifiedLabel.slice(0, props.maxLength)}…`
       : stringifiedLabel
     : stringifiedLabel
 
@@ -25,7 +25,7 @@ export function Code(props: Props) {
     <code
       onClick={() => copyToClipboard(props.value ?? props.label)}
       className={cn(
-        'text-xs text-gray-900 dark:text-gray-100 bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded',
+        'text-xs text-gray-900 dark:text-gray-100 bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded cursor-pointer',
         props.className,
       )}
     >

@@ -206,7 +206,7 @@ export default function AdminBadgesPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <Input
-                placeholder="Search badges..."
+                placeholder="Search badges…"
                 value={table.search}
                 onChange={table.handleSearchChange}
                 className="w-full pl-10"
@@ -256,7 +256,7 @@ export default function AdminBadgesPage() {
       {/* Table */}
       <AdminTableContainer>
         {badgesQuery.isPending ? (
-          <LoadingSpinner text="Loading badges..." />
+          <LoadingSpinner text="Loading badges…" />
         ) : badges.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 dark:text-gray-400 text-lg">
@@ -362,7 +362,7 @@ export default function AdminBadgesPage() {
                               <TooltipTrigger>
                                 <span className="line-clamp-2">
                                   {badge.description.length > 60
-                                    ? `${badge.description.substring(0, 60)}...`
+                                    ? `${badge.description.substring(0, 60)}…`
                                     : badge.description}
                                 </span>
                               </TooltipTrigger>

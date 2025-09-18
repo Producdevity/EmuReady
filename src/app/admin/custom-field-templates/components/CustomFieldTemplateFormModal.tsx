@@ -441,7 +441,7 @@ function CustomFieldTemplateFormModal(props: Props) {
               as="textarea"
               value={templateDescription}
               onChange={(ev) => setTemplateDescription(ev.target.value)}
-              placeholder="Describe what this template is for..."
+              placeholder="Describe what this template is for…"
               rows={3}
               maxLength={500}
               className={errors.templateDescription ? 'border-red-300 dark:border-red-600' : ''}
@@ -959,7 +959,7 @@ function CustomFieldTemplateFormModal(props: Props) {
               }
             >
               {isSubmitting
-                ? 'Saving...'
+                ? 'Saving…'
                 : props.templateIdToEdit
                   ? 'Update Template'
                   : 'Create Template'}

@@ -93,7 +93,7 @@ function CpuModal(props: Props) {
             items={deviceBrandsQuery.data ?? []}
             optionToValue={(brand) => brand.id}
             optionToLabel={(brand) => brand.name}
-            placeholder="Select a brand..."
+            placeholder="Select a brand…"
             className="w-full"
             filterKeys={['name']}
           />

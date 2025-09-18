@@ -144,7 +144,7 @@ function UserRoleModal(props: Props) {
                 (!isSuperAdmin && props.user.role === Role.SUPER_ADMIN)
               }
             >
-              {isLoading ? 'Saving...' : 'Save Changes'}
+              {isLoading ? 'Saving…' : 'Save Changes'}
             </Button>
           </div>
         </form>
