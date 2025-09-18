@@ -62,6 +62,10 @@ const nextConfig: NextConfig = {
 
   serverExternalPackages: ['@prisma/client', 'jsdom', 'markdown-it', 'dompurify'],
 
+  outputFileTracingIncludes: {
+    '/*': ['docs/**/*.md'],
+  },
+
   outputFileTracingExcludes: {
     // apply to all server routes
     '/*': [

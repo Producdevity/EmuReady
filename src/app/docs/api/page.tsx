@@ -30,9 +30,8 @@ function MobileApiDocsPage() {
             Auto-generated API reference with 90 endpoints, authentication, and usage patterns.
           </p>
           <Link
-            href="/docs/MOBILE_API.md"
-            target="_blank"
-            className="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+            href="/docs/api/reference"
+            className="inline-block rounded bg-blue-500 px-4 py-2 text-white transition-colors hover:bg-blue-600"
           >
             View Full Documentation
           </Link>
