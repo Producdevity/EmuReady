@@ -104,9 +104,7 @@ function isRateLimitError(error: unknown): boolean {
   if (message.toLowerCase().includes('rate limit')) return true
 
   const remaining = axiosError.response.headers?.['x-ratelimit-remaining']
-  if (typeof remaining === 'string' && remaining === '0') return true
-
-  return false
+  return typeof remaining === 'string' && remaining === '0'
 }
 
 async function fetchFromGitHub(): Promise<DriverRelease[]> {
