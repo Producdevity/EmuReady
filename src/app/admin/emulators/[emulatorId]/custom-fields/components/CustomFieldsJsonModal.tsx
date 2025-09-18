@@ -1,10 +1,11 @@
 'use client'
 
 import { Copy, Check, FileJson } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import { useMemo, useState } from 'react'
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter'
 import jsonLang from 'react-syntax-highlighter/dist/esm/languages/prism/json'
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { solarizedDarkAtom, solarizedlight } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Button, Modal } from '@/components/ui'
 import { copyToClipboard } from '@/utils/copyToClipboard'
 import { parseCustomFieldOptions } from '@/utils/customFields'
@@ -32,6 +33,7 @@ function valueTypeFor(fieldType: CustomFieldType): 'string' | 'boolean' | 'numbe
 }
 
 export default function CustomFieldsJsonModal(props: Props) {
+  const { resolvedTheme } = useTheme()
   const [copied, setCopied] = useState(false)
 
   const exportObject = useMemo(() => {
@@ -112,7 +114,7 @@ export default function CustomFieldsJsonModal(props: Props) {
           <div className="max-h-[60vh] overflow-auto">
             <SyntaxHighlighter
               language="json"
-              style={oneDark}
+              style={resolvedTheme === 'dark' ? solarizedDarkAtom : solarizedlight}
               customStyle={{ margin: 0, padding: '1rem' }}
             >
               {jsonString}
