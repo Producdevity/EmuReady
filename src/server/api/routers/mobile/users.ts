@@ -14,7 +14,7 @@ export const mobileUsersRouter = createMobileTRPCRouter({
       listingsPage = 1,
       listingsLimit = 12,
       listingsSearch,
-      listingsSystem,
+      listingsDevice,
       listingsEmulator,
       votesPage = 1,
       votesLimit = 12,
@@ -73,8 +73,8 @@ export const mobileUsersRouter = createMobileTRPCRouter({
         { emulator: { name: { contains: listingsSearch, mode } } },
       ]
     }
-    if (listingsSystem) {
-      listingsWhere.device = { brand: { name: listingsSystem } }
+    if (listingsDevice) {
+      listingsWhere.deviceId = listingsDevice
     }
     if (listingsEmulator) {
       listingsWhere.emulator = { name: listingsEmulator }

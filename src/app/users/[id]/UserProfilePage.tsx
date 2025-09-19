@@ -16,7 +16,7 @@ import {
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { isArray, isString } from 'remeda'
 import { z } from 'zod'
 import { SystemIcon } from '@/components/icons'
@@ -29,6 +29,7 @@ import {
   LocalizedDate,
   TrustLevelBadge,
 } from '@/components/ui'
+import { Dropdown } from '@/components/ui/Dropdown'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -71,7 +72,7 @@ function UserDetailsPage() {
     1,
   )
   const [searchFilter, setSearchFilter] = useState(searchParams.get('search') || '')
-  const [systemFilter, setSystemFilter] = useState(searchParams.get('system') || '')
+  const [deviceFilter, setDeviceFilter] = useState(searchParams.get('device') || '')
   const [emulatorFilter, setEmulatorFilter] = useState(searchParams.get('emulator') || '')
 
   // Use proper debouncing - not useMemo with setTimeout
@@ -82,7 +83,7 @@ function UserDetailsPage() {
     listingsPage,
     listingsLimit: 12,
     listingsSearch: debouncedSearch || undefined,
-    listingsSystem: systemFilter || undefined,
+    listingsDevice: deviceFilter || undefined,
     listingsEmulator: emulatorFilter || undefined,
     votesPage,
     votesLimit: 12,
@@ -94,7 +95,14 @@ function UserDetailsPage() {
 
   // Update URL params when filters change
   const updateUrlParams = useCallback(
-    (updates: Record<string, string | number | undefined>) => {
+    (
+      updates: Partial<
+        Record<
+          'search' | 'tab' | 'device' | 'emulator' | 'listingsPage' | 'votesPage',
+          string | number | undefined
+        >
+      >,
+    ) => {
       const newSearchParams = new URLSearchParams(searchParams.toString())
 
       Object.entries(updates).forEach(([key, value]) => {
@@ -119,15 +127,33 @@ function UserDetailsPage() {
     updateUrlParams({ search: value, listingsPage: 1, votesPage: 1 })
   }
 
-  const handleSystemChange = (value: string) => {
-    setSystemFilter(value)
-    updateUrlParams({ system: value, listingsPage: 1 })
+  const handleDeviceChange = (value: string) => {
+    setDeviceFilter(value)
+    updateUrlParams({ device: value, listingsPage: 1 })
   }
 
   const handleEmulatorChange = (value: string) => {
     setEmulatorFilter(value)
     updateUrlParams({ emulator: value, listingsPage: 1 })
   }
+
+  const deviceOptions = useMemo(() => {
+    const devices = userQuery.data?.filterOptions.devices ?? []
+    return [
+      { value: '', label: 'All Devices' } as const,
+      ...devices.map((device) => ({ value: device.id, label: device.label })),
+    ]
+  }, [userQuery.data?.filterOptions.devices])
+
+  const emulatorOptions = useMemo(() => {
+    const emulators = userQuery.data?.filterOptions.emulators ?? []
+    return [
+      { value: '', label: 'All Emulators' } as const,
+      ...emulators
+        .filter((emulator): emulator is string => Boolean(emulator))
+        .map((emulator) => ({ value: emulator, label: emulator })),
+    ]
+  }, [userQuery.data?.filterOptions.emulators])
 
   if (userQuery.isPending) return <UserProfilePageSkeleton />
 
@@ -136,7 +162,16 @@ function UserDetailsPage() {
   }
 
   const contributionSummary = userQuery.data.contributionSummary
-  const voteSummary = userQuery.data.voteSummary ?? { total: 0, upvotes: 0, downvotes: 0 }
+  const voteSummaryData = (
+    userQuery.data as {
+      voteSummary?: { total: number; upvotes: number; downvotes: number }
+    }
+  ).voteSummary
+  const voteSummary: { total: number; upvotes: number; downvotes: number } = voteSummaryData ?? {
+    total: 0,
+    upvotes: 0,
+    downvotes: 0,
+  }
   const positiveVoteRatio =
     voteSummary.total > 0 ? Math.round((voteSummary.upvotes / voteSummary.total) * 100) : 0
 
@@ -322,68 +357,78 @@ function UserDetailsPage() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
             {/* Tabs and Controls */}
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
-                <div className="flex gap-2">
-                  <Button
-                    variant={activeTab === 'listings' ? 'default' : 'outline'}
-                    onClick={() => handleTabChange('listings')}
-                    className="transition-all duration-200"
-                  >
-                    Reports ({userQuery.data._count?.listings ?? 0})
-                  </Button>
-                  <Button
-                    variant={activeTab === 'votes' ? 'default' : 'outline'}
-                    onClick={() => handleTabChange('votes')}
-                    className="transition-all duration-200"
-                  >
-                    Votes ({voteSummary.total})
-                  </Button>
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                <div className="w-full xl:w-auto">
+                  <div className="flex h-11 w-full items-center gap-2 rounded-xl border border-gray-200 bg-gray-100/70 p-1 shadow-sm dark:border-gray-700 dark:bg-gray-900/60 xl:w-auto">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleTabChange('listings')}
+                      className={cn(
+                        'h-10 flex-1 rounded-lg text-sm font-semibold transition',
+                        activeTab === 'listings'
+                          ? 'bg-white text-gray-900 shadow-md dark:bg-gray-800 dark:text-gray-100'
+                          : 'text-gray-600 hover:bg-white/70 dark:text-gray-300 dark:hover:bg-gray-800/70',
+                      )}
+                    >
+                      Reports ({userQuery.data._count?.listings ?? 0})
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleTabChange('votes')}
+                      className={cn(
+                        'h-10 flex-1 rounded-lg text-sm font-semibold transition',
+                        activeTab === 'votes'
+                          ? 'bg-white text-gray-900 shadow-md dark:bg-gray-800 dark:text-gray-100'
+                          : 'text-gray-600 hover:bg-white/70 dark:text-gray-300 dark:hover:bg-gray-800/70',
+                      )}
+                    >
+                      Votes ({voteSummary.total})
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 items-center">
+                <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
                   <Input
                     placeholder="Search..."
                     value={searchFilter}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    className="w-48"
+                    onChange={(event) => handleSearchChange(event.target.value)}
+                    className="h-11 w-full sm:w-72"
+                    aria-label="Search reports"
                   />
 
-                  {activeTab === 'listings' && (
-                    <>
-                      <select
-                        value={systemFilter}
-                        onChange={(e) => handleSystemChange(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-                      >
-                        <option value="">All Systems</option>
-                        {userQuery.data.filterOptions.systems.map((system) => (
-                          <option key={system} value={system}>
-                            {system}
-                          </option>
-                        ))}
-                      </select>
-
-                      <select
+                  {activeTab === 'listings' ? (
+                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                      <Dropdown
+                        options={deviceOptions}
+                        value={deviceFilter}
+                        onChange={handleDeviceChange}
+                        className="w-full sm:w-44"
+                        triggerClassName="h-11 border border-transparent bg-white/90 text-sm font-medium text-gray-700 hover:bg-white dark:bg-gray-800/80 dark:text-gray-200"
+                        placeholder="All Devices"
+                      />
+                      <Dropdown
+                        options={emulatorOptions}
                         value={emulatorFilter}
-                        onChange={(e) => handleEmulatorChange(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-                      >
-                        <option value="">All Emulators</option>
-                        {userQuery.data.filterOptions.emulators.map((emulator) => (
-                          <option key={emulator} value={emulator}>
-                            {emulator}
-                          </option>
-                        ))}
-                      </select>
-                    </>
-                  )}
+                        onChange={handleEmulatorChange}
+                        className="w-full sm:w-44"
+                        triggerClassName="h-11 border border-transparent bg-white/90 text-sm font-medium text-gray-700 hover:bg-white dark:bg-gray-800/80 dark:text-gray-200"
+                        placeholder="All Emulators"
+                      />
+                    </div>
+                  ) : null}
 
-                  <div className="flex gap-1 border border-gray-300 dark:border-gray-600 rounded-lg p-1">
+                  <div className="flex h-11 items-center gap-1 rounded-xl border border-gray-200 bg-white/80 px-1 shadow-sm dark:border-gray-700 dark:bg-gray-900/60">
                     <Button
                       variant={viewMode === 'grid' ? 'default' : 'ghost'}
                       size="sm"
                       onClick={() => setViewMode('grid')}
-                      className="px-2"
+                      className={cn(
+                        'h-9 w-9 p-0',
+                        viewMode === 'grid'
+                          ? 'shadow-sm'
+                          : 'text-gray-500 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100',
+                      )}
+                      aria-label="Grid view"
                     >
                       <Grid3X3 className="w-4 h-4" />
                     </Button>
@@ -391,7 +436,13 @@ function UserDetailsPage() {
                       variant={viewMode === 'list' ? 'default' : 'ghost'}
                       size="sm"
                       onClick={() => setViewMode('list')}
-                      className="px-2"
+                      className={cn(
+                        'h-9 w-9 p-0',
+                        viewMode === 'list'
+                          ? 'shadow-sm'
+                          : 'text-gray-500 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100',
+                      )}
+                      aria-label="List view"
                     >
                       <List className="w-4 h-4" />
                     </Button>
@@ -413,55 +464,89 @@ function UserDetailsPage() {
                           : 'flex flex-col space-y-4',
                       )}
                     >
-                      {userQuery.data.listings.items.map((listing, index) => (
-                        <Link
-                          key={listing.id}
-                          href={`/listings/${listing.id}`}
-                          className={cn(
-                            'group bg-gradient-to-br from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1',
-                            'animate-fade-in-up',
-                          )}
-                          style={{ animationDelay: `${index * 50}ms` }}
-                        >
-                          <div className="flex items-start gap-4">
-                            <div className="flex-shrink-0 w-10 h-10">
-                              {listing.game?.system?.key ? (
-                                <SystemIcon
-                                  systemKey={listing.game.system.key}
-                                  name={listing.game.system.name}
-                                  size="md"
-                                />
-                              ) : (
-                                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-sm">
-                                  <GamepadIcon className="w-5 h-5 text-white" />
+                      {userQuery.data.listings.items.map((listing, index) => {
+                        const deviceName = [listing.device?.brand.name, listing.device?.modelName]
+                          .filter(Boolean)
+                          .join(' ')
+                          .trim()
+
+                        return (
+                          <Link
+                            key={listing.id}
+                            href={`/listings/${listing.id}`}
+                            className={cn(
+                              'animate-fade-in-up group relative overflow-hidden rounded-2xl border transition-all duration-300',
+                              'border-slate-200/70 bg-gradient-to-br from-white/95 via-slate-50/90 to-slate-100/90 hover:-translate-y-1 hover:border-blue-400/40 hover:shadow-xl dark:border-white/5 dark:from-slate-900/70 dark:via-slate-900/60 dark:to-slate-900/45 dark:hover:border-blue-500/40',
+                              viewMode === 'list' ? 'p-5' : 'p-6',
+                            )}
+                            style={{ animationDelay: `${index * 50}ms` }}
+                          >
+                            <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:bg-gradient-to-br dark:from-blue-600/10 dark:via-purple-500/10 dark:to-transparent" />
+                            <div className="relative flex flex-col gap-4">
+                              <div className="flex items-start gap-4">
+                                <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-white/85 ring-1 ring-slate-900/10 shadow-md dark:bg-slate-900/70 dark:ring-white/10">
+                                  {listing.game?.system?.key ? (
+                                    <SystemIcon
+                                      systemKey={listing.game.system.key}
+                                      name={listing.game.system.name}
+                                      size="md"
+                                    />
+                                  ) : (
+                                    <div className="flex h-full w-full items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/90 to-purple-600/90 text-white">
+                                      <GamepadIcon className="h-5 w-5" />
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200 truncate">
-                                {listing.game?.title}
-                              </h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                {listing.device?.brand.name} {listing.device?.modelName}
-                              </p>
-                              <div className="flex items-center gap-2 mt-2">
-                                <Badge variant="default" size="sm">
-                                  {listing.emulator?.name}
-                                </Badge>
-                                {listing.performance && (
-                                  <PerformanceBadge
-                                    rank={listing.performance.rank}
-                                    label={listing.performance.label}
-                                  />
-                                )}
+                                <div className="min-w-0 flex-1 space-y-3">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0 space-y-1">
+                                      <h3 className="truncate font-semibold text-slate-900 transition-colors duration-200 group-hover:text-blue-600 dark:text-slate-100 dark:group-hover:text-blue-300">
+                                        {listing.game?.title}
+                                      </h3>
+                                      <p className="truncate text-sm text-slate-500 dark:text-slate-400">
+                                        {deviceName || 'Unknown device'}
+                                      </p>
+                                    </div>
+                                    {listing.performance ? (
+                                      <PerformanceBadge
+                                        rank={listing.performance.rank}
+                                        label={listing.performance.label}
+                                        pill
+                                        className="hidden shrink-0 text-sm sm:block"
+                                      />
+                                    ) : null}
+                                  </div>
+
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    {listing.emulator?.name ? (
+                                      <Badge
+                                        variant="primary"
+                                        size="sm"
+                                        pill
+                                        className="shadow-sm dark:bg-blue-900/40 dark:text-blue-200"
+                                      >
+                                        {listing.emulator.name}
+                                      </Badge>
+                                    ) : null}
+                                    {listing.performance ? (
+                                      <PerformanceBadge
+                                        rank={listing.performance.rank}
+                                        label={listing.performance.label}
+                                        pill
+                                        className="sm:hidden"
+                                      />
+                                    ) : null}
+                                  </div>
+                                </div>
                               </div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+
+                              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                                 <LocalizedDate date={listing.createdAt} format="timeAgo" />
-                              </p>
+                              </div>
                             </div>
-                          </div>
-                        </Link>
-                      ))}
+                          </Link>
+                        )
+                      })}
                     </div>
                   ) : (
                     <div className="text-center py-12">
@@ -470,7 +555,7 @@ function UserDetailsPage() {
                         No Compatibility Reports found
                       </h3>
                       <p className="text-gray-600 dark:text-gray-400">
-                        {searchFilter || systemFilter || emulatorFilter
+                        {searchFilter || deviceFilter || emulatorFilter
                           ? 'Try adjusting your filters'
                           : "This user hasn't submitted any Compatibility Reports yet"}
                       </p>

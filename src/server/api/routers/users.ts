@@ -228,7 +228,7 @@ export const usersRouter = createTRPCRouter({
       listingsPage = 1,
       listingsLimit = 12,
       listingsSearch,
-      listingsSystem,
+      listingsDevice,
       listingsEmulator,
       votesPage = 1,
       votesLimit = 12,
@@ -261,7 +261,14 @@ export const usersRouter = createTRPCRouter({
 
     // Build where clauses for listings filtering
     const listingsWhere: Prisma.ListingWhereInput = {}
-    if (!ctx.session?.user?.showNsfw) listingsWhere.game = { isErotic: false }
+    const listingsGameFilter: Prisma.GameWhereInput = {}
+    if (!ctx.session?.user?.showNsfw) {
+      listingsGameFilter.isErotic = false
+    }
+
+    if (listingsDevice) {
+      listingsWhere.deviceId = listingsDevice
+    }
 
     // Filter by approval status based on user permissions
     if (canViewBannedUsers) {
@@ -281,17 +288,17 @@ export const usersRouter = createTRPCRouter({
       'emulator.name',
     ])
     if (listingsSearchConditions) listingsWhere.OR = listingsSearchConditions
-    if (listingsSystem) listingsWhere.device = { brand: { name: listingsSystem } }
+    if (Object.keys(listingsGameFilter).length > 0) {
+      listingsWhere.game = listingsGameFilter
+    }
     if (listingsEmulator) listingsWhere.emulator = { name: listingsEmulator }
 
     // Build where clauses for votes filtering
-    const votesWhere: Prisma.VoteWhereInput = {}
+    const voteVisibilityWhere: Prisma.VoteWhereInput = {}
     if (!ctx.session?.user?.showNsfw) {
-      votesWhere.listing = {
-        ...(votesWhere.listing as Prisma.ListingWhereInput),
-        game: { isErotic: false },
-      } as Prisma.ListingWhereInput
+      voteVisibilityWhere.listing = { game: { isErotic: false } }
     }
+    const votesWhere: Prisma.VoteWhereInput = { ...voteVisibilityWhere }
     const votesSearchConditions = buildSearchFilter(votesSearch, [
       'listing.game.title',
       'listing.device.modelName',
@@ -396,10 +403,18 @@ export const usersRouter = createTRPCRouter({
     ])
 
     // Get filter options (for frontend dropdowns)
-    const [availableSystems, availableEmulators, contributionSummary] = await Promise.all([
+    const [availableDevices, availableEmulators, contributionSummary] = await Promise.all([
       ctx.prisma.listing.findMany({
         where: { authorId: userId },
-        select: { device: { select: { brand: { select: { name: true } } } } },
+        select: {
+          device: {
+            select: {
+              id: true,
+              modelName: true,
+              brand: { select: { name: true } },
+            },
+          },
+        },
         distinct: ['deviceId'],
       }),
       ctx.prisma.listing.findMany({
@@ -421,7 +436,15 @@ export const usersRouter = createTRPCRouter({
         pagination: paginate({ total: votesTotal, page: votesPage, limit: votesLimit }),
       },
       filterOptions: {
-        systems: [...new Set(availableSystems.map((l) => l.device.brand.name))],
+        devices: availableDevices
+          .map((entry) => {
+            if (!entry.device?.id) return null
+            const brand = entry.device.brand?.name ?? ''
+            const model = entry.device.modelName ?? ''
+            const label = [brand, model].filter(Boolean).join(' ').trim() || 'Unknown Device'
+            return { id: entry.device.id, label }
+          })
+          .filter((device): device is { id: string; label: string } => Boolean(device)),
         emulators: [...new Set(availableEmulators.map((l) => l.emulator?.name).filter(Boolean))],
       },
       contributionSummary,
