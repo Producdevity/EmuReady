@@ -28,12 +28,19 @@ export const RATE_LIMITS = {
   WINDOW_SIZE_MS: ms.minutes(1),
 } as const
 
+export const API_KEY_LIMITS = {
+  DEFAULT_MONTHLY: 10_000,
+  DEFAULT_WEEKLY: 2_500,
+  DEFAULT_BURST_PER_MINUTE: 100,
+  USAGE_SERIES_LIMIT: 30,
+} as const
+
 // UI constants
 export const UI_CONSTANTS = {
   MODAL_MAX_HEIGHT: '90vh',
-  TOAST_DURATION: 5000, // 5 seconds
-  DEBOUNCE_DELAY: 300, // 300ms
-  ANIMATION_DURATION: 200, // 200ms
+  TOAST_DURATION: ms.seconds(5),
+  DEBOUNCE_DELAY: 300,
+  ANIMATION_DURATION: 200,
 } as const
 
 // Character limits
