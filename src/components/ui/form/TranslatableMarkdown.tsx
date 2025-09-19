@@ -6,7 +6,7 @@ import { useMemo, useCallback } from 'react'
 import { Button } from '@/components/ui'
 import { useTranslation } from '@/hooks/useTranslation'
 import { cn } from '@/lib/utils'
-import { parseMarkdown, hasMarkdownSyntax } from '@/utils/markdown'
+import { parseMarkdown } from '@/utils/markdown'
 
 interface Props {
   content: string
@@ -25,26 +25,15 @@ export function TranslatableMarkdown(props: Props) {
     getTranslationInfo,
   } = useTranslation(props.content)
 
-  // Check if the currently displayed content (original or translated) has markdown
-  const displayedContentHasMarkdown = useMemo(
-    () => hasMarkdownSyntax(displayedContent || ''),
-    [displayedContent],
-  )
-
-  // Parse markdown for the currently displayed content if it has markdown syntax
   const parsedMarkdown = useMemo(() => {
-    if (!displayedContentHasMarkdown || !displayedContent?.trim()) {
-      return null
-    }
+    if (!displayedContent?.trim()) return null
     return parseMarkdown(displayedContent)
-  }, [displayedContent, displayedContentHasMarkdown])
+  }, [displayedContent])
 
-  // Use useCallback to avoid recreating this function on every render
   const renderContent = useCallback(() => {
     if (!displayedContent?.trim()) return null
 
-    // If the displayed content (original or translated) has markdown, parse and render it
-    if (displayedContentHasMarkdown && parsedMarkdown) {
+    if (parsedMarkdown) {
       return (
         <div
           className={cn(
@@ -84,13 +73,7 @@ export function TranslatableMarkdown(props: Props) {
         {displayedContent}
       </div>
     )
-  }, [
-    displayedContent,
-    displayedContentHasMarkdown,
-    parsedMarkdown,
-    props.className,
-    props.preserveWhitespace,
-  ])
+  }, [displayedContent, parsedMarkdown, props.className, props.preserveWhitespace])
 
   const ButtonIcon = isTranslating ? Languages : showTranslated ? Globe : Earth
 
