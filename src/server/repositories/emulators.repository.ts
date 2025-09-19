@@ -1,7 +1,7 @@
 import { PAGINATION } from '@/data/constants'
 import { ResourceError } from '@/lib/errors'
 import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
-import { type Prisma } from '@orm'
+import { ApprovalStatus, type Prisma } from '@orm'
 import { BaseRepository } from './base.repository'
 
 export interface EmulatorFilters {
@@ -11,49 +11,117 @@ export interface EmulatorFilters {
   page?: number | null
   sortField?: string | null
   sortDirection?: Prisma.SortOrder | null
+  systemId?: string | null
 }
+
+const SYSTEM_SELECTION = { select: { id: true, name: true, key: true } } as const
+
+const INCLUDE = {
+  default: {
+    systems: SYSTEM_SELECTION,
+  } satisfies Prisma.EmulatorInclude,
+
+  withCustomFields: {
+    systems: SYSTEM_SELECTION,
+    customFieldDefinitions: {
+      orderBy: { displayOrder: 'asc' as const },
+    },
+  } satisfies Prisma.EmulatorInclude,
+
+  withDevelopers: {
+    systems: SYSTEM_SELECTION,
+    verifiedDevelopers: {
+      include: {
+        user: { select: { id: true, name: true, profileImage: true } },
+      },
+    },
+  } satisfies Prisma.EmulatorInclude,
+
+  withDevelopersAndCounts: {
+    systems: SYSTEM_SELECTION,
+    verifiedDevelopers: {
+      include: {
+        user: { select: { id: true, name: true, profileImage: true } },
+      },
+    },
+    _count: { select: { listings: true, systems: true } },
+  } satisfies Prisma.EmulatorInclude,
+
+  minimal: {
+    systems: SYSTEM_SELECTION,
+    _count: {
+      select: {
+        listings: { where: { status: ApprovalStatus.APPROVED } },
+      },
+    },
+  } satisfies Prisma.EmulatorInclude,
+
+  forDeletion: {
+    _count: { select: { listings: true, pcListings: true } },
+  } satisfies Prisma.EmulatorInclude,
+
+  detail: {
+    systems: SYSTEM_SELECTION,
+    verifiedDevelopers: {
+      include: {
+        user: { select: { id: true, name: true, profileImage: true } },
+      },
+    },
+    customFieldDefinitions: {
+      orderBy: { displayOrder: 'asc' as const },
+    },
+    _count: {
+      select: {
+        listings: true,
+        systems: true,
+        customFieldDefinitions: true,
+      },
+    },
+  } satisfies Prisma.EmulatorInclude,
+} as const
+
+type DetailedEmulatorListItem = Prisma.EmulatorGetPayload<{
+  include: typeof INCLUDE.withDevelopersAndCounts
+}>
+
+type MinimalEmulatorListItem = Prisma.EmulatorGetPayload<{
+  include: typeof INCLUDE.minimal
+}>
+
+type EmulatorListResponse<TEmulator> = Promise<{
+  emulators: TEmulator[]
+  pagination: PaginationResult
+}>
+
+type DetailedEmulatorDetail = Prisma.EmulatorGetPayload<{
+  include: typeof INCLUDE.detail
+}>
+
+type MinimalEmulatorDetail = Prisma.EmulatorGetPayload<{
+  include: typeof INCLUDE.minimal
+}>
 
 /**
  * Repository for Emulator data access
  */
 export class EmulatorsRepository extends BaseRepository {
-  // Static query shapes for this repository
-  static readonly includes = {
-    default: {
-      systems: { select: { id: true, name: true, key: true } },
-    } satisfies Prisma.EmulatorInclude,
+  static readonly includes = INCLUDE
 
-    withCustomFields: {
-      systems: { select: { id: true, name: true, key: true } },
-      customFieldDefinitions: {
-        orderBy: { displayOrder: 'asc' as const },
-      },
-    } satisfies Prisma.EmulatorInclude,
-
-    withDevelopers: {
-      systems: { select: { id: true, name: true, key: true } },
-      verifiedDevelopers: {
-        include: {
-          user: { select: { id: true, name: true, profileImage: true } },
-        },
-      },
-    } satisfies Prisma.EmulatorInclude,
-
-    forDeletion: {
-      _count: { select: { listings: true, pcListings: true } },
-    } satisfies Prisma.EmulatorInclude,
-  } as const
-
-  async list(filters: EmulatorFilters = {}): Promise<{
-    emulators: Prisma.EmulatorGetPayload<{
-      include: typeof EmulatorsRepository.includes.withDevelopers & {
-        _count: { select: { listings: true; systems: true } }
-      }
-    }>[]
+  list(filters?: EmulatorFilters): EmulatorListResponse<DetailedEmulatorListItem>
+  list(
+    filters: EmulatorFilters | undefined,
+    options: { minimal: true },
+  ): EmulatorListResponse<MinimalEmulatorListItem>
+  async list(
+    filters: EmulatorFilters = {},
+    options?: { minimal?: boolean },
+  ): Promise<{
+    emulators: DetailedEmulatorListItem[] | MinimalEmulatorListItem[]
     pagination: PaginationResult
   }> {
     const {
       search,
+      systemId,
       limit = PAGINATION.DEFAULT_LIMIT,
       offset = 0,
       page,
@@ -61,61 +129,64 @@ export class EmulatorsRepository extends BaseRepository {
       sortDirection,
     } = filters
 
-    const where = this.buildWhereClause(search)
+    const where = this.buildWhereClause(search, systemId)
     const orderBy = this.buildOrderBy(sortField, sortDirection)
-    const actualOffset = calculateOffset({ page, offset }, limit ?? 20)
+    const resolvedLimit = limit ?? PAGINATION.DEFAULT_LIMIT
+    const actualOffset = calculateOffset({ page, offset }, resolvedLimit)
+
+    const include = options?.minimal ? INCLUDE.minimal : INCLUDE.withDevelopersAndCounts
 
     const [total, emulators] = await Promise.all([
       this.prisma.emulator.count({ where }),
       this.prisma.emulator.findMany({
         where,
-        include: {
-          ...EmulatorsRepository.includes.withDevelopers,
-          _count: { select: { listings: true, systems: true } },
-        },
+        include,
         orderBy,
-        take: limit ?? 20,
+        take: resolvedLimit,
         skip: actualOffset,
       }),
     ])
 
     const pagination = paginate({
-      total: total,
-      page: page ?? Math.floor(actualOffset / (limit ?? 20)) + 1,
-      limit: limit ?? 20,
+      total,
+      page: page ?? Math.floor(actualOffset / resolvedLimit) + 1,
+      limit: resolvedLimit,
     })
 
-    return { emulators, pagination }
+    if (options?.minimal) {
+      return {
+        emulators: emulators as MinimalEmulatorListItem[],
+        pagination,
+      }
+    }
+
+    return {
+      emulators: emulators as DetailedEmulatorListItem[],
+      pagination,
+    }
   }
 
-  async byId(id: string): Promise<Prisma.EmulatorGetPayload<{
-    include: typeof EmulatorsRepository.includes.withDevelopers &
-      typeof EmulatorsRepository.includes.withCustomFields & {
-        _count: { select: { listings: true; systems: true; customFieldDefinitions: true } }
-      }
-  }> | null> {
+  byId(id: string): Promise<DetailedEmulatorDetail | null>
+  byId(id: string, options: { minimal: true }): Promise<MinimalEmulatorDetail | null>
+  async byId(id: string, options?: { minimal?: boolean }) {
+    if (options?.minimal) {
+      return this.prisma.emulator.findUnique({
+        where: { id },
+        include: INCLUDE.minimal,
+      })
+    }
+
     return this.prisma.emulator.findUnique({
       where: { id },
-      include: {
-        ...EmulatorsRepository.includes.withDevelopers,
-        ...EmulatorsRepository.includes.withCustomFields,
-        _count: {
-          select: {
-            listings: true,
-            systems: true,
-            customFieldDefinitions: true,
-          },
-        },
-      },
+      include: INCLUDE.detail,
     })
   }
 
   async create(data: Prisma.EmulatorCreateInput): Promise<
     Prisma.EmulatorGetPayload<{
-      include: typeof EmulatorsRepository.includes.default
+      include: typeof INCLUDE.default
     }>
   > {
-    // Check for duplicate name
     const exists = await this.existsByName(data.name as string)
     if (exists) throw ResourceError.emulator.alreadyExists(data.name as string)
 
@@ -123,7 +194,7 @@ export class EmulatorsRepository extends BaseRepository {
       () =>
         this.prisma.emulator.create({
           data,
-          include: EmulatorsRepository.includes.default,
+          include: INCLUDE.default,
         }),
       'Emulator',
     )
@@ -134,14 +205,12 @@ export class EmulatorsRepository extends BaseRepository {
     data: Prisma.EmulatorUpdateInput,
   ): Promise<
     Prisma.EmulatorGetPayload<{
-      include: typeof EmulatorsRepository.includes.default
+      include: typeof INCLUDE.default
     }>
   > {
-    // Check if emulator exists
     const emulator = await this.byId(id)
     if (!emulator) throw ResourceError.emulator.notFound()
 
-    // Check for duplicate name if being updated
     if (data.name && typeof data.name === 'string') {
       const exists = await this.existsByName(data.name, id)
       if (exists) throw ResourceError.emulator.alreadyExists(data.name)
@@ -152,17 +221,16 @@ export class EmulatorsRepository extends BaseRepository {
         this.prisma.emulator.update({
           where: { id },
           data,
-          include: EmulatorsRepository.includes.default,
+          include: INCLUDE.default,
         }),
       'Emulator',
     )
   }
 
   async delete(id: string): Promise<void> {
-    // Check if emulator exists and has listings
     const emulator = await this.prisma.emulator.findUnique({
       where: { id },
-      include: EmulatorsRepository.includes.forDeletion,
+      include: INCLUDE.forDeletion,
     })
 
     if (!emulator) throw ResourceError.emulator.notFound()
@@ -198,15 +266,29 @@ export class EmulatorsRepository extends BaseRepository {
     }
   }
 
-  private buildWhereClause(search?: string | null): Prisma.EmulatorWhereInput {
-    if (!search) return {}
+  private buildWhereClause(
+    search?: string | null,
+    systemId?: string | null,
+  ): Prisma.EmulatorWhereInput {
+    const clauses: Prisma.EmulatorWhereInput[] = []
 
-    return {
-      OR: [
-        { name: { contains: search, mode: this.mode } },
-        { description: { contains: search, mode: this.mode } },
-      ],
+    if (search) {
+      clauses.push({
+        OR: [
+          { name: { contains: search, mode: this.mode } },
+          { description: { contains: search, mode: this.mode } },
+        ],
+      })
     }
+
+    if (systemId) {
+      clauses.push({ systems: { some: { id: systemId } } })
+    }
+
+    if (clauses.length === 0) return {}
+    if (clauses.length === 1) return clauses[0]
+
+    return { AND: clauses }
   }
 
   private buildOrderBy(
@@ -227,9 +309,6 @@ export class EmulatorsRepository extends BaseRepository {
     }
   }
 
-  /**
-   * Check if emulator name exists
-   */
   async existsByName(name: string, excludeId?: string): Promise<boolean> {
     const emulator = await this.prisma.emulator.findFirst({
       where: {
@@ -240,28 +319,23 @@ export class EmulatorsRepository extends BaseRepository {
     return !!emulator
   }
 
-  /**
-   * Update supported systems for an emulator
-   */
   async updateSupportedSystems(
     emulatorId: string,
     systemIds: string[],
   ): Promise<
     Prisma.EmulatorGetPayload<{
-      include: typeof EmulatorsRepository.includes.default
+      include: typeof INCLUDE.default
     }>
   > {
-    // First disconnect all existing systems
     await this.prisma.emulator.update({
       where: { id: emulatorId },
       data: {
         systems: {
-          set: [], // Clear all connections
+          set: [],
         },
       },
     })
 
-    // Then connect the new systems
     return this.prisma.emulator.update({
       where: { id: emulatorId },
       data: {
@@ -269,7 +343,7 @@ export class EmulatorsRepository extends BaseRepository {
           connect: systemIds.map((id) => ({ id })),
         },
       },
-      include: EmulatorsRepository.includes.default,
+      include: INCLUDE.default,
     })
   }
 }

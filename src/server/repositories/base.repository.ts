@@ -1,4 +1,5 @@
 import { AppError, ResourceError, ValidationError } from '@/lib/errors'
+import { logger } from '@/lib/logger'
 import { Prisma, type PrismaClient } from '@orm'
 
 /**
@@ -65,6 +66,7 @@ export abstract class BaseRepository {
         throw error
       }
       // Generic database error for unknown errors
+      logger.error('[BaseRepository] Database error', error, { context })
       throw AppError.databaseError(context)
     }
   }

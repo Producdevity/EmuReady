@@ -1,49 +1,32 @@
 import { GetEmulatorByIdSchema, GetEmulatorsSchema } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
-import { buildSearchFilter } from '@/server/utils/query-builders'
-import { ApprovalStatus } from '@orm'
+import { EmulatorsRepository } from '@/server/repositories/emulators.repository'
 
 export const mobileEmulatorsRouter = createMobileTRPCRouter({
   /**
    * Get emulators with search and filtering
    */
   get: mobilePublicProcedure.input(GetEmulatorsSchema).query(async ({ ctx, input }) => {
-    const { systemId, search, limit } = input ?? {}
-
-    const whereClause: Record<string, unknown> = {}
-
-    // Add search filtering at database level
-    const searchConditions = buildSearchFilter(search, ['name'])
-    if (searchConditions) whereClause.OR = searchConditions
-
-    // Add system filtering at database level
-    if (systemId) whereClause.systems = { some: { id: systemId } }
-
-    return await ctx.prisma.emulator.findMany({
-      where: whereClause,
-      include: {
-        systems: { select: { id: true, name: true, key: true } },
-        _count: {
-          select: {
-            listings: { where: { status: ApprovalStatus.APPROVED } },
-          },
-        },
+    const repository = new EmulatorsRepository(ctx.prisma)
+    const { emulators } = await repository.list(
+      {
+        search: input?.search,
+        systemId: input?.systemId ?? null,
+        limit: input?.limit,
+        sortField: 'listingCount',
+        sortDirection: 'desc',
       },
-      orderBy: [{ listings: { _count: 'desc' } }, { name: 'asc' }],
-      take: limit,
-    })
+      { minimal: true },
+    )
+
+    return emulators
   }),
 
   /**
    * Get emulator by ID
    */
   byId: mobilePublicProcedure.input(GetEmulatorByIdSchema).query(async ({ ctx, input }) => {
-    return await ctx.prisma.emulator.findUnique({
-      where: { id: input.id },
-      include: {
-        systems: { select: { id: true, name: true, key: true } },
-        _count: { select: { listings: true } },
-      },
-    })
+    const repository = new EmulatorsRepository(ctx.prisma)
+    return repository.byId(input.id, { minimal: true })
   }),
 })
