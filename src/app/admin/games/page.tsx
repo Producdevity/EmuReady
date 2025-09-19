@@ -9,13 +9,12 @@ import ImageIndicators from '@/app/admin/components/ImageIndicators'
 import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
 import { useAdminTable } from '@/app/admin/hooks'
 import { useAdminFilters } from '@/app/admin/hooks/useAdminFilters'
-import { AdminTableContainer } from '@/components/admin'
+import { AdminPageLayout, AdminStatsDisplay, AdminTableContainer } from '@/components/admin'
 import {
   ApprovalStatusBadge,
   ApproveButton,
   Badge,
   Button,
-  Card,
   DeleteButton,
   EditButton,
   Input,
@@ -30,10 +29,12 @@ import {
   useConfirmDialog,
   ViewButton,
   LocalizedDate,
+  ColumnVisibilityControl,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
+import { logger } from '@/lib/logger'
 import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import { type Nullable } from '@/types/utils'
@@ -42,21 +43,7 @@ import getGameImageUrl from '@/utils/images/getGameImageUrl'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus } from '@orm'
 
-type Game = RouterOutput['games']['get']['games'][number] & {
-  system?: {
-    id: string
-    name: string
-  }
-  submitter?: {
-    id: string
-    name: string | null
-    email: string | null
-  } | null
-  _count?: {
-    listings: number
-    pcListings: number
-  }
-}
+type Game = RouterOutput['games']['get']['games'][number]
 type GameSortField = 'title' | 'system.name' | 'listingsCount' | 'submittedAt' | 'status'
 
 const GAMES_COLUMNS: ColumnDefinition[] = [
@@ -125,13 +112,13 @@ function AdminGamesPage() {
     onSuccess: () => {
       toast.success('Game deleted successfully')
       gamesQuery.refetch().catch((error) => {
-        console.error('Error refreshing games:', error)
         toast.error('Failed to refresh games list')
+        logger.error('[AdminGamesPage] Error refreshing games:', error)
       })
     },
     onError: (error) => {
       toast.error(`Failed to delete game: ${getErrorMessage(error)}`)
-      console.error('Error deleting game:', error)
+      logger.error('[AdminGamesPage] Error deleting game:', error)
     },
   })
 
@@ -139,14 +126,14 @@ function AdminGamesPage() {
     onSuccess: (data) => {
       toast.success(`Game ${data.status.toLowerCase()} successfully!`)
       gamesQuery.refetch().catch((error) => {
-        console.error('Error refreshing games:', error)
+        logger.error('[AdminGamesPage] Error refreshing games:', error)
       })
       setProcessingGameId(null)
       setProcessingAction(null)
     },
     onError: (error) => {
       toast.error(`Failed to update game status: ${getErrorMessage(error)}`)
-      console.error('Error updating game status:', error)
+      logger.error('[AdminGamesPage] Error updating game status:', error)
       setProcessingGameId(null)
       setProcessingAction(null)
     },
@@ -225,53 +212,42 @@ function AdminGamesPage() {
     { id: ApprovalStatus.REJECTED, name: 'Rejected' },
   ]
 
-  // TODO: use AdminPageLayout like all the other admin pages
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Games Management</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage all games in the system</p>
-        </div>
-
-        <div className="flex items-center gap-4">
+    <AdminPageLayout
+      title="Games Management"
+      description="Manage all games in the system"
+      headerActions={
+        <>
+          <ColumnVisibilityControl columns={GAMES_COLUMNS} columnVisibility={columnVisibility} />
+          <Button asChild variant="default">
+            <Link href="/admin/games/approvals">Game Approvals</Link>
+          </Button>
           <Button asChild variant="primary">
             <Link href="/games/new">Add Game</Link>
           </Button>
-          <Button asChild variant="outline">
-            <Link href="/admin/games/approvals">Game Approvals</Link>
-          </Button>
-        </div>
-      </div>
-
-      {gameStatsQuery.data && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {gameStatsQuery.data.total}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Total Games</div>
-          </Card>
-          <Card>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {gameStatsQuery.data.approved}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Approved</div>
-          </Card>
-          <Card>
-            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-              {gameStatsQuery.data.pending}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Pending</div>
-          </Card>
-          <Card>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-              {gameStatsQuery.data.rejected}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Rejected</div>
-          </Card>
-        </div>
-      )}
+        </>
+      }
+    >
+      <AdminStatsDisplay
+        stats={[
+          {
+            label: 'Total Games',
+            value: gameStatsQuery.data?.total,
+            color: 'blue',
+          },
+          {
+            label: 'Used in Reports',
+            value: gameStatsQuery.data?.approved,
+            color: 'green',
+          },
+          {
+            label: 'Rejected',
+            value: gameStatsQuery.data?.rejected,
+            color: 'red',
+          },
+        ]}
+        isLoading={gameStatsQuery.isPending}
+      />
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
         <div className="flex flex-col sm:flex-row gap-4">
@@ -354,7 +330,7 @@ function AdminGamesPage() {
                     )}
                     {columnVisibility.isColumnVisible('listings') && (
                       <SortableHeader
-                        label="Listings"
+                        label="Reports"
                         field="listingsCount"
                         currentSortField={table.sortField}
                         currentSortDirection={table.sortDirection}
@@ -462,7 +438,7 @@ function AdminGamesPage() {
                       )}
                       {columnVisibility.isColumnVisible('listings') && (
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          {game._count?.listings || 0} listings
+                          <Badge>{game._count?.listings || 0} reports</Badge>
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('status') && (
@@ -571,7 +547,7 @@ function AdminGamesPage() {
         onClose={() => setIsImagePreviewOpen(false)}
         game={selectedGameForImagePreview}
       />
-    </div>
+    </AdminPageLayout>
   )
 }
 
