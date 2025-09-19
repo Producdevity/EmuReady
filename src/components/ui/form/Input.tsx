@@ -1,8 +1,8 @@
 import { ChevronDown } from 'lucide-react'
 import {
   forwardRef,
-  type Ref,
   type ReactNode,
+  type Ref,
   type SelectHTMLAttributes,
   type InputHTMLAttributes,
   type TextareaHTMLAttributes,
@@ -33,16 +33,66 @@ export const Input = forwardRef<HTMLElement, Props>(
       containerClassName,
       as = 'input',
       children,
-      ...props
+      ...restProps
     },
     ref,
   ) => {
     const commonInputStyling =
       'w-full outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 bg-transparent'
 
-    // For select elements, we need a dropdown icon if no rightIcon is provided
-    const selectRightIcon =
+    const trailingIcon =
       as === 'select' && !rightIcon ? <ChevronDown className="w-4 h-4" /> : rightIcon
+
+    let control: ReactNode
+
+    if (as === 'input') {
+      const { type, ...inputProps } = restProps as InputHTMLAttributes<HTMLInputElement>
+      control = (
+        <input
+          ref={ref as Ref<HTMLInputElement>}
+          type={type ?? 'text'}
+          className={cn(
+            commonInputStyling,
+            'py-2 px-3',
+            leftIcon ? 'pl-10' : '',
+            trailingIcon ? 'pr-10' : '',
+            inputClassName,
+          )}
+          {...inputProps}
+        />
+      )
+    } else if (as === 'select') {
+      control = (
+        <select
+          ref={ref as Ref<HTMLSelectElement>}
+          className={cn(
+            commonInputStyling,
+            'appearance-none cursor-pointer',
+            'py-2 px-3',
+            leftIcon ? 'pl-10' : '',
+            trailingIcon ? 'pr-10' : '',
+            inputClassName,
+          )}
+          {...(restProps as SelectHTMLAttributes<HTMLSelectElement>)}
+        >
+          {children}
+        </select>
+      )
+    } else {
+      control = (
+        <textarea
+          ref={ref as Ref<HTMLTextAreaElement>}
+          className={cn(
+            commonInputStyling,
+            'py-2 px-3 resize-vertical',
+            leftIcon ? 'pl-10' : '',
+            trailingIcon ? 'pr-10' : '',
+            inputClassName,
+          )}
+          {...(restProps as TextareaHTMLAttributes<HTMLTextAreaElement>)}
+        />
+      )
+    }
 
     return (
       <div className={cn('relative', containerClassName)}>
@@ -57,52 +107,10 @@ export const Input = forwardRef<HTMLElement, Props>(
               {leftIcon}
             </span>
           )}
-          {as === 'input' && (
-            <input
-              ref={ref as Ref<HTMLInputElement>}
-              type="text"
-              className={cn(
-                commonInputStyling,
-                'py-2 px-3',
-                leftIcon ? 'pl-10' : '',
-                rightIcon ? 'pr-10' : '',
-                inputClassName,
-              )}
-              {...props}
-            />
-          )}
-          {as === 'select' && (
-            <select
-              ref={ref as Ref<HTMLSelectElement>}
-              className={cn(
-                commonInputStyling,
-                'appearance-none cursor-pointer',
-                'py-2 px-3',
-                leftIcon ? 'pl-10' : '',
-                selectRightIcon ? 'pr-10' : '',
-                inputClassName,
-              )}
-              {...(props as SelectHTMLAttributes<HTMLSelectElement>)}
-            >
-              {children}
-            </select>
-          )}
-          {as === 'textarea' && (
-            <textarea
-              ref={ref as Ref<HTMLTextAreaElement>}
-              className={cn(
-                commonInputStyling,
-                'py-2 px-3 resize-vertical',
-                leftIcon ? 'pl-10' : '',
-                rightIcon ? 'pr-10' : '',
-                inputClassName,
-              )}
-              {...(props as TextareaHTMLAttributes<HTMLTextAreaElement>)}
-            />
-          )}
-          {(selectRightIcon || rightIcon) && (
+          {control}
+          {trailingIcon && (
             <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-gray-500 pointer-events-none">
-              {as === 'select' ? selectRightIcon : rightIcon}
+              {trailingIcon}
             </span>
           )}
         </div>
