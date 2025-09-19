@@ -70,6 +70,12 @@ enum PermissionCategory {
   SYSTEM
 }
 
+enum ApiUsagePeriod {
+  MINUTE
+  WEEK
+  MONTH
+}
+
 model User {
   id                          String                            @id @default(uuid())
   clerkId                     String                            @unique
@@ -133,6 +139,50 @@ model User {
   userBadges                  UserBadge[]
   badgesCreated               Badge[]                           @relation("BadgesCreatedBy")
   badgeAssignments            UserBadge[]                       @relation("BadgeAssignments")
+  // API access relations
+  apiKeys                     ApiKey[]
+}
+
+model ApiKey {
+  id             String          @id @default(uuid())
+  userId         String
+  name           String?
+  prefix         String          @unique
+  secretHash     String
+  salt           String
+  monthlyQuota   Int             @default(10000)
+  weeklyQuota    Int             @default(2500)
+  burstQuota     Int             @default(100)
+  requestCount   Int             @default(0)
+  isSystemKey    Boolean         @default(false)
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  lastUsedAt     DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usageWindows   ApiKeyUsage[]
+
+  @@index([userId])
+  @@index([isSystemKey])
+  @@map("api_keys")
+}
+
+model ApiKeyUsage {
+  id          String         @id @default(uuid())
+  apiKeyId    String
+  period      ApiUsagePeriod
+  windowStart DateTime
+  requestCount Int          @default(0)
+  firstRequestAt DateTime?  @default(now())
+  lastRequestAt  DateTime?  @default(now())
+
+  apiKey      ApiKey        @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@unique([apiKeyId, period, windowStart])
+  @@index([apiKeyId, period])
+  @@map("api_key_usage")
 }
 
 model UserDevicePreference {
