@@ -48,6 +48,8 @@ const storageKeys = {
     adminPcListings: `${PREFIX}admin_pc_listings_column_visibility`,
     pcListings: `${PREFIX}pc_listings_column_visibility`,
     adminBadges: `${PREFIX}admin_badges_column_visibility`,
+    adminApiKeys: `${PREFIX}admin_api_keys_column_visibility`,
+    developerApiKeys: `${PREFIX}developer_api_keys_column_visibility`,
   },
 } as const
 
