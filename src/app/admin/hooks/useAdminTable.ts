@@ -128,7 +128,9 @@ export function useAdminTable<TSortField extends string>(
       if (value) params.set(key, value)
     })
 
-    const url = params.toString() ? `?${params.toString()}` : window.location.pathname
+    const url = params.toString()
+      ? `${window.location.pathname}?${params.toString()}`
+      : window.location.pathname
     router.replace(url, { scroll: false })
   }, [enableUrlState, debouncedSearch, page, sortField, sortDirection, additionalParams, router])
 
