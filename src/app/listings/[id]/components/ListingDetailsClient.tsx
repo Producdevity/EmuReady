@@ -120,14 +120,19 @@ function ListingDetailsClient(props: Props) {
                 gameUrl={`/games/${props.listing?.game.id}`}
                 badges={
                   [
-                    <Badge key="system" variant="default">
+                    <Badge
+                      key="system"
+                      onClick={() =>
+                        router.push(`/systems?systemId=${props.listing?.game.system?.id}`)
+                      }
+                      variant="default"
+                    >
                       System: {props.listing?.game.system?.name}
                     </Badge>,
                     <Badge
                       key="device"
                       onClick={() => router.push(`/devices?deviceId=${props.listing?.device?.id}`)}
                       variant="default"
-                      className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
                     >
                       Device: {props.listing?.device?.brand?.name}{' '}
                       {props.listing?.device?.modelName}
@@ -138,7 +143,6 @@ function ListingDetailsClient(props: Props) {
                         router.push(`/emulators?emulatorId=${props.listing?.emulator?.id}`)
                       }
                       variant="default"
-                      className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
                     >
                       Emulator: {props.listing?.emulator?.name}
                     </Badge>,
