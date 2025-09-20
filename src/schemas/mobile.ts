@@ -51,7 +51,7 @@ export const GetListingByIdSchema = z.object({
 
 export const GetListingEmulatorConfigSchema = z.object({
   listingId: z.string().uuid(),
-  emulatorType: z.enum(['eden', 'gamenative']).optional(),
+  emulatorType: z.enum(['azahar', 'eden', 'gamenative']).optional(),
 })
 
 export const GetListingsByGameSchema = z.object({

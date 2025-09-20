@@ -1092,6 +1092,7 @@
           "emulatorType": {
             "type": "string",
             "enum": [
+              "azahar",
               "eden",
               "gamenative"
             ]
