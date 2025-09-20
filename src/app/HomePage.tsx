@@ -1,6 +1,7 @@
 'use client'
 
 import { SignUpButton, useUser } from '@clerk/nextjs'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   ThumbsUp,
   MessageCircle,
@@ -20,8 +21,44 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { SuccessRateBar, LoadingSpinner, PerformanceBadge } from '@/components/ui'
 import { api } from '@/lib/api'
+import { cn } from '@/lib/utils'
 import { formatters, getLocale } from '@/utils/date'
 import getImageUrl from '@/utils/getImageUrl'
+
+const contributorTabs = [
+  { id: 'allTime' as const, label: 'All Time' },
+  { id: 'thisMonth' as const, label: 'This Month' },
+  { id: 'thisWeek' as const, label: 'This Week' },
+]
+
+type ContributorTab = (typeof contributorTabs)[number]['id']
+
+const rankThemes = [
+  {
+    numberClass: 'text-amber-500 dark:text-amber-200',
+    badgeClass:
+      'from-amber-200 via-amber-300 to-amber-400 dark:from-amber-500 dark:via-amber-600 dark:to-amber-500',
+    badgeTextClass: 'text-amber-900 dark:text-gray-50',
+    cardClass:
+      'ring-2 ring-amber-300/70 dark:ring-amber-400/60 shadow-[0_32px_70px_-36px_rgba(245,158,11,0.65)]',
+  },
+  {
+    numberClass: 'text-slate-500 dark:text-slate-200',
+    badgeClass:
+      'from-slate-200 via-slate-300 to-slate-400 dark:from-slate-500 dark:via-slate-600 dark:to-slate-700',
+    badgeTextClass: 'text-slate-900 dark:text-slate-100',
+    cardClass:
+      'ring-2 ring-slate-400/70 dark:ring-slate-500/60 shadow-[0_32px_70px_-36px_rgba(148,163,184,0.75)]',
+  },
+  {
+    numberClass: 'text-orange-600 dark:text-orange-200',
+    badgeClass:
+      'from-orange-200 via-amber-300 to-orange-400 dark:from-orange-500 dark:via-amber-500 dark:to-orange-500',
+    badgeTextClass: 'text-amber-900 dark:text-white',
+    cardClass:
+      'ring-2 ring-orange-200/70 dark:ring-amber-500/60 shadow-[0_32px_70px_-36px_rgba(234,88,12,0.55)]',
+  },
+]
 
 function Home() {
   const { user } = useUser()
@@ -37,14 +74,6 @@ function Home() {
     devices: 0,
   }
 
-  const contributorTabs = [
-    { id: 'allTime' as const, label: 'All Time' },
-    { id: 'thisMonth' as const, label: 'This Month' },
-    { id: 'thisWeek' as const, label: 'This Week' },
-  ]
-
-  type ContributorTab = (typeof contributorTabs)[number]['id']
-
   const [activeContributorRange, setActiveContributorRange] = useState<ContributorTab>('thisMonth')
 
   const contributors = topContributorsQuery.data?.[activeContributorRange] ?? []
@@ -54,7 +83,7 @@ function Home() {
     <div className="bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
       <div className="container mx-auto px-4 pb-8">
         {/* Hero Section */}
-        <section className="relative py-10 mb-10 overflow-hidden">
+        <section className="relative py-10 mb-10 overflow-visible">
           {/* Background Elements */}
           <div className="absolute inset-0 -z-10">
             <div className="absolute top-0 left-1/4 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse" />
@@ -90,22 +119,22 @@ function Home() {
 
             {/* Subtitle */}
             <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-12 max-w-4xl mx-auto font-medium leading-relaxed">
-              Find the perfect emulator for your device with{' '}
+              The largest{' '}
               <span className="text-blue-600 dark:text-blue-400 font-semibold">
                 community-driven
               </span>{' '}
-              compatibility reports that help you make{' '}
+              hub for tracking{' '}
               <span className="text-purple-600 dark:text-purple-400 font-semibold">
-                informed decisions
-              </span>
-              .
+                emulation compatibility
+              </span>{' '}
+              across devices, emulators, and platforms.
             </p>
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row justify-center gap-6 mb-16 px-2 sm:px-4">
               <Link
                 href="/pc-listings"
-                className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white font-bold text-lg rounded-2xl shadow-2xl shadow-blue-500/25 transition-all duration-300 transform hover:scale-105 hover:shadow-blue-500/40"
+                className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white font-bold text-lg rounded-2xl shadow-2xl shadow-blue-500/25 transition duration-300 transform hover:scale-105 hover:shadow-blue-500/40"
               >
                 <span className="relative z-10 flex items-center gap-2">
                   <Monitor className="w-5 h-5" />
@@ -117,7 +146,7 @@ function Home() {
 
               <Link
                 href="/listings"
-                className="group relative px-8 py-4 bg-gradient-to-r from-green-500 via-green-600 to-green-700 hover:from-green-600 hover:via-green-700 hover:to-green-800 text-white font-bold text-lg rounded-2xl shadow-2xl shadow-green-500/25 transition-all duration-300 transform hover:scale-105 hover:shadow-green-500/40"
+                className="group relative px-8 py-4 bg-gradient-to-r from-green-500 via-green-600 to-green-700 hover:from-green-600 hover:via-green-700 hover:to-green-800 text-white font-bold text-lg rounded-2xl shadow-2xl shadow-green-500/25 transition duration-300 transform hover:scale-105 hover:shadow-green-500/40"
               >
                 <span className="relative z-10 flex items-center gap-2">
                   <Gamepad2 className="w-5 h-5" />
@@ -131,7 +160,7 @@ function Home() {
                 <SignUpButton>
                   <button
                     type="button"
-                    className="group relative px-8 py-4 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm transition-all duration-300 transform hover:scale-105"
+                    className="group relative px-8 py-4 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm transition duration-300 transform hover:scale-105"
                   >
                     <span className="relative z-10 flex items-center gap-2">
                       <Users className="w-5 h-5" />
@@ -145,7 +174,7 @@ function Home() {
 
             {/* Feature Highlights */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-              <div className="group p-6 rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+              <div className="group p-6 rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-2">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
                   <Shield className="w-6 h-6 text-white" />
                 </div>
@@ -157,7 +186,7 @@ function Home() {
                 </p>
               </div>
 
-              <div className="group p-6 rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+              <div className="group p-6 rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-2">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
                   <Zap className="w-6 h-6 text-white" />
                 </div>
@@ -169,7 +198,7 @@ function Home() {
                 </p>
               </div>
 
-              <div className="group p-6 rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+              <div className="group p-6 rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-2">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
                   <Users className="w-6 h-6 text-white" />
                 </div>
@@ -189,7 +218,7 @@ function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-2 sm:px-4">
             <Link
               href="/listings"
-              className="group p-8 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 text-center cursor-pointer"
+              className="group p-8 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition duration-500 transform hover:scale-105 text-center cursor-pointer"
             >
               {statisticsQuery.isPending ? (
                 <div className="animate-pulse">
@@ -204,14 +233,14 @@ function Home() {
                   <div className="text-gray-600 dark:text-gray-300 font-semibold">
                     Compatibility Reports
                   </div>
-                  <div className="mt-2 w-12 h-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full mx-auto group-hover:w-16 transition-all duration-300" />
+                  <div className="mt-2 w-12 h-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full mx-auto group-hover:w-16 transition-[width] duration-300" />
                 </>
               )}
             </Link>
 
             <Link
               href="/games"
-              className="group p-8 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 text-center cursor-pointer"
+              className="group p-8 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition duration-500 transform hover:scale-105 text-center cursor-pointer"
             >
               {statisticsQuery.isPending ? (
                 <div className="animate-pulse">
@@ -226,14 +255,14 @@ function Home() {
                   <div className="text-gray-600 dark:text-gray-300 font-semibold">
                     Supported Games
                   </div>
-                  <div className="mt-2 w-12 h-1 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full mx-auto group-hover:w-16 transition-all duration-300" />
+                  <div className="mt-2 w-12 h-1 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full mx-auto group-hover:w-16 transition-[width] duration-300" />
                 </>
               )}
             </Link>
 
             <Link
               href="/emulators"
-              className="group p-8 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 text-center cursor-pointer"
+              className="group p-8 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition duration-500 transform hover:scale-105 text-center cursor-pointer"
             >
               {statisticsQuery.isPending ? (
                 <div className="animate-pulse">
@@ -246,14 +275,14 @@ function Home() {
                     {stats.emulators.toLocaleString()}
                   </div>
                   <div className="text-gray-600 dark:text-gray-300 font-semibold">Emulators</div>
-                  <div className="mt-2 w-12 h-1 bg-gradient-to-r from-green-500 to-green-600 rounded-full mx-auto group-hover:w-16 transition-all duration-300" />
+                  <div className="mt-2 w-12 h-1 bg-gradient-to-r from-green-500 to-green-600 rounded-full mx-auto group-hover:w-16 transition-[width] duration-300" />
                 </>
               )}
             </Link>
 
             <Link
               href="/devices"
-              className="group p-8 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 text-center cursor-pointer"
+              className="group p-8 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition duration-500 transform hover:scale-105 text-center cursor-pointer"
             >
               {statisticsQuery.isPending ? (
                 <div className="animate-pulse">
@@ -266,7 +295,7 @@ function Home() {
                     {stats.devices.toLocaleString()}
                   </div>
                   <div className="text-gray-600 dark:text-gray-300 font-semibold">Handhelds</div>
-                  <div className="mt-2 w-12 h-1 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full mx-auto group-hover:w-16 transition-all duration-300" />
+                  <div className="mt-2 w-12 h-1 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full mx-auto group-hover:w-16 transition-[width] duration-300" />
                 </>
               )}
             </Link>
@@ -291,17 +320,18 @@ function Home() {
                   compatibility reports an upvote, or share your feedback.
                 </p>
               </div>
-              <div className="flex w-full items-center gap-2 rounded-full bg-gray-100 p-1 text-sm font-medium dark:bg-gray-900/70 lg:w-auto">
+              <div className="flex w-full items-center justify-around gap-2 rounded-full bg-gray-100 p-1 text-sm font-medium dark:bg-gray-900/70 lg:w-auto">
                 {contributorTabs.map((tab) => (
                   <button
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveContributorRange(tab.id)}
-                    className={`${
+                    className={cn(
                       activeContributorRange === tab.id
                         ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white'
-                        : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
-                    } rounded-full px-4 py-1.5 transition-colors`}
+                        : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white',
+                      'rounded-full px-4 py-1.5 transition-colors',
+                    )}
                     aria-pressed={activeContributorRange === tab.id}
                   >
                     {tab.label}
@@ -312,8 +342,8 @@ function Home() {
 
             <div className="mt-8">
               {isContributorsLoading ? (
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {[...Array(6)].map((_, index) => (
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                  {[...Array(3)].map((_, index) => (
                     <div
                       key={`contributor-skeleton-${index}`}
                       className="min-h-[14rem] rounded-2xl border border-gray-200 bg-white/70 p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800/70"
@@ -331,89 +361,120 @@ function Home() {
                   Contributions are being tallied—check back soon to meet our community MVPs.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {contributors.map((contributor) => {
-                    const lastContributionLabel = contributor.contributions.lastContributionAt
-                      ? formatters.timeAgo(
-                          contributor.contributions.lastContributionAt,
-                          getLocale(),
-                        )
-                      : 'No recent activity'
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeContributorRange}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ duration: 0.25, ease: 'easeOut' }}
+                    className="grid grid-cols-1 gap-6 lg:grid-cols-3"
+                  >
+                    {contributors.map((contributor) => {
+                      const lastContributionLabel = contributor.contributions.lastContributionAt
+                        ? formatters.timeAgo(
+                            contributor.contributions.lastContributionAt,
+                            getLocale(),
+                          )
+                        : 'No recent activity'
 
-                    return (
-                      <Link
-                        key={contributor.id}
-                        href={`/users/${contributor.id}`}
-                        className="group flex h-full flex-col justify-between rounded-2xl border border-gray-200 bg-white/80 p-6 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-gray-700 dark:bg-gray-800/80"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-center gap-3">
-                            <span className="text-3xl font-black text-blue-600 dark:text-blue-300">
-                              #{contributor.rank}
-                            </span>
-                            <div className="relative h-14 w-14 overflow-hidden rounded-full border-2 border-white shadow-md dark:border-gray-700">
-                              <Image
-                                src={contributor.profileImage ?? '/placeholder/profile.svg'}
-                                alt={contributor.name ?? 'Community member'}
-                                fill
-                                sizes="56px"
-                                className="object-cover"
-                                unoptimized
-                              />
+                      const theme = rankThemes[contributor.rank - 1] ?? {
+                        numberClass: 'text-blue-600 dark:text-blue-300',
+                        badgeClass:
+                          'from-blue-200 via-blue-300 to-blue-400 dark:from-blue-500 dark:via-blue-600 dark:to-blue-500',
+                        badgeTextClass: 'text-blue-900 dark:text-white',
+                        cardClass: 'ring-1 ring-blue-400/30 dark:ring-blue-500/40 shadow-lg',
+                      }
+
+                      const totalListings =
+                        contributor.contributions.listings + contributor.contributions.pcListings
+
+                      return (
+                        <Link
+                          key={contributor.id}
+                          href={`/users/${contributor.id}`}
+                          className={cn(
+                            'group flex h-full flex-col justify-between rounded-2xl border border-gray-200 bg-white/85 p-6 transition duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-gray-700 dark:bg-gray-800/85',
+                            theme.cardClass,
+                          )}
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                              <span className={cn('text-3xl font-black', theme.numberClass)}>
+                                #{contributor.rank}
+                              </span>
+                              <div className="relative h-14 w-14 overflow-hidden rounded-full border-2 border-white shadow-md dark:border-gray-700">
+                                <Image
+                                  src={contributor.profileImage ?? '/placeholder/profile.svg'}
+                                  alt={contributor.name ?? 'Community member'}
+                                  fill
+                                  sizes="56px"
+                                  className="object-cover"
+                                  unoptimized
+                                />
+                              </div>
+                            </div>
+                            <div
+                              className={cn(
+                                'flex items-center gap-1 rounded-full bg-gradient-to-br px-3 py-1 text-xs font-semibold shadow-sm',
+                                theme.badgeClass,
+                                theme.badgeTextClass,
+                              )}
+                            >
+                              <Award className="mr-1 inline-block h-3.5 w-3.5" />
+                              {totalListings.toLocaleString()} total
                             </div>
                           </div>
-                          <div className="rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 px-3 py-1 text-xs font-semibold text-white shadow-sm dark:from-yellow-500 dark:to-amber-400">
-                            <Award className="mr-1 inline-block h-3.5 w-3.5" />
-                            {contributor.contributions.total.toLocaleString()} total
-                          </div>
-                        </div>
 
-                        <div className="mt-4 flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                            {contributor.name || 'Anonymous Contributor'}
-                          </h3>
-                          {contributor.bio && (
-                            <p className="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-300">
-                              {contributor.bio}
-                            </p>
-                          )}
-                        </div>
+                          <div className="mt-4 flex-1">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                              {contributor.name || 'Anonymous Contributor'}
+                            </h3>
+                            {contributor.bio && (
+                              <p className="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-300">
+                                {contributor.bio}
+                              </p>
+                            )}
+                          </div>
 
-                        <div className="mt-4 grid grid-cols-3 gap-3 text-center text-xs text-gray-600 dark:text-gray-300">
-                          <div className="rounded-lg bg-blue-50/80 p-3 dark:bg-blue-900/30">
-                            <Gamepad2 className="mx-auto mb-1 h-4 w-4 text-blue-600 dark:text-blue-300" />
-                            <span className="block font-semibold text-gray-900 dark:text-white">
-                              {contributor.contributions.listings}
-                            </span>
-                            <span className="text-[11px] uppercase tracking-wide">Handheld</span>
+                          <div className="mt-4 grid grid-cols-3 gap-3 text-center text-xs text-gray-600 dark:text-gray-300">
+                            <div className="rounded-lg bg-blue-50/80 p-3 dark:bg-blue-900/30">
+                              <Gamepad2 className="mx-auto mb-1 h-4 w-4 text-blue-600 dark:text-blue-300" />
+                              <span className="block font-semibold text-gray-900 dark:text-white">
+                                {contributor.contributions.listings}
+                              </span>
+                              <span className="text-[11px] uppercase tracking-wide">Handheld</span>
+                            </div>
+                            <div className="rounded-lg bg-purple-50/80 p-3 dark:bg-purple-900/30">
+                              <Monitor className="mx-auto mb-1 h-4 w-4 text-purple-600 dark:text-purple-300" />
+                              <span className="block font-semibold text-gray-900 dark:text-white">
+                                {contributor.contributions.pcListings}
+                              </span>
+                              <span className="text-[11px] uppercase tracking-wide">PC</span>
+                            </div>
+                            <div className="rounded-lg bg-amber-50/80 p-3 dark:bg-amber-900/30">
+                              <TrendingUp className="mx-auto mb-1 h-4 w-4 text-amber-600 dark:text-amber-300" />
+                              <span className="block font-semibold text-gray-900 dark:text-white">
+                                {contributor.trustScore.toLocaleString()}
+                              </span>
+                              <span className="text-[11px] uppercase tracking-wide">
+                                Trust Score
+                              </span>
+                            </div>
                           </div>
-                          <div className="rounded-lg bg-purple-50/80 p-3 dark:bg-purple-900/30">
-                            <Monitor className="mx-auto mb-1 h-4 w-4 text-purple-600 dark:text-purple-300" />
-                            <span className="block font-semibold text-gray-900 dark:text-white">
-                              {contributor.contributions.pcListings}
-                            </span>
-                            <span className="text-[11px] uppercase tracking-wide">PC</span>
-                          </div>
-                          <div className="rounded-lg bg-amber-50/80 p-3 dark:bg-amber-900/30">
-                            <TrendingUp className="mx-auto mb-1 h-4 w-4 text-amber-600 dark:text-amber-300" />
-                            <span className="block font-semibold text-gray-900 dark:text-white">
-                              {contributor.trustScore.toLocaleString()}
-                            </span>
-                            <span className="text-[11px] uppercase tracking-wide">Trust Score</span>
-                          </div>
-                        </div>
 
-                        <div className="mt-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                          <span>Last contribution {lastContributionLabel}</span>
-                          <span className="inline-flex items-center gap-1 text-blue-600 transition-colors group-hover:text-blue-500 dark:text-blue-300 dark:group-hover:text-blue-200">
-                            View profile
-                            <ArrowRight className="h-4 w-4" />
-                          </span>
-                        </div>
-                      </Link>
-                    )
-                  })}
-                </div>
+                          <div className="mt-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                            <span>Last contribution {lastContributionLabel}</span>
+                            <span className="inline-flex items-center gap-1 text-blue-600 transition-colors group-hover:text-blue-500 dark:text-blue-300 dark:group-hover:text-blue-200">
+                              View profile
+                              <ArrowRight className="h-4 w-4" />
+                            </span>
+                          </div>
+                        </Link>
+                      )
+                    })}
+                  </motion.div>
+                </AnimatePresence>
               )}
             </div>
           </div>
@@ -439,7 +500,7 @@ function Home() {
               {(listingsQuery.data ?? []).map((listing) => (
                 <div
                   key={listing.id}
-                  className="group bg-white/80 dark:bg-gray-800/80 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50"
+                  className="group bg-white/80 dark:bg-gray-800/80 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition duration-500 transform hover:scale-[1.02] backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50"
                 >
                   <div className="relative overflow-hidden">
                     <Image
@@ -552,7 +613,7 @@ function Home() {
         </section>
 
         {/* Call to Action Section - Updated design */}
-        <section className="relative overflow-hidden mb-16">
+        <section className="relative overflow-visible mb-16">
           {/* Background Elements */}
           <div className="absolute inset-0 -z-10">
             <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse" />
@@ -567,13 +628,21 @@ function Home() {
                 </span>{' '}
                 the Community
               </h2>
-              <p className="text-xl text-gray-600 dark:text-gray-300 mb-10 leading-relaxed">
+              <p
+                className={cn(
+                  'text-xl text-gray-600 dark:text-gray-300 leading-relaxed',
+                  !user && 'mb-10',
+                )}
+              >
                 Submit your own compatibility reports and help others find the best gaming
                 experience on their devices.
               </p>
               {!user && (
                 <SignUpButton>
-                  <button className="group relative px-10 py-5 bg-gradient-to-r from-blue-500 via-blue-600 to-purple-600 hover:from-blue-600 hover:via-purple-600 hover:to-blue-700 text-white font-bold text-xl rounded-2xl shadow-2xl shadow-blue-500/25 transition-all duration-300 transform hover:scale-105 hover:shadow-blue-500/40">
+                  <button
+                    type="button"
+                    className="group relative px-10 py-5 bg-gradient-to-r from-blue-500 via-blue-600 to-purple-600 hover:from-blue-600 hover:via-purple-600 hover:to-blue-700 text-white font-bold text-xl rounded-2xl shadow-2xl shadow-blue-500/25 transition duration-300 transform hover:scale-105 hover:shadow-blue-500/40"
+                  >
                     <span className="relative z-10 flex items-center gap-3">
                       <Users className="w-6 h-6" />
                       Create an Account
