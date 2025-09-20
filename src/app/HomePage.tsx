@@ -27,7 +27,7 @@ function Home() {
   const { user } = useUser()
   const listingsQuery = api.listings.featured.useQuery()
   const statisticsQuery = api.listings.statistics.useQuery()
-  const topContributorsQuery = api.users.topContributorsSummary.useQuery({ limit: 6 })
+  const topContributorsQuery = api.users.topContributorsSummary.useQuery({ limit: 3 })
 
   const stats = statisticsQuery.data ?? {
     listings: 0,
