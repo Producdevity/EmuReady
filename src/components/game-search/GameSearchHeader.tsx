@@ -26,7 +26,7 @@ const providerConfig: Record<
 > = {
   igdb: {
     title: 'Search Game Database',
-    badge: 'IGDB Enhanced',
+    badge: 'Powered by IGDB',
     badgeIcon: Sparkles,
     description:
       'Search IGDB for comprehensive game information with better metadata, multiple images, and accurate NSFW detection',
@@ -34,14 +34,14 @@ const providerConfig: Record<
   },
   tgdb: {
     title: 'Search Game Database',
-    badge: 'TheGamesDB',
+    badge: 'Powered by TheGamesDB',
     badgeIcon: Gamepad2,
     description: 'Search TheGamesDB for community-sourced game information and artwork',
     alternativeProvider: { label: 'Use IGDB Search', path: '/games/new/search/v2' },
   },
   rawg: {
     title: 'Search Game Database',
-    badge: 'RAWG Database',
+    badge: 'Powered by RAWG',
     badgeIcon: Globe,
     description: "Search RAWG's extensive video game database with modern game coverage",
     alternativeProvider: { label: 'Use IGDB Search', path: '/games/new/search/v2' },
