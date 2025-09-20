@@ -40,8 +40,8 @@ describe('translation utilities', () => {
 
       expect(result.isEnglish).toBe(true)
       expect(result.detectedLanguage).toBe('en')
-      // Could be 1 if detected as English, or 0.1 if detected as undetermined
-      expect([0.1, 1]).toContain(result.confidence)
+      expect(result.confidence).toBeGreaterThanOrEqual(0.8)
+      expect(result.confidence).toBeLessThanOrEqual(1)
     })
 
     it('should detect Portuguese text', () => {
@@ -78,6 +78,16 @@ describe('translation utilities', () => {
       expect(result.detectedLanguage).toBe('en')
       expect(typeof result.confidence).toBe('number')
       expect(result.confidence).toBeLessThanOrEqual(0.3) // Low confidence for undetermined text
+    })
+
+    it('should ignore standalone URLs when detecting language', () => {
+      const text =
+        'С модом на HD текстуры идет отлично\nhttps://github.com/Lin-zl522/Patapon-3-HD-Texture-Pack'
+      const result = detectLanguage(text)
+
+      expect(result.isEnglish).toBe(false)
+      expect(result.detectedLanguage).toBe('ru')
+      expect(result.confidence).toBeGreaterThan(0.8)
     })
   })
 
@@ -158,6 +168,14 @@ Downlaod Hardware Mode: Unsynchronized (Non-Dterministic)
 
 The performance of the Europe version (SLES-53702) was worse than the USA version (SLUS-21134), and the only thing I had to change was the resolution, but the nether 2.0-4248 version performed better (even if not by much) than version 2.0-3668.`
       const should = shouldShowTranslation(mixedText)
+      expect(should).toBe(true)
+    })
+
+    it('should show translation when non-English notes include URLs', () => {
+      vi.mocked(getUserLocale).mockReturnValue('en')
+      const text =
+        'С модом на HD текстуры идет отлично\nhttps://github.com/Lin-zl522/Patapon-3-HD-Texture-Pack'
+      const should = shouldShowTranslation(text)
       expect(should).toBe(true)
     })
   })

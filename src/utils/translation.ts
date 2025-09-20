@@ -54,6 +54,16 @@ const SUPPORTED_LANGUAGES: Record<string, { code: string; name: string }> = {
 // Set of supported ISO 639-1 language codes for quick lookup
 const SUPPORTED_LANGUAGE_CODES = new Set(Object.values(SUPPORTED_LANGUAGES).map(({ code }) => code))
 const LINE_SPLIT_REGEX = /(\r?\n+)/
+const URL_REGEX = /(https?:\/\/|www\.)[^\s)]+/gi
+const MARKDOWN_LINK_REGEX = /\[([^\]]+)\]\((https?:\/\/|www\.)[^)]+\)/gi
+const MIN_ENGLISH_CONFIDENCE = 0.8
+const NON_ENGLISH_SCORE_MARGIN = 0.05
+
+function sanitizeForDetection(value: string): string {
+  const withoutMarkdownLinks = value.replace(MARKDOWN_LINK_REGEX, '$1')
+  const withoutStandaloneUrls = withoutMarkdownLinks.replace(URL_REGEX, ' ')
+  return withoutStandaloneUrls.replace(/\s+/g, ' ').trim()
+}
 
 interface TranslationRequest {
   text: string
@@ -161,53 +171,75 @@ const FRANC_MIN_LENGTH = 10
 const MIN_ALTERNATIVE_CONFIDENCE = 0.4
 
 export function detectLanguage(text: string): LanguageDetectionResult {
-  if (text.trim().length < 10) {
+  const sanitized = sanitizeForDetection(text)
+
+  if (sanitized.length < 10) {
     return { isEnglish: true, detectedLanguage: 'en', confidence: 0 }
   }
 
   const francOptions = { minLength: FRANC_MIN_LENGTH }
-  const francCode = franc(text, francOptions)
-  const candidates = francAll(text, francOptions)
+  const francCode = franc(sanitized, francOptions)
+  const candidates = francAll(sanitized, francOptions)
 
   const languageData = SUPPORTED_LANGUAGES[francCode]
   const iso = languageData?.code ?? 'und'
-  const confidence = 1
+  const detectedConfidence = 1
 
   if (languageData && iso !== 'en') {
-    return { isEnglish: false, detectedLanguage: iso, confidence }
+    return { isEnglish: false, detectedLanguage: iso, confidence: detectedConfidence }
   }
 
-  // If franc returns 'und' (undetermined), treat as English with low confidence
-  // Only offer translation for clearly detected non-English languages
+  const englishCandidateScore =
+    languageData?.code === 'en'
+      ? detectedConfidence
+      : (() => {
+          const candidate = candidates.find(([code, score]) => {
+            const data = SUPPORTED_LANGUAGES[code]
+            if (!data) return false
+            return data.code === 'en' && score >= MIN_ENGLISH_CONFIDENCE
+          })
+          return candidate ? candidate[1] : 0
+        })()
+
+  const bestNonEnglishCandidate = candidates.reduce<{ code: string; score: number } | null>(
+    (current, [code, score]) => {
+      const data = SUPPORTED_LANGUAGES[code]
+      if (!data) return current
+      if (data.code === 'en') return current
+      if (score < MIN_ALTERNATIVE_CONFIDENCE) return current
+      if (!current || score > current.score) {
+        return { code: data.code, score }
+      }
+      return current
+    },
+    null,
+  )
+
+  if (
+    bestNonEnglishCandidate &&
+    (englishCandidateScore === 0 ||
+      englishCandidateScore - bestNonEnglishCandidate.score <= NON_ENGLISH_SCORE_MARGIN)
+  ) {
+    return {
+      isEnglish: false,
+      detectedLanguage: bestNonEnglishCandidate.code,
+      confidence: Math.max(0.9, bestNonEnglishCandidate.score),
+    }
+  }
+
+  if (languageData?.code === 'en') {
+    return { isEnglish: true, detectedLanguage: 'en', confidence: detectedConfidence }
+  }
+
+  if (englishCandidateScore >= MIN_ENGLISH_CONFIDENCE) {
+    return { isEnglish: true, detectedLanguage: 'en', confidence: englishCandidateScore }
+  }
+
   if (iso === 'und') {
     return { isEnglish: true, detectedLanguage: 'en', confidence: 0.1 }
   }
 
-  const alternative = candidates.find(([code, score]) => {
-    if (code === francCode) return false
-    const data = SUPPORTED_LANGUAGES[code]
-    if (!data) return false
-    if (data.code === 'en') return false
-    return score >= MIN_ALTERNATIVE_CONFIDENCE
-  })
-
-  if (alternative) {
-    const [altCode, score] = alternative
-    const altData = SUPPORTED_LANGUAGES[altCode]
-    if (altData) {
-      return {
-        isEnglish: false,
-        detectedLanguage: altData.code,
-        confidence: Math.max(0.9, score),
-      }
-    }
-  }
-
-  return {
-    isEnglish: true,
-    detectedLanguage: 'en',
-    confidence: 1,
-  }
+  return { isEnglish: true, detectedLanguage: 'en', confidence: 1 }
 }
 
 /**
