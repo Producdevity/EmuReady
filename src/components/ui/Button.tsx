@@ -1,5 +1,6 @@
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
+import { type LucideIcon } from 'lucide-react'
 import { type ComponentProps } from 'react'
 import { LoadingIcon } from '@/components/icons'
 import { cn } from '@/lib/utils'
@@ -64,19 +65,17 @@ export const buttonVariants = cva(
 )
 
 // Legacy Props interface for backward compatibility
-interface LegacyProps {
+interface Props {
   variant?: ButtonVariant
   size?: ButtonSize
   isLoading?: boolean
   isFullWidth?: boolean
   rounded?: boolean
+  asChild?: boolean
+  icon?: LucideIcon
 }
 
-export type ButtonProps = ComponentProps<'button'> &
-  VariantProps<typeof buttonVariants> &
-  LegacyProps & {
-    asChild?: boolean
-  }
+export type ButtonProps = ComponentProps<'button'> & VariantProps<typeof buttonVariants> & Props
 
 export function Button({
   className,
@@ -87,11 +86,13 @@ export function Button({
   isLoading = false,
   isFullWidth = false,
   rounded,
+  icon,
   children,
   disabled,
   ...props
 }: ButtonProps) {
   const Comp = asChild ? Slot : 'button'
+  const Icon = icon
 
   // Map legacy 'md' size to 'default' for shadcn compatibility
   const mappedSize = size === 'md' ? 'default' : size
@@ -120,7 +121,10 @@ export function Button({
             </>
           )
         ) : (
-          children
+          <>
+            {Icon ? <Icon className="h-4 w-4 mr-2" aria-hidden /> : null}
+            {children}
+          </>
         )}
       </span>
     </Comp>

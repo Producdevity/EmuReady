@@ -123,10 +123,14 @@ export function GameSearchForm(props: GameSearchFormProps) {
         <div className="space-y-5">
           {/* System Selection Row */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              System (Optional)
+            <label
+              className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
+              htmlFor="system"
+            >
+              System <span className="text-red-500">*</span>
             </label>
             <Autocomplete<SystemOption>
+              name="system"
               placeholder="Choose a system to filter results..."
               value={selectedSystemId}
               onChange={(value) => setSelectedSystemId(value ?? '')}
@@ -137,7 +141,6 @@ export function GameSearchForm(props: GameSearchFormProps) {
               minCharsToTrigger={0}
               disabled={false}
               className="w-full"
-              inputClassName="py-3"
             />
             {selectedSystem && platformId && (
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
@@ -160,36 +163,34 @@ export function GameSearchForm(props: GameSearchFormProps) {
 
           {/* Game Title Search Row */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            <label
+              className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2"
+              htmlFor="searchQuery"
+            >
               Game Title <span className="text-red-500">*</span>
             </label>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-4">
               <Input
+                name="searchQuery"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Enter game title (e.g., Mario, Zelda, Pokemon)"
-                className="flex-1 w-full sm:h-12"
-                inputClassName="py-3"
+                containerClassName="flex-1 w-full"
                 disabled={props.isSearching}
                 minLength={2}
                 required
               />
               <Button
                 type="submit"
+                icon={Search}
                 size="lg"
+                rounded
                 disabled={!searchQuery.trim() || searchQuery.trim().length < 2 || props.isSearching}
                 isLoading={props.isSearching}
-                className="px-8 w-full sm:w-auto sm:h-12 rounded-xl"
+                className="px-6 w-full sm:w-auto"
               >
-                {props.isSearching ? (
-                  <>Searching...</>
-                ) : (
-                  <>
-                    <Search className="h-4 w-4 mr-2" />
-                    Search
-                  </>
-                )}
+                Search
               </Button>
             </div>
           </div>
