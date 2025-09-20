@@ -34,4 +34,3 @@ Please make sure to fill out the following sections with the correct information
 - [ ] I have confirmed that I made no typo's in the device details to prevent duplicates
 - [ ] I have confirmed this device is able to run any of the emulators listed on EmuReady
 - [ ] I have confirmed this device is not already listed on EmuReady
-- [ ] I have listed all the systems the emulator supports
