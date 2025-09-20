@@ -61,7 +61,7 @@ export function FooterKofiButton() {
       </TooltipTrigger>
       <TooltipContent side="top" className="max-w-xs">
         <div className="text-center">
-          <p className="font-medium mb-1">Support EmuReady ☕</p>
+          <p className="font-medium mb-1">Support EmuReady on ☕</p>
           <p className="text-xs text-gray-600 dark:text-gray-400">
             Help keep the servers running and development active
           </p>
