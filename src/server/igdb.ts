@@ -22,6 +22,56 @@ export class IGDBError extends Error {
 const IGDB_BASE_URL = 'https://api.igdb.com/v4'
 const IGDB_IMAGE_BASE_URL = 'https://images.igdb.com/igdb/image/upload'
 
+export const DEFAULT_ALLOWED_GAME_TYPES = [
+  IGDBGameCategory.MAIN_GAME,
+  IGDBGameCategory.EXPANSION,
+  IGDBGameCategory.STANDALONE_EXPANSION,
+  IGDBGameCategory.REMAKE,
+  IGDBGameCategory.REMASTER,
+  IGDBGameCategory.EXPANDED_GAME,
+  IGDBGameCategory.PORT,
+  IGDBGameCategory.BUNDLE,
+  IGDBGameCategory.PACK,
+] as const
+
+const GAME_SEARCH_FIELDS =
+  ' fields id,name,cover.*,artworks.*,screenshots.*,platforms.*,genres.*,themes.*,summary,storyline,first_release_date,category;'
+
+interface BuildGamesSearchQueryOptions {
+  query: string
+  platformId?: number | null
+  limit: number
+  includeAllCategories: boolean
+}
+
+function escapeQuery(value: string): string {
+  return value.trim().replace(/"/g, '\\"')
+}
+
+export function buildGamesSearchQuery(options: BuildGamesSearchQueryOptions): string {
+  const sanitizedQuery = escapeQuery(options.query)
+  let igdbQuery = `search "${sanitizedQuery}";`
+  igdbQuery += GAME_SEARCH_FIELDS
+
+  const whereConditions: string[] = []
+
+  if (options.platformId) {
+    whereConditions.push(`platforms = [${options.platformId}]`)
+  }
+
+  if (!options.includeAllCategories) {
+    whereConditions.push(`game_type = (${DEFAULT_ALLOWED_GAME_TYPES.join(',')})`)
+  }
+
+  if (whereConditions.length > 0) {
+    igdbQuery += ` where ${whereConditions.join(' & ')};`
+  }
+
+  igdbQuery += ` limit ${options.limit};`
+
+  return igdbQuery
+}
+
 function getClientId(): string {
   const clientId = process.env.NEXT_PUBLIC_IGDB_CLIENT_ID
   if (!clientId) {
@@ -202,25 +252,12 @@ export async function searchGames(
 ): Promise<IGDBSearchResponse> {
   if (!query.trim()) throw new IGDBError('Search query cannot be empty')
 
-  // Build the query
-  let igdbQuery = `search "${query.trim()}";`
-  igdbQuery +=
-    ' fields id,name,cover.*,artworks.*,screenshots.*,platforms.*,genres.*,themes.*,summary,storyline,first_release_date,category;'
-
-  // Build where clause for filtering
-  const whereConditions: string[] = []
-
-  // Filter by platform if specified
-  if (platformId) whereConditions.push(`platforms = [${platformId}]`)
-
-  // Filter to only main games by default (exclude DLCs, expansions, etc.)
-  if (!includeAllCategories) whereConditions.push(`game_type = ${IGDBGameCategory.MAIN_GAME}`)
-
-  // Add where clause if we have conditions
-  if (whereConditions.length > 0) igdbQuery += ` where ${whereConditions.join(' & ')};`
-
-  igdbQuery += ` limit ${limit};`
-  console.log('\n\n\n IGDB Query:\n', igdbQuery, '\n\n\n')
+  const igdbQuery = buildGamesSearchQuery({
+    query,
+    platformId,
+    limit,
+    includeAllCategories,
+  })
 
   const games = await makeRequest<IGDBGame[]>('/games', igdbQuery)
 
