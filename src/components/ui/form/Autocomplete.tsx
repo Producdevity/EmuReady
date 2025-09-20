@@ -45,6 +45,7 @@ interface AutocompleteProps<T extends AutocompleteOptionBase> {
   rightIcon?: ReactNode
   disabled?: boolean
   className?: string
+  inputClassName?: string
   minCharsToTrigger?: number
   debounceTime?: number
 }
@@ -69,6 +70,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
   rightIcon,
   disabled,
   className,
+  inputClassName,
   minCharsToTrigger = 0,
   debounceTime = 300,
 }: AutocompleteProps<T>) {
@@ -415,6 +417,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
             'w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200',
             leftIcon ? 'pl-10' : '',
             rightIcon || isLoading ? 'pr-10' : '',
+            inputClassName,
           )}
           placeholder={placeholder ?? 'Type to search...'}
           value={inputValue}
