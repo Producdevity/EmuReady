@@ -77,7 +77,6 @@ function Home() {
   const [activeContributorRange, setActiveContributorRange] = useState<ContributorTab>('thisMonth')
 
   const contributors = topContributorsQuery.data?.[activeContributorRange] ?? []
-  const isContributorsLoading = topContributorsQuery.isPending
 
   return (
     <div className="bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
@@ -206,7 +205,7 @@ function Home() {
                   Community Driven
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300 text-sm text-center">
-                  Built by gamers, for gamers worldwide
+                  Preserving games where corporations won’t
                 </p>
               </div>
             </div>
@@ -341,7 +340,7 @@ function Home() {
             </div>
 
             <div className="mt-8">
-              {isContributorsLoading ? (
+              {topContributorsQuery.isPending ? (
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                   {[...Array(3)].map((_, index) => (
                     <div
