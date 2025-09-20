@@ -87,6 +87,18 @@ export const adminNavItems: AdminNavItem[] = [
     exact: true,
     description: 'Test title ID provider lookups.',
   },
+  {
+    href: ADMIN_ROUTES.API_ACCESS,
+    label: 'API Access',
+    exact: true,
+    description: 'Generate, rotate, and monitor API keys.',
+  },
+  {
+    href: ADMIN_ROUTES.API_ACCESS_DEVELOPER,
+    label: 'Developer API Access',
+    exact: true,
+    description: 'Preview the developer dashboard and quotas.',
+  },
 ]
 
 export const superAdminNavItems: AdminNavItem[] = [
@@ -293,6 +305,13 @@ export function getDeveloperNavItems(emulatorIds: string[]): AdminNavItem[] {
     label: 'Title ID Tools',
     exact: true,
     description: 'Test handheld title ID lookups.',
+  })
+
+  navItems.push({
+    href: ADMIN_ROUTES.API_ACCESS_DEVELOPER,
+    label: 'API Access',
+    exact: true,
+    description: 'Generate and monitor your API keys.',
   })
 
   return navItems

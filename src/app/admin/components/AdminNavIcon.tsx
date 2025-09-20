@@ -21,12 +21,18 @@ import {
   FileKey,
   Award,
   Microchip,
+  QrCode,
+  ServerCog,
+  TerminalSquare,
 } from 'lucide-react'
 
 const getAdminNavIcon = (href: string, className: string) => {
   if (href.includes('/cpus')) return <Cpu className={className} />
   if (href.includes('/gpus')) return <HardDrive className={className} />
   if (href.includes('/socs')) return <Microchip className={className} />
+  if (href.includes('/title-id-tools')) return <QrCode className={className} />
+  if (href.includes('/api-access/developer')) return <TerminalSquare className={className} />
+  if (href.includes('/api-access')) return <ServerCog className={className} />
   if (href.includes('/manage-listings')) return <List className={className} />
   if (href.includes('/processed-listings')) return <FileText className={className} />
   if (href.includes('/reports')) return <AlertCircle className={className} />

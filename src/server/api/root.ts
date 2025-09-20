@@ -1,6 +1,7 @@
 import { createTRPCRouter } from '@/server/api/trpc'
 import { activityRouter } from './routers/admin/activity'
 import { titleIdToolsRouter } from './routers/admin/titleIdTools'
+import { apiKeysRouter } from './routers/apiKeys'
 import { auditLogsRouter } from './routers/auditLogs'
 import { badgesRouter } from './routers/badges'
 import { cacheRouter } from './routers/cache'
@@ -36,6 +37,7 @@ export const appRouter = createTRPCRouter({
   activity: activityRouter,
   listings: listingsRouter,
   pcListings: pcListingsRouter,
+  apiKeys: apiKeysRouter,
   devices: devicesRouter,
   cpus: cpusRouter,
   gpus: gpusRouter,

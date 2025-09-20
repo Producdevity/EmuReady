@@ -11,6 +11,22 @@ const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 // Rate limiting configuration
 const RATE_LIMIT_REQUESTS = process.env.NODE_ENV === 'test' ? 10000 : 100 // Much higher limit for tests
 const RATE_LIMIT_WINDOW = ms.minutes(3)
+const DEV_NO_STORE_HOSTS = new Set(['dev.emuready.com'])
+
+function applyDevNoStoreHeader<T extends NextResponse | Response>(
+  response: T,
+  req: NextRequest,
+): T {
+  const host = req.headers.get('host')
+  if (!host) return response
+
+  const hostname = host.split(':')[0]
+  if (!DEV_NO_STORE_HOSTS.has(hostname)) return response
+
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+  response.headers.set('Pragma', 'no-cache')
+  return response
+}
 
 function getClientIdentifier(req: NextRequest): string {
   // Use IP from forwarded headers or fallback
@@ -128,16 +144,19 @@ function protectTRPCAPI(req: NextRequest): NextResponse | null {
 
   if (!skipRateLimit && !checkRateLimit(clientId)) {
     console.warn(`Rate limit exceeded for client: ${clientId}, path: ${pathname}`)
-    return NextResponse.json(
-      { error: 'Rate limit exceeded. Please try again later.' },
-      {
-        status: 429,
-        headers: {
-          'Retry-After': Math.floor(RATE_LIMIT_WINDOW / 1000).toString(),
-          'X-RateLimit-Limit': RATE_LIMIT_REQUESTS.toString(),
-          'X-RateLimit-Window': RATE_LIMIT_WINDOW.toString(),
+    return applyDevNoStoreHeader(
+      NextResponse.json(
+        { error: 'Rate limit exceeded. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': Math.floor(RATE_LIMIT_WINDOW / 1000).toString(),
+            'X-RateLimit-Limit': RATE_LIMIT_REQUESTS.toString(),
+            'X-RateLimit-Window': RATE_LIMIT_WINDOW.toString(),
+          },
         },
-      },
+      ),
+      req,
     )
   }
 
@@ -146,20 +165,23 @@ function protectTRPCAPI(req: NextRequest): NextResponse | null {
     console.warn(
       `Invalid origin for client: ${clientId}, origin: ${req.headers.get('origin')}, referer: ${req.headers.get('referer')}, path: ${pathname}`,
     )
-    return NextResponse.json(
-      { error: 'Access denied. Invalid origin.' },
-      {
-        status: 403,
-        headers: {
-          'X-Content-Type-Options': 'nosniff',
-          'X-Frame-Options': 'DENY',
+    return applyDevNoStoreHeader(
+      NextResponse.json(
+        { error: 'Access denied. Invalid origin.' },
+        {
+          status: 403,
+          headers: {
+            'X-Content-Type-Options': 'nosniff',
+            'X-Frame-Options': 'DENY',
+          },
         },
-      },
+      ),
+      req,
     )
   }
 
   // Add security headers to successful requests
-  const response = NextResponse.next()
+  const response = applyDevNoStoreHeader(NextResponse.next(), req)
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('X-Frame-Options', 'DENY')
   response.headers.set('X-RateLimit-Limit', RATE_LIMIT_REQUESTS.toString())
@@ -173,20 +195,24 @@ const handleClerkAuth = clerkMiddleware((auth, req) => {
   return
 })
 
-export default function middleware(req: NextRequest, evt: NextFetchEvent) {
+export default async function middleware(req: NextRequest, evt: NextFetchEvent) {
   const pathname = req.nextUrl.pathname
 
   if (pathname.startsWith('/api/mobile/')) {
     const apiProtectionResponse = protectTRPCAPI(req)
     if (apiProtectionResponse) return apiProtectionResponse
-    return NextResponse.next()
+    return applyDevNoStoreHeader(NextResponse.next(), req)
   }
 
   if (pathname.startsWith('/api/webhooks/')) {
-    return NextResponse.next()
+    return applyDevNoStoreHeader(NextResponse.next(), req)
   }
 
-  return handleClerkAuth(req, evt)
+  const response = await handleClerkAuth(req, evt)
+  if (!response) {
+    return applyDevNoStoreHeader(NextResponse.next(), req)
+  }
+  return applyDevNoStoreHeader(response, req)
 }
 
 export const config = {

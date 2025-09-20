@@ -9,11 +9,13 @@ import analytics from '@/lib/analytics'
 import { AppError } from '@/lib/errors'
 import { logger } from '@/lib/logger'
 import { prisma } from '@/server/db'
+import { ApiAccessService } from '@/server/services/api-access.service'
 import { hasDeveloperAccessToEmulator } from '@/server/utils/permissions'
 import { type Nullable } from '@/types/utils'
 import { hasPermissionInContext, PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
+import type { ApiKeyWithUser } from '@/server/repositories/api-keys.repository'
 
 // ===== Mobile Permission Procedure Shortcuts =====
 
@@ -22,7 +24,7 @@ type User = {
   email: string | null
   name: string | null
   role: Role
-  permissions: string[] // Array of permission keys
+  permissions: string[]
   showNsfw: boolean
 }
 
@@ -32,6 +34,7 @@ type Session = {
 
 type CreateMobileContextOptions = {
   session: Nullable<Session>
+  apiKey?: ApiKeyWithUser | null
 }
 
 const createInnerMobileContext = (opts: CreateMobileContextOptions & { headers?: Headers }) => {
@@ -39,7 +42,123 @@ const createInnerMobileContext = (opts: CreateMobileContextOptions & { headers?:
     session: opts.session,
     prisma,
     headers: opts.headers,
+    apiKey: opts.apiKey ?? null,
   }
+}
+
+async function getPermissionsForRole(role: Role): Promise<string[]> {
+  const rolePermissions = await prisma.rolePermission.findMany({
+    where: { role },
+    include: { permission: { select: { key: true } } },
+  })
+
+  return rolePermissions.map((rp) => rp.permission.key)
+}
+
+async function createSessionForUserId(userId: string): Promise<Nullable<Session>> {
+  if (!userId) return null
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      showNsfw: true,
+    },
+  })
+
+  if (!user) return null
+
+  const permissions = await getPermissionsForRole(user.role)
+
+  return {
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      permissions,
+      showNsfw: user.showNsfw,
+    },
+  }
+}
+
+async function createSessionFromApiKey(apiKey: ApiKeyWithUser): Promise<Nullable<Session>> {
+  const permissions = await getPermissionsForRole(apiKey.user.role)
+
+  return {
+    user: {
+      id: apiKey.user.id,
+      email: apiKey.user.email,
+      name: apiKey.user.name,
+      role: apiKey.user.role,
+      permissions,
+      showNsfw: apiKey.user.showNsfw,
+    },
+  }
+}
+
+function extractApiKey(headers: Headers): string | null {
+  const headerCandidates = [headers.get('x-api-key'), headers.get('X-API-Key')]
+  for (const candidate of headerCandidates) {
+    if (candidate && candidate.trim()) return candidate.trim()
+  }
+
+  const authorization = headers.get('authorization') || headers.get('Authorization')
+  if (authorization && authorization.startsWith('ApiKey ')) {
+    return authorization.slice('ApiKey '.length).trim()
+  }
+
+  return null
+}
+
+async function resolveApiKey(headers: Headers): Promise<ApiKeyWithUser | null> {
+  const rawKey = extractApiKey(headers)
+  if (!rawKey) return null
+
+  const apiAccessService = new ApiAccessService(prisma)
+  return apiAccessService.authorize(rawKey)
+}
+
+async function resolveClerkSessionFromHeaders(headers: Headers): Promise<string | null> {
+  const authHeader = headers.get('authorization') || headers.get('Authorization')
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null
+
+  const token = authHeader.slice('Bearer '.length)
+  if (!token) return null
+
+  try {
+    const secretKey = process.env.CLERK_SECRET_KEY!
+
+    if (process.env.NODE_ENV === 'production' && secretKey.startsWith('sk_test_')) {
+      console.warn('Warning: Using test secret key in production environment')
+    }
+
+    const payload = await verifyToken(token, {
+      secretKey,
+      skipJwksCache: false,
+      clockSkewInMs: 60000,
+    })
+
+    return payload.sub
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Mobile JWT token verification failed:', error)
+    }
+
+    if (process.env.NODE_ENV === 'production' && error instanceof Error) {
+      console.error('Mobile auth error:', error.message)
+      if (error.message.includes('signature')) {
+        console.error(
+          'Token signature mismatch - check if CLERK_SECRET_KEY matches the token environment (live vs test)',
+        )
+      }
+    }
+  }
+
+  return null
 }
 
 /**
@@ -47,10 +166,11 @@ const createInnerMobileContext = (opts: CreateMobileContextOptions & { headers?:
  * Handles both web sessions (via cookies) and mobile JWT tokens (via Authorization header)
  */
 export const createMobileTRPCContext = async (opts: CreateNextContextOptions) => {
+  const headers = new Headers(opts.req.headers as Record<string, string>)
+
   let session: Nullable<Session> = null
   let clerkUserId: string | null = null
 
-  // Try web authentication first (for development/testing)
   try {
     const webAuth = await auth()
     clerkUserId = webAuth.userId
@@ -58,106 +178,30 @@ export const createMobileTRPCContext = async (opts: CreateNextContextOptions) =>
     logger.error('Web auth failed, try mobile JWT token', error)
   }
 
-  // If no web auth, try mobile JWT token from Authorization header
   if (!clerkUserId) {
-    const authHeader = opts.req.headers.authorization
-    const token = authHeader?.replace('Bearer ', '')
-
-    if (token) {
-      try {
-        // Check if we have the right secret key for the token type
-        const secretKey = process.env.CLERK_SECRET_KEY!
-
-        // Log key type mismatch in production
-        if (process.env.NODE_ENV === 'production') {
-          const isTestKey = secretKey.startsWith('sk_test_')
-
-          // JWT tokens from live keys have different signatures than test keys
-          if (isTestKey) {
-            console.warn('Warning: Using test secret key in production environment')
-          }
-        }
-
-        // Verify token with options optimized for mobile apps
-        const payload = await verifyToken(token, {
-          secretKey,
-          // Skip authorized parties check for mobile tokens (they often don't have azp claim)
-          skipJwksCache: false,
-          // Add clock skew tolerance for mobile devices with incorrect time
-          clockSkewInMs: 60000, // 60 seconds tolerance
-        })
-        clerkUserId = payload.sub
-      } catch (error) {
-        // Invalid or expired token - continue without auth for public endpoints
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('Mobile JWT token verification failed:', error)
-        }
-        // Log production errors for debugging
-        if (process.env.NODE_ENV === 'production' && error instanceof Error) {
-          console.error('Mobile auth error:', error.message)
-          // Check for common issues
-          if (error.message.includes('signature')) {
-            console.error(
-              'Token signature mismatch - check if CLERK_SECRET_KEY matches the token environment (live vs test)',
-            )
-          }
-        }
-      }
-    }
+    clerkUserId = await resolveClerkSessionFromHeaders(headers)
   }
 
-  // If we have a Clerk user ID, fetch user from the database
-  if (clerkUserId) {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { clerkId: clerkUserId },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          showNsfw: true,
-        },
-      })
+  const authorizedApiKey = await resolveApiKey(headers)
+  if (authorizedApiKey) {
+    session = await createSessionFromApiKey(authorizedApiKey)
+  }
 
-      if (user) {
-        // Fetch user permissions based on their role
-        const rolePermissions = await prisma.rolePermission.findMany({
-          where: { role: user.role },
-          include: { permission: { select: { key: true } } },
-        })
+  if (!session && clerkUserId) {
+    const user = await prisma.user.findUnique({
+      where: { clerkId: clerkUserId },
+      select: { id: true },
+    })
 
-        const permissions = rolePermissions.map((rp) => rp.permission.key)
-
-        session = {
-          user: {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            permissions,
-            showNsfw: user.showNsfw,
-          },
-        }
-      } else {
-        // User isn't found in the database
-        if (process.env.NODE_ENV === 'development') {
-          console.warn(`🔧 Mobile Dev: User with clerkId ${clerkUserId} not found in database.`)
-          console.warn('   Run the seeder (npx prisma db seed) or set up webhooks for auto-sync.')
-        } else {
-          console.warn(
-            `Mobile: User with clerkId ${clerkUserId} not found in database. Check webhook configuration.`,
-          )
-        }
-      }
-    } catch (dbError) {
-      console.error('Database error in mobile context:', dbError)
+    if (user) {
+      session = await createSessionForUserId(user.id)
     }
   }
 
   return createInnerMobileContext({
     session,
-    headers: new Headers(opts.req.headers as Record<string, string>),
+    headers,
+    apiKey: authorizedApiKey,
   })
 }
 
@@ -165,112 +209,31 @@ export const createMobileTRPCContext = async (opts: CreateNextContextOptions) =>
  * Creates tRPC context for mobile fetch requests (used by the fetch adapter)
  */
 export const createMobileTRPCFetchContext = async (opts: FetchCreateContextFnOptions) => {
+  const headers = opts.req.headers
+
   let session: Nullable<Session> = null
-  let clerkUserId: string | null = null
+  const clerkUserId = await resolveClerkSessionFromHeaders(headers)
 
-  // Try mobile JWT token from Authorization header (check both cases)
-  // Also check for custom header as fallback if Authorization is stripped
-  const authHeader =
-    opts.req.headers.get('authorization') ||
-    opts.req.headers.get('Authorization') ||
-    opts.req.headers.get('x-auth-token')
-  const token = authHeader?.replace('Bearer ', '')
-
-  if (token) {
-    try {
-      // Check if we have the right secret key for the token type
-      const secretKey = process.env.CLERK_SECRET_KEY!
-
-      // Log key type mismatch in production
-      if (process.env.NODE_ENV === 'production') {
-        const isTestKey = secretKey.startsWith('sk_test_')
-
-        // JWT tokens from live keys have different signatures than test keys
-        if (isTestKey) {
-          console.warn('Warning: Using test secret key in production environment')
-        }
-      }
-
-      // Verify token with options optimized for mobile apps
-      const payload = await verifyToken(token, {
-        secretKey,
-        // Skip authorized parties check for mobile tokens (they often don't have azp claim)
-        skipJwksCache: false,
-        // Add clock skew tolerance for mobile devices with incorrect time
-        clockSkewInMs: 60000, // 60 seconds tolerance
-      })
-      clerkUserId = payload.sub
-      console.log('[Mobile Context] Token verification successful, userId:', clerkUserId)
-    } catch (error) {
-      // Invalid or expired token - continue without auth for public endpoints
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('Mobile JWT token verification failed:', error)
-      }
-      // Log production errors for debugging
-      if (process.env.NODE_ENV === 'production' && error instanceof Error) {
-        console.error('Mobile auth error:', error.message)
-        // Check for common issues
-        if (error.message.includes('signature')) {
-          console.error(
-            'Token signature mismatch - check if CLERK_SECRET_KEY matches the token environment (live vs test)',
-          )
-        }
-      }
-    }
+  const authorizedApiKey = await resolveApiKey(headers)
+  if (authorizedApiKey) {
+    session = await createSessionFromApiKey(authorizedApiKey)
   }
 
-  // If we have a Clerk user ID, fetch user from database
-  if (clerkUserId) {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { clerkId: clerkUserId },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          showNsfw: true,
-        },
-      })
+  if (!session && clerkUserId) {
+    const user = await prisma.user.findUnique({
+      where: { clerkId: clerkUserId },
+      select: { id: true },
+    })
 
-      if (user) {
-        // Fetch user permissions based on their role
-        const rolePermissions = await prisma.rolePermission.findMany({
-          where: { role: user.role },
-          include: { permission: { select: { key: true } } },
-        })
-
-        const permissions = rolePermissions.map((rp) => rp.permission.key)
-
-        session = {
-          user: {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            permissions,
-            showNsfw: user.showNsfw,
-          },
-        }
-      } else {
-        // User not found in database
-        if (process.env.NODE_ENV === 'development') {
-          console.warn(`🔧 Mobile Dev: User with clerkId ${clerkUserId} not found in database.`)
-          console.warn('   Run the seeder (npx prisma db seed) or set up webhooks for auto-sync.')
-        } else {
-          console.warn(
-            `Mobile: User with clerkId ${clerkUserId} not found in database. Check webhook configuration.`,
-          )
-        }
-      }
-    } catch (dbError) {
-      console.error('Database error in mobile context:', dbError)
+    if (user) {
+      session = await createSessionForUserId(user.id)
     }
   }
 
   return createInnerMobileContext({
     session,
-    headers: opts.req.headers,
+    headers,
+    apiKey: authorizedApiKey,
   })
 }
 
@@ -279,7 +242,6 @@ export type MobileTRPCContext = ReturnType<typeof createInnerMobileContext>
 const mt = initTRPC.context<typeof createMobileTRPCFetchContext>().create({
   transformer: superjson,
   errorFormatter(ctx) {
-    // Track errors for analytics
     if (ctx.error.code !== 'UNAUTHORIZED' && ctx.error.code !== 'FORBIDDEN') {
       analytics.performance.errorOccurred({
         errorType: ctx.error.code || 'UNKNOWN',
@@ -308,7 +270,6 @@ const mobilePerformanceMiddleware = mt.middleware(async ({ next, path }) => {
   const result = await next()
   const duration = Date.now() - start
 
-  // Track slow queries (threshold: 3 seconds for mobile)
   const THRESHOLD_MS = 3000
   if (duration > THRESHOLD_MS) {
     analytics.performance.slowQuery({
@@ -321,16 +282,28 @@ const mobilePerformanceMiddleware = mt.middleware(async ({ next, path }) => {
   return result
 })
 
+const mobileRateLimitMiddleware = mt.middleware(async ({ ctx, next }) => {
+  if (ctx.apiKey) {
+    const apiAccessService = new ApiAccessService(ctx.prisma)
+    await apiAccessService.consumeRequest(ctx.apiKey)
+  }
+
+  return next()
+})
+
 /**
  * Public mobile procedure (no auth required)
  */
-export const mobilePublicProcedure = mt.procedure.use(mobilePerformanceMiddleware)
+export const mobilePublicProcedure = mt.procedure
+  .use(mobilePerformanceMiddleware)
+  .use(mobileRateLimitMiddleware)
 
 /**
  * Protected mobile procedure (requires authentication)
  */
 export const mobileProtectedProcedure = mt.procedure
   .use(mobilePerformanceMiddleware)
+  .use(mobileRateLimitMiddleware)
   .use(({ ctx, next }) => {
     if (!ctx.session?.user) AppError.unauthorized()
 
@@ -344,6 +317,7 @@ export const mobileProtectedProcedure = mt.procedure
  */
 export const mobileAdminProcedure = mt.procedure
   .use(mobilePerformanceMiddleware)
+  .use(mobileRateLimitMiddleware)
   .use(({ ctx, next }) => {
     if (!ctx.session?.user) {
       AppError.unauthorized()
@@ -360,11 +334,9 @@ export const mobileAdminProcedure = mt.procedure
     })
   })
 
-/**
- * Mobile moderator procedure (requires moderator role or higher)
- */
 export const mobileModeratorProcedure = mt.procedure
   .use(mobilePerformanceMiddleware)
+  .use(mobileRateLimitMiddleware)
   .use(({ ctx, next }) => {
     if (!ctx.session?.user) {
       AppError.unauthorized()
@@ -382,15 +354,12 @@ export const mobileModeratorProcedure = mt.procedure
     })
   })
 
-/**
- * Mobile author procedure (requires at least Author role)
- */
 export const mobileAuthorProcedure = mt.procedure
   .use(mobilePerformanceMiddleware)
+  .use(mobileRateLimitMiddleware)
   .use(({ ctx, next }) => {
     if (!ctx.session?.user) return AppError.unauthorized()
 
-    // For now, we consider User as Author
     if (!hasRolePermission(ctx.session.user.role, Role.USER)) {
       AppError.forbidden()
     }
@@ -407,6 +376,7 @@ export const mobileAuthorProcedure = mt.procedure
  */
 export const mobileDeveloperProcedure = mt.procedure
   .use(mobilePerformanceMiddleware)
+  .use(mobileRateLimitMiddleware)
   .use(({ ctx, next }) => {
     if (!ctx.session?.user) {
       AppError.unauthorized()
@@ -428,6 +398,7 @@ export const mobileDeveloperProcedure = mt.procedure
  */
 export const mobileSuperAdminProcedure = mt.procedure
   .use(mobilePerformanceMiddleware)
+  .use(mobileRateLimitMiddleware)
   .use(({ ctx, next }) => {
     if (!ctx.session?.user) return AppError.unauthorized()
 
@@ -442,14 +413,6 @@ export const mobileSuperAdminProcedure = mt.procedure
     })
   })
 
-/**
- * Mobile developer emulator procedure
- * Ensures that a developer can only access emulators they're verified for,
- * while admins and super admins retain access to all emulators.
- *
- * @param emulatorId The ID of the emulator to check access for
- * @returns A procedure that can be used to create router endpoints requiring emulator-specific access
- */
 export function mobileDeveloperEmulatorProcedure(emulatorId: string) {
   return mobileProtectedProcedure.use(async ({ ctx, next }) => {
     const userId = ctx.session.user.id
@@ -462,26 +425,14 @@ export function mobileDeveloperEmulatorProcedure(emulatorId: string) {
   })
 }
 
-// ===== Permission-Based Procedures =====
-
-/**
- * Generic mobile permission-based procedure
- * @param requiredPermission The permission key required to access this procedure
- */
 export function mobilePermissionProcedure(requiredPermission: string) {
   return mobileProtectedProcedure.use(({ ctx, next }) => {
-    if (!hasPermissionInContext(ctx, requiredPermission)) {
-      return AppError.insufficientPermissions(requiredPermission)
-    }
-
-    return next({ ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } } })
+    return hasPermissionInContext(ctx, requiredPermission)
+      ? next({ ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } } })
+      : AppError.insufficientPermissions(requiredPermission)
   })
 }
 
-/**
- * Mobile procedure that requires multiple permissions (all must be present)
- * @param requiredPermissions Array of permission keys that are all required
- */
 export function mobileMultiPermissionProcedure(requiredPermissions: string[]) {
   return mobileProtectedProcedure.use(({ ctx, next }) => {
     const missingPermissions = requiredPermissions.filter(
@@ -494,10 +445,6 @@ export function mobileMultiPermissionProcedure(requiredPermissions: string[]) {
   })
 }
 
-/**
- * Mobile procedure that requires any one of multiple permissions
- * @param requiredPermissions Array of permission keys (any one is sufficient)
- */
 export function mobileAnyPermissionProcedure(requiredPermissions: string[]) {
   return mobileProtectedProcedure.use(({ ctx, next }) => {
     const hasAnyPermission = requiredPermissions.some((permission) =>

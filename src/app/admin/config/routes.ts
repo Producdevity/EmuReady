@@ -32,6 +32,8 @@ export const ADMIN_ROUTES = {
 
   // Tools
   TITLE_ID_TOOLS: '/admin/title-id-tools',
+  API_ACCESS: '/admin/api-access',
+  API_ACCESS_DEVELOPER: '/admin/api-access/developer',
 
   // Reports & Monitoring
   REPORTS: '/admin/reports',

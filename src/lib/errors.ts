@@ -13,6 +13,7 @@ export const ERROR_CODES = {
   FORBIDDEN: 'FORBIDDEN',
   INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
   NOT_FOUND: 'NOT_FOUND',
+  TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
   UNAUTHORIZED: 'UNAUTHORIZED',
 } as const
 
@@ -38,6 +39,7 @@ export const ERROR_MESSAGES = {
   // Business logic errors
   OPERATION_NOT_ALLOWED: 'This operation is not allowed',
   RESOURCE_IN_USE: 'Cannot delete resource as it is currently in use',
+  TOO_MANY_REQUESTS: 'Rate limit exceeded. Please try again later.',
 
   // System errors
   DATABASE_ERROR: 'A database error occurred',
@@ -157,6 +159,13 @@ export class AppError {
     throw new TRPCError({ code: ERROR_CODES.BAD_REQUEST, message })
   }
 
+  static tooManyRequests(message?: string): never {
+    throw new TRPCError({
+      code: ERROR_CODES.TOO_MANY_REQUESTS,
+      message: message ?? ERROR_MESSAGES.TOO_MANY_REQUESTS,
+    })
+  }
+
   // System errors
   static internalError(message?: string): never {
     throw new TRPCError({
@@ -208,6 +217,10 @@ export class ResourceError {
     notFound: () => AppError.notFound('Device brand'),
     alreadyExists: (name: string) => AppError.alreadyExists('Brand', `"${name}"`),
     inUse: (count: number) => AppError.resourceInUse('brand', count),
+  }
+
+  static apiKey = {
+    notFound: (): never => AppError.notFound('API key'),
   }
 
   static permission = {
