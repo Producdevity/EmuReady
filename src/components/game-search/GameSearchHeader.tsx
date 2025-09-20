@@ -14,16 +14,15 @@ interface Props {
   isAdmin?: boolean
 }
 
-const providerConfig: Record<
-  GameProvider,
-  {
-    title: string
-    badge: string
-    badgeIcon: ComponentType<{ className?: string }>
-    description: string
-    alternativeProvider?: { label: string; path: string }
-  }
-> = {
+interface GameProviderConfig {
+  title: string
+  badge: string
+  badgeIcon: ComponentType<{ className?: string }>
+  description: string
+  alternativeProvider?: { label: string; path: string }
+}
+
+const providerConfig: Record<GameProvider, GameProviderConfig> = {
   igdb: {
     title: 'Search Game Database',
     badge: 'Powered by IGDB',
