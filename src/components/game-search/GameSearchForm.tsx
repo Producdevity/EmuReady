@@ -136,7 +136,8 @@ export function GameSearchForm(props: GameSearchFormProps) {
               filterKeys={['name']}
               minCharsToTrigger={0}
               disabled={false}
-              className="w-full max-w-md"
+              className="w-full"
+              inputClassName="py-3"
             />
             {selectedSystem && platformId && (
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
@@ -144,7 +145,7 @@ export function GameSearchForm(props: GameSearchFormProps) {
               </p>
             )}
             {selectedSystem && !platformId && (
-              <div className="mt-2 max-w-md flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <div className="mt-2 flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                 <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                 <div className="text-sm text-amber-800 dark:text-amber-200">
                   <p className="font-medium">Platform not mapped</p>
@@ -162,22 +163,24 @@ export function GameSearchForm(props: GameSearchFormProps) {
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Game Title <span className="text-red-500">*</span>
             </label>
-            <div className="flex gap-3 items-stretch">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-4">
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Enter game title (e.g., Mario, Zelda, Pokemon)"
-                className="flex-1 max-w-2xl"
+                className="flex-1 w-full sm:h-12"
+                inputClassName="py-3"
                 disabled={props.isSearching}
                 minLength={2}
                 required
               />
               <Button
                 type="submit"
+                size="lg"
                 disabled={!searchQuery.trim() || searchQuery.trim().length < 2 || props.isSearching}
                 isLoading={props.isSearching}
-                className="px-8"
+                className="px-8 w-full sm:w-auto sm:h-12 rounded-xl"
               >
                 {props.isSearching ? (
                   <>Searching...</>
