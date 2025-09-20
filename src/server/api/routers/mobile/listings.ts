@@ -28,14 +28,11 @@ import {
 } from '@/server/api/mobileContext'
 import { CommentsRepository } from '@/server/repositories/comments.repository'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
+import { ConfigTypeUtils, type EmulatorConfigType } from '@/server/utils/emulator-config/constants'
 import {
-  convertToEdenConfig,
-  serializeEdenConfig,
-} from '@/server/utils/emulator-config/eden/eden.converter'
-import {
-  convertToGameNativeConfig,
-  serializeGameNativeConfig,
-} from '@/server/utils/emulator-config/gamenative/gamenative.converter'
+  detectEmulatorConfigType,
+  generateEmulatorConfig,
+} from '@/server/utils/emulator-config/emulator-detector'
 import { updateListingVoteCounts } from '@/server/utils/vote-counts'
 import { isModerator } from '@/utils/permissions'
 import { ApprovalStatus, Prisma, TrustAction, type PrismaClient, type Role } from '@orm'
@@ -381,91 +378,51 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     .input(GetListingEmulatorConfigSchema)
     .query(async ({ ctx, input }) => {
       // Fetch the listing with all required data
-      const listing = await ctx.prisma.listing.findUnique({
-        where: { id: input.listingId },
-        include: {
-          game: {
-            select: {
-              id: true,
-              title: true,
-              system: { select: { id: true, name: true, key: true } },
-            },
-          },
-          emulator: { select: { id: true, name: true } },
-          customFieldValues: {
-            include: {
-              customFieldDefinition: {
-                select: { id: true, name: true, label: true, type: true, options: true },
-              },
-            },
-          },
-        },
-      })
+      const repository = new ListingsRepository(ctx.prisma)
+      const listing = await repository.findForEmulatorConfig(input.listingId)
 
       if (!listing) return ResourceError.listing.notFound()
 
-      // Determine emulator type
-      const emulatorName = listing.emulator.name.toLowerCase()
-      const emulatorType =
-        input.emulatorType ??
-        (emulatorName.includes('eden')
-          ? 'eden'
-          : emulatorName.includes('gamenative')
-            ? 'gamenative'
-            : null)
+      const resolvedType: EmulatorConfigType | null = input.emulatorType
+        ? ConfigTypeUtils.isValidConfigType(input.emulatorType)
+          ? input.emulatorType
+          : null
+        : (() => {
+            try {
+              return detectEmulatorConfigType(listing.emulator.name)
+            } catch {
+              return null
+            }
+          })()
 
-      if (emulatorType === 'eden') {
-        // Convert to Eden configuration
-        const edenConfig = convertToEdenConfig({
-          listingId: listing.id,
-          gameId: listing.game.id,
-          customFieldValues: listing.customFieldValues.map((cfv) => ({
-            customFieldDefinition: cfv.customFieldDefinition,
-            value: cfv.value,
-          })),
-        })
-
-        // Serialize to .ini format
-        const configContent = serializeEdenConfig(edenConfig)
-
-        return {
-          type: 'eden',
-          filename: `${listing.game.id}.ini`,
-          content: configContent,
-          mimeType: 'text/plain',
-          metadata: {
-            gameTitle: listing.game.title,
-            systemName: listing.game.system.name,
-            emulatorName: listing.emulator.name,
-          },
-        }
-      } else if (emulatorType === 'gamenative') {
-        // Convert to GameNative configuration
-        const gameNativeConfig = convertToGameNativeConfig({
-          listingId: listing.id,
-          gameId: listing.game.id,
-          customFieldValues: listing.customFieldValues.map((cfv) => ({
-            customFieldDefinition: cfv.customFieldDefinition,
-            value: cfv.value,
-          })),
-        })
-
-        // Serialize to JSON format
-        const configContent = serializeGameNativeConfig(gameNativeConfig)
-
-        return {
-          type: 'gamenative',
-          filename: `${listing.game.id}.json`,
-          content: configContent,
-          mimeType: 'application/json',
-          metadata: {
-            gameTitle: listing.game.title,
-            systemName: listing.game.system.name,
-            emulatorName: listing.emulator.name,
-          },
-        }
+      if (!resolvedType) {
+        return AppError.badRequest('Unsupported emulator type')
       }
-      return AppError.badRequest('Unsupported emulator type')
+
+      const configResult = generateEmulatorConfig({
+        listingId: listing.id,
+        gameId: listing.game.id,
+        emulatorName: listing.emulator.name,
+        customFieldValues: listing.customFieldValues.map((cfv) => ({
+          customFieldDefinition: cfv.customFieldDefinition,
+          value: cfv.value,
+        })),
+        configTypeOverride: resolvedType,
+      })
+
+      const fileExtension = ConfigTypeUtils.getFileExtension(configResult.type)
+
+      return {
+        type: configResult.type,
+        filename: `${listing.game.id}${fileExtension}`,
+        content: configResult.serialized,
+        mimeType: ConfigTypeUtils.getMimeType(configResult.type),
+        metadata: {
+          gameTitle: listing.game.title,
+          systemName: listing.game.system.name,
+          emulatorName: listing.emulator.name,
+        },
+      }
     }),
 
   /**

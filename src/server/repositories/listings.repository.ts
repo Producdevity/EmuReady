@@ -93,6 +93,12 @@ export class ListingsRepository extends BaseRepository {
       _count: { select: { votes: true, comments: true } },
     } satisfies Prisma.ListingInclude,
 
+    forEmulatorConfig: {
+      game: { include: { system: { select: { id: true, name: true, key: true } } } },
+      emulator: { select: { id: true, name: true } },
+      customFieldValues: { include: { customFieldDefinition: true } },
+    } satisfies Prisma.ListingInclude,
+
     forFeatured: {
       game: { include: { system: { select: { id: true, name: true, key: true } } } },
       device: { include: { brand: true, soc: true } },
@@ -325,6 +331,13 @@ export class ListingsRepository extends BaseRepository {
       userVote: userVote?.value ?? null,
       isVerifiedDeveloper,
     }
+  }
+
+  async findForEmulatorConfig(id: string) {
+    return this.prisma.listing.findUnique({
+      where: { id },
+      include: ListingsRepository.includes.forEmulatorConfig,
+    })
   }
 
   /**

@@ -172,6 +172,19 @@ describe('Emulator Detector', () => {
       expect(result.serialized).toContain('swap_screen=true')
     })
 
+    it('should respect explicit config type override', () => {
+      const result = generateEmulatorConfig({
+        listingId: 'override-listing',
+        gameId: 'override-game',
+        emulatorName: 'Unknown Emulator',
+        customFieldValues: [],
+        configTypeOverride: 'eden',
+      })
+
+      expect(result.type).toBe('eden')
+      expect(result.serialized).toContain('[Renderer]')
+    })
+
     it('should throw error for unsupported emulators', () => {
       expect(() => {
         generateEmulatorConfig({

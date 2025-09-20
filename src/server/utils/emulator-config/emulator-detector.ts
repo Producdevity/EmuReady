@@ -109,8 +109,9 @@ export function generateEmulatorConfig(input: {
     }
     value: Prisma.JsonValue
   }[]
+  configTypeOverride?: EmulatorConfigType
 }): EmulatorConfigResult {
-  const configType = detectEmulatorConfigType(input.emulatorName)
+  const configType = input.configTypeOverride ?? detectEmulatorConfigType(input.emulatorName)
 
   switch (configType) {
     case EMULATOR_CONFIG_TYPES.EDEN: {
