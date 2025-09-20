@@ -170,9 +170,9 @@ function DeviceSelector(props: Props) {
         <Input
           leftIcon={<Search className="w-4 h-4" />}
           type="text"
-          placeholder="Search devices... (e.g., 'rp5' for Retroid Pocket 5)"
+          placeholder="Search devices... (e.g., Retroid Pocket 5, Odin 2)"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(ev) => setSearchQuery(ev.target.value)}
           className="w-full"
         />
       </div>
