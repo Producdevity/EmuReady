@@ -47,7 +47,7 @@ export function Dropdown(props: Props) {
       )}
       <button
         className={cn(
-          'relative inline-flex w-full items-center justify-between gap-2 rounded-lg border border-gray-300 bg-white py-2 px-3 text-left text-sm shadow-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800',
+          'relative inline-flex w-full items-center justify-between gap-2 rounded-md border border-gray-200 bg-white py-2.5 px-3 text-left text-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-gray-100',
           props.triggerClassName,
         )}
         onClick={() => setIsOpen(!isOpen)}
@@ -68,15 +68,15 @@ export function Dropdown(props: Props) {
       </button>
 
       {isOpen && (
-        <div className="absolute z-20 mt-2 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-gray-700 dark:bg-gray-800">
+        <div className="absolute z-20 mt-1 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-xl backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900">
           {props.options.map((option) => (
             <div
               key={option.value}
               className={cn(
-                'cursor-pointer select-none px-3 py-2 text-sm transition',
+                'cursor-pointer select-none px-3 py-2.5 text-sm transition-colors',
                 option.value === props.value
-                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-100'
-                  : 'text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-700',
+                  ? 'bg-blue-50 text-blue-700 font-medium dark:bg-blue-950/50 dark:text-blue-300'
+                  : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800',
               )}
               onClick={() => {
                 props.onChange(option.value)

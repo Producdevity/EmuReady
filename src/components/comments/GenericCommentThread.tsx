@@ -4,7 +4,13 @@ import { useUser } from '@clerk/nextjs'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MessageCircle, Pencil, Trash2, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
-import { RoleBadge, useConfirmDialog, TranslatableMarkdown, LocalizedDate } from '@/components/ui'
+import {
+  RoleBadge,
+  useConfirmDialog,
+  TranslatableMarkdown,
+  LocalizedDate,
+  Dropdown,
+} from '@/components/ui'
 import { canEditComment, canDeleteComment } from '@/utils/permissions'
 import type { Role } from '@orm'
 
@@ -386,17 +392,12 @@ export function GenericCommentThread(props: GenericCommentThreadProps) {
 
         {/* Sort Options */}
         {props.comments.length > 0 && (
-          <select
+          <Dropdown
+            options={props.config.sortOptions}
             value={sortBy}
-            onChange={(e) => handleSortChange(e.target.value)}
-            className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-          >
-            {props.config.sortOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            onChange={handleSortChange}
+            className="min-w-[150px]"
+          />
         )}
       </div>
 
