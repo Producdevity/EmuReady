@@ -19,10 +19,12 @@ import {
 import { invalidateUser } from '@/server/cache/invalidation'
 import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
 import {
+  buildTopContributorsSummary,
+  EMPTY_TOP_CONTRIBUTORS_SUMMARY,
+  getActiveBanFilter,
   getTopContributorsRaw,
   getUserContributionBreakdown,
-  getActiveBanFilter,
-  type ContributionBreakdown,
+  type RawContributor,
   type ContributorTimeframe,
 } from '@/server/services/contributors.service'
 import { buildOrderBy, paginate } from '@/server/utils/pagination'
@@ -60,7 +62,7 @@ export const usersRouter = createTRPCRouter({
       const limit = input.limit
       const timeframes: ContributorTimeframe[] = ['all_time', 'this_month', 'this_week']
 
-      let rawResults: { userId: string; breakdown: ContributionBreakdown }[][] = [[], [], []]
+      let rawResults: RawContributor[][] = [[], [], []]
 
       try {
         rawResults = await Promise.all(
@@ -68,24 +70,18 @@ export const usersRouter = createTRPCRouter({
         )
       } catch (error) {
         console.error('Failed to load top contributors summary', error)
-        return {
-          allTime: [],
-          thisMonth: [],
-          thisWeek: [],
-        }
+        return EMPTY_TOP_CONTRIBUTORS_SUMMARY
       }
 
       const candidateIds = Array.from(
         new Set(rawResults.flatMap((list) => list.map((item) => item.userId))),
       )
 
-      if (candidateIds.length === 0) {
-        return {
-          allTime: [],
-          thisMonth: [],
-          thisWeek: [],
-        }
-      }
+      const lifetimeContributionMap = new Map(
+        (rawResults[0] ?? []).map((entry) => [entry.userId, entry.breakdown]),
+      )
+
+      if (candidateIds.length === 0) return EMPTY_TOP_CONTRIBUTORS_SUMMARY
 
       const users = await ctx.prisma.user.findMany({
         where: {
@@ -104,47 +100,7 @@ export const usersRouter = createTRPCRouter({
       })
 
       const userMap = new Map(users.map((user) => [user.id, user]))
-
-      const mapContributors = (entries: { userId: string; breakdown: ContributionBreakdown }[]) => {
-        const formatted: {
-          rank: number
-          id: string
-          name: string | null
-          profileImage: string | null
-          role: Role
-          trustScore: number
-          bio: string | null
-          joinedAt: Date
-          contributions: ContributionBreakdown
-        }[] = []
-
-        for (const entry of entries) {
-          const user = userMap.get(entry.userId)
-          if (!user) continue
-
-          formatted.push({
-            rank: formatted.length + 1,
-            id: user.id,
-            name: user.name,
-            profileImage: user.profileImage,
-            role: user.role,
-            trustScore: user.trustScore,
-            bio: user.bio,
-            joinedAt: user.createdAt,
-            contributions: entry.breakdown,
-          })
-
-          if (formatted.length === limit) break
-        }
-
-        return formatted
-      }
-
-      return {
-        allTime: mapContributors(rawResults[0] ?? []),
-        thisMonth: mapContributors(rawResults[1] ?? []),
-        thisWeek: mapContributors(rawResults[2] ?? []),
-      }
+      return buildTopContributorsSummary(rawResults, limit, userMap, lifetimeContributionMap)
     }),
 
   getProfile: protectedProcedure.query(async ({ ctx }) => {

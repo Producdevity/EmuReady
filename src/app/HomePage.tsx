@@ -385,8 +385,11 @@ function Home() {
                         cardClass: 'ring-1 ring-blue-400/30 dark:ring-blue-500/40 shadow-lg',
                       }
 
-                      const totalListings =
-                        contributor.contributions.listings + contributor.contributions.pcListings
+                      const timeframeHandheld = contributor.contributions.listings
+                      const timeframePc = contributor.contributions.pcListings
+                      const lifetimeHandheld = contributor.lifetime?.listings ?? timeframeHandheld
+                      const lifetimePc = contributor.lifetime?.pcListings ?? timeframePc
+                      const lifetimeTotal = lifetimeHandheld + lifetimePc
 
                       return (
                         <Link
@@ -421,7 +424,7 @@ function Home() {
                               )}
                             >
                               <Award className="mr-1 inline-block h-3.5 w-3.5" />
-                              {totalListings.toLocaleString()} total
+                              {lifetimeTotal.toLocaleString()} total lifetime listings
                             </div>
                           </div>
 
@@ -440,14 +443,14 @@ function Home() {
                             <div className="rounded-lg bg-blue-50/80 p-3 dark:bg-blue-900/30">
                               <Gamepad2 className="mx-auto mb-1 h-4 w-4 text-blue-600 dark:text-blue-300" />
                               <span className="block font-semibold text-gray-900 dark:text-white">
-                                {contributor.contributions.listings}
+                                {timeframeHandheld}
                               </span>
                               <span className="text-[11px] uppercase tracking-wide">Handheld</span>
                             </div>
                             <div className="rounded-lg bg-purple-50/80 p-3 dark:bg-purple-900/30">
                               <Monitor className="mx-auto mb-1 h-4 w-4 text-purple-600 dark:text-purple-300" />
                               <span className="block font-semibold text-gray-900 dark:text-white">
-                                {contributor.contributions.pcListings}
+                                {timeframePc}
                               </span>
                               <span className="text-[11px] uppercase tracking-wide">PC</span>
                             </div>

@@ -58,7 +58,7 @@ describe('contributors.service', () => {
       listings: 0,
       pcListings: 4,
       games: 1,
-      total: 5,
+      total: 4,
       lastContributionAt: dateB,
     })
   })
@@ -85,8 +85,8 @@ describe('contributors.service', () => {
     const top = await getTopContributorsRaw(prisma, 'all_time', 2)
 
     expect(top).toHaveLength(2)
-    expect(top[0]?.userId).toBe('user-2')
-    expect(top[1]?.userId).toBe('user-1')
+    expect(top[0]?.userId).toBe('user-1')
+    expect(top[1]?.userId).toBe('user-2')
   })
 
   it('returns zeroed contribution breakdown when user has no records', async () => {

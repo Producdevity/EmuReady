@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     qualities: [50, 75, 85, 100],
     localPatterns: [
       // Allow any query on the proxy route
-      { pathname: '/api/proxy-image', search: '?*' },
+      { pathname: '/api/proxy-image' },
       { pathname: '/_next/**' },
       { pathname: '/placeholder/**' },
     ],

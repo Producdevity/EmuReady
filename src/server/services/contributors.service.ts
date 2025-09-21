@@ -1,5 +1,5 @@
 import { startOfMonth, subDays } from 'date-fns'
-import { ApprovalStatus, type PrismaClient } from '@orm'
+import { ApprovalStatus, type PrismaClient, type Role } from '@orm'
 
 export type ContributorTimeframe = 'all_time' | 'this_month' | 'this_week'
 
@@ -19,6 +19,46 @@ interface AggregateOptions {
 
 interface AggregateResult {
   [userId: string]: ContributionBreakdown
+}
+
+export interface RawContributor {
+  userId: string
+  breakdown: ContributionBreakdown
+}
+
+export interface ContributorSummary {
+  rank: number
+  id: string
+  name: string | null
+  profileImage: string | null
+  role: Role
+  trustScore: number
+  bio: string | null
+  joinedAt: Date
+  contributions: ContributionBreakdown
+  lifetime: ContributionBreakdown
+}
+
+export interface TopContributorsSummary {
+  allTime: ContributorSummary[]
+  thisMonth: ContributorSummary[]
+  thisWeek: ContributorSummary[]
+}
+
+export const EMPTY_TOP_CONTRIBUTORS_SUMMARY: TopContributorsSummary = {
+  allTime: [],
+  thisMonth: [],
+  thisWeek: [],
+}
+
+export interface ContributorUserDetails {
+  id: string
+  name: string | null
+  profileImage: string | null
+  role: Role
+  trustScore: number
+  bio: string | null
+  createdAt: Date
 }
 
 export function getActiveBanFilter(now: Date) {
@@ -72,7 +112,6 @@ function mergeContribution(
 
   if (typeof contribution.games === 'number') {
     entry.games += contribution.games
-    entry.total += contribution.games
   }
 
   if (contribution.lastContributionAt) {
@@ -164,7 +203,7 @@ export async function getTopContributorsRaw(
   prisma: PrismaClient,
   timeframe: ContributorTimeframe,
   limit: number,
-): Promise<{ userId: string; breakdown: ContributionBreakdown }[]> {
+): Promise<RawContributor[]> {
   const startDate = resolveContributorTimeframe(timeframe)
   const aggregates = await aggregateContributions(prisma, { startDate })
 
@@ -178,6 +217,53 @@ export async function getTopContributorsRaw(
     })
 
   return sorted.slice(0, limit).map(([userId, breakdown]) => ({ userId, breakdown }))
+}
+
+export function formatContributors(
+  entries: RawContributor[],
+  limit: number,
+  userMap: Map<string, ContributorUserDetails>,
+  lifetimeMap: Map<string, ContributionBreakdown>,
+): ContributorSummary[] {
+  const formatted: ContributorSummary[] = []
+
+  for (const entry of entries) {
+    const user = userMap.get(entry.userId)
+    if (!user) continue
+
+    formatted.push({
+      rank: formatted.length + 1,
+      id: user.id,
+      name: user.name,
+      profileImage: user.profileImage,
+      role: user.role,
+      trustScore: user.trustScore,
+      bio: user.bio,
+      joinedAt: user.createdAt,
+      contributions: entry.breakdown,
+      lifetime: lifetimeMap.get(entry.userId) ?? entry.breakdown,
+    })
+
+    if (formatted.length === limit) break
+  }
+
+  return formatted
+}
+
+export function buildTopContributorsSummary(
+  rawResults: RawContributor[][],
+  limit: number,
+  userMap: Map<string, ContributorUserDetails>,
+  lifetimeMap: Map<string, ContributionBreakdown>,
+): TopContributorsSummary {
+  const getList = (index: number) =>
+    formatContributors(rawResults[index] ?? [], limit, userMap, lifetimeMap)
+
+  return {
+    allTime: getList(0),
+    thisMonth: getList(1),
+    thisWeek: getList(2),
+  }
 }
 
 export async function getUserContributionBreakdown(

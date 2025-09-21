@@ -28,20 +28,30 @@ interface Props {
   quality?: 50 | 75 | 85 | 100
   fallbackSrc?: string
   objectFit?: ObjectFit
+  useProxy?: boolean
 }
 
 export function OptimizedImage(props: Props) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(false)
 
-  const getNormalizedSrc = (src: string): string => {
-    if (!src.startsWith('/api/proxy-image')) return src
-    const qIndex = src.indexOf('?')
-    if (qIndex === -1) return src
-    const search = src.slice(qIndex + 1)
-    const params = new URLSearchParams(search)
-    const real = params.get('url')
-    return real ?? src
+  const fallbackSrc = props.fallbackSrc ?? '/placeholder/game.svg'
+
+  const resolveSrc = (): string => {
+    if (error) return fallbackSrc
+
+    const shouldProxy = props.useProxy ?? true
+    const src = props.src
+
+    if (!shouldProxy) return src
+
+    if (src.startsWith('/api/proxy-image')) return src
+
+    if (src.startsWith('http://') || src.startsWith('https://')) {
+      return `/api/proxy-image?url=${encodeURIComponent(src)}`
+    }
+
+    return src
   }
 
   const handleError = () => {
@@ -57,7 +67,7 @@ export function OptimizedImage(props: Props) {
         </div>
       )}
       <Image
-        src={error ? (props.fallbackSrc ?? '/placeholder.svg') : getNormalizedSrc(props.src)}
+        src={resolveSrc()}
         alt={props.alt}
         width={props.width ?? 300}
         height={props.height ?? 300}
