@@ -23,7 +23,7 @@ import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
 import { MarkdownEditor } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
-import { parseCustomFieldOptions, getCustomFieldDefaultValue } from '@/utils/customFields'
+import { parseCustomFieldOptions, getCustomFieldDefaultValue } from '@/utils/custom-fields'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { PcOs } from '@orm'
 import createDynamicPcListingSchema, {
@@ -474,7 +474,7 @@ function AddPcListingPage() {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {presetsQuery.data.map((preset) => (
                     <Button
                       key={preset.id}

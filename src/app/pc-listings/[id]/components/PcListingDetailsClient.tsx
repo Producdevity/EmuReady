@@ -1,23 +1,18 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ArrowLeft, ExternalLink, Monitor, Cpu, HardDrive } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
+import { ArrowLeft, Monitor, Cpu, HardDrive } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef } from 'react'
 import { VoteReminderBanner } from '@/app/listings/[id]/components/vote-reminder/VoteReminderBanner'
 import { CustomFieldsSection } from '@/app/listings/components/shared/CustomFieldsSection'
+import { ActionButtonsStack } from '@/app/listings/components/shared/details/ActionButtonsStack'
+import { AuthorPanel } from '@/app/listings/components/shared/details/AuthorPanel'
+import { DetailsHeader } from '@/app/listings/components/shared/details/DetailsHeader'
+import { DetailsHeaderBadges } from '@/app/listings/components/shared/details/DetailsHeaderBadges'
+import { VotingSection } from '@/app/listings/components/shared/details/VotingSection'
 import { NotesSection } from '@/app/listings/components/shared/NotesSection'
-import {
-  Card,
-  Badge,
-  PerformanceBadge,
-  Button,
-  ApprovalStatusBadge,
-  LocalizedDate,
-  GameImage,
-} from '@/components/ui'
+import { Card, Button, GameImage, Badge } from '@/components/ui'
 import { api } from '@/lib/api'
 import { logger } from '@/lib/logger'
 import toast from '@/lib/toast'
@@ -53,8 +48,8 @@ function PcListingDetailsClient(props: Props) {
   const currentUserQuery = api.users.me.useQuery()
   const canViewBannedUsers = roleIncludesRole(currentUserQuery.data?.role, Role.MODERATOR)
 
-  const refreshData = () => {
-    utils.pcListings.byId.invalidate({ id: props.pcListing.id }).catch(console.error)
+  const refreshData = async () => {
+    await utils.pcListings.byId.invalidate({ id: props.pcListing.id })
   }
 
   const scrollToVoteSection = () => {
@@ -114,39 +109,17 @@ function PcListingDetailsClient(props: Props) {
                 />
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-                <h1 className="text-2xl lg:text-3xl font-extrabold text-indigo-700 dark:text-indigo-300">
-                  {props.pcListing?.game.title}
-                </h1>
-
-                <Link
-                  href={`/games/${props.pcListing?.game.id}`}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md self-start sm:self-auto"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  View Game
-                </Link>
-              </div>
-
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant="default">System: {props.pcListing?.game.system?.name}</Badge>
-                <Badge
-                  onClick={() =>
-                    router.push(`/emulators?emulatorId=${props.pcListing?.emulator?.id}`)
-                  }
-                  variant="default"
-                  className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
-                >
-                  Emulator: {props.pcListing?.emulator?.name}
-                </Badge>
-                <PerformanceBadge
-                  pill={false}
-                  rank={props.pcListing.performance.rank}
-                  label={props.pcListing.performance.label}
-                  description={props.pcListing.performance?.description}
-                />
-                {canViewBannedUsers && <ApprovalStatusBadge status={props.pcListing.status} />}
-              </div>
+              <DetailsHeader
+                title={props.pcListing.game.title}
+                gameUrl={`/games/${props.pcListing.game.id}`}
+                badges={[
+                  <DetailsHeaderBadges
+                    key="shared-badges"
+                    universalListing={props.pcListing}
+                    canViewBannedUsers={canViewBannedUsers}
+                  />,
+                ]}
+              />
 
               {/* PC Hardware Specifications */}
               <div className="mb-6">
@@ -223,61 +196,31 @@ function PcListingDetailsClient(props: Props) {
               />
             </div>
 
-            {/* Author Info */}
             <div className="flex flex-col items-center gap-2 w-full md:w-auto md:min-w-[140px]">
-              <div className="relative w-16 h-16 rounded-full overflow-hidden bg-indigo-200 dark:bg-indigo-800">
-                {props.pcListing?.author?.profileImage ? (
-                  <Image
-                    src={props.pcListing?.author.profileImage}
-                    alt={`${props.pcListing?.author?.name ?? 'Author'}'s profile`}
-                    fill
-                    sizes="64px"
-                    className="object-cover"
-                    priority
-                    unoptimized
+              {(() => {
+                const author = props.pcListing.author as typeof props.pcListing.author & {
+                  userBans?: unknown
+                }
+                const userBans = Array.isArray(author?.userBans) ? author.userBans : null
+
+                return (
+                  <AuthorPanel
+                    profileImage={props.pcListing.author?.profileImage}
+                    authorName={props.pcListing.author?.name}
+                    authorId={props.pcListing.author?.id}
+                    postedAt={props.pcListing.createdAt}
+                    bannedBadge={
+                      canViewBannedUsers && userBans && userBans.length > 0 ? (
+                        <Badge variant="danger" size="sm" className="mt-1">
+                          BANNED USER
+                        </Badge>
+                      ) : undefined
+                    }
                   />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-indigo-700 dark:text-indigo-200">
-                    {props.pcListing?.author?.name?.[0] ?? '?'}
-                  </div>
-                )}
-              </div>
-              <div className="text-center">
-                <div className="font-semibold text-gray-900 dark:text-white">
-                  {props.pcListing?.author?.name ?? 'Unknown'}
-                </div>
-                {canViewBannedUsers &&
-                  props.pcListing?.author &&
-                  'userBans' in props.pcListing.author &&
-                  Array.isArray(props.pcListing.author.userBans) &&
-                  props.pcListing.author.userBans.length > 0 && (
-                    <Badge variant="danger" size="sm" className="mt-1">
-                      BANNED USER
-                    </Badge>
-                  )}
-              </div>
-              <Link
-                href={`/users/${props.pcListing?.author?.id ?? ''}`}
-                className="mt-2 text-indigo-600 hover:underline text-xs"
-              >
-                View Profile
-              </Link>
+                )
+              })()}
 
-              {/* Posted Date */}
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="text-center">
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Posted</div>
-                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    <LocalizedDate date={props.pcListing.createdAt} format="timeAgo" />
-                  </div>
-                  <div className="text-xs text-gray-400 dark:text-gray-500">
-                    <LocalizedDate date={props.pcListing.createdAt} format="dateTime" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="mt-4 space-y-2">
+              <ActionButtonsStack>
                 <EditPcListingButton pcListingId={props.pcListing.id} onSuccess={refreshData} />
                 <PcReportListingButton
                   pcListingId={props.pcListing.id}
@@ -302,16 +245,12 @@ function PcListingDetailsClient(props: Props) {
                   }
                   onSuccess={refreshData}
                 />
-              </div>
+              </ActionButtonsStack>
             </div>
           </div>
 
           {/* Voting Section */}
-          <div
-            className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700"
-            id="vote-section"
-            ref={voteSectionRef}
-          >
+          <VotingSection id="vote-section" ref={voteSectionRef}>
             <PcVoteButtons
               pcListingId={props.pcListing.id}
               currentVote={props.pcListing.userVote ?? null}
@@ -324,7 +263,7 @@ function PcListingDetailsClient(props: Props) {
               cpuId={props.pcListing.cpu.id}
               gpuId={props.pcListing.gpu?.id}
             />
-          </div>
+          </VotingSection>
 
           {/* Comments Section */}
           <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">

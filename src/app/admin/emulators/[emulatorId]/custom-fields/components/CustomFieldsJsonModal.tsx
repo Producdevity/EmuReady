@@ -8,7 +8,7 @@ import jsonLang from 'react-syntax-highlighter/dist/esm/languages/prism/json'
 import { solarizedDarkAtom, solarizedlight } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Button, Modal } from '@/components/ui'
 import { copyToClipboard } from '@/utils/copyToClipboard'
-import { parseCustomFieldOptions } from '@/utils/customFields'
+import { parseCustomFieldOptions } from '@/utils/custom-fields'
 import { CustomFieldType, type CustomFieldDefinition } from '@orm'
 
 // Register the JSON language once in this module

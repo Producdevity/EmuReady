@@ -13,9 +13,7 @@ export function parseCustomFieldOptions(field: {
   type: CustomFieldType
   options?: unknown
 }): CustomFieldOptionUI[] | undefined {
-  if (field.type !== CustomFieldType.SELECT || !Array.isArray(field.options)) {
-    return undefined
-  }
+  if (field.type !== CustomFieldType.SELECT || !Array.isArray(field.options)) return undefined
 
   return field.options.reduce((acc: CustomFieldOptionUI[], opt: unknown) => {
     if (typeof opt === 'object' && opt !== null && 'value' in opt && 'label' in opt) {
@@ -40,9 +38,7 @@ export function getCustomFieldDefaultValue(
   parsedOptions?: CustomFieldOptionUI[],
 ): string | boolean | number | null | undefined {
   // Use the actual default value from the field definition if available
-  if (field.defaultValue !== null && field.defaultValue !== undefined) {
-    return field.defaultValue
-  }
+  if (field.defaultValue !== null && field.defaultValue !== undefined) return field.defaultValue
 
   // Fall back to type-specific defaults
   switch (field.type) {

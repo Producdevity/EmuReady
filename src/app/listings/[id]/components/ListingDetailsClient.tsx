@@ -3,23 +3,15 @@
 import { motion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useRef, type ReactNode } from 'react'
+import { useRef } from 'react'
 import { CustomFieldsSection } from '@/app/listings/components/shared/CustomFieldsSection'
 import { ActionButtonsStack } from '@/app/listings/components/shared/details/ActionButtonsStack'
 import { AuthorPanel } from '@/app/listings/components/shared/details/AuthorPanel'
 import { DetailsHeader } from '@/app/listings/components/shared/details/DetailsHeader'
+import { DetailsHeaderBadges } from '@/app/listings/components/shared/details/DetailsHeaderBadges'
 import { VotingSection } from '@/app/listings/components/shared/details/VotingSection'
 import { NotesSection } from '@/app/listings/components/shared/NotesSection'
-import {
-  Card,
-  Badge,
-  PerformanceBadge,
-  Button,
-  VerifiedDeveloperBadge,
-  ListingVerificationBadge,
-  ApprovalStatusBadge,
-  GameImage,
-} from '@/components/ui'
+import { Card, Button, GameImage, Badge } from '@/components/ui'
 import { api } from '@/lib/api'
 import { logger } from '@/lib/logger'
 import toast from '@/lib/toast'
@@ -51,7 +43,7 @@ function ListingDetailsClient(props: Props) {
   const canViewBannedUsers = roleIncludesRole(currentUserQuery.data?.role, Role.MODERATOR)
 
   const refreshData = async () => {
-    // Use refetch for immediate update instead of just invalidating
+    await utils.listings.byId.invalidate({ id: props.listing.id })
     await utils.listings.byId.refetch({ id: props.listing.id })
   }
 
@@ -116,62 +108,15 @@ function ListingDetailsClient(props: Props) {
               </div>
 
               <DetailsHeader
-                title={props.listing?.game.title}
-                gameUrl={`/games/${props.listing?.game.id}`}
-                badges={
-                  [
-                    <Badge
-                      key="system"
-                      onClick={() =>
-                        router.push(`/systems?systemId=${props.listing?.game.system?.id}`)
-                      }
-                      variant="default"
-                    >
-                      System: {props.listing?.game.system?.name}
-                    </Badge>,
-                    <Badge
-                      key="device"
-                      onClick={() => router.push(`/devices?deviceId=${props.listing?.device?.id}`)}
-                      variant="default"
-                    >
-                      Device: {props.listing?.device?.brand?.name}{' '}
-                      {props.listing?.device?.modelName}
-                    </Badge>,
-                    <Badge
-                      key="emulator"
-                      onClick={() =>
-                        router.push(`/emulators?emulatorId=${props.listing?.emulator?.id}`)
-                      }
-                      variant="default"
-                    >
-                      Emulator: {props.listing?.emulator?.name}
-                    </Badge>,
-                    <PerformanceBadge
-                      key="perf"
-                      pill={false}
-                      rank={props.listing.performance.rank}
-                      label={props.listing.performance.label}
-                      description={props.listing.performance?.description}
-                    />,
-                    props.listing.isVerifiedDeveloper ? (
-                      <span key="vd" className="ml-1">
-                        <VerifiedDeveloperBadge showText />
-                      </span>
-                    ) : undefined,
-                    props.listing.developerVerifications &&
-                    props.listing.developerVerifications.length > 0 ? (
-                      <ListingVerificationBadge
-                        key="lvb"
-                        verifications={props.listing.developerVerifications}
-                        showText
-                        showTooltip
-                      />
-                    ) : undefined,
-                    canViewBannedUsers ? (
-                      <ApprovalStatusBadge key="as" status={props.listing.status} />
-                    ) : undefined,
-                  ].filter(Boolean) as ReactNode[]
-                }
+                title={props.listing.game.title}
+                gameUrl={`/games/${props.listing.game.id}`}
+                badges={[
+                  <DetailsHeaderBadges
+                    key="shared-badges"
+                    universalListing={props.listing}
+                    canViewBannedUsers={canViewBannedUsers}
+                  />,
+                ]}
               />
 
               <NotesSection content={props.listing?.notes ?? ''} />

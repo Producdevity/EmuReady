@@ -24,7 +24,7 @@ import { TrustStatsOverview } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { TRUST_ACTIONS } from '@/lib/trust/config'
 import { type RouterOutput } from '@/types/trpc'
-import { getTrustActionBadgeColor } from '@/utils/badgeColors'
+import { getTrustActionBadgeColor } from '@/utils/badge-colors'
 import { TrustAction } from '@orm'
 
 type TrustLog = RouterOutput['trust']['getTrustLogs']['logs'][number]

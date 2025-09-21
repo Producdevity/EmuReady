@@ -2,7 +2,7 @@
 
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
-import { getRoleColor } from '@/utils/badgeColors'
+import { getRoleColor } from '@/utils/badge-colors'
 import { formatUserRole } from '@/utils/format'
 import { Role } from '@orm'
 

@@ -15,7 +15,7 @@ import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
 import { MarkdownEditor } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
-import { parseCustomFieldOptions, getCustomFieldDefaultValue } from '@/utils/customFields'
+import { parseCustomFieldOptions, getCustomFieldDefaultValue } from '@/utils/custom-fields'
 import getErrorMessage from '@/utils/getErrorMessage'
 import {
   CustomFieldRenderer,

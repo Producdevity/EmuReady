@@ -11,7 +11,7 @@ import {
   renderCustomField,
   PerformanceSelector,
 } from '@/app/listings/components/shared'
-import { initializeCustomFieldValues } from '@/app/listings/components/shared/utils/formHelpers'
+import { initializeCustomFieldValues } from '@/app/listings/components/shared/utils/form-helpers'
 import { Button, Modal, LoadingSpinner, SelectInput } from '@/components/ui'
 import { api } from '@/lib/api'
 import { MarkdownEditor } from '@/lib/dynamic-imports'

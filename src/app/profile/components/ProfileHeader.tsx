@@ -6,7 +6,7 @@ import { Edit, Shield, Calendar, UserIcon, Award } from 'lucide-react'
 import { TrustLevelBadge, LocalizedDate } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { type RouterOutput } from '@/types/trpc'
-import { getRoleColor } from '@/utils/badgeColors'
+import { getRoleColor } from '@/utils/badge-colors'
 import { formatUserRole } from '@/utils/format'
 import ProfileUpload from './ProfileUpload'
 

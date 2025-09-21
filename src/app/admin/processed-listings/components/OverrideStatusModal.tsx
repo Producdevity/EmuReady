@@ -1,6 +1,6 @@
 import { Button, Input, Modal } from '@/components/ui'
 import { type RouterOutput } from '@/types/trpc'
-import { getApprovalStatusColor } from '@/utils/badgeColors'
+import { getApprovalStatusColor } from '@/utils/badge-colors'
 import { ApprovalStatus } from '@orm'
 
 type ProcessedListing = RouterOutput['listings']['getProcessed']['listings'][number]

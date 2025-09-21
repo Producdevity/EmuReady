@@ -1,7 +1,7 @@
 import { CheckCircle, Clock, XCircle, HelpCircle, type LucideIcon } from 'lucide-react'
 import { Badge, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import { getApprovalStatusVariant } from '@/utils/badgeColors'
+import { getApprovalStatusVariant } from '@/utils/badge-colors'
 import { ApprovalStatus } from '@orm'
 
 type Status = {

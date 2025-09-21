@@ -30,9 +30,7 @@ export function VoteButtons(props: Props) {
   const handleVote = async (value: boolean) => {
     // Get CAPTCHA token if enabled
     let recaptchaToken: string | null = null
-    if (isCaptchaEnabled) {
-      recaptchaToken = await executeForVote()
-    }
+    if (isCaptchaEnabled) recaptchaToken = await executeForVote()
 
     voteMutation.mutate({
       listingId: props.listingId,
