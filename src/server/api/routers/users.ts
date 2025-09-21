@@ -39,8 +39,46 @@ import {
 } from '@/utils/permission-system'
 import { sanitizeBio } from '@/utils/sanitization'
 import { ApprovalStatus, Role } from '@orm'
-import type { Prisma } from '@orm'
+import type { Prisma, PrismaClient } from '@orm'
 
+function accumulateVoteGroups(groups: { value: boolean; _count: { _all: number } }[]) {
+  return groups.reduce(
+    (acc, group) => {
+      const count = group._count._all
+      acc.total += count
+      if (group.value) acc.upvotes += count
+      else acc.downvotes += count
+      return acc
+    },
+    { total: 0, upvotes: 0, downvotes: 0 },
+  )
+}
+
+async function getUserVoteSummary(prisma: PrismaClient, userId: string) {
+  const [listingVotes, pcListingVotes] = await Promise.all([
+    prisma.vote.groupBy({
+      by: ['value'],
+      where: { listing: { authorId: userId } },
+      _count: { _all: true },
+    }),
+    prisma.pcListingVote.groupBy({
+      by: ['value'],
+      where: { pcListing: { authorId: userId } },
+      _count: { _all: true },
+    }),
+  ])
+
+  const listingTotals = accumulateVoteGroups(listingVotes)
+  const pcTotals = accumulateVoteGroups(pcListingVotes)
+
+  return {
+    total: listingTotals.total + pcTotals.total,
+    upvotes: listingTotals.upvotes + pcTotals.upvotes,
+    downvotes: listingTotals.downvotes + pcTotals.downvotes,
+  }
+}
+
+// TODO: this needs to be extracted in a user.repository.ts and/or a user.service.ts
 export const usersRouter = createTRPCRouter({
   me: publicProcedure.query(({ ctx }) => {
     const sessionUser = ctx.session?.user
@@ -359,27 +397,29 @@ export const usersRouter = createTRPCRouter({
     ])
 
     // Get filter options (for frontend dropdowns)
-    const [availableDevices, availableEmulators, contributionSummary] = await Promise.all([
-      ctx.prisma.listing.findMany({
-        where: { authorId: userId },
-        select: {
-          device: {
-            select: {
-              id: true,
-              modelName: true,
-              brand: { select: { name: true } },
+    const [availableDevices, availableEmulators, contributionSummary, voteSummary] =
+      await Promise.all([
+        ctx.prisma.listing.findMany({
+          where: { authorId: userId },
+          select: {
+            device: {
+              select: {
+                id: true,
+                modelName: true,
+                brand: { select: { name: true } },
+              },
             },
           },
-        },
-        distinct: ['deviceId'],
-      }),
-      ctx.prisma.listing.findMany({
-        where: { authorId: userId },
-        select: { emulator: { select: { name: true } } },
-        distinct: ['emulatorId'],
-      }),
-      getUserContributionBreakdown(ctx.prisma, userId),
-    ])
+          distinct: ['deviceId'],
+        }),
+        ctx.prisma.listing.findMany({
+          where: { authorId: userId },
+          select: { emulator: { select: { name: true } } },
+          distinct: ['emulatorId'],
+        }),
+        getUserContributionBreakdown(ctx.prisma, userId),
+        getUserVoteSummary(ctx.prisma, userId),
+      ])
 
     return {
       ...user,
@@ -404,6 +444,7 @@ export const usersRouter = createTRPCRouter({
         emulators: [...new Set(availableEmulators.map((l) => l.emulator?.name).filter(Boolean))],
       },
       contributionSummary,
+      voteSummary,
     }
   }),
 

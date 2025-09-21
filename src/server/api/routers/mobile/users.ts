@@ -4,6 +4,7 @@ import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobi
 import { roleIncludesRole } from '@/utils/permission-system'
 import { ApprovalStatus, Role, Prisma } from '@orm'
 
+// TODO: this needs to be extracted in a user.repository.ts and/or a user.service.ts
 export const mobileUsersRouter = createMobileTRPCRouter({
   /**
    * Get user profile by ID (public user profiles)
