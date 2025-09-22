@@ -1,4 +1,5 @@
 import path from 'path'
+import { clerk } from '@clerk/testing/playwright'
 import { test as setup, type Page } from '@playwright/test'
 
 // Define auth files for different roles
@@ -15,145 +16,30 @@ const authFiles = {
 async function authenticateUser(page: Page, email: string, password: string, role: string) {
   console.log(`🔐 Setting up authentication for ${role}: ${email}`)
 
+  const userButtonSelector = '.cl-userButtonTrigger, .cl-userButton, [data-clerk-user-button]'
+
   try {
-    // Navigate to home page
-    await page.goto('/')
-    await page.waitForLoadState('domcontentloaded')
-
-    // Check if already authenticated by looking for user menu
-    const userMenuButton = page
-      .locator('.cl-userButtonTrigger, .cl-userButton, [data-clerk-user-button]')
-      .first()
-    const isAlreadySignedIn = await userMenuButton.isVisible({ timeout: 2000 }).catch(() => false)
-
-    if (isAlreadySignedIn) {
-      console.log(`🔄 Already signed in, signing out first...`)
-      await userMenuButton.click()
-
-      // Look for sign out option
-      const signOutButton = page
-        .getByRole('menuitem', { name: /sign out/i })
-        .or(page.getByText(/sign out/i))
-      await signOutButton.click()
-
-      // Wait for sign out redirect
-      await page.waitForURL('/', { timeout: 5000 })
-    }
-
-    // Click sign in button
-    const signInButton = page.getByRole('button', { name: /sign in/i }).first()
-    await signInButton.waitFor({ state: 'visible', timeout: 5000 })
-    await signInButton.click()
-
-    // Wait for Clerk sign-in modal to load
-    await page.waitForSelector(
-      'input[name="identifier"], input[name="emailAddress"], input[type="email"]',
-      {
-        timeout: 5000,
-        state: 'visible',
+    await page.goto('/', { waitUntil: 'load' })
+    await clerk.loaded({ page })
+    await clerk.signIn({
+      page,
+      signInParams: {
+        strategy: 'password',
+        identifier: email,
+        password,
       },
-    )
+    })
 
-    // Fill email
-    const emailField = page
-      .locator('input[name="identifier"], input[name="emailAddress"], input[type="email"]')
-      .first()
-    await emailField.fill(email)
-
-    // Continue to password step
-    const continueBtn = page.getByRole('button', { name: /continue/i })
-    if (await continueBtn.isVisible({ timeout: 1000 })) {
-      await continueBtn.click()
-      // Wait for password field to appear instead of arbitrary timeout
-      await page.waitForSelector('input[name="password"], input[type="password"]', {
-        timeout: 3000,
-      })
-    }
-
-    // Fill password
-    const passwordField = page.locator('input[name="password"], input[type="password"]').first()
-    await passwordField.waitFor({ state: 'visible', timeout: 5000 })
-    await passwordField.fill(password)
-
-    // Submit
-    const submitButton = page.getByRole('button', { name: /sign in|continue/i }).first()
-    await submitButton.click()
-
-    // Wait for redirect after authentication
-    try {
-      await page.waitForURL('/', { timeout: 15000 })
-    } catch {
-      // URL navigation may timeout if redirect is slow or goes to different page
-      console.log(`URL navigation timeout, checking authentication status anyway...`)
-    }
-
-    // Wait for page to stabilize
-    await page.waitForTimeout(2000)
-
-    // Verify authentication status
-    const profileButton = page
-      .getByRole('link', { name: /profile/i })
-      .or(page.getByRole('button', { name: /profile/i }))
-    const adminButton = page
-      .getByRole('link', { name: /admin/i })
-      .or(page.getByRole('button', { name: /admin/i }))
-    const userMenu = page
-      .locator('.cl-userButtonTrigger, .cl-userButton, [data-clerk-user-button]')
-      .first()
-    const signOutButton = page.getByRole('button', { name: /sign out/i })
-
-    // Check authentication indicators sequentially
-    let authenticated = false
-    try {
-      authenticated = await profileButton.isVisible({ timeout: 3000 })
-    } catch {
-      // Not visible
-    }
-
-    if (!authenticated) {
-      try {
-        authenticated = await adminButton.isVisible({ timeout: 3000 })
-      } catch {
-        // Not visible
-      }
-    }
-
-    if (!authenticated) {
-      try {
-        authenticated = await userMenu.isVisible({ timeout: 3000 })
-      } catch {
-        // Not visible
-      }
-    }
-
-    if (!authenticated) {
-      // Check user menu for sign out option
-      try {
-        await userMenu.click({ timeout: 2000 })
-        authenticated = await signOutButton.isVisible({ timeout: 2000 })
-        // Close menu
-        await page.keyboard.press('Escape')
-      } catch {
-        // Not authenticated
-      }
-    }
-
-    if (!authenticated) {
-      // Capture screenshot for debugging
-      await page.screenshot({
-        path: `test-results/auth-failed-${role}-${Date.now()}.png`,
-        fullPage: true,
-      })
-      throw new Error(`Authentication verification failed for ${email}`)
-    }
+    await page.reload({ waitUntil: 'networkidle' })
+    await page.waitForSelector(userButtonSelector, { timeout: 8000 })
 
     console.log(`✅ Successfully authenticated ${role}: ${email}`)
     return true
   } catch (error) {
     console.error(`❌ Authentication failed for ${role} (${email}):`, error)
-    // Take screenshot for debugging
     await page.screenshot({
       path: `test-results/auth-failed-${role}.png`,
+      fullPage: true,
     })
     throw error
   }
