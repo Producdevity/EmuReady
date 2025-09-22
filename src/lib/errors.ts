@@ -390,6 +390,8 @@ export class ResourceError {
     parentNotFound: () => AppError.notFound('Parent comment'),
     alreadyDeleted: () => AppError.badRequest('Comment is already deleted'),
     cannotEditDeleted: () => AppError.badRequest('Cannot edit a deleted comment'),
+    alreadyPinned: () => AppError.conflict('A comment is already pinned for this resource'),
+    notPinned: () => AppError.badRequest('There is no pinned comment to unpin'),
   }
 
   static userDevicePreference = {

@@ -14,6 +14,8 @@ export const listingsRouter = createTRPCRouter({
   editComment: commentsRouter.edit,
   deleteComment: commentsRouter.delete,
   voteComment: commentsRouter.vote,
+  pinComment: commentsRouter.pinComment,
+  unpinComment: commentsRouter.unpinComment,
 
   // Admin operations
   getPending: adminRouter.getPending,

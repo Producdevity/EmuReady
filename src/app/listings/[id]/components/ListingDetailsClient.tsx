@@ -195,6 +195,7 @@ function ListingDetailsClient(props: Props) {
               gameId={props.listing?.game.id}
               systemId={props.listing?.game.system?.id}
               listingOwnerId={props.listing?.authorId}
+              emulatorId={props.listing?.emulatorId}
             />
           </div>
         </Card>

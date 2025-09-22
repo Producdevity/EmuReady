@@ -8,7 +8,10 @@ import {
   type CommentThreadConfig,
   type CommentFormConfig,
 } from '@/components/comments'
+import useVerifiedDeveloper from '@/hooks/useVerifiedDeveloper'
 import { api } from '@/lib/api'
+import { hasRolePermission } from '@/utils/permissions'
+import { Role } from '@orm'
 
 interface Props {
   pcListingId: string
@@ -16,6 +19,7 @@ interface Props {
   gameId?: string
   systemId?: string
   pcListingOwnerId?: string
+  emulatorId?: string
 }
 
 function PcCommentThread(props: Props) {
@@ -30,6 +34,8 @@ function PcCommentThread(props: Props) {
   const userQuery = api.users.me.useQuery(undefined, {
     enabled: !!user,
   })
+
+  const verifiedDeveloper = useVerifiedDeveloper(userQuery.data?.id ?? '', props.emulatorId ?? '')
 
   const utils = api.useUtils()
 
@@ -51,9 +57,41 @@ function PcCommentThread(props: Props) {
     },
   })
 
+  const pinCommentMutation = api.pcListings.pinComment.useMutation({
+    onSuccess: () => {
+      refreshComments()
+    },
+  })
+
+  const unpinCommentMutation = api.pcListings.unpinComment.useMutation({
+    onSuccess: () => {
+      refreshComments()
+    },
+  })
+
   const refreshComments = () => {
     utils.pcListings.getComments.invalidate({ pcListingId: props.pcListingId }).catch(console.error)
   }
+
+  const handlePinComment = async (params: { commentId: string; replaceExisting: boolean }) => {
+    await pinCommentMutation.mutateAsync({
+      pcListingId: props.pcListingId,
+      commentId: params.commentId,
+      replaceExisting: params.replaceExisting,
+    })
+  }
+
+  const handleUnpinComment = async () => {
+    await unpinCommentMutation.mutateAsync({ pcListingId: props.pcListingId })
+  }
+
+  const canPinComments = Boolean(
+    userQuery.data?.role &&
+      (hasRolePermission(userQuery.data.role, Role.MODERATOR) ||
+        (userQuery.data.role === Role.DEVELOPER &&
+          verifiedDeveloper.isVerifiedDeveloper &&
+          props.emulatorId)),
+  )
 
   const threadConfig: CommentThreadConfig = {
     entityIdField: 'pcListingId',
@@ -108,6 +146,10 @@ function PcCommentThread(props: Props) {
       isLoading={pcListingsQuery.isLoading}
       userRole={userQuery.data?.role}
       entityOwnerId={props.pcListingOwnerId}
+      pinnedComment={pcListingsQuery.data?.pinnedComment ?? null}
+      canPin={canPinComments}
+      onPin={canPinComments ? handlePinComment : undefined}
+      onUnpin={canPinComments ? handleUnpinComment : undefined}
       onRefresh={refreshComments}
       onDelete={handleDelete}
       onSortChange={(newSort) => setSortBy(newSort as typeof sortBy)}

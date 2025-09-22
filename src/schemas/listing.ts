@@ -116,6 +116,16 @@ export const GetCommentsSchema = z.object({ listingId: z.string().uuid() })
 
 export const DeleteCommentSchema = z.object({ commentId: z.string().uuid() })
 
+export const PinCommentSchema = z.object({
+  listingId: z.string().uuid(),
+  commentId: z.string().uuid(),
+  replaceExisting: z.boolean().default(false),
+})
+
+export const UnpinCommentSchema = z.object({
+  listingId: z.string().uuid(),
+})
+
 export const ApproveListingSchema = z.object({ listingId: z.string().uuid() })
 export const RejectListingSchema = z.object({
   listingId: z.string().uuid(),

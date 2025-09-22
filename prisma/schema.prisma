@@ -107,6 +107,8 @@ model User {
   pcListingVotes              PcListingVote[]
   pcListingComments           PcListingComment[]
   pcListingCommentVotes       PcListingCommentVote[]
+  pinnedListings              Listing[]                    @relation("ListingPinnedBy")
+  pinnedPcListings            PcListing[]                  @relation("PcListingPinnedBy")
   devicePreferences           UserDevicePreference[]
   socPreferences              UserSocPreference[]
   pcPresets                   UserPcPreset[]
@@ -384,6 +386,9 @@ model Listing {
   processedAt       DateTime?
   processedNotes    String?
   processedByUserId String?
+  pinnedCommentId   String? @unique
+  pinnedByUserId    String?
+  pinnedAt          DateTime?
 
   // Vote statistics (materialized for performance)
   upvoteCount   Int   @default(0)
@@ -403,10 +408,14 @@ model Listing {
   notificationPrefs      ListingNotificationPreference[]
   developerVerifications ListingDeveloperVerification[]
   reports                ListingReport[]
+  pinnedComment          Comment?                        @relation("ListingPinnedComment", fields: [pinnedCommentId], references: [id], onDelete: SetNull)
+  pinnedByUser           User?                           @relation("ListingPinnedBy", fields: [pinnedByUserId], references: [id], onDelete: SetNull)
 
   @@index([processedByUserId])
   @@index([successRate, voteCount])
   @@index([voteCount])
+  @@index([pinnedCommentId])
+  @@index([pinnedByUserId])
 }
 
 model Vote {
@@ -436,6 +445,10 @@ model Comment {
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   votes     CommentVote[]
   score     Int           @default(0)
+  pinnedOn Listing?       @relation("ListingPinnedComment")
+
+  @@index([listingId])
+  @@index([userId])
 }
 
 model CommentVote {
@@ -882,6 +895,9 @@ model PcListing {
   processedAt       DateTime?
   processedNotes    String?
   processedByUserId String?
+  pinnedCommentId   String? @unique
+  pinnedByUserId    String?
+  pinnedAt          DateTime?
   memorySize        Int // in GB
   cpuId             String
   gpuId             String? // Optional for integrated graphics
@@ -908,6 +924,8 @@ model PcListing {
   reports                PcListingReport[]
   votes                  PcListingVote[]
   comments               PcListingComment[]
+  pinnedComment          PcListingComment?             @relation("PcListingPinnedComment", fields: [pinnedCommentId], references: [id], onDelete: SetNull)
+  pinnedByUser           User?                         @relation("PcListingPinnedBy", fields: [pinnedByUserId], references: [id], onDelete: SetNull)
 
   @@index([processedByUserId])
   @@index([status])
@@ -918,6 +936,8 @@ model PcListing {
   @@index([authorId])
   @@index([successRate, voteCount])
   @@index([voteCount])
+  @@index([pinnedCommentId])
+  @@index([pinnedByUserId])
   @@map("pc_listings")
 }
 
@@ -1029,6 +1049,7 @@ model PcListingComment {
   pcListing PcListing              @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
   user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   votes     PcListingCommentVote[]
+  pinnedOn PcListing?              @relation("PcListingPinnedComment")
 
   @@index([pcListingId])
   @@index([userId])
@@ -1122,6 +1143,8 @@ enum AuditAction {
   UNASSIGN
   BAN
   UNBAN
+  PIN
+  UNPIN
 
   @@map("audit_action")
 }

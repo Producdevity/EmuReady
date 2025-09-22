@@ -31,7 +31,15 @@ export class CommentsRepository extends BaseRepository {
 
     withListing: {
       user: { select: { id: true, name: true, profileImage: true } },
-      listing: { select: { id: true, gameId: true } },
+      listing: {
+        select: {
+          id: true,
+          gameId: true,
+          emulatorId: true,
+          pinnedCommentId: true,
+          pinnedByUserId: true,
+        },
+      },
     } satisfies Prisma.CommentInclude,
 
     recent: {
@@ -107,9 +115,7 @@ export class CommentsRepository extends BaseRepository {
   /**
    * Get comment by ID
    */
-  async byId(
-    id: string,
-  ): Promise<Prisma.CommentGetPayload<{
+  async byId(id: string): Promise<Prisma.CommentGetPayload<{
     include: typeof CommentsRepository.includes.withListing
   }> | null> {
     return this.prisma.comment.findUnique({

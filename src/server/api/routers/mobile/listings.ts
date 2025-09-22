@@ -291,7 +291,47 @@ export const mobileListingsRouter = createMobileTRPCRouter({
    */
   comments: mobilePublicProcedure.input(GetListingCommentsSchema).query(async ({ ctx, input }) => {
     const repository = new CommentsRepository(ctx.prisma)
-    return repository.listByListing(input.listingId, ctx.session?.user?.role)
+    const [comments, listing] = await Promise.all([
+      repository.listByListing(input.listingId, ctx.session?.user?.role),
+      ctx.prisma.listing.findUnique({
+        where: { id: input.listingId },
+        select: {
+          pinnedCommentId: true,
+          pinnedAt: true,
+          pinnedByUser: { select: { id: true, name: true } },
+        },
+      }),
+    ])
+
+    let pinnedComment: {
+      comment: (typeof comments)[number]
+      isReply: boolean
+      parentId: string | null
+      pinnedBy?: { id: string; name: string | null } | null
+      pinnedAt?: Date | null
+    } | null = null
+
+    if (listing?.pinnedCommentId) {
+      const matched = comments.find((comment) => comment.id === listing.pinnedCommentId)
+
+      if (matched) {
+        pinnedComment = {
+          comment: matched,
+          isReply: !!matched.parentId,
+          parentId: matched.parentId ?? null,
+          pinnedBy: listing.pinnedByUser
+            ? { id: listing.pinnedByUser.id, name: listing.pinnedByUser.name }
+            : null,
+          pinnedAt: listing.pinnedAt ?? null,
+        }
+      }
+    }
+
+    return {
+      comments,
+      _count: { comments: comments.length },
+      pinnedComment,
+    }
   }),
 
   /**

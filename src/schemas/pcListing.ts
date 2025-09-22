@@ -255,6 +255,16 @@ export const VotePcListingCommentSchema = z.object({
   value: z.boolean(), // true = upvote, false = downvote
 })
 
+export const PinPcListingCommentSchema = z.object({
+  pcListingId: z.string().uuid(),
+  commentId: z.string().uuid(),
+  replaceExisting: z.boolean().default(false),
+})
+
+export const UnpinPcListingCommentSchema = z.object({
+  pcListingId: z.string().uuid(),
+})
+
 // PC Listing Report schemas
 export const CreatePcListingReportSchema = z.object({
   pcListingId: z.string().uuid(),

@@ -8,10 +8,13 @@ import {
   type CommentThreadConfig,
   type CommentFormConfig,
 } from '@/components/comments'
+import useVerifiedDeveloper from '@/hooks/useVerifiedDeveloper'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { useRecaptchaForComment } from '@/lib/captcha/hooks'
 import { type RouterInput } from '@/types/trpc'
+import { hasRolePermission } from '@/utils/permissions'
+import { Role } from '@orm'
 
 interface Props {
   listingId: string
@@ -19,6 +22,7 @@ interface Props {
   gameId?: string
   systemId?: string
   listingOwnerId?: string
+  emulatorId?: string
 }
 
 function CommentThread(props: Props) {
@@ -34,6 +38,8 @@ function CommentThread(props: Props) {
   const userQuery = api.users.me.useQuery(undefined, {
     enabled: !!user,
   })
+
+  const verifiedDeveloper = useVerifiedDeveloper(userQuery.data?.id ?? '', props.emulatorId ?? '')
 
   const utils = api.useUtils()
 
@@ -74,9 +80,41 @@ function CommentThread(props: Props) {
     },
   })
 
+  const pinCommentMutation = api.listings.pinComment.useMutation({
+    onSuccess: () => {
+      refreshData()
+    },
+  })
+
+  const unpinCommentMutation = api.listings.unpinComment.useMutation({
+    onSuccess: () => {
+      refreshData()
+    },
+  })
+
   const refreshData = () => {
     utils.listings.getSortedComments.invalidate({ listingId: props.listingId }).catch(console.error)
   }
+
+  const handlePinComment = async (params: { commentId: string; replaceExisting: boolean }) => {
+    await pinCommentMutation.mutateAsync({
+      listingId: props.listingId,
+      commentId: params.commentId,
+      replaceExisting: params.replaceExisting,
+    })
+  }
+
+  const handleUnpinComment = async () => {
+    await unpinCommentMutation.mutateAsync({ listingId: props.listingId })
+  }
+
+  const canPinComments = Boolean(
+    userQuery.data?.role &&
+      (hasRolePermission(userQuery.data.role, Role.MODERATOR) ||
+        (userQuery.data.role === Role.DEVELOPER &&
+          verifiedDeveloper.isVerifiedDeveloper &&
+          props.emulatorId)),
+  )
 
   const threadConfig: CommentThreadConfig = {
     entityIdField: 'listingId',
@@ -178,6 +216,10 @@ function CommentThread(props: Props) {
         isLoading={listingsQuery.isPending}
         userRole={userQuery.data?.role}
         entityOwnerId={props.listingOwnerId}
+        pinnedComment={listingsQuery.data?.pinnedComment ?? null}
+        canPin={canPinComments}
+        onPin={canPinComments ? handlePinComment : undefined}
+        onUnpin={canPinComments ? handleUnpinComment : undefined}
         onRefresh={refreshData}
         onVote={handleVote}
         onDelete={handleDelete}

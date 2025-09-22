@@ -10,13 +10,18 @@ import {
   GetCommentsSchema,
   GetSortedCommentsSchema,
   CreateVoteComment,
+  PinCommentSchema,
+  UnpinCommentSchema,
 } from '@/schemas/listing'
 import { createTRPCRouter, publicProcedure, protectedProcedure } from '@/server/api/trpc'
+import { buildCommentTree, findCommentWithParent } from '@/server/api/utils/commentTree'
+import { canManageCommentPins } from '@/server/api/utils/pinPermissions'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { CommentsRepository } from '@/server/repositories/comments.repository'
+import { logAudit } from '@/server/services/audit.service'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { canDeleteComment, canEditComment } from '@/utils/permissions'
-import { Role, TrustAction } from '@orm'
+import { AuditAction, AuditEntityType, Role, TrustAction } from '@orm'
 
 export const commentsRouter = createTRPCRouter({
   create: protectedProcedure.input(CreateCommentSchema).mutation(async ({ ctx, input }) => {
@@ -110,15 +115,24 @@ export const commentsRouter = createTRPCRouter({
   }),
 
   getSorted: publicProcedure.input(GetSortedCommentsSchema).query(async ({ ctx, input }) => {
-    // Get ALL comments for this listing (not just top-level)
-    // Note: We need the role field which isn't in the repository's default include,
-    // so we do a custom query here but still apply shadow ban filtering
+    const listing = await ctx.prisma.listing.findUnique({
+      where: { id: input.listingId },
+      select: {
+        id: true,
+        emulatorId: true,
+        pinnedCommentId: true,
+        pinnedAt: true,
+        pinnedByUser: { select: { id: true, name: true, profileImage: true, role: true } },
+      },
+    })
+
+    if (!listing) return ResourceError.listing.notFound()
+
     const canSeeBannedUsers = roleIncludesRole(ctx.session?.user?.role, Role.MODERATOR)
 
     const allComments = await ctx.prisma.comment.findMany({
       where: {
         listingId: input.listingId,
-        // Apply shadow ban filter
         ...(!canSeeBannedUsers && {
           user: {
             userBans: {
@@ -137,7 +151,6 @@ export const commentsRouter = createTRPCRouter({
       },
     })
 
-    // Get all comment votes for the user if logged in
     let userCommentVotes: Record<string, boolean> = {}
 
     if (ctx.session?.user) {
@@ -149,7 +162,6 @@ export const commentsRouter = createTRPCRouter({
         select: { commentId: true, value: true },
       })
 
-      // Create a lookup map of commentId -> vote value
       userCommentVotes = votes.reduce(
         (acc, vote) => ({
           ...acc,
@@ -159,70 +171,59 @@ export const commentsRouter = createTRPCRouter({
       )
     }
 
-    type CommentWithExtras = (typeof allComments)[0] & {
-      userVote: boolean | null
-      replies: CommentWithExtras[]
-      replyCount: number
-    }
+    const commentsWithVotes = allComments.map((comment) => ({
+      ...comment,
+      userVote: userCommentVotes[comment.id] ?? null,
+    }))
 
-    // Build the tree structure
-    const buildCommentTree = (comments: typeof allComments): CommentWithExtras[] => {
-      const topLevelComments: CommentWithExtras[] = []
-      const childrenMap = new Map<string, CommentWithExtras[]>()
+    let commentsTree = buildCommentTree(commentsWithVotes, { replySort: 'asc' })
 
-      // First pass: organize comments by parent
-      for (const comment of comments) {
-        const commentWithExtras: CommentWithExtras = {
-          ...comment,
-          userVote: userCommentVotes[comment.id] ?? null,
-          replies: [], // Will be populated below
-          replyCount: 0, // Will be calculated below
-        }
-
-        if (!comment.parentId) {
-          topLevelComments.push(commentWithExtras)
-        } else {
-          if (!childrenMap.has(comment.parentId)) {
-            childrenMap.set(comment.parentId, [])
-          }
-          childrenMap.get(comment.parentId)!.push(commentWithExtras)
-        }
-      }
-
-      // Second pass: attach children to parents recursively
-      const attachReplies = (comment: CommentWithExtras): CommentWithExtras => {
-        const children = childrenMap.get(comment.id) || []
-
-        // Sort children by creation date (ascending for replies)
-        children.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-
-        // Recursively attach replies to children
-        comment.replies = children.map(attachReplies)
-        comment.replyCount = children.length
-
-        return comment
-      }
-
-      return topLevelComments.map(attachReplies)
-    }
-
-    const commentsTree = buildCommentTree(allComments)
-
-    // Sort top-level comments according to the sort criteria
     commentsTree.sort((a, b) => {
       switch (input.sortBy) {
-        case 'newest':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         case 'oldest':
           return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         case 'popular':
           return (b.score ?? 0) - (a.score ?? 0)
+        case 'newest':
         default:
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       }
     })
 
-    return { comments: commentsTree }
+    let pinnedCommentPayload: {
+      comment: (typeof commentsTree)[number]
+      parentId: string | null
+      isReply: boolean
+    } | null = null
+
+    if (listing.pinnedCommentId) {
+      const located = findCommentWithParent(commentsTree, listing.pinnedCommentId)
+
+      if (located) {
+        pinnedCommentPayload = {
+          comment: located.comment,
+          parentId: located.parent?.id ?? null,
+          isReply: Boolean(located.parent),
+        }
+
+        if (!located.parent) {
+          commentsTree = commentsTree.filter((comment) => comment.id !== located.comment.id)
+        }
+      }
+    }
+
+    return {
+      comments: commentsTree,
+      pinnedComment: pinnedCommentPayload
+        ? {
+            comment: pinnedCommentPayload.comment,
+            isReply: pinnedCommentPayload.isReply,
+            parentId: pinnedCommentPayload.parentId,
+            pinnedBy: listing.pinnedByUser,
+            pinnedAt: listing.pinnedAt,
+          }
+        : null,
+    }
   }),
 
   edit: protectedProcedure.input(EditCommentSchema).mutation(async ({ ctx, input }) => {
@@ -271,6 +272,8 @@ export const commentsRouter = createTRPCRouter({
 
     if (!canDelete) return ResourceError.comment.noPermission('delete')
 
+    const wasPinned = comment.listing?.pinnedCommentId === comment.id
+
     await repository.delete(input.commentId)
 
     // Emit notification event
@@ -284,6 +287,28 @@ export const commentsRouter = createTRPCRouter({
         commentId: comment.id,
       },
     })
+
+    if (wasPinned && comment.listing) {
+      await ctx.prisma.listing.update({
+        where: { id: comment.listing.id },
+        data: {
+          pinnedCommentId: null,
+          pinnedByUserId: null,
+          pinnedAt: null,
+        },
+      })
+
+      void logAudit(ctx.prisma, {
+        actorId: ctx.session.user.id,
+        action: AuditAction.UNPIN,
+        entityType: AuditEntityType.COMMENT,
+        entityId: comment.id,
+        metadata: {
+          listingId: comment.listing.id,
+          reason: 'comment_deleted',
+        },
+      })
+    }
 
     return comment
   }),
@@ -485,5 +510,125 @@ export const commentsRouter = createTRPCRouter({
 
       return voteResult
     })
+  }),
+
+  pinComment: protectedProcedure.input(PinCommentSchema).mutation(async ({ ctx, input }) => {
+    const { commentId, listingId, replaceExisting } = input
+    const userId = ctx.session.user.id
+    const userRole = ctx.session.user.role
+
+    const comment = await ctx.prisma.comment.findUnique({
+      where: { id: commentId },
+      include: {
+        listing: {
+          select: {
+            id: true,
+            emulatorId: true,
+            pinnedCommentId: true,
+            pinnedByUserId: true,
+          },
+        },
+      },
+    })
+
+    if (!comment) return ResourceError.comment.notFound()
+    if (comment.deletedAt) return ResourceError.comment.alreadyDeleted()
+    if (comment.listingId !== listingId)
+      return AppError.badRequest('Comment does not belong to this listing')
+    if (!comment.listing) return ResourceError.listing.notFound()
+
+    const listing = comment.listing
+
+    const canPin = await canManageCommentPins({
+      prisma: ctx.prisma,
+      userRole,
+      userId,
+      emulatorId: listing.emulatorId,
+    })
+
+    if (!canPin) return ResourceError.comment.noPermission('pin')
+
+    if (listing.pinnedCommentId && listing.pinnedCommentId !== comment.id && !replaceExisting) {
+      return ResourceError.comment.alreadyPinned()
+    }
+
+    const previousPinnedId = listing.pinnedCommentId
+
+    const updatedListing = await ctx.prisma.listing.update({
+      where: { id: listing.id },
+      data: {
+        pinnedCommentId: comment.id,
+        pinnedByUserId: userId,
+        pinnedAt: new Date(),
+      },
+      select: {
+        id: true,
+        pinnedCommentId: true,
+        pinnedAt: true,
+      },
+    })
+
+    void logAudit(ctx.prisma, {
+      actorId: userId,
+      action: AuditAction.PIN,
+      entityType: AuditEntityType.COMMENT,
+      entityId: comment.id,
+      metadata: {
+        listingId: listing.id,
+        previousPinnedCommentId: previousPinnedId,
+      },
+    })
+
+    return updatedListing
+  }),
+
+  unpinComment: protectedProcedure.input(UnpinCommentSchema).mutation(async ({ ctx, input }) => {
+    const { listingId } = input
+    const userId = ctx.session.user.id
+    const userRole = ctx.session.user.role
+
+    const listing = await ctx.prisma.listing.findUnique({
+      where: { id: listingId },
+      select: {
+        id: true,
+        emulatorId: true,
+        pinnedCommentId: true,
+      },
+    })
+
+    if (!listing) return ResourceError.listing.notFound()
+    if (!listing.pinnedCommentId) return ResourceError.comment.notPinned()
+
+    const canUnpin = await canManageCommentPins({
+      prisma: ctx.prisma,
+      userRole,
+      userId,
+      emulatorId: listing.emulatorId,
+    })
+
+    if (!canUnpin) return ResourceError.comment.noPermission('unpin')
+
+    const previousPinnedId = listing.pinnedCommentId
+
+    await ctx.prisma.listing.update({
+      where: { id: listing.id },
+      data: {
+        pinnedCommentId: null,
+        pinnedByUserId: null,
+        pinnedAt: null,
+      },
+    })
+
+    void logAudit(ctx.prisma, {
+      actorId: userId,
+      action: AuditAction.UNPIN,
+      entityType: AuditEntityType.COMMENT,
+      entityId: previousPinnedId,
+      metadata: {
+        listingId: listing.id,
+      },
+    })
+
+    return { success: true }
   }),
 })

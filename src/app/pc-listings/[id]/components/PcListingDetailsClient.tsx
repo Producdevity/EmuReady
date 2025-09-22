@@ -272,6 +272,7 @@ function PcListingDetailsClient(props: Props) {
               gameId={props.pcListing.game.id}
               systemId={props.pcListing.game.system?.id}
               pcListingOwnerId={props.pcListing.authorId}
+              emulatorId={props.pcListing.emulator.id}
             />
           </div>
         </Card>

@@ -16,14 +16,17 @@ import {
   GetPcListingByIdSchema,
   GetPcListingCommentsSchema,
   GetPcListingForAdminEditSchema,
+  GetPcListingForUserEditSchema,
   GetPcListingReportsSchema,
   GetPcListingsSchema,
   GetPcListingUserVoteSchema,
   GetPcListingVerificationsSchema,
   GetPcPresetsSchema,
   GetPendingPcListingsSchema,
+  PinPcListingCommentSchema,
   RejectPcListingSchema,
   RemovePcListingVerificationSchema,
+  UnpinPcListingCommentSchema,
   UpdatePcListingAdminSchema,
   UpdatePcListingCommentSchema,
   UpdatePcListingReportSchema,
@@ -32,7 +35,6 @@ import {
   VerifyPcListingAdminSchema,
   VotePcListingCommentSchema,
   VotePcListingSchema,
-  GetPcListingForUserEditSchema,
 } from '@/schemas/pcListing'
 import {
   createTRPCRouter,
@@ -41,20 +43,23 @@ import {
   publicProcedure,
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
+import { buildCommentTree, findCommentWithParent } from '@/server/api/utils/commentTree'
 import {
   buildPcListingOrderBy,
   buildPcListingWhere,
   pcListingAdminInclude,
   pcListingDetailInclude,
 } from '@/server/api/utils/pcListingHelpers'
+import { canManageCommentPins } from '@/server/api/utils/pinPermissions'
 import {
   invalidateListPages,
   invalidateSitemap,
   revalidateByTag,
 } from '@/server/cache/invalidation'
-import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
+import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
 import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
+import { logAudit } from '@/server/services/audit.service'
 import { listingStatsCache } from '@/server/utils/cache'
 import { paginate } from '@/server/utils/pagination'
 import { validatePagination } from '@/server/utils/security-validation'
@@ -66,7 +71,15 @@ import {
   hasRolePermission,
   isModerator,
 } from '@/utils/permissions'
-import { type Prisma, ApprovalStatus, Role, ReportStatus, TrustAction } from '@orm'
+import {
+  ApprovalStatus,
+  AuditAction,
+  AuditEntityType,
+  type Prisma,
+  ReportStatus,
+  Role,
+  TrustAction,
+} from '@orm'
 
 export const pcListingsRouter = createTRPCRouter({
   // PC Listing procedures
@@ -827,42 +840,31 @@ export const pcListingsRouter = createTRPCRouter({
   getComments: publicProcedure.input(GetPcListingCommentsSchema).query(async ({ ctx, input }) => {
     const { pcListingId, sortBy = 'newest', limit = 50, offset = 0 } = input
 
-    const comments = await ctx.prisma.pcListingComment.findMany({
+    const pcListing = await ctx.prisma.pcListing.findUnique({
+      where: { id: pcListingId },
+      select: {
+        id: true,
+        emulatorId: true,
+        pinnedCommentId: true,
+        pinnedAt: true,
+        pinnedByUser: { select: { id: true, name: true, profileImage: true, role: true } },
+      },
+    })
+
+    if (!pcListing) return ResourceError.pcListing.notFound()
+
+    const allComments = await ctx.prisma.pcListingComment.findMany({
       where: {
         pcListingId,
-        parentId: null, // Only get top-level comments
-        deletedAt: null, // Don't show soft-deleted comments
+        deletedAt: null,
       },
       include: {
         user: {
           select: { id: true, name: true, profileImage: true, role: true },
         },
-        replies: {
-          where: { deletedAt: null },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                profileImage: true,
-                role: true,
-              },
-            },
-          },
-          orderBy: { createdAt: 'asc' },
-        },
       },
-      orderBy:
-        sortBy === 'newest'
-          ? { createdAt: 'desc' }
-          : sortBy === 'oldest'
-            ? { createdAt: 'asc' }
-            : { score: 'desc' },
-      skip: offset,
-      take: limit,
     })
 
-    // Get comment votes for the user if logged in
     let userCommentVotes: Record<string, boolean> = {}
     if (ctx.session?.user) {
       const votes = await ctx.prisma.pcListingCommentVote.findMany({
@@ -882,16 +884,61 @@ export const pcListingsRouter = createTRPCRouter({
       )
     }
 
-    const commentsWithVotes = comments.map((comment) => ({
+    const commentsWithVotes = allComments.map((comment) => ({
       ...comment,
       userVote: userCommentVotes[comment.id] ?? null,
-      replies: comment.replies.map((reply) => ({
-        ...reply,
-        userVote: userCommentVotes[reply.id] ?? null,
-      })),
     }))
 
-    return { comments: commentsWithVotes }
+    let commentsTree = buildCommentTree(commentsWithVotes, { replySort: 'asc' })
+
+    commentsTree.sort((a, b) => {
+      switch (sortBy) {
+        case 'oldest':
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        case 'score':
+          return (b.score ?? 0) - (a.score ?? 0)
+        case 'newest':
+        default:
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      }
+    })
+
+    let pinnedCommentPayload: {
+      comment: (typeof commentsTree)[number]
+      parentId: string | null
+      isReply: boolean
+    } | null = null
+
+    if (pcListing.pinnedCommentId) {
+      const located = findCommentWithParent(commentsTree, pcListing.pinnedCommentId)
+
+      if (located) {
+        pinnedCommentPayload = {
+          comment: located.comment,
+          parentId: located.parent?.id ?? null,
+          isReply: Boolean(located.parent),
+        }
+
+        if (!located.parent) {
+          commentsTree = commentsTree.filter((comment) => comment.id !== located.comment.id)
+        }
+      }
+    }
+
+    const paginatedComments = commentsTree.slice(offset, offset + limit)
+
+    return {
+      comments: paginatedComments,
+      pinnedComment: pinnedCommentPayload
+        ? {
+            comment: pinnedCommentPayload.comment,
+            isReply: pinnedCommentPayload.isReply,
+            parentId: pinnedCommentPayload.parentId,
+            pinnedBy: pcListing.pinnedByUser,
+            pinnedAt: pcListing.pinnedAt,
+          }
+        : null,
+    }
   }),
 
   createComment: protectedProcedure
@@ -988,7 +1035,15 @@ export const pcListingsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const comment = await ctx.prisma.pcListingComment.findUnique({
         where: { id: input.commentId },
-        include: { user: { select: { id: true } } },
+        include: {
+          user: { select: { id: true } },
+          pcListing: {
+            select: {
+              id: true,
+              pinnedCommentId: true,
+            },
+          },
+        },
       })
 
       if (!comment) return ResourceError.comment.notFound()
@@ -1004,10 +1059,36 @@ export const pcListingsRouter = createTRPCRouter({
         return ResourceError.comment.noPermission('delete')
       }
 
-      return ctx.prisma.pcListingComment.update({
+      const wasPinned = comment.pcListing?.pinnedCommentId === comment.id
+
+      const updatedComment = await ctx.prisma.pcListingComment.update({
         where: { id: input.commentId },
         data: { deletedAt: new Date() },
       })
+
+      if (wasPinned && comment.pcListing) {
+        await ctx.prisma.pcListing.update({
+          where: { id: comment.pcListing.id },
+          data: {
+            pinnedCommentId: null,
+            pinnedByUserId: null,
+            pinnedAt: null,
+          },
+        })
+
+        void logAudit(ctx.prisma, {
+          actorId: ctx.session.user.id,
+          action: AuditAction.UNPIN,
+          entityType: AuditEntityType.COMMENT,
+          entityId: comment.id,
+          metadata: {
+            pcListingId: comment.pcListing.id,
+            reason: 'comment_deleted',
+          },
+        })
+      }
+
+      return updatedComment
     }),
 
   voteComment: protectedProcedure
@@ -1064,6 +1145,135 @@ export const pcListingsRouter = createTRPCRouter({
 
         return voteResult
       })
+    }),
+
+  pinComment: protectedProcedure
+    .input(PinPcListingCommentSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { commentId, pcListingId, replaceExisting } = input
+      const userId = ctx.session.user.id
+      const userRole = ctx.session.user.role
+
+      const comment = await ctx.prisma.pcListingComment.findUnique({
+        where: { id: commentId },
+        include: {
+          pcListing: {
+            select: {
+              id: true,
+              emulatorId: true,
+              pinnedCommentId: true,
+              pinnedByUserId: true,
+            },
+          },
+        },
+      })
+
+      if (!comment) return ResourceError.comment.notFound()
+      if (comment.deletedAt) return ResourceError.comment.alreadyDeleted()
+      if (comment.pcListingId !== pcListingId) {
+        return AppError.badRequest('Comment does not belong to this PC listing')
+      }
+      if (!comment.pcListing) return ResourceError.pcListing.notFound()
+
+      const pcListing = comment.pcListing
+
+      const canPin = await canManageCommentPins({
+        prisma: ctx.prisma,
+        userRole,
+        userId,
+        emulatorId: pcListing.emulatorId,
+      })
+
+      if (!canPin) return ResourceError.comment.noPermission('pin')
+
+      if (
+        pcListing.pinnedCommentId &&
+        pcListing.pinnedCommentId !== comment.id &&
+        !replaceExisting
+      ) {
+        return ResourceError.comment.alreadyPinned()
+      }
+
+      const previousPinnedId = pcListing.pinnedCommentId
+
+      const updatedPcListing = await ctx.prisma.pcListing.update({
+        where: { id: pcListing.id },
+        data: {
+          pinnedCommentId: comment.id,
+          pinnedByUserId: userId,
+          pinnedAt: new Date(),
+        },
+        select: {
+          id: true,
+          pinnedCommentId: true,
+          pinnedAt: true,
+        },
+      })
+
+      void logAudit(ctx.prisma, {
+        actorId: userId,
+        action: AuditAction.PIN,
+        entityType: AuditEntityType.COMMENT,
+        entityId: comment.id,
+        metadata: {
+          pcListingId: pcListing.id,
+          previousPinnedCommentId: previousPinnedId,
+        },
+      })
+
+      return updatedPcListing
+    }),
+
+  unpinComment: protectedProcedure
+    .input(UnpinPcListingCommentSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { pcListingId } = input
+      const userId = ctx.session.user.id
+      const userRole = ctx.session.user.role
+
+      const pcListing = await ctx.prisma.pcListing.findUnique({
+        where: { id: pcListingId },
+        select: {
+          id: true,
+          emulatorId: true,
+          pinnedCommentId: true,
+        },
+      })
+
+      if (!pcListing) return ResourceError.pcListing.notFound()
+      if (!pcListing.pinnedCommentId) return ResourceError.comment.notPinned()
+
+      const canUnpin = await canManageCommentPins({
+        prisma: ctx.prisma,
+        userRole,
+        userId,
+        emulatorId: pcListing.emulatorId,
+      })
+
+      if (!canUnpin) return ResourceError.comment.noPermission('unpin')
+
+      const previousPinnedId = pcListing.pinnedCommentId
+
+      await ctx.prisma.pcListing.update({
+        where: { id: pcListing.id },
+        data: {
+          pinnedCommentId: null,
+          pinnedByUserId: null,
+          pinnedAt: null,
+        },
+      })
+
+      void logAudit(ctx.prisma, {
+        actorId: userId,
+        action: AuditAction.UNPIN,
+        entityType: AuditEntityType.COMMENT,
+        entityId: previousPinnedId,
+        metadata: {
+          pcListingId: pcListing.id,
+        },
+      })
+
+      return { success: true }
     }),
 
   // Reporting endpoints

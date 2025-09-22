@@ -285,6 +285,13 @@ export interface MobileCommentsResponse {
   _count: {
     comments: number
   }
+  pinnedComment?: {
+    comment: MobileComment
+    isReply: boolean
+    parentId: string | null
+    pinnedBy?: MobileAuthor | null
+    pinnedAt?: Date | null
+  } | null
 }
 
 // PC Listing specific types
