@@ -134,9 +134,7 @@ function AdminEmulatorsPage() {
       (vd) => vd.userId === currentUserId || vd.user?.id === currentUserId,
     ) ?? false
 
-  const canEditEmulator = (emulator: AdminEmulator) =>
-    hasManageEmulatorsPermission &&
-    (isAdminOrHigher || (isDeveloper && isVerifiedForEmulator(emulator)))
+  const canEditEmulator = () => hasManageEmulatorsPermission && isAdminOrHigher
 
   const canManageCustomFields = (emulator: AdminEmulator) =>
     hasManageCustomFieldsPermission && (!isDeveloper || isVerifiedForEmulator(emulator))
@@ -258,7 +256,7 @@ function AdminEmulatorsPage() {
                     <tr key={emulator.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       {columnVisibility.isColumnVisible('name') && (
                         <td className="px-6 py-4">
-                          {canEditEmulator(emulator) ? (
+                          {canEditEmulator() ? (
                             <Link
                               href={`/admin/emulators/${emulator.id}`}
                               className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium flex items-center gap-2"
@@ -325,14 +323,14 @@ function AdminEmulatorsPage() {
                             )}
 
                             {/* Edit and Quick Edit based on MANAGE_EMULATORS + verified for developers */}
-                            {canEditEmulator(emulator) && (
+                            {canEditEmulator() && (
                               <EditButton
                                 href={`/admin/emulators/${emulator.id}`}
                                 disabled={deleteEmulator.isPending}
                                 title={`Edit Emulator ${emulator.name}`}
                               />
                             )}
-                            {canEditEmulator(emulator) && (
+                            {canEditEmulator() && (
                               <QuickEditButton
                                 title={`Quick Edit Emulator ${emulator.name}`}
                                 disabled={deleteEmulator.isPending || modalOpen}

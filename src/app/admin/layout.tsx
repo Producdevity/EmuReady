@@ -79,6 +79,16 @@ function AdminLayout(props: PropsWithChildren) {
   const isModerator = hasRolePermission(userQuery.data?.role, Role.MODERATOR)
   const isDeveloper = userQuery.data?.role === Role.DEVELOPER // Exact match, not hierarchical
 
+  const devPendingListingsQuery = api.listings.getPending.useQuery(
+    { page: 1, limit: 1 },
+    { enabled: isDeveloper },
+  )
+
+  const devPendingPcListingsQuery = api.pcListings.pending.useQuery(
+    { page: 1, limit: 1 },
+    { enabled: isDeveloper },
+  )
+
   // New permission-based checks
   const hasAdminPanelAccess = hasPermission(
     userQuery.data?.permissions,
@@ -151,15 +161,6 @@ function AdminLayout(props: PropsWithChildren) {
     navItems = getDeveloperNavItems(emulatorIds)
 
     // Add counts to developer approvals links (handheld + PC)
-    const devPendingListingsQuery = api.listings.getPending.useQuery(
-      { page: 1, limit: 1 },
-      { enabled: true },
-    )
-    const devPendingPcListingsQuery = api.pcListings.pending.useQuery(
-      { page: 1, limit: 1 },
-      { enabled: true },
-    )
-
     const pendingHandheldCount = devPendingListingsQuery.data?.pagination.total
     const pendingPcCount = devPendingPcListingsQuery.data?.pagination.total
 
