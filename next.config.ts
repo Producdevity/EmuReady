@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
       { pathname: '/api/proxy-image' },
       { pathname: '/_next/**' },
       { pathname: '/placeholder/**' },
+      { pathname: '/assets/android-app/**' },
     ],
     remotePatterns: [
       { protocol: 'https', hostname: 'placehold.co', pathname: '/**' },
