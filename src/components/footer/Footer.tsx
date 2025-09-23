@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { FooterAppLinks } from '@/components/footer/components/FooterAppLinks'
 import { FooterBetaBadge } from '@/components/footer/components/FooterBetaBadge'
 import { FooterKofiButton } from '@/components/footer/components/FooterKofiButton'
 import { FooterLink } from '@/components/footer/components/FooterLink'
@@ -46,6 +47,12 @@ function Footer() {
                 </p>
               </div>
 
+              <div className="flex flex-col gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
+                  Apps
+                </span>
+                <FooterAppLinks />
+              </div>
               <div className="flex items-center gap-3 flex-wrap">
                 <a
                   href={githubUrl}

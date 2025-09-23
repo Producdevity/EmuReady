@@ -975,6 +975,25 @@ const analytics = {
       })
     },
 
+    appDownloadClicked: (params: {
+      appName: string
+      platform: 'android' | 'ios' | 'desktop'
+      location: string
+      url: string
+    }) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.CONVERSION,
+        action: CONVERSION_ACTIONS.APP_DOWNLOAD_CLICKED,
+        value: params.platform,
+        metadata: filterUndefinedValues({
+          appName: params.appName,
+          platform: params.platform,
+          location: params.location,
+          url: params.url,
+        }),
+      })
+    },
+
     funnelStepCompleted: (params: {
       userId?: string
       funnelName: string

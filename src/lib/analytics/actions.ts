@@ -191,4 +191,5 @@ export const CONVERSION_ACTIONS = {
   ONBOARDING_STEP_COMPLETED: 'onboarding_step_completed',
   TUTORIAL_COMPLETED: 'tutorial_completed',
   FEATURE_UNLOCKED: 'feature_unlocked',
+  APP_DOWNLOAD_CLICKED: 'app_download_clicked',
 } as const
