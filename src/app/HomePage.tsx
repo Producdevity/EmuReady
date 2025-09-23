@@ -258,7 +258,7 @@ function Home() {
                       title="Get the EmuReady Beta Android App on the Google Play Store"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 px-6 py-3 text-base font-semibold text-white shadow-[0_25px_60px_-28px_rgba(79,70,229,0.65)] transition duration-300 hover:shadow-[0_35px_80px_-30px_rgba(129,140,248,0.6)]"
+                      className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 px-6 py-3 text-base font-semibold text-white shadow-lg transition duration-150 hover:shadow-xl"
                       onClick={() => {
                         analytics.conversion.appDownloadClicked({
                           appName: 'EmuReady Beta',
@@ -278,7 +278,7 @@ function Home() {
                       href={appDownloadPath}
                       title="Download the EmuReady Lite Android App"
                       download="EmuReady-Lite.apk"
-                      className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 px-6 py-3 text-base font-semibold text-white shadow-[0_25px_60px_-28px_rgba(16,185,129,0.65)] transition duration-300 hover:shadow-[0_35px_80px_-30px_rgba(45,212,191,0.6)]"
+                      className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 px-6 py-3 text-base font-semibold text-white shadow-lg transition duration-150 hover:shadow-xl"
                       onClick={() => {
                         analytics.conversion.appDownloadClicked({
                           appName: 'EmuReady Lite',
@@ -530,7 +530,7 @@ function Home() {
                               )}
                             >
                               <Award className="mr-1 inline-block h-3.5 w-3.5" />
-                              {lifetimeTotal.toLocaleString()} total lifetime listings
+                              {lifetimeTotal.toLocaleString()} total
                             </div>
                           </div>
 
