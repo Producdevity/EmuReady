@@ -235,7 +235,7 @@ function Home() {
 
           <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[48px] border border-white/40 bg-white/95 shadow-[0_60px_160px_-70px_rgba(14,116,144,0.45)] backdrop-blur-xl dark:border-gray-700/50 dark:bg-gray-900/85">
             <div className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-white/80 via-white/30 to-transparent dark:from-white/10 dark:via-white/5" />
-            <div className="relative z-10 px-6 py-16 lg:px-16">
+            <div className="relative z-10 px-6 py-10 lg:px-16">
               <div className="grid gap-16 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-center">
                 <motion.div {...motionPresets.fadeInUp(0)} className="space-y-10">
                   <div className="px-3 py-1.5 inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-sm font-bold rounded-full shadow-lg backdrop-blur-sm border border-line-400/20">
@@ -258,7 +258,7 @@ function Home() {
                       title="Get the EmuReady Beta Android App on the Google Play Store"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 px-6 py-3 text-base font-semibold text-white shadow-lg transition duration-150 hover:shadow-xl"
+                      className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 px-6 py-3 text-base font-semibold text-white shadow-lg transition-shadow duration-150 hover:shadow-xl"
                       onClick={() => {
                         analytics.conversion.appDownloadClicked({
                           appName: 'EmuReady Beta',
@@ -267,7 +267,7 @@ function Home() {
                           url: playStoreBetaUrl,
                         })
                       }}
-                      whileHover={{ scale: 1.02 }}
+                      whileHover={{ scale: 1.02, transition: { duration: 0.12, ease: 'easeOut' } }}
                       whileTap={{ scale: 0.97 }}
                     >
                       <ArrowRight className="h-5 w-5" />
@@ -278,7 +278,7 @@ function Home() {
                       href={appDownloadPath}
                       title="Download the EmuReady Lite Android App"
                       download="EmuReady-Lite.apk"
-                      className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 px-6 py-3 text-base font-semibold text-white shadow-lg transition duration-150 hover:shadow-xl"
+                      className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 px-6 py-3 text-base font-semibold text-white shadow-lg transition-shadow duration-150 hover:shadow-xl"
                       onClick={() => {
                         analytics.conversion.appDownloadClicked({
                           appName: 'EmuReady Lite',
@@ -287,7 +287,7 @@ function Home() {
                           url: appDownloadPath,
                         })
                       }}
-                      whileHover={{ scale: 1.02 }}
+                      whileHover={{ scale: 1.02, transition: { duration: 0.12, ease: 'easeOut' } }}
                       whileTap={{ scale: 0.97 }}
                     >
                       <Download className="h-5 w-5" />
