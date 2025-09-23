@@ -65,7 +65,9 @@ const rankThemes = [
   },
 ]
 
-const appDownloadPath = '/downloads/emuready-lite-1.0.1.apk'
+const appDownloadPath =
+  process.env.NEXT_PUBLIC_EMUREADY_LITE_GITHUB_URL ||
+  'https://github.com/Producdevity/EmuReadyLite/releases'
 const playStoreBetaUrl =
   process.env.NEXT_PUBLIC_EMUREADY_BETA_URL ||
   'https://play.google.com/store/apps/details?id=com.producdevity.emureadyapp'
@@ -229,21 +231,22 @@ function Home() {
         </section>
 
         <section className="relative mb-20">
-          <div className="absolute inset-0 -z-30 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.18),transparent_65%)]" />
-          <div className="absolute -left-24 top-16 -z-20 h-80 w-80 rounded-full bg-emerald-400/25 blur-3xl dark:bg-emerald-500/20" />
-          <div className="absolute -right-32 bottom-0 -z-20 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl dark:bg-blue-500/20" />
+          {/* Soft gradient accents behind the Android hero */}
+          <div className="absolute inset-0 -z-30 bg-gradient-to-b from-blue-500/20 via-indigo-500/10 to-transparent dark:from-blue-500/20 dark:via-indigo-500/10" />
+          <div className="absolute -left-24 top-16 -z-20 h-80 w-80 rounded-full bg-emerald-500/20 blur-3xl dark:bg-emerald-400/20" />
+          <div className="absolute -right-32 bottom-0 -z-20 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl" />
 
-          <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[48px] border border-white/40 bg-white/95 shadow-[0_60px_160px_-70px_rgba(14,116,144,0.45)] backdrop-blur-xl dark:border-gray-700/50 dark:bg-gray-900/85">
+          <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl border border-white/30 bg-white/95 shadow-2xl shadow-blue-500/20 backdrop-blur-xl dark:border-gray-700/50 dark:bg-gray-900/85 dark:shadow-blue-900/30">
             <div className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-white/80 via-white/30 to-transparent dark:from-white/10 dark:via-white/5" />
             <div className="relative z-10 px-6 py-10 lg:px-16">
-              <div className="grid gap-16 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-center">
+              <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
                 <motion.div {...motionPresets.fadeInUp(0)} className="space-y-10">
                   <div className="px-3 py-1.5 inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-sm font-bold rounded-full shadow-lg backdrop-blur-sm border border-line-400/20">
                     <Smartphone className="h-4 w-4" />
                     EmuReady on Android
                   </div>
                   <div className="space-y-5">
-                    <h2 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white md:text-[3.25rem] md:leading-[1.15]">
+                    <h2 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white md:text-5xl lg:text-6xl md:leading-tight">
                       <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
                         The largest Emulation Compatibility Database
                       </span>{' '}
@@ -276,8 +279,7 @@ function Home() {
                     <motion.a
                       {...motionPresets.fadeInUp(0.22)}
                       href={appDownloadPath}
-                      title="Download the EmuReady Lite Android App"
-                      download="EmuReady-Lite.apk"
+                      title="View EmuReady Lite releases on GitHub"
                       className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 px-6 py-3 text-base font-semibold text-white shadow-lg transition-shadow duration-150 hover:shadow-xl"
                       onClick={() => {
                         analytics.conversion.appDownloadClicked({
@@ -291,7 +293,7 @@ function Home() {
                       whileTap={{ scale: 0.97 }}
                     >
                       <Download className="h-5 w-5" />
-                      Download Lite APK
+                      View Lite Releases
                     </motion.a>
                   </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">

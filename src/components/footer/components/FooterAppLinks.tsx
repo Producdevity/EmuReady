@@ -6,7 +6,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 
-const appDownloadPath = '/downloads/emuready-lite-1.0.1.apk'
+const appDownloadPath =
+  process.env.NEXT_PUBLIC_EMUREADY_LITE_GITHUB_URL ||
+  'https://github.com/Producdevity/EmuReadyLite/releases'
 const playStoreBetaUrl =
   process.env.NEXT_PUBLIC_EMUREADY_BETA_URL ||
   'https://play.google.com/store/apps/details?id=com.producdevity.emureadyapp'
@@ -21,8 +23,7 @@ function LiteAppButton(props: ButtonState) {
       <TooltipTrigger asChild>
         <a
           href={appDownloadPath}
-          download="EmuReady-Lite.apk"
-          aria-label="Download the EmuReady Lite Android app"
+          aria-label="Open the EmuReady Lite releases on GitHub"
           className="group relative inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-500/25 bg-gradient-to-br from-emerald-500/15 via-blue-500/10 to-violet-500/15 px-4 py-2 text-left transition-all duration-200 hover:border-emerald-500/45 hover:shadow-lg hover:shadow-emerald-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 dark:border-emerald-400/25 dark:from-emerald-400/15 dark:via-blue-400/10 dark:to-violet-400/15 dark:hover:border-emerald-400/45 dark:hover:shadow-emerald-400/15"
           onClick={() => {
             analytics.conversion.appDownloadClicked({
@@ -46,7 +47,7 @@ function LiteAppButton(props: ButtonState) {
           </div>
           <div className="relative text-left">
             <p className="text-sm font-semibold text-gray-900 dark:text-white">EmuReady Lite App</p>
-            <p className="text-xs text-gray-600 dark:text-gray-300">Sideload</p>
+            <p className="text-xs text-gray-600 dark:text-gray-300">GitHub releases</p>
           </div>
         </a>
       </TooltipTrigger>
@@ -54,7 +55,7 @@ function LiteAppButton(props: ButtonState) {
         <div className="text-center">
           <p className="font-medium mb-1">EmuReady Lite</p>
           <p className="text-xs text-gray-600 dark:text-gray-400">
-            Grab the Lite version directly from EmuReady.
+            Browse the latest Lite builds on GitHub.
           </p>
         </div>
       </TooltipContent>
