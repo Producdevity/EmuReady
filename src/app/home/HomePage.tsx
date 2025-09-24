@@ -6,29 +6,28 @@ import {
   ThumbsUp,
   MessageCircle,
   Gamepad2,
-  Shield,
   Users,
-  Zap,
   ArrowRight,
   Sparkles,
   Monitor,
   TrendingUp,
   Trophy,
   Award,
-  Download,
-  Smartphone,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
-import { AppPhoneMockup } from '@/components/app/AppPhoneMockup'
 import { SuccessRateBar, LoadingSpinner, PerformanceBadge } from '@/components/ui'
-import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
-import { motionPresets } from '@/lib/motionPresets'
 import { cn } from '@/lib/utils'
 import { formatters, getLocale } from '@/utils/date'
 import getImageUrl from '@/utils/getImageUrl'
+import {
+  HomeActionButtons,
+  HomeFeatureHighlights,
+  HomeAppFeatured,
+  HomeStatistics,
+} from './components'
 
 const contributorTabs = [
   { id: 'allTime' as const, label: 'All Time' },
@@ -65,32 +64,10 @@ const rankThemes = [
   },
 ]
 
-const appDownloadPath =
-  process.env.NEXT_PUBLIC_EMUREADY_LITE_GITHUB_URL ||
-  'https://github.com/Producdevity/EmuReadyLite/releases'
-const playStoreBetaUrl =
-  process.env.NEXT_PUBLIC_EMUREADY_BETA_URL ||
-  'https://play.google.com/store/apps/details?id=com.producdevity.emureadyapp'
-const emuReadyLiteScreens = [
-  '/assets/android-app/emuready-app-ss-1.png',
-  '/assets/android-app/emuready-app-ss-2.png',
-  '/assets/android-app/emuready-app-ss-3.png',
-  '/assets/android-app/emuready-app-ss-4.png',
-]
-
 function Home() {
   const { user } = useUser()
   const listingsQuery = api.listings.featured.useQuery()
-  const statisticsQuery = api.listings.statistics.useQuery()
   const topContributorsQuery = api.users.topContributorsSummary.useQuery({ limit: 3 })
-
-  const stats = statisticsQuery.data ?? {
-    listings: 0,
-    pcListings: 0,
-    games: 0,
-    emulators: 0,
-    devices: 0,
-  }
 
   const [activeContributorRange, setActiveContributorRange] = useState<ContributorTab>('thisMonth')
 
@@ -147,269 +124,19 @@ function Home() {
               across devices, emulators, and platforms.
             </p>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row justify-center gap-6 mb-16 px-2 sm:px-4">
-              <Link
-                href="/pc-listings"
-                className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white font-bold text-lg rounded-2xl shadow-2xl shadow-blue-500/25 transition duration-300 transform hover:scale-105 hover:shadow-blue-500/40"
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  <Monitor className="w-5 h-5" />
-                  Browse PC Compatibility
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                </span>
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400 to-blue-600 blur opacity-0 group-hover:opacity-70 transition-opacity duration-300" />
-              </Link>
-
-              <Link
-                href="/listings"
-                className="group relative px-8 py-4 bg-gradient-to-r from-green-500 via-green-600 to-green-700 hover:from-green-600 hover:via-green-700 hover:to-green-800 text-white font-bold text-lg rounded-2xl shadow-2xl shadow-green-500/25 transition duration-300 transform hover:scale-105 hover:shadow-green-500/40"
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  <Gamepad2 className="w-5 h-5" />
-                  Browse Handheld Compatibility
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                </span>
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-green-400 to-green-600 blur opacity-0 group-hover:opacity-70 transition-opacity duration-300" />
-              </Link>
-
-              {!user && (
-                <SignUpButton>
-                  <button
-                    type="button"
-                    className="group relative px-8 py-4 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm transition duration-300 transform hover:scale-105"
-                  >
-                    <span className="relative z-10 flex items-center gap-2">
-                      <Users className="w-5 h-5" />
-                      Join the Community
-                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                    </span>
-                  </button>
-                </SignUpButton>
-              )}
-            </div>
+            <HomeActionButtons isSignedIn={!!user} />
 
             {/* Feature Highlights */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-              <div className="group p-6 rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-2">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
-                  <Shield className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-bold text-gray-900 dark:text-white mb-2 text-center">
-                  Trusted Reports
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300 text-sm text-center">
-                  Real testing from real users across devices
-                </p>
-              </div>
-
-              <div className="group p-6 rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-2">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-bold text-gray-900 dark:text-white mb-2 text-center">
-                  Performance Metrics
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300 text-sm text-center">
-                  Detailed compatibility and performance data
-                </p>
-              </div>
-
-              <div className="group p-6 rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-2">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform duration-300">
-                  <Users className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-bold text-gray-900 dark:text-white mb-2 text-center">
-                  Community Driven
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300 text-sm text-center">
-                  Preserving games where corporations won’t
-                </p>
-              </div>
-            </div>
+            <HomeFeatureHighlights />
           </div>
         </section>
 
-        <section className="relative mb-20">
-          {/* Soft gradient accents behind the Android hero */}
-          <div className="absolute inset-0 -z-30 bg-gradient-to-b from-blue-500/20 via-indigo-500/10 to-transparent dark:from-blue-500/20 dark:via-indigo-500/10" />
-          <div className="absolute -left-24 top-16 -z-20 h-80 w-80 rounded-full bg-emerald-500/20 blur-3xl dark:bg-emerald-400/20" />
-          <div className="absolute -right-32 bottom-0 -z-20 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl" />
+        <HomeAppFeatured />
 
-          <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl border border-white/30 bg-white/95 shadow-2xl shadow-blue-500/20 backdrop-blur-xl dark:border-gray-700/50 dark:bg-gray-900/85 dark:shadow-blue-900/30">
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-white/80 via-white/30 to-transparent dark:from-white/10 dark:via-white/5" />
-            <div className="relative z-10 px-6 py-10 lg:px-16">
-              <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
-                <motion.div {...motionPresets.fadeInUp(0)} className="space-y-10">
-                  <div className="px-3 py-1.5 inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-sm font-bold rounded-full shadow-lg backdrop-blur-sm border border-line-400/20">
-                    <Smartphone className="h-4 w-4" />
-                    EmuReady on Android
-                  </div>
-                  <div className="space-y-5">
-                    <h2 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white md:text-5xl lg:text-6xl md:leading-tight">
-                      <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                        The largest Emulation Compatibility Database
-                      </span>{' '}
-                      now in your pocket.
-                    </h2>
-                  </div>
-
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <motion.a
-                      {...motionPresets.fadeInUp(0.18)}
-                      href={playStoreBetaUrl}
-                      title="Get the EmuReady Beta Android App on the Google Play Store"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 px-6 py-3 text-base font-semibold text-white shadow-lg transition-shadow duration-150 hover:shadow-xl"
-                      onClick={() => {
-                        analytics.conversion.appDownloadClicked({
-                          appName: 'EmuReady Beta',
-                          platform: 'android',
-                          location: 'homepage_beta_cta',
-                          url: playStoreBetaUrl,
-                        })
-                      }}
-                      whileHover={{ scale: 1.02, transition: { duration: 0.12, ease: 'easeOut' } }}
-                      whileTap={{ scale: 0.97 }}
-                    >
-                      <ArrowRight className="h-5 w-5" />
-                      Get EmuReady Beta
-                    </motion.a>
-                    <motion.a
-                      {...motionPresets.fadeInUp(0.22)}
-                      href={appDownloadPath}
-                      title="View EmuReady Lite releases on GitHub"
-                      className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 px-6 py-3 text-base font-semibold text-white shadow-lg transition-shadow duration-150 hover:shadow-xl"
-                      onClick={() => {
-                        analytics.conversion.appDownloadClicked({
-                          appName: 'EmuReady Lite',
-                          platform: 'android',
-                          location: 'homepage_lite_cta',
-                          url: appDownloadPath,
-                        })
-                      }}
-                      whileHover={{ scale: 1.02, transition: { duration: 0.12, ease: 'easeOut' } }}
-                      whileTap={{ scale: 0.97 }}
-                    >
-                      <Download className="h-5 w-5" />
-                      View Lite Releases
-                    </motion.a>
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                    <b>EmuReady Beta</b> ships on Google Play with all the latest early access
-                    features and automatic updates.
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    <b>EmuReady Lite</b> is the free APK hosted here on emuready.com providing the
-                    core functionality.
-                  </p>
-                </motion.div>
-
-                <motion.div
-                  {...motionPresets.fadeInUp(0.12)}
-                  className="relative flex justify-center"
-                >
-                  <AppPhoneMockup
-                    alt="Preview of the EmuReady Lite Android app"
-                    imageSrcs={emuReadyLiteScreens}
-                  />
-                </motion.div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Statistics */}
-        <section className="mb-20">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-2 sm:px-4">
-            <Link
-              href="/listings"
-              className="group p-8 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition duration-500 transform hover:scale-105 text-center cursor-pointer"
-            >
-              {statisticsQuery.isPending ? (
-                <div className="animate-pulse">
-                  <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded mb-3" />
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mx-auto" />
-                </div>
-              ) : (
-                <>
-                  <div className="text-4xl md:text-5xl font-black bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300">
-                    {(stats.listings + stats.pcListings).toLocaleString()}
-                  </div>
-                  <div className="text-gray-600 dark:text-gray-300 font-semibold">
-                    Compatibility Reports
-                  </div>
-                  <div className="mt-2 w-12 h-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full mx-auto group-hover:w-16 transition-[width] duration-300" />
-                </>
-              )}
-            </Link>
-
-            <Link
-              href="/games"
-              className="group p-8 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition duration-500 transform hover:scale-105 text-center cursor-pointer"
-            >
-              {statisticsQuery.isPending ? (
-                <div className="animate-pulse">
-                  <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded mb-3" />
-                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto" />
-                </div>
-              ) : (
-                <>
-                  <div className="text-4xl md:text-5xl font-black bg-gradient-to-r from-purple-600 to-purple-700 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300">
-                    {stats.games.toLocaleString()}
-                  </div>
-                  <div className="text-gray-600 dark:text-gray-300 font-semibold">
-                    Supported Games
-                  </div>
-                  <div className="mt-2 w-12 h-1 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full mx-auto group-hover:w-16 transition-[width] duration-300" />
-                </>
-              )}
-            </Link>
-
-            <Link
-              href="/emulators"
-              className="group p-8 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition duration-500 transform hover:scale-105 text-center cursor-pointer"
-            >
-              {statisticsQuery.isPending ? (
-                <div className="animate-pulse">
-                  <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded mb-3" />
-                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto" />
-                </div>
-              ) : (
-                <>
-                  <div className="text-4xl md:text-5xl font-black bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300">
-                    {stats.emulators.toLocaleString()}
-                  </div>
-                  <div className="text-gray-600 dark:text-gray-300 font-semibold">Emulators</div>
-                  <div className="mt-2 w-12 h-1 bg-gradient-to-r from-green-500 to-green-600 rounded-full mx-auto group-hover:w-16 transition-[width] duration-300" />
-                </>
-              )}
-            </Link>
-
-            <Link
-              href="/devices"
-              className="group p-8 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-xl hover:shadow-2xl transition duration-500 transform hover:scale-105 text-center cursor-pointer"
-            >
-              {statisticsQuery.isPending ? (
-                <div className="animate-pulse">
-                  <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded mb-3" />
-                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto" />
-                </div>
-              ) : (
-                <>
-                  <div className="text-4xl md:text-5xl font-black bg-gradient-to-r from-indigo-600 to-indigo-700 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300">
-                    {stats.devices.toLocaleString()}
-                  </div>
-                  <div className="text-gray-600 dark:text-gray-300 font-semibold">Handhelds</div>
-                  <div className="mt-2 w-12 h-1 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full mx-auto group-hover:w-16 transition-[width] duration-300" />
-                </>
-              )}
-            </Link>
-          </div>
-        </section>
+        <HomeStatistics />
 
         {/* Community MVPs */}
+        {/* TODO: extract to a component named HomeCommunityMvp */}
         <section className="mb-20 px-2 sm:px-4">
           <div className="rounded-3xl border border-gray-200/60 bg-white/80 p-6 shadow-xl backdrop-blur-sm dark:border-gray-700/60 dark:bg-gray-800/80 lg:p-8">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -591,6 +318,7 @@ function Home() {
         </section>
 
         {/* Featured Content */}
+        {/* TODO: extract to a component named HomeFeaturedContent */}
         <section className="mb-16">
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
