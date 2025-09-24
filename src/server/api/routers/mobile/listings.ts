@@ -28,6 +28,7 @@ import {
 } from '@/server/api/mobileContext'
 import { CommentsRepository } from '@/server/repositories/comments.repository'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
+import { getDriverVersions } from '@/server/utils/driver-versions'
 import { ConfigTypeUtils, type EmulatorConfigType } from '@/server/utils/emulator-config/constants'
 import {
   detectEmulatorConfigType,
@@ -83,6 +84,11 @@ async function getListingsHelper(
 }
 
 export const mobileListingsRouter = createMobileTRPCRouter({
+  /**
+   * Get available driver versions (mirrors web listings.driverVersions)
+   */
+  driverVersions: mobilePublicProcedure.query(async () => getDriverVersions()),
+
   /**
    * Get listings with pagination and filtering
    */
