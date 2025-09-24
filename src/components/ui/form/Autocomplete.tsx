@@ -7,6 +7,7 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react'
@@ -50,6 +51,10 @@ interface AutocompleteProps<T extends AutocompleteOptionBase> {
   debounceTime?: number
 }
 
+const DROPDOWN_MAX_HEIGHT_PX = 240
+const DROPDOWN_MIN_HEIGHT_PX = 160
+const DROPDOWN_MARGIN_PX = 8
+
 export function Autocomplete<T extends AutocompleteOptionBase>({
   value,
   onChange,
@@ -82,6 +87,12 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
   const [hasInitialLoad, setHasInitialLoad] = useState(false)
   const [isUserTyping, setIsUserTyping] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
+  const [dropdownStyles, setDropdownStyles] = useState<{
+    top: number
+    left: number
+    width: number
+    maxHeight: number
+  } | null>(null)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
@@ -336,6 +347,68 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
     }, 100)
   }
 
+  const updateDropdownPosition = useCallback(() => {
+    if (typeof window === 'undefined') return
+    const inputElement = inputRef.current
+    if (!inputElement) return
+
+    const rect = inputElement.getBoundingClientRect()
+    const viewportHeight = window.innerHeight
+    const viewportWidth = window.innerWidth
+    const scrollY = window.scrollY ?? window.pageYOffset ?? 0
+    const scrollX = window.scrollX ?? window.pageXOffset ?? 0
+
+    const availableBelow = viewportHeight - rect.bottom
+    const availableAbove = rect.top
+    const shouldOpenAbove =
+      availableBelow < DROPDOWN_MIN_HEIGHT_PX && availableAbove > availableBelow
+
+    const maxHeight = Math.min(
+      DROPDOWN_MAX_HEIGHT_PX,
+      Math.max(DROPDOWN_MIN_HEIGHT_PX, viewportHeight - DROPDOWN_MARGIN_PX * 2),
+    )
+
+    let top = rect.bottom + scrollY + DROPDOWN_MARGIN_PX
+    if (shouldOpenAbove) {
+      const proposedTop = rect.top + scrollY - maxHeight - DROPDOWN_MARGIN_PX
+      if (proposedTop >= DROPDOWN_MARGIN_PX) {
+        top = proposedTop
+      }
+    }
+
+    const minLeft = scrollX + DROPDOWN_MARGIN_PX
+    const maxLeft = scrollX + viewportWidth - rect.width - DROPDOWN_MARGIN_PX
+    const left = Math.min(Math.max(rect.left + scrollX, minLeft), Math.max(minLeft, maxLeft))
+
+    setDropdownStyles({
+      top,
+      left,
+      width: rect.width,
+      maxHeight,
+    })
+  }, [])
+
+  useLayoutEffect(() => {
+    if (!isOpen) return
+    updateDropdownPosition()
+  }, [isOpen, updateDropdownPosition, suggestions.length])
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleReposition = () => {
+      updateDropdownPosition()
+    }
+
+    window.addEventListener('resize', handleReposition)
+    window.addEventListener('scroll', handleReposition, true)
+
+    return () => {
+      window.removeEventListener('resize', handleReposition)
+      window.removeEventListener('scroll', handleReposition, true)
+    }
+  }, [isOpen, updateDropdownPosition])
+
   useEffect(() => {
     const currentList = listRef.current
     if (isOpen && highlightedIndex >= 0 && currentList) {
@@ -391,6 +464,9 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
     inputValue.length > 0 &&
     suggestions.length === 0 &&
     loadItems != null
+
+  const dropdownVisible =
+    isOpen && (suggestions.length > 0 || showNoResults || showMinCharsMessage || isLoading)
 
   return (
     <div className={cn('relative', className)}>
@@ -449,12 +525,19 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
         )}
       </div>
 
-      {isOpen && (suggestions.length > 0 || showNoResults || showMinCharsMessage || isLoading) && (
+      {dropdownVisible && dropdownStyles && (
         <ul
           ref={listRef}
           id="autocomplete-list"
           role="listbox"
-          className="absolute z-[70] mt-1 w-full bg-white dark:bg-gray-900 shadow-lg rounded-xl py-1 ring-1 ring-black ring-opacity-5 max-h-60 overflow-auto border border-gray-200 dark:border-gray-700 animate-fade-in"
+          className="z-[70] w-full bg-white dark:bg-gray-900 shadow-lg rounded-xl py-1 ring-1 ring-black ring-opacity-5 overflow-auto border border-gray-200 dark:border-gray-700 animate-fade-in"
+          style={{
+            position: 'fixed',
+            top: dropdownStyles.top,
+            left: dropdownStyles.left,
+            width: dropdownStyles.width,
+            maxHeight: dropdownStyles.maxHeight,
+          }}
         >
           <li className="px-4 py-2 text-gray-500 dark:text-gray-400 text-center">
             {isLoading
