@@ -19,6 +19,7 @@ import {
   DeleteButton,
   EditButton,
   ViewButton,
+  Pagination,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -57,6 +58,8 @@ function AdminSoCsPage() {
     search: isEmpty(table.debouncedSearch) ? undefined : table.debouncedSearch,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
+    limit: table.limit,
+    page: table.page,
   })
   const socsStatsQuery = api.socs.stats.useQuery()
   const deleteSoc = api.socs.delete.useMutation()
@@ -68,6 +71,9 @@ function AdminSoCsPage() {
   const [socData, setSocData] = useState<SocData | null>(null)
 
   const utils = api.useUtils()
+
+  const socs = socsQuery.data?.socs ?? []
+  const pagination = socsQuery.data?.pagination
 
   const openModal = (soc?: SocData) => {
     setEditId(soc?.id ?? null)
@@ -162,7 +168,7 @@ function AdminSoCsPage() {
       <AdminTableContainer>
         {socsQuery.isPending ? (
           <LoadingSpinner text="Loading SoCs..." />
-        ) : socsQuery.data?.socs.length === 0 ? (
+        ) : socs.length === 0 ? (
           <AdminTableNoResults icon={Cpu} hasQuery={!!table.search} />
         ) : (
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -203,7 +209,7 @@ function AdminSoCsPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {socsQuery.data?.socs.map((soc) => (
+              {socs.map((soc) => (
                 <tr
                   key={soc.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
@@ -247,6 +253,16 @@ function AdminSoCsPage() {
           </table>
         )}
       </AdminTableContainer>
+
+      {pagination && pagination.pages > 1 && (
+        <Pagination
+          page={table.page}
+          totalPages={pagination.pages}
+          totalItems={pagination.total}
+          itemsPerPage={pagination.limit}
+          onPageChange={table.setPage}
+        />
+      )}
 
       <SocModal
         isOpen={modalOpen}
