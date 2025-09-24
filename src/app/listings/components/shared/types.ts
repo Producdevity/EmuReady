@@ -18,6 +18,7 @@ export interface EmulatorOption extends AutocompleteOptionBase {
     id: string
     name: string
   }[]
+  slug?: string
 }
 
 export interface DeviceOption extends AutocompleteOptionBase {

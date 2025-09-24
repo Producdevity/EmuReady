@@ -2,11 +2,22 @@
 
 import { SignInButton, SignUpButton } from '@clerk/nextjs'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Loader2, Upload } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useCallback, useEffect, useState, type KeyboardEvent } from 'react'
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type KeyboardEvent,
+} from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { isString } from 'remeda'
+import '@/shared/emulator-config/eden'
 import { Button, LoadingSpinner } from '@/components/ui'
 import useMounted from '@/hooks/useMounted'
 import analytics from '@/lib/analytics'
@@ -14,6 +25,7 @@ import { api } from '@/lib/api'
 import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
 import { MarkdownEditor } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
+import { cn } from '@/lib/utils'
 import { type RouterInput } from '@/types/trpc'
 import { parseCustomFieldOptions, getCustomFieldDefaultValue } from '@/utils/custom-fields'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -32,6 +44,7 @@ import createDynamicListingSchema, {
   type CustomFieldDefinitionWithOptions,
 } from './form-schemas/createDynamicListingSchema'
 import listingFormSchema from './form-schemas/listingFormSchema'
+import { useEmulatorConfigImporter } from './hooks/useEmulatorConfigImporter'
 
 export type ListingFormValues = RouterInput['listings']['create']
 
@@ -58,6 +71,12 @@ function AddListingPage() {
   const [schemaState, setSchemaState] = useState<
     typeof listingFormSchema | ReturnType<typeof createDynamicListingSchema>
   >(listingFormSchema)
+  const [highlightedFieldIds, setHighlightedFieldIds] = useState<string[]>([])
+  const [importSummary, setImportSummary] = useState<{ filled: number; missing: string[] } | null>(
+    null,
+  )
+  const importHighlightTimeoutRef = useRef<number | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const form = useForm<ListingFormValues>({
     resolver: zodResolver(schemaState),
@@ -74,6 +93,77 @@ function AddListingPage() {
   const selectedEmulatorId = form.watch('emulatorId')
   const selectedGameId = form.watch('gameId')
 
+  const selectedEmulatorOption = useMemo(() => {
+    if (!selectedEmulatorId) return undefined
+    return availableEmulators.find((emulator) => emulator.id === selectedEmulatorId)
+  }, [availableEmulators, selectedEmulatorId])
+  const handleImportResult = useCallback(
+    (result: {
+      values: { id: string; value: unknown }[]
+      missing: string[]
+      warnings: string[]
+    }) => {
+      const currentValues = form.getValues('customFieldValues') ?? []
+      const valueMap = new Map(
+        currentValues.map((entry) => [entry.customFieldDefinitionId, entry.value]),
+      )
+
+      result.values.forEach(({ id, value }) => {
+        valueMap.set(id, value)
+      })
+
+      const nextValues = parsedCustomFields.map((field) => {
+        const explicitValue = valueMap.has(field.id) ? valueMap.get(field.id) : undefined
+        const existingValue = currentValues.find(
+          (cv) => cv.customFieldDefinitionId === field.id,
+        )?.value
+        const fallbackValue =
+          explicitValue ?? existingValue ?? getCustomFieldDefaultValue(field, field.parsedOptions)
+
+        return {
+          customFieldDefinitionId: field.id,
+          value: fallbackValue,
+        }
+      })
+
+      form.setValue('customFieldValues', nextValues, { shouldDirty: true, shouldValidate: true })
+      void form.trigger('customFieldValues')
+
+      const changedCount = result.values.reduce((count, entry) => {
+        const previousValue = currentValues.find(
+          (cv) => cv.customFieldDefinitionId === entry.id,
+        )?.value
+        return previousValue === entry.value ? count : count + 1
+      }, 0)
+
+      const uniqueMissing = Array.from(new Set(result.missing))
+      setImportSummary({ filled: changedCount, missing: uniqueMissing })
+
+      setHighlightedFieldIds(result.values.map((entry) => entry.id))
+      if (importHighlightTimeoutRef.current) {
+        window.clearTimeout(importHighlightTimeoutRef.current)
+      }
+      importHighlightTimeoutRef.current = window.setTimeout(() => {
+        setHighlightedFieldIds([])
+      }, 1800)
+
+      if (changedCount > 0) {
+        toast.success(
+          `Imported Eden configuration. Filled ${changedCount} field${changedCount === 1 ? '' : 's'}.`,
+        )
+      } else {
+        toast.success('Imported Eden configuration.')
+      }
+
+      if (uniqueMissing.length > 0) {
+        toast.info(`Review manually: ${uniqueMissing.join(', ')}`)
+      }
+
+      result.warnings.forEach((warning) => toast.warning(warning))
+    },
+    [form, parsedCustomFields],
+  )
+
   // Data fetching for Autocomplete options
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
   const customFieldDefinitionsQuery = api.customFieldDefinitions.getByEmulator.useQuery(
@@ -85,6 +175,48 @@ function AddListingPage() {
       refetchOnReconnect: false,
     },
   )
+
+  const normalizedEmulatorName = (
+    selectedEmulatorOption?.name ??
+    customFieldDefinitionsQuery.data?.[0]?.emulator?.name ??
+    ''
+  )
+    .trim()
+    .toLowerCase()
+
+  const selectedEmulatorSlug = normalizedEmulatorName === 'eden' ? 'eden' : null
+
+  const {
+    importFile: importEdenConfig,
+    isImporting: isImportingConfig,
+    error: importError,
+  } = useEmulatorConfigImporter({
+    emulatorSlug: selectedEmulatorSlug,
+    fields: parsedCustomFields,
+    onResult: handleImportResult,
+  })
+
+  const handleConfigUpload = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
+      if (!file) return
+
+      try {
+        await importEdenConfig(file)
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Unable to import the configuration file. Please try again.'
+        toast.error(message)
+      } finally {
+        event.target.value = ''
+      }
+    },
+    [importEdenConfig],
+  )
+
+  const showConfigImporter = selectedEmulatorSlug === 'eden' && parsedCustomFields.length > 0
 
   const currentUserQuery = api.users.me.useQuery()
 
@@ -191,6 +323,14 @@ function AddListingPage() {
     },
     [utils.devices.get],
   )
+
+  useEffect(() => {
+    return () => {
+      if (importHighlightTimeoutRef.current) {
+        window.clearTimeout(importHighlightTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // Handle pre-selected game from URL parameter
   useEffect(() => {
@@ -319,6 +459,13 @@ function AddListingPage() {
       toast.error(`Error creating listing: ${getErrorMessage(error)}`)
     },
   })
+
+  useEffect(() => {
+    if (selectedEmulatorSlug !== 'eden') {
+      setImportSummary(null)
+      setHighlightedFieldIds([])
+    }
+  }, [selectedEmulatorSlug])
 
   const onSubmit = async (data: ListingFormValues) => {
     if (!currentUserQuery.data?.id) {
@@ -502,23 +649,82 @@ function AddListingPage() {
                     </span>
                   )}
                 </h2>
-                {parsedCustomFields.map((fieldDef, index) => {
-                  const errorMessage = isString(
-                    form.formState.errors.customFieldValues?.[index]?.value?.message,
-                  )
-                    ? form.formState.errors.customFieldValues?.[index]?.value?.message
-                    : undefined
-                  return (
-                    <CustomFieldRenderer
-                      key={fieldDef.id}
-                      fieldDef={fieldDef}
-                      fieldName={`customFieldValues.${index}.value` as const}
-                      index={index}
-                      control={form.control}
-                      errorMessage={errorMessage}
-                    />
-                  )
-                })}
+                {showConfigImporter && (
+                  <div className="mb-6">
+                    <label
+                      htmlFor="eden-config-upload"
+                      className={cn(
+                        'group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-emerald-400/60 bg-emerald-500/10 p-6 text-center transition focus-within:ring-2 focus-within:ring-emerald-400 hover:border-emerald-400 hover:bg-emerald-500/15 sm:flex-row sm:gap-4 sm:text-left',
+                        isImportingConfig && 'cursor-progress opacity-80',
+                      )}
+                    >
+                      <input
+                        ref={fileInputRef}
+                        id="eden-config-upload"
+                        type="file"
+                        accept=".ini"
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                        onChange={handleConfigUpload}
+                      />
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg transition-transform duration-200 group-hover:scale-105">
+                        {isImportingConfig ? (
+                          <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                        ) : (
+                          <Upload className="h-5 w-5" aria-hidden="true" />
+                        )}
+                      </div>
+                      <div className="mt-4 sm:mt-0 sm:text-left">
+                        <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-200">
+                          Import Eden config (.ini)
+                        </p>
+                        <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                          We’ll auto-fill matching fields from your Eden configuration file.
+                        </p>
+                      </div>
+                    </label>
+                    {importError && (
+                      <p className="mt-2 text-sm text-red-500 dark:text-red-400">{importError}</p>
+                    )}
+                    {importSummary && (
+                      <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                        Filled {importSummary.filled} field{importSummary.filled === 1 ? '' : 's'}.
+                        {importSummary.missing.length > 0 && (
+                          <> Missing: {importSummary.missing.join(', ')}.</>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  {parsedCustomFields.map((fieldDef, index) => {
+                    const errorMessage = isString(
+                      form.formState.errors.customFieldValues?.[index]?.value?.message,
+                    )
+                      ? form.formState.errors.customFieldValues?.[index]?.value?.message
+                      : undefined
+                    const isHighlighted = highlightedFieldIds.includes(fieldDef.id)
+
+                    return (
+                      <div
+                        key={fieldDef.id}
+                        className={cn(
+                          'rounded-2xl border border-gray-200/60 p-4 shadow-sm transition dark:border-gray-700/60',
+                          isHighlighted &&
+                            'border-emerald-400/60 bg-emerald-500/10 shadow-lg shadow-emerald-500/20',
+                        )}
+                      >
+                        <CustomFieldRenderer
+                          fieldDef={fieldDef}
+                          fieldName={`customFieldValues.${index}.value` as const}
+                          index={index}
+                          control={form.control}
+                          errorMessage={errorMessage}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
 

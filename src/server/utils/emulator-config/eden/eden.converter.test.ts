@@ -504,12 +504,14 @@ describe('Eden Converter', () => {
       expect(config.Renderer?.use_fast_gpu_time?.value).toBe(false)
       expect(config.Renderer?.fast_gpu_time?.value).toBe(0)
       expect(config.Renderer?.use_reactive_flushing?.value).toBe(false)
+      expect(config.Renderer?.use_video_framerate?.value).toBe(true)
+      expect(config.Renderer?.use_video_framerate?.use_global).toBe(false)
       expect(config.Renderer?.vram_usage_mode?.value).toBe(0) // Conservative
       expect(config.Renderer?.use_vsync?.value).toBe(2) // FIFO
       expect(config.Renderer?.scaling_filter?.value).toBe(1) // Bilinear
 
       // Verify informational fields don't affect config
-      // average_fps, emulator_version, game_version, media_url, youtube, enhanced_frame_pacing should be ignored
+      // average_fps, emulator_version, game_version, media_url, youtube should be ignored
       // Check that defaults remain for fields that should not be affected
       expect(config.Core!.use_multi_core!.use_global).toBe(true)
     })
@@ -553,6 +555,11 @@ describe('Eden Converter', () => {
       {
         field: 'use_fast_gpu_time',
         key: 'use_fast_gpu_time',
+        section: 'Renderer',
+      },
+      {
+        field: 'enhanced_frame_pacing',
+        key: 'use_video_framerate',
         section: 'Renderer',
       },
     ]
@@ -1168,7 +1175,7 @@ describe('Eden Converter', () => {
             },
           ],
         })
-        expect(config.Renderer?.dyna_state?.value).toBe(0) // Disabled is default
+        expect(config.Renderer?.dyna_state?.value).toBe(Number(value))
       })
     })
 
@@ -1187,7 +1194,43 @@ describe('Eden Converter', () => {
           },
         ],
       })
-      expect(config.Renderer?.dyna_state?.value).toBe(0) // Default since numeric input maps to 0
+      expect(config.Renderer?.dyna_state?.value).toBe(2)
+    })
+
+    it('should fall back to defaults when value is outside supported range', () => {
+      const config = convertToEdenConfig({
+        listingId: 'test-id',
+        gameId: 'game-id',
+        customFieldValues: [
+          {
+            customFieldDefinition: {
+              name: 'extended_dynamic_state',
+              label: 'Extended Dynamic State',
+              type: 'RANGE',
+            },
+            value: '9',
+          },
+        ],
+      })
+      expect(config.Renderer?.dyna_state?.value).toBe(3)
+    })
+
+    it('should support legacy label values', () => {
+      const config = convertToEdenConfig({
+        listingId: 'test-id',
+        gameId: 'game-id',
+        customFieldValues: [
+          {
+            customFieldDefinition: {
+              name: 'extended_dynamic_state',
+              label: 'Extended Dynamic State',
+              type: 'RANGE',
+            },
+            value: 'Dynamic State 2',
+          },
+        ],
+      })
+      expect(config.Renderer?.dyna_state?.value).toBe(2)
     })
   })
 
@@ -1318,14 +1361,6 @@ describe('Eden Converter', () => {
               type: 'URL',
             },
             value: 'https://youtube.com/watch?v=123',
-          },
-          {
-            customFieldDefinition: {
-              name: 'enhanced_frame_pacing',
-              label: 'Enhanced Frame Pacing',
-              type: 'BOOLEAN',
-            },
-            value: true,
           },
         ],
       }
