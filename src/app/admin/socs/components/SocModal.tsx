@@ -1,12 +1,20 @@
 'use client'
 
 import { useState, useEffect, type FormEvent } from 'react'
-import { Button, Input, Modal } from '@/components/ui'
+import { Button, Input, Modal, ModalCommonButton } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 
+// Common values for quick selection
+const commonNames = ['Snapdragon', 'Exynos', 'Dimensity', 'Helio']
+const commonManufacturers = ['Qualcomm', 'MediaTek', 'Samsung', 'Apple', 'AMD', 'NVIDIA']
+const commonArchitectures = ['ARM64', 'x86_64'] as const
+const commonProcessNodes = ['4nm', '5nm', '6nm', '7nm', '10nm', '12nm', '14nm']
+const commonGpuModels = ['Adreno', 'Mali']
+
 type SocData = RouterOutput['socs']['get']['socs'][number]
+type SocArchitecture = (typeof commonArchitectures)[number]
 
 interface Props {
   isOpen: boolean
@@ -22,25 +30,19 @@ function SocModal(props: Props) {
 
   const [name, setName] = useState('')
   const [manufacturer, setManufacturer] = useState('')
-  const [architecture, setArchitecture] = useState('')
+  const [architecture, setArchitecture] = useState<SocArchitecture | ''>('')
   const [processNode, setProcessNode] = useState('')
   const [cpuCores, setCpuCores] = useState('')
   const [gpuModel, setGpuModel] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  // Common values for quick selection
-  const commonManufacturers = ['Qualcomm', 'MediaTek', 'Apple', 'AMD', 'NVIDIA']
-  const commonArchitectures = ['ARM64', 'x86_64']
-
-  const commonProcessNodes = ['4nm', '5nm', '7nm', '10nm', '12nm']
-
   // Update form fields when socData changes
   useEffect(() => {
     if (props.socData) {
       setName(props.socData.name)
       setManufacturer(props.socData.manufacturer)
-      setArchitecture(props.socData.architecture ?? '')
+      setArchitecture((props.socData.architecture as SocArchitecture) ?? '')
       setProcessNode(props.socData.processNode ?? '')
       setCpuCores(props.socData.cpuCores?.toString() ?? '')
       setGpuModel(props.socData.gpuModel ?? '')
@@ -116,11 +118,22 @@ function SocModal(props: Props) {
             <Input
               id="name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(ev) => setName(ev.target.value)}
               required
               className="w-full"
               placeholder="e.g., Snapdragon 8 Gen 3"
             />
+            <div className="flex flex-wrap gap-1 mt-2">
+              {commonNames.map((commonName) => (
+                <ModalCommonButton
+                  key={commonName}
+                  onClick={setName}
+                  value={`${commonName} `}
+                  label={`${commonName}...`}
+                  isSelected={name.includes(commonName)}
+                />
+              ))}
+            </div>
           </div>
 
           <div className="col-span-2">
@@ -133,25 +146,19 @@ function SocModal(props: Props) {
             <Input
               id="manufacturer"
               value={manufacturer}
-              onChange={(e) => setManufacturer(e.target.value)}
+              onChange={(ev) => setManufacturer(ev.target.value)}
               required
               className="w-full"
               placeholder="e.g., Qualcomm"
             />
             <div className="flex flex-wrap gap-1 mt-2">
-              {commonManufacturers.map((mfg) => (
-                <button
-                  key={mfg}
-                  type="button"
-                  onClick={() => setManufacturer(mfg)}
-                  className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                    manufacturer === mfg
-                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-300 dark:border-blue-600'
-                      : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600'
-                  }`}
-                >
-                  {mfg}
-                </button>
+              {commonManufacturers.map((commonManufacturer) => (
+                <ModalCommonButton
+                  key={commonManufacturer}
+                  onClick={setManufacturer}
+                  label={commonManufacturer}
+                  isSelected={manufacturer === commonManufacturer}
+                />
               ))}
             </div>
           </div>
@@ -166,24 +173,18 @@ function SocModal(props: Props) {
             <Input
               id="architecture"
               value={architecture}
-              onChange={(e) => setArchitecture(e.target.value)}
+              onChange={(ev) => setArchitecture(ev.target.value as SocArchitecture)}
               className="w-full"
               placeholder="e.g., ARM64"
             />
             <div className="flex flex-wrap gap-1 mt-2">
-              {commonArchitectures.map((arch) => (
-                <button
-                  key={arch}
-                  type="button"
-                  onClick={() => setArchitecture(arch)}
-                  className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                    architecture === arch
-                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-300 dark:border-blue-600'
-                      : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600'
-                  }`}
-                >
-                  {arch}
-                </button>
+              {commonArchitectures.map((commonArchitecture) => (
+                <ModalCommonButton<SocArchitecture>
+                  key={commonArchitecture}
+                  onClick={setArchitecture}
+                  label={commonArchitecture}
+                  isSelected={architecture === commonArchitecture}
+                />
               ))}
             </div>
           </div>
@@ -203,19 +204,13 @@ function SocModal(props: Props) {
               placeholder="e.g., 4nm"
             />
             <div className="flex flex-wrap gap-1 mt-2">
-              {commonProcessNodes.map((node) => (
-                <button
-                  key={node}
-                  type="button"
-                  onClick={() => setProcessNode(node)}
-                  className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                    processNode === node
-                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-300 dark:border-blue-600'
-                      : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600'
-                  }`}
-                >
-                  {node}
-                </button>
+              {commonProcessNodes.map((commonProcessNode) => (
+                <ModalCommonButton
+                  key={commonProcessNode}
+                  onClick={setProcessNode}
+                  label={commonProcessNode}
+                  isSelected={processNode === commonProcessNode}
+                />
               ))}
             </div>
           </div>
@@ -249,10 +244,21 @@ function SocModal(props: Props) {
             <Input
               id="gpuModel"
               value={gpuModel}
-              onChange={(e) => setGpuModel(e.target.value)}
+              onChange={(ev) => setGpuModel(ev.target.value)}
               className="w-full"
               placeholder="e.g., Adreno 750"
             />
+            <div className="flex flex-wrap gap-1 mt-2">
+              {commonGpuModels.map((commonGpuModel) => (
+                <ModalCommonButton
+                  key={commonGpuModel}
+                  onClick={setGpuModel}
+                  value={commonGpuModel}
+                  label={`${commonGpuModel}...`}
+                  isSelected={gpuModel.includes(commonGpuModel)}
+                />
+              ))}
+            </div>
           </div>
         </div>
 

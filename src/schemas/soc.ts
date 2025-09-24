@@ -1,16 +1,5 @@
 import { z } from 'zod'
 
-export const SoCBasicSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string(),
-  manufacturer: z.string(),
-  architecture: z.string().nullable(),
-  processNode: z.string().nullable(),
-  cpuCores: z.number().int().nullable(),
-  gpuModel: z.string().nullable(),
-  createdAt: z.date(),
-})
-
 export const SoCSortField = z.enum(['name', 'manufacturer', 'devicesCount'])
 export const SortDirection = z.enum(['asc', 'desc'])
 
@@ -32,21 +21,13 @@ export const GetSoCByIdSchema = z.object({
 export const CreateSoCSchema = z.object({
   name: z.string().min(1).max(255),
   manufacturer: z.string().min(1).max(255),
-  architecture: z.string().max(50).optional(),
-  processNode: z.string().max(20).optional(),
+  architecture: z.enum(['ARM64', 'x86_64']).optional(),
+  processNode: z.string().max(10).optional(),
   cpuCores: z.number().int().positive().max(64).optional(),
   gpuModel: z.string().max(255).optional(),
 })
 
-export const UpdateSoCSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string().min(1).max(255),
-  manufacturer: z.string().min(1).max(255),
-  architecture: z.string().max(50).optional(),
-  processNode: z.string().max(20).optional(),
-  cpuCores: z.number().int().positive().max(64).optional(),
-  gpuModel: z.string().max(255).optional(),
-})
+export const UpdateSoCSchema = CreateSoCSchema.extend({ id: z.string().uuid() })
 
 export const DeleteSoCSchema = z.object({
   id: z.string().uuid(),
