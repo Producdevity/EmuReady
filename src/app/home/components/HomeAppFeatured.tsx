@@ -24,7 +24,7 @@ export function HomeAppFeatured() {
     <section className="relative mb-20">
       {/* Soft gradient accents behind the Android hero */}
       <div className="absolute inset-0 -z-30 bg-gradient-to-b from-blue-500/20 via-indigo-500/10 to-transparent dark:from-blue-500/20 dark:via-indigo-500/10" />
-      <div className="pointer-events-none absolute inset-0 -z-20">
+      <div className="pointer-events-none overflow-hidden absolute inset-0 -z-20">
         <div className="h-full w-full bg-app-glow" />
       </div>
 
