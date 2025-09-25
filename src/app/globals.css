@@ -95,6 +95,11 @@
   --app-glow:
     radial-gradient(90% 90% at 0% 30%, rgba(16, 185, 129, 0.25), transparent 70%),
     radial-gradient(110% 100% at 100% 90%, rgba(59, 130, 246, 0.25), transparent 75%);
+  --scrollbar-track: rgba(15, 23, 42, 0.08);
+  --scrollbar-thumb: linear-gradient(180deg, #7c3aed, #c026d3 55%, #f472b6);
+  --scrollbar-thumb-hover: linear-gradient(180deg, #8b5cf6, #d946ef 55%, #fb7185);
+  --scrollbar-thumb-solid: #c026d3;
+  --scrollbar-size: 10px;
 
   /* Brand colors */
   --brand-kofi: 255 94 91; /* #ff5e5b */
@@ -153,6 +158,10 @@
   --app-glow:
     radial-gradient(90% 90% at 0% 30%, rgba(52, 211, 153, 0.28), transparent 70%),
     radial-gradient(110% 100% at 100% 90%, rgba(96, 165, 250, 0.28), transparent 75%);
+  --scrollbar-track: rgba(148, 163, 184, 0.12);
+  --scrollbar-thumb: linear-gradient(180deg, #8b5cf6, #d946ef 55%, #fb7185);
+  --scrollbar-thumb-hover: linear-gradient(180deg, #a78bfa, #e879f9 55%, #fda4af);
+  --scrollbar-thumb-solid: #d946ef;
 }
 
 /* Keyframes defined at root level */
@@ -216,6 +225,31 @@
 
   body {
     @apply bg-background text-foreground font-sans;
+  }
+
+  :where(html) {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb-solid) var(--scrollbar-track);
+  }
+
+  :where(html)::-webkit-scrollbar {
+    width: var(--scrollbar-size);
+    height: var(--scrollbar-size);
+  }
+
+  :where(html)::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  :where(html)::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: var(--radius-xl);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  :where(html)::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
   }
 }
 
