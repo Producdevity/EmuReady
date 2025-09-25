@@ -1,8 +1,21 @@
-import { type ReactNode } from 'react'
+import { type ReactNode, useEffect, useMemo, useCallback } from 'react'
 import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { type DriverRelease, useDriverVersions } from './hooks/useDriverVersions'
+
+const baseOptions: DriverReleaseOption[] = [
+  {
+    label: 'Select for Non-Android Device',
+    value: 'N/A',
+    name: 'Select for Non-Android Device',
+  },
+  {
+    label: 'Default System Driver',
+    value: 'Default System Driver',
+    name: 'Default System Driver',
+  },
+]
 
 interface DriverPlaceholderOption extends AutocompleteOptionBase {
   label: string
@@ -40,22 +53,26 @@ function CustomFieldTypeDriverVersion<TFieldValues extends FieldValues = FieldVa
 ) {
   const driverVersions = useDriverVersions()
 
-  const baseOptions: DriverReleaseOption[] = [
-    {
-      label: 'Select for Non-Android Device',
-      value: 'N/A',
-      name: 'Select for Non-Android Device',
-    },
-    {
-      label: 'Default System Driver',
-      value: 'Default System Driver',
-      name: 'Default System Driver',
-    },
-  ]
+  const selectOptions: DriverReleaseOption[] = useMemo(
+    () => (driverVersions.data ? [...baseOptions, ...driverVersions.data] : baseOptions),
+    [driverVersions.data],
+  )
 
-  const selectOptions: DriverReleaseOption[] = driverVersions.data
-    ? [...baseOptions, ...driverVersions.data]
-    : baseOptions
+  const loadItems = useCallback(
+    async (query: string): Promise<DriverReleaseOption[]> => {
+      const all = selectOptions
+      if (!query) return all
+      const q = query.toLowerCase()
+      return all.filter((opt) => {
+        const label = (opt as DriverReleaseOption).label?.toLowerCase?.() || ''
+        const value = (opt as DriverReleaseOption).value?.toLowerCase?.() || ''
+        const name =
+          ((opt as DriverReleaseOption).name as string | undefined)?.toLowerCase?.() || ''
+        return label.includes(q) || value.includes(q) || name.includes(q)
+      })
+    },
+    [selectOptions],
+  )
 
   const helperMessage = driverVersions.errorMessage
     ? driverVersions.errorMessage
@@ -76,24 +93,22 @@ function CustomFieldTypeDriverVersion<TFieldValues extends FieldValues = FieldVa
         control={props.control}
         rules={props.rules}
         render={({ field }) => (
-          <Autocomplete<DriverReleaseOption>
+          <DriverVersionAutocomplete
             id={props.fieldName}
             value={field.value as string}
             onChange={(value) => field.onChange(value ?? '')}
-            items={selectOptions}
+            loadItems={loadItems}
             leftIcon={props.icon}
-            optionToValue={(driverVersion) => driverVersion.value}
-            optionToLabel={(driverVersion) => driverVersion.label}
             placeholder={
               props.fieldDef.placeholder || `Enter ${props.fieldDef.label.toLowerCase()}`
             }
-            className={cn(
+            inputClassName={cn(
               'w-full mt-2',
               props.errorMessage &&
                 'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500',
             )}
-            filterKeys={['name', 'label', 'value']}
             disabled={driverVersions.loading && !driverVersions.data}
+            driverReleases={driverVersions.data}
           />
         )}
       />
@@ -109,3 +124,50 @@ function CustomFieldTypeDriverVersion<TFieldValues extends FieldValues = FieldVa
 }
 
 export default CustomFieldTypeDriverVersion
+
+interface DriverVersionAutocompleteProps {
+  id: string
+  value: string | null
+  onChange: (v: string | null) => void
+  loadItems: (q: string) => Promise<DriverReleaseOption[]>
+  leftIcon: ReactNode
+  placeholder: string
+  inputClassName?: string
+  disabled?: boolean
+  driverReleases: DriverRelease[] | null
+}
+
+function DriverVersionAutocomplete(props: DriverVersionAutocompleteProps) {
+  const { driverReleases, value, onChange } = props
+  // Reconcile filename or plain value to canonical option when driver list arrives
+  useEffect(() => {
+    const current = String(value ?? '')
+    if (!current || current.includes('|||') || !driverReleases) return
+    const filename = current.split('/').pop()
+    const match = driverReleases.find((rel) => {
+      if (rel.value && rel.value.includes('|||')) {
+        return rel.value.split('|||')[1] === filename
+      }
+      return rel.assets?.some((a) => a.name === filename)
+    })
+    if (match) onChange(match.value)
+  }, [driverReleases, value, onChange])
+
+  return (
+    <Autocomplete<DriverReleaseOption>
+      id={props.id}
+      value={props.value ?? ''}
+      onChange={(value) => props.onChange(value ?? '')}
+      loadItems={props.loadItems}
+      leftIcon={props.leftIcon}
+      optionToValue={(driverVersion) => driverVersion.value}
+      optionToLabel={(driverVersion) => driverVersion.label}
+      minCharsToTrigger={0}
+      debounceTime={300}
+      placeholder={props.placeholder}
+      className={props.inputClassName}
+      filterKeys={['name', 'label', 'value']}
+      disabled={props.disabled}
+    />
+  )
+}

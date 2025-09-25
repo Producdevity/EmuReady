@@ -97,6 +97,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const lastStaticLenRef = useRef<number>(staticItems?.length ?? 0)
 
   // Load initial items from server if loadItems is provided (only once)
   useEffect(() => {
@@ -355,8 +356,6 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
     const rect = inputElement.getBoundingClientRect()
     const viewportHeight = window.innerHeight
     const viewportWidth = window.innerWidth
-    const scrollY = window.scrollY ?? window.pageYOffset ?? 0
-    const scrollX = window.scrollX ?? window.pageXOffset ?? 0
 
     const availableBelow = viewportHeight - rect.bottom
     const availableAbove = rect.top
@@ -368,17 +367,18 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
       Math.max(DROPDOWN_MIN_HEIGHT_PX, viewportHeight - DROPDOWN_MARGIN_PX * 2),
     )
 
-    let top = rect.bottom + scrollY + DROPDOWN_MARGIN_PX
+    // For fixed positioning, coordinates are viewport-relative.
+    let top = rect.bottom + DROPDOWN_MARGIN_PX
     if (shouldOpenAbove) {
-      const proposedTop = rect.top + scrollY - maxHeight - DROPDOWN_MARGIN_PX
+      const proposedTop = rect.top - maxHeight - DROPDOWN_MARGIN_PX
       if (proposedTop >= DROPDOWN_MARGIN_PX) {
         top = proposedTop
       }
     }
 
-    const minLeft = scrollX + DROPDOWN_MARGIN_PX
-    const maxLeft = scrollX + viewportWidth - rect.width - DROPDOWN_MARGIN_PX
-    const left = Math.min(Math.max(rect.left + scrollX, minLeft), Math.max(minLeft, maxLeft))
+    const minLeft = DROPDOWN_MARGIN_PX
+    const maxLeft = viewportWidth - rect.width - DROPDOWN_MARGIN_PX
+    const left = Math.min(Math.max(rect.left, minLeft), Math.max(minLeft, maxLeft))
 
     setDropdownStyles({
       top,
@@ -392,6 +392,19 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
     if (!isOpen) return
     updateDropdownPosition()
   }, [isOpen, updateDropdownPosition, suggestions.length])
+
+  // Refresh suggestions once when static items length changes (e.g., async data arrived)
+  useEffect(() => {
+    const currentLen = staticItems?.length ?? 0
+    if (!isOpen) {
+      lastStaticLenRef.current = currentLen
+      return
+    }
+    if (currentLen !== lastStaticLenRef.current) {
+      lastStaticLenRef.current = currentLen
+      performSearch(inputValue).catch(console.error)
+    }
+  }, [staticItems?.length, isOpen, performSearch, inputValue])
 
   useEffect(() => {
     if (!isOpen) return
@@ -509,7 +522,10 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
           aria-controls={isOpen ? 'autocomplete-list' : undefined}
           aria-activedescendant={
             highlightedIndex >= 0 && suggestions[highlightedIndex]
-              ? `option-${optionToValue(suggestions[highlightedIndex])}`
+              ? `option-${String(optionToValue(suggestions[highlightedIndex])).replace(
+                  /[^A-Za-z0-9_-]/g,
+                  '_',
+                )}`
               : undefined
           }
         />
@@ -525,19 +541,27 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
         )}
       </div>
 
-      {dropdownVisible && dropdownStyles && (
+      {dropdownVisible && (
         <ul
           ref={listRef}
           id="autocomplete-list"
           role="listbox"
-          className="z-[70] w-full bg-white dark:bg-gray-900 shadow-lg rounded-xl py-1 ring-1 ring-black ring-opacity-5 overflow-auto border border-gray-200 dark:border-gray-700 animate-fade-in"
-          style={{
-            position: 'fixed',
-            top: dropdownStyles.top,
-            left: dropdownStyles.left,
-            width: dropdownStyles.width,
-            maxHeight: dropdownStyles.maxHeight,
-          }}
+          className={cn(
+            'z-[70] w-full bg-white dark:bg-gray-900 shadow-lg rounded-xl py-1 overflow-auto animate-fade-in',
+            'ring-1 ring-black/5 dark:ring-white/10 border border-transparent',
+            !dropdownStyles && 'absolute left-0 mt-2',
+          )}
+          style={
+            dropdownStyles
+              ? {
+                  position: 'fixed',
+                  top: dropdownStyles.top,
+                  left: dropdownStyles.left,
+                  width: dropdownStyles.width,
+                  maxHeight: dropdownStyles.maxHeight,
+                }
+              : undefined
+          }
         >
           <li className="px-4 py-2 text-gray-500 dark:text-gray-400 text-center">
             {isLoading
@@ -554,11 +578,12 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
             !showMinCharsMessage &&
             suggestions.map((item, idx) => {
               const itemValue = optionToValue(item)
+              const safeId = `option-${String(itemValue).replace(/[^A-Za-z0-9_-]/g, '_')}`
               const isHighlighted = idx === highlightedIndex
               return (
                 <li
-                  key={itemValue}
-                  id={`option-${itemValue}`}
+                  key={safeId}
+                  id={safeId}
                   role="option"
                   aria-selected={isHighlighted}
                   className={cn(

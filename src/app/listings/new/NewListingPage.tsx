@@ -98,6 +98,12 @@ function AddListingPage() {
     if (!selectedEmulatorId) return undefined
     return availableEmulators.find((emulator) => emulator.id === selectedEmulatorId)
   }, [availableEmulators, selectedEmulatorId])
+  // Prefetch driver versions so an imported Eden driver filename can be resolved immediately
+  const driverVersionsQuery = api.listings.driverVersions.useQuery(undefined, {
+    staleTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  })
   const handleImportResult = useCallback(
     (result: {
       values: { id: string; value: unknown }[]
@@ -112,6 +118,25 @@ function AddListingPage() {
       result.values.forEach(({ id, value }) => {
         valueMap.set(id, value)
       })
+
+      // Reconcile Eden driver filename (if present) to canonical driver option value
+      {
+        const driverField = parsedCustomFields.find((f) => f.name === 'dynamic_driver_version')
+        const releases = driverVersionsQuery.data?.releases
+        if (driverField && releases) {
+          const current = valueMap.get(driverField.id)
+          if (typeof current === 'string' && !current.includes('|||') && current.trim() !== '') {
+            const filename = current.split('/').pop() || current
+            const match = releases.find((rel) => {
+              if (rel.value && rel.value.includes('|||')) {
+                return rel.value.split('|||')[1] === filename
+              }
+              return rel.assets?.some((a) => a.name === filename)
+            })
+            if (match) valueMap.set(driverField.id, match.value)
+          }
+        }
+      }
 
       const nextValues = parsedCustomFields.map((field) => {
         const explicitValue = valueMap.has(field.id) ? valueMap.get(field.id) : undefined
@@ -162,7 +187,7 @@ function AddListingPage() {
 
       result.warnings.forEach((warning) => toast.warning(warning))
     },
-    [form, parsedCustomFields],
+    [form, parsedCustomFields, driverVersionsQuery.data?.releases],
   )
 
   // Data fetching for Autocomplete options

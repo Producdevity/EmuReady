@@ -151,6 +151,6 @@ backend=1
         { id: 'accuracy_level', value: 'Normal' },
       ]),
     )
-    expect(result.missing).toEqual(['GPU Driver'])
+    expect(result.missing).toEqual([])
   })
 })

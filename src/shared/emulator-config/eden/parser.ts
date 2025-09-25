@@ -107,7 +107,7 @@ export function parseEdenConfigFromIni(
     if (!mapping) {
       if (field.defaultValue !== undefined && field.defaultValue !== null) {
         values.push({ id: field.id, value: field.defaultValue })
-      } else {
+      } else if (field.isRequired) {
         missing.push(field.label)
       }
       continue
@@ -119,7 +119,7 @@ export function parseEdenConfigFromIni(
     if (!entry || typeof entry !== 'object' || !('value' in entry)) {
       if (field.defaultValue !== undefined && field.defaultValue !== null) {
         values.push({ id: field.id, value: field.defaultValue })
-      } else {
+      } else if (field.isRequired) {
         missing.push(field.label)
       }
       continue
@@ -128,7 +128,18 @@ export function parseEdenConfigFromIni(
     const rawValue = (entry as { value: unknown }).value
 
     if (mapping.key === 'driver_path') {
-      missing.push(field.label)
+      // Special handling: extract filename from absolute path and pass it through.
+      // The form component will reconcile this filename with the fetched driver list
+      // and replace it with the canonical option value.
+      const str = String(rawValue ?? '')
+      const filename = str.split('/').pop() || str
+      if (filename) {
+        values.push({ id: field.id, value: filename })
+      } else if (field.defaultValue !== undefined && field.defaultValue !== null) {
+        values.push({ id: field.id, value: field.defaultValue })
+      } else if (field.isRequired) {
+        missing.push(field.label)
+      }
       continue
     }
 
@@ -137,7 +148,7 @@ export function parseEdenConfigFromIni(
         values.push({ id: field.id, value: rawValue })
       } else if (field.defaultValue !== undefined && field.defaultValue !== null) {
         values.push({ id: field.id, value: field.defaultValue })
-      } else {
+      } else if (field.isRequired) {
         missing.push(field.label)
       }
       continue
@@ -147,7 +158,7 @@ export function parseEdenConfigFromIni(
     if (parsedValue === undefined) {
       if (field.defaultValue !== undefined && field.defaultValue !== null) {
         values.push({ id: field.id, value: field.defaultValue })
-      } else {
+      } else if (field.isRequired) {
         missing.push(field.label)
       }
       continue
