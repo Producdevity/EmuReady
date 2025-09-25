@@ -24,8 +24,10 @@ export function HomeAppFeatured() {
     <section className="relative mb-20">
       {/* Soft gradient accents behind the Android hero */}
       <div className="absolute inset-0 -z-30 bg-gradient-to-b from-blue-500/20 via-indigo-500/10 to-transparent dark:from-blue-500/20 dark:via-indigo-500/10" />
-      <div className="absolute -left-24 top-16 -z-20 h-80 w-80 rounded-full bg-emerald-500/20 blur-3xl dark:bg-emerald-400/20" />
-      <div className="absolute -right-32 bottom-0 -z-20 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl" />
+      <div className="pointer-events-none absolute inset-0 -z-20 overflow-hidden">
+        <div className="absolute left-0 top-16 h-56 w-56 -translate-x-[45%] rounded-full bg-emerald-500/20 blur-3xl dark:bg-emerald-400/20 sm:h-72 sm:w-72 sm:-translate-x-[35%] lg:h-80 lg:w-80 lg:-translate-x-[25%]" />
+        <div className="absolute bottom-0 right-0 h-64 w-64 translate-x-[45%] rounded-full bg-blue-500/20 blur-3xl sm:h-80 sm:w-80 sm:translate-x-[35%] lg:h-96 lg:w-96 lg:translate-x-[25%]" />
+      </div>
 
       <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl border border-white/30 bg-white/95 shadow-2xl shadow-blue-500/20 backdrop-blur-xl dark:border-gray-700/50 dark:bg-gray-900/85 dark:shadow-blue-900/30">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-white/80 via-white/30 to-transparent dark:from-white/10 dark:via-white/5" />
