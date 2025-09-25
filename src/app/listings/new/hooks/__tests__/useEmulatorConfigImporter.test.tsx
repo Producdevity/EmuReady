@@ -96,6 +96,8 @@ describe('useEmulatorConfigImporter', () => {
       }),
     )
 
+    expect(result.current.supportedFileTypes).toEqual(['ini'])
+
     const file = new File(['[Renderer]\nbackend=1'], 'config.ini', { type: 'text/plain' })
     ;(file as File & { text: () => Promise<string> }).text = () =>
       Promise.resolve('[Renderer]\nbackend=1')
@@ -136,6 +138,8 @@ describe('useEmulatorConfigImporter', () => {
       }),
     )
 
+    expect(result.current.supportedFileTypes).toEqual(['ini'])
+
     const file = new File(['{}'], 'config.json', { type: 'application/json' })
     ;(file as File & { text: () => Promise<string> }).text = () => Promise.resolve('{}')
 
@@ -145,5 +149,49 @@ describe('useEmulatorConfigImporter', () => {
       }),
     ).rejects.toThrow('Only Eden .ini configuration files are supported right now.')
     expect(onResult).not.toHaveBeenCalled()
+  })
+
+  it('supports Azahar imports with the correct messaging', async () => {
+    registerEmulatorConfigMapper({
+      slug: 'azahar',
+      fileTypes: ['ini'],
+      parse: (raw, fields) => mockedParse('azahar', raw, fields),
+    })
+
+    mockedParse.mockReturnValueOnce({
+      values: [],
+      missing: [],
+      warnings: [],
+    })
+
+    const onResult = vi.fn()
+    const { result } = renderHook(() =>
+      useEmulatorConfigImporter({
+        emulatorSlug: 'azahar',
+        fields: [],
+        onResult,
+      }),
+    )
+
+    expect(result.current.supportedFileTypes).toEqual(['ini'])
+
+    const iniFile = new File(['[Renderer]\ngraphics_api=2'], 'config.ini', { type: 'text/plain' })
+    ;(iniFile as File & { text: () => Promise<string> }).text = () =>
+      Promise.resolve('[Renderer]\ngraphics_api=2')
+
+    await act(async () => {
+      await result.current.importFile(iniFile)
+    })
+
+    expect(mockedParse).toHaveBeenCalledWith('azahar', expect.any(String), expect.any(Array))
+
+    const invalidFile = new File(['{}'], 'config.json', { type: 'application/json' })
+    ;(invalidFile as File & { text: () => Promise<string> }).text = () => Promise.resolve('{}')
+
+    await expect(
+      act(async () => {
+        await result.current.importFile(invalidFile)
+      }),
+    ).rejects.toThrow('Only Azahar .ini configuration files are supported right now.')
   })
 })

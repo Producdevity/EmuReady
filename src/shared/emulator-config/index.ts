@@ -4,6 +4,7 @@ import type {
   EmulatorConfigImportResult,
   EmulatorConfigMapper,
 } from './types'
+export * from './types'
 
 const mappers = new Map<string, EmulatorConfigMapper>()
 
@@ -35,9 +36,3 @@ export function parseEmulatorConfig(
 export function getSupportedFileTypes(slug: string): EmulatorConfigFileType[] {
   return mappers.get(slug)?.fileTypes ?? []
 }
-
-export type {
-  CustomFieldImportDefinition,
-  EmulatorConfigImportResult,
-  EmulatorConfigMapper,
-} from './types'

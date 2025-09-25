@@ -123,4 +123,13 @@ describe('Azahar converter', () => {
     expect(serialized).toContain('[Layout]')
     expect(serialized).toContain('layout_option=0')
   })
+
+  it('supports corrected async shader field name', () => {
+    const config = convertToAzaharConfig({
+      ...baseInput,
+      customFieldValues: [createField('enable_async_shader_compilation', true)],
+    })
+
+    expect(config.Renderer?.async_shader_compilation?.value).toBe(true)
+  })
 })

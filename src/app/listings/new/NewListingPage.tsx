@@ -18,6 +18,7 @@ import {
 import { useForm, Controller } from 'react-hook-form'
 import { isString } from 'remeda'
 import '@/shared/emulator-config/eden'
+import '@/shared/emulator-config/azahar'
 import { Button, LoadingSpinner } from '@/components/ui'
 import useMounted from '@/hooks/useMounted'
 import analytics from '@/lib/analytics'
@@ -184,12 +185,18 @@ function AddListingPage() {
     .trim()
     .toLowerCase()
 
-  const selectedEmulatorSlug = normalizedEmulatorName === 'eden' ? 'eden' : null
+  const importerSlugMap: Record<string, 'eden' | 'azahar'> = {
+    eden: 'eden',
+    azahar: 'azahar',
+  }
+
+  const selectedEmulatorSlug = importerSlugMap[normalizedEmulatorName] ?? null
 
   const {
-    importFile: importEdenConfig,
+    importFile: importEmulatorConfig,
     isImporting: isImportingConfig,
     error: importError,
+    supportedFileTypes,
   } = useEmulatorConfigImporter({
     emulatorSlug: selectedEmulatorSlug,
     fields: parsedCustomFields,
@@ -202,7 +209,7 @@ function AddListingPage() {
       if (!file) return
 
       try {
-        await importEdenConfig(file)
+        await importEmulatorConfig(file)
       } catch (error) {
         const message =
           error instanceof Error
@@ -213,10 +220,23 @@ function AddListingPage() {
         event.target.value = ''
       }
     },
-    [importEdenConfig],
+    [importEmulatorConfig],
   )
 
-  const showConfigImporter = selectedEmulatorSlug === 'eden' && parsedCustomFields.length > 0
+  const showConfigImporter = selectedEmulatorSlug !== null && parsedCustomFields.length > 0
+  const supportedExtensions = supportedFileTypes.map((type) => `.${type}`).join(',') || '.ini'
+  const supportedExtensionsLabel =
+    supportedFileTypes.length === 0
+      ? '.ini'
+      : supportedFileTypes
+          .map((type) => `.${type}`)
+          .join(supportedFileTypes.length > 1 ? ' or ' : '')
+  const importerDisplayName =
+    selectedEmulatorOption?.name ??
+    customFieldDefinitionsQuery.data?.[0]?.emulator?.name ??
+    (selectedEmulatorSlug
+      ? selectedEmulatorSlug.charAt(0).toUpperCase() + selectedEmulatorSlug.slice(1)
+      : '')
 
   const currentUserQuery = api.users.me.useQuery()
 
@@ -662,7 +682,7 @@ function AddListingPage() {
                         ref={fileInputRef}
                         id="eden-config-upload"
                         type="file"
-                        accept=".ini"
+                        accept={supportedExtensions}
                         className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                         onChange={handleConfigUpload}
                       />
@@ -675,10 +695,11 @@ function AddListingPage() {
                       </div>
                       <div className="mt-4 sm:mt-0 sm:text-left">
                         <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-200">
-                          Import Eden config (.ini)
+                          Import {importerDisplayName} config ({supportedExtensionsLabel})
                         </p>
                         <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
-                          We’ll auto-fill matching fields from your Eden configuration file.
+                          We’ll auto-fill matching fields from your {importerDisplayName}{' '}
+                          configuration file.
                         </p>
                       </div>
                     </label>

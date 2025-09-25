@@ -3,18 +3,18 @@
  * Converts listing data with custom field values to Azahar .ini format
  */
 
-import { AzaharDefaults, GPU_BACKEND_MAPPING, RESOLUTION_FACTOR_MAPPING } from './azahar.defaults'
-import type {
-  AzaharConfig,
-  AzaharConfigSection,
-  GraphicsApi,
-  ResolutionFactor,
-  TextureFilter,
-  TextureSampling,
-  LayoutOption,
-  StereoRenderOption,
-  Microseconds0To16000,
-} from './azahar.types'
+import {
+  mapLayoutOption,
+  mapStereoRenderOption,
+  mapTextureFilter,
+  mapTextureSampling,
+  toBoolean,
+  toDelayGameRenderThread,
+  toGraphicsApi,
+  toResolutionFactor,
+} from '@/shared/emulator-config/azahar/transformers'
+import { AzaharDefaults } from './azahar.defaults'
+import type { AzaharConfig, AzaharConfigSection } from './azahar.types'
 import type { Prisma } from '@orm'
 
 export interface CustomFieldValue {
@@ -39,50 +39,6 @@ interface FieldMapping {
   transform?: (value: unknown) => unknown
 }
 
-const TEXTURE_FILTER_MAPPING: Record<string, TextureFilter> = {
-  None: 0,
-  'No Filter': 0,
-  Anime4K: 1,
-  Bicubic: 2,
-  ScaleForce: 3,
-  xBRZ: 4,
-  MMPX: 5,
-}
-
-const TEXTURE_SAMPLING_MAPPING: Record<string, TextureSampling> = {
-  'Game Controlled': 0,
-  GameControlled: 0,
-  'Nearest Neighbor': 1,
-  Nearest: 1,
-  Linear: 2,
-}
-
-const LAYOUT_OPTION_MAPPING: Record<string, LayoutOption> = {
-  Default: 0,
-  'Single Screen': 1,
-  SingleScreen: 1,
-  'Large Screen': 2,
-  LargeScreen: 2,
-  'Side by Side': 3,
-  SideScreen: 3,
-  'Side Screen': 3,
-  'Hybrid Screen': 4,
-  HybridScreen: 4,
-  'Separate Windows': 4,
-  'Custom Layout': 5,
-  CustomLayout: 5,
-}
-
-const STEREO_RENDER_MODE_MAPPING: Record<string, StereoRenderOption> = {
-  Off: 0,
-  'Side by Side': 1,
-  'Reverse Side by Side': 2,
-  Anaglyph: 3,
-  Interlaced: 4,
-  'Reverse Interlaced': 5,
-  'Cardboard VR': 6,
-}
-
 const FIELD_MAPPINGS: Record<string, FieldMapping> = {
   graphics_api: {
     section: 'Renderer',
@@ -99,7 +55,15 @@ const FIELD_MAPPINGS: Record<string, FieldMapping> = {
     key: 'disable_spirv_optimizer',
     transform: toBoolean,
   },
+  // Legacy misspelling kept for backward compatibility.
+  // Correct field name is `enable_async_shader_compilation`.
   enable_async_shader_complication: {
+    section: 'Renderer',
+    key: 'async_shader_compilation',
+    transform: toBoolean,
+  },
+  // Corrected field name (preferred)
+  enable_async_shader_compilation: {
     section: 'Renderer',
     key: 'async_shader_compilation',
     transform: toBoolean,
@@ -127,12 +91,12 @@ const FIELD_MAPPINGS: Record<string, FieldMapping> = {
   texture_filter: {
     section: 'Renderer',
     key: 'texture_filter',
-    transform: (value) => mapFromDictionary(TEXTURE_FILTER_MAPPING, value),
+    transform: mapTextureFilter,
   },
   texture_sampling: {
     section: 'Renderer',
     key: 'texture_sampling',
-    transform: (value) => mapFromDictionary(TEXTURE_SAMPLING_MAPPING, value),
+    transform: mapTextureSampling,
   },
   delay_game_render_thread: {
     section: 'Renderer',
@@ -142,7 +106,7 @@ const FIELD_MAPPINGS: Record<string, FieldMapping> = {
   stereoscopic_3d_mode: {
     section: 'Renderer',
     key: 'render_3d',
-    transform: (value) => mapFromDictionary(STEREO_RENDER_MODE_MAPPING, value),
+    transform: mapStereoRenderOption,
   },
   cpu_jit: {
     section: 'Core',
@@ -167,7 +131,7 @@ const FIELD_MAPPINGS: Record<string, FieldMapping> = {
   layout_option: {
     section: 'Layout',
     key: 'layout_option',
-    transform: (value) => mapFromDictionary(LAYOUT_OPTION_MAPPING, value),
+    transform: mapLayoutOption,
   },
   swap_screen: {
     section: 'Layout',
@@ -417,89 +381,6 @@ const DefaultValueReaders: Partial<Record<AzaharConfigSection, DefaultReaders>> 
     citra_username: AzaharDefaults.getDefaultCitraUsername,
     citra_token: AzaharDefaults.getDefaultCitraToken,
   },
-}
-
-function mapFromDictionary<T>(dictionary: Record<string, T>, value: unknown): T | undefined {
-  if (value === null || value === undefined) return undefined
-  const raw = String(value).trim()
-  if (raw === '') return undefined
-
-  if (dictionary[raw] !== undefined) return dictionary[raw]
-
-  const lower = raw.toLowerCase()
-  for (const [key, mappedValue] of Object.entries(dictionary)) {
-    if (key.toLowerCase() === lower) return mappedValue
-  }
-
-  return undefined
-}
-
-function toGraphicsApi(value: unknown): GraphicsApi | undefined {
-  if (value === null || value === undefined) return undefined
-
-  const raw = String(value).trim()
-  if (raw === '') return undefined
-
-  if (raw === 'OpenGLES') {
-    return GPU_BACKEND_MAPPING.OpenGLES
-  }
-
-  if (GPU_BACKEND_MAPPING[raw] !== undefined) return GPU_BACKEND_MAPPING[raw]
-
-  const lower = raw.toLowerCase()
-  for (const [key, mappedValue] of Object.entries(GPU_BACKEND_MAPPING)) {
-    if (key.toLowerCase() === lower) return mappedValue
-  }
-
-  return AzaharDefaults.getDefaultGpuBackend()
-}
-
-function toResolutionFactor(value: unknown): ResolutionFactor | undefined {
-  if (value === null || value === undefined) return undefined
-
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    const rounded = Math.round(value)
-    if (rounded >= 0 && rounded <= 10) return rounded as ResolutionFactor
-    return undefined
-  }
-
-  const raw = String(value).trim()
-  if (raw === '') return undefined
-
-  const mapped = RESOLUTION_FACTOR_MAPPING[raw.toLowerCase()]
-  if (mapped !== undefined) return mapped as ResolutionFactor
-
-  const numeric = Number(raw)
-  if (!Number.isNaN(numeric)) {
-    const rounded = Math.round(numeric)
-    if (rounded >= 0 && rounded <= 10) return rounded as ResolutionFactor
-  }
-
-  return undefined
-}
-
-function toDelayGameRenderThread(value: unknown): Microseconds0To16000 | undefined {
-  if (value === null || value === undefined) return undefined
-
-  const numeric = Number(value)
-  if (Number.isNaN(numeric)) return undefined
-
-  const clamped = Math.max(0, Math.min(100, Math.round(numeric)))
-
-  return (clamped * 100) as Microseconds0To16000
-}
-
-function toBoolean(value: unknown): boolean | undefined {
-  if (typeof value === 'boolean') return value
-  if (typeof value === 'number') return value !== 0
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase()
-    if (normalized === 'true') return true
-    if (normalized === 'false') return false
-    if (normalized === '1') return true
-    if (normalized === '0') return false
-  }
-  return undefined
 }
 
 function formatIniValue(value: unknown): string {

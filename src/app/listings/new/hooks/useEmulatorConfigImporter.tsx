@@ -25,6 +25,17 @@ interface ImporterState {
   error: string | null
 }
 
+interface UseEmulatorConfigImporterResult {
+  importFile: (file: File) => Promise<{
+    values: { id: string; value: unknown }[]
+    missing: string[]
+    warnings: string[]
+  }>
+  isImporting: boolean
+  error: string | null
+  supportedFileTypes: string[]
+}
+
 function mapFieldDefinitions(
   fields: CustomFieldDefinitionWithOptions[],
 ): CustomFieldImportDefinition[] {
@@ -42,8 +53,12 @@ function mapFieldDefinitions(
   }))
 }
 
-export function useEmulatorConfigImporter(options: UseEmulatorConfigImporterOptions) {
+export function useEmulatorConfigImporter(
+  options: UseEmulatorConfigImporterOptions,
+): UseEmulatorConfigImporterResult {
   const [state, setState] = useState<ImporterState>({ isImporting: false, error: null })
+
+  const supportedFileTypes = getSupportedFileTypes(options.emulatorSlug ?? '')
 
   const importFile = useCallback(
     async (file: File) => {
@@ -121,5 +136,6 @@ export function useEmulatorConfigImporter(options: UseEmulatorConfigImporterOpti
     importFile,
     isImporting: state.isImporting,
     error: state.error,
+    supportedFileTypes,
   }
 }
