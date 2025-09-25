@@ -4,14 +4,9 @@ import { motion } from 'framer-motion'
 import { ArrowRight, Download, Smartphone } from 'lucide-react'
 import { AppPhoneMockup } from '@/components/app/AppPhoneMockup'
 import analytics from '@/lib/analytics'
+import { env } from '@/lib/env'
 import { motionPresets } from '@/lib/motionPresets'
 
-const appDownloadPath =
-  process.env.NEXT_PUBLIC_EMUREADY_LITE_GITHUB_URL ||
-  'https://github.com/Producdevity/EmuReadyLite/releases'
-const playStoreBetaUrl =
-  process.env.NEXT_PUBLIC_EMUREADY_BETA_URL ||
-  'https://play.google.com/store/apps/details?id=com.producdevity.emureadyapp'
 const emuReadyLiteScreens = [
   '/assets/android-app/emuready-app-ss-1.png',
   '/assets/android-app/emuready-app-ss-2.png',
@@ -49,7 +44,7 @@ export function HomeAppFeatured() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <motion.a
                   {...motionPresets.fadeInUp(0.18)}
-                  href={playStoreBetaUrl}
+                  href={env.EMUREADY_BETA_URL}
                   title="Get the EmuReady Beta Android App on the Google Play Store"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -59,7 +54,7 @@ export function HomeAppFeatured() {
                       appName: 'EmuReady Beta',
                       platform: 'android',
                       location: 'homepage_beta_cta',
-                      url: playStoreBetaUrl,
+                      url: env.EMUREADY_BETA_URL,
                     })
                   }}
                   whileHover={{ scale: 1.02, transition: { duration: 0.12, ease: 'easeOut' } }}
@@ -70,7 +65,7 @@ export function HomeAppFeatured() {
                 </motion.a>
                 <motion.a
                   {...motionPresets.fadeInUp(0.22)}
-                  href={appDownloadPath}
+                  href={env.EMUREADY_LITE_GITHUB_URL}
                   title="View EmuReady Lite releases on GitHub"
                   className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 px-6 py-3 text-base font-semibold text-white shadow-lg transition-shadow duration-150 hover:shadow-xl"
                   onClick={() => {
@@ -78,7 +73,7 @@ export function HomeAppFeatured() {
                       appName: 'EmuReady Lite',
                       platform: 'android',
                       location: 'homepage_lite_cta',
-                      url: appDownloadPath,
+                      url: env.EMUREADY_LITE_GITHUB_URL,
                     })
                   }}
                   whileHover={{ scale: 1.02, transition: { duration: 0.12, ease: 'easeOut' } }}

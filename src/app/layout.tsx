@@ -16,6 +16,7 @@ import PageViewTracker from '@/components/PageViewTracker'
 import Providers from '@/components/Providers'
 import SessionTracker from '@/components/SessionTracker'
 import KofiWidget from '@/components/ui/KofiWidget'
+import { env } from '@/lib/env'
 import { defaultMetadata } from '@/lib/seo/metadata'
 import { cn } from '@/lib/utils'
 import Main from './Main'
@@ -30,11 +31,6 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = defaultMetadata
 
-const IS_PRODUCTION = process.env.NODE_ENV === 'production'
-const GA_ID = process.env.NEXT_PUBLIC_GA_ID as string
-const ENABLE_SW = process.env.NEXT_PUBLIC_ENABLE_SW === 'true'
-const DISABLE_COOKIE_BANNER = process.env.NEXT_PUBLIC_DISABLE_COOKIE_BANNER === 'true'
-
 export default function RootLayout(props: PropsWithChildren) {
   return (
     <ClerkProvider appearance={{ baseTheme: shadesOfPurple }}>
@@ -44,12 +40,12 @@ export default function RootLayout(props: PropsWithChildren) {
            * - In dev (not production), always load to proactively unregister any SW and clear caches
            * - In prod, only load when explicitly enabled via NEXT_PUBLIC_ENABLE_SW
            */}
-          {(ENABLE_SW || !IS_PRODUCTION) && (
+          {(env.ENABLE_SW || !env.IS_PROD) && (
             <Script src="/sw-register.js" strategy="afterInteractive" />
           )}
 
           {/* Initialize dataLayer for Google Analytics */}
-          {IS_PRODUCTION && GA_ID && (
+          {env.IS_PROD && env.GA_ID && (
             <Script id="google-analytics-dataLayer" strategy="beforeInteractive">
               {`
                 window.dataLayer = window.dataLayer || [];
@@ -64,23 +60,23 @@ export default function RootLayout(props: PropsWithChildren) {
         <body className={cn(inter.className, 'min-h-screen bg-background font-sans antialiased')}>
           <Providers>
             <Toaster richColors closeButton />
-            {IS_PRODUCTION && !DISABLE_COOKIE_BANNER && <CookieConsent />}
+            {env.IS_PROD && !env.DISABLE_COOKIE_BANNER && <CookieConsent />}
             <div className="flex flex-col min-h-screen bg-background text-foreground">
               <Navbar />
               <Main>{props.children}</Main>
               <Footer />
             </div>
           </Providers>
-          {IS_PRODUCTION && (
+          {env.IS_PROD && (
             <>
               <SessionTracker />
               <PageViewTracker />
-              <Analytics />
               <SpeedInsights />
               <KofiWidget />
-              <GoogleAnalytics gaId={GA_ID} />
+              <GoogleAnalytics gaId={env.GA_ID} />
             </>
           )}
+          {env.VERCEL_ANALYTICS_ENABLED && <Analytics />}
         </body>
       </html>
     </ClerkProvider>

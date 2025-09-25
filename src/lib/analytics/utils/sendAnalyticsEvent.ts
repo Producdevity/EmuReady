@@ -1,6 +1,7 @@
 import { sendGAEvent } from '@next/third-parties/google'
 import { track } from '@vercel/analytics'
 import { type AnalyticsEventData } from '@/lib/analytics/analytics.types'
+import { env } from '@/lib/env'
 import { logger } from '@/lib/logger'
 import { isTrackingAllowed } from './isTrackingAllowed'
 /**
@@ -58,7 +59,7 @@ export function sendAnalyticsEvent(params: AnalyticsEventData) {
 
   // Only send to analytics services in production and on client-side
   if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-    track(params.action, eventData)
+    if (env.VERCEL_ANALYTICS_ENABLED) track(params.action, eventData)
     sendGAEvent('event', params.action, {
       event_category: params.category,
       ...eventData,

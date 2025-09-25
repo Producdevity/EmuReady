@@ -4,14 +4,8 @@ import { ArrowUpRight, Download } from 'lucide-react'
 import { useState } from 'react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
 import analytics from '@/lib/analytics'
+import { env } from '@/lib/env'
 import { cn } from '@/lib/utils'
-
-const appDownloadPath =
-  process.env.NEXT_PUBLIC_EMUREADY_LITE_GITHUB_URL ||
-  'https://github.com/Producdevity/EmuReadyLite/releases'
-const playStoreBetaUrl =
-  process.env.NEXT_PUBLIC_EMUREADY_BETA_URL ||
-  'https://play.google.com/store/apps/details?id=com.producdevity.emureadyapp'
 
 interface ButtonState {
   isHovered: boolean
@@ -22,7 +16,7 @@ function LiteAppButton(props: ButtonState) {
     <Tooltip>
       <TooltipTrigger asChild>
         <a
-          href={appDownloadPath}
+          href={env.EMUREADY_LITE_GITHUB_URL}
           aria-label="Open the EmuReady Lite releases on GitHub"
           className="group relative inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-500/25 bg-gradient-to-br from-emerald-500/15 via-blue-500/10 to-violet-500/15 px-4 py-2 text-left transition-all duration-200 hover:border-emerald-500/45 hover:shadow-lg hover:shadow-emerald-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 dark:border-emerald-400/25 dark:from-emerald-400/15 dark:via-blue-400/10 dark:to-violet-400/15 dark:hover:border-emerald-400/45 dark:hover:shadow-emerald-400/15"
           onClick={() => {
@@ -30,7 +24,7 @@ function LiteAppButton(props: ButtonState) {
               appName: 'EmuReady Lite',
               platform: 'android',
               location: 'footer_lite_cta',
-              url: appDownloadPath,
+              url: env.EMUREADY_LITE_GITHUB_URL,
             })
           }}
         >
@@ -68,7 +62,7 @@ function BetaAppButton(props: ButtonState) {
     <Tooltip>
       <TooltipTrigger asChild>
         <a
-          href={playStoreBetaUrl}
+          href={env.EMUREADY_BETA_URL}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Open the EmuReady Beta app on Google Play"
@@ -78,7 +72,7 @@ function BetaAppButton(props: ButtonState) {
               appName: 'EmuReady Beta',
               platform: 'android',
               location: 'footer_beta_cta',
-              url: playStoreBetaUrl,
+              url: env.EMUREADY_BETA_URL,
             })
           }}
         >

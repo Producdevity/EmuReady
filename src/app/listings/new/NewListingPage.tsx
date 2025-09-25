@@ -46,6 +46,7 @@ import createDynamicListingSchema, {
 } from './form-schemas/createDynamicListingSchema'
 import listingFormSchema from './form-schemas/listingFormSchema'
 import { useEmulatorConfigImporter } from './hooks/useEmulatorConfigImporter'
+import { reconcileDriverValue } from '../components/shared/custom-fields/driverVersionUtils'
 
 export type ListingFormValues = RouterInput['listings']['create']
 
@@ -125,16 +126,11 @@ function AddListingPage() {
         const releases = driverVersionsQuery.data?.releases
         if (driverField && releases) {
           const current = valueMap.get(driverField.id)
-          if (typeof current === 'string' && !current.includes('|||') && current.trim() !== '') {
-            const filename = current.split('/').pop() || current
-            const match = releases.find((rel) => {
-              if (rel.value && rel.value.includes('|||')) {
-                return rel.value.split('|||')[1] === filename
-              }
-              return rel.assets?.some((a) => a.name === filename)
-            })
-            if (match) valueMap.set(driverField.id, match.value)
-          }
+          const canonical = reconcileDriverValue(
+            typeof current === 'string' ? current : String(current ?? ''),
+            releases,
+          )
+          if (canonical) valueMap.set(driverField.id, canonical)
         }
       }
 

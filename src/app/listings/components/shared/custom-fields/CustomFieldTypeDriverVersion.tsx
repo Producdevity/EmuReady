@@ -2,6 +2,7 @@ import { type ReactNode, useEffect, useMemo, useCallback } from 'react'
 import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import { reconcileDriverValue } from './driverVersionUtils'
 import { type DriverRelease, useDriverVersions } from './hooks/useDriverVersions'
 
 const baseOptions: DriverReleaseOption[] = [
@@ -141,16 +142,8 @@ function DriverVersionAutocomplete(props: DriverVersionAutocompleteProps) {
   const { driverReleases, value, onChange } = props
   // Reconcile filename or plain value to canonical option when driver list arrives
   useEffect(() => {
-    const current = String(value ?? '')
-    if (!current || current.includes('|||') || !driverReleases) return
-    const filename = current.split('/').pop()
-    const match = driverReleases.find((rel) => {
-      if (rel.value && rel.value.includes('|||')) {
-        return rel.value.split('|||')[1] === filename
-      }
-      return rel.assets?.some((a) => a.name === filename)
-    })
-    if (match) onChange(match.value)
+    const canonical = reconcileDriverValue(value, driverReleases)
+    if (canonical) onChange(canonical)
   }, [driverReleases, value, onChange])
 
   return (

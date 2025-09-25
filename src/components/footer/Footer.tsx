@@ -9,14 +9,7 @@ import { FooterPatreonButton } from '@/components/footer/components/FooterPatreo
 import { GitHubIcon } from '@/components/icons'
 import { ThemeSelect } from '@/components/ui'
 import analytics from '@/lib/analytics'
-
-const discordUrl = process.env.NEXT_PUBLIC_DISCORD_LINK
-const patreonUrl = process.env.NEXT_PUBLIC_PATREON_LINK
-const githubUrl = process.env.NEXT_PUBLIC_GITHUB_URL
-const githubReadmeUrl = `${process.env.NEXT_PUBLIC_GITHUB_URL}/blob/master/README.md`
-const githubSupportUrl = `${process.env.NEXT_PUBLIC_GITHUB_URL}/issues/new?template=question.md`
-const githubContributingUrl = `${process.env.NEXT_PUBLIC_GITHUB_URL}/blob/master/CONTRIBUTING.md`
-const githubRequestEmulatorUrl = `${process.env.NEXT_PUBLIC_GITHUB_URL}/issues/new?template=emulator_request.md`
+import { env } from '@/lib/env'
 
 function Footer() {
   return (
@@ -55,14 +48,14 @@ function Footer() {
               </div>
               <div className="flex items-center gap-3 flex-wrap">
                 <a
-                  href={githubUrl}
+                  href={env.GITHUB_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="EmuReady GitHub"
                   className="inline-flex items-center justify-center p-3 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 hover:scale-105"
                   onClick={() => {
                     analytics.contentDiscovery.externalLinkClicked({
-                      url: githubUrl || '',
+                      url: env.GITHUB_URL,
                       context: 'footer_github_link',
                     })
                   }}
@@ -92,7 +85,7 @@ function Footer() {
               <ul className="space-y-4">
                 <li>
                   <FooterLink
-                    href={githubReadmeUrl}
+                    href={env.GITHUB_README_URL}
                     label="About"
                     color="blue"
                     analyticsContextKey="footer_about_link"
@@ -100,7 +93,7 @@ function Footer() {
                 </li>
                 <li>
                   <FooterLink
-                    href={githubSupportUrl}
+                    href={env.GITHUB_SUPPORT_URL}
                     label="Support"
                     color="blue"
                     analyticsContextKey="footer_support_link"
@@ -138,7 +131,7 @@ function Footer() {
               <ul className="space-y-4">
                 <li>
                   <FooterLink
-                    href={githubContributingUrl}
+                    href={env.GITHUB_CONTRIBUTING_URL}
                     label="Contribute"
                     color="purple"
                     analyticsContextKey="footer_contribute_link"
@@ -146,42 +139,36 @@ function Footer() {
                 </li>
                 <li>
                   <FooterLink
-                    href={githubRequestEmulatorUrl}
+                    href={env.GITHUB_REQUEST_EMULATOR_URL}
                     label="Add Your Emulator"
                     color="purple"
                     analyticsContextKey="footer_add_emulator_link"
                   />
                 </li>
-                {githubUrl && (
-                  <li>
-                    <FooterLink
-                      href={githubUrl}
-                      label="GitHub"
-                      color="purple"
-                      analyticsContextKey="footer_github_community_link"
-                    />
-                  </li>
-                )}
-                {discordUrl && (
-                  <li>
-                    <FooterLink
-                      href={discordUrl}
-                      label="Discord"
-                      color="purple"
-                      analyticsContextKey="footer_discord_link"
-                    />
-                  </li>
-                )}
-                {patreonUrl && (
-                  <li>
-                    <FooterLink
-                      href={patreonUrl}
-                      label="Patreon"
-                      color="purple"
-                      analyticsContextKey="footer_patreon_link"
-                    />
-                  </li>
-                )}
+                <li>
+                  <FooterLink
+                    href={env.GITHUB_URL}
+                    label="GitHub"
+                    color="purple"
+                    analyticsContextKey="footer_github_community_link"
+                  />
+                </li>
+                <li>
+                  <FooterLink
+                    href={env.DISCORD_URL}
+                    label="Discord"
+                    color="purple"
+                    analyticsContextKey="footer_discord_link"
+                  />
+                </li>
+                <li>
+                  <FooterLink
+                    href={env.PATREON_URL}
+                    label="Patreon"
+                    color="purple"
+                    analyticsContextKey="footer_patreon_link"
+                  />
+                </li>
               </ul>
             </div>
           </div>

@@ -1,3 +1,4 @@
+import { env } from '@/lib/env'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -5,9 +6,6 @@ export const metadata: Metadata = {
   description: 'Learn how EmuReady collects, uses, and protects your personal information.',
   robots: 'index, follow',
 }
-
-const emureadyEmail = process.env.NEXT_PUBLIC_EMUREADY_EMAIL || ''
-const githubIssuesUrl = `${process.env.NEXT_PUBLIC_GITHUB_URL}/issues`
 
 function PrivacyPolicyPage() {
   return (
@@ -303,21 +301,21 @@ function PrivacyPolicyPage() {
               <li>
                 <strong>GitHub Issues:</strong>{' '}
                 <a
-                  href={githubIssuesUrl}
+                  href={env.GITHUB_ISSUES_URL}
                   className="text-blue-600 dark:text-blue-400 hover:underline"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  {githubIssuesUrl}
+                  {env.GITHUB_ISSUES_URL}
                 </a>
               </li>
               <li>
                 <strong>Email:</strong>{' '}
                 <a
-                  href={`mailto:${emureadyEmail}`}
+                  href={`mailto:${env.EMUREADY_EMAIL}`}
                   className="text-blue-600 dark:text-blue-400 hover:underline"
                 >
-                  {emureadyEmail}
+                  {env.EMUREADY_EMAIL}
                 </a>
               </li>
             </ul>
