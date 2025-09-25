@@ -4,6 +4,7 @@ import clearTestDataSeeder from './seeders/clearTestDataSeeder'
 import cpuSeeder from './seeders/cpuSeeder'
 import customFieldTemplatesSeeder from './seeders/customFieldTemplatesSeeder'
 import devicesSeeder from './seeders/devicesSeeder'
+import edenCustomFieldsSeeder from './seeders/edenCustomFieldsSeeder'
 import emulatorsSeeder from './seeders/emulatorsSeeder'
 import gamesSeeder from './seeders/gamesSeeder'
 import gpuSeeder from './seeders/gpuSeeder'
@@ -127,6 +128,7 @@ async function main() {
     try {
       await customFieldTemplatesSeeder(prisma)
       await azaharCustomFieldsSeeder(prisma)
+      await edenCustomFieldsSeeder(prisma)
       console.info('✅ Custom fields seeded successfully!')
     } catch (error) {
       console.error('❌ Error seeding custom fields:', error)
@@ -185,6 +187,7 @@ async function main() {
     await usersSeeder(prisma)
     await emulatorsSeeder(prisma)
     await azaharCustomFieldsSeeder(prisma)
+    await edenCustomFieldsSeeder(prisma)
     await customFieldTemplatesSeeder(prisma)
     await socSeeder(prisma)
     await cpuSeeder(prisma)
