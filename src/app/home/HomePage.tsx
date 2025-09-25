@@ -79,10 +79,10 @@ function Home() {
         {/* Hero Section */}
         <section className="relative pt-10 mb-20 overflow-visible">
           {/* Background Elements */}
-          <div className="absolute inset-0 -z-10">
-            <div className="absolute top-0 left-1/4 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl animate-pulse delay-500" />
+          <div className="pointer-events-none absolute inset-0 -z-10">
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="h-full w-full bg-hero-glow animate-pulse-slow" />
+            </div>
           </div>
 
           {/* Grid Pattern */}
@@ -453,9 +453,10 @@ function Home() {
         {/* Call to Action Section */}
         <section className="relative overflow-visible mb-20">
           {/* Background Elements */}
-          <div className="absolute inset-0 -z-10">
-            <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute bottom-0 right-0 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl animate-pulse delay-700" />
+          <div className="pointer-events-none absolute inset-0 -z-10">
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="h-full w-full bg-cta-glow animate-pulse-slow" />
+            </div>
           </div>
 
           <div className="relative p-12 rounded-3xl bg-gradient-to-br from-white/80 via-blue-50/80 to-purple-50/80 dark:from-gray-800/80 dark:via-gray-800/80 dark:to-gray-900/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 shadow-2xl text-center">

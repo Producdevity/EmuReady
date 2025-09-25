@@ -84,6 +84,18 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
+  /* Aurora backgrounds */
+  --hero-glow:
+    radial-gradient(55% 55% at 18% 12%, rgba(59, 130, 246, 0.35), transparent 70%),
+    radial-gradient(65% 60% at 82% 88%, rgba(147, 51, 234, 0.35), transparent 75%),
+    radial-gradient(70% 65% at 50% 48%, rgba(99, 102, 241, 0.25), transparent 80%);
+  --cta-glow:
+    radial-gradient(65% 65% at 5% 15%, rgba(59, 130, 246, 0.32), transparent 75%),
+    radial-gradient(70% 70% at 95% 85%, rgba(147, 51, 234, 0.32), transparent 75%);
+  --app-glow:
+    radial-gradient(90% 90% at 0% 30%, rgba(16, 185, 129, 0.25), transparent 70%),
+    radial-gradient(110% 100% at 100% 90%, rgba(59, 130, 246, 0.25), transparent 75%);
+
   /* Brand colors */
   --brand-kofi: 255 94 91; /* #ff5e5b */
   --brand-kofi-alt: 255 142 83; /* #ff8e53 */
@@ -129,6 +141,18 @@
   --brand-kofi-alt: 255 142 83; /* #ff8e53 */
   --brand-patreon: 255 66 77; /* #FF424D */
   --brand-patreon-alt: 255 138 91; /* #FF8A5B */
+
+  /* Aurora backgrounds */
+  --hero-glow:
+    radial-gradient(55% 55% at 18% 12%, rgba(96, 165, 250, 0.45), transparent 70%),
+    radial-gradient(65% 60% at 82% 88%, rgba(167, 139, 250, 0.42), transparent 75%),
+    radial-gradient(70% 65% at 50% 48%, rgba(129, 140, 248, 0.3), transparent 80%);
+  --cta-glow:
+    radial-gradient(65% 65% at 5% 15%, rgba(96, 165, 250, 0.42), transparent 75%),
+    radial-gradient(70% 70% at 95% 85%, rgba(167, 139, 250, 0.44), transparent 78%);
+  --app-glow:
+    radial-gradient(90% 90% at 0% 30%, rgba(52, 211, 153, 0.28), transparent 70%),
+    radial-gradient(110% 100% at 100% 90%, rgba(96, 165, 250, 0.28), transparent 75%);
 }
 
 /* Keyframes defined at root level */
@@ -222,6 +246,26 @@
   .animate-gradient-x {
     background-size: 200% 200%;
     animation: var(--animate-gradient-x);
+  }
+
+  .bg-hero-glow,
+  .bg-cta-glow,
+  .bg-app-glow {
+    background-repeat: no-repeat;
+    background-size: 140% 140%;
+    background-position: center;
+  }
+
+  .bg-hero-glow {
+    background-image: var(--hero-glow);
+  }
+
+  .bg-cta-glow {
+    background-image: var(--cta-glow);
+  }
+
+  .bg-app-glow {
+    background-image: var(--app-glow);
   }
 }
 
