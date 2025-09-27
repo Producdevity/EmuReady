@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { EmulatorIcon } from '@/components/icons'
 import { AuthorDisplay } from '@/components/listings/AuthorDisplay'
-import { Badge, PerformanceBadge, EditButton, ViewButton } from '@/components/ui'
+import { Badge, PerformanceBadge, EditButton, ViewButton, LocalizedDate } from '@/components/ui'
 import { useEmulatorLogos } from '@/hooks'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role, ApprovalStatus } from '@orm'
@@ -47,6 +47,9 @@ export function GameListingsSection(props: Props) {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Comments
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Created
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Actions
@@ -103,6 +106,9 @@ export function GameListingsSection(props: Props) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge>{listing._count.comments || 0}</Badge>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    <LocalizedDate date={listing.createdAt} format="date" />
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">

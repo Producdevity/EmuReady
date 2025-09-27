@@ -1,8 +1,10 @@
 'use client'
 
 import Link from 'next/link'
+import { EmulatorIcon } from '@/components/icons'
 import { AuthorDisplay } from '@/components/listings/AuthorDisplay'
 import { Badge, PerformanceBadge, EditButton, ViewButton, LocalizedDate } from '@/components/ui'
+import { useEmulatorLogos } from '@/hooks'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role, ApprovalStatus } from '@orm'
 import type { RouterOutput } from '@/types/trpc'
@@ -17,6 +19,7 @@ interface Props {
 }
 
 export function GamePcListingsSection(props: Props) {
+  const emulatorLogos = useEmulatorLogos()
   const canSeeBannedUsers = roleIncludesRole(props.userRole, Role.MODERATOR)
 
   return (
@@ -30,6 +33,9 @@ export function GamePcListingsSection(props: Props) {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Emulator
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Performance
                 </th>
@@ -50,6 +56,18 @@ export function GamePcListingsSection(props: Props) {
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {props.pcListings.map((listing) => (
                 <tr key={listing.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {listing.emulator ? (
+                      <EmulatorIcon
+                        name={listing.emulator.name}
+                        logo={listing.emulator.logo}
+                        showLogo={emulatorLogos.isHydrated && emulatorLogos.showEmulatorLogos}
+                        size="md"
+                      />
+                    ) : (
+                      'N/A'
+                    )}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <PerformanceBadge
