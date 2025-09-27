@@ -278,7 +278,7 @@ function AddPcListingPage() {
   const onSubmit = useCallback(
     async (data: PcListingFormValues) => {
       if (!currentUserQuery.data?.id) {
-        return toast.error('You must be signed in to create a listing.')
+        return toast.error('You must be signed in to create a Compatibility Report.')
       }
       try {
         const recaptchaToken = (await recaptchaHook.executeForCreateListing?.()) ?? undefined
@@ -305,11 +305,11 @@ function AddPcListingPage() {
           await utils.games.byId.invalidate({ id: data.gameId })
         }
 
-        toast.success('PC listing created! It will be reviewed before going live.')
+        toast.success('PC Report created! It will be reviewed before going live.')
         router.push(`/pc-listings/${result.id}`)
       } catch (error) {
         const message = getErrorMessage(error)
-        toast.error(`Failed to create PC listing: ${message}`)
+        toast.error(`Failed to create PC Report: ${message}`)
       }
     },
     [
@@ -394,7 +394,7 @@ function AddPcListingPage() {
     <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full md:max-w-3xl lg:mx-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-8">
-          Create PC Compatibility Listing
+          Create a PC Compatibility Report
         </h1>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -805,7 +805,7 @@ function AddPcListingPage() {
               disabled={form.formState.isSubmitting ?? createPcListing.isPending}
               size="lg"
             >
-              Create PC Listing
+              Create Compatibility Report
             </Button>
           </div>
         </form>

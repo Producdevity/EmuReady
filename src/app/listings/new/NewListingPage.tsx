@@ -493,11 +493,11 @@ function AddListingPage() {
         await utils.games.byId.invalidate({ id: data.gameId })
       }
 
-      toast.success('Listing successfully submitted for review!')
+      toast.success('Handheld Report successfully submitted for review!')
       router.push('/listings')
     },
     onError: (error) => {
-      toast.error(`Error creating listing: ${getErrorMessage(error)}`)
+      toast.error(`Error creating Handheld Report: ${getErrorMessage(error)}`)
     },
   })
 
@@ -510,7 +510,7 @@ function AddListingPage() {
 
   const onSubmit = async (data: ListingFormValues) => {
     if (!currentUserQuery.data?.id) {
-      return toast.error('You must be signed in to create a listing.')
+      return toast.error('You must be signed in to create a Compatibility Report.')
     }
 
     // Get CAPTCHA token if enabled
@@ -576,7 +576,7 @@ function AddListingPage() {
     <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full md:max-w-3xl lg:mx-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-8">
-          Create New Listing
+          Create a Handheld Compatibility Report
         </h1>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -781,7 +781,7 @@ function AddListingPage() {
               disabled={form.formState.isSubmitting ?? createListingMutation.isPending}
               size="lg"
             >
-              {createListingMutation.isPending ? 'Creating...' : 'Create Listing'}
+              Create Compatibility Report
             </Button>
           </div>
         </form>
