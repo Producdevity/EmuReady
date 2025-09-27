@@ -1,13 +1,14 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ArrowLeft, Monitor, Cpu, HardDrive } from 'lucide-react'
+import { ArrowLeft, Monitor, Cpu, HardDrive, Globe2, Hash } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef } from 'react'
 import { VoteReminderBanner } from '@/app/listings/[id]/components/vote-reminder/VoteReminderBanner'
 import { CustomFieldsSection } from '@/app/listings/components/shared/CustomFieldsSection'
 import { ActionButtonsStack } from '@/app/listings/components/shared/details/ActionButtonsStack'
 import { AuthorPanel } from '@/app/listings/components/shared/details/AuthorPanel'
+import { DetailFieldRow } from '@/app/listings/components/shared/details/DetailFieldRow'
 import { DetailsHeader } from '@/app/listings/components/shared/details/DetailsHeader'
 import { DetailsHeaderBadges } from '@/app/listings/components/shared/details/DetailsHeaderBadges'
 import { VotingSection } from '@/app/listings/components/shared/details/VotingSection'
@@ -47,6 +48,43 @@ function PcListingDetailsClient(props: Props) {
   // Get current user to check if they can see banned user indicators
   const currentUserQuery = api.users.me.useQuery()
   const canViewBannedUsers = roleIncludesRole(currentUserQuery.data?.role, Role.MODERATOR)
+  const osLabel = osLabels[props.pcListing.os as PcOs] ?? osLabels.UNKNOWN
+  const osVersion = props.pcListing.osVersion?.trim() ? props.pcListing.osVersion : '—'
+
+  const hardwareFields = [
+    {
+      id: 'cpu',
+      icon: <Cpu className="h-5 w-5" aria-hidden="true" />,
+      label: 'CPU',
+      value: `${props.pcListing.cpu.brand.name} ${props.pcListing.cpu.modelName}`,
+    },
+    {
+      id: 'gpu',
+      icon: <Monitor className="h-5 w-5" aria-hidden="true" />,
+      label: 'GPU',
+      value: props.pcListing.gpu
+        ? `${props.pcListing.gpu.brand.name} ${props.pcListing.gpu.modelName}`
+        : 'Integrated Graphics',
+    },
+    {
+      id: 'memory',
+      icon: <HardDrive className="h-5 w-5" aria-hidden="true" />,
+      label: 'Memory',
+      value: `${props.pcListing.memorySize}GB RAM`,
+    },
+    {
+      id: 'os',
+      icon: <Globe2 className="h-5 w-5" aria-hidden="true" />,
+      label: 'OS',
+      value: osLabel,
+    },
+    {
+      id: 'os-version',
+      icon: <Hash className="h-5 w-5" aria-hidden="true" />,
+      label: 'OS Version',
+      value: osVersion,
+    },
+  ] as const
 
   const refreshData = async () => {
     await utils.pcListings.byId.invalidate({ id: props.pcListing.id })
@@ -126,64 +164,18 @@ function PcListingDetailsClient(props: Props) {
                 <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-3">
                   PC Specifications
                 </h2>
-                <div className="space-y-3 bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                  <div className="flex items-center gap-3">
-                    <Cpu className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">CPU:</span>
-                      <span className="ml-2 text-gray-600 dark:text-gray-400">
-                        {props.pcListing.cpu.brand.name} {props.pcListing.cpu.modelName}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <Monitor className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">GPU:</span>
-                      <span className="ml-2 text-gray-600 dark:text-gray-400">
-                        {props.pcListing.gpu
-                          ? `${props.pcListing.gpu.brand.name} ${props.pcListing.gpu.modelName}`
-                          : 'Integrated Graphics'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <HardDrive className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">Memory:</span>
-                      <span className="ml-2 text-gray-600 dark:text-gray-400">
-                        {props.pcListing.memorySize}GB RAM
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="h-5 w-5 flex items-center justify-center">
-                      <div className="h-3 w-3 bg-gray-500 rounded" />
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">OS:</span>
-                      <span className="ml-2 text-gray-600 dark:text-gray-400">
-                        {osLabels[props.pcListing.os as PcOs] || osLabels.UNKNOWN}{' '}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="h-5 w-5 flex items-center justify-center">
-                      <div className="h-3 w-3 bg-gray-500 rounded" />
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">
-                        OS Version:
-                      </span>
-                      <span className="ml-2 text-gray-600 dark:text-gray-400">
-                        {props.pcListing.osVersion}
-                      </span>
-                    </div>
-                  </div>
+                <div className="max-w-full rounded-2xl border border-gray-200/70 bg-white/80 p-4 shadow-sm dark:border-gray-700/70 dark:bg-gray-800/80">
+                  <dl className="space-y-4">
+                    {hardwareFields.map((field) => (
+                      <DetailFieldRow
+                        key={field.id}
+                        icon={field.icon}
+                        label={field.label}
+                        value={<span className="block break-words text-pretty">{field.value}</span>}
+                        align="center"
+                      />
+                    ))}
+                  </dl>
                 </div>
               </div>
 

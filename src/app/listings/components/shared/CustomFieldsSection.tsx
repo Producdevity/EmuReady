@@ -5,7 +5,7 @@ import {
   CustomFieldValue,
   type FieldValueLike,
 } from '@/app/listings/components/shared/CustomFieldValue'
-import { cn } from '@/lib/utils'
+import { DetailFieldRow } from '@/app/listings/components/shared/details/DetailFieldRow'
 
 interface Props {
   title?: string
@@ -26,20 +26,21 @@ export function CustomFieldsSection(props: Props) {
         {props.fieldValues
           .filter((fv) => !isNullish(fv.value) && fv.value !== '')
           .map((fieldValue) => (
-            <div key={fieldValue.id} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
-              <div
-                className={cn(
-                  'flex flex-col sm:flex-row gap-2',
-                  alignItems === 'center' ? 'sm:items-center' : 'sm:items-start',
-                )}
-              >
-                <span className="font-medium text-gray-700 dark:text-gray-300 sm:min-w-[120px] sm:flex-shrink-0">
-                  {fieldValue.customFieldDefinition.label}:
-                </span>
-                <span className="text-gray-600 dark:text-gray-400 break-words overflow-wrap-anywhere min-w-0 flex-1">
-                  <CustomFieldValue fieldValue={fieldValue} />
-                </span>
-              </div>
+            <div
+              key={fieldValue.id}
+              className="max-w-full rounded-2xl border border-gray-200/70 bg-white/80 p-4 shadow-sm dark:border-gray-700/70 dark:bg-gray-800/80"
+            >
+              <dl>
+                <DetailFieldRow
+                  align={alignItems}
+                  label={fieldValue.customFieldDefinition.label ?? 'Field'}
+                  value={
+                    <span className="block break-words overflow-wrap-anywhere">
+                      <CustomFieldValue fieldValue={fieldValue} />
+                    </span>
+                  }
+                />
+              </dl>
             </div>
           ))}
       </div>
