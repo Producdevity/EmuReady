@@ -22,7 +22,7 @@ export function GamePcListingsSection(props: Props) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
       <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
-        PC Listings <Badge>{props.pcListings?.length || 0}</Badge>
+        PC Reports <Badge>{props.pcListings?.length || 0}</Badge>
       </h2>
 
       {props.pcListings && props.pcListings.length > 0 ? (
@@ -85,7 +85,7 @@ export function GamePcListingsSection(props: Props) {
                       {props.hasPermission && (
                         <EditButton
                           href={`/admin/pc-listings/${listing.id}/edit`}
-                          title="Edit PC Listing"
+                          title="Edit PC Report"
                         />
                       )}
                       <ViewButton href={`/pc-listings/${listing.id}`} title="View Details" />
@@ -98,12 +98,14 @@ export function GamePcListingsSection(props: Props) {
         </div>
       ) : (
         <div className="text-center py-10">
-          <p className="text-gray-500 dark:text-gray-400">No PC listings yet for this game.</p>
+          <p className="text-gray-500 dark:text-gray-400">
+            No PC Compatibility Reports yet for this game.
+          </p>
           <Link
             href={`/pc-listings/new?gameId=${props.gameId}`}
             className="mt-4 inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow transition-colors duration-200 text-sm font-medium"
           >
-            Be the first to add a PC listing
+            Be the first to add a PC Compatibility Report
           </Link>
         </div>
       )}

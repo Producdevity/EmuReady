@@ -25,7 +25,7 @@ export function GameListingsSection(props: Props) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
       <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
-        Compatibility Listings <Badge>{props.listings?.length || 0}</Badge>
+        Handheld Reports <Badge>{props.listings?.length || 0}</Badge>
       </h2>
 
       {props.listings && props.listings.length > 0 ? (
@@ -123,13 +123,13 @@ export function GameListingsSection(props: Props) {
       ) : (
         <div className="text-center py-10">
           <p className="text-gray-500 dark:text-gray-400">
-            No compatibility listings yet for this game.
+            No Handheld Compatibility Reports yet for this game.
           </p>
           <Link
             href={`/listings/new?gameId=${props.gameId}`}
             className="mt-4 inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow transition-colors duration-200 text-sm font-medium"
           >
-            Be the first to add a listing
+            Be the first to add a Handheld Compatibility Report
           </Link>
         </div>
       )}
