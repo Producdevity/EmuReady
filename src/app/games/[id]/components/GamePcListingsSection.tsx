@@ -1,9 +1,19 @@
 'use client'
 
 import Link from 'next/link'
+import { getPcSpecsSummary } from '@/app/games/[id]/utils/getPcSpecsSummary'
 import { EmulatorIcon } from '@/components/icons'
 import { AuthorDisplay } from '@/components/listings/AuthorDisplay'
-import { Badge, PerformanceBadge, EditButton, ViewButton, LocalizedDate } from '@/components/ui'
+import {
+  Badge,
+  PerformanceBadge,
+  EditButton,
+  ViewButton,
+  LocalizedDate,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/components/ui'
 import { useEmulatorLogos } from '@/hooks'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role, ApprovalStatus } from '@orm'
@@ -34,6 +44,9 @@ export function GamePcListingsSection(props: Props) {
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  PC Specs
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Emulator
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -54,63 +67,94 @@ export function GamePcListingsSection(props: Props) {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {props.pcListings.map((listing) => (
-                <tr key={listing.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {listing.emulator ? (
-                      <EmulatorIcon
-                        name={listing.emulator.name}
-                        logo={listing.emulator.logo}
-                        showLogo={emulatorLogos.isHydrated && emulatorLogos.showEmulatorLogos}
-                        size="md"
-                      />
-                    ) : (
-                      'N/A'
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <PerformanceBadge
-                        rank={listing.performance.rank}
-                        label={listing.performance.label}
-                        description={listing.performance?.description}
-                      />
-                      {canSeeBannedUsers &&
-                        'status' in listing &&
-                        listing.status !== ApprovalStatus.APPROVED && (
-                          <Badge
-                            variant={
-                              listing.status === ApprovalStatus.REJECTED ? 'danger' : 'warning'
-                            }
-                            size="sm"
-                          >
-                            {listing.status}
-                          </Badge>
-                        )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <AuthorDisplay author={listing.author} canSeeBannedUsers={canSeeBannedUsers} />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge>{listing._count.comments || 0}</Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    <LocalizedDate date={listing.createdAt} format="date" />
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {props.hasPermission && (
-                        <EditButton
-                          href={`/admin/pc-listings/${listing.id}/edit`}
-                          title="Edit PC Report"
+              {props.pcListings.map((listing) => {
+                const specs = getPcSpecsSummary(listing)
+
+                return (
+                  <tr key={listing.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="max-w-[240px] cursor-help truncate">{specs.summary}</div>
+                        </TooltipTrigger>
+                        <TooltipContent className="w-fit max-w-xs text-left">
+                          <div className="font-semibold text-xs uppercase tracking-wide text-primary-foreground">
+                            PC Specs
+                          </div>
+                          <div className="mt-1 space-y-1 text-xs leading-snug">
+                            {specs.details.length === 0 ? (
+                              <div>No additional specs provided.</div>
+                            ) : (
+                              specs.details.map((detail) => (
+                                <div key={detail.label}>
+                                  <span className="font-semibold">{detail.label}:</span>{' '}
+                                  {detail.value}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {listing.emulator ? (
+                        <EmulatorIcon
+                          name={listing.emulator.name}
+                          logo={listing.emulator.logo}
+                          showLogo={emulatorLogos.isHydrated && emulatorLogos.showEmulatorLogos}
+                          size="md"
                         />
+                      ) : (
+                        'N/A'
                       )}
-                      <ViewButton href={`/pc-listings/${listing.id}`} title="View Details" />
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <PerformanceBadge
+                          rank={listing.performance.rank}
+                          label={listing.performance.label}
+                          description={listing.performance?.description}
+                        />
+                        {canSeeBannedUsers &&
+                          'status' in listing &&
+                          listing.status !== ApprovalStatus.APPROVED && (
+                            <Badge
+                              variant={
+                                listing.status === ApprovalStatus.REJECTED ? 'danger' : 'warning'
+                              }
+                              size="sm"
+                            >
+                              {listing.status}
+                            </Badge>
+                          )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <AuthorDisplay
+                        author={listing.author}
+                        canSeeBannedUsers={canSeeBannedUsers}
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge>{listing._count.comments || 0}</Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      <LocalizedDate date={listing.createdAt} format="date" />
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {props.hasPermission && (
+                          <EditButton
+                            href={`/admin/pc-listings/${listing.id}/edit`}
+                            title="Edit PC Report"
+                          />
+                        )}
+                        <ViewButton href={`/pc-listings/${listing.id}`} title="View Details" />
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
