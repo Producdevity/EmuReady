@@ -154,7 +154,7 @@ function ListingDetailsClient(props: Props) {
                   ) : undefined
                 }
               />
-              <ActionButtonsStack className="w-full items-center md:items-stretch">
+              <ActionButtonsStack>
                 <EditListingButton listingId={props.listing.id} onSuccess={refreshData} />
                 <ReportListingButton
                   listingId={props.listing.id}

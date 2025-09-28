@@ -212,7 +212,7 @@ function PcListingDetailsClient(props: Props) {
                 )
               })()}
 
-              <ActionButtonsStack className="w-full items-center md:items-stretch">
+              <ActionButtonsStack>
                 <EditPcListingButton pcListingId={props.pcListing.id} onSuccess={refreshData} />
                 <PcReportListingButton
                   pcListingId={props.pcListing.id}
