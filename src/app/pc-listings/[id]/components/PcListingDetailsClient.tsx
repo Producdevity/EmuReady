@@ -117,12 +117,12 @@ function PcListingDetailsClient(props: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900 dark:to-indigo-950 py-4 lg:py-10 px-4 flex justify-center items-start">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900 dark:to-indigo-950 py-4 lg:py-10 px-4 overflow-x-hidden">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="w-full max-w-4xl"
+        className="mx-auto w-full max-w-4xl"
       >
         {/* Back Navigation */}
         <div className="mb-6">
@@ -132,15 +132,15 @@ function PcListingDetailsClient(props: Props) {
           </Button>
         </div>
 
-        <Card className="p-4 lg:p-8 shadow-2xl rounded-2xl lg:rounded-3xl border-0 bg-white dark:bg-gray-900">
-          <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
+        <Card className="w-full p-4 lg:p-8 shadow-2xl rounded-2xl lg:rounded-3xl border-0 bg-white dark:bg-gray-900 overflow-hidden">
+          <div className="flex w-full flex-col items-start gap-6 lg:gap-8 md:flex-row">
             {/* Game Info */}
             <div className="flex-1 md:pr-8 sm:border-r-0 md:border-r md:border-gray-200 md:dark:border-gray-700">
               {/* Game Image */}
               <div className="mb-6">
                 <GameImage
                   game={props.pcListing.game}
-                  className="w-full h-48 sm:h-56 md:h-64 rounded-lg shadow-md"
+                  className="w-full aspect-video rounded-lg shadow-md"
                   aspectRatio="video"
                   showFallback={true}
                   priority={true}
@@ -164,7 +164,7 @@ function PcListingDetailsClient(props: Props) {
                 <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-3">
                   PC Specifications
                 </h2>
-                <div className="max-w-full rounded-2xl border border-gray-200/70 bg-white/80 p-4 shadow-sm dark:border-gray-700/70 dark:bg-gray-800/80">
+                <div className="w-full max-w-full rounded-2xl border border-gray-200/70 bg-white/80 p-4 shadow-sm dark:border-gray-700/70 dark:bg-gray-800/80 overflow-hidden">
                   <dl className="space-y-4">
                     {hardwareFields.map((field) => (
                       <DetailFieldRow
@@ -188,7 +188,7 @@ function PcListingDetailsClient(props: Props) {
               />
             </div>
 
-            <div className="flex flex-col items-center gap-2 w-full md:w-auto md:min-w-[140px]">
+            <div className="flex w-full flex-col items-center gap-4 md:w-auto md:min-w-[180px] md:items-start">
               {(() => {
                 const author = props.pcListing.author as typeof props.pcListing.author & {
                   userBans?: unknown
@@ -212,7 +212,7 @@ function PcListingDetailsClient(props: Props) {
                 )
               })()}
 
-              <ActionButtonsStack>
+              <ActionButtonsStack className="w-full items-center md:items-stretch">
                 <EditPcListingButton pcListingId={props.pcListing.id} onSuccess={refreshData} />
                 <PcReportListingButton
                   pcListingId={props.pcListing.id}

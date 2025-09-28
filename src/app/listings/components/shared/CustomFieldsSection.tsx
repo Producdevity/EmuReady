@@ -28,7 +28,7 @@ export function CustomFieldsSection(props: Props) {
           .map((fieldValue) => (
             <div
               key={fieldValue.id}
-              className="max-w-full rounded-2xl border border-gray-200/70 bg-white/80 p-4 shadow-sm dark:border-gray-700/70 dark:bg-gray-800/80"
+              className="w-full max-w-full rounded-2xl border border-gray-200/70 bg-white/80 p-4 shadow-sm dark:border-gray-700/70 dark:bg-gray-800/80 overflow-hidden"
             >
               <dl>
                 <DetailFieldRow

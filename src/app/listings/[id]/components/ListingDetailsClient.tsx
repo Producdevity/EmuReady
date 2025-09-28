@@ -62,10 +62,7 @@ function ListingDetailsClient(props: Props) {
   const handleVote = async (value: boolean | null) => {
     if (value !== null) {
       // Normal vote - send the value directly, API handles toggle logic
-      await voteMutation.mutateAsync({
-        listingId: props.listing.id,
-        value,
-      })
+      await voteMutation.mutateAsync({ listingId: props.listing.id, value })
     } else if (props.listing.userVote !== null) {
       // For vote removal, we need to know what the current vote is and send that same value
       // The API handles toggle logic - if same value is sent, it removes the vote
@@ -77,12 +74,12 @@ function ListingDetailsClient(props: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900 dark:to-indigo-950 py-4 lg:py-10 px-4 flex justify-center items-start">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-900 dark:to-indigo-950 py-4 lg:py-10 px-4 overflow-x-hidden">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="w-full max-w-4xl"
+        className="mx-auto w-full max-w-4xl"
       >
         {/* Back Navigation */}
         <div className="mb-6">
@@ -92,15 +89,15 @@ function ListingDetailsClient(props: Props) {
           </Button>
         </div>
 
-        <Card className="p-4 lg:p-8 shadow-2xl rounded-2xl lg:rounded-3xl border-0 bg-white dark:bg-gray-900">
-          <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
+        <Card className="w-full p-4 lg:p-8 shadow-2xl rounded-2xl lg:rounded-3xl border-0 bg-white dark:bg-gray-900 overflow-hidden">
+          <div className="flex w-full flex-col items-start gap-6 lg:gap-8 md:flex-row">
             {/* Game Info */}
             <div className="flex-1 md:pr-8 sm:border-r-0 md:border-r md:border-gray-200 md:dark:border-gray-700">
               {/* Game Image */}
               <div className="mb-6">
                 <GameImage
                   game={props.listing.game}
-                  className="w-full h-48 sm:h-56 md:h-64 rounded-lg shadow-md"
+                  className="w-full aspect-video rounded-lg shadow-md"
                   aspectRatio="video"
                   showFallback={true}
                   priority={true}
@@ -139,7 +136,7 @@ function ListingDetailsClient(props: Props) {
                 />
               </VotingSection>
             </div>
-            <div>
+            <div className="flex w-full flex-col items-center gap-4 md:w-auto md:min-w-[180px] md:items-start">
               <AuthorPanel
                 profileImage={props.listing?.author?.profileImage}
                 authorName={props.listing?.author?.name}
@@ -157,7 +154,7 @@ function ListingDetailsClient(props: Props) {
                   ) : undefined
                 }
               />
-              <ActionButtonsStack>
+              <ActionButtonsStack className="w-full items-center md:items-stretch">
                 <EditListingButton listingId={props.listing.id} onSuccess={refreshData} />
                 <ReportListingButton
                   listingId={props.listing.id}

@@ -12,31 +12,52 @@ interface DetailFieldRowProps {
 
 export function DetailFieldRow(props: DetailFieldRowProps) {
   const alignment = props.align ?? 'start'
+  const shouldCenter = alignment === 'center'
+  const gridTemplate = props.icon ? 'grid-cols-auto-value' : 'grid-cols-label-value'
 
   return (
     <div
       className={cn(
-        'flex flex-wrap items-start gap-3',
-        props.icon ? null : alignment === 'center' ? 'sm:items-center' : 'sm:items-start',
+        'detail-field-grid grid w-full gap-x-3 gap-y-1',
+        gridTemplate === 'grid-cols-auto-value'
+          ? 'sm:grid-cols-[auto_minmax(0,1fr)]'
+          : 'grid-cols-1 sm:grid-cols-[minmax(0,max-content)_minmax(0,1fr)]',
       )}
     >
       {props.icon ? (
-        <div className="flex items-start text-gray-500 dark:text-gray-400">{props.icon}</div>
+        <div className="flex items-start text-gray-500 dark:text-gray-400" aria-hidden="true">
+          {props.icon}
+        </div>
       ) : null}
 
-      <div
+      <dt
         className={cn(
-          'flex min-w-0 flex-1 flex-wrap items-start gap-y-1 gap-x-2 text-sm',
-          alignment === 'center' ? 'sm:items-center' : 'sm:items-start',
+          'text-sm font-semibold leading-snug text-gray-700 dark:text-gray-200',
+          props.icon
+            ? 'col-start-2 flex items-start'
+            : shouldCenter
+              ? 'flex items-center'
+              : 'flex items-start',
         )}
       >
-        <dt className="shrink-0 font-semibold text-gray-700 dark:text-gray-200 leading-snug after:ml-1 after:content-[':']">
+        <span className="flex items-center gap-1">
           {props.label}
-        </dt>
-        <dd className="min-w-0 flex-1 text-gray-600 dark:text-gray-300 break-words text-pretty leading-relaxed">
-          {props.value}
-        </dd>
-      </div>
+          <span aria-hidden="true">:</span>
+        </span>
+      </dt>
+
+      <dd
+        className={cn(
+          'min-w-0 text-sm leading-relaxed text-gray-600 dark:text-gray-300',
+          props.icon
+            ? 'col-start-2'
+            : shouldCenter
+              ? 'sm:flex sm:items-center'
+              : 'sm:flex sm:items-start',
+        )}
+      >
+        <span className="block min-w-0 break-words text-pretty">{props.value}</span>
+      </dd>
     </div>
   )
 }
