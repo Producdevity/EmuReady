@@ -1,11 +1,11 @@
 'use client'
 
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { LoadingSpinner, Card, Button } from '@/components/ui'
 import { api } from '@/lib/api'
 
-export default function PatreonCallbackPage() {
+function PatreonCallbackClient() {
   const search = useSearchParams()
   const router = useRouter()
   const code = search.get('code')
@@ -60,5 +60,22 @@ export default function PatreonCallbackPage() {
         )}
       </Card>
     </div>
+  )
+}
+
+export default function PatreonCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center p-6">
+          <Card className="p-8 max-w-md w-full text-center space-y-4">
+            <LoadingSpinner size="lg" />
+            <p className="text-sm text-gray-600 dark:text-gray-400">Finishing Patreon linking…</p>
+          </Card>
+        </div>
+      }
+    >
+      <PatreonCallbackClient />
+    </Suspense>
   )
 }
