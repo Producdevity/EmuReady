@@ -8,8 +8,16 @@ import { presignGetObject } from '@/server/services/r2.service'
 export const releasesRouter = createTRPCRouter({
   latest: publicProcedure.input(GetLatestReleaseSchema).query(async ({ ctx, input }) => {
     const repo = new ReleasesRepository(ctx.prisma)
-    const channel = input?.channel ?? 'stable'
-    const latest = await repo.latest(channel)
+    // Try selected channel if provided; otherwise prefer stable, then beta
+    const tryChannels = input?.channel ? [input.channel] : (['stable', 'beta'] as const)
+    let latest: Awaited<ReturnType<typeof repo.latest>> | null = null
+    for (const ch of tryChannels) {
+      const found = await repo.latest(ch)
+      if (found) {
+        latest = found
+        break
+      }
+    }
     if (latest) {
       // If DB has a record, build the CDN URL directly from the stored fileKey
       const publicBase = process.env.R2_PUBLIC_BASE_URL

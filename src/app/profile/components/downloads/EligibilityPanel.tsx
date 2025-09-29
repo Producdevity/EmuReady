@@ -4,6 +4,7 @@ import { BadgeCheck, Handshake, Shield } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Badge, Button, Card } from '@/components/ui'
 import { api } from '@/lib/api'
+import { EntitlementSource } from '@orm'
 import ClaimPlayPurchaseDialog from './ClaimPlayPurchaseDialog'
 import LinkPatreonDialog from './LinkPatreonDialog'
 
@@ -13,13 +14,13 @@ export default function EligibilityPanel(_: Props) {
   const [openClaim, setOpenClaim] = useState(false)
   const [openPatreon, setOpenPatreon] = useState(false)
   const entitlementsQuery = api.entitlements.getMy.useQuery()
-  type EntRow = { source: 'PLAY' | 'PATREON' | 'MANUAL'; grantedAt: string | Date }
+  type EntRow = { source: EntitlementSource; grantedAt: string | Date }
   const items = useMemo(
     () => (entitlementsQuery.data?.items ?? []) as EntRow[],
     [entitlementsQuery.data?.items],
   )
-  const play = useMemo(() => items.find((e) => e.source === 'PLAY'), [items])
-  const patreon = useMemo(() => items.find((e) => e.source === 'PATREON'), [items])
+  const play = useMemo(() => items.find((e) => e.source === EntitlementSource.PLAY), [items])
+  const patreon = useMemo(() => items.find((e) => e.source === EntitlementSource.PATREON), [items])
   const hasPlayEntitlement = Boolean(play)
 
   return (
@@ -52,6 +53,13 @@ export default function EligibilityPanel(_: Props) {
             ) : (
               <Badge variant="default" pill className="inline-flex items-center gap-1.5">
                 <Handshake className="w-3.5 h-3.5" /> Patreon not linked
+              </Badge>
+            )}
+
+            {/* Manual entitlement indicator (grants lifetime access too) */}
+            {items.some((e) => e.source === EntitlementSource.MANUAL) && (
+              <Badge variant="primary" pill className="inline-flex items-center gap-1.5">
+                <BadgeCheck className="w-3.5 h-3.5" /> Manual access
               </Badge>
             )}
           </div>

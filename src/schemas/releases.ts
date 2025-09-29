@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const GetLatestReleaseSchema = z.object({
-  channel: z.enum(['stable', 'beta']).default('stable').optional(),
+  channel: z.enum(['stable', 'beta']).optional(),
 })
 
 export const SignDownloadSchema = z.object({
