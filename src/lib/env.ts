@@ -20,6 +20,9 @@ interface Env {
   IS_PROD: boolean
   IS_DEV: boolean
   IS_TEST: boolean
+  ENABLE_ANDROID_DOWNLOADS: boolean
+  ANDROID_LATEST_JSON_URL: string
+  ANDROID_LATEST_APK_URL: string
 }
 
 const GITHUB_URL = process.env.NEXT_PUBLIC_GITHUB_URL ?? 'https://github.com/Producdevity/EmuReady'
@@ -63,4 +66,12 @@ export const env = {
   IS_PROD: process.env.NODE_ENV === 'production',
   IS_DEV: process.env.NODE_ENV === 'development',
   IS_TEST: process.env.NODE_ENV === 'test',
+
+  ENABLE_ANDROID_DOWNLOADS: process.env.NEXT_PUBLIC_ENABLE_ANDROID_DOWNLOADS === 'true',
+  ANDROID_LATEST_JSON_URL:
+    process.env.NEXT_PUBLIC_ANDROID_LATEST_JSON_URL ??
+    'https://cdn.emuready.com/android/latest.json',
+  ANDROID_LATEST_APK_URL:
+    process.env.NEXT_PUBLIC_ANDROID_LATEST_APK_URL ??
+    'https://cdn.emuready.com/android/emuready-latest.apk',
 } as const satisfies Env

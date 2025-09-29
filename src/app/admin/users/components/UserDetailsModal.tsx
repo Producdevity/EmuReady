@@ -33,6 +33,7 @@ import getErrorMessage from '@/utils/getErrorMessage'
 import { canBanUser } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
+import UserEntitlementsPanel from './UserEntitlementsPanel'
 
 interface Props {
   userId: string | null
@@ -682,6 +683,10 @@ function UserDetailsModal(props: Props) {
                   )}
                 </div>
               </div>
+            </div>
+
+            <div className="mt-6">
+              {props.userId && <UserEntitlementsPanel userId={props.userId} />}
             </div>
 
             {/* User Badges */}

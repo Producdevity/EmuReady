@@ -143,6 +143,10 @@ model User {
   badgeAssignments            UserBadge[]                       @relation("BadgeAssignments")
   // API access relations
   apiKeys                     ApiKey[]
+  // Android distribution relations
+  entitlements                Entitlement[]
+  downloads                   Download[]
+  externalAccounts            ExternalAccount[]
 }
 
 model ApiKey {
@@ -1172,4 +1176,97 @@ model AuditLog {
   @@index([targetUserId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ==============================
+// Android Distribution (Entitlements & Releases)
+// ==============================
+
+enum EntitlementSource {
+  PLAY
+  PATREON
+  MANUAL
+}
+
+enum EntitlementStatus {
+  ACTIVE
+  REVOKED
+}
+
+model Entitlement {
+  id           String            @id @default(uuid())
+  userId       String
+  source       EntitlementSource
+  status       EntitlementStatus @default(ACTIVE)
+  referenceId  String?
+  amountCents  Int?
+  currency     String?
+  grantedAt    DateTime          @default(now())
+  revokedAt    DateTime?
+  notes        String?
+
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([source, referenceId])
+}
+
+model Release {
+  id          String   @id @default(uuid())
+  channel     String
+  versionCode Int
+  versionName String
+  fileKey     String
+  fileSha256  String
+  sizeBytes   BigInt
+  createdAt   DateTime @default(now())
+  notes       String?
+
+  downloads   Download[]
+
+  @@unique([channel, versionCode])
+  @@index([createdAt])
+}
+
+model Download {
+  id         String   @id @default(uuid())
+  userId     String
+  releaseId  String
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  release Release @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([releaseId])
+}
+
+model ExternalAccount {
+  id          String   @id @default(uuid())
+  userId      String
+  provider    String
+  externalId  String
+  email       String?
+  linkedAt    DateTime @default(now())
+  data        Json?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, externalId])
+  @@index([userId])
+}
+
+model WebhookEvent {
+  id          String   @id @default(uuid())
+  source      String
+  eventId     String
+  payload     Json
+  status      String
+  error       String?
+  processedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  @@unique([source, eventId])
 }

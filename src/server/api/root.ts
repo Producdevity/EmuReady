@@ -1,5 +1,7 @@
 import { createTRPCRouter } from '@/server/api/trpc'
 import { activityRouter } from './routers/admin/activity'
+import { adminEntitlementsRouter } from './routers/admin/entitlements'
+import { adminReleasesRouter } from './routers/admin/releases'
 import { titleIdToolsRouter } from './routers/admin/titleIdTools'
 import { apiKeysRouter } from './routers/apiKeys'
 import { auditLogsRouter } from './routers/auditLogs'
@@ -11,6 +13,7 @@ import { customFieldTemplateRouter } from './routers/customFieldTemplates'
 import { deviceBrandsRouter } from './routers/deviceBrands'
 import { devicesRouter } from './routers/devices'
 import { emulatorsRouter } from './routers/emulators'
+import { entitlementsRouter } from './routers/entitlements'
 import { gamesRouter } from './routers/games'
 import { gpusRouter } from './routers/gpus'
 import { igdbRouter } from './routers/igdb'
@@ -24,6 +27,7 @@ import { performanceScalesRouter } from './routers/performanceScales'
 import { permissionLogsRouter } from './routers/permissionLogs'
 import { permissionsRouter } from './routers/permissions'
 import { rawgRouter } from './routers/rawg'
+import { releasesRouter } from './routers/releases'
 import { socsRouter } from './routers/socs'
 import { systemsRouter } from './routers/systems'
 import { tgdbRouter } from './routers/tgdb'
@@ -67,6 +71,10 @@ export const appRouter = createTRPCRouter({
   listingVerifications: listingVerificationsRouter,
   listingReports: listingReportsRouter,
   titleIdTools: titleIdToolsRouter,
+  releases: releasesRouter,
+  entitlements: entitlementsRouter,
+  adminReleases: adminReleasesRouter,
+  adminEntitlements: adminEntitlementsRouter,
 })
 
 export type AppRouter = typeof appRouter

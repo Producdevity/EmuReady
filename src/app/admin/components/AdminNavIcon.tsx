@@ -24,34 +24,41 @@ import {
   QrCode,
   ServerCog,
   TerminalSquare,
+  CloudDownload,
+  BadgeCheck,
 } from 'lucide-react'
+import { ADMIN_ROUTES } from '@/app/admin/config/routes'
 
 const getAdminNavIcon = (href: string, className: string) => {
-  if (href.includes('/cpus')) return <Cpu className={className} />
-  if (href.includes('/gpus')) return <HardDrive className={className} />
-  if (href.includes('/socs')) return <Microchip className={className} />
-  if (href.includes('/title-id-tools')) return <QrCode className={className} />
-  if (href.includes('/api-access/developer')) return <TerminalSquare className={className} />
-  if (href.includes('/api-access')) return <ServerCog className={className} />
-  if (href.includes('/manage-listings')) return <List className={className} />
-  if (href.includes('/processed-listings')) return <FileText className={className} />
-  if (href.includes('/reports')) return <AlertCircle className={className} />
-  if (href.includes('/user-bans')) return <Gavel className={className} />
-  if (href.includes('/trust-logs')) return <TrendingUp className={className} />
-  if (href.includes('/monitoring')) return <Activity className={className} />
-  if (href.includes('/permission-logs')) return <FileKey className={className} />
-  if (href.includes('/permissions')) return <Key className={className} />
-  if (href.includes('/badges')) return <Award className={className} />
-  if (href.includes('/systems')) return <Monitor className={className} />
-  if (href.includes('/games')) return <Gamepad2 className={className} />
-  if (href.includes('/brands')) return <Package className={className} />
-  if (href.includes('/devices')) return <Smartphone className={className} />
-  if (href.includes('/emulators')) return <Play className={className} />
-  if (href.includes('/verified-developers')) return <Shield className={className} />
-  if (href.includes('/performance')) return <Gauge className={className} />
-  if (href.includes('/approvals')) return <CheckSquare className={className} />
-  if (href.includes('/users')) return <Users className={className} />
-  if (href.includes('/custom-field-templates')) return <Layout className={className} />
+  if (href.includes(ADMIN_ROUTES.CPUS)) return <Cpu className={className} />
+  if (href.includes(ADMIN_ROUTES.GPUS)) return <HardDrive className={className} />
+  if (href.includes(ADMIN_ROUTES.SOCS)) return <Microchip className={className} />
+  if (href.includes(ADMIN_ROUTES.TITLE_ID_TOOLS)) return <QrCode className={className} />
+  if (href.includes(ADMIN_ROUTES.API_ACCESS_DEV)) return <TerminalSquare className={className} />
+  if (href.includes(ADMIN_ROUTES.API_ACCESS)) return <ServerCog className={className} />
+  if (href.includes(ADMIN_ROUTES.MANAGE_LISTINGS)) return <List className={className} />
+  if (href.includes(ADMIN_ROUTES.PROCESSED_LISTINGS)) return <FileText className={className} />
+  if (href.includes(ADMIN_ROUTES.REPORTS)) return <AlertCircle className={className} />
+  if (href.includes(ADMIN_ROUTES.USER_BANS)) return <Gavel className={className} />
+  if (href.includes(ADMIN_ROUTES.TRUST_LOGS)) return <TrendingUp className={className} />
+  if (href.includes(ADMIN_ROUTES.MONITORING)) return <Activity className={className} />
+  if (href.includes(ADMIN_ROUTES.PERMISSION_LOGS)) return <FileKey className={className} />
+  if (href.includes(ADMIN_ROUTES.PERMISSIONS)) return <Key className={className} />
+  if (href.includes(ADMIN_ROUTES.BADGES)) return <Award className={className} />
+  if (href.includes(ADMIN_ROUTES.SYSTEMS)) return <Monitor className={className} />
+  if (href.includes(ADMIN_ROUTES.LISTING_APPROVALS)) return <CheckSquare className={className} />
+  if (href.includes(ADMIN_ROUTES.PC_LISTING_APPROVALS)) return <CheckSquare className={className} />
+  if (href.includes(ADMIN_ROUTES.GAME_APPROVALS)) return <CheckSquare className={className} />
+  if (href.includes(ADMIN_ROUTES.GAMES)) return <Gamepad2 className={className} />
+  if (href.includes(ADMIN_ROUTES.BRANDS)) return <Package className={className} />
+  if (href.includes(ADMIN_ROUTES.DEVICES)) return <Smartphone className={className} />
+  if (href.includes(ADMIN_ROUTES.EMULATORS)) return <Play className={className} />
+  if (href.includes(ADMIN_ROUTES.VERIFIED_DEVELOPERS)) return <Shield className={className} />
+  if (href.includes(ADMIN_ROUTES.PERFORMANCE)) return <Gauge className={className} />
+  if (href.includes(ADMIN_ROUTES.USERS)) return <Users className={className} />
+  if (href.includes(ADMIN_ROUTES.FIELD_TEMPLATES)) return <Layout className={className} />
+  if (href.includes(ADMIN_ROUTES.ANDROID_RELEASES)) return <CloudDownload className={className} />
+  if (href.includes(ADMIN_ROUTES.ENTITLEMENTS)) return <BadgeCheck className={className} />
 
   return <Monitor className={className} />
 }

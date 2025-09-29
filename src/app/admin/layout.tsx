@@ -5,6 +5,8 @@ import { ChevronLeft, ChevronRight, Home } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, type PropsWithChildren } from 'react'
+import { isNumber } from 'remeda'
+import { ADMIN_ROUTES } from '@/app/admin/config/routes'
 import { LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -100,9 +102,7 @@ function AdminLayout(props: PropsWithChildren) {
 
     // Check if a user has the right permissions once data is loaded
     // Use permission-based access control
-    if (userQuery.data && !hasAdminPanelAccess) {
-      router.replace('/')
-    }
+    if (userQuery.data && !hasAdminPanelAccess) router.replace('/')
   }, [isLoaded, user, userQuery.data, hasAdminPanelAccess, router, userQuery.isPending])
 
   if (!isLoaded || userQuery.isPending) return <LoadingSpinner size="lg" />
@@ -114,13 +114,13 @@ function AdminLayout(props: PropsWithChildren) {
 
   // Create navigation items with counts
   const adminNavItemsWithCounts = adminNavItems.map((item) => {
-    if (item.href === '/admin/games/approvals' && gameStatsQuery.data) {
+    if (item.href === ADMIN_ROUTES.GAME_APPROVALS && gameStatsQuery.data) {
       return { ...item, count: gameStatsQuery.data.pending }
     }
-    if (item.href === '/admin/approvals' && listingStatsQuery.data) {
+    if (item.href === ADMIN_ROUTES.LISTING_APPROVALS && listingStatsQuery.data) {
       return { ...item, count: listingStatsQuery.data.pending }
     }
-    if (item.href === '/admin/pc-listing-approvals' && pcListingStatsQuery.data) {
+    if (item.href === ADMIN_ROUTES.PC_LISTING_APPROVALS && pcListingStatsQuery.data) {
       return { ...item, count: pcListingStatsQuery.data.pending }
     }
     return item
@@ -128,10 +128,9 @@ function AdminLayout(props: PropsWithChildren) {
 
   // Create super admin navigation items with counts
   const superAdminNavItemsWithCounts = superAdminNavItems.map((item) => {
-    if (item.href === '/admin/reports' && reportsStatsQuery.data) {
-      return { ...item, count: reportsStatsQuery.data.pending }
-    }
-    return item
+    return item.href === ADMIN_ROUTES.REPORTS && reportsStatsQuery.data
+      ? { ...item, count: reportsStatsQuery.data.pending }
+      : item
   })
 
   // Select appropriate nav items based on a user role
@@ -145,13 +144,13 @@ function AdminLayout(props: PropsWithChildren) {
     navItems = adminNavItemsWithCounts
   } else if (isModerator) {
     navItems = moderatorNavItems.map((item) => {
-      if (item.href === '/admin/games/approvals' && gameStatsQuery.data) {
+      if (item.href === ADMIN_ROUTES.GAME_APPROVALS && gameStatsQuery.data) {
         return { ...item, count: gameStatsQuery.data.pending }
       }
-      if (item.href === '/admin/approvals' && listingStatsQuery.data) {
+      if (item.href === ADMIN_ROUTES.LISTING_APPROVALS && listingStatsQuery.data) {
         return { ...item, count: listingStatsQuery.data.pending }
       }
-      if (item.href === '/admin/pc-listing-approvals' && pcListingStatsQuery.data) {
+      if (item.href === ADMIN_ROUTES.PC_LISTING_APPROVALS && pcListingStatsQuery.data) {
         return { ...item, count: pcListingStatsQuery.data.pending }
       }
       return item
@@ -165,10 +164,10 @@ function AdminLayout(props: PropsWithChildren) {
     const pendingPcCount = devPendingPcListingsQuery.data?.pagination.total
 
     navItems = navItems.map((item) => {
-      if (item.href === '/admin/approvals' && typeof pendingHandheldCount === 'number') {
+      if (item.href === ADMIN_ROUTES.LISTING_APPROVALS && isNumber(pendingHandheldCount)) {
         return { ...item, count: pendingHandheldCount }
       }
-      if (item.href === '/admin/pc-listing-approvals' && typeof pendingPcCount === 'number') {
+      if (item.href === ADMIN_ROUTES.PC_LISTING_APPROVALS && isNumber(pendingPcCount)) {
         return { ...item, count: pendingPcCount }
       }
       return item
@@ -231,7 +230,7 @@ function AdminLayout(props: PropsWithChildren) {
 
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col min-w-0">
-            <main className="flex-1 p-1 sm:p-6 md:p-10 overflow-auto">
+            <main className="flex-1 p-2 sm:px-4 md:px-6 overflow-auto">
               <div className="max-w-full">{props.children}</div>
             </main>
           </div>

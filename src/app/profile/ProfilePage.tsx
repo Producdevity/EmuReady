@@ -1,9 +1,9 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { User, Smartphone, Bell, Settings, Computer } from 'lucide-react'
+import { User, Smartphone, Bell, Settings, Computer, Download } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
-import { useState, Suspense, useEffect } from 'react'
+import { useMemo, useState, Suspense, useEffect, lazy } from 'react'
 import { PageSkeletonLoading } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
@@ -19,7 +19,7 @@ import ProfilePageUnauthenticated from './components/ProfilePageUnauthenticated'
 import ProfileTabs from './components/ProfileTabs'
 import SettingsSection from './components/SettingsSection'
 
-const tabs = [
+const baseTabs = [
   {
     id: 'profile',
     label: 'Profile',
@@ -51,6 +51,15 @@ function ProfilePage() {
   const { user, isLoaded } = useUser()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profile')
+  const tabs = useMemo(() => {
+    const enableDownloads = process.env.NEXT_PUBLIC_ENABLE_ANDROID_DOWNLOADS === 'true'
+    if (!enableDownloads) return baseTabs
+    return [
+      baseTabs[0],
+      { id: 'downloads', label: 'Downloads', icon: <Download className="w-4 h-4" /> },
+      ...baseTabs.slice(1),
+    ]
+  }, [])
 
   const userQuery = api.users.getProfile.useQuery(undefined, {
     enabled: !!user,
@@ -134,6 +143,14 @@ function ProfilePage() {
         <div className="mt-8">
           {activeTab === 'profile' && <ProfileInformation userQuery={userQuery} />}
 
+          {activeTab === 'downloads' && (
+            // Lazy-imported component to keep initial bundle lean
+            <Suspense fallback={<PageSkeletonLoading />}>
+              {/* Separate file keeps ProfilePage tidy */}
+              <DownloadsSection />
+            </Suspense>
+          )}
+
           {activeTab === 'devices' && (
             <DeviceAndSocPreferences preferencesQuery={preferencesQuery} />
           )}
@@ -170,3 +187,6 @@ function ProfilePageWithSuspense() {
 }
 
 export default ProfilePageWithSuspense
+
+// Import placed at end to avoid top-level load if tab is disabled
+const DownloadsSection = lazy(() => import('./components/downloads/DownloadsSection'))

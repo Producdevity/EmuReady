@@ -33,13 +33,15 @@ export const ADMIN_ROUTES = {
   // Tools
   TITLE_ID_TOOLS: '/admin/title-id-tools',
   API_ACCESS: '/admin/api-access',
-  API_ACCESS_DEVELOPER: '/admin/api-access/developer',
+  API_ACCESS_DEV: '/admin/api-access/developer',
 
   // Reports & Monitoring
   REPORTS: '/admin/reports',
   TRUST_LOGS: '/admin/trust-logs',
   MONITORING: '/admin/monitoring',
   PERFORMANCE: '/admin/performance',
+  ANDROID_RELEASES: '/admin/releases',
+  ENTITLEMENTS: '/admin/entitlements',
 
   // Listings
   MANAGE_LISTINGS: '/admin/listings',

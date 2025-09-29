@@ -1,7 +1,9 @@
 import { ADMIN_ROUTES } from './config/routes'
 
 export interface AdminNavItem {
-  href: string
+  href:
+    | (typeof ADMIN_ROUTES)[keyof typeof ADMIN_ROUTES]
+    | `${(typeof ADMIN_ROUTES)[keyof typeof ADMIN_ROUTES]}/${string}`
   label: string
   description: string
   exact: boolean
@@ -94,7 +96,7 @@ export const adminNavItems: AdminNavItem[] = [
     description: 'Generate, rotate, and monitor API keys.',
   },
   {
-    href: ADMIN_ROUTES.API_ACCESS_DEVELOPER,
+    href: ADMIN_ROUTES.API_ACCESS_DEV,
     label: 'Developer API Access',
     exact: true,
     description: 'Preview the developer dashboard and quotas.',
@@ -102,6 +104,18 @@ export const adminNavItems: AdminNavItem[] = [
 ]
 
 export const superAdminNavItems: AdminNavItem[] = [
+  {
+    href: ADMIN_ROUTES.ANDROID_RELEASES,
+    label: 'Android Releases',
+    exact: true,
+    description: 'Upload APKs to R2 and publish latest.json.',
+  },
+  {
+    href: ADMIN_ROUTES.ENTITLEMENTS,
+    label: 'Entitlements',
+    exact: true,
+    description: 'Manage download eligibility (Play, Patreon, manual).',
+  },
   {
     href: ADMIN_ROUTES.PERFORMANCE,
     label: 'Performance',
@@ -308,7 +322,7 @@ export function getDeveloperNavItems(emulatorIds: string[]): AdminNavItem[] {
   })
 
   navItems.push({
-    href: ADMIN_ROUTES.API_ACCESS_DEVELOPER,
+    href: ADMIN_ROUTES.API_ACCESS_DEV,
     label: 'API Access',
     exact: true,
     description: 'Generate and monitor your API keys.',
