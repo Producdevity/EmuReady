@@ -6,7 +6,7 @@ export const ClaimPlayOrderSchema = z.object({
     .string()
     .min(10)
     .max(128)
-    .regex(/^GPA\.[A-Z0-9\-\.]+$/i, 'Invalid Google Play order ID (expected GPA.*)')
+    .regex(/^GPA\.[A-Z0-9\-.]+$/i, 'Invalid Google Play order ID (expected GPA.*)')
     .describe('Google Play order id starting with GPA.'),
 })
 

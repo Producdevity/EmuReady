@@ -73,6 +73,5 @@ export async function fetchPlayOrder(packageName: string, orderId: string): Prom
 export function isPaidAppOrder(order: PlayOrder): boolean {
   // Heuristic: either paidAppDetails present or at least one line item
   if (order.paidAppDetails) return true
-  if (order.lineItems && order.lineItems.length > 0) return true
-  return false
+  return !!(order.lineItems && order.lineItems.length > 0)
 }

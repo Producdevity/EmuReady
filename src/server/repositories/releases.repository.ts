@@ -42,11 +42,10 @@ export class ReleasesRepository extends BaseRepository {
   }
 
   async latest(channel: string) {
-    const rel = await this.prisma.release.findFirst({
+    return this.prisma.release.findFirst({
       where: { channel },
       orderBy: [{ versionCode: 'desc' }, { createdAt: 'desc' }],
     })
-    return rel
   }
 
   async list(params?: { channel?: string; limit?: number }) {

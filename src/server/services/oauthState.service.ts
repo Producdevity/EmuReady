@@ -35,7 +35,7 @@ export const oauthState = {
     const [h, p, s] = token.split('.')
     if (!h || !p || !s) throw new Error('Invalid state token')
     const expected = base64url(crypto.createHmac('sha256', secret).update(`${h}.${p}`).digest())
-    if (crypto.timingSafeEqual(Buffer.from(s), Buffer.from(expected)) === false) {
+    if (!crypto.timingSafeEqual(Buffer.from(s), Buffer.from(expected))) {
       throw new Error('Invalid signature')
     }
     const payload = JSON.parse(Buffer.from(p, 'base64').toString('utf8')) as Payload
