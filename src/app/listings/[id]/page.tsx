@@ -16,9 +16,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
   const listing = await getListingForSEO(params.id)
 
-  if (!listing) {
-    return generatePageMetadata('Compatibility Report Not Found')
-  }
+  if (!listing) return generatePageMetadata('Compatibility Report Not Found')
 
   const description = `${listing.game.title} running on ${listing.emulator.name} using ${listing.device.brand.name} ${listing.device.modelName}. Performance: ${listing.performance.label}`
 
@@ -34,9 +32,7 @@ export default async function Page(props: Props) {
   const params = await props.params
   const listing = await getListingForSEO(params.id)
 
-  if (!listing) {
-    notFound()
-  }
+  if (!listing) notFound()
 
   const structuredData = generateStructuredData('Review', {
     gameName: listing.game.title,
