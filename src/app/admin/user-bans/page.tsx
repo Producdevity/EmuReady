@@ -21,6 +21,7 @@ import {
   LocalizedDate,
   Modal,
   Input,
+  Code,
 } from '@/components/ui'
 import { ViewButton, DeleteButton, UndoButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
@@ -316,7 +317,7 @@ function AdminUserBansPage() {
                   >
                     {columnVisibility.isColumnVisible('id') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {ban.id.slice(0, 8)}
+                        <Code label={ban.id} maxLength={8} />
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('user') && (

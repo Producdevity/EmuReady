@@ -10,6 +10,7 @@ import {
   AdminStatsDisplay,
   AdminSearchFilters,
   AdminTableContainer,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   ColumnVisibilityControl,
@@ -19,6 +20,7 @@ import {
   Pagination,
   LocalizedDate,
   Button,
+  Code,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -227,13 +229,10 @@ function AdminPermissionLogsPage() {
 
       <AdminTableContainer>
         {logs.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search || selectedAction || selectedRole || dateFrom || dateTo
-                ? 'No permission logs found matching your criteria.'
-                : 'No permission logs found.'}
-            </p>
-          </div>
+          <AdminTableNoResults
+            hasQuery={Boolean(table.search || selectedAction || selectedRole || dateFrom || dateTo)}
+            icon={FileText}
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -304,7 +303,7 @@ function AdminPermissionLogsPage() {
                   >
                     {columnVisibility.isColumnVisible('id') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {log.id.slice(0, 8)}
+                        <Code label={log.id} maxLength={8} />
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('createdAt') && (

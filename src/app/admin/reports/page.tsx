@@ -21,6 +21,7 @@ import {
   Badge,
   Pagination,
   LocalizedDate,
+  Code,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -345,7 +346,7 @@ function AdminReportsPage() {
                   >
                     {columnVisibility.isColumnVisible('id') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {report.id.slice(0, 8)}
+                        <Code label={report.id} maxLength={8} />
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('listing') && (

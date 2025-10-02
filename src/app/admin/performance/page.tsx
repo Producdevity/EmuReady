@@ -10,6 +10,7 @@ import {
 } from '@/components/admin'
 import {
   Button,
+  Code,
   ColumnVisibilityControl,
   DeleteButton,
   EditButton,
@@ -202,7 +203,7 @@ function AdminPerformancePage() {
                   >
                     {columnVisibility.isColumnVisible('id') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {scale.id}
+                        <Code label={scale.id} maxLength={8} />
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('label') && (
