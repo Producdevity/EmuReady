@@ -212,21 +212,28 @@ export function MarkdownEditor(props: Props) {
       >
         {/* Toolbar */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-          <div className="flex items-center gap-1">
-            <ToolbarButton onClick={handleBold} icon={Bold} title="Bold" />
-            <ToolbarButton onClick={handleItalic} icon={Italic} title="Italic" />
-            <ToolbarButton
-              onClick={handleStrikethrough}
-              icon={Strikethrough}
-              title="Strikethrough"
-            />
-            <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
-            <ToolbarButton onClick={handleLink} icon={Link} title="Link" />
-            <ToolbarButton onClick={handleCode} icon={Code} title="Inline Code" />
-            <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
-            <ToolbarButton onClick={handleBulletList} icon={List} title="Bullet List" />
-            <ToolbarButton onClick={handleNumberedList} icon={ListOrdered} title="Numbered List" />
-            <ToolbarButton onClick={handleQuote} icon={Quote} title="Quote" />
+          {/* Left toolbar group scrolls horizontally on small screens */}
+          <div className="flex-1 min-w-0 overflow-x-auto">
+            <div className="inline-flex items-center gap-1 pr-2">
+              <ToolbarButton onClick={handleBold} icon={Bold} title="Bold" />
+              <ToolbarButton onClick={handleItalic} icon={Italic} title="Italic" />
+              <ToolbarButton
+                onClick={handleStrikethrough}
+                icon={Strikethrough}
+                title="Strikethrough"
+              />
+              <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
+              <ToolbarButton onClick={handleLink} icon={Link} title="Link" />
+              <ToolbarButton onClick={handleCode} icon={Code} title="Inline Code" />
+              <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
+              <ToolbarButton onClick={handleBulletList} icon={List} title="Bullet List" />
+              <ToolbarButton
+                onClick={handleNumberedList}
+                icon={ListOrdered}
+                title="Numbered List"
+              />
+              <ToolbarButton onClick={handleQuote} icon={Quote} title="Quote" />
+            </div>
           </div>
 
           <div className="flex items-center gap-1">
