@@ -78,9 +78,11 @@ export default function EligibilityPanel(_: Props) {
             {!hasPlayEntitlement && (
               <Button onClick={() => setOpenClaim(true)}>Verify Play Purchase</Button>
             )}
-            <Button variant="secondary" onClick={() => setOpenPatreon(true)}>
-              Link Patreon
-            </Button>
+            {!patreon && (
+              <Button variant="secondary" onClick={() => setOpenPatreon(true)}>
+                Link Patreon
+              </Button>
+            )}
           </div>
         </div>
       </div>

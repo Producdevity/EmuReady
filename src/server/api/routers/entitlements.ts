@@ -1,4 +1,5 @@
 import { AppError } from '@/lib/errors'
+import { logger } from '@/lib/logger'
 import {
   ClaimPlayOrderSchema,
   LinkPatreonCallbackSchema,
@@ -11,9 +12,12 @@ import { oauthState } from '@/server/services/oauthState.service'
 import {
   patreonExchangeCode,
   patreonFetchIdentity,
-  hasPaidOnce,
+  hasPaidOnceForCampaign,
+  hasActivePledgeForCampaign,
+  PatreonError,
+  getPatreonCampaignId,
 } from '@/server/services/patreon.service'
-import { EntitlementSource } from '@orm'
+import { EntitlementSource, EntitlementStatus } from '@orm'
 
 export const entitlementsRouter = createTRPCRouter({
   // Returns current entitlements and a simple eligibility flag.
@@ -38,11 +42,17 @@ export const entitlementsRouter = createTRPCRouter({
 
   linkPatreonStart: protectedProcedure.input(LinkPatreonStartSchema).mutation(async ({ ctx }) => {
     const clientId = process.env.PATREON_CLIENT_ID
-    const redirectUri =
-      process.env.PATREON_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL}/auth/patreon/callback`
+    // Choose redirect URI dynamically to avoid invalid_grant due to env mismatch
+    const forwardedProto = ctx.headers?.get('x-forwarded-proto') || 'http'
+    const forwardedHost = ctx.headers?.get('x-forwarded-host') || ctx.headers?.get('host')
+    const inferredBase = forwardedHost
+      ? `${forwardedProto}://${forwardedHost}`
+      : process.env.NEXT_PUBLIC_APP_URL
+    const dynamicRedirect = `${inferredBase}/auth/patreon/callback`
+    const redirectUri = process.env.PATREON_REDIRECT_URI || dynamicRedirect
     if (!clientId) return AppError.internalError('PATREON_CLIENT_ID missing')
     const scope = encodeURIComponent('identity identity[email] identity.memberships')
-    const state = oauthState.sign(ctx.session.user.id)
+    const state = oauthState.sign(ctx.session.user.id, 600, redirectUri)
     const url = `https://www.patreon.com/oauth2/authorize?response_type=code&client_id=${encodeURIComponent(
       clientId,
     )}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${encodeURIComponent(state)}`
@@ -52,19 +62,80 @@ export const entitlementsRouter = createTRPCRouter({
   linkPatreonCallback: protectedProcedure
     .input(LinkPatreonCallbackSchema)
     .mutation(async ({ ctx, input }) => {
-      const redirectUri =
-        process.env.PATREON_REDIRECT_URI ||
-        `${process.env.NEXT_PUBLIC_APP_URL}/auth/patreon/callback`
+      const forwardedProto = ctx.headers?.get('x-forwarded-proto') || 'http'
+      const forwardedHost = ctx.headers?.get('x-forwarded-host') || ctx.headers?.get('host')
+      const inferredBase = forwardedHost
+        ? `${forwardedProto}://${forwardedHost}`
+        : process.env.NEXT_PUBLIC_APP_URL
       const payload = oauthState.verify(input.state)
+      const redirectUri =
+        payload.ru || process.env.PATREON_REDIRECT_URI || `${inferredBase}/auth/patreon/callback`
       if (payload.sub !== ctx.session.user.id) return AppError.forbidden('State subject mismatch')
-      const token = await patreonExchangeCode(input.code, redirectUri)
-      const identity = await patreonFetchIdentity(token.access_token)
-      if (!hasPaidOnce(identity)) {
-        return { ok: false, message: 'No successful paid month found yet' }
+      // Idempotency: if the user already has an active PATREON entitlement, succeed silently
+      const already = await ctx.prisma.entitlement.findFirst({
+        where: {
+          userId: ctx.session.user.id,
+          source: EntitlementSource.PATREON,
+          status: EntitlementStatus.ACTIVE,
+        },
+        select: { id: true },
+      })
+      if (already) return { ok: true }
+
+      let token: { access_token: string }
+      try {
+        token = await patreonExchangeCode(input.code, redirectUri)
+      } catch (e) {
+        logger.error('[entitlements] patreonExchangeCode error', e)
+        if (e instanceof PatreonError) {
+          if (e.status === 429)
+            AppError.tooManyRequests('Patreon is rate limiting. Please try again shortly.')
+          if (e.status === 400 && e.code === 'invalid_grant')
+            AppError.badRequest('Authorization code invalid or already used. Start the link again.')
+          if (e.status === 401 && e.code === 'invalid_grant')
+            AppError.badRequest('Invalid grant: Redirect URI mismatch or code already used.')
+          AppError.custom('INTERNAL_SERVER_ERROR', 'Patreon token exchange failed')
+        }
+        AppError.custom('INTERNAL_SERVER_ERROR', 'Patreon token exchange failed')
+      }
+      let identity: unknown
+      try {
+        identity = await patreonFetchIdentity(token.access_token)
+      } catch (e) {
+        if (e instanceof PatreonError) {
+          logger.error('[entitlements] patreonFetchIdentity error', e)
+          return e.status === 429
+            ? AppError.tooManyRequests('Patreon is rate limiting. Please try again shortly.')
+            : AppError.custom('INTERNAL_SERVER_ERROR', 'Patreon identity fetch failed')
+        }
+        AppError.custom('INTERNAL_SERVER_ERROR', 'Patreon identity fetch failed')
+      }
+      const campaignId = await getPatreonCampaignId()
+      const grantOnActive = process.env.PATREON_GRANT_ON_ACTIVE_PLEDGE === 'true'
+
+      if (!campaignId) {
+        logger.warn(
+          '[entitlements] Campaign id unavailable; refusing grant (check PATREON_CAMPAIGN_ID or PATREON_CREATOR_TOKEN)',
+        )
+        return {
+          ok: false,
+          message: 'Patreon verification is not configured. Please try again later.',
+        }
+      }
+
+      const eligible =
+        hasPaidOnceForCampaign(identity, campaignId) ||
+        (grantOnActive && hasActivePledgeForCampaign(identity, campaignId))
+
+      if (!eligible) {
+        const reason = grantOnActive
+          ? 'No active pledge or paid month found yet'
+          : 'No successful paid month found yet'
+        return { ok: false, message: reason }
       }
       const repo = new EntitlementsRepository(ctx.prisma)
       await repo.grant(ctx.session.user.id, EntitlementSource.PATREON, { referenceId: undefined })
-      // Store external account mapping for future support
+      // Store external account mapping for auditability
       try {
         const idData = identity as unknown as {
           data?: { id?: string; attributes?: { email?: string } }
@@ -88,8 +159,8 @@ export const entitlementsRouter = createTRPCRouter({
             },
           })
         }
-      } catch {
-        // best-effort
+      } catch (err) {
+        logger.warn('[entitlements] externalAccount upsert failed', err)
       }
       // Record event for traceability
       try {
@@ -102,8 +173,8 @@ export const entitlementsRouter = createTRPCRouter({
             status: 'PROCESSED',
           },
         })
-      } catch {
-        // best-effort
+      } catch (err) {
+        logger.warn('[entitlements] webhookEvent create failed', err)
       }
       return { ok: true }
     }),

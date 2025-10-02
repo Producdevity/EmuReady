@@ -1,14 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { Modal, Button, LoadingSpinner } from '@/components/ui'
+import { Modal, Button } from '@/components/ui'
 import { api } from '@/lib/api'
 
 interface Props {
   onClose: () => void
 }
 
-const COMING_SOON = true
+const COMING_SOON = false
 
 export default function LinkPatreonDialog(props: Props) {
   const [loading, setLoading] = useState(false)
@@ -49,8 +49,8 @@ export default function LinkPatreonDialog(props: Props) {
               <Button variant="secondary" onClick={props.onClose} disabled={loading}>
                 Cancel
               </Button>
-              <Button onClick={onLink} disabled={loading}>
-                {loading ? <LoadingSpinner size="sm" /> : 'Open Patreon'}
+              <Button onClick={onLink} disabled={loading} isLoading={loading}>
+                Open Patreon
               </Button>
             </div>
           </>

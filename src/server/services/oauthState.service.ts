@@ -5,6 +5,7 @@ type Payload = {
   iat: number
   exp: number
   n: string // nonce
+  ru?: string // redirectUri used when initiating oauth
 }
 
 function base64url(input: Buffer | string) {
@@ -13,7 +14,7 @@ function base64url(input: Buffer | string) {
 }
 
 export const oauthState = {
-  sign(userId: string, ttlSeconds = 600): string {
+  sign(userId: string, ttlSeconds = 600, redirectUri?: string): string {
     const secret = process.env.INTERNAL_API_KEY
     if (!secret) throw new Error('INTERNAL_API_KEY missing')
     const header = { alg: 'HS256', typ: 'JWT' }
@@ -23,6 +24,7 @@ export const oauthState = {
       iat: now,
       exp: now + ttlSeconds,
       n: crypto.randomUUID(),
+      ru: redirectUri,
     }
     const unsigned = `${base64url(JSON.stringify(header))}.${base64url(JSON.stringify(payload))}`
     const sig = crypto.createHmac('sha256', secret).update(unsigned).digest()
