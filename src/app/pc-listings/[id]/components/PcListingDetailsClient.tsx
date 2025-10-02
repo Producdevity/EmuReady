@@ -122,7 +122,7 @@ function PcListingDetailsClient(props: Props) {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="mx-auto w-full max-w-4xl"
+        className="mx-auto w-full max-w-5xl"
       >
         {/* Back Navigation */}
         <div className="mb-6">
