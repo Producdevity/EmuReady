@@ -72,10 +72,9 @@ const FIELD_MAPPINGS: Record<
     key: 'envVars',
     transform: (value) => {
       // If empty or not provided, use default environment variables
-      if (!value || String(value).trim() === '') {
-        return GameNativeDefaults.getDefaultEnvVars()
-      }
-      return String(value).trim()
+      return !value || String(value).trim() === ''
+        ? GameNativeDefaults.getDefaultEnvVars()
+        : String(value).trim()
     },
   },
 
@@ -161,9 +160,8 @@ const FIELD_MAPPINGS: Record<
   // Box64 preset
   box64_preset: {
     key: 'box64Preset',
-    transform: (value): Box86_64Preset => {
-      return BOX64_PRESET_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultBoxPreset()
-    },
+    transform: (value): Box86_64Preset =>
+      BOX64_PRESET_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultBoxPreset(),
   },
 
   // Box86 preset (not in example but needed)

@@ -20,7 +20,7 @@ import type {
 
 // Default environment variables for GameNative
 export const DEFAULT_ENV_VARS =
-  'ZINK_DESCRIPTORS=lazy ZINK_DEBUG=compact MESA_SHADER_CACHE_DISABLE=false MESA_SHADER_CACHE_MAX_SIZE=512MB mesa_glthread=true WINEESYNC=1 MESA_VK_WSI_PRESENT_MODE=mailbox TU_DEBUG=noconform'
+  'ZINK_DESCRIPTORS=lazy ZINK_DEBUG=compact MESA_SHADER_CACHE_DISABLE=false MESA_SHADER_CACHE_MAX_SIZE=512MB mesa_glthread=true WINEESYNC=1 MESA_VK_WSI_PRESENT_MODE=mailbox TU_DEBUG=noconform DXVK_FRAME_RATE=60'
 
 // Default resolution for GameNative
 export const DEFAULT_SCREEN_SIZE: ScreenSize = '854x480'
@@ -202,7 +202,7 @@ export const DEFAULT_CONFIG: Required<ContainerConfig> = {
   box64Version: '0.3.6',
   box86Preset: 'COMPATIBILITY',
   box64Preset: 'COMPATIBILITY',
-  desktopTheme: 'LIGHT,IMAGE,#0277bd',
+  desktopTheme: 'LIGHT,IMAGE,#0277bd,854x480', // TODO: check if `854x480` is correct and needed
   sdlControllerAPI: true,
   enableXInput: true,
   enableDInput: true,
