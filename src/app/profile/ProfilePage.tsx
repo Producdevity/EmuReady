@@ -2,7 +2,7 @@
 
 import { useUser } from '@clerk/nextjs'
 import { User, Smartphone, Bell, Settings, Computer, Download } from 'lucide-react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useMemo, useState, Suspense, useEffect, lazy } from 'react'
 import { PageSkeletonLoading } from '@/components/ui'
 import analytics from '@/lib/analytics'
@@ -50,6 +50,7 @@ const baseTabs = [
 function ProfilePage() {
   const { user, isLoaded } = useUser()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profile')
   const tabs = useMemo(() => {
     const enableDownloads = process.env.NEXT_PUBLIC_ENABLE_ANDROID_DOWNLOADS === 'true'
@@ -112,13 +113,22 @@ function ProfilePage() {
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId)
 
-    // Track tab navigation
+    const params = new URLSearchParams(Array.from(searchParams.entries()))
+    params.set('tab', tabId)
+    router.replace(`/profile?${params.toString()}`)
+
     analytics.navigation.menuItemClicked({
       menuItem: `profile_tab_${tabId}`,
       section: 'profile',
       page: 'profile',
     })
   }
+
+  // Keep state in sync with URL (back/forward or external links)
+  useEffect(() => {
+    const tab = searchParams.get('tab') || 'profile'
+    setActiveTab(tab)
+  }, [searchParams])
 
   if (!isLoaded) return <PageSkeletonLoading />
 
