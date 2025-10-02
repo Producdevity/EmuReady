@@ -1,12 +1,13 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useAdminTable } from '@/app/admin/hooks/useAdminTable'
 import {
   AdminPageLayout,
   AdminSearchFilters,
   AdminStatsDisplay,
   AdminTableContainer,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   Badge,
@@ -17,18 +18,22 @@ import {
   Pagination,
   SortableHeader,
   useConfirmDialog,
+  ViewButton,
+  DeleteButton,
+  UndoButton,
 } from '@/components/ui'
-import { ViewButton, DeleteButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility } from '@/hooks/useColumnVisibility'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
-import { EntitlementSource } from '@orm'
+import { exportCsv } from '@/utils/export-csv'
+import { EntitlementSource, EntitlementStatus } from '@orm'
 import EntitlementDetailsModal from './components/EntitlementDetailsModal'
 import GrantEntitlementModal from './components/GrantEntitlementModal'
 
 type SortField = 'grantedAt' | 'revokedAt' | 'source' | 'status' | 'userEmail' | 'userName'
+type Entitlement = RouterOutput['adminEntitlements']['list']['items'][number]
 
 interface ColumnDef {
   key: string
@@ -59,17 +64,29 @@ export default function AdminEntitlementsPage() {
   })
 
   // Filters
-  const source = table.additionalParams['source'] || ''
-  const status = table.additionalParams['status'] || ''
+  const source = table.additionalParams?.source || ''
+  const status = table.additionalParams?.status || ''
+
+  const isEntitlementSource = (v: string): v is EntitlementSource =>
+    v === EntitlementSource.PLAY ||
+    v === EntitlementSource.PATREON ||
+    v === EntitlementSource.MANUAL
+  const isEntitlementStatus = (v: string): v is EntitlementStatus =>
+    v === EntitlementStatus.ACTIVE || v === EntitlementStatus.REVOKED
+
+  const parseSource = (s: string): EntitlementSource | undefined =>
+    isEntitlementSource(s) ? s : undefined
+  const parseStatus = (s: string): EntitlementStatus | undefined =>
+    isEntitlementStatus(s) ? s : undefined
 
   const listQuery = api.adminEntitlements.list.useQuery({
     search: table.debouncedSearch || undefined,
-    source: (source || undefined) as EntitlementSource | undefined,
-    status: (status || undefined) as 'ACTIVE' | 'REVOKED' | undefined,
+    source: parseSource(source),
+    status: parseStatus(status),
     page: table.page,
     limit: table.limit,
-    sortField: ((table.sortField as SortField) || 'grantedAt') as SortField,
-    sortDirection: ((table.sortDirection as 'asc' | 'desc') || 'desc') as 'asc' | 'desc',
+    sortField: table.sortField ?? undefined,
+    sortDirection: table.sortDirection ?? undefined,
   })
   const statsQuery = api.adminEntitlements.stats.useQuery({})
 
@@ -80,11 +97,10 @@ export default function AdminEntitlementsPage() {
     onSuccess: () => listQuery.refetch().catch(console.error),
   })
   const utils = api.useUtils()
-  const [selected, setSelected] = useState<Row | null>(null)
+  const [selected, setSelected] = useState<Entitlement | null>(null)
   const [showGrant, setShowGrant] = useState(false)
 
-  type Row = RouterOutput['adminEntitlements']['list']['items'][number]
-  const items = (listQuery.data?.items ?? []) as Row[]
+  const items = (listQuery.data?.items ?? []) as Entitlement[]
   const pagination = listQuery.data?.pagination
 
   const stats = useMemo(() => {
@@ -99,70 +115,100 @@ export default function AdminEntitlementsPage() {
     ]
   }, [statsQuery.data])
 
+  const handleRevoke = useCallback(
+    async (entitlement: Entitlement) => {
+      const ok = await confirm({
+        title: 'Revoke entitlement',
+        description: 'This will immediately remove access for the user.',
+        confirmText: 'Revoke',
+      })
+      if (!ok) return
+      await revokeMutation.mutateAsync({ entitlementId: entitlement.id })
+    },
+    [confirm, revokeMutation],
+  )
+
+  const handleRestore = useCallback(
+    async (entitlement: Entitlement) => {
+      const ok = await confirm({
+        title: 'Restore entitlement',
+        description: 'This will mark the entitlement as ACTIVE again. Proceed?',
+        confirmText: 'Restore',
+      })
+      if (!ok) return
+      await restoreMutation.mutateAsync({ entitlementId: entitlement.id })
+    },
+    [confirm, restoreMutation],
+  )
+
+  const handleView = useCallback((row: Entitlement) => {
+    setSelected(row)
+  }, [])
+
+  const onModalRevoke = useCallback(
+    async (id: string) => {
+      await revokeMutation.mutateAsync({ entitlementId: id })
+    },
+    [revokeMutation],
+  )
+
+  const onModalRestore = useCallback(
+    async (id: string) => {
+      await restoreMutation.mutateAsync({ entitlementId: id })
+    },
+    [restoreMutation],
+  )
+
+  const handleExportCsv = async () => {
+    try {
+      const all = await utils.adminEntitlements.list.fetch({
+        search: table.debouncedSearch || undefined,
+        source: parseSource(source),
+        status: parseStatus(status),
+        page: 1,
+        limit: 5000,
+        sortField: table.sortField ?? undefined,
+        sortDirection: table.sortDirection ?? undefined,
+      })
+      const rows: Entitlement[] = all.items as Entitlement[]
+      exportCsv({
+        filename: 'entitlements.csv',
+        header: [
+          'userId',
+          'userEmail',
+          'source',
+          'status',
+          'referenceId',
+          'grantedAt',
+          'revokedAt',
+        ],
+        rows: rows.map((r) => [
+          r.user.id,
+          r.user.email ?? '',
+          r.source,
+          r.status,
+          r.referenceId ?? '',
+          new Date(r.grantedAt).toISOString(),
+          r.revokedAt ? new Date(r.revokedAt).toISOString() : '',
+        ]),
+      })
+    } catch {
+      toast.error('Failed to export CSV')
+    }
+  }
+
   return (
     <AdminPageLayout
       title="Android Entitlements"
       description="Manage eligibility for Android app downloads."
       headerActions={
-        <div className="flex items-center gap-2">
+        <>
           <ColumnVisibilityControl columns={COLUMNS} columnVisibility={columnVisibility} />
           <Button onClick={() => setShowGrant(true)}>Grant entitlement</Button>
-          <Button
-            variant="outline"
-            onClick={async () => {
-              try {
-                const all = await utils.adminEntitlements.list.fetch({
-                  search: table.debouncedSearch || undefined,
-                  source: (source || undefined) as EntitlementSource | undefined,
-                  status: (status || undefined) as 'ACTIVE' | 'REVOKED' | undefined,
-                  page: 1,
-                  limit: 5000,
-                  sortField: ((table.sortField as SortField) || 'grantedAt') as SortField,
-                  sortDirection: ((table.sortDirection as 'asc' | 'desc') || 'desc') as
-                    | 'asc'
-                    | 'desc',
-                })
-                const rows: Row[] = all.items as Row[]
-                const header = [
-                  'userId',
-                  'userEmail',
-                  'source',
-                  'status',
-                  'referenceId',
-                  'grantedAt',
-                  'revokedAt',
-                ]
-                const csv = [
-                  header.join(','),
-                  ...rows.map((r: Row) =>
-                    [
-                      r.user.id,
-                      r.user.email ?? '',
-                      r.source,
-                      r.status,
-                      r.referenceId ?? '',
-                      new Date(r.grantedAt).toISOString(),
-                      r.revokedAt ? new Date(r.revokedAt).toISOString() : '',
-                    ]
-                      .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-                      .join(','),
-                  ),
-                ].join('\n')
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-                const url = URL.createObjectURL(blob)
-                const a = document.createElement('a')
-                a.href = url
-                a.download = 'entitlements.csv'
-                a.click()
-                URL.revokeObjectURL(url)
-              } catch {
-                toast.error('Failed to export CSV')
-              }
-            }}
-          >
+          <Button variant="ghost" onClick={handleExportCsv}>
             Export CSV
           </Button>
-        </div>
+        </>
       }
     >
       <AdminStatsDisplay stats={stats} isLoading={statsQuery.isPending} />
@@ -171,21 +217,21 @@ export default function AdminEntitlementsPage() {
         <Dropdown
           options={[
             { value: '', label: 'All sources' },
-            { value: EntitlementSource.PLAY, label: 'PLAY' },
-            { value: EntitlementSource.PATREON, label: 'PATREON' },
-            { value: EntitlementSource.MANUAL, label: 'MANUAL' },
+            { value: EntitlementSource.PLAY, label: EntitlementSource.PLAY },
+            { value: EntitlementSource.PATREON, label: EntitlementSource.PATREON },
+            { value: EntitlementSource.MANUAL, label: EntitlementSource.MANUAL },
           ]}
           value={source}
-          onChange={(v) => table.setAdditionalParam('source', v)}
+          onChange={(value) => table.setAdditionalParam('source', value)}
         />
         <Dropdown
           options={[
             { value: '', label: 'All statuses' },
-            { value: 'ACTIVE', label: 'ACTIVE' },
-            { value: 'REVOKED', label: 'REVOKED' },
+            { value: EntitlementStatus.ACTIVE, label: EntitlementStatus.ACTIVE },
+            { value: EntitlementStatus.REVOKED, label: EntitlementStatus.REVOKED },
           ]}
           value={status}
-          onChange={(v) => table.setAdditionalParam('status', v)}
+          onChange={(value) => table.setAdditionalParam('status', value)}
         />
       </AdminSearchFilters>
 
@@ -196,75 +242,71 @@ export default function AdminEntitlementsPage() {
             {listQuery.isPending && <LoadingSpinner size="sm" />}
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-left">
-                  {columnVisibility.isColumnVisible('userName') && (
+          {items.length === 0 ? (
+            <AdminTableNoResults hasQuery={Boolean(table.search || source || status)} />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="text-left">
+                    {columnVisibility.isColumnVisible('userName') && (
+                      <SortableHeader
+                        field="userName"
+                        label="Username"
+                        currentSortField={table.sortField}
+                        currentSortDirection={table.sortDirection}
+                        onSort={(f) => table.handleSort(f)}
+                      />
+                    )}
+                    {columnVisibility.isColumnVisible('userEmail') && (
+                      <SortableHeader
+                        field="userEmail"
+                        label="Email"
+                        currentSortField={table.sortField}
+                        currentSortDirection={table.sortDirection}
+                        onSort={(f) => table.handleSort(f)}
+                      />
+                    )}
                     <SortableHeader
-                      field="userName"
-                      label="Username"
+                      field="source"
+                      label="Source"
                       currentSortField={table.sortField}
                       currentSortDirection={table.sortDirection}
                       onSort={(f) => table.handleSort(f)}
                     />
-                  )}
-                  {columnVisibility.isColumnVisible('userEmail') && (
                     <SortableHeader
-                      field="userEmail"
-                      label="Email"
+                      field="status"
+                      label="Status"
                       currentSortField={table.sortField}
                       currentSortDirection={table.sortDirection}
                       onSort={(f) => table.handleSort(f)}
                     />
-                  )}
-                  <SortableHeader
-                    field="source"
-                    label="Source"
-                    currentSortField={table.sortField}
-                    currentSortDirection={table.sortDirection}
-                    onSort={(f) => table.handleSort(f)}
-                  />
-                  <SortableHeader
-                    field="status"
-                    label="Status"
-                    currentSortField={table.sortField}
-                    currentSortDirection={table.sortDirection}
-                    onSort={(f) => table.handleSort(f)}
-                  />
-                  {columnVisibility.isColumnVisible('referenceId') && (
-                    <th className="py-2 px-3">Reference</th>
-                  )}
-                  {columnVisibility.isColumnVisible('grantedAt') && (
-                    <SortableHeader
-                      field="grantedAt"
-                      label="Granted"
-                      currentSortField={table.sortField}
-                      currentSortDirection={table.sortDirection}
-                      onSort={(f) => table.handleSort(f)}
-                    />
-                  )}
-                  {columnVisibility.isColumnVisible('revokedAt') && (
-                    <SortableHeader
-                      field="revokedAt"
-                      label="Revoked"
-                      currentSortField={table.sortField}
-                      currentSortDirection={table.sortDirection}
-                      onSort={(f) => table.handleSort(f)}
-                    />
-                  )}
-                  <th className="py-2 px-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-gray-500">
-                      No entitlements found
-                    </td>
+                    {columnVisibility.isColumnVisible('referenceId') && (
+                      <th className="py-2 px-3">Reference</th>
+                    )}
+                    {columnVisibility.isColumnVisible('grantedAt') && (
+                      <SortableHeader
+                        field="grantedAt"
+                        label="Granted"
+                        currentSortField={table.sortField}
+                        currentSortDirection={table.sortDirection}
+                        onSort={(f) => table.handleSort(f)}
+                      />
+                    )}
+                    {columnVisibility.isColumnVisible('revokedAt') && (
+                      <SortableHeader
+                        field="revokedAt"
+                        label="Revoked"
+                        currentSortField={table.sortField}
+                        currentSortDirection={table.sortDirection}
+                        onSort={(f) => table.handleSort(f)}
+                      />
+                    )}
+                    <th className="py-2 px-3 text-right">Actions</th>
                   </tr>
-                ) : (
-                  items.map((e) => (
+                </thead>
+                <tbody>
+                  {items.map((e) => (
                     <tr key={e.id} className="border-t border-gray-200 dark:border-gray-700">
                       {columnVisibility.isColumnVisible('userName') && (
                         <td className="py-2 px-3">
@@ -281,7 +323,9 @@ export default function AdminEntitlementsPage() {
                       )}
                       <td className="py-2 px-3">{e.source}</td>
                       <td className="py-2 px-3">
-                        <Badge variant={e.status === 'ACTIVE' ? 'primary' : 'default'}>
+                        <Badge
+                          variant={e.status === EntitlementStatus.ACTIVE ? 'primary' : 'default'}
+                        >
                           {e.status}
                         </Badge>
                       </td>
@@ -300,47 +344,28 @@ export default function AdminEntitlementsPage() {
                       )}
                       <td className="py-2 px-3 text-right">
                         <div className="inline-flex items-center gap-2">
-                          <ViewButton title="View" onClick={() => setSelected(e)} />
-                          {e.status === 'ACTIVE' ? (
+                          <ViewButton title="View" onClick={() => handleView(e)} />
+                          {e.status === EntitlementStatus.ACTIVE ? (
                             <DeleteButton
                               title="Revoke"
-                              onClick={async () => {
-                                const ok = await confirm({
-                                  title: 'Revoke entitlement',
-                                  description: 'This will immediately remove access for the user.',
-                                  confirmText: 'Revoke',
-                                })
-                                if (!ok) return
-                                await revokeMutation.mutateAsync({ entitlementId: e.id })
-                              }}
+                              onClick={() => void handleRevoke(e)}
                               disabled={revokeMutation.isPending}
                             />
                           ) : (
-                            <Button
-                              variant="primary"
-                              onClick={async () => {
-                                const ok = await confirm({
-                                  title: 'Restore entitlement',
-                                  description:
-                                    'This will mark the entitlement as ACTIVE again. Proceed?',
-                                  confirmText: 'Restore',
-                                })
-                                if (!ok) return
-                                await restoreMutation.mutateAsync({ entitlementId: e.id })
-                              }}
+                            <UndoButton
+                              title="Restore entitlement"
+                              onClick={() => void handleRestore(e)}
                               disabled={restoreMutation.isPending}
-                            >
-                              Restore
-                            </Button>
+                            />
                           )}
                         </div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {pagination && (
             <div className="mt-4">
@@ -365,12 +390,8 @@ export default function AdminEntitlementsPage() {
           isOpen
           onClose={() => setSelected(null)}
           row={selected}
-          onRevoke={async (id) => {
-            await revokeMutation.mutateAsync({ entitlementId: id })
-          }}
-          onRestore={async (id) => {
-            await restoreMutation.mutateAsync({ entitlementId: id })
-          }}
+          onRevoke={onModalRevoke}
+          onRestore={onModalRestore}
           isMutating={revokeMutation.isPending || restoreMutation.isPending}
         />
       )}
