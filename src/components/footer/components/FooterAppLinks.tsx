@@ -58,28 +58,21 @@ function LiteAppButton(props: ButtonState) {
 }
 
 function BetaAppButton(props: ButtonState) {
-  const downloadsEnabled = process.env.NEXT_PUBLIC_ENABLE_ANDROID_DOWNLOADS === 'true'
-  const href = downloadsEnabled ? '/profile?tab=downloads' : env.EMUREADY_BETA_URL
-  const ariaLabel = downloadsEnabled
-    ? 'Open EmuReady profile downloads tab'
-    : 'Open the EmuReady Beta app on Google Play'
-  const subtitle = downloadsEnabled ? 'Profile → Downloads' : 'Google Play'
-
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <a
-          href={href}
+          href={env.EMUREADY_BETA_URL}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label={ariaLabel}
+          aria-label="Open the EmuReady Beta app on Google Play"
           className="group relative inline-flex items-center justify-center gap-2 rounded-lg border border-blue-500/25 bg-gradient-to-br from-blue-500/15 via-indigo-500/10 to-purple-500/15 px-4 py-2 text-left transition-all duration-200 hover:border-blue-500/45 hover:shadow-lg hover:shadow-blue-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:border-blue-400/25 dark:from-blue-400/15 dark:via-indigo-400/10 dark:to-purple-400/15 dark:hover:border-blue-400/45 dark:hover:shadow-blue-400/15"
           onClick={() => {
             analytics.conversion.appDownloadClicked({
               appName: 'EmuReady Beta',
               platform: 'android',
               location: 'footer_beta_cta',
-              url: href,
+              url: env.EMUREADY_BETA_URL,
             })
           }}
         >
@@ -96,22 +89,16 @@ function BetaAppButton(props: ButtonState) {
           </div>
           <div className="relative text-left">
             <p className="text-sm font-semibold text-gray-900 dark:text-white">EmuReady Beta App</p>
-            <p className="text-xs text-gray-600 dark:text-gray-300">{subtitle}</p>
+            <p className="text-xs text-gray-600 dark:text-gray-300">Google Play</p>
           </div>
         </a>
       </TooltipTrigger>
       <TooltipContent side="top" className="max-w-xs">
         <div className="text-center">
           <p className="font-medium mb-1">EmuReady Beta</p>
-          {downloadsEnabled ? (
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              Open your profile’s Downloads tab to get the latest APK and release notes.
-            </p>
-          ) : (
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              Head to the Google Play Store to get the EmuReady Beta app with all the features
-            </p>
-          )}
+          <p className="text-xs text-gray-600 dark:text-gray-400">
+            Head to the Google Play Store to get the EmuReady Beta app with all the features
+          </p>
         </div>
       </TooltipContent>
     </Tooltip>
