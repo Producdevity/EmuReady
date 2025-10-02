@@ -83,7 +83,7 @@ function ViewConfigButton(props: Props) {
       >
         <Settings className="w-4 h-4" />
         <span className="ml-1 hidden sm:inline">
-          {fetchConfigQuery.isFetching ? 'Loading...' : 'Config'}
+          {fetchConfigQuery.isFetching ? 'Loading...' : 'Emulator Config'}
         </span>
       </Button>
 
