@@ -8,7 +8,7 @@ interface Props {
   onClose: () => void
 }
 
-const COMING_SOON = false
+const COMING_SOON = true
 
 export default function LinkPatreonDialog(props: Props) {
   const [loading, setLoading] = useState(false)
