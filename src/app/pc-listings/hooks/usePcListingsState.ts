@@ -1,5 +1,5 @@
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import analytics from '@/lib/analytics'
 import { type SortDirection } from '@/types/api'
 import { type RouterInput } from '@/types/trpc'
@@ -7,13 +7,16 @@ import { parseArrayParam, parseNumberArrayParam } from '@/utils/parse-params'
 
 type SortField = NonNullable<RouterInput['pcListings']['get']['sortField']>
 
+const SEARCH_DEBOUNCE_MS = 300
+
 export default function usePcListingsState() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
   // Parse initial state from URL
   const [page, setPage] = useState(Number(searchParams.get('page')) || 1)
-  const [search, setSearch] = useState(searchParams.get('search') || '')
+  const [searchInput, setSearchInput] = useState(searchParams.get('search') || '')
+  const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get('search') || '')
   const [cpuIds, setCpuIds] = useState<string[]>(parseArrayParam(searchParams.get('cpuIds')))
   const [gpuIds, setGpuIds] = useState<string[]>(parseArrayParam(searchParams.get('gpuIds')))
   const [systemIds, setSystemIds] = useState<string[]>(
@@ -39,12 +42,31 @@ export default function usePcListingsState() {
   )
   const [myListings, setMyListings] = useState(searchParams.get('myListings') === 'true')
 
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  // Debounce search input
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(searchInput)
+    }, SEARCH_DEBOUNCE_MS)
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [searchInput])
+
   // Update URL when state changes
   useEffect(() => {
     const params = new URLSearchParams()
 
     if (page > 1) params.set('page', page.toString())
-    if (search) params.set('search', search)
+    if (debouncedSearch) params.set('search', debouncedSearch)
     if (cpuIds.length) params.set('cpuIds', JSON.stringify(cpuIds))
     if (gpuIds.length) params.set('gpuIds', JSON.stringify(gpuIds))
     if (systemIds.length) params.set('systemIds', JSON.stringify(systemIds))
@@ -58,7 +80,7 @@ export default function usePcListingsState() {
 
     analytics.filter.pcListingsCombined({
       page,
-      search,
+      search: debouncedSearch,
       cpuIds,
       gpuIds,
       systemIds,
@@ -75,7 +97,7 @@ export default function usePcListingsState() {
     router.replace(url, { scroll: false })
   }, [
     page,
-    search,
+    debouncedSearch,
     cpuIds,
     gpuIds,
     systemIds,
@@ -93,7 +115,7 @@ export default function usePcListingsState() {
   useEffect(() => {
     setPage(1)
   }, [
-    search,
+    debouncedSearch,
     cpuIds,
     gpuIds,
     systemIds,
@@ -125,8 +147,9 @@ export default function usePcListingsState() {
   return {
     page,
     setPage,
-    search,
-    setSearch,
+    search: debouncedSearch,
+    searchInput,
+    setSearch: setSearchInput,
     cpuIds,
     setCpuIds,
     gpuIds,

@@ -3,7 +3,7 @@
 import { Clock, GamepadIcon, CpuIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useCallback } from 'react'
 import NoListingsFound from '@/app/listings/components/NoListingsFound'
 import { MobileFilterSheet, MobileFiltersFab } from '@/app/listings/shared/components'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
@@ -119,63 +119,81 @@ function ListingsPage() {
 
   const listingsQuery = api.listings.get.useQuery(filterParams)
 
-  const handleSystemChange = (values: string[]) => {
-    listingsState.setSystemIds(values)
-  }
+  const handleSystemChange = useCallback(
+    (values: string[]) => {
+      listingsState.setSystemIds(values)
+    },
+    [listingsState],
+  )
 
-  const handleDeviceChange = (values: string[]) => {
-    listingsState.setDeviceIds(values)
-    // When user manually selects devices, disable user preference filtering
-    if (values.length > 0) {
-      preferred.setUserDeviceFilterDisabled(true)
-      // Also disable SoC preferences when manually selecting devices
-      preferred.setUserSocFilterDisabled(true)
-    }
-    // When clearing device selections (Show all devices), ensure user preferences are disabled
-    // so we show ALL devices, not filtered by user preferences
-    if (values.length === 0) {
-      preferred.setUserDeviceFilterDisabled(true)
-    }
-  }
+  const handleDeviceChange = useCallback(
+    (values: string[]) => {
+      listingsState.setDeviceIds(values)
+      // When user manually selects devices, disable user preference filtering
+      if (values.length > 0) {
+        preferred.setUserDeviceFilterDisabled(true)
+        // Also disable SoC preferences when manually selecting devices
+        preferred.setUserSocFilterDisabled(true)
+      }
+      // When clearing device selections (Show all devices), ensure user preferences are disabled
+      // so we show ALL devices, not filtered by user preferences
+      if (values.length === 0) {
+        preferred.setUserDeviceFilterDisabled(true)
+      }
+    },
+    [listingsState, preferred],
+  )
 
-  const handleSocChange = (values: string[]) => {
-    listingsState.setSocIds(values)
-    // When user manually selects SoCs, disable user preference filtering
-    if (values.length > 0) {
-      preferred.setUserSocFilterDisabled(true)
-      // Also disable device preferences when manually selecting SoCs
-      preferred.setUserDeviceFilterDisabled(true)
-    }
-    // When clearing SOC selections (Show all SOCs), ensure user preferences are disabled
-    // so we show ALL listings, not filtered by user preferences
-    if (values.length === 0) {
-      preferred.setUserSocFilterDisabled(true)
-    }
-  }
+  const handleSocChange = useCallback(
+    (values: string[]) => {
+      listingsState.setSocIds(values)
+      // When user manually selects SoCs, disable user preference filtering
+      if (values.length > 0) {
+        preferred.setUserSocFilterDisabled(true)
+        // Also disable device preferences when manually selecting SoCs
+        preferred.setUserDeviceFilterDisabled(true)
+      }
+      // When clearing SOC selections (Show all SOCs), ensure user preferences are disabled
+      // so we show ALL listings, not filtered by user preferences
+      if (values.length === 0) {
+        preferred.setUserSocFilterDisabled(true)
+      }
+    },
+    [listingsState, preferred],
+  )
 
-  const handleEmulatorChange = (values: string[]) => {
-    listingsState.setEmulatorIds(values)
-  }
+  const handleEmulatorChange = useCallback(
+    (values: string[]) => {
+      listingsState.setEmulatorIds(values)
+    },
+    [listingsState],
+  )
 
-  const handlePerformanceChange = (values: number[]) => {
-    listingsState.setPerformanceIds(values)
-  }
+  const handlePerformanceChange = useCallback(
+    (values: number[]) => {
+      listingsState.setPerformanceIds(values)
+    },
+    [listingsState],
+  )
 
-  const handleSearchChange = (value: string) => {
-    listingsState.setSearch(value)
-  }
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      listingsState.setSearch(value)
+    },
+    [listingsState],
+  )
 
-  const handleEnableUserDeviceFilter = () => {
+  const handleEnableUserDeviceFilter = useCallback(() => {
     preferred.enableUserDeviceFilter()
     // Clear any manual device selections to allow user preferences to take effect
     listingsState.setDeviceIds([])
-  }
+  }, [preferred, listingsState])
 
-  const handleEnableUserSocFilter = () => {
+  const handleEnableUserSocFilter = useCallback(() => {
     preferred.enableUserSocFilter()
     // Clear any manual SoC selections to allow user preferences to take effect
     listingsState.setSocIds([])
-  }
+  }, [preferred, listingsState])
 
   if (listingsQuery?.error) {
     return <div className="p-8 text-center text-red-500">Failed to load listings.</div>

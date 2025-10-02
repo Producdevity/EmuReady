@@ -6,9 +6,11 @@ import {
   useState,
   useEffect,
   useMemo,
+  useRef,
   type ComponentType,
   type FormEvent,
   type KeyboardEvent,
+  type ChangeEvent,
 } from 'react'
 import { Button, Input, Autocomplete, Badge } from '@/components/ui'
 import { PLATFORM_MAPPINGS, type PlatformKey } from '@/data/constants'
@@ -56,18 +58,33 @@ const providerConfig: Record<
 export function GameSearchForm(props: GameSearchFormProps) {
   const [selectedSystemId, setSelectedSystemId] = useState(props.initialSystemId ?? '')
   const [searchQuery, setSearchQuery] = useState(props.initialQuery ?? '')
+  const [isUserTyping, setIsUserTyping] = useState(false)
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const config = providerConfig[props.provider]
   const Icon = config.icon
 
-  // Sync local state with prop changes
+  // Sync local state with prop changes (but not while user is typing)
   useEffect(() => {
-    setSelectedSystemId(props.initialSystemId ?? '')
-  }, [props.initialSystemId])
+    if (!isUserTyping) {
+      setSelectedSystemId(props.initialSystemId ?? '')
+    }
+  }, [props.initialSystemId, isUserTyping])
 
   useEffect(() => {
-    setSearchQuery(props.initialQuery ?? '')
-  }, [props.initialQuery])
+    if (!isUserTyping) {
+      setSearchQuery(props.initialQuery ?? '')
+    }
+  }, [props.initialQuery, isUserTyping])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const selectedSystem = useMemo(
     () =>
@@ -82,8 +99,24 @@ export function GameSearchForm(props: GameSearchFormProps) {
     ? (PLATFORM_MAPPINGS[config.platformKey][selectedSystemKey] ?? null)
     : null
 
+  const handleSearchQueryChange = (ev: ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(ev.target.value)
+    setIsUserTyping(true)
+
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+
+    // Set new timeout to mark user as done typing
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsUserTyping(false)
+    }, 1000)
+  }
+
   const handleSubmit = (ev: FormEvent) => {
     ev.preventDefault()
+    setIsUserTyping(false)
     const query = searchQuery.trim()
     if (!query || query.length < 2) return
     props.onSearch(query, platformId ?? null, selectedSystemId || null)
@@ -92,6 +125,7 @@ export function GameSearchForm(props: GameSearchFormProps) {
   const handleKeyPress = (ev: KeyboardEvent) => {
     if (ev.key !== 'Enter') return
     ev.preventDefault()
+    setIsUserTyping(false)
     const query = searchQuery.trim()
     if (!query || query.length < 2) return
     props.onSearch(query, platformId ?? null, selectedSystemId || null)
@@ -102,21 +136,23 @@ export function GameSearchForm(props: GameSearchFormProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
-      className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-8"
+      className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-8 w-full overflow-hidden"
     >
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <Icon className="h-5 w-5 text-slate-500 dark:text-slate-400" />
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+      <div className="mb-6 w-full">
+        <div className="flex items-center justify-between gap-2 mb-3 w-full">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Icon className="h-5 w-5 text-slate-500 dark:text-slate-400 shrink-0" />
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white truncate">
               Search Settings
             </h2>
           </div>
-          <Badge variant={config.badgeVariant} size="sm">
+          <Badge variant={config.badgeVariant} size="sm" className="shrink-0">
             {config.badge}
           </Badge>
         </div>
-        <p className="text-sm text-slate-600 dark:text-slate-400">{config.description}</p>
+        <p className="text-sm text-slate-600 dark:text-slate-400 break-words">
+          {config.description}
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -131,7 +167,7 @@ export function GameSearchForm(props: GameSearchFormProps) {
             </label>
             <Autocomplete<SystemOption>
               name="system"
-              placeholder="Choose a system to filter results..."
+              placeholder="Choose a system..."
               value={selectedSystemId}
               onChange={(value) => setSelectedSystemId(value ?? '')}
               items={props.systems}
@@ -140,7 +176,7 @@ export function GameSearchForm(props: GameSearchFormProps) {
               filterKeys={['name']}
               minCharsToTrigger={0}
               disabled={false}
-              className="w-full"
+              className="w-full min-w-0"
             />
             {selectedSystem && platformId && (
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
@@ -173,10 +209,10 @@ export function GameSearchForm(props: GameSearchFormProps) {
               <Input
                 name="searchQuery"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchQueryChange}
                 onKeyDown={handleKeyPress}
-                placeholder="Enter game title (e.g., Mario, Zelda, Pokemon)"
-                containerClassName="flex-1 w-full"
+                placeholder="Enter game title (e.g., Mario)"
+                containerClassName="flex-1 w-full min-w-0"
                 disabled={props.isSearching}
                 minLength={2}
                 required
@@ -197,10 +233,12 @@ export function GameSearchForm(props: GameSearchFormProps) {
         </div>
 
         {props.showModeratorFeatures && (
-          <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-              <Info className="h-4 w-4" />
-              <span>As a moderator, you can access additional features when selecting games.</span>
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-700 w-full">
+            <div className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400 w-full">
+              <Info className="h-4 w-4 shrink-0 mt-0.5" />
+              <span className="break-words">
+                As a moderator, you can access additional features when selecting games.
+              </span>
             </div>
           </div>
         )}

@@ -177,7 +177,7 @@ function PcListingsPage() {
             performanceIds={listingsState.performanceIds}
             minMemory={listingsState.minMemory}
             maxMemory={listingsState.maxMemory}
-            searchTerm={listingsState.search}
+            searchTerm={listingsState.searchInput}
             cpus={cpusQuery.data?.cpus ?? []}
             gpus={gpusQuery.data?.gpus ?? []}
             systems={systemsQuery.data ?? []}
@@ -205,7 +205,7 @@ function PcListingsPage() {
               performanceIds={listingsState.performanceIds}
               minMemory={listingsState.minMemory}
               maxMemory={listingsState.maxMemory}
-              searchTerm={listingsState.search}
+              searchTerm={listingsState.searchInput}
               cpus={cpusQuery.data?.cpus ?? []}
               gpus={gpusQuery.data?.gpus ?? []}
               systems={systemsQuery.data ?? []}

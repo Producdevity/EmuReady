@@ -77,6 +77,7 @@ export function GameSearchResults<T extends BaseGameResult>(props: GameSearchRes
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
+      className="w-full overflow-hidden"
     >
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-medium text-slate-900 dark:text-white">Search Results</h2>
@@ -85,7 +86,7 @@ export function GameSearchResults<T extends BaseGameResult>(props: GameSearchRes
         </Badge>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
         {games.map((game) => {
           const gameKey = `${game.name}_${props.currentSystemId || 'all'}`
           const existingGameId = props.existingGames?.[gameKey]
@@ -100,7 +101,7 @@ export function GameSearchResults<T extends BaseGameResult>(props: GameSearchRes
               whileHover={{ scale: 1.02 }}
               onClick={() => props.onGameSelect(game)}
               className={cn(
-                'bg-white dark:bg-slate-800 rounded-lg shadow-sm border overflow-hidden cursor-pointer transition-all hover:shadow-md',
+                'bg-white dark:bg-slate-800 rounded-lg shadow-sm border overflow-hidden cursor-pointer transition-all hover:shadow-md w-full',
                 isExisting
                   ? 'border-green-500 dark:border-green-400 ring-2 ring-green-500/20'
                   : 'border-slate-200 dark:border-slate-700',
@@ -166,7 +167,7 @@ export function GameSearchResults<T extends BaseGameResult>(props: GameSearchRes
 
                 {/* Platforms */}
                 {game.platforms && game.platforms.length > 0 && (
-                  <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  <div className="mt-2 text-xs text-slate-500 dark:text-slate-400 break-words">
                     {game.platforms
                       .slice(0, 2)
                       .map((p) => p.name)

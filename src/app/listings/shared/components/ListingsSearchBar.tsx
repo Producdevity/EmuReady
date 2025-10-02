@@ -12,58 +12,58 @@ interface Props {
 }
 
 export function ListingsSearchBar(props: Props) {
+  const { value, onChange, placeholder, className } = props
   const inputRef = useRef<HTMLInputElement>(null)
-  const typingRef = useRef(false)
+  const wasTypingRef = useRef(false)
 
   const handleChange = useCallback(
     (ev: ChangeEvent<HTMLInputElement>) => {
-      typingRef.current = true
-      props.onChange(ev.target.value)
+      wasTypingRef.current = true
+      onChange(ev.target.value)
     },
-    [props],
+    [onChange],
   )
 
   useEffect(() => {
-    if (!typingRef.current) return
+    if (!wasTypingRef.current) return
 
     const inputElement = inputRef.current
     if (!inputElement) return
 
-    const isIOS = typeof navigator !== 'undefined' && /iP(ad|hone|od)/.test(navigator.userAgent)
-
-    if (!isIOS) {
-      typingRef.current = false
-      return
-    }
-
+    // Restore focus
+    // Use multiple animation frames to ensure DOM has updated
     requestAnimationFrame(() => {
-      inputElement.focus({ preventScroll: true })
-      const cursorPosition = inputElement.value.length
-      try {
-        inputElement.setSelectionRange(cursorPosition, cursorPosition)
-      } catch {
-        // Ignore selection errors on unsupported inputs
-      }
+      requestAnimationFrame(() => {
+        if (document.activeElement !== inputElement) {
+          inputElement.focus({ preventScroll: true })
+          const cursorPosition = inputElement.value.length
+          try {
+            inputElement.setSelectionRange(cursorPosition, cursorPosition)
+          } catch {
+            // Ignore selection errors
+          }
+        }
+      })
     })
 
     const timeout = setTimeout(() => {
-      typingRef.current = false
-    }, 400)
+      wasTypingRef.current = false
+    }, 500)
 
     return () => {
       clearTimeout(timeout)
     }
-  }, [props.value])
+  }, [value])
 
   return (
     <Input
       ref={inputRef}
       leftIcon={<Search className="w-5 h-5" />}
       type="text"
-      placeholder={props.placeholder ?? 'Search games, notes, emulators...'}
-      value={props.value}
+      placeholder={placeholder ?? 'Search games, notes, emulators...'}
+      value={value}
       onChange={handleChange}
-      className={props.className ?? 'transition-all duration-200 focus:scale-[1.02]'}
+      className={className ?? 'transition-all duration-200 focus:scale-[1.02]'}
     />
   )
 }
