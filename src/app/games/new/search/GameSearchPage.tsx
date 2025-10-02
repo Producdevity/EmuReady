@@ -269,45 +269,47 @@ function TGDBSearchContent() {
   if (!user) return <NotSignedInMessage />
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <GameSearchHeader
-        provider="tgdb"
-        showBackButton={isAdmin}
-        showAlternativeSearch={isAdmin}
-        isAdmin={isAdmin}
-      />
-
-      <GameSearchForm
-        provider="tgdb"
-        onSearch={handleSearch}
-        systems={systemsQuery.data ?? []}
-        initialQuery={urlQuery}
-        initialSystemId={urlSystemId}
-        isSearching={isSearching}
-        showModeratorFeatures={isModeratorOrHigher}
-      />
-
-      {searchResults && (
-        <GameSearchResults<TGDBGameResult>
+    <div className="w-full overflow-x-hidden">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 w-full">
+        <GameSearchHeader
           provider="tgdb"
-          results={searchResults}
-          onGameSelect={handleGamePreview}
-          existingGames={existingGamesQuery.data ?? {}}
-          currentSystemId={urlSystemId}
+          showBackButton={isAdmin}
+          showAlternativeSearch={isAdmin}
+          isAdmin={isAdmin}
         />
-      )}
 
-      <GamePreviewModal
-        game={selectedGame}
-        searchResponse={searchResponse}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSelect={(game) => {
-          const gameWithBoxart = { ...game, boxart: selectedGame?.boxart }
-          handleGameSelect(gameWithBoxart, urlSystemId)
-        }}
-        isSelecting={isSelecting}
-      />
+        <GameSearchForm
+          provider="tgdb"
+          onSearch={handleSearch}
+          systems={systemsQuery.data ?? []}
+          initialQuery={urlQuery}
+          initialSystemId={urlSystemId}
+          isSearching={isSearching}
+          showModeratorFeatures={isModeratorOrHigher}
+        />
+
+        {searchResults && (
+          <GameSearchResults<TGDBGameResult>
+            provider="tgdb"
+            results={searchResults}
+            onGameSelect={handleGamePreview}
+            existingGames={existingGamesQuery.data ?? {}}
+            currentSystemId={urlSystemId}
+          />
+        )}
+
+        <GamePreviewModal
+          game={selectedGame}
+          searchResponse={searchResponse}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSelect={(game) => {
+            const gameWithBoxart = { ...game, boxart: selectedGame?.boxart }
+            handleGameSelect(gameWithBoxart, urlSystemId)
+          }}
+          isSelecting={isSelecting}
+        />
+      </div>
     </div>
   )
 }

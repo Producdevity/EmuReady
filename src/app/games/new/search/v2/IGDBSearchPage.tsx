@@ -230,59 +230,61 @@ function IGDBSearchContent() {
   if (!user) return <NotSignedInMessage />
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <GameSearchHeader
-        provider="igdb"
-        showBackButton={isAdmin}
-        showAlternativeSearch={isAdmin}
-        isAdmin={isAdmin}
-      />
+    <div className="w-full overflow-x-hidden">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 w-full">
+        <GameSearchHeader
+          provider="igdb"
+          showBackButton={isAdmin}
+          showAlternativeSearch={isAdmin}
+          isAdmin={isAdmin}
+        />
 
-      <GameSearchForm
-        provider="igdb"
-        onSearch={handleSearch}
-        systems={systemsQuery.data ?? []}
-        initialQuery={urlQuery}
-        initialSystemId={urlSystemId}
-        isSearching={isSearching}
-        showModeratorFeatures={isModeratorOrHigher}
-      />
+        <GameSearchForm
+          provider="igdb"
+          onSearch={handleSearch}
+          systems={systemsQuery.data ?? []}
+          initialQuery={urlQuery}
+          initialSystemId={urlSystemId}
+          isSearching={isSearching}
+          showModeratorFeatures={isModeratorOrHigher}
+        />
 
-      {searchResults && !urlSystemId && (
-        <div className="mt-8 p-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
-            <div>
-              <h3 className="font-medium text-amber-900 dark:text-amber-200">System Required</h3>
-              <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">
-                Please select a system from the dropdown above before searching for games. Games
-                must be associated with a specific system to be added to the database.
-              </p>
+        {searchResults && !urlSystemId && (
+          <div className="mt-8 p-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+              <div>
+                <h3 className="font-medium text-amber-900 dark:text-amber-200">System Required</h3>
+                <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">
+                  Please select a system from the dropdown above before searching for games. Games
+                  must be associated with a specific system to be added to the database.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {searchResults && urlSystemId && (
-        <GameSearchResults<IGDBGameResult>
-          provider="igdb"
-          results={searchResults}
-          onGameSelect={handleGamePreview}
+        {searchResults && urlSystemId && (
+          <GameSearchResults<IGDBGameResult>
+            provider="igdb"
+            results={searchResults}
+            onGameSelect={handleGamePreview}
+            existingGames={existingGamesQuery.data ?? {}}
+            currentSystemId={urlSystemId}
+          />
+        )}
+
+        <IGDBGamePreviewModal
+          game={selectedGame}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSelect={handleGameSelect}
+          systems={systemsQuery.data ?? []}
+          isSelecting={isSelecting}
           existingGames={existingGamesQuery.data ?? {}}
           currentSystemId={urlSystemId}
         />
-      )}
-
-      <IGDBGamePreviewModal
-        game={selectedGame}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSelect={handleGameSelect}
-        systems={systemsQuery.data ?? []}
-        isSelecting={isSelecting}
-        existingGames={existingGamesQuery.data ?? {}}
-        currentSystemId={urlSystemId}
-      />
+      </div>
     </div>
   )
 }
