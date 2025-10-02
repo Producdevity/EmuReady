@@ -139,7 +139,7 @@ function AdminPermissionLogsPage() {
       title="Permission Logs"
       description="Monitor permission changes and system audit trail"
       headerActions={
-        <div className="flex items-center gap-2">
+        <>
           <Button variant="ghost" size="sm" asChild>
             <Link href={ADMIN_ROUTES.AUDIT_LOGS}>
               <FileText className="w-4 h-4" /> Audit Logs
@@ -149,7 +149,7 @@ function AdminPermissionLogsPage() {
             columns={PERMISSION_LOG_COLUMNS}
             columnVisibility={columnVisibility}
           />
-        </div>
+        </>
       }
     >
       <AdminStatsDisplay

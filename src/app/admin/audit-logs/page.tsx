@@ -136,7 +136,7 @@ function AdminAuditLogsPage() {
       title="Audit Logs"
       description="System-wide audit trail for sensitive operations"
       headerActions={
-        <div className="flex items-center gap-2">
+        <>
           <Button variant="ghost" size="sm" asChild>
             <Link href={ADMIN_ROUTES.PERMISSION_LOGS}>
               <Shield className="w-4 h-4" /> Permission Logs
@@ -146,7 +146,7 @@ function AdminAuditLogsPage() {
             columns={AUDIT_LOG_COLUMNS}
             columnVisibility={columnVisibility}
           />
-        </div>
+        </>
       }
     >
       <AdminStatsDisplay

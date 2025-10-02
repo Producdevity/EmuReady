@@ -184,33 +184,28 @@ function PcListingDetailsClient(props: Props) {
               <CustomFieldsSection
                 title="Emulator-Specific Details"
                 fieldValues={props.pcListing?.customFieldValues ?? []}
-                alignItems="center"
+                alignItems="start"
               />
             </div>
 
             <div className="flex w-full flex-col items-center gap-4 md:w-auto md:min-w-[180px] md:items-start">
-              {(() => {
-                const author = props.pcListing.author as typeof props.pcListing.author & {
-                  userBans?: unknown
+              <AuthorPanel
+                profileImage={props.pcListing.author?.profileImage}
+                authorName={props.pcListing.author?.name}
+                authorId={props.pcListing.author?.id}
+                postedAt={props.pcListing.createdAt}
+                bannedBadge={
+                  canViewBannedUsers &&
+                  props.pcListing?.author &&
+                  'userBans' in props.pcListing.author &&
+                  Array.isArray(props.pcListing.author.userBans) &&
+                  props.pcListing.author.userBans.length > 0 ? (
+                    <Badge variant="danger" size="sm" className="mt-1">
+                      BANNED USER
+                    </Badge>
+                  ) : undefined
                 }
-                const userBans = Array.isArray(author?.userBans) ? author.userBans : null
-
-                return (
-                  <AuthorPanel
-                    profileImage={props.pcListing.author?.profileImage}
-                    authorName={props.pcListing.author?.name}
-                    authorId={props.pcListing.author?.id}
-                    postedAt={props.pcListing.createdAt}
-                    bannedBadge={
-                      canViewBannedUsers && userBans && userBans.length > 0 ? (
-                        <Badge variant="danger" size="sm" className="mt-1">
-                          BANNED USER
-                        </Badge>
-                      ) : undefined
-                    }
-                  />
-                )
-              })()}
+              />
 
               <ActionButtonsStack>
                 <EditPcListingButton pcListingId={props.pcListing.id} onSuccess={refreshData} />

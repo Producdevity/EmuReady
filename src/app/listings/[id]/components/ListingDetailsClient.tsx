@@ -122,19 +122,6 @@ function ListingDetailsClient(props: Props) {
                 fieldValues={props.listing?.customFieldValues ?? []}
                 alignItems="start"
               />
-              <VotingSection id="vote-section" ref={voteSectionRef}>
-                <VoteButtons
-                  listingId={props.listing.id}
-                  currentVote={props.listing.userVote ?? null}
-                  upVoteCount={props.listing.upVotes}
-                  totalVotes={props.listing.totalVotes}
-                  onVoteSuccess={refreshData}
-                  gameId={props.listing.game.id}
-                  systemId={props.listing.game.system?.id}
-                  emulatorId={props.listing.emulator.id}
-                  deviceId={props.listing.device?.id}
-                />
-              </VotingSection>
             </div>
             <div className="flex w-full flex-col items-center gap-4 md:w-auto md:min-w-[180px] md:items-start">
               <AuthorPanel
@@ -185,10 +172,23 @@ function ListingDetailsClient(props: Props) {
             </div>
           </div>
 
+          <VotingSection id="vote-section" ref={voteSectionRef}>
+            <VoteButtons
+              listingId={props.listing.id}
+              currentVote={props.listing.userVote ?? null}
+              upVoteCount={props.listing.upVotes}
+              totalVotes={props.listing.totalVotes}
+              onVoteSuccess={refreshData}
+              gameId={props.listing.game.id}
+              systemId={props.listing.game.system?.id}
+              emulatorId={props.listing.emulator.id}
+              deviceId={props.listing.device?.id}
+            />
+          </VotingSection>
+
           <div className="mt-10 border-t border-gray-200 dark:border-gray-700 pt-8">
             <CommentThread
               listingId={props.listing?.id}
-              initialSortBy="newest"
               gameId={props.listing?.game.id}
               systemId={props.listing?.game.system?.id}
               listingOwnerId={props.listing?.authorId}

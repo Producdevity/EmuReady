@@ -40,33 +40,23 @@ function PcCommentThread(props: Props) {
   const utils = api.useUtils()
 
   const createComment = api.pcListings.createComment.useMutation({
-    onSuccess: () => {
-      refreshComments()
-    },
+    onSuccess: () => refreshComments(),
   })
 
   const updateComment = api.pcListings.updateComment.useMutation({
-    onSuccess: () => {
-      refreshComments()
-    },
+    onSuccess: () => refreshComments(),
   })
 
   const deleteComment = api.pcListings.deleteComment.useMutation({
-    onSuccess: () => {
-      refreshComments()
-    },
+    onSuccess: () => refreshComments(),
   })
 
   const pinCommentMutation = api.pcListings.pinComment.useMutation({
-    onSuccess: () => {
-      refreshComments()
-    },
+    onSuccess: () => refreshComments(),
   })
 
   const unpinCommentMutation = api.pcListings.unpinComment.useMutation({
-    onSuccess: () => {
-      refreshComments()
-    },
+    onSuccess: () => refreshComments(),
   })
 
   const refreshComments = () => {

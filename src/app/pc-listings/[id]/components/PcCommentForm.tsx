@@ -51,10 +51,7 @@ function PcCommentForm(props: Props) {
       parentId={props.parentId}
       editingComment={
         props.editingComment
-          ? {
-              id: props.editingComment.id,
-              content: props.editingComment.content,
-            }
+          ? { id: props.editingComment.id, content: props.editingComment.content }
           : undefined
       }
       config={config}

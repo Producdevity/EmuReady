@@ -223,7 +223,7 @@ export function DeveloperApiAccessPanel(props: Props) {
       title="API Access"
       description="Generate and monitor your personal API keys for the EmuReady API."
       headerActions={
-        <div className="flex items-center gap-2">
+        <>
           <ColumnVisibilityControl
             columns={DEVELOPER_COLUMNS}
             columnVisibility={columnVisibility}
@@ -233,7 +233,7 @@ export function DeveloperApiAccessPanel(props: Props) {
               {createMutation.isPending ? 'Creating…' : 'Create API Key'}
             </Button>
           ) : null}
-        </div>
+        </>
       }
     >
       <AdminStatsDisplay
