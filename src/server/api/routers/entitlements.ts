@@ -1,3 +1,4 @@
+import { env } from '@/lib/env'
 import { AppError } from '@/lib/errors'
 import { logger } from '@/lib/logger'
 import {
@@ -64,9 +65,7 @@ export const entitlementsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const forwardedProto = ctx.headers?.get('x-forwarded-proto') || 'http'
       const forwardedHost = ctx.headers?.get('x-forwarded-host') || ctx.headers?.get('host')
-      const inferredBase = forwardedHost
-        ? `${forwardedProto}://${forwardedHost}`
-        : process.env.NEXT_PUBLIC_APP_URL
+      const inferredBase = forwardedHost ? `${forwardedProto}://${forwardedHost}` : env.APP_URL
       const payload = oauthState.verify(input.state)
       const redirectUri =
         payload.ru || process.env.PATREON_REDIRECT_URI || `${inferredBase}/auth/patreon/callback`
@@ -89,14 +88,14 @@ export const entitlementsRouter = createTRPCRouter({
         logger.error('[entitlements] patreonExchangeCode error', e)
         if (e instanceof PatreonError) {
           if (e.status === 429)
-            AppError.tooManyRequests('Patreon is rate limiting. Please try again shortly.')
+            return AppError.tooManyRequests('Patreon is rate limiting. Please try again shortly.')
           if (e.status === 400 && e.code === 'invalid_grant')
-            AppError.badRequest('Authorization code invalid or already used. Start the link again.')
+            return AppError.badRequest('Authorization code invalid or already used. Try again.')
           if (e.status === 401 && e.code === 'invalid_grant')
-            AppError.badRequest('Invalid grant: Redirect URI mismatch or code already used.')
-          AppError.custom('INTERNAL_SERVER_ERROR', 'Patreon token exchange failed')
+            return AppError.badRequest('Invalid grant: Redirect URI mismatch or code already used.')
+          return AppError.custom('INTERNAL_SERVER_ERROR', 'Patreon token exchange failed')
         }
-        AppError.custom('INTERNAL_SERVER_ERROR', 'Patreon token exchange failed')
+        return AppError.custom('INTERNAL_SERVER_ERROR', 'Patreon token exchange failed')
       }
       let identity: unknown
       try {
@@ -108,7 +107,7 @@ export const entitlementsRouter = createTRPCRouter({
             ? AppError.tooManyRequests('Patreon is rate limiting. Please try again shortly.')
             : AppError.custom('INTERNAL_SERVER_ERROR', 'Patreon identity fetch failed')
         }
-        AppError.custom('INTERNAL_SERVER_ERROR', 'Patreon identity fetch failed')
+        return AppError.custom('INTERNAL_SERVER_ERROR', 'Patreon identity fetch failed')
       }
       const campaignId = await getPatreonCampaignId()
       const grantOnActive = process.env.PATREON_GRANT_ON_ACTIVE_PLEDGE === 'true'
@@ -160,21 +159,21 @@ export const entitlementsRouter = createTRPCRouter({
           })
         }
       } catch (err) {
-        logger.warn('[entitlements] externalAccount upsert failed', err)
+        logger.error('[entitlements] externalAccount upsert failed', err)
       }
       // Record event for traceability
       try {
         const eventId = `oauth:${Date.now()}:${ctx.session.user.id}`
         await ctx.prisma.webhookEvent.create({
           data: {
-            source: 'PATREON',
+            source: EntitlementSource.PATREON,
             eventId,
             payload: identity as unknown as object,
             status: 'PROCESSED',
           },
         })
       } catch (err) {
-        logger.warn('[entitlements] webhookEvent create failed', err)
+        logger.error('[entitlements] webhookEvent create failed', err)
       }
       return { ok: true }
     }),
