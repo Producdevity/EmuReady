@@ -37,6 +37,8 @@ const osOptions = [
   { id: PcOs.WINDOWS, name: 'Windows' },
   { id: PcOs.LINUX, name: 'Linux' },
   { id: PcOs.MACOS, name: 'macOS' },
+  { id: PcOs.FREEBSD, name: 'FreeBSD' },
+  { id: PcOs.OTHER, name: 'Other' },
 ]
 
 function EditPcListingModal(props: Props) {

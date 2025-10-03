@@ -39,6 +39,8 @@ enum PcOs {
   WINDOWS
   LINUX
   MACOS
+  FREEBSD
+  OTHER
 }
 
 enum TailwindColor {

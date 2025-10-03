@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type FormEvent } from 'react'
 import { Button, Input, Modal, Autocomplete, SelectInput } from '@/components/ui'
+import { PC_OS_OPTIONS } from '@/data/pc-os'
 import { api } from '@/lib/api'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -19,11 +20,7 @@ interface Props {
   onSuccess: (data?: PcPresetMutationResult) => void
 }
 
-const OS_OPTIONS = [
-  { value: PcOs.WINDOWS, label: 'Windows' },
-  { value: PcOs.LINUX, label: 'Linux' },
-  { value: PcOs.MACOS, label: 'macOS' },
-]
+const OS_OPTIONS = PC_OS_OPTIONS
 
 function PcPresetModal(props: Props) {
   const createPreset = api.pcListings.presets.create.useMutation()

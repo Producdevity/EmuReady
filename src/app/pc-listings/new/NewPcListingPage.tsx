@@ -16,6 +16,7 @@ import {
   type GameOption,
 } from '@/app/listings/components/shared'
 import { Autocomplete, Button, Input, LoadingSpinner, SelectInput } from '@/components/ui'
+import { PC_OS_OPTIONS } from '@/data/pc-os'
 import useMounted from '@/hooks/useMounted'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
@@ -36,11 +37,7 @@ type CpuOption = RouterOutput['cpus']['get']['cpus'][number]
 type GpuOption = RouterOutput['gpus']['get']['gpus'][number]
 type PcPresetOption = RouterOutput['pcListings']['presets']['get'][number]
 
-const OS_OPTIONS = [
-  { value: PcOs.WINDOWS, label: 'Windows' },
-  { value: PcOs.LINUX, label: 'Linux' },
-  { value: PcOs.MACOS, label: 'macOS' },
-]
+const OS_OPTIONS = PC_OS_OPTIONS
 
 function AddPcListingPage() {
   const router = useRouter()

@@ -14,13 +14,14 @@ import { DetailsHeaderBadges } from '@/app/listings/components/shared/details/De
 import { VotingSection } from '@/app/listings/components/shared/details/VotingSection'
 import { NotesSection } from '@/app/listings/components/shared/NotesSection'
 import { Card, Button, GameImage, Badge } from '@/components/ui'
+import { PC_OS_LABELS } from '@/data/pc-os'
 import { api } from '@/lib/api'
 import { logger } from '@/lib/logger'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { PcOs, Role } from '@orm'
+import { type PcOs, Role } from '@orm'
 import EditPcListingButton from './EditPcListingButton'
 import PcCommentThread from './PcCommentThread'
 import PcReportListingButton from './PcReportListingButton'
@@ -34,9 +35,7 @@ interface Props {
 }
 
 const osLabels: Record<PcOs | 'UNKNOWN', string> = {
-  [PcOs.WINDOWS]: 'Windows',
-  [PcOs.LINUX]: 'Linux',
-  [PcOs.MACOS]: 'macOS',
+  ...PC_OS_LABELS,
   UNKNOWN: 'Unknown',
 }
 

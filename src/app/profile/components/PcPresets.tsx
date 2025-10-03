@@ -3,10 +3,11 @@
 import { Computer, Plus, Edit, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Button, LoadingSpinner, useConfirmDialog, Card } from '@/components/ui'
+import { PC_OS_LABELS } from '@/data/pc-os'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { PcOs } from '@orm'
+import { type PcOs } from '@orm'
 import PcPresetModal from './PcPresetModal'
 import type { RouterOutput } from '@/types/trpc'
 
@@ -53,18 +54,7 @@ function PcPresets() {
     }
   }
 
-  const formatOs = (os: PcOs) => {
-    switch (os) {
-      case PcOs.WINDOWS:
-        return 'Windows'
-      case PcOs.LINUX:
-        return 'Linux'
-      case PcOs.MACOS:
-        return 'macOS'
-      default:
-        return os
-    }
-  }
+  const formatOs = (os: PcOs) => PC_OS_LABELS[os] ?? os
 
   if (presetsQuery.isPending) {
     return (
