@@ -1,7 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { Filter, FilterX, PencilLine } from 'lucide-react'
+import { Filter, FilterX, Puzzle } from 'lucide-react'
 import { useState } from 'react'
 import { isNullish } from 'remeda'
 import {
@@ -133,9 +133,10 @@ export function CustomFieldsSection(props: Props) {
                       <Badge
                         variant="default"
                         size="sm"
+                        pill
                         className="bg-blue-500 dark:bg-blue-600 text-white shadow-md"
                       >
-                        <PencilLine className="w-3 h-3" />
+                        <Puzzle className="w-3 h-3" />
                       </Badge>
                     </motion.div>
                   )}
