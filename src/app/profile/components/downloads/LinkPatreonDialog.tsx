@@ -11,17 +11,23 @@ interface Props {
 
 export default function LinkPatreonDialog(props: Props) {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const start = api.entitlements.linkPatreonStart.useMutation()
 
   async function onLink() {
     setLoading(true)
+    setError(null)
     try {
       const res = await start.mutateAsync({})
       const url = res?.url
-      if (url) window.location.href = url
-    } finally {
+      if (url) {
+        window.location.href = url
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Failed to start Patreon linking. Please try again.',
+      )
       setLoading(false)
-      props.onClose()
     }
   }
 
@@ -34,6 +40,12 @@ export default function LinkPatreonDialog(props: Props) {
               Link your Patreon account to grant lifetime downloads once you have at least one
               successful monthly payment.
             </p>
+
+            {error && (
+              <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
+                <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+              </div>
+            )}
 
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="secondary" onClick={props.onClose} disabled={loading}>

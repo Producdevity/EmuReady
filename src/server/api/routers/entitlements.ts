@@ -43,6 +43,30 @@ export const entitlementsRouter = createTRPCRouter({
 
   linkPatreonStart: protectedProcedure.input(LinkPatreonStartSchema).mutation(async ({ ctx }) => {
     const clientId = process.env.PATREON_CLIENT_ID
+    const clientSecret = process.env.PATREON_CLIENT_SECRET
+    const creatorToken = process.env.PATREON_CREATOR_TOKEN
+    const campaignId = process.env.PATREON_CAMPAIGN_ID
+
+    if (!clientId || !clientSecret) {
+      logger.error('[entitlements] Patreon client credentials missing', {
+        hasClientId: Boolean(clientId),
+        hasClientSecret: Boolean(clientSecret),
+      })
+      return AppError.internalError(
+        'Patreon integration is not currently available. Please contact support.',
+      )
+    }
+
+    if (!creatorToken && !campaignId) {
+      logger.error('[entitlements] Patreon campaign credentials missing', {
+        hasCreatorToken: Boolean(creatorToken),
+        hasCampaignId: Boolean(campaignId),
+      })
+      return AppError.internalError(
+        'Patreon integration is not currently available. Please contact support.',
+      )
+    }
+
     // Choose redirect URI dynamically to avoid invalid_grant due to env mismatch
     const forwardedProto = ctx.headers?.get('x-forwarded-proto') || 'http'
     const forwardedHost = ctx.headers?.get('x-forwarded-host') || ctx.headers?.get('host')
@@ -51,7 +75,6 @@ export const entitlementsRouter = createTRPCRouter({
       : process.env.NEXT_PUBLIC_APP_URL
     const dynamicRedirect = `${inferredBase}/auth/patreon/callback`
     const redirectUri = process.env.PATREON_REDIRECT_URI || dynamicRedirect
-    if (!clientId) return AppError.internalError('PATREON_CLIENT_ID missing')
     const scope = encodeURIComponent('identity identity[email] identity.memberships')
     const state = oauthState.sign(ctx.session.user.id, 600, redirectUri)
     const url = `https://www.patreon.com/oauth2/authorize?response_type=code&client_id=${encodeURIComponent(

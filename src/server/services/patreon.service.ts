@@ -55,22 +55,33 @@ export async function getPatreonCampaignId(): Promise<string | null> {
         validateStatus: () => true,
       })
       if (res.status < 200 || res.status >= 300) {
-        logger.warn('[patreon] Campaign discovery failed', { status: res.status })
+        logger.error('[patreon] Campaign discovery failed', {
+          status: res.status,
+          statusText: res.statusText,
+          data: res.data,
+        })
         cachedCampaignId = null
         return null
       }
       const data = res.data as unknown as { data?: unknown[] }
       const arr = Array.isArray(data?.data) ? (data!.data as unknown[]) : []
+      if (arr.length === 0) {
+        logger.error('[patreon] No campaigns found for creator token')
+        cachedCampaignId = null
+        return null
+      }
       const first = arr[0]
       const id = readStringProp(first, 'id')
       if (id) {
+        logger.info('[patreon] Successfully discovered campaign', { campaignId: id })
         cachedCampaignId = id
         return id
       }
+      logger.error('[patreon] Campaign ID not found in response', { firstCampaign: first })
       cachedCampaignId = null
       return null
     } catch (err) {
-      logger.warn('[patreon] Campaign discovery exception', err as Error)
+      logger.error('[patreon] Campaign discovery exception', err as Error)
       cachedCampaignId = null
       return null
     } finally {
