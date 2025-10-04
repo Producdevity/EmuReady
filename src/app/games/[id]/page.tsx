@@ -13,9 +13,6 @@ interface Props {
   params: Promise<{ id: string }>
 }
 
-// Revalidate every hour
-export const revalidate = 3600
-
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
   const game = await getGameForSEO(params.id)

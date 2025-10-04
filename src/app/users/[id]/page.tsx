@@ -8,9 +8,6 @@ interface Props {
   params: Promise<{ id: string }>
 }
 
-// Revalidate every 60 seconds for profile updates
-export const revalidate = 60
-
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
   const user = await getUserForSEO(params.id)
