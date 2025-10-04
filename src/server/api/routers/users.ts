@@ -19,6 +19,7 @@ import {
 import { invalidateUser } from '@/server/cache/invalidation'
 import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
 import {
+  aggregateContributions,
   buildTopContributorsSummary,
   EMPTY_TOP_CONTRIBUTORS_SUMMARY,
   getActiveBanFilter,
@@ -115,11 +116,12 @@ export const usersRouter = createTRPCRouter({
         new Set(rawResults.flatMap((list) => list.map((item) => item.userId))),
       )
 
-      const lifetimeContributionMap = new Map(
-        (rawResults[0] ?? []).map((entry) => [entry.userId, entry.breakdown]),
-      )
-
       if (candidateIds.length === 0) return EMPTY_TOP_CONTRIBUTORS_SUMMARY
+
+      const lifetimeContributions = await aggregateContributions(ctx.prisma, {
+        userIds: candidateIds,
+      })
+      const lifetimeContributionMap = new Map(Object.entries(lifetimeContributions))
 
       const users = await ctx.prisma.user.findMany({
         where: {
@@ -207,9 +209,7 @@ export const usersRouter = createTRPCRouter({
           },
           orderBy: { assignedAt: 'desc' },
         },
-        _count: {
-          select: { listings: true, submittedGames: true, votes: true },
-        },
+        _count: { select: { listings: true, submittedGames: true, votes: true } },
       },
     })
 
@@ -235,10 +235,7 @@ export const usersRouter = createTRPCRouter({
       select: {
         id: true,
         userBans: {
-          where: {
-            isActive: true,
-            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-          },
+          where: { isActive: true, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
           select: { id: true },
         },
       },
@@ -256,13 +253,9 @@ export const usersRouter = createTRPCRouter({
     // Build where clauses for listings filtering
     const listingsWhere: Prisma.ListingWhereInput = {}
     const listingsGameFilter: Prisma.GameWhereInput = {}
-    if (!ctx.session?.user?.showNsfw) {
-      listingsGameFilter.isErotic = false
-    }
+    if (!ctx.session?.user?.showNsfw) listingsGameFilter.isErotic = false
 
-    if (listingsDevice) {
-      listingsWhere.deviceId = listingsDevice
-    }
+    if (listingsDevice) listingsWhere.deviceId = listingsDevice
 
     // Filter by approval status based on user permissions
     if (canViewBannedUsers) {
@@ -319,10 +312,7 @@ export const usersRouter = createTRPCRouter({
         // Include ban status for moderators
         ...(canViewBannedUsers && {
           userBans: {
-            where: {
-              isActive: true,
-              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-            },
+            where: { isActive: true, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
             select: {
               id: true,
               reason: true,
