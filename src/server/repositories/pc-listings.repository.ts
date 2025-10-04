@@ -88,7 +88,22 @@ export class PcListingsRepository extends BaseRepository {
       developerVerifications: {
         include: { developer: { select: { id: true, name: true } } },
       },
-      customFieldValues: { include: { customFieldDefinition: true } },
+      customFieldValues: {
+        include: {
+          customFieldDefinition: {
+            select: {
+              id: true,
+              type: true,
+              label: true,
+              name: true,
+              options: true,
+              defaultValue: true,
+              rangeDecimals: true,
+              rangeUnit: true,
+            },
+          },
+        },
+      },
       _count: { select: { votes: true, comments: { where: { deletedAt: null } }, reports: true } },
     } satisfies Prisma.PcListingInclude,
     forTopBySuccessRate: {

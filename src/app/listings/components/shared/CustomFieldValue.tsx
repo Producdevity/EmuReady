@@ -12,6 +12,7 @@ export interface FieldValueLike {
     label?: string
     name?: string | null
     options?: unknown
+    defaultValue?: unknown
     rangeDecimals?: number | null
     rangeUnit?: string | null
   }

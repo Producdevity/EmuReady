@@ -88,7 +88,22 @@ export class ListingsRepository extends BaseRepository {
       performance: true,
       author: { select: { id: true, name: true, profileImage: true, verifiedDeveloperBy: true } },
       comments: { include: { user: { select: { id: true, name: true, profileImage: true } } } },
-      customFieldValues: { include: { customFieldDefinition: true } },
+      customFieldValues: {
+        include: {
+          customFieldDefinition: {
+            select: {
+              id: true,
+              type: true,
+              label: true,
+              name: true,
+              options: true,
+              defaultValue: true,
+              rangeDecimals: true,
+              rangeUnit: true,
+            },
+          },
+        },
+      },
       developerVerifications: { include: { developer: { select: { id: true, name: true } } } },
       _count: { select: { votes: true, comments: true } },
     } satisfies Prisma.ListingInclude,
@@ -96,7 +111,22 @@ export class ListingsRepository extends BaseRepository {
     forEmulatorConfig: {
       game: { include: { system: { select: { id: true, name: true, key: true } } } },
       emulator: { select: { id: true, name: true } },
-      customFieldValues: { include: { customFieldDefinition: true } },
+      customFieldValues: {
+        include: {
+          customFieldDefinition: {
+            select: {
+              id: true,
+              type: true,
+              label: true,
+              name: true,
+              options: true,
+              defaultValue: true,
+              rangeDecimals: true,
+              rangeUnit: true,
+            },
+          },
+        },
+      },
     } satisfies Prisma.ListingInclude,
 
     forFeatured: {
