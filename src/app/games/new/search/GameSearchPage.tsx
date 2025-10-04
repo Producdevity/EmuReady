@@ -1,7 +1,7 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react'
 import { toast } from 'sonner'
 import {
@@ -14,9 +14,9 @@ import { LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasRolePermission } from '@/utils/permissions'
-import { ms } from '@/utils/time'
 import { Role } from '@orm'
 import GamePreviewModal from './components/GamePreviewModal'
+import { useGameSearch } from './hooks/useGameSearch'
 import NotSignedInMessage from '../components/NotSignedInMessage'
 import { extractBoxartUrl } from './utils/boxartHelpers'
 import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
@@ -61,7 +61,6 @@ function mapTGDBToBaseGame(game: TGDBGameWithBoxart): TGDBGameResult {
 function TGDBSearchContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const pathname = usePathname()
   const { user, isLoaded } = useUser()
 
   // Get values directly from URL
@@ -85,39 +84,13 @@ function TGDBSearchContent() {
   const createGame = api.games.create.useMutation()
   const systemsQuery = api.systems.get.useQuery()
 
-  // Check for existing games by name and system
-  const gameNamesAndSystems = useMemo(() => {
-    if (!searchResults?.games || !urlSystemId) return []
-    return searchResults.games.map((game) => ({
-      name: game.name,
-      systemId: urlSystemId,
-    }))
-  }, [searchResults, urlSystemId])
-
-  const existingGamesQuery = api.games.checkExistingByNamesAndSystems.useQuery(
-    { games: gameNamesAndSystems },
-    {
-      enabled: gameNamesAndSystems.length > 0,
-      staleTime: ms.seconds(30),
-      refetchOnWindowFocus: true,
-    },
-  )
-
-  // Update URL when search parameters change
-  const updateSearchParams = useCallback(
-    (query: string, systemId: string | null) => {
-      const params = new URLSearchParams()
-      if (query.trim()) params.set('q', query.trim())
-      if (systemId) params.set('system', systemId)
-      const searchString = params.toString()
-      const newUrl = searchString ? `?${searchString}` : pathname
-      router.replace(newUrl, { scroll: false })
-    },
-    [router, pathname],
-  )
+  const { existingGames, updateSearchParams } = useGameSearch({
+    searchResults,
+    urlSystemId,
+  })
 
   const handleSearch = useCallback(
-    async (query: string, platformId: number | null, systemId: string | null) => {
+    async (query: string, _platformId: number | null, systemId: string | null) => {
       setIsSearching(true)
 
       // Update URL with search parameters
@@ -293,7 +266,7 @@ function TGDBSearchContent() {
             provider="tgdb"
             results={searchResults}
             onGameSelect={handleGamePreview}
-            existingGames={existingGamesQuery.data ?? {}}
+            existingGames={existingGames}
             currentSystemId={urlSystemId}
           />
         )}

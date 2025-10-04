@@ -2,8 +2,8 @@
 
 import { useUser } from '@clerk/nextjs'
 import { AlertTriangle } from 'lucide-react'
-import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { useState, useCallback, useMemo, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useCallback, useEffect, Suspense } from 'react'
 import { toast } from 'sonner'
 import {
   GameSearchForm,
@@ -16,8 +16,8 @@ import { api } from '@/lib/api'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasRolePermission } from '@/utils/permissions'
 import { getIGDBPlatformId } from '@/utils/system-platform-mapping'
-import { ms } from '@/utils/time'
 import { Role } from '@orm'
+import { useGameSearch } from '../hooks/useGameSearch'
 import IGDBGamePreviewModal from './components/IGDBGamePreviewModal'
 import NotSignedInMessage from '../../components/NotSignedInMessage'
 
@@ -35,7 +35,6 @@ interface IGDBGameResult extends BaseGameResult {
 function IGDBSearchContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const pathname = usePathname()
   const { user, isLoaded } = useUser()
 
   // Get values directly from URL
@@ -59,36 +58,10 @@ function IGDBSearchContent() {
   const systemsQuery = api.systems.get.useQuery()
   const confirm = useConfirmDialog()
 
-  // Check for existing games by name and system
-  const gameNamesAndSystems = useMemo(() => {
-    if (!searchResults?.games || !urlSystemId) return []
-    return searchResults.games.map((game) => ({
-      name: game.name,
-      systemId: urlSystemId,
-    }))
-  }, [searchResults, urlSystemId])
-
-  const existingGamesQuery = api.games.checkExistingByNamesAndSystems.useQuery(
-    { games: gameNamesAndSystems },
-    {
-      enabled: gameNamesAndSystems.length > 0,
-      staleTime: ms.seconds(30),
-      refetchOnWindowFocus: true,
-    },
-  )
-
-  // Update URL when search parameters change
-  const updateSearchParams = useCallback(
-    (query: string, systemId: string | null) => {
-      const params = new URLSearchParams()
-      if (query.trim()) params.set('q', query.trim())
-      if (systemId) params.set('system', systemId)
-      const searchString = params.toString()
-      const newUrl = searchString ? `?${searchString}` : pathname
-      router.replace(newUrl, { scroll: false })
-    },
-    [router, pathname],
-  )
+  const { existingGames, updateSearchParams } = useGameSearch({
+    searchResults,
+    urlSystemId,
+  })
 
   const handleSearch = useCallback(
     async (query: string, platformId: number | null, systemId: string | null) => {
@@ -181,7 +154,6 @@ function IGDBSearchContent() {
           igdbGameId: Number(selectedGame.id),
         })
 
-        // Invalidate the existing games cache to ensure the new game is reflected
         await utils.games.checkExistingByNamesAndSystems.invalidate()
 
         toast.success('Game added successfully!')
@@ -264,7 +236,7 @@ function IGDBSearchContent() {
             provider="igdb"
             results={searchResults}
             onGameSelect={handleGamePreview}
-            existingGames={existingGamesQuery.data ?? {}}
+            existingGames={existingGames}
             currentSystemId={urlSystemId}
           />
         )}
@@ -276,7 +248,7 @@ function IGDBSearchContent() {
           onSelect={handleGameSelect}
           systems={systemsQuery.data ?? []}
           isSelecting={isSelecting}
-          existingGames={existingGamesQuery.data ?? {}}
+          existingGames={existingGames}
           currentSystemId={urlSystemId}
         />
       </div>
