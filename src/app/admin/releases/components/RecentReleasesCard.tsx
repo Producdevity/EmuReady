@@ -1,10 +1,10 @@
 'use client'
 
-import { Copy, MoreVertical, Trash2, Rocket, Calendar, HardDrive, Check } from 'lucide-react'
+import { Copy, MoreVertical, Rocket, Calendar, HardDrive, Check } from 'lucide-react'
 import { useState } from 'react'
 import { bytesToHuman } from '@/app/profile/components/downloads/utils'
 import { AdminTableContainer } from '@/components/admin'
-import { Button, LoadingSpinner, useConfirmDialog, Badge } from '@/components/ui'
+import { Button, LoadingSpinner, useConfirmDialog, Badge, DeleteButton } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { formatters, getLocale } from '@/utils/date'
@@ -99,10 +99,8 @@ export default function RecentReleasesCard() {
                       >
                         Publish
                       </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        icon={Trash2}
+                      <DeleteButton
+                        title="Delete release"
                         onClick={async () => {
                           const ok = await confirm({
                             title: 'Delete release',

@@ -6,8 +6,10 @@ import {
   AdminDeleteReleaseSchema,
 } from '@/schemas/releasesAdmin'
 import { createTRPCRouter, adminProcedure } from '@/server/api/trpc'
+import { notificationService } from '@/server/notifications/service'
 import { ReleasesRepository } from '@/server/repositories/releases.repository'
 import { presignPutObject, putJson, deleteObject } from '@/server/services/r2.service'
+import { NotificationType, NotificationCategory, DeliveryChannel, EntitlementStatus } from '@orm'
 
 export const adminReleasesRouter = createTRPCRouter({
   getUploadUrl: adminProcedure.input(AdminGetUploadUrlSchema).mutation(async ({ input }) => {
@@ -25,7 +27,49 @@ export const adminReleasesRouter = createTRPCRouter({
   }),
   create: adminProcedure.input(AdminCreateReleaseSchema).mutation(async ({ ctx, input }) => {
     const repo = new ReleasesRepository(ctx.prisma)
-    return repo.create(input)
+    const release = await repo.create(input)
+
+    // Send notifications to eligible users for stable releases only
+    if (input.channel === 'stable') {
+      // Get all users with active entitlements (PLAY, PATREON, or MANUAL)
+      const eligibleUsers = await ctx.prisma.user.findMany({
+        where: {
+          entitlements: {
+            some: {
+              status: EntitlementStatus.ACTIVE,
+              OR: [{ revokedAt: null }, { revokedAt: { gt: new Date() } }],
+            },
+          },
+        },
+        select: { id: true },
+      })
+
+      // Send notification to each eligible user
+      const notificationPromises = eligibleUsers.map((user) =>
+        notificationService.createNotification(
+          {
+            userId: user.id,
+            type: NotificationType.FEATURE_ANNOUNCEMENT,
+            category: NotificationCategory.SYSTEM,
+            title: `New Stable Release Available: v${input.versionName}`,
+            message: `A new stable version (v${input.versionName}) is now available for download.`,
+            actionUrl: '/profile?tab=downloads',
+            deliveryChannel: DeliveryChannel.IN_APP,
+            metadata: {
+              releaseId: release.id,
+              versionName: input.versionName,
+              versionCode: input.versionCode,
+              channel: input.channel,
+            },
+          },
+          { immediate: true },
+        ),
+      )
+
+      await Promise.allSettled(notificationPromises)
+    }
+
+    return release
   }),
 
   list: adminProcedure.input(AdminListReleasesSchema).query(async ({ ctx, input }) => {
