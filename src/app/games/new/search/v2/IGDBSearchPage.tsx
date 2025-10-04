@@ -211,13 +211,8 @@ function IGDBSearchContent() {
     [selectedGame, user, createGame, utils, showGameCreatedConfirmation],
   )
 
-  const isModeratorOrHigher = useMemo(() => {
-    return userQuery.data ? hasRolePermission(userQuery.data.role, Role.MODERATOR) : false
-  }, [userQuery.data])
-
-  const isAdmin = useMemo(() => {
-    return userQuery.data ? hasRolePermission(userQuery.data.role, Role.ADMIN) : false
-  }, [userQuery.data])
+  const isModeratorOrHigher = hasRolePermission(userQuery?.data?.role, Role.MODERATOR)
+  const isAdmin = hasRolePermission(userQuery?.data?.role, Role.ADMIN)
 
   if (!isLoaded) {
     return (

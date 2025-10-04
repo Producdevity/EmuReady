@@ -4,9 +4,7 @@ import { motion } from 'framer-motion'
 import { Search, Info, Database, Gamepad2, Globe } from 'lucide-react'
 import {
   useState,
-  useEffect,
   useMemo,
-  useRef,
   type ComponentType,
   type FormEvent,
   type KeyboardEvent,
@@ -58,33 +56,9 @@ const providerConfig: Record<
 export function GameSearchForm(props: GameSearchFormProps) {
   const [selectedSystemId, setSelectedSystemId] = useState(props.initialSystemId ?? '')
   const [searchQuery, setSearchQuery] = useState(props.initialQuery ?? '')
-  const [isUserTyping, setIsUserTyping] = useState(false)
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const config = providerConfig[props.provider]
   const Icon = config.icon
-
-  // Sync local state with prop changes (but not while user is typing)
-  useEffect(() => {
-    if (!isUserTyping) {
-      setSelectedSystemId(props.initialSystemId ?? '')
-    }
-  }, [props.initialSystemId, isUserTyping])
-
-  useEffect(() => {
-    if (!isUserTyping) {
-      setSearchQuery(props.initialQuery ?? '')
-    }
-  }, [props.initialQuery, isUserTyping])
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current)
-      }
-    }
-  }, [])
 
   const selectedSystem = useMemo(
     () =>
@@ -101,22 +75,10 @@ export function GameSearchForm(props: GameSearchFormProps) {
 
   const handleSearchQueryChange = (ev: ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(ev.target.value)
-    setIsUserTyping(true)
-
-    // Clear existing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
-    }
-
-    // Set new timeout to mark user as done typing
-    typingTimeoutRef.current = setTimeout(() => {
-      setIsUserTyping(false)
-    }, 1000)
   }
 
   const handleSubmit = (ev: FormEvent) => {
     ev.preventDefault()
-    setIsUserTyping(false)
     const query = searchQuery.trim()
     if (!query || query.length < 2) return
     props.onSearch(query, platformId ?? null, selectedSystemId || null)
@@ -125,7 +87,6 @@ export function GameSearchForm(props: GameSearchFormProps) {
   const handleKeyPress = (ev: KeyboardEvent) => {
     if (ev.key !== 'Enter') return
     ev.preventDefault()
-    setIsUserTyping(false)
     const query = searchQuery.trim()
     if (!query || query.length < 2) return
     props.onSearch(query, platformId ?? null, selectedSystemId || null)
