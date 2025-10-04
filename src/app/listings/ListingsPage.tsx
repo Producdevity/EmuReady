@@ -183,6 +183,13 @@ function ListingsPage() {
     [listingsState],
   )
 
+  const handleClearAllFilters = useCallback(() => {
+    listingsState.clearAllFilters()
+    // When clearing all filters, disable user preferences to show truly ALL listings
+    preferred.setUserDeviceFilterDisabled(true)
+    preferred.setUserSocFilterDisabled(true)
+  }, [listingsState, preferred])
+
   const handleEnableUserDeviceFilter = useCallback(() => {
     preferred.enableUserDeviceFilter()
     // Clear any manual device selections to allow user preferences to take effect
@@ -222,6 +229,7 @@ function ListingsPage() {
             onEmulatorChange={handleEmulatorChange}
             onPerformanceChange={handlePerformanceChange}
             onSearchChange={handleSearchChange}
+            onClearAll={handleClearAllFilters}
             isCollapsed={isMobileSidebarOpen}
             onToggleCollapse={() => setIsMobileSidebarOpen((prevState) => !prevState)}
             userPreferences={userPreferencesQuery.data}
@@ -257,6 +265,8 @@ function ListingsPage() {
               onEmulatorChange={handleEmulatorChange}
               onPerformanceChange={(values) => handlePerformanceChange(values.map(Number))}
               onSearchChange={handleSearchChange}
+              onClearAll={handleClearAllFilters}
+              showActiveFilters
             />
           </MobileFilterSheet>
         )}

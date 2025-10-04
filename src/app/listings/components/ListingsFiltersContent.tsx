@@ -1,8 +1,9 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Joystick, MonitorSmartphone, Cpu, Gamepad, Rocket } from 'lucide-react'
-import { ListingsSearchBar } from '@/app/listings/shared/components'
+import { ActiveFiltersSummary, ListingsSearchBar } from '@/app/listings/shared/components'
+import { buildActiveFilterItems } from '@/app/listings/shared/utils/buildActiveFilterItems'
 import { MultiSelect } from '@/components/ui'
 import AsyncDeviceMultiSelect from '@/components/ui/form/AsyncDeviceMultiSelect'
 import AsyncSocMultiSelect from '@/components/ui/form/AsyncSocMultiSelect'
@@ -32,10 +33,13 @@ interface Props {
   onEmulatorChange: (values: string[]) => void
   onPerformanceChange: (values: string[]) => void
   onSearchChange: (value: string) => void
+  onClearAll?: () => void
+  showActiveFilters?: boolean
 }
 
 export default function ListingsFiltersContent(props: Props) {
   const ENABLE_ASYNC_LISTINGS = process.env.NEXT_PUBLIC_ENABLE_ASYNC_LISTINGS_FILTERS === 'true'
+
   const hasActiveFilters =
     props.systemIds.length > 0 ||
     props.deviceIds.length > 0 ||
@@ -133,12 +137,23 @@ export default function ListingsFiltersContent(props: Props) {
         maxDisplayed={1}
       />
 
-      {hasActiveFilters && (
-        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Active Filters</h3>
-          </div>
-        </div>
+      {props.showActiveFilters && props.onClearAll && (
+        <AnimatePresence>
+          {hasActiveFilters && (
+            <ActiveFiltersSummary
+              showClearAll
+              onClearAll={props.onClearAll}
+              items={buildActiveFilterItems({
+                searchTerm: props.searchTerm,
+                systemIds: props.systemIds,
+                deviceIds: props.deviceIds,
+                socIds: props.socIds,
+                emulatorIds: props.emulatorIds,
+                performanceIds: props.performanceIds,
+              })}
+            />
+          )}
+        </AnimatePresence>
       )}
     </motion.div>
   )

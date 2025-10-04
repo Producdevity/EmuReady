@@ -167,6 +167,18 @@ function useListingsState() {
     [sortDirection, sortField, updateFilters],
   )
 
+  const clearAllFilters = useCallback(() => {
+    // Clear all filters including search via updateFilters (which updates URL immediately)
+    updateFilters({
+      systemIds: [],
+      deviceIds: [],
+      socIds: [],
+      emulatorIds: [],
+      performanceIds: [],
+      search: null, // Use null to trigger deletion
+    })
+  }, [updateFilters])
+
   return {
     // Current filter values from URL for actual filtering
     systemIds,
@@ -197,6 +209,7 @@ function useListingsState() {
 
     // Helpers
     handleSort,
+    clearAllFilters,
   }
 }
 

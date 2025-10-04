@@ -19,6 +19,7 @@ import {
   CollapsedBadges,
   FilterSidebarShell,
 } from '@/app/listings/shared/components'
+import { buildActiveFilterItems } from '@/app/listings/shared/utils/buildActiveFilterItems'
 import {
   getSystemNames,
   getDeviceNames,
@@ -58,6 +59,7 @@ interface FiltersProps {
   onEmulatorChange: (values: string[]) => void
   onPerformanceChange: (values: number[]) => void
   onSearchChange: (value: string) => void
+  onClearAll: () => void
   isCollapsed: boolean
   onToggleCollapse: () => void
   userPreferences: UserPreferences | null | undefined
@@ -108,13 +110,8 @@ function ListingsFiltersSidebar(props: FiltersProps) {
     analytics.filter.search(value)
   }
 
-  const clearAllFilters = () => {
-    props.onSystemChange([])
-    props.onDeviceChange([])
-    props.onSocChange([])
-    props.onEmulatorChange([])
-    props.onPerformanceChange([])
-    props.onSearchChange('')
+  const handleClearAll = () => {
+    props.onClearAll()
     filterAnalytics.clearAll()
   }
 
@@ -204,7 +201,7 @@ function ListingsFiltersSidebar(props: FiltersProps) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 10 }}
-          onClick={clearAllFilters}
+          onClick={handleClearAll}
           className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 flex items-center justify-center transition-colors"
           whileHover={{ scale: 1.1, rotate: 5 }}
           whileTap={{ scale: 0.95 }}
@@ -395,69 +392,15 @@ function ListingsFiltersSidebar(props: FiltersProps) {
         {hasActiveFilters && (
           <ActiveFiltersSummary
             showClearAll
-            onClearAll={clearAllFilters}
-            items={[
-              ...(props.searchTerm
-                ? [
-                    {
-                      key: 'search',
-                      content: `Search: “${props.searchTerm}”`,
-                      colorClass: 'bg-yellow-500',
-                      delay: 0.1,
-                    },
-                  ]
-                : []),
-              ...(props.systemIds.length > 0
-                ? [
-                    {
-                      key: 'systems',
-                      content: `Systems: ${props.systemIds.length} selected`,
-                      colorClass: 'bg-blue-500',
-                      delay: 0.15,
-                    },
-                  ]
-                : []),
-              ...(props.deviceIds.length > 0
-                ? [
-                    {
-                      key: 'devices',
-                      content: `Devices: ${props.deviceIds.length} selected`,
-                      colorClass: 'bg-green-500',
-                      delay: 0.2,
-                    },
-                  ]
-                : []),
-              ...(props.socIds.length > 0
-                ? [
-                    {
-                      key: 'socs',
-                      content: `SoCs: ${props.socIds.length} selected`,
-                      colorClass: 'bg-purple-500',
-                      delay: 0.25,
-                    },
-                  ]
-                : []),
-              ...(props.emulatorIds.length > 0
-                ? [
-                    {
-                      key: 'emulators',
-                      content: `Emulators: ${props.emulatorIds.length} selected`,
-                      colorClass: 'bg-orange-500',
-                      delay: 0.3,
-                    },
-                  ]
-                : []),
-              ...(props.performanceIds.length > 0
-                ? [
-                    {
-                      key: 'performance',
-                      content: `Performance: ${props.performanceIds.length} selected`,
-                      colorClass: 'bg-red-500',
-                      delay: 0.35,
-                    },
-                  ]
-                : []),
-            ]}
+            onClearAll={handleClearAll}
+            items={buildActiveFilterItems({
+              searchTerm: props.searchTerm,
+              systemIds: props.systemIds,
+              deviceIds: props.deviceIds,
+              socIds: props.socIds,
+              emulatorIds: props.emulatorIds,
+              performanceIds: props.performanceIds,
+            })}
           />
         )}
       </AnimatePresence>
