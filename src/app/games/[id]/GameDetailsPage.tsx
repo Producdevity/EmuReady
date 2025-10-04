@@ -1,7 +1,8 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Smartphone, Monitor } from 'lucide-react'
+import Link from 'next/link'
 import { notFound, useParams, useRouter } from 'next/navigation'
 import { GameDetailsPageSkeleton } from '@/app/games/[id]/components/GameDetailsPageSkeleton'
 import { Badge, Button } from '@/components/ui'
@@ -71,6 +72,22 @@ function GameDetailsPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Add Report Buttons */}
+        <div className="mb-8 flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <Link href={`/listings/new?gameId=${gameQuery.data.id}`} className="flex-1">
+            <Button variant="fancy" size="lg" className="w-full group">
+              <Smartphone className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+              Add Handheld Report
+            </Button>
+          </Link>
+          <Link href={`/pc-listings/new?gameId=${gameQuery.data.id}`} className="flex-1">
+            <Button variant="fancy" size="lg" className="w-full group">
+              <Monitor className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+              Add PC Report
+            </Button>
+          </Link>
         </div>
 
         <GameListingsSection
