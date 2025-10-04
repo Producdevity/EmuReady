@@ -144,6 +144,24 @@ export default function usePcListingsState() {
     [sortField, sortDirection],
   )
 
+  const clearAllFilters = useCallback(() => {
+    // Clear debounce timer to prevent delayed update
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+
+    // Clear all state including both search states immediately
+    setSearchInput('')
+    setDebouncedSearch('')
+    setSystemIds([])
+    setCpuIds([])
+    setGpuIds([])
+    setEmulatorIds([])
+    setPerformanceIds([])
+    setMinMemory(null)
+    setMaxMemory(null)
+  }, [])
+
   return {
     page,
     setPage,
@@ -171,5 +189,6 @@ export default function usePcListingsState() {
     myListings,
     setMyListings,
     handleSort,
+    clearAllFilters,
   }
 }

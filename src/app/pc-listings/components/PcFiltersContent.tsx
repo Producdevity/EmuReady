@@ -1,8 +1,10 @@
 'use client'
 
+import { AnimatePresence } from 'framer-motion'
 import { Cpu, HardDrive, Rocket, MonitorSpeaker, Gamepad2, MemoryStick } from 'lucide-react'
 import { type ChangeEvent } from 'react'
-import { ListingsSearchBar } from '@/app/listings/shared/components'
+import { ListingsSearchBar, ActiveFiltersSummary } from '@/app/listings/shared/components'
+import { buildPcActiveFilterItems } from '@/app/pc-listings/utils/buildPcActiveFilterItems'
 import { MultiSelect, Input } from '@/components/ui'
 import AsyncCpuMultiSelect from '@/components/ui/form/AsyncCpuMultiSelect'
 import AsyncGpuMultiSelect from '@/components/ui/form/AsyncGpuMultiSelect'
@@ -40,7 +42,28 @@ interface Props {
   onMinMemoryChange: (value: number | null) => void
   onMaxMemoryChange: (value: number | null) => void
   onSearchChange: (value: string) => void
+  onClearAll?: () => void
+  showActiveFilters?: boolean
 }
+
+const filterPcSystems = (systems: System[]): System[] =>
+  systems.filter((system) => system.key !== 'microsoft_windows')
+
+// TODO: Remove this once we have a better way to filter out Systems and Emulators that don't belong on PC
+const ANDROID_EMULATORS = [
+  'AetherSX2',
+  'ExaGear',
+  'GameHub',
+  'GameNative',
+  'Horizon',
+  'MiceWine',
+  'Mobox',
+  'NethersX2',
+  'Pluvia',
+  'Winlator',
+]
+const filterPcEmulators = (emulators: Emulator[]): Emulator[] =>
+  emulators.filter((emulator) => !ANDROID_EMULATORS.includes(emulator.name))
 
 export default function PcFiltersContent(props: Props) {
   const handleMinMemoryChange = (ev: ChangeEvent<HTMLInputElement>) => {
@@ -58,6 +81,16 @@ export default function PcFiltersContent(props: Props) {
   }
 
   const ENABLE_ASYNC = process.env.NEXT_PUBLIC_ENABLE_ASYNC_PC_FILTERS === 'true'
+
+  const hasActiveFilters =
+    props.searchTerm ||
+    props.systemIds.length > 0 ||
+    props.cpuIds.length > 0 ||
+    props.gpuIds.length > 0 ||
+    props.emulatorIds.length > 0 ||
+    props.performanceIds.length > 0 ||
+    props.minMemory !== null ||
+    props.maxMemory !== null
 
   return (
     <div className="space-y-6">
@@ -77,7 +110,7 @@ export default function PcFiltersContent(props: Props) {
         leftIcon={<MonitorSpeaker className="w-5 h-5" />}
         value={props.systemIds}
         onChange={props.onSystemChange}
-        options={systemOptions(props.systems)}
+        options={systemOptions(filterPcSystems(props.systems))}
         placeholder="All systems"
         maxDisplayed={2}
       />
@@ -132,7 +165,7 @@ export default function PcFiltersContent(props: Props) {
         leftIcon={<Gamepad2 className="w-5 h-5" />}
         value={props.emulatorIds}
         onChange={props.onEmulatorChange}
-        options={emulatorOptions(props.emulators)}
+        options={emulatorOptions(filterPcEmulators(props.emulators))}
         placeholder="All emulators"
         maxDisplayed={2}
       />
@@ -176,6 +209,28 @@ export default function PcFiltersContent(props: Props) {
         placeholder="All performance levels"
         maxDisplayed={2}
       />
+
+      {/* Active Filters */}
+      {props.showActiveFilters && props.onClearAll && (
+        <AnimatePresence>
+          {hasActiveFilters && (
+            <ActiveFiltersSummary
+              showClearAll
+              onClearAll={props.onClearAll}
+              items={buildPcActiveFilterItems({
+                searchTerm: props.searchTerm,
+                systemIds: props.systemIds,
+                cpuIds: props.cpuIds,
+                gpuIds: props.gpuIds,
+                emulatorIds: props.emulatorIds,
+                performanceIds: props.performanceIds,
+                minMemory: props.minMemory,
+                maxMemory: props.maxMemory,
+              })}
+            />
+          )}
+        </AnimatePresence>
+      )}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Cpu, HardDrive, Rocket, MonitorSpeaker, Gamepad2, Search, CircleX } from 'lucide-react'
 import {
   ActiveFiltersSummary,
@@ -14,6 +14,7 @@ import {
   getEmulatorNames,
   getPerformanceLabels,
 } from '@/app/listings/shared/utils/selectedLabels'
+import { buildPcActiveFilterItems } from '@/app/pc-listings/utils/buildPcActiveFilterItems'
 import { filterAnalytics } from '@/lib/analytics/filterAnalytics'
 import PcFiltersContent from './PcFiltersContent'
 import type { System, PerformanceScale, Emulator } from '@orm'
@@ -59,6 +60,21 @@ export default function PcFiltersSidebar(props: Props) {
     search: props.searchTerm ? 1 : 0,
   }
   const totalActiveFilters = Object.values(filterCounts).reduce((sum, count) => sum + count, 0)
+
+  const hasActiveFilters =
+    props.searchTerm ||
+    props.systemIds.length > 0 ||
+    props.cpuIds.length > 0 ||
+    props.gpuIds.length > 0 ||
+    props.emulatorIds.length > 0 ||
+    props.performanceIds.length > 0 ||
+    props.minMemory !== null ||
+    props.maxMemory !== null
+
+  const handleClearAll = () => {
+    props.onClearAll?.()
+    filterAnalytics.clearAll()
+  }
 
   const collapsedSummary = (
     <div className="flex flex-col items-center gap-4 w-full" style={{ overflow: 'visible' }}>
@@ -176,80 +192,26 @@ export default function PcFiltersSidebar(props: Props) {
           filterAnalytics.performance(numeric, labels)
         }}
       />
-      <ActiveFiltersSummary
-        items={[
-          ...(props.searchTerm
-            ? [
-                {
-                  key: 'search',
-                  content: `Search: “${props.searchTerm}”`,
-                  colorClass: 'bg-yellow-500',
-                  delay: 0.1,
-                },
-              ]
-            : []),
-          ...(props.systemIds.length > 0
-            ? [
-                {
-                  key: 'systems',
-                  content: `Systems: ${props.systemIds.length} selected`,
-                  colorClass: 'bg-purple-500',
-                  delay: 0.15,
-                },
-              ]
-            : []),
-          ...(props.cpuIds.length > 0
-            ? [
-                {
-                  key: 'cpus',
-                  content: `CPUs: ${props.cpuIds.length} selected`,
-                  colorClass: 'bg-blue-500',
-                  delay: 0.2,
-                },
-              ]
-            : []),
-          ...(props.gpuIds.length > 0
-            ? [
-                {
-                  key: 'gpus',
-                  content: `GPUs: ${props.gpuIds.length} selected`,
-                  colorClass: 'bg-green-500',
-                  delay: 0.25,
-                },
-              ]
-            : []),
-          ...(props.emulatorIds.length > 0
-            ? [
-                {
-                  key: 'emulators',
-                  content: `Emulators: ${props.emulatorIds.length} selected`,
-                  colorClass: 'bg-indigo-500',
-                  delay: 0.3,
-                },
-              ]
-            : []),
-          ...(props.minMemory !== null || props.maxMemory !== null
-            ? [
-                {
-                  key: 'memory',
-                  content: `Memory: ${props.minMemory ?? '-'} - ${props.maxMemory ?? '-'} GB`,
-                  colorClass: 'bg-pink-500',
-                  delay: 0.35,
-                },
-              ]
-            : []),
-          ...(props.performanceIds.length > 0
-            ? [
-                {
-                  key: 'performance',
-                  content: `Performance: ${props.performanceIds.length} selected`,
-                  colorClass: 'bg-rose-500',
-                  delay: 0.4,
-                },
-              ]
-            : []),
-        ]}
-      />
+      {props.onClearAll && (
+        <AnimatePresence>
+          {hasActiveFilters && (
+            <ActiveFiltersSummary
+              showClearAll
+              onClearAll={handleClearAll}
+              items={buildPcActiveFilterItems({
+                searchTerm: props.searchTerm,
+                systemIds: props.systemIds,
+                cpuIds: props.cpuIds,
+                gpuIds: props.gpuIds,
+                emulatorIds: props.emulatorIds,
+                performanceIds: props.performanceIds,
+                minMemory: props.minMemory,
+                maxMemory: props.maxMemory,
+              })}
+            />
+          )}
+        </AnimatePresence>
+      )}
     </FilterSidebarShell>
   )
 }

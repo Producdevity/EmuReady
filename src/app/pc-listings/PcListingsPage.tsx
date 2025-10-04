@@ -147,14 +147,7 @@ function PcListingsPage() {
   }
 
   const clearAllFilters = () => {
-    listingsState.setSearch('')
-    listingsState.setSystemIds([])
-    listingsState.setCpuIds([])
-    listingsState.setGpuIds([])
-    listingsState.setEmulatorIds([])
-    listingsState.setPerformanceIds([])
-    listingsState.setMinMemory(null)
-    listingsState.setMaxMemory(null)
+    listingsState.clearAllFilters()
   }
 
   if (listingsQuery?.error) {
@@ -219,6 +212,8 @@ function PcListingsPage() {
               onMinMemoryChange={handleMinMemoryChange}
               onMaxMemoryChange={handleMaxMemoryChange}
               onSearchChange={handleSearchChange}
+              onClearAll={clearAllFilters}
+              showActiveFilters
             />
           </MobileFilterSheet>
         )}
