@@ -6,21 +6,8 @@ import Image from 'next/image'
 import { useState } from 'react'
 import { Badge } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import { formatters, getLocale } from '@/utils/date'
+import { formatReleaseYear } from '@/utils/date'
 import type { GameSearchResultsProps, BaseGameResult } from './types'
-
-function formatReleaseYear(date: Date | string | null | undefined): string {
-  if (!date) return 'Unknown'
-  try {
-    const d = typeof date === 'string' ? new Date(date) : date
-    if (isNaN(d.getTime())) return 'Unknown'
-    const year = d.getFullYear()
-    if (year < 1970 || year > 2100) return 'Unknown'
-    return formatters.year(d, getLocale())
-  } catch {
-    return 'Unknown'
-  }
-}
 
 interface GameImageProps {
   src: string
@@ -77,7 +64,7 @@ export function GameSearchResults<T extends BaseGameResult>(props: GameSearchRes
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="w-full overflow-hidden"
+      className="w-full"
     >
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-medium text-slate-900 dark:text-white">Search Results</h2>

@@ -51,3 +51,16 @@ export function useLocalizedDate() {
     formatYear: (date: Date | string) => formatters.year(new Date(date), locale),
   }
 }
+
+export function formatReleaseYear(date: Date | string | null | undefined): string {
+  if (!date) return 'Unknown'
+  try {
+    const d = typeof date === 'string' ? new Date(date) : date
+    if (isNaN(d.getTime())) return 'Unknown'
+    const year = d.getFullYear()
+    if (year < 1970 || year > 2100) return 'Unknown'
+    return formatters.year(d, getLocale())
+  } catch {
+    return 'Unknown'
+  }
+}
