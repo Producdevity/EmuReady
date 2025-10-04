@@ -23,12 +23,14 @@ export function MobileFilterSheet({ onClose, ...props }: Props) {
     }
   }, [])
 
-  // Initial focus + Escape handling (no querySelector)
+  // Initial focus on mount only
   useEffect(() => {
-    // Focus close button first; fallback to container
     if (closeBtnRef.current) closeBtnRef.current.focus()
     else if (containerRef.current) containerRef.current.focus()
+  }, [])
 
+  // Escape key handling
+  useEffect(() => {
     const container = containerRef.current
     if (!container) return
 
