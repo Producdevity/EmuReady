@@ -1,7 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { Filter, FilterX } from 'lucide-react'
+import { Filter, FilterX, PencilLine } from 'lucide-react'
 import { useState } from 'react'
 import { isNullish } from 'remeda'
 import {
@@ -9,8 +9,11 @@ import {
   type FieldValueLike,
 } from '@/app/listings/components/shared/CustomFieldValue'
 import { DetailFieldRow } from '@/app/listings/components/shared/details/DetailFieldRow'
-import { Button } from '@/components/ui'
+import { isDefaultValue } from '@/app/listings/components/shared/utils/isDefaultValue'
+import { Badge, Button } from '@/components/ui'
+import storageKeys from '@/data/storageKeys'
 import { useLocalStorage } from '@/hooks'
+import { cn } from '@/lib/utils'
 
 interface Props {
   title?: string
@@ -18,28 +21,19 @@ interface Props {
   alignItems?: 'start' | 'center'
 }
 
-function isDefaultValue(fieldValue: FieldValueLike): boolean {
-  const defaultValue = fieldValue.customFieldDefinition.defaultValue
-  const currentValue = fieldValue.value
-
-  // If no default is set, consider any value as non-default
-  if (isNullish(defaultValue)) return false
-
-  // For JSON values, need to parse and compare
-  if (typeof defaultValue === 'object' && typeof currentValue === 'object') {
-    return JSON.stringify(defaultValue) === JSON.stringify(currentValue)
-  }
-
-  // Direct comparison for primitives
-  return defaultValue === currentValue
-}
+const INDICATOR_BORDER_WIDTH = '4px'
+const DEFAULT_BORDER_WIDTH = '1px'
+const TOGGLE_DELAY_MS = 400
 
 export function CustomFieldsSection(props: Props) {
   const title = props.title ?? 'Emulator-Specific Details'
   const alignItems = props.alignItems ?? 'start'
   const hasFields = Array.isArray(props.fieldValues) && props.fieldValues.length > 0
 
-  const [hideDefaults, setHideDefaults] = useLocalStorage('hideDefaultCustomFields', false)
+  const [hideDefaults, setHideDefaults] = useLocalStorage(
+    storageKeys.hideDefaultCustomFields,
+    false,
+  )
   const [isToggling, setIsToggling] = useState(false)
 
   if (!hasFields) return null
@@ -54,7 +48,7 @@ export function CustomFieldsSection(props: Props) {
   const handleToggle = () => {
     setIsToggling(true)
     setHideDefaults(!hideDefaults)
-    setTimeout(() => setIsToggling(false), 400)
+    setTimeout(() => setIsToggling(false), TOGGLE_DELAY_MS)
   }
 
   return (
@@ -89,33 +83,77 @@ export function CustomFieldsSection(props: Props) {
       </div>
       <AnimatePresence mode="popLayout">
         <motion.div layout className="space-y-3" transition={{ duration: 0.3, ease: 'easeInOut' }}>
-          {fieldsToShow.map((fieldValue, index) => (
-            <motion.div
-              key={fieldValue.id}
-              layout
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              transition={{
-                duration: 0.3,
-                delay: index * 0.03,
-                ease: 'easeOut',
-              }}
-              className="w-full max-w-full rounded-2xl border border-gray-200/70 bg-white/80 p-4 shadow-sm dark:border-gray-700/70 dark:bg-gray-800/80 overflow-hidden"
-            >
-              <dl>
-                <DetailFieldRow
-                  align={alignItems}
-                  label={fieldValue.customFieldDefinition.label ?? 'Field'}
-                  value={
-                    <span className="block break-words overflow-wrap-anywhere">
-                      <CustomFieldValue fieldValue={fieldValue} />
-                    </span>
-                  }
-                />
-              </dl>
-            </motion.div>
-          ))}
+          {fieldsToShow.map((fieldValue, index) => {
+            const isCustomized = !isDefaultValue(fieldValue)
+            const showIndicator = !hideDefaults && isCustomized
+
+            return (
+              <motion.div
+                key={fieldValue.id}
+                layout
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  scale: 1,
+                  borderLeftWidth: showIndicator ? INDICATOR_BORDER_WIDTH : DEFAULT_BORDER_WIDTH,
+                }}
+                exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                transition={{
+                  duration: 0.3,
+                  delay: index * 0.03,
+                  ease: 'easeOut',
+                  borderLeftWidth: { duration: 0.5, ease: 'easeInOut' },
+                }}
+                className={cn(
+                  'w-full max-w-full rounded-2xl border p-4 shadow-sm overflow-hidden relative',
+                  'bg-white/80 dark:bg-gray-800/80',
+                  'transition-colors duration-500 ease-in-out',
+                  showIndicator
+                    ? 'border-blue-300/70 dark:border-blue-600/70 border-l-blue-500 dark:border-l-blue-400'
+                    : 'border-gray-200/70 dark:border-gray-700/70',
+                )}
+              >
+                <AnimatePresence mode="wait">
+                  {showIndicator && (
+                    <motion.div
+                      key="modified-badge"
+                      initial={{ opacity: 0, scale: 0.5, x: 10, rotate: -5 }}
+                      animate={{ opacity: 1, scale: 1, x: 0, rotate: 0 }}
+                      exit={{ opacity: 0, scale: 0.5, x: 10, rotate: 5 }}
+                      transition={{
+                        duration: 0.3,
+                        delay: 0.1 + index * 0.02,
+                        type: 'spring',
+                        stiffness: 300,
+                        damping: 20,
+                      }}
+                      className="absolute top-3 right-3 z-10"
+                    >
+                      <Badge
+                        variant="default"
+                        size="sm"
+                        className="bg-blue-500 dark:bg-blue-600 text-white shadow-md"
+                      >
+                        <PencilLine className="w-3 h-3" />
+                      </Badge>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <dl>
+                  <DetailFieldRow
+                    align={alignItems}
+                    label={fieldValue.customFieldDefinition.label ?? 'Field'}
+                    value={
+                      <span className="block break-words overflow-wrap-anywhere">
+                        <CustomFieldValue fieldValue={fieldValue} />
+                      </span>
+                    }
+                  />
+                </dl>
+              </motion.div>
+            )
+          })}
         </motion.div>
       </AnimatePresence>
       {hideDefaults && defaultFields.length > 0 && (

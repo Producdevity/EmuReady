@@ -2,6 +2,7 @@ const PREFIX = process.env.NEXT_PUBLIC_LOCAL_STORAGE_PREFIX ?? '@EmuReady_'
 
 const storageKeys = {
   theme: `${PREFIX}theme`,
+  hideDefaultCustomFields: `${PREFIX}hide_default_custom_fields`,
   showSystemIcons: `${PREFIX}show_system_icons`,
   showEmulatorLogos: `${PREFIX}show_emulator_logos`,
   newListing: {

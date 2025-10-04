@@ -93,11 +93,11 @@ export function FilterSidebarShell(props: Props) {
               : 320,
           borderRadius: props.isCollapsed ? 20 : 24,
         }}
-        transition={{ duration: 0.4, ease: 'easeInOut' }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
         style={{ zIndex: 10, overflow: 'visible' }}
       >
         <div
-          className={`${props.isCollapsed ? 'p-4' : 'p-6'} transition-all duration-400 overflow-visible`}
+          className={`${props.isCollapsed ? 'p-4' : 'p-6'} transition-all duration-300 overflow-visible`}
         >
           <AnimatePresence mode="wait">
             {props.isCollapsed ? (
