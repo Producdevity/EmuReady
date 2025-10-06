@@ -6,9 +6,8 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useState, type KeyboardEvent } from 'react'
 import { Controller, useForm } from 'react-hook-form'
-import { isString } from 'remeda'
 import {
-  CustomFieldRenderer,
+  CustomFieldsFormSection,
   FormValidationSummary,
   EmulatorSelector,
   GameSelector,
@@ -48,6 +47,7 @@ function AddPcListingPage() {
   const gameIdFromUrl = searchParams.get('gameId')
 
   const [selectedGame, setSelectedGame] = useState<GameOption | null>(null)
+  const [selectedEmulator, setSelectedEmulator] = useState<EmulatorOption | null>(null)
   const [selectedPreset, setSelectedPreset] = useState<PcPresetOption | null>(null)
   const [gameSearchTerm, setGameSearchTerm] = useState('')
   const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
@@ -153,6 +153,7 @@ function AddPcListingPage() {
             id: emulator.id,
             name: emulator.name,
             systems: emulator.systems,
+            logo: emulator.logo,
           }))
 
         // Update the availableEmulators state for the warning logic
@@ -694,6 +695,14 @@ function AddPcListingPage() {
               control={form.control}
               name="emulatorId"
               selectedGame={selectedGame}
+              selectedEmulator={selectedEmulator}
+              onEmulatorSelect={(emulator) => {
+                setSelectedEmulator(emulator)
+                if (!emulator) {
+                  form.setValue('emulatorId', '')
+                  form.setValue('customFieldValues', [])
+                }
+              }}
               availableEmulators={availableEmulators}
               emulatorSearchTerm={emulatorSearchTerm}
               emulatorInputFocus={emulatorInputFocus}
@@ -766,33 +775,12 @@ function AddPcListingPage() {
           {selectedEmulatorId &&
             !customFieldDefinitionsQuery.isPending &&
             parsedCustomFields.length > 0 && (
-              <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
-                <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">
-                  Emulator-Specific Details
-                  {customFieldDefinitionsQuery.data?.[0]?.emulator?.name && (
-                    <span className="text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
-                      ({customFieldDefinitionsQuery.data[0].emulator.name})
-                    </span>
-                  )}
-                </h2>
-                {parsedCustomFields.map((fieldDef, index) => {
-                  const errorMessage = isString(
-                    form.formState.errors.customFieldValues?.[index]?.value?.message,
-                  )
-                    ? form.formState.errors.customFieldValues?.[index]?.value?.message
-                    : undefined
-                  return (
-                    <CustomFieldRenderer
-                      key={fieldDef.id}
-                      fieldDef={fieldDef}
-                      fieldName={`customFieldValues.${index}.value` as const}
-                      index={index}
-                      control={form.control}
-                      errorMessage={errorMessage}
-                    />
-                  )
-                })}
-              </div>
+              <CustomFieldsFormSection
+                parsedCustomFields={parsedCustomFields}
+                control={form.control}
+                errors={form.formState.errors}
+                emulatorName={customFieldDefinitionsQuery.data?.[0]?.emulator?.name}
+              />
             )}
 
           {/* Form Validation Summary */}

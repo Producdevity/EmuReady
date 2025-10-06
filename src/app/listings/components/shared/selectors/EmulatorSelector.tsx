@@ -8,9 +8,11 @@ import {
   type FieldPath,
   type FieldValues,
 } from 'react-hook-form'
-import { GitHubIcon } from '@/components/icons'
+import { GitHubIcon, EmulatorIcon } from '@/components/icons'
 import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import { type Nullable } from '@/types/utils'
+import SelectedItemCard from '../SelectedItemCard'
 
 export interface GameOption extends AutocompleteOptionBase {
   id: string
@@ -22,12 +24,15 @@ interface EmulatorOption extends AutocompleteOptionBase {
   id: string
   name: string
   systems: { id: string; name: string }[]
+  logo?: string | null
 }
 
 interface Props<TFieldValues extends FieldValues = FieldValues> {
   control: Control<TFieldValues>
   name: FieldPath<TFieldValues>
   selectedGame: GameOption | null
+  selectedEmulator?: Nullable<EmulatorOption>
+  onEmulatorSelect?: (emulator: Nullable<EmulatorOption>) => void
   availableEmulators: EmulatorOption[]
   emulatorSearchTerm: string
   emulatorInputFocus: boolean
@@ -62,69 +67,108 @@ function EmulatorSelector<TFieldValues extends FieldValues = FieldValues>(
   }
 
   return (
-    <>
-      <Controller
-        name={props.name}
-        control={props.control}
-        render={({ field }) => (
-          <>
-            <Autocomplete<EmulatorOption>
-              label="Emulator"
-              leftIcon={<Gamepad2 className="w-5 h-5" />}
-              value={field.value}
-              onChange={(value) => {
-                field.onChange(value)
-                // reset custom field values when emulator changes
-                if (props.customFieldValuesFieldName) {
-                  props.setValue(
-                    props.customFieldValuesFieldName,
-                    [] as TFieldValues[FieldPath<TFieldValues>],
-                  )
-                }
-              }}
-              onFocus={props.onFocus}
-              onBlur={props.onBlur}
-              loadItems={props.loadEmulatorItems}
-              optionToValue={(item) => item.id}
-              optionToLabel={(item) => item.name}
-              placeholder={`Search for emulators that support ${props.selectedGame?.system.name}...`}
-              minCharsToTrigger={0}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        Emulator
+      </label>
+
+      {props.selectedEmulator ? (
+        <SelectedItemCard
+          leftContent={
+            <EmulatorIcon
+              logo={props.selectedEmulator.logo}
+              name={props.selectedEmulator.name}
+              size="md"
+              showLogo
             />
-            {props.availableEmulators.length === 0 &&
-              props.selectedGame &&
-              props.emulatorSearchTerm.length >= 1 &&
-              !field.value && (
-                <div
-                  className={cn(
-                    'p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800',
-                    props.emulatorInputFocus ? 'mt-14' : 'mt-2',
-                  )}
-                >
-                  <div className="flex items-center text-sm text-orange-700 dark:text-orange-300">
-                    <AlertCircle className="w-4 h-4 mr-2" />
-                    <span>
-                      No emulators found that support{' '}
-                      <strong>{props.selectedGame.system.name}</strong>. Try a different search
-                      term, or request to add your emulator by opening a GitHub issue.
-                      <a
-                        href="https://github.com/Producdevity/EmuReady/issues/new?template=emulator_request.md"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="Request Emulator on GitHub"
-                        className="ml-1 underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                      >
-                        <GitHubIcon className="inline w-4 h-4 mr-1" />
-                        Request Emulator
-                      </a>
-                    </span>
+          }
+          title={props.selectedEmulator.name}
+          subtitle={
+            props.selectedEmulator.systems.length > 0
+              ? `Supports ${props.selectedEmulator.systems.map((s) => s.name).join(', ')}`
+              : undefined
+          }
+          onClear={() => {
+            props.onEmulatorSelect?.(null)
+          }}
+        />
+      ) : (
+        <Controller
+          name={props.name}
+          control={props.control}
+          render={({ field }) => (
+            <>
+              <Autocomplete<EmulatorOption>
+                leftIcon={<Gamepad2 className="w-5 h-5" />}
+                value={field.value}
+                onChange={(value) => {
+                  field.onChange(value)
+                  // reset custom field values when emulator changes
+                  if (props.customFieldValuesFieldName) {
+                    props.setValue(
+                      props.customFieldValuesFieldName,
+                      [] as TFieldValues[FieldPath<TFieldValues>],
+                    )
+                  }
+                  // Find and set the selected emulator
+                  if (!value) {
+                    props.onEmulatorSelect?.(null)
+                    return
+                  }
+
+                  props
+                    .loadEmulatorItems(props.emulatorSearchTerm)
+                    .then((emulators) => {
+                      const emulator = emulators.find((e) => e.id === value)
+                      if (emulator) props.onEmulatorSelect?.(emulator)
+                    })
+                    .catch(console.error)
+                }}
+                onFocus={props.onFocus}
+                onBlur={props.onBlur}
+                loadItems={props.loadEmulatorItems}
+                optionToValue={(item) => item.id}
+                optionToLabel={(item) => item.name}
+                placeholder={`Search for emulators that support ${props.selectedGame?.system.name}...`}
+                minCharsToTrigger={0}
+              />
+              {props.availableEmulators.length === 0 &&
+                props.selectedGame &&
+                props.emulatorSearchTerm.length >= 1 &&
+                !field.value && (
+                  <div
+                    className={cn(
+                      'p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800',
+                      props.emulatorInputFocus ? 'mt-14' : 'mt-2',
+                    )}
+                  >
+                    <div className="flex items-center text-sm text-orange-700 dark:text-orange-300">
+                      <AlertCircle className="w-4 h-4 mr-2" />
+                      <span>
+                        No emulators found that support{' '}
+                        <strong>{props.selectedGame.system.name}</strong>. Try a different search
+                        term, or request to add your emulator by opening a GitHub issue.
+                        <a
+                          href="https://github.com/Producdevity/EmuReady/issues/new?template=emulator_request.md"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Request Emulator on GitHub"
+                          className="ml-1 underline text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                        >
+                          <GitHubIcon className="inline w-4 h-4 mr-1" />
+                          Request Emulator
+                        </a>
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )}
-          </>
-        )}
-      />
+                )}
+            </>
+          )}
+        />
+      )}
+
       {props.errorMessage && <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>}
-    </>
+    </div>
   )
 }
 

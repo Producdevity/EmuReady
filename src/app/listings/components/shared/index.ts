@@ -14,7 +14,8 @@ export { default as CustomFieldTypeSelect } from './custom-fields/CustomFieldTyp
 export { default as CustomFieldTypeRange } from './custom-fields/CustomFieldTypeRange'
 
 // Form Components
-export { default as FormValidationSummary } from './FormValidationSummary'
+export * from './FormValidationSummary'
+export * from './CustomFieldsFormSection'
 
 // Utilities
 export { default as getCustomFieldTypeIcon } from './utils/getCustomFieldTypeIcon'
@@ -25,10 +26,5 @@ export {
 } from './utils/customFieldHelpers'
 
 // Types
-export type { GameOption, EmulatorOption, DeviceOption, PerformanceScale } from './types'
-
-export type {
-  CustomFieldDefinitionWithOptions,
-  CustomFieldOptionUI,
-  ValidationRules,
-} from './CustomFieldRenderer'
+export * from './types'
+export * from './CustomFieldRenderer'

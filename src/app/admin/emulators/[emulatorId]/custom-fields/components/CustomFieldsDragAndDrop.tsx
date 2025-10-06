@@ -36,6 +36,21 @@ interface Props {
   onRefresh: () => void
 }
 
+const DRAG_ACTIVATION_DISTANCE = 3
+
+/**
+ * Check if two fields are in the same category (including both being uncategorized)
+ */
+function areFieldsInSameCategory(
+  fieldCategoryId: string | null,
+  otherFieldCategoryId: string | null,
+): boolean {
+  return (
+    fieldCategoryId === otherFieldCategoryId ||
+    (fieldCategoryId === null && otherFieldCategoryId === null)
+  )
+}
+
 export default function CustomFieldsDragAndDrop(props: Props) {
   const utils = api.useUtils()
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -46,7 +61,7 @@ export default function CustomFieldsDragAndDrop(props: Props) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 3, // Reduced from 8px for more responsive dragging
+        distance: DRAG_ACTIVATION_DISTANCE,
       },
     }),
     useSensor(KeyboardSensor),
@@ -233,12 +248,7 @@ export default function CustomFieldsDragAndDrop(props: Props) {
         // Optimistically update all fields in this category with their new order
         setLocalFields(
           props.fields.map((f) => {
-            // Skip fields not in this category
-            const isInSameCategory =
-              f.categoryId === activeField.categoryId ||
-              (f.categoryId === null && activeField.categoryId === null)
-
-            if (!isInSameCategory) return f
+            if (!areFieldsInSameCategory(f.categoryId, activeField.categoryId)) return f
 
             // Find this field's new position in the reordered array
             const newPosition = reordered.findIndex((rf) => rf.id === f.id)

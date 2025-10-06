@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { type FieldErrors } from 'react-hook-form'
 import { describe, expect, it } from 'vitest'
-import FormValidationSummary from './FormValidationSummary'
+import { FormValidationSummary } from './FormValidationSummary'
 
 describe('FormValidationSummary', () => {
   it('maps generic required message to field label for standard fields', () => {

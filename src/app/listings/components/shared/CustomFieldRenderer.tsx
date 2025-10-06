@@ -31,6 +31,14 @@ export interface CustomFieldDefinitionWithOptions {
   rangeUnit?: string | null
   rangeDecimals?: number | null
   defaultValue?: string | number | boolean | null
+  categoryId?: string | null
+  categoryOrder?: number
+  displayOrder?: number
+  category?: {
+    id: string
+    name: string
+    displayOrder: number
+  } | null
 }
 
 export interface ValidationRules {
@@ -38,6 +46,7 @@ export interface ValidationRules {
   validate?: (value: unknown) => boolean | string
 }
 
+// TODO: move to ./utils/customFieldHelpers.ts and the related tests to ./utils/customFieldHelpers.test.ts
 export function isCustomFieldValueEmpty(value: unknown): boolean {
   if (value === null || value === undefined) return true
   if (typeof value === 'boolean') return false

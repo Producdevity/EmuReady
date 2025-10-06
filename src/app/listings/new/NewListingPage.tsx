@@ -16,7 +16,6 @@ import {
   type KeyboardEvent,
 } from 'react'
 import { useForm, Controller } from 'react-hook-form'
-import { isString } from 'remeda'
 import '@/shared/emulator-config/eden'
 import '@/shared/emulator-config/azahar'
 import { Button, LoadingSpinner } from '@/components/ui'
@@ -31,7 +30,7 @@ import { type RouterInput } from '@/types/trpc'
 import { parseCustomFieldOptions, getCustomFieldDefaultValue } from '@/utils/custom-fields'
 import getErrorMessage from '@/utils/getErrorMessage'
 import {
-  CustomFieldRenderer,
+  CustomFieldsFormSection,
   type DeviceOption,
   DeviceSelector,
   type EmulatorOption,
@@ -63,6 +62,7 @@ function AddListingPage() {
   const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
   const [deviceSearchTerm, setDeviceSearchTerm] = useState('')
   const [selectedGame, setSelectedGame] = useState<GameOption | null>(null)
+  const [selectedEmulator, setSelectedEmulator] = useState<EmulatorOption | null>(null)
   const [selectedDevice, setSelectedDevice] = useState<DeviceOption | null>(null)
   const [availableEmulators, setAvailableEmulators] = useState<EmulatorOption[]>([])
   const [emulatorInputFocus, setEmulatorInputFocus] = useState(false)
@@ -320,6 +320,7 @@ function AddListingPage() {
             id: emulator.id,
             name: emulator.name,
             systems: emulator.systems,
+            logo: emulator.logo,
           }))
 
         // Update the availableEmulators state for the warning logic
@@ -635,6 +636,14 @@ function AddListingPage() {
               control={form.control}
               name="emulatorId"
               selectedGame={selectedGame}
+              selectedEmulator={selectedEmulator}
+              onEmulatorSelect={(emulator) => {
+                setSelectedEmulator(emulator)
+                if (!emulator) {
+                  form.setValue('emulatorId', '')
+                  form.setValue('customFieldValues', [])
+                }
+              }}
               availableEmulators={availableEmulators}
               emulatorSearchTerm={emulatorSearchTerm}
               emulatorInputFocus={emulatorInputFocus}
@@ -687,17 +696,9 @@ function AddListingPage() {
           {selectedEmulatorId &&
             !customFieldDefinitionsQuery.isPending &&
             parsedCustomFields.length > 0 && (
-              <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
-                <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">
-                  Emulator-Specific Details
-                  {customFieldDefinitionsQuery.data?.[0]?.emulator?.name && (
-                    <span className="text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
-                      ({customFieldDefinitionsQuery.data[0].emulator.name})
-                    </span>
-                  )}
-                </h2>
+              <>
                 {showConfigImporter && (
-                  <div className="mb-6">
+                  <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
                     <label
                       htmlFor="eden-config-upload"
                       className={cn(
@@ -725,7 +726,7 @@ function AddListingPage() {
                           Import {importerDisplayName} config ({supportedExtensionsLabel})
                         </p>
                         <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
-                          We’ll auto-fill matching fields from your {importerDisplayName}{' '}
+                          We&apos;ll auto-fill matching fields from your {importerDisplayName}{' '}
                           configuration file.
                         </p>
                       </div>
@@ -744,36 +745,14 @@ function AddListingPage() {
                   </div>
                 )}
 
-                <div className="space-y-4">
-                  {parsedCustomFields.map((fieldDef, index) => {
-                    const errorMessage = isString(
-                      form.formState.errors.customFieldValues?.[index]?.value?.message,
-                    )
-                      ? form.formState.errors.customFieldValues?.[index]?.value?.message
-                      : undefined
-                    const isHighlighted = highlightedFieldIds.includes(fieldDef.id)
-
-                    return (
-                      <div
-                        key={fieldDef.id}
-                        className={cn(
-                          'rounded-2xl border border-gray-200/60 p-4 shadow-sm transition dark:border-gray-700/60',
-                          isHighlighted &&
-                            'border-emerald-400/60 bg-emerald-500/10 shadow-lg shadow-emerald-500/20',
-                        )}
-                      >
-                        <CustomFieldRenderer
-                          fieldDef={fieldDef}
-                          fieldName={`customFieldValues.${index}.value` as const}
-                          index={index}
-                          control={form.control}
-                          errorMessage={errorMessage}
-                        />
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
+                <CustomFieldsFormSection
+                  parsedCustomFields={parsedCustomFields}
+                  control={form.control}
+                  errors={form.formState.errors}
+                  emulatorName={customFieldDefinitionsQuery.data?.[0]?.emulator?.name}
+                  highlightedFieldIds={highlightedFieldIds}
+                />
+              </>
             )}
 
           {/* Form Validation Summary */}

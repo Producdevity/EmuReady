@@ -15,7 +15,7 @@ interface Props<TFieldValues extends FieldValues = FieldValues> {
   fieldLabels?: Record<string, string>
 }
 
-function FormValidationSummary<TFieldValues extends FieldValues = FieldValues>(
+export function FormValidationSummary<TFieldValues extends FieldValues = FieldValues>(
   props: Props<TFieldValues>,
 ) {
   const hasErrors = Object.keys(props.errors).length > 0
@@ -122,5 +122,3 @@ function FormValidationSummary<TFieldValues extends FieldValues = FieldValues>(
     </div>
   )
 }
-
-export default FormValidationSummary

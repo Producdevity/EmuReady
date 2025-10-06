@@ -1,4 +1,9 @@
 /**
+ * Sort order value for uncategorized fields (ensures they appear last)
+ */
+const UNCATEGORIZED_SORT_ORDER = Number.MAX_SAFE_INTEGER
+
+/**
  * Grouped fields by category with metadata
  */
 export interface GroupedCustomFields<T> {
@@ -43,7 +48,8 @@ export function sortCustomFieldsByCategory<T extends SortableCustomField>(
     (acc, field) => {
       const categoryId = field.customFieldDefinition.categoryId || 'uncategorized'
       const categoryName = field.customFieldDefinition.category?.name || 'Uncategorized'
-      const displayOrder = field.customFieldDefinition.category?.displayOrder ?? 999999
+      const displayOrder =
+        field.customFieldDefinition.category?.displayOrder ?? UNCATEGORIZED_SORT_ORDER
 
       if (!acc[categoryId]) {
         acc[categoryId] = { categoryName, displayOrder, fields: [] }
