@@ -65,6 +65,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       return prisma.customFieldDefinition.create({
         data: {
           emulatorId: input.emulatorId,
+          categoryId: input.categoryId ?? null,
           name: input.name,
           label: input.label,
           type: input.type,
@@ -78,6 +79,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
           rangeDecimals: input.rangeDecimals ?? null,
           isRequired: input.isRequired,
           displayOrder: input.displayOrder,
+          categoryOrder: input.categoryOrder ?? 0,
         },
       })
     }),
@@ -87,8 +89,8 @@ export const customFieldDefinitionRouter = createTRPCRouter({
     .query(async ({ input }) => {
       return prisma.customFieldDefinition.findMany({
         where: { emulatorId: input.emulatorId },
-        orderBy: { displayOrder: 'asc' },
-        include: { emulator: true },
+        orderBy: [{ categoryId: 'asc' }, { categoryOrder: 'asc' }, { displayOrder: 'asc' }],
+        include: { emulator: true, category: true },
       })
     }),
 
@@ -172,6 +174,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       return prisma.customFieldDefinition.update({
         where: { id: input.id },
         data: {
+          categoryId: input.hasOwnProperty('categoryId') ? input.categoryId : undefined,
           name: input.name,
           label: input.label,
           type: input.type,
@@ -184,6 +187,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
           rangeDecimals: input.rangeDecimals ?? undefined,
           isRequired: input.isRequired,
           displayOrder: input.displayOrder,
+          categoryOrder: input.categoryOrder ?? undefined,
         },
       })
     }),

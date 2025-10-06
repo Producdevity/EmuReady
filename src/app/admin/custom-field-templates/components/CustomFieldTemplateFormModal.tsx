@@ -12,6 +12,8 @@ interface TemplateField {
   name: string
   label: string
   type: CustomFieldType
+  categoryName?: string
+  categoryOrder?: number
   options: FilterValue[]
   defaultValue?: string | boolean | number | null
   placeholder?: string
@@ -109,6 +111,8 @@ function CustomFieldTemplateFormModal(props: Props) {
         name: field.name,
         label: field.label,
         type: field.type,
+        categoryName: field.categoryName ?? '',
+        categoryOrder: field.categoryOrder ?? 0,
         options: (field.options as { value: string; label: string }[]) || [],
         defaultValue:
           field.defaultValue === undefined
@@ -242,6 +246,8 @@ function CustomFieldTemplateFormModal(props: Props) {
         name: field.name.trim().toLowerCase(),
         label: field.label.trim(),
         type: field.type,
+        categoryName: field.categoryName?.trim() || undefined,
+        categoryOrder: field.categoryOrder ?? 0,
         options:
           field.type === CustomFieldType.SELECT
             ? field.options.filter((opt) => opt.value.trim() && opt.label.trim())
@@ -288,6 +294,8 @@ function CustomFieldTemplateFormModal(props: Props) {
         name: '',
         label: '',
         type: CustomFieldType.TEXT,
+        categoryName: '',
+        categoryOrder: 0,
         options: [],
         defaultValue: null,
         placeholder: '',
@@ -568,6 +576,20 @@ function CustomFieldTemplateFormModal(props: Props) {
                         </p>
                       )}
                     </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-2">Category (Optional)</label>
+                    <Input
+                      type="text"
+                      value={field.categoryName || ''}
+                      onChange={(ev) => updateField(fieldIndex, { categoryName: ev.target.value })}
+                      placeholder="e.g., Graphics, Performance, Audio"
+                      maxLength={100}
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Suggest a category name to organize this field
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-4">

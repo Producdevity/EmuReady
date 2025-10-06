@@ -227,6 +227,36 @@ export const customFieldTemplateRouter = createTRPCRouter({
         )
       }
 
+      const existingCategories = await ctx.prisma.customFieldCategory.findMany({
+        where: { emulatorId: input.emulatorId },
+      })
+
+      const categoryMap = new Map<string, string>()
+      existingCategories.forEach((cat) => categoryMap.set(cat.name, cat.id))
+
+      const uniqueCategoryNames = new Set(
+        fieldsToCreate.map((f) => f.categoryName).filter((name): name is string => !!name),
+      )
+
+      const maxCategoryOrder = existingCategories.reduce(
+        (max, cat) => Math.max(max, cat.displayOrder),
+        -1,
+      )
+
+      let categoryOrderCounter = maxCategoryOrder + 1
+      for (const categoryName of uniqueCategoryNames) {
+        if (!categoryMap.has(categoryName)) {
+          const newCategory = await ctx.prisma.customFieldCategory.create({
+            data: {
+              emulatorId: input.emulatorId,
+              name: categoryName,
+              displayOrder: categoryOrderCounter++,
+            },
+          })
+          categoryMap.set(categoryName, newCategory.id)
+        }
+      }
+
       const maxDisplayOrder = existingFields.reduce(
         (max, field) => Math.max(max, field.displayOrder),
         -1,
@@ -237,6 +267,7 @@ export const customFieldTemplateRouter = createTRPCRouter({
           ctx.prisma.customFieldDefinition.create({
             data: {
               emulatorId: input.emulatorId,
+              categoryId: field.categoryName ? (categoryMap.get(field.categoryName) ?? null) : null,
               name: field.name,
               label: field.label,
               type: field.type,
@@ -247,6 +278,7 @@ export const customFieldTemplateRouter = createTRPCRouter({
               defaultValue: field.defaultValue ?? Prisma.DbNull,
               isRequired: field.isRequired,
               displayOrder: maxDisplayOrder + index + 1,
+              categoryOrder: field.categoryOrder ?? 0,
             },
           }),
         ),

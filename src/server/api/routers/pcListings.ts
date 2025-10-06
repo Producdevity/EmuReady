@@ -224,7 +224,11 @@ export const pcListingsRouter = createTRPCRouter({
         include: {
           ...pcListingDetailInclude,
           emulator: {
-            include: { customFieldDefinitions: { orderBy: { label: 'asc' } } },
+            include: {
+              customFieldDefinitions: {
+                orderBy: [{ categoryId: 'asc' }, { categoryOrder: 'asc' }, { displayOrder: 'asc' }],
+              },
+            },
           },
         },
       })
@@ -375,7 +379,9 @@ export const pcListingsRouter = createTRPCRouter({
         emulator: true,
         performance: true,
         author: true,
-        customFieldValues: { include: { customFieldDefinition: true } },
+        customFieldValues: {
+          include: { customFieldDefinition: { include: { category: true } } },
+        },
       },
     })
 

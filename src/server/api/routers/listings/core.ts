@@ -591,11 +591,15 @@ export const coreRouter = createTRPCRouter({
             select: {
               id: true,
               name: true,
-              customFieldDefinitions: { orderBy: { displayOrder: 'asc' } },
+              customFieldDefinitions: {
+                orderBy: [{ categoryId: 'asc' }, { categoryOrder: 'asc' }, { displayOrder: 'asc' }],
+              },
             },
           },
           performance: { select: { id: true, label: true, rank: true } },
-          customFieldValues: { include: { customFieldDefinition: true } },
+          customFieldValues: {
+            include: { customFieldDefinition: { include: { category: true } } },
+          },
         },
       })
 

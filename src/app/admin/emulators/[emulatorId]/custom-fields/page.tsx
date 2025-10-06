@@ -1,17 +1,18 @@
 'use client'
 
-import { PlusCircle, Copy, FileJson } from 'lucide-react'
+import { PlusCircle, Copy, FileJson, ShieldAlert } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useState } from 'react'
+import UnauthenticatedPage from '@/components/auth/UnauthenticatedPage'
 import { Button, LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
-import { CustomFieldList } from '@/lib/dynamic-imports'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import ApplyTemplatesModal from './components/ApplyTemplatesModal'
 import CustomFieldFormModal from './components/CustomFieldFormModal'
+import CustomFieldsDragAndDrop from './components/CustomFieldsDragAndDrop'
 import CustomFieldsJsonModal from './components/CustomFieldsJsonModal'
 import FeedbackCard from './components/FeedbackCard'
 
@@ -32,8 +33,14 @@ export default function EmulatorCustomFieldsPage() {
     { enabled: !!emulatorId },
   )
 
+  const categoriesQuery = api.customFieldCategories.getByEmulator.useQuery(
+    { emulatorId },
+    { enabled: !!emulatorId },
+  )
+
   const user = userQuery.data
-  const isLoading = userQuery.isPending || emulatorQuery.isLoading
+  const isLoading = userQuery.isPending && !userQuery.isError
+  const isEmulatorLoading = emulatorQuery.isLoading
   const hasManagePermission = hasPermission(user?.permissions, PERMISSIONS.MANAGE_CUSTOM_FIELDS)
   const isDeveloper = user?.role === Role.DEVELOPER
   const isVerifiedDeveloper = Boolean(
@@ -47,7 +54,7 @@ export default function EmulatorCustomFieldsPage() {
     </Link>
   )
 
-  if (isLoading) {
+  if (isLoading || isEmulatorLoading) {
     return (
       <div className="flex justify-center py-12">
         <LoadingSpinner text="Loading custom fields…" />
@@ -55,7 +62,19 @@ export default function EmulatorCustomFieldsPage() {
     )
   }
 
-  if (!user || !canAccess) {
+  if (userQuery.isError || !user) {
+    return (
+      <UnauthenticatedPage
+        icon={ShieldAlert}
+        title="Admin Access Required"
+        subtitle="Sign in to access the admin panel"
+        description="This area is restricted to administrators. Please sign in with your admin account to manage custom fields."
+        showSignUp={false}
+      />
+    )
+  }
+
+  if (!canAccess) {
     return (
       <FeedbackCard
         title="Access Denied"
@@ -84,7 +103,16 @@ export default function EmulatorCustomFieldsPage() {
     void customFieldDefinitionsQuery.refetch()
   }
 
-  if (customFieldDefinitionsQuery.isLoading) {
+  function handleRefresh() {
+    void customFieldDefinitionsQuery.refetch()
+    void categoriesQuery.refetch()
+  }
+
+  function handleFieldDelete() {
+    void customFieldDefinitionsQuery.refetch()
+  }
+
+  if (customFieldDefinitionsQuery.isLoading || categoriesQuery.isLoading) {
     return (
       <div className="flex justify-center py-12">
         <LoadingSpinner text="Loading custom fields…" />
@@ -141,30 +169,14 @@ export default function EmulatorCustomFieldsPage() {
         </div>
       </div>
 
-      {customFieldDefinitionsQuery.data && customFieldDefinitionsQuery.data.length > 0 ? (
-        <CustomFieldList
-          customFields={customFieldDefinitionsQuery.data}
-          onEdit={handleOpenEditModal}
-          onDeleteSuccess={customFieldDefinitionsQuery.refetch}
-          emulatorId={emulatorId}
-        />
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400 text-lg">
-            No custom fields defined for this emulator yet.
-          </p>
-          <div className="mt-4 flex justify-center space-x-3">
-            {canApplyTemplates && (
-              <Button variant="outline" onClick={() => setIsApplyTemplatesModalOpen(true)}>
-                <Copy className="mr-2 h-4 w-4" /> Apply Templates
-              </Button>
-            )}
-            <Button onClick={handleOpenCreateModal}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Custom Field
-            </Button>
-          </div>
-        </div>
-      )}
+      <CustomFieldsDragAndDrop
+        emulatorId={emulatorId}
+        fields={customFieldDefinitionsQuery.data ?? []}
+        categories={categoriesQuery.data ?? []}
+        onFieldEdit={handleOpenEditModal}
+        onFieldDelete={handleFieldDelete}
+        onRefresh={handleRefresh}
+      />
 
       {isFormModalOpen && (
         <CustomFieldFormModal

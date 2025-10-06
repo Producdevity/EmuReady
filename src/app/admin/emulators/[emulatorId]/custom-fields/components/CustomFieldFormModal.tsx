@@ -33,6 +33,8 @@ const customFieldFormSchema = z.object({
     }),
   label: z.string().min(1, 'Label is required'),
   type: z.nativeEnum(CustomFieldType),
+  categoryId: z.string().uuid().nullable().optional(),
+  categoryOrder: z.coerce.number().int().optional(),
   options: z.array(customFieldOptionSchema).optional(),
   defaultValue: z.union([z.string(), z.boolean(), z.number(), z.null()]).optional(),
   placeholder: z.string().optional(),
@@ -63,6 +65,11 @@ function CustomFieldFormModal(props: Props) {
     { enabled: !!props.fieldIdToEdit },
   )
 
+  const categoriesQuery = api.customFieldCategories.getByEmulator.useQuery(
+    { emulatorId: props.emulatorId },
+    { enabled: !!props.emulatorId },
+  )
+
   const { control, register, handleSubmit, reset, watch, setValue, formState } =
     useForm<CustomFieldFormValues>({
       resolver: zodResolver(customFieldFormSchema),
@@ -70,6 +77,8 @@ function CustomFieldFormModal(props: Props) {
         name: '',
         label: '',
         type: CustomFieldType.TEXT,
+        categoryId: null,
+        categoryOrder: 0,
         options: [],
         defaultValue: null,
         placeholder: '',
@@ -106,6 +115,8 @@ function CustomFieldFormModal(props: Props) {
         name: customFieldDefinitionsQuery.data.name,
         label: customFieldDefinitionsQuery.data.label,
         type: customFieldDefinitionsQuery.data.type,
+        categoryId: customFieldDefinitionsQuery.data.categoryId || null,
+        categoryOrder: customFieldDefinitionsQuery.data.categoryOrder || 0,
         options: opts,
         defaultValue: customFieldDefinitionsQuery.data.defaultValue as
           | string
@@ -126,6 +137,8 @@ function CustomFieldFormModal(props: Props) {
         name: '',
         label: '',
         type: CustomFieldType.TEXT,
+        categoryId: null,
+        categoryOrder: 0,
         options: [],
         defaultValue: null,
         placeholder: '',
@@ -178,6 +191,8 @@ function CustomFieldFormModal(props: Props) {
       name: data.name,
       label: data.label,
       type: data.type,
+      categoryId: data.categoryId || null,
+      categoryOrder: data.categoryOrder ?? 0,
       isRequired: data.isRequired ?? false,
       displayOrder: data.displayOrder ?? 0,
       options: undefined as { value: string; label: string }[] | undefined,
@@ -344,6 +359,40 @@ function CustomFieldFormModal(props: Props) {
             />
             {formState.errors.type && (
               <p className="text-red-500 text-xs mt-1">{formState.errors.type.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label
+              htmlFor="categoryId"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
+              Category (Optional)
+            </label>
+            <Controller
+              name="categoryId"
+              control={control}
+              render={({ field }) => {
+                const categories = categoriesQuery.data ?? []
+                const categoryOptions = [
+                  { id: '', name: 'Uncategorized' },
+                  ...categories.map((cat) => ({ id: cat.id, name: cat.name })),
+                ]
+                return (
+                  <SelectInput
+                    label="Category"
+                    options={categoryOptions}
+                    value={field.value ?? ''}
+                    onChange={(ev) => {
+                      const value = ev.target.value === '' ? null : ev.target.value
+                      field.onChange(value)
+                    }}
+                  />
+                )
+              }}
+            />
+            {formState.errors.categoryId && (
+              <p className="text-red-500 text-xs mt-1">{formState.errors.categoryId.message}</p>
             )}
           </div>
 

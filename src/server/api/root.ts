@@ -8,6 +8,7 @@ import { auditLogsRouter } from './routers/auditLogs'
 import { badgesRouter } from './routers/badges'
 import { cacheRouter } from './routers/cache'
 import { cpusRouter } from './routers/cpus'
+import { customFieldCategoryRouter } from './routers/customFieldCategories'
 import { customFieldDefinitionRouter } from './routers/customFieldDefinitions'
 import { customFieldTemplateRouter } from './routers/customFieldTemplates'
 import { deviceBrandsRouter } from './routers/deviceBrands'
@@ -56,6 +57,7 @@ export const appRouter = createTRPCRouter({
   badges: badgesRouter,
   cache: cacheRouter,
   notifications: notificationsRouter,
+  customFieldCategories: customFieldCategoryRouter,
   customFieldDefinitions: customFieldDefinitionRouter,
   customFieldTemplates: customFieldTemplateRouter,
   performanceScales: performanceScalesRouter,

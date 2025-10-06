@@ -963,12 +963,16 @@ export const adminRouter = createTRPCRouter({
         device: { include: { brand: true, soc: true } },
         emulator: {
           include: {
-            customFieldDefinitions: { orderBy: { displayOrder: 'asc' } },
+            customFieldDefinitions: {
+              orderBy: [{ categoryId: 'asc' }, { categoryOrder: 'asc' }, { displayOrder: 'asc' }],
+            },
           },
         },
         author: { select: { id: true, name: true, email: true } },
         performance: true,
-        customFieldValues: { include: { customFieldDefinition: true } },
+        customFieldValues: {
+          include: { customFieldDefinition: { include: { category: true } } },
+        },
       },
     })
 

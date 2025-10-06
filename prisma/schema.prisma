@@ -296,9 +296,25 @@ model Game {
   @@index([tgdbGameId])
 }
 
+model CustomFieldCategory {
+  id           String                    @id @default(uuid())
+  emulatorId   String
+  name         String
+  displayOrder Int                       @default(0)
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  emulator     Emulator                  @relation(fields: [emulatorId], references: [id], onDelete: Cascade)
+  fields       CustomFieldDefinition[]
+
+  @@unique([emulatorId, name])
+  @@index([emulatorId])
+  @@index([emulatorId, displayOrder])
+}
+
 model CustomFieldDefinition {
   id              String                      @id @default(uuid())
   emulatorId      String
+  categoryId      String? // NULL = uncategorized
   name            String // Internal name, e.g., "driver_version"
   label           String // UI display label, e.g., "Driver Version"
   type            CustomFieldType
@@ -311,15 +327,19 @@ model CustomFieldDefinition {
   rangeUnit       String? // Unit for RANGE type (e.g., "%", "GB", "MB")
   rangeDecimals   Int? // Number of decimal places for RANGE type (0 for integers, 1 for one decimal)
   isRequired      Boolean                     @default(false)
-  displayOrder    Int                         @default(0)
+  displayOrder    Int                         @default(0) // Global order for uncategorized, or legacy fallback
+  categoryOrder   Int                         @default(0) // Order within category
   createdAt       DateTime                    @default(now())
   updatedAt       DateTime                    @updatedAt
   emulator        Emulator                    @relation(fields: [emulatorId], references: [id])
+  category        CustomFieldCategory?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   listingValues   ListingCustomFieldValue[]
   pcListingValues PcListingCustomFieldValue[]
 
   @@unique([emulatorId, name])
   @@index([emulatorId])
+  @@index([categoryId])
+  @@index([emulatorId, categoryId, categoryOrder])
 }
 
 model CustomFieldTemplate {
@@ -346,6 +366,9 @@ model CustomFieldTemplateField {
   rangeUnit     String? // Unit for RANGE type (e.g., "%", "GB", "MB")
   rangeDecimals Int? // Number of decimal places for RANGE type (0 for integers, 1 for one decimal)
   isRequired    Boolean             @default(false)
+  // Category suggestion
+  categoryName  String? // Suggested category name when applying template
+  categoryOrder Int                 @default(0) // Suggested order within category
   displayOrder  Int                 @default(0)
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
@@ -356,8 +379,8 @@ model CustomFieldTemplateField {
 }
 
 model Emulator {
-  id                     String                  @id @default(uuid())
-  name                   String                  @unique
+  id                     String                    @id @default(uuid())
+  name                   String                    @unique
   logo                   String? // Logo filename (e.g., "aethersx2.png")
   description            String? // Markdown description/notes
   repositoryUrl          String? // Repository/source code URL
@@ -366,6 +389,7 @@ model Emulator {
   listings               Listing[]
   pcListings             PcListing[]
   customFieldDefinitions CustomFieldDefinition[]
+  customFieldCategories  CustomFieldCategory[]
   systems                System[]
   verifiedDevelopers     VerifiedDeveloper[]
 }

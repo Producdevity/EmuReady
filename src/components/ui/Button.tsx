@@ -97,6 +97,8 @@ export function Button({
   // Map legacy 'md' size to 'default' for shadcn compatibility
   const mappedSize = size === 'md' ? 'default' : size
 
+  const iconClassName = size === 'sm' ? 'size-3.5' : size === 'lg' ? 'size-5 mr-2' : 'size-4 mr-2' // default/md
+
   return (
     <Comp
       data-slot="button"
@@ -122,7 +124,7 @@ export function Button({
           )
         ) : (
           <>
-            {Icon ? <Icon className="h-4 w-4 mr-2" aria-hidden /> : null}
+            {Icon ? <Icon className={iconClassName} aria-hidden /> : null}
             {children}
           </>
         )}

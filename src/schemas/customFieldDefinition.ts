@@ -8,6 +8,7 @@ const customFieldOptionSchema = z.object({
 
 export const CreateCustomFieldDefinitionSchema = z.object({
   emulatorId: z.string().uuid(),
+  categoryId: z.string().uuid().nullable().optional(),
   name: z
     .string()
     .min(1)
@@ -26,6 +27,7 @@ export const CreateCustomFieldDefinitionSchema = z.object({
   rangeDecimals: z.number().int().min(0).max(5).optional(),
   isRequired: z.boolean().optional().default(false),
   displayOrder: z.number().int().optional().default(0),
+  categoryOrder: z.number().int().optional().default(0),
 })
 
 export const GetCustomFieldDefinitionsByEmulatorSchema = z.object({
@@ -38,6 +40,7 @@ export const GetCustomFieldDefinitionByIdSchema = z.object({
 
 export const UpdateCustomFieldDefinitionSchema = z.object({
   id: z.string().uuid(),
+  categoryId: z.string().uuid().nullable().optional(),
   name: z
     .string()
     .min(1)
@@ -57,6 +60,7 @@ export const UpdateCustomFieldDefinitionSchema = z.object({
   rangeDecimals: z.number().int().min(0).max(5).optional(),
   isRequired: z.boolean().optional(),
   displayOrder: z.number().int().optional(),
+  categoryOrder: z.number().int().optional(),
 })
 
 export const DeleteCustomFieldDefinitionSchema = z.object({

@@ -15,6 +15,8 @@ export interface FieldValueLike {
     defaultValue?: unknown
     rangeDecimals?: number | null
     rangeUnit?: string | null
+    categoryId?: string | null
+    category?: { id: string; name: string } | null
   }
 }
 

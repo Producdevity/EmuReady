@@ -22,8 +22,12 @@ import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type Maybe } from '@/types/utils'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { type CustomFieldDefinition, type Prisma } from '@orm'
+import { type CustomFieldDefinition, type Prisma, type CustomFieldCategory } from '@orm'
 import CustomFieldSortableRow from './CustomFieldSortableRow'
+
+type CustomFieldWithCategory = CustomFieldDefinition & {
+  category: CustomFieldCategory | null
+}
 
 interface CustomFieldOptionUI {
   value: string
@@ -31,7 +35,7 @@ interface CustomFieldOptionUI {
 }
 
 interface CustomFieldListProps {
-  customFields: CustomFieldDefinition[]
+  customFields: CustomFieldWithCategory[]
   onEdit: (fieldId: string) => void
   onDeleteSuccess: () => void
   emulatorId: string
@@ -41,18 +45,28 @@ function CustomFieldList(props: CustomFieldListProps) {
   const utils = api.useUtils()
   const confirm = useConfirmDialog()
   const [isReorderMode, setIsReorderMode] = useState(false)
-  const [orderedFields, setOrderedFields] = useState<CustomFieldDefinition[]>(() => {
+  const [orderedFields, setOrderedFields] = useState<CustomFieldWithCategory[]>(() => {
     const fields = props.customFields ?? []
-    return [...fields].sort((a, b) => a.displayOrder - b.displayOrder)
+    return [...fields].sort((a, b) => {
+      if (a.categoryId === b.categoryId) {
+        return a.categoryOrder - b.categoryOrder || a.displayOrder - b.displayOrder
+      }
+      return (a.categoryId || '').localeCompare(b.categoryId || '')
+    })
   })
-  const [previousOrder, setPreviousOrder] = useState<CustomFieldDefinition[]>([])
+  const [previousOrder, setPreviousOrder] = useState<CustomFieldWithCategory[]>([])
   const [isDirty, setIsDirty] = useState(false)
 
   useEffect(() => {
     // Keep local state in sync if initialCustomFields prop changes and not in reorder mode or dirty
     if (!isReorderMode && !isDirty) {
       const fields = props.customFields ?? []
-      const sortedInitialFields = [...fields].sort((a, b) => a.displayOrder - b.displayOrder)
+      const sortedInitialFields = [...fields].sort((a, b) => {
+        if (a.categoryId === b.categoryId) {
+          return a.categoryOrder - b.categoryOrder || a.displayOrder - b.displayOrder
+        }
+        return (a.categoryId || '').localeCompare(b.categoryId || '')
+      })
       setOrderedFields(sortedInitialFields)
       // Ensure previousOrder is also in sync when not dirty and not in reorder mode
       setPreviousOrder(sortedInitialFields)
@@ -192,6 +206,45 @@ function CustomFieldList(props: CustomFieldListProps) {
     return <p>No custom fields defined for this emulator yet.</p>
   }
 
+  // Group fields by category
+  const fieldsByCategory = orderedFields.reduce(
+    (acc, field) => {
+      const categoryId = field.categoryId || 'uncategorized'
+      if (!acc[categoryId]) {
+        acc[categoryId] = []
+      }
+      acc[categoryId].push(field)
+      return acc
+    },
+    {} as Record<string, CustomFieldWithCategory[]>,
+  )
+
+  // Get unique categories
+  const categories = Array.from(
+    new Set(orderedFields.map((f) => f.categoryId).filter((id): id is string => id !== null)),
+  )
+
+  // Build sections: categorized fields first, then uncategorized
+  const sections: {
+    categoryId: string | null
+    categoryName: string
+    fields: CustomFieldWithCategory[]
+  }[] = []
+
+  categories.forEach((categoryId) => {
+    const categoryFields = fieldsByCategory[categoryId] || []
+    if (categoryFields.length > 0) {
+      const categoryName = categoryFields[0]?.category?.name || 'Unknown Category'
+      sections.push({ categoryId, categoryName, fields: categoryFields })
+    }
+  })
+
+  // Add uncategorized section if it exists
+  const uncategorizedFields = fieldsByCategory['uncategorized'] || []
+  if (uncategorizedFields.length > 0) {
+    sections.push({ categoryId: null, categoryName: 'Uncategorized', fields: uncategorizedFields })
+  }
+
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <div className="flex justify-end mb-4 space-x-2">
@@ -226,68 +279,80 @@ function CustomFieldList(props: CustomFieldListProps) {
         items={orderedFields.map((f) => f.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
-              <tr>
-                {isReorderMode && <th scope="col" className="px-2 py-3" />}
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Display Label
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Internal Name
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Type
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Required
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Options (Preview)
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Order
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                >
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {orderedFields.map((field) => (
-                <CustomFieldSortableRow
-                  key={field.id}
-                  field={field}
-                  onEdit={props.onEdit}
-                  handleDelete={handleDelete}
-                  isReorderMode={isReorderMode}
-                  renderOptionsPreview={renderOptionsPreview}
-                />
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-6">
+          {sections.map((section) => (
+            <div key={section.categoryId || 'uncategorized'} className="overflow-x-auto">
+              <div className="mb-3 pb-2 border-b-2 border-blue-500 dark:border-blue-400">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  {section.categoryName}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {section.fields.length} {section.fields.length === 1 ? 'field' : 'fields'}
+                </p>
+              </div>
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-800">
+                  <tr>
+                    {isReorderMode && <th scope="col" className="px-2 py-3" />}
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                    >
+                      Display Label
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                    >
+                      Internal Name
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                    >
+                      Type
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                    >
+                      Required
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                    >
+                      Options (Preview)
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                    >
+                      Order
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                  {section.fields.map((field) => (
+                    <CustomFieldSortableRow
+                      key={field.id}
+                      field={field}
+                      onEdit={props.onEdit}
+                      handleDelete={handleDelete}
+                      isReorderMode={isReorderMode}
+                      renderOptionsPreview={renderOptionsPreview}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
         </div>
       </SortableContext>
     </DndContext>

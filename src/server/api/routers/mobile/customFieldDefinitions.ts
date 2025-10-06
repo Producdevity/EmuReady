@@ -10,11 +10,12 @@ export const mobileCustomFieldDefinitionsRouter = createMobileTRPCRouter({
     .query(async ({ ctx, input }) => {
       return ctx.prisma.customFieldDefinition.findMany({
         where: { emulatorId: input.emulatorId },
-        orderBy: { displayOrder: 'asc' },
+        orderBy: [{ categoryId: 'asc' }, { categoryOrder: 'asc' }, { displayOrder: 'asc' }],
         include: {
           emulator: {
             select: { id: true, name: true },
           },
+          category: true,
         },
       })
     }),

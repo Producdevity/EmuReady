@@ -287,6 +287,8 @@ function AddListingPage() {
               name: 'Unknown',
             },
             status: game.status,
+            imageUrl: game.imageUrl ?? undefined,
+            boxartUrl: game.boxartUrl ?? undefined,
           })) ?? []
         )
       } catch (error) {
@@ -381,6 +383,8 @@ function AddListingPage() {
         title: preSelectedGameQuery.data.title,
         system: preSelectedGameQuery.data.system,
         status: preSelectedGameQuery.data.status,
+        imageUrl: preSelectedGameQuery.data.imageUrl ?? undefined,
+        boxartUrl: preSelectedGameQuery.data.boxartUrl ?? undefined,
       }
       setSelectedGame(gameOption)
       form.setValue('gameId', preSelectedGameQuery.data.id)
@@ -599,15 +603,17 @@ function AddListingPage() {
               }}
               gameSearchTerm={gameSearchTerm}
             />
-            <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Can&apos;t find your game?{' '}
-              <Link
-                href="/games/new/search/v2"
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
-              >
-                Add it here
-              </Link>
-            </div>
+            {!selectedGame && (
+              <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                Can&apos;t find your game?{' '}
+                <Link
+                  href="/games/new/search/v2"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
+                >
+                  Add it here
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Device Selection */}

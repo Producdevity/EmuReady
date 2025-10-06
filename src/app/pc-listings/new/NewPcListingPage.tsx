@@ -92,6 +92,8 @@ function AddPcListingPage() {
             title: game.title,
             system: game.system || { id: game.systemId, name: 'Unknown' },
             status: game.status,
+            imageUrl: game.imageUrl ?? undefined,
+            boxartUrl: game.boxartUrl ?? undefined,
           })) ?? []
         )
       } catch (error) {
@@ -199,6 +201,8 @@ function AddPcListingPage() {
         title: preSelectedGameQuery.data.title,
         system: preSelectedGameQuery.data.system,
         status: preSelectedGameQuery.data.status,
+        imageUrl: preSelectedGameQuery.data.imageUrl ?? undefined,
+        boxartUrl: preSelectedGameQuery.data.boxartUrl ?? undefined,
       }
       setSelectedGame(gameOption)
       form.setValue('gameId', preSelectedGameQuery.data.id)

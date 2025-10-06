@@ -3,6 +3,7 @@ export { default as GameSelector } from './selectors/GameSelector'
 export { default as EmulatorSelector } from './selectors/EmulatorSelector'
 export { default as DeviceSelector } from './selectors/DeviceSelector'
 export { default as PerformanceSelector } from './selectors/PerformanceSelector'
+export { default as SelectedItemCard } from './SelectedItemCard'
 
 // Custom Field Components
 export { default as CustomFieldRenderer } from './CustomFieldRenderer'

@@ -33,6 +33,8 @@ function buildField(
 
   return {
     emulatorId: overrides.emulatorId ?? 'eden-emulator-id',
+    categoryId: overrides.categoryId ?? null,
+    categoryOrder: overrides.categoryOrder ?? 0,
     options: overrides.options ?? null,
     placeholder: overrides.placeholder ?? null,
     rangeMin: overrides.rangeMin ?? null,

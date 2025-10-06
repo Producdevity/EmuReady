@@ -33,6 +33,13 @@ const customFieldTemplateFieldSchema = z.object({
   defaultValue: z.union([z.string(), z.boolean(), z.null()]).optional(),
   isRequired: z.boolean().optional().default(false),
   displayOrder: z.number().int().min(0).optional().default(0),
+  categoryName: z
+    .string()
+    .min(1)
+    .max(100, 'Category name must be 100 characters or less')
+    .transform((val) => val.trim())
+    .optional(),
+  categoryOrder: z.number().int().min(0).optional().default(0),
 })
 
 export const CreateCustomFieldTemplateSchema = z.object({
