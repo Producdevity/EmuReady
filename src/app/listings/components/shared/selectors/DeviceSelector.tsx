@@ -4,26 +4,13 @@ import { MonitorSmartphone, Cpu } from 'lucide-react'
 import { useRef } from 'react'
 import { Controller } from 'react-hook-form'
 import { type Control, type FieldPath, type FieldValues } from 'react-hook-form'
-import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
+import { Autocomplete } from '@/components/ui'
 import { useLastUsedDevice } from '@/hooks/useLastUsedDevice'
 import { logger } from '@/lib/logger'
 import { type Nullable } from '@/types/utils'
 import LastUsedDeviceSelector from './LastUsedDeviceSelector'
-import SelectedItemCard from '../SelectedItemCard'
-
-export interface DeviceOption extends AutocompleteOptionBase {
-  id: string
-  modelName: string
-  brand: {
-    id: string
-    name: string
-  }
-  soc: {
-    id: string
-    name: string
-    manufacturer: string
-  }
-}
+import { SelectedItemCard } from '../SelectedItemCard'
+import { type DeviceOption } from '../types'
 
 interface Props<TFieldValues extends FieldValues = FieldValues> {
   control: Control<TFieldValues>
@@ -35,7 +22,7 @@ interface Props<TFieldValues extends FieldValues = FieldValues> {
   deviceSearchTerm: string
 }
 
-function DeviceSelector<TFieldValues extends FieldValues = FieldValues>(
+export function DeviceSelector<TFieldValues extends FieldValues = FieldValues>(
   props: Props<TFieldValues>,
 ) {
   const {
@@ -150,5 +137,3 @@ function DeviceSelector<TFieldValues extends FieldValues = FieldValues>(
     </div>
   )
 }
-
-export default DeviceSelector

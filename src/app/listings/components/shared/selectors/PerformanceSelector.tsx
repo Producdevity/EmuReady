@@ -6,14 +6,8 @@ import { type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import { SelectInput } from '@/components/ui'
 import { performanceColorMap, defaultPerformanceColor } from '@/data/styles'
 import { cn } from '@/lib/utils'
-import SelectedItemCard from '../SelectedItemCard'
-
-export interface PerformanceScale {
-  id: number
-  label: string
-  rank: number
-  description: string | null
-}
+import { SelectedItemCard } from '../SelectedItemCard'
+import { type PerformanceScale } from '../types'
 
 interface Props<TFieldValues extends FieldValues = FieldValues> {
   control: Control<TFieldValues>
@@ -22,7 +16,7 @@ interface Props<TFieldValues extends FieldValues = FieldValues> {
   errorMessage?: string
 }
 
-function PerformanceSelector<TFieldValues extends FieldValues = FieldValues>(
+export function PerformanceSelector<TFieldValues extends FieldValues = FieldValues>(
   props: Props<TFieldValues>,
 ) {
   return (
@@ -84,5 +78,3 @@ function PerformanceSelector<TFieldValues extends FieldValues = FieldValues>(
     </div>
   )
 }
-
-export default PerformanceSelector

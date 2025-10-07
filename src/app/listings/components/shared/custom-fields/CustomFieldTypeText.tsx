@@ -26,7 +26,7 @@ interface Props<TFieldValues extends FieldValues = FieldValues> {
   icon: ReactNode
 }
 
-function CustomFieldTypeText<TFieldValues extends FieldValues = FieldValues>(
+export function CustomFieldTypeText<TFieldValues extends FieldValues = FieldValues>(
   props: Props<TFieldValues>,
 ) {
   return (
@@ -63,5 +63,3 @@ function CustomFieldTypeText<TFieldValues extends FieldValues = FieldValues>(
     </div>
   )
 }
-
-export default CustomFieldTypeText

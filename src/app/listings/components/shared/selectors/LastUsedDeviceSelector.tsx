@@ -3,7 +3,7 @@
 import { Clock } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import type { DeviceOption } from './DeviceSelector'
+import { type DeviceOption } from '../types'
 
 interface Props {
   lastUsedDevice: DeviceOption | null

@@ -9,23 +9,11 @@ import {
   type FieldValues,
 } from 'react-hook-form'
 import { GitHubIcon, EmulatorIcon } from '@/components/icons'
-import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
+import { Autocomplete } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { type Nullable } from '@/types/utils'
-import SelectedItemCard from '../SelectedItemCard'
-
-export interface GameOption extends AutocompleteOptionBase {
-  id: string
-  title: string
-  system: { id: string; name: string }
-}
-
-interface EmulatorOption extends AutocompleteOptionBase {
-  id: string
-  name: string
-  systems: { id: string; name: string }[]
-  logo?: string | null
-}
+import { SelectedItemCard } from '../SelectedItemCard'
+import { type GameOption, type EmulatorOption } from '../types'
 
 interface Props<TFieldValues extends FieldValues = FieldValues> {
   control: Control<TFieldValues>
@@ -44,7 +32,7 @@ interface Props<TFieldValues extends FieldValues = FieldValues> {
   customFieldValuesFieldName?: FieldPath<TFieldValues>
 }
 
-function EmulatorSelector<TFieldValues extends FieldValues = FieldValues>(
+export function EmulatorSelector<TFieldValues extends FieldValues = FieldValues>(
   props: Props<TFieldValues>,
 ) {
   if (!props.selectedGame) {
@@ -171,5 +159,3 @@ function EmulatorSelector<TFieldValues extends FieldValues = FieldValues>(
     </div>
   )
 }
-
-export default EmulatorSelector

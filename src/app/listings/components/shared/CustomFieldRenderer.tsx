@@ -1,7 +1,6 @@
 'use client'
 
 import { type Control, type FieldPath, type FieldValues } from 'react-hook-form'
-import { isString } from 'remeda'
 import CustomFieldTypeDriverVersion from '@/app/listings/components/shared/custom-fields/CustomFieldTypeDriverVersion'
 import { CustomFieldType } from '@orm'
 import {
@@ -11,6 +10,7 @@ import {
   CustomFieldTypeText,
   CustomFieldTypeTextArea,
   getCustomFieldTypeIcon,
+  isCustomFieldValueEmpty,
 } from './index'
 
 export interface CustomFieldOptionUI {
@@ -46,19 +46,6 @@ export interface ValidationRules {
   validate?: (value: unknown) => boolean | string
 }
 
-// TODO: move to ./utils/customFieldHelpers.ts and the related tests to ./utils/customFieldHelpers.test.ts
-export function isCustomFieldValueEmpty(value: unknown): boolean {
-  if (value === null || value === undefined) return true
-  if (typeof value === 'boolean') return false
-  if (typeof value === 'number') return Number.isNaN(value)
-  if (isString(value)) return value.trim().length === 0
-  if (Array.isArray(value)) return value.length === 0
-  if (value instanceof Date) return false
-  if (typeof value === 'object') return Object.keys(value as Record<string, unknown>).length === 0
-
-  return false
-}
-
 interface Props<TFieldValues extends FieldValues = FieldValues> {
   fieldDef: CustomFieldDefinitionWithOptions
   fieldName: FieldPath<TFieldValues>
@@ -69,7 +56,7 @@ interface Props<TFieldValues extends FieldValues = FieldValues> {
 
 export const DRIVER_VERSION_FIELD_NAME = 'dynamic_driver_version' as const
 
-function CustomFieldRenderer<TFieldValues extends FieldValues = FieldValues>(
+export function CustomFieldRenderer<TFieldValues extends FieldValues = FieldValues>(
   props: Props<TFieldValues>,
 ) {
   function getValidationRules(): ValidationRules {
@@ -179,5 +166,3 @@ function CustomFieldRenderer<TFieldValues extends FieldValues = FieldValues>(
       return null
   }
 }
-
-export default CustomFieldRenderer

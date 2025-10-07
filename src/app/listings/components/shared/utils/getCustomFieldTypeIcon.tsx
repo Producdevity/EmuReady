@@ -11,8 +11,6 @@ const iconMap: Record<CustomFieldType, ReactNode> = {
   [CustomFieldType.RANGE]: <Sliders className="w-5 h-5" />,
 }
 
-function getCustomFieldTypeIcon(type: CustomFieldType) {
+export function getCustomFieldTypeIcon(type: CustomFieldType) {
   return iconMap[type] ?? <FileText className="w-5 h-5" />
 }
-
-export default getCustomFieldTypeIcon

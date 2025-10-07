@@ -393,16 +393,17 @@ function AddPcListingPage() {
   }
 
   return (
-    <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full md:max-w-3xl lg:mx-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-8">
-          Create a PC Compatibility Report
-        </h1>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          onKeyDown={handleKeyDown}
-          className="space-y-6 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl"
-        >
+    <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8 max-w-[1600px]">
+      <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-8">
+        Create a PC Compatibility Report
+      </h1>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        onKeyDown={handleKeyDown}
+        className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+      >
+        {/* Left Column - Core Fields */}
+        <div className="space-y-6 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
           {/* PC Preset Selection */}
           {presetsQuery.data && presetsQuery.data.length > 0 && (
             <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
@@ -763,30 +764,47 @@ function AddPcListingPage() {
               )}
             />
           </div>
+        </div>
 
-          {/* Dynamic Custom Fields Section */}
+        {/* Right Column - Custom Fields */}
+        <div className="space-y-6">
           {selectedEmulatorId && customFieldDefinitionsQuery.isPending && (
-            <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
               <p className="text-center py-4 text-gray-500 dark:text-gray-400">
                 Loading emulator-specific fields...
               </p>
             </div>
           )}
+
           {selectedEmulatorId &&
             !customFieldDefinitionsQuery.isPending &&
             parsedCustomFields.length > 0 && (
-              <CustomFieldsFormSection
-                parsedCustomFields={parsedCustomFields}
-                control={form.control}
-                errors={form.formState.errors}
-                emulatorName={customFieldDefinitionsQuery.data?.[0]?.emulator?.name}
-              />
+              <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
+                <CustomFieldsFormSection
+                  parsedCustomFields={parsedCustomFields}
+                  control={form.control}
+                  errors={form.formState.errors}
+                  emulatorName={customFieldDefinitionsQuery.data?.[0]?.emulator?.name}
+                  variant="inline"
+                />
+              </div>
             )}
 
+          {!selectedEmulatorId && (
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl border-2 border-dashed border-gray-300 dark:border-gray-700">
+              <p className="text-center text-gray-500 dark:text-gray-400">
+                Select an emulator to configure emulator-specific settings
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom - Full Width */}
+        <div className="lg:col-span-2 space-y-6">
           {/* Form Validation Summary */}
           <FormValidationSummary errors={form.formState.errors} />
 
-          <div className="flex justify-end pt-8">
+          <div className="flex justify-end">
             <Button
               type="submit"
               variant="primary"
@@ -797,8 +815,8 @@ function AddPcListingPage() {
               Create Compatibility Report
             </Button>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   )
 }

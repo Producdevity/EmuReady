@@ -5,7 +5,7 @@ import { isString } from 'remeda'
 import { Badge } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { sortCustomFieldsByCategory } from '@/utils/sortCustomFields'
-import CustomFieldRenderer, { type CustomFieldDefinitionWithOptions } from './CustomFieldRenderer'
+import { CustomFieldRenderer, type CustomFieldDefinitionWithOptions } from './CustomFieldRenderer'
 
 interface CustomFieldsFormSectionProps<TFormValues extends FieldValues> {
   parsedCustomFields: CustomFieldDefinitionWithOptions[]
@@ -13,11 +13,14 @@ interface CustomFieldsFormSectionProps<TFormValues extends FieldValues> {
   errors: FieldErrors<TFormValues>
   emulatorName?: string
   highlightedFieldIds?: string[]
+  variant?: 'section' | 'inline'
 }
 
 export function CustomFieldsFormSection<TFormValues extends FieldValues>(
   props: CustomFieldsFormSectionProps<TFormValues>,
 ) {
+  const variant = props.variant ?? 'section'
+
   if (props.parsedCustomFields.length === 0) return null
 
   const categoryGroups = sortCustomFieldsByCategory(
@@ -32,8 +35,8 @@ export function CustomFieldsFormSection<TFormValues extends FieldValues>(
     })),
   )
 
-  return (
-    <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+  const content = (
+    <>
       <h2 className="text-xl font-semibold mb-6 text-gray-900 dark:text-white">
         Emulator-Specific Details
         {props.emulatorName && (
@@ -43,7 +46,7 @@ export function CustomFieldsFormSection<TFormValues extends FieldValues>(
         )}
       </h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {categoryGroups.map((group) => {
           const categoryFields = props.parsedCustomFields.filter(
             (field) =>
@@ -109,6 +112,12 @@ export function CustomFieldsFormSection<TFormValues extends FieldValues>(
           )
         })}
       </div>
-    </div>
+    </>
   )
+
+  if (variant === 'inline') {
+    return <div className="space-y-6">{content}</div>
+  }
+
+  return <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">{content}</div>
 }

@@ -24,7 +24,7 @@ interface Props<TFieldValues extends FieldValues = FieldValues> {
   icon: ReactNode
 }
 
-function CustomFieldTypeBoolean<TFieldValues extends FieldValues = FieldValues>(
+export function CustomFieldTypeBoolean<TFieldValues extends FieldValues = FieldValues>(
   props: Props<TFieldValues>,
 ) {
   // Use the actual default value from the field definition, fallback to false if null/undefined
@@ -61,5 +61,3 @@ function CustomFieldTypeBoolean<TFieldValues extends FieldValues = FieldValues>(
     </div>
   )
 }
-
-export default CustomFieldTypeBoolean

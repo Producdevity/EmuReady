@@ -28,7 +28,7 @@ interface Props<TFieldValues extends FieldValues = FieldValues> {
   icon: ReactNode
 }
 
-function CustomFieldTypeRange<TFieldValues extends FieldValues = FieldValues>(
+export function CustomFieldTypeRange<TFieldValues extends FieldValues = FieldValues>(
   props: Props<TFieldValues>,
 ) {
   const min = props.fieldDef.rangeMin ?? 0
@@ -227,5 +227,3 @@ function CustomFieldTypeRange<TFieldValues extends FieldValues = FieldValues>(
     </div>
   )
 }
-
-export default CustomFieldTypeRange

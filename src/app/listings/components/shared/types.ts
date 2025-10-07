@@ -9,6 +9,8 @@ export interface GameOption extends AutocompleteOptionBase {
     name: string
   }
   status: ApprovalStatus
+  imageUrl?: string
+  boxartUrl?: string
 }
 
 export interface EmulatorOption extends AutocompleteOptionBase {
@@ -37,7 +39,7 @@ export interface DeviceOption extends AutocompleteOptionBase {
 }
 
 export interface PerformanceScale {
-  id: string
+  id: number
   label: string
   rank: number
   description: string | null

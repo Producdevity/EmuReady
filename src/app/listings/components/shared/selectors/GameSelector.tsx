@@ -4,20 +4,12 @@ import { Puzzle } from 'lucide-react'
 import Image from 'next/image'
 import { Controller } from 'react-hook-form'
 import { type Control, type FieldPath, type FieldValues } from 'react-hook-form'
-import { Autocomplete, type AutocompleteOptionBase } from '@/components/ui'
+import { Autocomplete } from '@/components/ui'
 import { logger } from '@/lib/logger'
 import { type Nullable } from '@/types/utils'
 import { ApprovalStatus } from '@orm'
-import SelectedItemCard from '../SelectedItemCard'
-
-export interface GameOption extends AutocompleteOptionBase {
-  id: string
-  title: string
-  system: { id: string; name: string }
-  status: ApprovalStatus
-  imageUrl?: string
-  boxartUrl?: string
-}
+import { SelectedItemCard } from '../SelectedItemCard'
+import { type GameOption } from '../types'
 
 interface Props<TFieldValues extends FieldValues = FieldValues> {
   control: Control<TFieldValues>
@@ -29,7 +21,9 @@ interface Props<TFieldValues extends FieldValues = FieldValues> {
   gameSearchTerm: string
 }
 
-function GameSelector<TFieldValues extends FieldValues = FieldValues>(props: Props<TFieldValues>) {
+export function GameSelector<TFieldValues extends FieldValues = FieldValues>(
+  props: Props<TFieldValues>,
+) {
   const thumbnailUrl = props.selectedGame?.boxartUrl ?? props.selectedGame?.imageUrl
 
   return (
@@ -110,5 +104,3 @@ function GameSelector<TFieldValues extends FieldValues = FieldValues>(props: Pro
     </div>
   )
 }
-
-export default GameSelector

@@ -13,7 +13,7 @@ interface Props {
   className?: string
 }
 
-function SelectedItemCard(props: Props) {
+export function SelectedItemCard(props: Props) {
   return (
     <div
       className={cn(
@@ -49,5 +49,3 @@ function SelectedItemCard(props: Props) {
     </div>
   )
 }
-
-export default SelectedItemCard
