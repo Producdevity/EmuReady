@@ -100,6 +100,15 @@ export class PcListingsRepository extends BaseRepository {
               defaultValue: true,
               rangeDecimals: true,
               rangeUnit: true,
+              categoryId: true,
+              categoryOrder: true,
+              category: {
+                select: {
+                  id: true,
+                  name: true,
+                  displayOrder: true,
+                },
+              },
             },
           },
         },

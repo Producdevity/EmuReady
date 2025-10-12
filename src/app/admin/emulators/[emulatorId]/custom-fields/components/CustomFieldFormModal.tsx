@@ -87,7 +87,6 @@ function CustomFieldFormModal(props: Props) {
         rangeUnit: '',
         rangeDecimals: 0,
         isRequired: false,
-        displayOrder: 0,
       },
     })
 
@@ -111,6 +110,19 @@ function CustomFieldFormModal(props: Props) {
             label: string
           }[])
         : []
+
+      // Defensive: handle case where defaultValue is an object (from old bad data)
+      let defaultValue: string | boolean | number | null = null
+      const rawDefaultValue = customFieldDefinitionsQuery.data.defaultValue
+      if (rawDefaultValue === null || rawDefaultValue === undefined) {
+        defaultValue = null
+      } else if (typeof rawDefaultValue === 'object') {
+        // Bad data - object stored instead of primitive
+        defaultValue = null
+      } else {
+        defaultValue = rawDefaultValue as string | boolean | number
+      }
+
       reset({
         name: customFieldDefinitionsQuery.data.name,
         label: customFieldDefinitionsQuery.data.label,
@@ -118,18 +130,13 @@ function CustomFieldFormModal(props: Props) {
         categoryId: customFieldDefinitionsQuery.data.categoryId || null,
         categoryOrder: customFieldDefinitionsQuery.data.categoryOrder || 0,
         options: opts,
-        defaultValue: customFieldDefinitionsQuery.data.defaultValue as
-          | string
-          | boolean
-          | number
-          | null,
+        defaultValue,
         placeholder: customFieldDefinitionsQuery.data.placeholder || '',
         rangeMin: customFieldDefinitionsQuery.data.rangeMin || 0,
         rangeMax: customFieldDefinitionsQuery.data.rangeMax || 100,
         rangeUnit: customFieldDefinitionsQuery.data.rangeUnit || '',
         rangeDecimals: customFieldDefinitionsQuery.data.rangeDecimals || 0,
         isRequired: customFieldDefinitionsQuery.data.isRequired,
-        displayOrder: customFieldDefinitionsQuery.data.displayOrder,
       })
       userHasEditedNameRef.current = true // Don't auto-populate when editing
     } else if (!props.fieldIdToEdit) {
@@ -147,7 +154,6 @@ function CustomFieldFormModal(props: Props) {
         rangeUnit: '',
         rangeDecimals: 0,
         isRequired: false,
-        displayOrder: 0,
       })
       userHasEditedNameRef.current = false
     }
@@ -194,12 +200,8 @@ function CustomFieldFormModal(props: Props) {
       categoryId: data.categoryId || null,
       categoryOrder: data.categoryOrder ?? 0,
       isRequired: data.isRequired ?? false,
-      displayOrder: data.displayOrder ?? 0,
       options: undefined as { value: string; label: string }[] | undefined,
-      defaultValue:
-        data.defaultValue === null || data.defaultValue === undefined
-          ? undefined
-          : data.defaultValue,
+      defaultValue: data.defaultValue !== undefined ? data.defaultValue : undefined,
       placeholder:
         data.placeholder === null || data.placeholder === undefined || data.placeholder === ''
           ? undefined
@@ -484,19 +486,6 @@ function CustomFieldFormModal(props: Props) {
             </label>
             {formState.errors.isRequired && (
               <p className="text-red-500 text-xs mt-1">{formState.errors.isRequired.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="displayOrder"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Display Order
-            </label>
-            <Input id="displayOrder" type="number" {...register('displayOrder')} className="mt-1" />
-            {formState.errors.displayOrder && (
-              <p className="text-red-500 text-xs mt-1">{formState.errors.displayOrder.message}</p>
             )}
           </div>
 

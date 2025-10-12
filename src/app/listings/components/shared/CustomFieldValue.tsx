@@ -66,7 +66,7 @@ export function CustomFieldValue(props: Props) {
             href={props.fieldValue.value}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-600 dark:text-blue-400 hover:underline break-all"
+            className="inline-block max-w-full text-blue-600 dark:text-blue-400 hover:underline break-all"
           >
             {props.fieldValue.value}
           </a>
@@ -76,39 +76,61 @@ export function CustomFieldValue(props: Props) {
     }
 
     case CustomFieldType.TEXT: {
+      const valueStr = String(props.fieldValue.value ?? '')
+
       if (props.fieldValue.customFieldDefinition.name === DRIVER_VERSION_FIELD_NAME) {
-        const valueStr = String(props.fieldValue.value ?? '')
+        let displayValue = valueStr
         if (valueStr.includes('|||')) {
-          const [displayPart] = valueStr.split('|||')
-          return <span className="break-words overflow-wrap-anywhere">{displayPart}</span>
-        }
-        try {
-          const parsed = JSON.parse(valueStr)
-          if (parsed && typeof parsed === 'object') {
-            return (
-              <span className="break-words overflow-wrap-anywhere">
-                {parsed.display || parsed.release || 'Custom Driver'}
-              </span>
-            )
+          ;[displayValue] = valueStr.split('|||')
+        } else {
+          try {
+            const parsed = JSON.parse(valueStr)
+            if (parsed && typeof parsed === 'object') {
+              displayValue = parsed.display || parsed.release || 'Custom Driver'
+            }
+          } catch {
+            // Not JSON, use as-is
           }
-        } catch {
-          // Not JSON, fall through
         }
-        return <span className="break-words overflow-wrap-anywhere">{valueStr}</span>
+
+        return (
+          <span className="inline-block max-w-full break-words hyphens-auto" lang="en">
+            {displayValue}
+          </span>
+        )
       }
+
+      // For regular text: use badge style for short single words, break-words for longer content
+      const isSingleWord = !valueStr.includes(' ') && valueStr.length > 0
+      const isShortWord = valueStr.length <= 20
+
+      if (isSingleWord && isShortWord) {
+        // Render short single words as inline badges
+        return (
+          <Badge variant="default" className="font-normal">
+            {valueStr}
+          </Badge>
+        )
+      }
+
       return (
-        <span className="break-words overflow-wrap-anywhere">
-          {String(props.fieldValue.value ?? '')}
+        <span className="inline-block max-w-full break-words hyphens-auto" lang="en">
+          {valueStr}
         </span>
       )
     }
 
     case CustomFieldType.TEXTAREA:
-    default:
+    default: {
+      const textValue = String(props.fieldValue.value ?? '')
       return (
-        <span className="break-words overflow-wrap-anywhere">
-          {String(props.fieldValue.value ?? '')}
+        <span
+          className="inline-block max-w-full whitespace-pre-wrap break-words hyphens-auto"
+          lang="en"
+        >
+          {textValue}
         </span>
       )
+    }
   }
 }

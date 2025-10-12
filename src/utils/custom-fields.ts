@@ -34,6 +34,7 @@ export function getCustomFieldDefaultValue(
   field: {
     type: CustomFieldType
     defaultValue?: string | number | boolean | null | undefined
+    rangeMin?: number | null
   },
   parsedOptions?: CustomFieldOptionUI[],
 ): string | boolean | number | null | undefined {
@@ -43,10 +44,20 @@ export function getCustomFieldDefaultValue(
   // Fall back to type-specific defaults
   switch (field.type) {
     case CustomFieldType.BOOLEAN:
-      return false
+      // Return undefined - let checkbox start unchecked
+      return undefined
     case CustomFieldType.SELECT:
-      return parsedOptions?.[0]?.value ?? ''
+      // Return first option value, or undefined if no options
+      return parsedOptions?.[0]?.value
+    case CustomFieldType.RANGE:
+      // Return min value or 0 for range fields
+      return field.rangeMin ?? 0
+    case CustomFieldType.TEXT:
+    case CustomFieldType.TEXTAREA:
+    case CustomFieldType.URL:
+      // Return undefined for text fields - let them be truly empty
+      return undefined
     default:
-      return ''
+      return undefined
   }
 }

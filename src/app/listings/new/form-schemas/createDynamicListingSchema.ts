@@ -1,4 +1,4 @@
-import { isNullish, isString } from 'remeda'
+import { isString } from 'remeda'
 import { z } from 'zod'
 import { CustomFieldType, type CustomFieldDefinition } from '@orm'
 import listingFormSchema from './listingFormSchema'
@@ -32,12 +32,11 @@ function createDynamicListingSchema(customFields: CustomFieldDefinitionWithOptio
     )
     .optional()
     .superRefine((values, ctx) => {
-      if (!values) return
-
+      // Check required fields even if values array is empty or undefined
       customFields.forEach((field, index) => {
         if (!field.isRequired) return
 
-        const fieldValue = values.find((cfv) => cfv.customFieldDefinitionId === field.id)
+        const fieldValue = values?.find((cfv) => cfv.customFieldDefinitionId === field.id)
 
         let isValid = true
         const errorMessage = `${field.label} is required`
@@ -51,35 +50,42 @@ function createDynamicListingSchema(customFields: CustomFieldDefinitionWithOptio
             case CustomFieldType.TEXTAREA:
             case CustomFieldType.URL:
               if (
-                !fieldValue.value ||
+                fieldValue.value === undefined ||
+                fieldValue.value === null ||
                 (isString(fieldValue.value) && fieldValue.value.trim() === '')
               ) {
                 isValid = false
               }
               break
             case CustomFieldType.SELECT:
-              if (!fieldValue.value || fieldValue.value === '') {
-                isValid = false
-              }
-              break
-            case CustomFieldType.RANGE:
               if (
-                isNullish(fieldValue.value) ||
-                (isString(fieldValue.value) && fieldValue.value.trim() === '')
+                fieldValue.value === undefined ||
+                fieldValue.value === null ||
+                fieldValue.value === ''
               ) {
                 isValid = false
               }
               break
+            case CustomFieldType.RANGE:
+              if (fieldValue.value === undefined || fieldValue.value === null) {
+                isValid = false
+              } else if (isString(fieldValue.value) && fieldValue.value.trim() === '') {
+                isValid = false
+              }
+              break
             case CustomFieldType.BOOLEAN:
-              // Boolean fields are always valid (true or false)
-              isValid = true
+              // Required boolean must have explicit true/false value (not undefined/null)
+              if (fieldValue.value === undefined || fieldValue.value === null) {
+                isValid = false
+              }
+              // Note: both true and false are valid values
               break
           }
         }
 
         if (!isValid) {
           // Find the actual index in the values array for this field
-          const valueIndex = values.findIndex((v) => v.customFieldDefinitionId === field.id)
+          const valueIndex = values?.findIndex((v) => v.customFieldDefinitionId === field.id) ?? -1
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: errorMessage,

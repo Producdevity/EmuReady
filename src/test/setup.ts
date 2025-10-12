@@ -35,6 +35,13 @@ vi.mock('@orm', () => ({
     URL: 'URL',
     BOOLEAN: 'BOOLEAN',
     SELECT: 'SELECT',
+    RANGE: 'RANGE',
+  },
+  PcOs: {
+    WINDOWS: 'WINDOWS',
+    MAC_OS: 'MAC_OS',
+    LINUX: 'LINUX',
+    CHROME_OS: 'CHROME_OS',
   },
   ApprovalStatus: {
     PENDING: 'PENDING',

@@ -1,4 +1,4 @@
-import { CustomFieldType, Prisma, type PrismaClient } from '@orm'
+import { CustomFieldType, type Prisma, type PrismaClient } from '@orm'
 
 interface SelectOption {
   value: string
@@ -446,7 +446,7 @@ function normalizeJsonInput(
   value: unknown,
 ): Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue | undefined {
   if (value === null || value === undefined) {
-    return Prisma.JsonNull
+    return undefined
   }
 
   return value as Prisma.InputJsonValue

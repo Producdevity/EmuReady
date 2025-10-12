@@ -801,8 +801,10 @@ function AddPcListingPage() {
 
         {/* Bottom - Full Width */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Form Validation Summary */}
-          <FormValidationSummary errors={form.formState.errors} />
+          <FormValidationSummary
+            errors={form.formState.errors}
+            customFieldDefinitions={parsedCustomFields}
+          />
 
           <div className="flex justify-end">
             <Button

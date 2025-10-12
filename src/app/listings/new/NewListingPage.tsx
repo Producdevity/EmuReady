@@ -685,6 +685,55 @@ function AddListingPage() {
               )}
             />
           </div>
+
+          {/* Eden Config Import */}
+          {showConfigImporter && (
+            <div>
+              <label
+                htmlFor="eden-config-upload"
+                className={cn(
+                  'group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-emerald-400/60 bg-emerald-500/10 p-6 text-center transition focus-within:ring-2 focus-within:ring-emerald-400 hover:border-emerald-400 hover:bg-emerald-500/15 sm:flex-row sm:gap-4 sm:text-left',
+                  isImportingConfig && 'cursor-progress opacity-80',
+                )}
+              >
+                <input
+                  ref={fileInputRef}
+                  id="eden-config-upload"
+                  type="file"
+                  accept={supportedExtensions}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  onChange={handleConfigUpload}
+                />
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg transition-transform duration-200 group-hover:scale-105">
+                  {isImportingConfig ? (
+                    <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Upload className="h-5 w-5" aria-hidden="true" />
+                  )}
+                </div>
+                <div className="mt-4 sm:mt-0 sm:text-left">
+                  <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-200">
+                    Import {importerDisplayName} config ({supportedExtensionsLabel})
+                  </p>
+                  <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                    We&apos;ll auto-fill matching fields from your {importerDisplayName}{' '}
+                    configuration file.
+                  </p>
+                </div>
+              </label>
+              {importError && (
+                <p className="mt-2 text-sm text-red-500 dark:text-red-400">{importError}</p>
+              )}
+              {importSummary && (
+                <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                  Filled {importSummary.filled} field{importSummary.filled === 1 ? '' : 's'}.
+                  {importSummary.missing.length > 0 && (
+                    <> Missing: {importSummary.missing.join(', ')}.</>
+                  )}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right Column - Custom Fields */}
@@ -701,54 +750,6 @@ function AddListingPage() {
             !customFieldDefinitionsQuery.isPending &&
             parsedCustomFields.length > 0 && (
               <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
-                {showConfigImporter && (
-                  <div className="mb-6">
-                    <label
-                      htmlFor="eden-config-upload"
-                      className={cn(
-                        'group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-emerald-400/60 bg-emerald-500/10 p-6 text-center transition focus-within:ring-2 focus-within:ring-emerald-400 hover:border-emerald-400 hover:bg-emerald-500/15 sm:flex-row sm:gap-4 sm:text-left',
-                        isImportingConfig && 'cursor-progress opacity-80',
-                      )}
-                    >
-                      <input
-                        ref={fileInputRef}
-                        id="eden-config-upload"
-                        type="file"
-                        accept={supportedExtensions}
-                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                        onChange={handleConfigUpload}
-                      />
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg transition-transform duration-200 group-hover:scale-105">
-                        {isImportingConfig ? (
-                          <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-                        ) : (
-                          <Upload className="h-5 w-5" aria-hidden="true" />
-                        )}
-                      </div>
-                      <div className="mt-4 sm:mt-0 sm:text-left">
-                        <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-200">
-                          Import {importerDisplayName} config ({supportedExtensionsLabel})
-                        </p>
-                        <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
-                          We&apos;ll auto-fill matching fields from your {importerDisplayName}{' '}
-                          configuration file.
-                        </p>
-                      </div>
-                    </label>
-                    {importError && (
-                      <p className="mt-2 text-sm text-red-500 dark:text-red-400">{importError}</p>
-                    )}
-                    {importSummary && (
-                      <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-                        Filled {importSummary.filled} field{importSummary.filled === 1 ? '' : 's'}.
-                        {importSummary.missing.length > 0 && (
-                          <> Missing: {importSummary.missing.join(', ')}.</>
-                        )}
-                      </p>
-                    )}
-                  </div>
-                )}
-
                 <CustomFieldsFormSection
                   parsedCustomFields={parsedCustomFields}
                   control={form.control}
@@ -772,7 +773,10 @@ function AddListingPage() {
         {/* Bottom - Full Width */}
         <div className="lg:col-span-2 space-y-6">
           {/* Form Validation Summary */}
-          <FormValidationSummary errors={form.formState.errors} />
+          <FormValidationSummary
+            errors={form.formState.errors}
+            customFieldDefinitions={parsedCustomFields}
+          />
 
           <div className="flex justify-end">
             <Button

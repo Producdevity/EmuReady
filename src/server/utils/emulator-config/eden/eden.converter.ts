@@ -15,6 +15,7 @@ import type {
 import type { Prisma } from '@orm'
 
 // Constants
+// TODO: IMPORTANT fix this for different eden versions
 const EDEN_ANDROID_BASE_PATH =
   '/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers'
 

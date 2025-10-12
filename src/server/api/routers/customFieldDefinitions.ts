@@ -11,7 +11,7 @@ import { createTRPCRouter, protectedProcedure, permissionProcedure } from '@/ser
 import { prisma } from '@/server/db'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
-import { CustomFieldType, Prisma, Role } from '@orm'
+import { CustomFieldType, type Prisma, Role } from '@orm'
 
 type CustomFieldOptionArray = {
   value: string
@@ -62,6 +62,11 @@ export const customFieldDefinitionRouter = createTRPCRouter({
 
       if (existingField) return ResourceError.customField.alreadyExists(input.name)
 
+      // Auto-assign displayOrder based on existing field count for this emulator
+      const existingFieldCount = await prisma.customFieldDefinition.count({
+        where: { emulatorId: input.emulatorId },
+      })
+
       return prisma.customFieldDefinition.create({
         data: {
           emulatorId: input.emulatorId,
@@ -70,15 +75,17 @@ export const customFieldDefinitionRouter = createTRPCRouter({
           label: input.label,
           type: input.type,
           options:
-            input.type === CustomFieldType.SELECT && input.options ? input.options : Prisma.DbNull,
-          defaultValue: input.defaultValue ?? Prisma.DbNull,
+            input.type === CustomFieldType.SELECT && input.options
+              ? input.options
+              : (null as unknown as Prisma.InputJsonValue),
+          defaultValue: (input.defaultValue ?? null) as Prisma.InputJsonValue,
           placeholder: input.placeholder ?? null,
           rangeMin: input.rangeMin ?? null,
           rangeMax: input.rangeMax ?? null,
           rangeUnit: input.rangeUnit ?? null,
           rangeDecimals: input.rangeDecimals ?? null,
           isRequired: input.isRequired,
-          displayOrder: input.displayOrder,
+          displayOrder: existingFieldCount,
           categoryOrder: input.categoryOrder ?? 0,
         },
       })
@@ -87,10 +94,28 @@ export const customFieldDefinitionRouter = createTRPCRouter({
   getByEmulator: protectedProcedure
     .input(GetCustomFieldDefinitionsByEmulatorSchema)
     .query(async ({ input }) => {
-      return prisma.customFieldDefinition.findMany({
+      const fields = await prisma.customFieldDefinition.findMany({
         where: { emulatorId: input.emulatorId },
-        orderBy: [{ categoryId: 'asc' }, { categoryOrder: 'asc' }, { displayOrder: 'asc' }],
         include: { emulator: true, category: true },
+      })
+
+      // Sort by category displayOrder (nulls last), then categoryOrder, then displayOrder
+      return fields.sort((a, b) => {
+        const aDisplayOrder = a.category?.displayOrder ?? Number.MAX_SAFE_INTEGER
+        const bDisplayOrder = b.category?.displayOrder ?? Number.MAX_SAFE_INTEGER
+
+        if (aDisplayOrder !== bDisplayOrder) {
+          return aDisplayOrder - bDisplayOrder
+        }
+
+        const aCategoryOrder = a.categoryOrder ?? 0
+        const bCategoryOrder = b.categoryOrder ?? 0
+
+        if (aCategoryOrder !== bCategoryOrder) {
+          return aCategoryOrder - bCategoryOrder
+        }
+
+        return (a.displayOrder ?? 0) - (b.displayOrder ?? 0)
       })
     }),
 
@@ -131,7 +156,8 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       }
 
       const newType = input.type ?? fieldToUpdate.type
-      let optionsToSave: Prisma.JsonValue | typeof Prisma.DbNull = fieldToUpdate.options
+      let optionsToSave: Prisma.InputJsonValue = (fieldToUpdate.options ??
+        null) as Prisma.InputJsonValue
 
       if (newType === CustomFieldType.SELECT) {
         if (input.hasOwnProperty('options')) {
@@ -140,7 +166,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
           } else if (input.options && input.options.length === 0) {
             return ValidationError.emptyOptions(CustomFieldType.SELECT)
           } else {
-            optionsToSave = Prisma.DbNull
+            optionsToSave = null as unknown as Prisma.InputJsonValue
           }
         } else {
           const currentOptions = fieldToUpdate.options as CustomFieldOptionArray | null
@@ -153,7 +179,7 @@ export const customFieldDefinitionRouter = createTRPCRouter({
         if (input.hasOwnProperty('options') && input.options && input.options.length > 0) {
           return ValidationError.optionsNotAllowed(newType)
         }
-        optionsToSave = Prisma.DbNull
+        optionsToSave = null as unknown as Prisma.InputJsonValue
       }
 
       if (newType === CustomFieldType.RANGE) {
@@ -179,14 +205,16 @@ export const customFieldDefinitionRouter = createTRPCRouter({
           label: input.label,
           type: input.type,
           options: optionsToSave,
-          defaultValue: input.defaultValue ?? Prisma.DbNull,
+          defaultValue:
+            input.defaultValue !== undefined
+              ? (input.defaultValue as Prisma.InputJsonValue)
+              : undefined,
           placeholder: input.placeholder ?? undefined,
           rangeMin: input.rangeMin ?? undefined,
           rangeMax: input.rangeMax ?? undefined,
           rangeUnit: input.rangeUnit ?? undefined,
           rangeDecimals: input.rangeDecimals ?? undefined,
           isRequired: input.isRequired,
-          displayOrder: input.displayOrder,
           categoryOrder: input.categoryOrder ?? undefined,
         },
       })

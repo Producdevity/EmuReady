@@ -26,7 +26,6 @@ export const CreateCustomFieldDefinitionSchema = z.object({
   rangeUnit: z.string().optional(),
   rangeDecimals: z.number().int().min(0).max(5).optional(),
   isRequired: z.boolean().optional().default(false),
-  displayOrder: z.number().int().optional().default(0),
   categoryOrder: z.number().int().optional().default(0),
 })
 
@@ -59,7 +58,6 @@ export const UpdateCustomFieldDefinitionSchema = z.object({
   rangeUnit: z.string().optional(),
   rangeDecimals: z.number().int().min(0).max(5).optional(),
   isRequired: z.boolean().optional(),
-  displayOrder: z.number().int().optional(),
   categoryOrder: z.number().int().optional(),
 })
 

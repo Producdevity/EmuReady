@@ -1,7 +1,7 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
-import { Filter, FilterX, Puzzle } from 'lucide-react'
+import { Filter, FilterX, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { isNullish } from 'remeda'
 import {
@@ -22,8 +22,6 @@ interface Props {
   alignItems?: 'start' | 'center'
 }
 
-const INDICATOR_BORDER_WIDTH = '4px'
-const DEFAULT_BORDER_WIDTH = '1px'
 const TOGGLE_DELAY_MS = 400
 
 export function CustomFieldsSection(props: Props) {
@@ -57,8 +55,10 @@ export function CustomFieldsSection(props: Props) {
 
   return (
     <div className="mb-6">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">{title}</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 tracking-tight">
+          {title}
+        </h2>
         {hasDefaultFields && (
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button
@@ -66,7 +66,7 @@ export function CustomFieldsSection(props: Props) {
               size="sm"
               onClick={handleToggle}
               disabled={isToggling}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 font-medium"
             >
               <motion.div animate={{ rotate: isToggling ? 180 : 0 }} transition={{ duration: 0.3 }}>
                 {hideDefaults ? <Filter className="w-4 h-4" /> : <FilterX className="w-4 h-4" />}
@@ -74,127 +74,102 @@ export function CustomFieldsSection(props: Props) {
               <span className="hidden sm:inline">
                 {hideDefaults ? 'Show All' : 'Hide Defaults'}
               </span>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="px-1.5 py-0.5 rounded-md bg-blue-500 text-white text-xs font-bold"
-              >
+              <Badge variant="default" size="sm" className="ml-1">
                 {fieldsToShow.length}
-              </motion.div>
+              </Badge>
             </Button>
           </motion.div>
         )}
       </div>
-      <AnimatePresence mode="popLayout">
-        <motion.div layout className="space-y-6" transition={{ duration: 0.3, ease: 'easeInOut' }}>
-          {categoryGroups.map((group, groupIndex) => (
+      <motion.div layout className="space-y-8">
+        {categoryGroups.map((group) => (
+          <motion.div key={group.categoryId} layout>
             <motion.div
-              key={group.categoryId}
               layout
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3, delay: groupIndex * 0.05 }}
-              className="space-y-3"
+              className="flex items-center gap-3 mb-4 pb-2 border-b-2 border-gray-200 dark:border-gray-700"
             >
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: groupIndex * 0.05 + 0.1 }}
-                className="flex items-center gap-2 mb-3"
-              >
-                <h3 className="text-base font-semibold text-gray-700 dark:text-gray-200">
-                  {group.categoryName}
-                </h3>
-                <Badge variant="default" size="sm">
-                  {group.fields.length}
-                </Badge>
-              </motion.div>
-              {group.fields.map((fieldValue, index) => {
-                const isCustomized = !isDefaultValue(fieldValue)
-                const showIndicator = !hideDefaults && isCustomized
-                const globalIndex = fieldsToShow.indexOf(fieldValue)
-
-                return (
-                  <motion.div
-                    key={fieldValue.id}
-                    layout
-                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                      scale: 1,
-                      borderLeftWidth: showIndicator
-                        ? INDICATOR_BORDER_WIDTH
-                        : DEFAULT_BORDER_WIDTH,
-                    }}
-                    exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                    transition={{
-                      duration: 0.3,
-                      delay: globalIndex * 0.03,
-                      ease: 'easeOut',
-                      borderLeftWidth: { duration: 0.5, ease: 'easeInOut' },
-                    }}
-                    className={cn(
-                      'w-full max-w-full rounded-2xl border p-4 shadow-sm overflow-hidden relative',
-                      'bg-white/80 dark:bg-gray-800/80',
-                      'transition-colors duration-500 ease-in-out',
-                      showIndicator
-                        ? 'border-blue-300/70 dark:border-blue-600/70 border-l-blue-500 dark:border-l-blue-400'
-                        : 'border-gray-200/70 dark:border-gray-700/70',
-                    )}
-                  >
-                    <AnimatePresence mode="wait">
-                      {showIndicator && (
-                        <motion.div
-                          key="modified-badge"
-                          initial={{ opacity: 0, scale: 0.5, x: 10, rotate: -5 }}
-                          animate={{ opacity: 1, scale: 1, x: 0, rotate: 0 }}
-                          exit={{ opacity: 0, scale: 0.5, x: 10, rotate: 5 }}
-                          transition={{
-                            duration: 0.3,
-                            delay: 0.1 + index * 0.02,
-                            type: 'spring',
-                            stiffness: 300,
-                            damping: 20,
-                          }}
-                          className="absolute top-3 right-3 z-10"
-                        >
-                          <Badge
-                            variant="default"
-                            size="sm"
-                            pill
-                            className="bg-blue-500 dark:bg-blue-600 text-white shadow-md"
-                          >
-                            <Puzzle className="w-3 h-3" />
-                          </Badge>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                    <dl>
-                      <DetailFieldRow
-                        align={alignItems}
-                        label={fieldValue.customFieldDefinition.label ?? 'Field'}
-                        value={
-                          <span className="block break-words overflow-wrap-anywhere">
-                            <CustomFieldValue fieldValue={fieldValue} />
-                          </span>
-                        }
-                      />
-                    </dl>
-                  </motion.div>
-                )
-              })}
+              <div className="h-6 w-1.5 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full" />
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+                {group.categoryName}
+              </h3>
+              <Badge variant="default" size="sm" className="ml-auto">
+                {group.fields.length}
+              </Badge>
             </motion.div>
-          ))}
-        </motion.div>
-      </AnimatePresence>
+            <motion.div layout className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <AnimatePresence initial={false}>
+                {group.fields.map((fieldValue) => {
+                  const isCustomized = !isDefaultValue(fieldValue)
+                  const showIndicator = !hideDefaults && isCustomized
+
+                  return (
+                    <motion.div
+                      key={fieldValue.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{
+                        layout: {
+                          type: 'spring',
+                          stiffness: 350,
+                          damping: 30,
+                        },
+                        opacity: { duration: 0.2 },
+                        scale: { duration: 0.2 },
+                      }}
+                      className={cn(
+                        'relative rounded-xl border shadow-sm overflow-hidden',
+                        'bg-white dark:bg-gray-800 backdrop-blur-sm',
+                        'transition-colors duration-200 ease-in-out',
+                        'hover:shadow-md',
+                        'p-4',
+                        showIndicator
+                          ? 'border-l-4 border-l-blue-500 dark:border-l-blue-400 border-blue-200 dark:border-blue-900/50'
+                          : 'border-gray-200 dark:border-gray-700',
+                      )}
+                    >
+                      <AnimatePresence>
+                        {showIndicator && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.5 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute top-2 right-2 z-10"
+                          >
+                            <Badge
+                              variant="default"
+                              size="sm"
+                              pill
+                              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg"
+                            >
+                              <Sparkles className="w-3 h-3" />
+                            </Badge>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                      <dl className={cn(showIndicator && 'pr-10')}>
+                        <DetailFieldRow
+                          align={alignItems}
+                          label={fieldValue.customFieldDefinition.label ?? 'Field'}
+                          value={<CustomFieldValue fieldValue={fieldValue} />}
+                        />
+                      </dl>
+                    </motion.div>
+                  )
+                })}
+              </AnimatePresence>
+            </motion.div>
+          </motion.div>
+        ))}
+      </motion.div>
       {hideDefaults && defaultFields.length > 0 && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
-          className="mt-3 text-sm text-gray-500 dark:text-gray-400 text-center"
+          className="mt-4 text-sm text-gray-500 dark:text-gray-400 text-center"
         >
           <motion.p initial={{ y: -10 }} animate={{ y: 0 }} transition={{ delay: 0.2 }}>
             {defaultFields.length} default setting{defaultFields.length !== 1 ? 's' : ''} hidden
