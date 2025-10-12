@@ -1,7 +1,7 @@
 import { DEFAULT_CONFIG } from '@/server/utils/emulator-config/eden/eden.defaults'
 import { EDEN_FIELD_MAPPINGS, edenConfigValueToCustomValue } from './mapping'
 import type { CustomFieldImportDefinition, EmulatorConfigImportResult } from '../types'
-import type { EdenConfig } from '@/server/utils/emulator-config/eden/eden.types'
+import type { EdenConfig, ResolutionSetup } from '@/server/utils/emulator-config/eden/eden.types'
 
 interface EdenIniSections {
   [section: string]: Record<string, string>
@@ -92,6 +92,34 @@ function buildConfigFromIni(raw: string): EdenConfig {
   return config
 }
 
+/**
+ * A direct lookup array to map a ResolutionSetup number to its string representation.
+ * These values are chosen to be representative of the ranges in the original parser.
+ */
+const MULTIPLIER_VALUES: string[] = [
+  '0.5x', // Corresponds to 0
+  '0.75x', // Corresponds to 1
+  '1.0x', // Corresponds to 2
+  '1.5x', // Corresponds to 3
+  '2.0x', // Corresponds to 4
+  '3.0x', // Corresponds to 5
+  '4.0x', // Corresponds to 6
+  '5.0x', // Corresponds to 7
+  '6.0x', // Corresponds to 8
+  '7.0x', // Corresponds to 9
+  '8.0x', // Corresponds to 10
+]
+
+/**
+ * Formats a ResolutionSetup number into its corresponding multiplier string (e.g., 1 -> '0.75x').
+ * @param setup The numeric resolution setup value (0-10).
+ * @returns The multiplier as a string with an 'x' suffix.
+ */
+const parseResolutionMultiplier = (setup: ResolutionSetup): string => {
+  // Return the string from the lookup array or default to '1.0x' if out of bounds.
+  return MULTIPLIER_VALUES[setup] || '1.0x'
+}
+
 export function parseEdenConfigFromIni(
   raw: string,
   customFields: CustomFieldImportDefinition[],
@@ -145,7 +173,8 @@ export function parseEdenConfigFromIni(
 
     if (mapping.key === 'resolution_setup') {
       if (typeof rawValue === 'number') {
-        values.push({ id: field.id, value: rawValue })
+        const value = parseResolutionMultiplier(rawValue as ResolutionSetup)
+        values.push({ id: field.id, value })
       } else if (field.defaultValue !== undefined && field.defaultValue !== null) {
         values.push({ id: field.id, value: field.defaultValue })
       } else if (field.isRequired) {
