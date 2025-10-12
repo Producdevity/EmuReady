@@ -1,10 +1,10 @@
 # EmuReady Mobile API (tRPC)
 
-*Auto-generated on: 2025-09-23T12:05:27.091Z*
+*Auto-generated on: 2025-10-08T13:45:04.762Z*
 
 ## Summary
-- **Total Endpoints**: 89
-- **Public Endpoints**: 53
+- **Total Endpoints**: 90
+- **Public Endpoints**: 54
 - **Protected Endpoints**: 36
 - **OpenAPI Version**: 3.0.0
 
@@ -233,161 +233,168 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Tags**: listingReports
 
 
-#### 31. **get**
+#### 31. **driverVersions**
+- **Method**: GET
+- **Path**: `/listings.driverVersions`
+- **Description**: Get available driver versions (mirrors web listings.driverVersions)
+- **Tags**: listings
+
+
+#### 32. **get**
 - **Method**: GET
 - **Path**: `/listings.get`
 - **Description**: Get listings with pagination and filtering
 - **Tags**: listings
 
 
-#### 32. **getListings**
+#### 33. **getListings**
 - **Method**: GET
 - **Path**: `/listings.getListings`
 - **Description**: @deprecated Use 'get' instead - kept for backwards compatibility with Eden
 - **Tags**: listings
 
 
-#### 33. **featured**
+#### 34. **featured**
 - **Method**: GET
 - **Path**: `/listings.featured`
 - **Description**: Get featured listings
 - **Tags**: listings
 
 
-#### 34. **byGame**
+#### 35. **byGame**
 - **Method**: GET
 - **Path**: `/listings.byGame`
 - **Description**: Get listings by game
 - **Tags**: listings
 
 
-#### 35. **byId**
+#### 36. **byId**
 - **Method**: GET
 - **Path**: `/listings.byId`
 - **Description**: Get listing by ID
 - **Tags**: listings
 
 
-#### 36. **comments**
+#### 37. **comments**
 - **Method**: GET
 - **Path**: `/listings.comments`
 - **Description**: Get listing comments
 - **Tags**: listings
 
 
-#### 37. **getEmulatorConfig**
+#### 38. **getEmulatorConfig**
 - **Method**: GET
 - **Path**: `/listings.getEmulatorConfig`
 - **Description**: Delete a comment
 - **Tags**: listings
 
 
-#### 38. **byId**
+#### 39. **byId**
 - **Method**: GET
 - **Path**: `/pcListings.byId`
 - **Description**: byId - pcListings
 - **Tags**: pcListings
 
 
-#### 39. **get**
+#### 40. **get**
 - **Method**: GET
 - **Path**: `/pcListings.get`
 - **Description**: Get PC listings with pagination and filtering
 - **Tags**: pcListings
 
 
-#### 40. **cpus**
+#### 41. **cpus**
 - **Method**: GET
 - **Path**: `/pcListings.cpus`
 - **Description**: Get CPUs for mobile
 - **Tags**: pcListings
 
 
-#### 41. **gpus**
+#### 42. **gpus**
 - **Method**: GET
 - **Path**: `/pcListings.gpus`
 - **Description**: Get GPUs for mobile
 - **Tags**: pcListings
 
 
-#### 42. **searchGameImages**
+#### 43. **searchGameImages**
 - **Method**: GET
 - **Path**: `/rawg.searchGameImages`
 - **Description**: Search for game images in RAWG database
 - **Tags**: rawg
 
 
-#### 43. **searchGames**
+#### 44. **searchGames**
 - **Method**: GET
 - **Path**: `/rawg.searchGames`
 - **Description**: Search for games in RAWG database
 - **Tags**: rawg
 
 
-#### 44. **getGameImages**
+#### 45. **getGameImages**
 - **Method**: GET
 - **Path**: `/rawg.getGameImages`
 - **Description**: Get game images by ID
 - **Tags**: rawg
 
 
-#### 45. **get**
+#### 46. **get**
 - **Method**: GET
 - **Path**: `/socs.get`
 - **Description**: Get SoCs with search, filtering, and pagination
 - **Tags**: socs
 
 
-#### 46. **getById**
+#### 47. **getById**
 - **Method**: GET
 - **Path**: `/socs.getById`
 - **Description**: Get SoC by ID
 - **Tags**: socs
 
 
-#### 47. **searchGameImages**
+#### 48. **searchGameImages**
 - **Method**: GET
 - **Path**: `/tgdb.searchGameImages`
 - **Description**: Search for game images in TGDB database
 - **Tags**: tgdb
 
 
-#### 48. **searchGames**
+#### 49. **searchGames**
 - **Method**: GET
 - **Path**: `/tgdb.searchGames`
 - **Description**: Search for games in TGDB database
 - **Tags**: tgdb
 
 
-#### 49. **getGameImageUrls**
+#### 50. **getGameImageUrls**
 - **Method**: GET
 - **Path**: `/tgdb.getGameImageUrls`
 - **Description**: Get game image URLs for a specific game
 - **Tags**: tgdb
 
 
-#### 50. **getGameImages**
+#### 51. **getGameImages**
 - **Method**: GET
 - **Path**: `/tgdb.getGameImages`
 - **Description**: Get game images by game IDs
 - **Tags**: tgdb
 
 
-#### 51. **getPlatforms**
+#### 52. **getPlatforms**
 - **Method**: GET
 - **Path**: `/tgdb.getPlatforms`
 - **Description**: Get available platforms from TGDB
 - **Tags**: tgdb
 
 
-#### 52. **userInfo**
+#### 53. **userInfo**
 - **Method**: GET
 - **Path**: `/trust.userInfo`
 - **Description**: Get trust info for a specific user (public)
 - **Tags**: trust
 
 
-#### 53. **byId**
+#### 54. **byId**
 - **Method**: GET
 - **Path**: `/users.byId`
 - **Description**: Get user profile by ID (public user profiles)

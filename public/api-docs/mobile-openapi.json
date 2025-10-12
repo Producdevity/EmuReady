@@ -1266,7 +1266,9 @@
             "enum": [
               "WINDOWS",
               "LINUX",
-              "MACOS"
+              "MACOS",
+              "FREEBSD",
+              "OTHER"
             ]
           },
           "search": {
@@ -1317,7 +1319,9 @@
             "enum": [
               "WINDOWS",
               "LINUX",
-              "MACOS"
+              "MACOS",
+              "FREEBSD",
+              "OTHER"
             ]
           },
           "osVersion": {
@@ -1542,7 +1546,9 @@
             "enum": [
               "WINDOWS",
               "LINUX",
-              "MACOS"
+              "MACOS",
+              "FREEBSD",
+              "OTHER"
             ]
           },
           "osVersion": {
@@ -1762,7 +1768,9 @@
             "enum": [
               "WINDOWS",
               "LINUX",
-              "MACOS"
+              "MACOS",
+              "FREEBSD",
+              "OTHER"
             ]
           },
           "osVersion": {
@@ -1810,7 +1818,9 @@
             "enum": [
               "WINDOWS",
               "LINUX",
-              "MACOS"
+              "MACOS",
+              "FREEBSD",
+              "OTHER"
             ]
           },
           "osVersion": {
@@ -6627,6 +6637,139 @@
                             "code": "BAD_REQUEST",
                             "httpStatus": 400,
                             "path": "listingReports.checkUserHasReports",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/listings.driverVersions": {
+      "get": {
+        "summary": "Get available driver versions (mirrors web listings.driverVersions)",
+        "description": "Get available driver versions (mirrors web listings.driverVersions)",
+        "tags": [
+          "listings"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from listings.driverVersions"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from listings.driverVersions",
+                          "data": {
+                            "id": "uuid-listing",
+                            "gameId": "uuid-game",
+                            "deviceId": "uuid-device",
+                            "emulatorId": "uuid-emulator",
+                            "performanceId": 1,
+                            "notes": "Runs perfectly at 60fps",
+                            "status": "APPROVED"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "listings.driverVersions",
                             "zodError": {
                               "formErrors": [
                                 "Required"
