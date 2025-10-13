@@ -93,19 +93,14 @@ export function CustomFieldValue(props: Props) {
           }
         }
 
-        return (
-          <span className="inline-block max-w-full break-words hyphens-auto" lang="en">
-            {displayValue}
-          </span>
-        )
+        return displayValue
       }
 
-      // For regular text: use badge style for short single words, break-words for longer content
+      // For regular text: use badge style for short single words, plain text for longer content
       const isSingleWord = !valueStr.includes(' ') && valueStr.length > 0
       const isShortWord = valueStr.length <= 20
 
       if (isSingleWord && isShortWord) {
-        // Render short single words as inline badges
         return (
           <Badge variant="default" className="font-normal">
             {valueStr}
@@ -113,24 +108,13 @@ export function CustomFieldValue(props: Props) {
         )
       }
 
-      return (
-        <span className="inline-block max-w-full break-words hyphens-auto" lang="en">
-          {valueStr}
-        </span>
-      )
+      return valueStr
     }
 
     case CustomFieldType.TEXTAREA:
     default: {
       const textValue = String(props.fieldValue.value ?? '')
-      return (
-        <span
-          className="inline-block max-w-full whitespace-pre-wrap break-words hyphens-auto"
-          lang="en"
-        >
-          {textValue}
-        </span>
-      )
+      return <span className="whitespace-pre-wrap">{textValue}</span>
     }
   }
 }

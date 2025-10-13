@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { CustomFieldType } from '@orm'
 import createDynamicListingSchema, {
   type CustomFieldDefinitionWithOptions,
@@ -371,9 +371,8 @@ describe('createDynamicListingSchema - Custom Field Validation', () => {
   describe('No custom fields', () => {
     it('should return base schema when no custom fields', () => {
       const schema = createDynamicListingSchema([])
-      const data = baseValidData
 
-      const result = schema.safeParse(data)
+      const result = schema.safeParse(baseValidData)
       expect(result.success).toBe(true)
     })
   })

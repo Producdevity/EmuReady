@@ -20,8 +20,8 @@ export function DetailFieldRow(props: DetailFieldRowProps) {
       className={cn(
         'detail-field-grid grid w-full gap-x-3 gap-y-1',
         gridTemplate === 'grid-cols-auto-value'
-          ? 'sm:grid-cols-[auto_minmax(0,1fr)]'
-          : 'grid-cols-1 sm:grid-cols-[minmax(0,max-content)_minmax(0,1fr)]',
+          ? 'sm:grid-cols-[auto_1fr]'
+          : 'grid-cols-1 sm:grid-cols-[max-content_1fr]',
       )}
     >
       {props.icon ? (
@@ -48,7 +48,7 @@ export function DetailFieldRow(props: DetailFieldRowProps) {
 
       <dd
         className={cn(
-          'min-w-0 text-sm leading-relaxed text-gray-600 dark:text-gray-300',
+          'text-sm leading-relaxed text-gray-600 dark:text-gray-300',
           props.icon
             ? 'col-start-2'
             : shouldCenter
@@ -56,7 +56,7 @@ export function DetailFieldRow(props: DetailFieldRowProps) {
               : 'sm:flex sm:items-start',
         )}
       >
-        <span className="block min-w-0 break-words text-pretty">{props.value}</span>
+        {props.value}
       </dd>
     </div>
   )

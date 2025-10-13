@@ -112,7 +112,7 @@ function CustomFieldFormModal(props: Props) {
         : []
 
       // Defensive: handle case where defaultValue is an object (from old bad data)
-      let defaultValue: string | boolean | number | null = null
+      let defaultValue: string | boolean | number | null
       const rawDefaultValue = customFieldDefinitionsQuery.data.defaultValue
       if (rawDefaultValue === null || rawDefaultValue === undefined) {
         defaultValue = null
@@ -261,6 +261,10 @@ function CustomFieldFormModal(props: Props) {
   const handleUpdateOption = (index: number, field: 'value' | 'label', value: string) => {
     const currentOption = fields[index]
     if (currentOption) update(index, { ...currentOption, [field]: value })
+  }
+
+  const handleReorderOptions = (newOptions: { value: string; label: string }[]) => {
+    setValue('options', newOptions)
   }
 
   if (!props.isOpen) return null
@@ -461,6 +465,7 @@ function CustomFieldFormModal(props: Props) {
               onAddOption={() => append({ value: '', label: '' })}
               onRemoveOption={(index: number) => remove(index)}
               onUpdateOption={handleUpdateOption}
+              onReorderOptions={handleReorderOptions}
             />
           )}
 

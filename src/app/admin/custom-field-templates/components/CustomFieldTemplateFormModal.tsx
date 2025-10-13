@@ -1,5 +1,22 @@
 'use client'
 
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { Plus, Trash2, GripVertical } from 'lucide-react'
 import { useState, useEffect, type FormEvent } from 'react'
 import { toSnakeCase } from 'remeda'
@@ -44,6 +61,115 @@ const FIELD_TYPES: FilterValue[] = [
   { value: CustomFieldType.RANGE, label: 'Range (Slider)' },
 ]
 
+interface SortableTemplateOptionItemProps {
+  option: FilterValue
+  fieldIndex: number
+  optionIndex: number
+  errors: { [key: string]: string }
+  onUpdate: (
+    fieldIndex: number,
+    optionIndex: number,
+    updates: Partial<{ value: string; label: string }>,
+  ) => void
+  onRemove: (fieldIndex: number, optionIndex: number) => void
+}
+
+function SortableTemplateOptionItem({
+  option,
+  fieldIndex,
+  optionIndex,
+  errors,
+  onUpdate,
+  onRemove,
+}: SortableTemplateOptionItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: `field-${fieldIndex}-option-${optionIndex}`,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex gap-2">
+      <button
+        type="button"
+        className="flex items-center justify-center w-8 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-5 w-5" />
+      </button>
+      <div className="flex-1">
+        <Input
+          type="text"
+          value={option.value}
+          onChange={(ev) => {
+            if (!option.label) {
+              onUpdate(fieldIndex, optionIndex, {
+                label: ev.target.value,
+              })
+            }
+            onUpdate(fieldIndex, optionIndex, {
+              value: ev.target.value,
+            })
+          }}
+          placeholder="Value"
+          maxLength={50}
+          className={
+            errors[`field-${fieldIndex}-option-${optionIndex}-value`]
+              ? 'border-red-300 dark:border-red-600'
+              : ''
+          }
+        />
+        {errors[`field-${fieldIndex}-option-${optionIndex}-value`] && (
+          <p className="text-red-500 text-xs mt-1">
+            {errors[`field-${fieldIndex}-option-${optionIndex}-value`]}
+          </p>
+        )}
+      </div>
+      <div className="flex-1">
+        <Input
+          type="text"
+          value={option.label}
+          onChange={(ev) => {
+            if (!option.value) {
+              onUpdate(fieldIndex, optionIndex, {
+                value: ev.target.value,
+              })
+            }
+            onUpdate(fieldIndex, optionIndex, {
+              label: ev.target.value,
+            })
+          }}
+          placeholder="Label"
+          maxLength={100}
+          className={
+            errors[`field-${fieldIndex}-option-${optionIndex}-label`]
+              ? 'border-red-300 dark:border-red-600'
+              : ''
+          }
+        />
+        {errors[`field-${fieldIndex}-option-${optionIndex}-label`] && (
+          <p className="text-red-500 text-xs mt-1">
+            {errors[`field-${fieldIndex}-option-${optionIndex}-label`]}
+          </p>
+        )}
+      </div>
+      <Button
+        type="button"
+        variant="destructive"
+        size="sm"
+        onClick={() => onRemove(fieldIndex, optionIndex)}
+      >
+        <Trash2 className="h-3 w-3" />
+      </Button>
+    </div>
+  )
+}
+
 function CustomFieldTemplateFormModal(props: Props) {
   const [templateName, setTemplateName] = useState('')
   const [templateDescription, setTemplateDescription] = useState('')
@@ -57,6 +183,13 @@ function CustomFieldTemplateFormModal(props: Props) {
   )
 
   const utils = api.useUtils()
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  )
 
   const createMutation = api.customFieldTemplates.create.useMutation({
     onSuccess: () => {
@@ -390,6 +523,10 @@ function CustomFieldTemplateFormModal(props: Props) {
         ),
       })
     }
+  }
+
+  function reorderFieldOptions(fieldIndex: number, newOptions: FilterValue[]) {
+    updateField(fieldIndex, { options: newOptions })
   }
 
   if (!props.isOpen) return null
@@ -893,76 +1030,46 @@ function CustomFieldTemplateFormModal(props: Props) {
                         </div>
                       )}
 
-                      <div className="space-y-2">
-                        {field.options.map((option, optionIndex) => (
-                          <div key={optionIndex} className="flex gap-2">
-                            <div className="flex-1">
-                              <Input
-                                type="text"
-                                value={option.value}
-                                onChange={(ev) => {
-                                  if (!option.label) {
-                                    updateFieldOption(fieldIndex, optionIndex, {
-                                      label: ev.target.value,
-                                    })
-                                  }
-                                  updateFieldOption(fieldIndex, optionIndex, {
-                                    value: ev.target.value,
-                                  })
-                                }}
-                                placeholder="Value"
-                                maxLength={50}
-                                className={
-                                  errors[`field-${fieldIndex}-option-${optionIndex}-value`]
-                                    ? 'border-red-300 dark:border-red-600'
-                                    : ''
-                                }
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={(event: DragEndEvent) => {
+                          const { active, over } = event
+
+                          if (over && active.id !== over.id) {
+                            const oldIndex = parseInt(
+                              String(active.id).replace(`field-${fieldIndex}-option-`, ''),
+                            )
+                            const newIndex = parseInt(
+                              String(over.id).replace(`field-${fieldIndex}-option-`, ''),
+                            )
+
+                            const newOptions = arrayMove(field.options, oldIndex, newIndex)
+                            reorderFieldOptions(fieldIndex, newOptions)
+                          }
+                        }}
+                      >
+                        <SortableContext
+                          items={field.options.map(
+                            (_, optionIndex) => `field-${fieldIndex}-option-${optionIndex}`,
+                          )}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <div className="space-y-2">
+                            {field.options.map((option, optionIndex) => (
+                              <SortableTemplateOptionItem
+                                key={`field-${fieldIndex}-option-${optionIndex}`}
+                                option={option}
+                                fieldIndex={fieldIndex}
+                                optionIndex={optionIndex}
+                                errors={errors}
+                                onUpdate={updateFieldOption}
+                                onRemove={removeOptionFromField}
                               />
-                              {errors[`field-${fieldIndex}-option-${optionIndex}-value`] && (
-                                <p className="text-red-500 text-xs mt-1">
-                                  {errors[`field-${fieldIndex}-option-${optionIndex}-value`]}
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <Input
-                                type="text"
-                                value={option.label}
-                                onChange={(ev) => {
-                                  if (!option.value) {
-                                    updateFieldOption(fieldIndex, optionIndex, {
-                                      value: ev.target.value,
-                                    })
-                                  }
-                                  updateFieldOption(fieldIndex, optionIndex, {
-                                    label: ev.target.value,
-                                  })
-                                }}
-                                placeholder="Label"
-                                maxLength={100}
-                                className={
-                                  errors[`field-${fieldIndex}-option-${optionIndex}-label`]
-                                    ? 'border-red-300 dark:border-red-600'
-                                    : ''
-                                }
-                              />
-                              {errors[`field-${fieldIndex}-option-${optionIndex}-label`] && (
-                                <p className="text-red-500 text-xs mt-1">
-                                  {errors[`field-${fieldIndex}-option-${optionIndex}-label`]}
-                                </p>
-                              )}
-                            </div>
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => removeOptionFromField(fieldIndex, optionIndex)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                            ))}
                           </div>
-                        ))}
-                      </div>
+                        </SortableContext>
+                      </DndContext>
                     </div>
                   )}
                 </div>

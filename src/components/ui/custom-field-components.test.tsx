@@ -83,6 +83,7 @@ describe('SelectFieldOptions', () => {
     const onAddOption = vi.fn()
     const onRemoveOption = vi.fn()
     const onUpdateOption = vi.fn()
+    const onReorderOptions = vi.fn()
 
     render(
       <SelectFieldOptions
@@ -90,6 +91,7 @@ describe('SelectFieldOptions', () => {
         onAddOption={onAddOption}
         onRemoveOption={onRemoveOption}
         onUpdateOption={onUpdateOption}
+        onReorderOptions={onReorderOptions}
       />,
     )
 
@@ -104,6 +106,7 @@ describe('SelectFieldOptions', () => {
     const onAddOption = vi.fn()
     const onRemoveOption = vi.fn()
     const onUpdateOption = vi.fn()
+    const onReorderOptions = vi.fn()
 
     render(
       <SelectFieldOptions
@@ -111,6 +114,7 @@ describe('SelectFieldOptions', () => {
         onAddOption={onAddOption}
         onRemoveOption={onRemoveOption}
         onUpdateOption={onUpdateOption}
+        onReorderOptions={onReorderOptions}
       />,
     )
 
@@ -124,6 +128,7 @@ describe('SelectFieldOptions', () => {
     const onAddOption = vi.fn()
     const onRemoveOption = vi.fn()
     const onUpdateOption = vi.fn()
+    const onReorderOptions = vi.fn()
 
     render(
       <SelectFieldOptions
@@ -131,6 +136,7 @@ describe('SelectFieldOptions', () => {
         onAddOption={onAddOption}
         onRemoveOption={onRemoveOption}
         onUpdateOption={onUpdateOption}
+        onReorderOptions={onReorderOptions}
       />,
     )
 
@@ -149,6 +155,7 @@ describe('SelectFieldOptions', () => {
     const onAddOption = vi.fn()
     const onRemoveOption = vi.fn()
     const onUpdateOption = vi.fn()
+    const onReorderOptions = vi.fn()
 
     render(
       <SelectFieldOptions
@@ -156,6 +163,7 @@ describe('SelectFieldOptions', () => {
         onAddOption={onAddOption}
         onRemoveOption={onRemoveOption}
         onUpdateOption={onUpdateOption}
+        onReorderOptions={onReorderOptions}
         maxOptions={50}
       />,
     )
@@ -175,6 +183,7 @@ describe('SelectFieldOptions', () => {
     const onAddOption = vi.fn()
     const onRemoveOption = vi.fn()
     const onUpdateOption = vi.fn()
+    const onReorderOptions = vi.fn()
 
     render(
       <SelectFieldOptions
@@ -182,6 +191,7 @@ describe('SelectFieldOptions', () => {
         onAddOption={onAddOption}
         onRemoveOption={onRemoveOption}
         onUpdateOption={onUpdateOption}
+        onReorderOptions={onReorderOptions}
       />,
     )
 

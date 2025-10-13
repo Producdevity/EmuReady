@@ -258,6 +258,7 @@ function AddListingPage() {
     (selectedEmulatorSlug
       ? selectedEmulatorSlug.charAt(0).toUpperCase() + selectedEmulatorSlug.slice(1)
       : '')
+  const configUploadInputId = `${selectedEmulatorSlug || 'emulator'}-config-upload`
 
   const currentUserQuery = api.users.me.useQuery()
 
@@ -686,11 +687,11 @@ function AddListingPage() {
             />
           </div>
 
-          {/* Eden Config Import */}
+          {/* Emulator Config Import */}
           {showConfigImporter && (
             <div>
               <label
-                htmlFor="eden-config-upload"
+                htmlFor={configUploadInputId}
                 className={cn(
                   'group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-emerald-400/60 bg-emerald-500/10 p-6 text-center transition focus-within:ring-2 focus-within:ring-emerald-400 hover:border-emerald-400 hover:bg-emerald-500/15 sm:flex-row sm:gap-4 sm:text-left',
                   isImportingConfig && 'cursor-progress opacity-80',
@@ -698,7 +699,7 @@ function AddListingPage() {
               >
                 <input
                   ref={fileInputRef}
-                  id="eden-config-upload"
+                  id={configUploadInputId}
                   type="file"
                   accept={supportedExtensions}
                   className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
