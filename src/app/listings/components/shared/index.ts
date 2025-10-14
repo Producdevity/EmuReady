@@ -16,6 +16,7 @@ export * from './custom-fields/CustomFieldTypeRange'
 // Form Components
 export * from './FormValidationSummary'
 export * from './CustomFieldsFormSection'
+export * from './ListingFormAuthGuard'
 
 // Utilities
 export * from './utils/getCustomFieldTypeIcon'

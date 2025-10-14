@@ -1,22 +1,27 @@
 'use client'
 
-import { SignInButton, SignUpButton } from '@clerk/nextjs'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useCallback, useEffect, useState, type KeyboardEvent } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import {
   CustomFieldsFormSection,
   FormValidationSummary,
   EmulatorSelector,
   GameSelector,
+  ListingFormAuthGuard,
   type EmulatorOption,
   type GameOption,
 } from '@/app/listings/components/shared'
+import {
+  useGameLoader,
+  useEmulatorLoader,
+  usePreSelectedGame,
+  useFormKeyDown,
+} from '@/app/listings/hooks'
 import { Autocomplete, Button, Input, LoadingSpinner, SelectInput } from '@/components/ui'
 import { PC_OS_OPTIONS } from '@/data/pc-os'
-import useMounted from '@/hooks/useMounted'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
@@ -41,7 +46,6 @@ const OS_OPTIONS = PC_OS_OPTIONS
 function AddPcListingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const mounted = useMounted()
   const currentUserQuery = api.users.me.useQuery()
 
   const gameIdFromUrl = searchParams.get('gameId')
@@ -49,14 +53,10 @@ function AddPcListingPage() {
   const [selectedGame, setSelectedGame] = useState<GameOption | null>(null)
   const [selectedEmulator, setSelectedEmulator] = useState<EmulatorOption | null>(null)
   const [selectedPreset, setSelectedPreset] = useState<PcPresetOption | null>(null)
-  const [gameSearchTerm, setGameSearchTerm] = useState('')
-  const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
-  const [availableEmulators, setAvailableEmulators] = useState<EmulatorOption[]>([])
   const [emulatorInputFocus, setEmulatorInputFocus] = useState(false)
   const [parsedCustomFields, setParsedCustomFields] = useState<CustomFieldDefinitionWithOptions[]>(
     [],
   )
-  const [isInitialGameLoaded, setIsInitialGameLoaded] = useState(false)
   const [schemaState, setSchemaState] = useState<ReturnType<typeof createDynamicPcListingSchema>>(
     createDynamicPcListingSchema([]),
   )
@@ -66,43 +66,11 @@ function AddPcListingPage() {
   const performanceScalesQuery = api.performanceScales.get.useQuery()
   const presetsQuery = api.pcListings.presets.get.useQuery({})
   const recaptchaHook = useRecaptchaForCreateListing()
+  const { handleKeyDown } = useFormKeyDown()
 
-  // Fetch game data if gameId is provided in URL
-  const preSelectedGameQuery = api.games.byId.useQuery(
-    { id: gameIdFromUrl! },
-    { enabled: !!gameIdFromUrl && !isInitialGameLoaded },
-  )
-
-  // Async load functions for autocomplete
-  // TODO: consider abstracting these into a shared hook
-  const loadGameItems = useCallback(
-    async (query: string): Promise<GameOption[]> => {
-      setGameSearchTerm(query)
-      if (query.length < 2) return Promise.resolve([])
-      try {
-        // Note: All games are shown in autocomplete (no platform filtering)
-        const result = await utils.games.get.fetch({
-          search: query,
-          limit: 20,
-          listingFilter: 'all',
-        })
-        return (
-          result.games.map((game) => ({
-            id: game.id,
-            title: game.title,
-            system: game.system || { id: game.systemId, name: 'Unknown' },
-            status: game.status,
-            imageUrl: game.imageUrl ?? undefined,
-            boxartUrl: game.boxartUrl ?? undefined,
-          })) ?? []
-        )
-      } catch (error) {
-        console.error('Error fetching games:', error)
-        return []
-      }
-    },
-    [utils.games.get],
-  )
+  const { gameSearchTerm, setGameSearchTerm, loadGameItems } = useGameLoader()
+  const { emulatorSearchTerm, availableEmulators, setAvailableEmulators, loadEmulatorItems } =
+    useEmulatorLoader(selectedGame)
 
   const loadCpuItems = useCallback(
     async (query: string): Promise<CpuOption[]> => {
@@ -132,42 +100,6 @@ function AddPcListingPage() {
     [utils.gpus.get],
   )
 
-  const loadEmulatorItems = useCallback(
-    async (query: string): Promise<EmulatorOption[]> => {
-      setEmulatorSearchTerm(query)
-
-      if (!selectedGame) {
-        setAvailableEmulators([])
-        return Promise.resolve([])
-      }
-
-      try {
-        const result = await utils.emulators.get.fetch({ search: query })
-
-        // Filter to only emulators that support the selected game's system
-        const filteredEmulators = result.emulators
-          .filter((emulator) =>
-            emulator.systems.some((system) => system.id === selectedGame.system.id),
-          )
-          .map((emulator) => ({
-            id: emulator.id,
-            name: emulator.name,
-            systems: emulator.systems,
-            logo: emulator.logo,
-          }))
-
-        // Update the availableEmulators state for the warning logic
-        setAvailableEmulators(filteredEmulators)
-        return filteredEmulators
-      } catch (error) {
-        console.error('Error fetching emulators:', error)
-        setAvailableEmulators([])
-        return []
-      }
-    },
-    [utils.emulators.get, selectedGame],
-  )
-
   const form = useForm<PcListingFormValues>({
     resolver: zodResolver(schemaState),
     defaultValues: {
@@ -194,24 +126,12 @@ function AddPcListingPage() {
     },
   )
 
-  // Handle pre-selected game from URL parameter
-  useEffect(() => {
-    if (preSelectedGameQuery.data && gameIdFromUrl && !isInitialGameLoaded) {
-      const gameOption: GameOption = {
-        id: preSelectedGameQuery.data.id,
-        title: preSelectedGameQuery.data.title,
-        system: preSelectedGameQuery.data.system,
-        status: preSelectedGameQuery.data.status,
-        imageUrl: preSelectedGameQuery.data.imageUrl ?? undefined,
-        boxartUrl: preSelectedGameQuery.data.boxartUrl ?? undefined,
-      }
-      setSelectedGame(gameOption)
-      form.setValue('gameId', preSelectedGameQuery.data.id)
-      setIsInitialGameLoaded(true)
-      // Set the game search term to help with the autocomplete display
-      setGameSearchTerm(preSelectedGameQuery.data.title)
-    }
-  }, [preSelectedGameQuery.data, gameIdFromUrl, isInitialGameLoaded, form])
+  usePreSelectedGame({
+    gameIdFromUrl,
+    form,
+    onGameSelect: setSelectedGame,
+    onSearchTermChange: setGameSearchTerm,
+  })
 
   // Update custom field definitions when emulator changes
   useEffect(() => {
@@ -228,7 +148,6 @@ function AddPcListingPage() {
       },
     )
 
-    // If emulator's custom field IDs are unchanged, skip reset to preserve input values
     const isSameAsCurrent =
       parsedCustomFields.length === parsed.length &&
       parsedCustomFields.every((f, i) => f.id === parsed[i]?.id)
@@ -236,17 +155,11 @@ function AddPcListingPage() {
 
     setParsedCustomFields(parsed)
 
-    // Create and set the dynamic schema
     const dynamicSchema = createDynamicPcListingSchema(parsed)
     setSchemaState(dynamicSchema)
 
-    // Store the form values before updating the resolver
     const currentValues = form.getValues()
-
-    // Release form state first
     form.reset()
-
-    // Update the form with new schema and restore values
     form.reset(currentValues)
 
     const currentCustomValues = form.watch('customFieldValues') ?? []
@@ -269,13 +182,12 @@ function AddPcListingPage() {
   // Clear emulator when game changes and load initial emulators
   useEffect(() => {
     if (selectedGame) {
-      form.setValue('emulatorId', '') // Clear emulator selection when game changes
-      // Load initial emulators for the selected game system
+      form.setValue('emulatorId', '')
       loadEmulatorItems('').catch(console.error)
     } else {
       setAvailableEmulators([])
     }
-  }, [selectedGame, form, loadEmulatorItems])
+  }, [selectedGame, form, loadEmulatorItems, setAvailableEmulators])
 
   const onSubmit = useCallback(
     async (data: PcListingFormValues) => {
@@ -346,480 +258,443 @@ function AddPcListingPage() {
   const formatCpuLabel = (cpu: CpuOption) => `${cpu.brand.name} ${cpu.modelName}`
   const formatGpuLabel = (gpu: GpuOption) => `${gpu.brand.name} ${gpu.modelName}`
 
-  // Prevent form submission on Enter key press
-  const handleKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
-    if (event.key === 'Enter' && event.target instanceof HTMLElement) {
-      // Allow Enter key in textareas for line breaks
-      if (event.target.tagName.toLowerCase() === 'textarea') return
-      // Prevent form submission for all other elements
-      event.preventDefault()
-    }
-  }
-
-  if (!mounted) return null
-
-  // Show loading state while authentication is being checked
-  if (currentUserQuery.isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinner size="lg" />
-      </div>
-    )
-  }
-
-  if (!currentUserQuery.data?.id) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Who this?</h1>
-          <p className="text-gray-600 mb-6">Please sign in to create a new listing.</p>
-
-          <div className="mt-4">
-            <SignInButton mode="modal">
-              <p className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
-                <span className="block text-gray-900 dark:text-white font-medium">Login</span>
-              </p>
-            </SignInButton>
-
-            <SignUpButton mode="modal">
-              <p className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
-                <span className="block text-gray-900 dark:text-white font-medium">Sign Up</span>
-              </p>
-            </SignUpButton>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8 max-w-[1600px]">
-      <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-8">
-        Create a PC Compatibility Report
-      </h1>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        onKeyDown={handleKeyDown}
-        className="grid grid-cols-1 lg:grid-cols-2 gap-8"
-      >
-        {/* Left Column - Core Fields */}
-        <div className="space-y-6 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
-          {/* PC Preset Selection */}
-          {presetsQuery.data && presetsQuery.data.length > 0 && (
-            <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Use PC Preset
-                </h3>
-                {selectedPreset && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClearPreset}
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  >
-                    Clear & Use Custom
-                  </Button>
-                )}
-              </div>
-
-              {selectedPreset ? (
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-gray-900 dark:text-white">
-                      {selectedPreset.name}
-                    </h4>
-                    <Button type="button" variant="outline" size="sm" onClick={handleClearPreset}>
-                      Change Preset
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">CPU:</span>
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {selectedPreset.cpu.brand.name} {selectedPreset.cpu.modelName}
-                        </span>
-                      </div>
-                      {selectedPreset.gpu && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 dark:text-gray-400">GPU:</span>
-                          <span className="font-medium text-gray-900 dark:text-white">
-                            {selectedPreset.gpu.brand.name} {selectedPreset.gpu.modelName}
-                          </span>
-                        </div>
-                      )}
-                      {!selectedPreset.gpu && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 dark:text-gray-400">GPU:</span>
-                          <span className="font-medium text-gray-900 dark:text-white">
-                            Integrated Graphics
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Memory:</span>
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {selectedPreset.memorySize}GB RAM
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">OS:</span>
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          {OS_OPTIONS.find((opt) => opt.value === selectedPreset.os)?.label}{' '}
-                          {selectedPreset.osVersion}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {presetsQuery.data.map((preset) => (
+    <ListingFormAuthGuard
+      isLoading={currentUserQuery.isLoading}
+      isAuthenticated={!!currentUserQuery.data?.id}
+    >
+      <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8 max-w-[1600px]">
+        <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-8">
+          Create a PC Compatibility Report
+        </h1>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          onKeyDown={handleKeyDown}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+        >
+          {/* Left Column - Core Fields */}
+          <div className="space-y-6 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
+            {/* PC Preset Selection */}
+            {presetsQuery.data && presetsQuery.data.length > 0 && (
+              <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Use PC Preset
+                  </h3>
+                  {selectedPreset && (
                     <Button
-                      key={preset.id}
                       type="button"
-                      variant="outline"
-                      onClick={() => handlePresetSelect(preset)}
-                      className="p-4 h-auto text-left justify-start hover:bg-white dark:hover:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearPreset}
+                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                     >
-                      <div className="w-full">
-                        <div className="font-medium text-gray-900 dark:text-white mb-2">
-                          {preset.name}
+                      Clear & Use Custom
+                    </Button>
+                  )}
+                </div>
+
+                {selectedPreset ? (
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-gray-900 dark:text-white">
+                        {selectedPreset.name}
+                      </h4>
+                      <Button type="button" variant="outline" size="sm" onClick={handleClearPreset}>
+                        Change Preset
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">CPU:</span>
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {selectedPreset.cpu.brand.name} {selectedPreset.cpu.modelName}
+                          </span>
                         </div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                          <div>
-                            {preset.cpu.brand.name} {preset.cpu.modelName}
+                        {selectedPreset.gpu && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">GPU:</span>
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              {selectedPreset.gpu.brand.name} {selectedPreset.gpu.modelName}
+                            </span>
                           </div>
-                          <div>
-                            {preset.gpu
-                              ? `${preset.gpu.brand.name} ${preset.gpu.modelName}`
-                              : 'Integrated Graphics'}
+                        )}
+                        {!selectedPreset.gpu && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">GPU:</span>
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              Integrated Graphics
+                            </span>
                           </div>
-                          <div>
-                            {preset.memorySize}GB •{' '}
-                            {OS_OPTIONS.find((opt) => opt.value === preset.os)?.label}
-                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Memory:</span>
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {selectedPreset.memorySize}GB RAM
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">OS:</span>
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {OS_OPTIONS.find((opt) => opt.value === selectedPreset.os)?.label}{' '}
+                            {selectedPreset.osVersion}
+                          </span>
                         </div>
                       </div>
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Game Selection */}
-          <div>
-            <GameSelector<PcListingFormValues>
-              control={form.control}
-              name="gameId"
-              selectedGame={selectedGame}
-              errorMessage={form.formState.errors.gameId?.message}
-              loadGameItems={loadGameItems}
-              onGameSelect={(game: GameOption | null) => {
-                setSelectedGame(game)
-                if (game) return
-                form.setValue('emulatorId', '')
-                form.setValue('customFieldValues', [])
-              }}
-              gameSearchTerm={gameSearchTerm}
-            />
-
-            <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Can&apos;t find your game?{' '}
-              <Link
-                href="/games/new/search/v2"
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
-              >
-                Add it here
-              </Link>
-            </div>
-          </div>
-
-          {/* PC Specifications - Only show if no preset selected */}
-          {!selectedPreset && (
-            <div className="space-y-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                PC Specifications
-              </h3>
-
-              {/* CPU Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  CPU *
-                </label>
-                <Controller
-                  control={form.control}
-                  name="cpuId"
-                  render={({ field }) => (
-                    <Autocomplete
-                      value={field.value}
-                      onChange={(value) => field.onChange(value || '')}
-                      loadItems={loadCpuItems}
-                      optionToValue={(cpu) => cpu.id}
-                      optionToLabel={formatCpuLabel}
-                      placeholder="Select a CPU..."
-                      className="w-full"
-                      filterKeys={['modelName']}
-                    />
-                  )}
-                />
-                {form.formState.errors.cpuId && (
-                  <p className="mt-1 text-sm text-red-600">{form.formState.errors.cpuId.message}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {presetsQuery.data.map((preset) => (
+                      <Button
+                        key={preset.id}
+                        type="button"
+                        variant="outline"
+                        onClick={() => handlePresetSelect(preset)}
+                        className="p-4 h-auto text-left justify-start hover:bg-white dark:hover:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
+                      >
+                        <div className="w-full">
+                          <div className="font-medium text-gray-900 dark:text-white mb-2">
+                            {preset.name}
+                          </div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                            <div>
+                              {preset.cpu.brand.name} {preset.cpu.modelName}
+                            </div>
+                            <div>
+                              {preset.gpu
+                                ? `${preset.gpu.brand.name} ${preset.gpu.modelName}`
+                                : 'Integrated Graphics'}
+                            </div>
+                            <div>
+                              {preset.memorySize}GB •{' '}
+                              {OS_OPTIONS.find((opt) => opt.value === preset.os)?.label}
+                            </div>
+                          </div>
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
                 )}
               </div>
+            )}
 
-              {/* GPU Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  GPU (Optional - leave blank for integrated graphics)
-                </label>
-                <Controller
-                  control={form.control}
-                  name="gpuId"
-                  render={({ field }) => (
-                    <Autocomplete
-                      value={field.value}
-                      onChange={(value) => field.onChange(value || '')}
-                      loadItems={loadGpuItems}
-                      optionToValue={(gpu) => gpu.id}
-                      optionToLabel={formatGpuLabel}
-                      placeholder="Select a GPU..."
-                      className="w-full"
-                      filterKeys={['modelName']}
-                    />
-                  )}
-                />
-                {form.formState.errors.gpuId && (
-                  <p className="mt-1 text-sm text-red-600">{form.formState.errors.gpuId.message}</p>
-                )}
-              </div>
-
-              {/* Memory Size */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  RAM (GB) *
-                </label>
-                <Controller
-                  control={form.control}
-                  name="memorySize"
-                  render={({ field }) => (
-                    <Input
-                      type="number"
-                      {...field}
-                      min="1"
-                      max="256"
-                      placeholder="e.g., 16"
-                      className="w-full"
-                    />
-                  )}
-                />
-                {form.formState.errors.memorySize && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {form.formState.errors.memorySize.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Operating System */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Operating System *
-                </label>
-                <Controller
-                  control={form.control}
-                  name="os"
-                  render={({ field }) => (
-                    <SelectInput
-                      label="Operating System"
-                      hideLabel
-                      options={OS_OPTIONS.map((opt) => ({
-                        id: opt.value,
-                        name: opt.label,
-                      }))}
-                      value={field.value}
-                      onChange={(ev) => field.onChange(ev.target.value as PcOs)}
-                    />
-                  )}
-                />
-                {form.formState.errors.os && (
-                  <p className="mt-1 text-sm text-red-600">{form.formState.errors.os.message}</p>
-                )}
-              </div>
-
-              {/* OS Version */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  OS Version *
-                </label>
-                <Controller
-                  control={form.control}
-                  name="osVersion"
-                  render={({ field }) => (
-                    <Input
-                      {...field}
-                      placeholder="e.g., Windows 11 Pro, Ubuntu 22.04, macOS Sonoma"
-                      className="w-full"
-                    />
-                  )}
-                />
-                {form.formState.errors.osVersion && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {form.formState.errors.osVersion.message}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Helpful message when preset is selected */}
-          {selectedPreset && (
-            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-              <p className="text-sm text-green-800 dark:text-green-200">
-                <span className="font-medium">
-                  PC specs auto-filled from &ldquo;{selectedPreset.name}
-                  &rdquo;
-                </span>
-                <br />
-                You can now select your game, emulator, and performance rating below.
-              </p>
-            </div>
-          )}
-
-          {/* Emulator Selection */}
-          <div>
-            <EmulatorSelector<PcListingFormValues>
-              control={form.control}
-              name="emulatorId"
-              selectedGame={selectedGame}
-              selectedEmulator={selectedEmulator}
-              onEmulatorSelect={(emulator) => {
-                setSelectedEmulator(emulator)
-                if (!emulator) {
+            {/* Game Selection */}
+            <div>
+              <GameSelector<PcListingFormValues>
+                control={form.control}
+                name="gameId"
+                selectedGame={selectedGame}
+                errorMessage={form.formState.errors.gameId?.message}
+                loadGameItems={loadGameItems}
+                onGameSelect={(game: GameOption | null) => {
+                  setSelectedGame(game)
+                  if (game) return
                   form.setValue('emulatorId', '')
                   form.setValue('customFieldValues', [])
-                }
-              }}
-              availableEmulators={availableEmulators}
-              emulatorSearchTerm={emulatorSearchTerm}
-              emulatorInputFocus={emulatorInputFocus}
-              errorMessage={form.formState.errors.emulatorId?.message}
-              loadEmulatorItems={loadEmulatorItems}
-              setValue={form.setValue}
-              onFocus={() => setEmulatorInputFocus(true)}
-              onBlur={() => setEmulatorInputFocus(false)}
-              customFieldValuesFieldName="customFieldValues"
-            />
-          </div>
+                }}
+                gameSearchTerm={gameSearchTerm}
+              />
 
-          {/* Performance */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Performance *
-            </label>
-            <Controller
-              control={form.control}
-              name="performanceId"
-              render={({ field }) => (
-                <SelectInput
-                  label="Performance"
-                  hideLabel
-                  options={
-                    performanceScalesQuery.data?.map((p) => ({
-                      id: String(p.id),
-                      name: p.label,
-                    })) ?? []
-                  }
-                  value={String(field.value ?? '')}
-                  onChange={(ev) => field.onChange(Number(ev.target.value))}
-                />
-              )}
-            />
-            {form.formState.errors.performanceId && (
-              <p className="mt-1 text-sm text-red-600">
-                {form.formState.errors.performanceId.message}
-              </p>
-            )}
-          </div>
-
-          {/* Notes */}
-          <div>
-            <Controller
-              name="notes"
-              control={form.control}
-              render={({ field }) => (
-                <MarkdownEditor
-                  {...field}
-                  placeholder="Share your experience, settings, or any additional details..."
-                  rows={4}
-                  label="Notes"
-                  id="notes"
-                  maxLength={5000}
-                  error={form.formState.errors.notes?.message}
-                />
-              )}
-            />
-          </div>
-        </div>
-
-        {/* Right Column - Custom Fields */}
-        <div className="space-y-6">
-          {selectedEmulatorId && customFieldDefinitionsQuery.isPending && (
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
-              <p className="text-center py-4 text-gray-500 dark:text-gray-400">
-                Loading emulator-specific fields...
-              </p>
+              <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                Can&apos;t find your game?{' '}
+                <Link
+                  href="/games/new/search/v2"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
+                >
+                  Add it here
+                </Link>
+              </div>
             </div>
-          )}
 
-          {selectedEmulatorId &&
-            !customFieldDefinitionsQuery.isPending &&
-            parsedCustomFields.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
-                <CustomFieldsFormSection
-                  parsedCustomFields={parsedCustomFields}
-                  control={form.control}
-                  errors={form.formState.errors}
-                  emulatorName={customFieldDefinitionsQuery.data?.[0]?.emulator?.name}
-                  variant="inline"
-                />
+            {/* PC Specifications - Only show if no preset selected */}
+            {!selectedPreset && (
+              <div className="space-y-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  PC Specifications
+                </h3>
+
+                {/* CPU Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    CPU *
+                  </label>
+                  <Controller
+                    control={form.control}
+                    name="cpuId"
+                    render={({ field }) => (
+                      <Autocomplete
+                        value={field.value}
+                        onChange={(value) => field.onChange(value || '')}
+                        loadItems={loadCpuItems}
+                        optionToValue={(cpu) => cpu.id}
+                        optionToLabel={formatCpuLabel}
+                        placeholder="Select a CPU..."
+                        className="w-full"
+                        filterKeys={['modelName']}
+                      />
+                    )}
+                  />
+                  {form.formState.errors.cpuId && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {form.formState.errors.cpuId.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* GPU Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    GPU (Optional - leave blank for integrated graphics)
+                  </label>
+                  <Controller
+                    control={form.control}
+                    name="gpuId"
+                    render={({ field }) => (
+                      <Autocomplete
+                        value={field.value}
+                        onChange={(value) => field.onChange(value || '')}
+                        loadItems={loadGpuItems}
+                        optionToValue={(gpu) => gpu.id}
+                        optionToLabel={formatGpuLabel}
+                        placeholder="Select a GPU..."
+                        className="w-full"
+                        filterKeys={['modelName']}
+                      />
+                    )}
+                  />
+                  {form.formState.errors.gpuId && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {form.formState.errors.gpuId.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Memory Size */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    RAM (GB) *
+                  </label>
+                  <Controller
+                    control={form.control}
+                    name="memorySize"
+                    render={({ field }) => (
+                      <Input
+                        type="number"
+                        {...field}
+                        min="1"
+                        max="256"
+                        placeholder="e.g., 16"
+                        className="w-full"
+                      />
+                    )}
+                  />
+                  {form.formState.errors.memorySize && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {form.formState.errors.memorySize.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Operating System */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Operating System *
+                  </label>
+                  <Controller
+                    control={form.control}
+                    name="os"
+                    render={({ field }) => (
+                      <SelectInput
+                        label="Operating System"
+                        hideLabel
+                        options={OS_OPTIONS.map((opt) => ({
+                          id: opt.value,
+                          name: opt.label,
+                        }))}
+                        value={field.value}
+                        onChange={(ev) => field.onChange(ev.target.value as PcOs)}
+                      />
+                    )}
+                  />
+                  {form.formState.errors.os && (
+                    <p className="mt-1 text-sm text-red-600">{form.formState.errors.os.message}</p>
+                  )}
+                </div>
+
+                {/* OS Version */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    OS Version *
+                  </label>
+                  <Controller
+                    control={form.control}
+                    name="osVersion"
+                    render={({ field }) => (
+                      <Input
+                        {...field}
+                        placeholder="e.g., Windows 11 Pro, Ubuntu 22.04, macOS Sonoma"
+                        className="w-full"
+                      />
+                    )}
+                  />
+                  {form.formState.errors.osVersion && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {form.formState.errors.osVersion.message}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 
-          {!selectedEmulatorId && (
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl border-2 border-dashed border-gray-300 dark:border-gray-700">
-              <p className="text-center text-gray-500 dark:text-gray-400">
-                Select an emulator to configure emulator-specific settings
-              </p>
+            {/* Helpful message when preset is selected */}
+            {selectedPreset && (
+              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  <span className="font-medium">
+                    PC specs auto-filled from &ldquo;{selectedPreset.name}
+                    &rdquo;
+                  </span>
+                  <br />
+                  You can now select your game, emulator, and performance rating below.
+                </p>
+              </div>
+            )}
+
+            {/* Emulator Selection */}
+            <div>
+              <EmulatorSelector<PcListingFormValues>
+                control={form.control}
+                name="emulatorId"
+                selectedGame={selectedGame}
+                selectedEmulator={selectedEmulator}
+                onEmulatorSelect={(emulator) => {
+                  setSelectedEmulator(emulator)
+                  if (!emulator) {
+                    form.setValue('emulatorId', '')
+                    form.setValue('customFieldValues', [])
+                  }
+                }}
+                availableEmulators={availableEmulators}
+                emulatorSearchTerm={emulatorSearchTerm}
+                emulatorInputFocus={emulatorInputFocus}
+                errorMessage={form.formState.errors.emulatorId?.message}
+                loadEmulatorItems={loadEmulatorItems}
+                setValue={form.setValue}
+                onFocus={() => setEmulatorInputFocus(true)}
+                onBlur={() => setEmulatorInputFocus(false)}
+                customFieldValuesFieldName="customFieldValues"
+              />
             </div>
-          )}
-        </div>
 
-        {/* Bottom - Full Width */}
-        <div className="lg:col-span-2 space-y-6">
-          <FormValidationSummary
-            errors={form.formState.errors}
-            customFieldDefinitions={parsedCustomFields}
-          />
+            {/* Performance */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Performance *
+              </label>
+              <Controller
+                control={form.control}
+                name="performanceId"
+                render={({ field }) => (
+                  <SelectInput
+                    label="Performance"
+                    hideLabel
+                    options={
+                      performanceScalesQuery.data?.map((p) => ({
+                        id: String(p.id),
+                        name: p.label,
+                      })) ?? []
+                    }
+                    value={String(field.value ?? '')}
+                    onChange={(ev) => field.onChange(Number(ev.target.value))}
+                  />
+                )}
+              />
+              {form.formState.errors.performanceId && (
+                <p className="mt-1 text-sm text-red-600">
+                  {form.formState.errors.performanceId.message}
+                </p>
+              )}
+            </div>
 
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              variant="primary"
-              isLoading={createPcListing.isPending}
-              disabled={form.formState.isSubmitting ?? createPcListing.isPending}
-              size="lg"
-            >
-              Create Compatibility Report
-            </Button>
+            {/* Notes */}
+            <div>
+              <Controller
+                name="notes"
+                control={form.control}
+                render={({ field }) => (
+                  <MarkdownEditor
+                    {...field}
+                    placeholder="Share your experience, settings, or any additional details..."
+                    rows={4}
+                    label="Notes"
+                    id="notes"
+                    maxLength={5000}
+                    error={form.formState.errors.notes?.message}
+                  />
+                )}
+              />
+            </div>
           </div>
-        </div>
-      </form>
-    </div>
+
+          {/* Right Column - Custom Fields */}
+          <div className="space-y-6">
+            {selectedEmulatorId && customFieldDefinitionsQuery.isPending && (
+              <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
+                <p className="text-center py-4 text-gray-500 dark:text-gray-400">
+                  Loading emulator-specific fields...
+                </p>
+              </div>
+            )}
+
+            {selectedEmulatorId &&
+              !customFieldDefinitionsQuery.isPending &&
+              parsedCustomFields.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
+                  <CustomFieldsFormSection
+                    parsedCustomFields={parsedCustomFields}
+                    control={form.control}
+                    errors={form.formState.errors}
+                    emulatorName={customFieldDefinitionsQuery.data?.[0]?.emulator?.name}
+                    variant="inline"
+                  />
+                </div>
+              )}
+
+            {!selectedEmulatorId && (
+              <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl border-2 border-dashed border-gray-300 dark:border-gray-700">
+                <p className="text-center text-gray-500 dark:text-gray-400">
+                  Select an emulator to configure emulator-specific settings
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom - Full Width */}
+          <div className="lg:col-span-2 space-y-6">
+            <FormValidationSummary
+              errors={form.formState.errors}
+              customFieldDefinitions={parsedCustomFields}
+            />
+
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                variant="primary"
+                isLoading={createPcListing.isPending}
+                disabled={form.formState.isSubmitting ?? createPcListing.isPending}
+                size="lg"
+              >
+                Create Compatibility Report
+              </Button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </ListingFormAuthGuard>
   )
 }
 

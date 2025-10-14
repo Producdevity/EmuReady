@@ -1,6 +1,5 @@
 'use client'
 
-import { SignInButton, SignUpButton } from '@clerk/nextjs'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, Upload } from 'lucide-react'
 import Link from 'next/link'
@@ -13,13 +12,11 @@ import {
   useRef,
   useState,
   type ChangeEvent,
-  type KeyboardEvent,
 } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import '@/shared/emulator-config/eden'
 import '@/shared/emulator-config/azahar'
 import { Button, LoadingSpinner } from '@/components/ui'
-import useMounted from '@/hooks/useMounted'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
@@ -39,7 +36,9 @@ import {
   GameSelector,
   PerformanceSelector,
   FormValidationSummary,
+  ListingFormAuthGuard,
 } from '../components/shared'
+import { useGameLoader, useEmulatorLoader, usePreSelectedGame, useFormKeyDown } from '../hooks'
 import createDynamicListingSchema, {
   type CustomFieldDefinitionWithOptions,
 } from './form-schemas/createDynamicListingSchema'
@@ -52,24 +51,19 @@ export type ListingFormValues = RouterInput['listings']['create']
 function AddListingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const mounted = useMounted()
   const utils = api.useUtils()
   const { executeForCreateListing, isCaptchaEnabled } = useRecaptchaForCreateListing()
 
   const gameIdFromUrl = searchParams.get('gameId')
 
-  const [gameSearchTerm, setGameSearchTerm] = useState('')
-  const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
-  const [deviceSearchTerm, setDeviceSearchTerm] = useState('')
   const [selectedGame, setSelectedGame] = useState<GameOption | null>(null)
   const [selectedEmulator, setSelectedEmulator] = useState<EmulatorOption | null>(null)
   const [selectedDevice, setSelectedDevice] = useState<DeviceOption | null>(null)
-  const [availableEmulators, setAvailableEmulators] = useState<EmulatorOption[]>([])
+  const [deviceSearchTerm, setDeviceSearchTerm] = useState('')
   const [emulatorInputFocus, setEmulatorInputFocus] = useState(false)
   const [parsedCustomFields, setParsedCustomFields] = useState<CustomFieldDefinitionWithOptions[]>(
     [],
   )
-  const [isInitialGameLoaded, setIsInitialGameLoaded] = useState(false)
   const [schemaState, setSchemaState] = useState<
     typeof listingFormSchema | ReturnType<typeof createDynamicListingSchema>
   >(listingFormSchema)
@@ -79,6 +73,10 @@ function AddListingPage() {
   )
   const importHighlightTimeoutRef = useRef<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const { gameSearchTerm, setGameSearchTerm, loadGameItems } = useGameLoader()
+  const { emulatorSearchTerm, availableEmulators, setAvailableEmulators, loadEmulatorItems } =
+    useEmulatorLoader(selectedGame)
 
   const form = useForm<ListingFormValues>({
     resolver: zodResolver(schemaState),
@@ -93,7 +91,6 @@ function AddListingPage() {
   })
 
   const selectedEmulatorId = form.watch('emulatorId')
-  const selectedGameId = form.watch('gameId')
 
   const selectedEmulatorOption = useMemo(() => {
     if (!selectedEmulatorId) return undefined
@@ -186,13 +183,11 @@ function AddListingPage() {
     [form, parsedCustomFields, driverVersionsQuery.data?.releases],
   )
 
-  // Data fetching for Autocomplete options
   const performanceScalesQuery = api.listings.performanceScales.useQuery()
   const customFieldDefinitionsQuery = api.customFieldDefinitions.getByEmulator.useQuery(
     { emulatorId: selectedEmulatorId },
     {
       enabled: !!selectedEmulatorId && selectedEmulatorId.trim() !== '',
-      // Avoid refetching on tab focus which could re-run schema reset logic
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
     },
@@ -262,80 +257,6 @@ function AddListingPage() {
 
   const currentUserQuery = api.users.me.useQuery()
 
-  // Fetch game data if gameId is provided in URL
-  const preSelectedGameQuery = api.games.byId.useQuery(
-    { id: gameIdFromUrl! },
-    { enabled: !!gameIdFromUrl && !isInitialGameLoaded },
-  )
-
-  // Individual load functions - cleaner than grouping them in an interface
-  const loadGameItems = useCallback(
-    async (query: string): Promise<GameOption[]> => {
-      setGameSearchTerm(query)
-      if (query.length < 2) return Promise.resolve([])
-      try {
-        const result = await utils.games.get.fetch({
-          search: query,
-          limit: 20,
-          listingFilter: 'all',
-        })
-        return (
-          result.games.map((game) => ({
-            id: game.id,
-            title: game.title,
-            system: game.system || {
-              id: game.systemId,
-              name: 'Unknown',
-            },
-            status: game.status,
-            imageUrl: game.imageUrl ?? undefined,
-            boxartUrl: game.boxartUrl ?? undefined,
-          })) ?? []
-        )
-      } catch (error) {
-        console.error('Error fetching games:', error)
-        return []
-      }
-    },
-    [utils.games.get],
-  )
-
-  const loadEmulatorItems = useCallback(
-    async (query: string): Promise<EmulatorOption[]> => {
-      setEmulatorSearchTerm(query)
-
-      if (!selectedGame) {
-        setAvailableEmulators([])
-        return Promise.resolve([])
-      }
-
-      try {
-        const result = await utils.emulators.get.fetch({ search: query })
-
-        // Filter to only emulators that support the selected game's system
-        const filteredEmulators = result.emulators
-          .filter((emulator) =>
-            emulator.systems.some((system) => system.id === selectedGame.system.id),
-          )
-          .map((emulator) => ({
-            id: emulator.id,
-            name: emulator.name,
-            systems: emulator.systems,
-            logo: emulator.logo,
-          }))
-
-        // Update the availableEmulators state for the warning logic
-        setAvailableEmulators(filteredEmulators)
-        return filteredEmulators
-      } catch (error) {
-        console.error('Error fetching emulators:', error)
-        setAvailableEmulators([])
-        return []
-      }
-    },
-    [utils.emulators.get, selectedGame],
-  )
-
   const loadDeviceItems = useCallback(
     async (query: string): Promise<DeviceOption[]> => {
       setDeviceSearchTerm(query)
@@ -377,51 +298,40 @@ function AddListingPage() {
     }
   }, [])
 
-  // Handle pre-selected game from URL parameter
-  useEffect(() => {
-    if (preSelectedGameQuery.data && gameIdFromUrl && !isInitialGameLoaded) {
-      const gameOption: GameOption = {
-        id: preSelectedGameQuery.data.id,
-        title: preSelectedGameQuery.data.title,
-        system: preSelectedGameQuery.data.system,
-        status: preSelectedGameQuery.data.status,
-        imageUrl: preSelectedGameQuery.data.imageUrl ?? undefined,
-        boxartUrl: preSelectedGameQuery.data.boxartUrl ?? undefined,
-      }
-      setSelectedGame(gameOption)
-      form.setValue('gameId', preSelectedGameQuery.data.id)
-      setIsInitialGameLoaded(true)
+  const selectedGameId = form.watch('gameId')
+  const { isInitialGameLoaded } = usePreSelectedGame({
+    gameIdFromUrl,
+    form,
+    onGameSelect: setSelectedGame,
+    onSearchTermChange: setGameSearchTerm,
+  })
 
-      // Set the game search term to help with the autocomplete display
-      setGameSearchTerm(preSelectedGameQuery.data.title)
-    }
-  }, [preSelectedGameQuery.data, gameIdFromUrl, isInitialGameLoaded, form])
+  const { handleKeyDown } = useFormKeyDown()
 
   // Update selected game when gameId changes (but not during initial load)
   useEffect(() => {
     if (isInitialGameLoaded && selectedGameId && !selectedGame) {
-      // Try to find the game in recent searches or fetch it
       loadGameItems(gameSearchTerm).then((games) => {
         const game = games.find((g) => g.id === selectedGameId)
         if (game) setSelectedGame(game)
       })
     } else if (isInitialGameLoaded && !selectedGameId) {
       setSelectedGame(null)
-      form.setValue('emulatorId', '') // Clear emulator when game is cleared
+      form.setValue('emulatorId', '')
     }
   }, [selectedGameId, selectedGame, gameSearchTerm, loadGameItems, form, isInitialGameLoaded])
 
   // Clear emulator when game changes and load initial emulators
   useEffect(() => {
     if (selectedGame) {
-      form.setValue('emulatorId', '') // Clear emulator selection when game changes
-      // Load initial emulators for the selected game system
+      form.setValue('emulatorId', '')
       loadEmulatorItems('').catch(console.error)
     } else {
       setAvailableEmulators([])
     }
-  }, [selectedGame, form, loadEmulatorItems])
+  }, [selectedGame, form, loadEmulatorItems, setAvailableEmulators])
 
+  // Update custom field definitions when emulator changes
   useEffect(() => {
     if (!customFieldDefinitionsQuery.data) return
 
@@ -436,7 +346,6 @@ function AddListingPage() {
       },
     )
 
-    // If the parsed field definition IDs are unchanged, do not reset the form
     const isSameAsCurrent =
       parsedCustomFields.length === parsed.length &&
       parsedCustomFields.every((f, i) => f.id === parsed[i]?.id)
@@ -444,17 +353,11 @@ function AddListingPage() {
 
     setParsedCustomFields(parsed)
 
-    // Create and set the dynamic schema
     const dynamicSchema = createDynamicListingSchema(parsed)
     setSchemaState(dynamicSchema)
 
-    // Store the form values before updating the resolver
     const currentValues = form.getValues()
-
-    // Release form state first
     form.reset()
-
-    // Update the form with new schema and restore values
     form.reset(currentValues)
 
     const currentCustomValues = form.watch('customFieldValues') ?? []
@@ -532,267 +435,226 @@ function AddListingPage() {
     })
   }
 
-  // Prevent form submission on Enter key press
-  const handleKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
-    if (event.key === 'Enter' && event.target instanceof HTMLElement) {
-      // Allow Enter key in textareas for line breaks
-      if (event.target.tagName.toLowerCase() === 'textarea') return
-      // Prevent form submission for all other elements
-      event.preventDefault()
-    }
-  }
-
-  if (!mounted) return null
-
-  // Show loading state while authentication is being checked
-  if (currentUserQuery.isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinner size="lg" />
-      </div>
-    )
-  }
-
-  if (!currentUserQuery.data?.id) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Who this?</h1>
-          <p className="text-gray-600 mb-6">Please sign in to create a new listing.</p>
-
-          <div className="mt-4">
-            <SignInButton mode="modal">
-              <p className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
-                <span className="block text-gray-900 dark:text-white font-medium">Login</span>
-              </p>
-            </SignInButton>
-
-            <SignUpButton mode="modal">
-              <p className="p-3 bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow">
-                <span className="block text-gray-900 dark:text-white font-medium">Sign Up</span>
-              </p>
-            </SignUpButton>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8 max-w-[1600px]">
-      <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-8">
-        Create a Handheld Compatibility Report
-      </h1>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        onKeyDown={handleKeyDown}
-        className="grid grid-cols-1 lg:grid-cols-2 gap-8"
-      >
-        {/* Left Column - Core Fields */}
-        <div className="space-y-6 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
-          {/* Game Selection */}
-          <div>
-            <GameSelector<ListingFormValues>
-              control={form.control}
-              name="gameId"
-              selectedGame={selectedGame}
-              errorMessage={form.formState.errors.gameId?.message}
-              loadGameItems={loadGameItems}
-              onGameSelect={(game: GameOption | null) => {
-                setSelectedGame(game)
-                if (game) return
-                form.setValue('emulatorId', '')
-                form.setValue('customFieldValues', [])
-              }}
-              gameSearchTerm={gameSearchTerm}
-            />
-            {!selectedGame && (
-              <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                Can&apos;t find your game?{' '}
-                <Link
-                  href="/games/new/search/v2"
-                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
-                >
-                  Add it here
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Device Selection */}
-          <div>
-            <DeviceSelector<ListingFormValues>
-              control={form.control}
-              name="deviceId"
-              selectedDevice={selectedDevice}
-              errorMessage={form.formState.errors.deviceId?.message}
-              loadDeviceItems={loadDeviceItems}
-              onDeviceSelect={(device: DeviceOption | null) => setSelectedDevice(device)}
-              deviceSearchTerm={deviceSearchTerm}
-            />
-          </div>
-
-          {/* Emulator Selection */}
-          <div>
-            <EmulatorSelector<ListingFormValues>
-              control={form.control}
-              name="emulatorId"
-              selectedGame={selectedGame}
-              selectedEmulator={selectedEmulator}
-              onEmulatorSelect={(emulator) => {
-                setSelectedEmulator(emulator)
-                if (!emulator) {
+    <ListingFormAuthGuard
+      isLoading={currentUserQuery.isLoading}
+      isAuthenticated={!!currentUserQuery.data?.id}
+    >
+      <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8 max-w-[1600px]">
+        <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-8">
+          Create a Handheld Compatibility Report
+        </h1>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          onKeyDown={handleKeyDown}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+        >
+          {/* Left Column - Core Fields */}
+          <div className="space-y-6 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
+            {/* Game Selection */}
+            <div>
+              <GameSelector<ListingFormValues>
+                control={form.control}
+                name="gameId"
+                selectedGame={selectedGame}
+                errorMessage={form.formState.errors.gameId?.message}
+                loadGameItems={loadGameItems}
+                onGameSelect={(game: GameOption | null) => {
+                  setSelectedGame(game)
+                  if (game) return
                   form.setValue('emulatorId', '')
                   form.setValue('customFieldValues', [])
-                }
-              }}
-              availableEmulators={availableEmulators}
-              emulatorSearchTerm={emulatorSearchTerm}
-              emulatorInputFocus={emulatorInputFocus}
-              errorMessage={form.formState.errors.emulatorId?.message}
-              loadEmulatorItems={loadEmulatorItems}
-              setValue={form.setValue}
-              onFocus={() => setEmulatorInputFocus(true)}
-              onBlur={() => setEmulatorInputFocus(false)}
-              customFieldValuesFieldName="customFieldValues"
-            />
-          </div>
-
-          {/* Performance Selection */}
-          <div>
-            <PerformanceSelector<ListingFormValues>
-              control={form.control}
-              name="performanceId"
-              performanceScalesData={performanceScalesQuery.data}
-              errorMessage={form.formState.errors.performanceId?.message}
-            />
-          </div>
-
-          {/* Notes */}
-          <div>
-            <Controller
-              name="notes"
-              control={form.control}
-              render={({ field }) => (
-                <MarkdownEditor
-                  {...field}
-                  placeholder="Share your experience, settings, or any additional details..."
-                  rows={4}
-                  label="Notes"
-                  id="notes"
-                  maxLength={5000}
-                  error={form.formState.errors.notes?.message}
-                />
+                }}
+                gameSearchTerm={gameSearchTerm}
+              />
+              {!selectedGame && (
+                <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  Can&apos;t find your game?{' '}
+                  <Link
+                    href="/games/new/search/v2"
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
+                  >
+                    Add it here
+                  </Link>
+                </div>
               )}
-            />
-          </div>
+            </div>
 
-          {/* Emulator Config Import */}
-          {showConfigImporter && (
+            {/* Device Selection */}
             <div>
-              <label
-                htmlFor={configUploadInputId}
-                className={cn(
-                  'group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-emerald-400/60 bg-emerald-500/10 p-6 text-center transition focus-within:ring-2 focus-within:ring-emerald-400 hover:border-emerald-400 hover:bg-emerald-500/15 sm:flex-row sm:gap-4 sm:text-left',
-                  isImportingConfig && 'cursor-progress opacity-80',
+              <DeviceSelector<ListingFormValues>
+                control={form.control}
+                name="deviceId"
+                selectedDevice={selectedDevice}
+                errorMessage={form.formState.errors.deviceId?.message}
+                loadDeviceItems={loadDeviceItems}
+                onDeviceSelect={(device: DeviceOption | null) => setSelectedDevice(device)}
+                deviceSearchTerm={deviceSearchTerm}
+              />
+            </div>
+
+            {/* Emulator Selection */}
+            <div>
+              <EmulatorSelector<ListingFormValues>
+                control={form.control}
+                name="emulatorId"
+                selectedGame={selectedGame}
+                selectedEmulator={selectedEmulator}
+                onEmulatorSelect={(emulator) => {
+                  setSelectedEmulator(emulator)
+                  if (!emulator) {
+                    form.setValue('emulatorId', '')
+                    form.setValue('customFieldValues', [])
+                  }
+                }}
+                availableEmulators={availableEmulators}
+                emulatorSearchTerm={emulatorSearchTerm}
+                emulatorInputFocus={emulatorInputFocus}
+                errorMessage={form.formState.errors.emulatorId?.message}
+                loadEmulatorItems={loadEmulatorItems}
+                setValue={form.setValue}
+                onFocus={() => setEmulatorInputFocus(true)}
+                onBlur={() => setEmulatorInputFocus(false)}
+                customFieldValuesFieldName="customFieldValues"
+              />
+            </div>
+
+            {/* Performance Selection */}
+            <div>
+              <PerformanceSelector<ListingFormValues>
+                control={form.control}
+                name="performanceId"
+                performanceScalesData={performanceScalesQuery.data}
+                errorMessage={form.formState.errors.performanceId?.message}
+              />
+            </div>
+
+            {/* Notes */}
+            <div>
+              <Controller
+                name="notes"
+                control={form.control}
+                render={({ field }) => (
+                  <MarkdownEditor
+                    {...field}
+                    placeholder="Share your experience, settings, or any additional details..."
+                    rows={4}
+                    label="Notes"
+                    id="notes"
+                    maxLength={5000}
+                    error={form.formState.errors.notes?.message}
+                  />
                 )}
-              >
-                <input
-                  ref={fileInputRef}
-                  id={configUploadInputId}
-                  type="file"
-                  accept={supportedExtensions}
-                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                  onChange={handleConfigUpload}
-                />
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg transition-transform duration-200 group-hover:scale-105">
-                  {isImportingConfig ? (
-                    <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Upload className="h-5 w-5" aria-hidden="true" />
-                  )}
-                </div>
-                <div className="mt-4 sm:mt-0 sm:text-left">
-                  <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-200">
-                    Import {importerDisplayName} config ({supportedExtensionsLabel})
-                  </p>
-                  <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
-                    We&apos;ll auto-fill matching fields from your {importerDisplayName}{' '}
-                    configuration file.
-                  </p>
-                </div>
-              </label>
-              {importError && (
-                <p className="mt-2 text-sm text-red-500 dark:text-red-400">{importError}</p>
-              )}
-              {importSummary && (
-                <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-                  Filled {importSummary.filled} field{importSummary.filled === 1 ? '' : 's'}.
-                  {importSummary.missing.length > 0 && (
-                    <> Missing: {importSummary.missing.join(', ')}.</>
-                  )}
-                </p>
-              )}
+              />
             </div>
-          )}
-        </div>
 
-        {/* Right Column - Custom Fields */}
-        <div className="space-y-6">
-          {selectedEmulatorId && customFieldDefinitionsQuery.isPending && (
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
-              <p className="text-center py-4 text-gray-500 dark:text-gray-400">
-                Loading emulator-specific fields...
-              </p>
-            </div>
-          )}
+            {/* Emulator Config Import */}
+            {showConfigImporter && (
+              <div>
+                <label
+                  htmlFor={configUploadInputId}
+                  className={cn(
+                    'group relative flex w-full flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-emerald-400/60 bg-emerald-500/10 p-6 text-center transition focus-within:ring-2 focus-within:ring-emerald-400 hover:border-emerald-400 hover:bg-emerald-500/15 sm:flex-row sm:gap-4 sm:text-left',
+                    isImportingConfig && 'cursor-progress opacity-80',
+                  )}
+                >
+                  <input
+                    ref={fileInputRef}
+                    id={configUploadInputId}
+                    type="file"
+                    accept={supportedExtensions}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    onChange={handleConfigUpload}
+                  />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg transition-transform duration-200 group-hover:scale-105">
+                    {isImportingConfig ? (
+                      <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <Upload className="h-5 w-5" aria-hidden="true" />
+                    )}
+                  </div>
+                  <div className="mt-4 sm:mt-0 sm:text-left">
+                    <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-200">
+                      Import {importerDisplayName} config ({supportedExtensionsLabel})
+                    </p>
+                    <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                      We&apos;ll auto-fill matching fields from your {importerDisplayName}{' '}
+                      configuration file.
+                    </p>
+                  </div>
+                </label>
+                {importError && (
+                  <p className="mt-2 text-sm text-red-500 dark:text-red-400">{importError}</p>
+                )}
+                {importSummary && (
+                  <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                    Filled {importSummary.filled} field{importSummary.filled === 1 ? '' : 's'}.
+                    {importSummary.missing.length > 0 && (
+                      <> Missing: {importSummary.missing.join(', ')}.</>
+                    )}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
 
-          {selectedEmulatorId &&
-            !customFieldDefinitionsQuery.isPending &&
-            parsedCustomFields.length > 0 && (
+          {/* Right Column - Custom Fields */}
+          <div className="space-y-6">
+            {selectedEmulatorId && customFieldDefinitionsQuery.isPending && (
               <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
-                <CustomFieldsFormSection
-                  parsedCustomFields={parsedCustomFields}
-                  control={form.control}
-                  errors={form.formState.errors}
-                  emulatorName={customFieldDefinitionsQuery.data?.[0]?.emulator?.name}
-                  highlightedFieldIds={highlightedFieldIds}
-                  variant="inline"
-                />
+                <p className="text-center py-4 text-gray-500 dark:text-gray-400">
+                  Loading emulator-specific fields...
+                </p>
               </div>
             )}
 
-          {!selectedEmulatorId && (
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl border-2 border-dashed border-gray-300 dark:border-gray-700">
-              <p className="text-center text-gray-500 dark:text-gray-400">
-                Select an emulator to configure emulator-specific settings
-              </p>
-            </div>
-          )}
-        </div>
+            {selectedEmulatorId &&
+              !customFieldDefinitionsQuery.isPending &&
+              parsedCustomFields.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
+                  <CustomFieldsFormSection
+                    parsedCustomFields={parsedCustomFields}
+                    control={form.control}
+                    errors={form.formState.errors}
+                    emulatorName={customFieldDefinitionsQuery.data?.[0]?.emulator?.name}
+                    highlightedFieldIds={highlightedFieldIds}
+                    variant="inline"
+                  />
+                </div>
+              )}
 
-        {/* Bottom - Full Width */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Form Validation Summary */}
-          <FormValidationSummary
-            errors={form.formState.errors}
-            customFieldDefinitions={parsedCustomFields}
-          />
-
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              variant="primary"
-              isLoading={createListingMutation.isPending}
-              disabled={form.formState.isSubmitting ?? createListingMutation.isPending}
-              size="lg"
-            >
-              Create Compatibility Report
-            </Button>
+            {!selectedEmulatorId && (
+              <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl border-2 border-dashed border-gray-300 dark:border-gray-700">
+                <p className="text-center text-gray-500 dark:text-gray-400">
+                  Select an emulator to configure emulator-specific settings
+                </p>
+              </div>
+            )}
           </div>
-        </div>
-      </form>
-    </div>
+
+          {/* Bottom - Full Width */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Form Validation Summary */}
+            <FormValidationSummary
+              errors={form.formState.errors}
+              customFieldDefinitions={parsedCustomFields}
+            />
+
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                variant="primary"
+                isLoading={createListingMutation.isPending}
+                disabled={form.formState.isSubmitting ?? createListingMutation.isPending}
+                size="lg"
+              >
+                Create Compatibility Report
+              </Button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </ListingFormAuthGuard>
   )
 }
 
