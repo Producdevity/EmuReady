@@ -42,22 +42,26 @@ export function CustomFieldTypeText<TFieldValues extends FieldValues = FieldValu
         control={props.control}
         defaultValue={'' as TFieldValues[FieldPath<TFieldValues>]}
         rules={props.rules}
-        render={({ field }) => (
-          <Input
-            className={cn(
-              'mt-2',
-              props.errorMessage &&
-                'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500',
-            )}
-            id={props.fieldName}
-            leftIcon={props.icon}
-            value={field.value as string}
-            onChange={(e) => field.onChange(e.target.value)}
-            placeholder={
-              props.fieldDef.placeholder || `Enter ${props.fieldDef.label.toLowerCase()}`
-            }
-          />
-        )}
+        render={({ field }) => {
+          const stringValue =
+            typeof field.value === 'string' ? field.value : field.value ? String(field.value) : ''
+          return (
+            <Input
+              className={cn(
+                'mt-2',
+                props.errorMessage &&
+                  'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500',
+              )}
+              id={props.fieldName}
+              leftIcon={props.icon}
+              value={stringValue}
+              onChange={(e) => field.onChange(e.target.value)}
+              placeholder={
+                props.fieldDef.placeholder || `Enter ${props.fieldDef.label.toLowerCase()}`
+              }
+            />
+          )
+        }}
       />
       {props.errorMessage && <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>}
     </div>

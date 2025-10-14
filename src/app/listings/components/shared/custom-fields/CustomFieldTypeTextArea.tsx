@@ -42,21 +42,25 @@ export function CustomFieldTypeTextArea<TFieldValues extends FieldValues = Field
         control={props.control}
         defaultValue={'' as TFieldValues[FieldPath<TFieldValues>]}
         rules={props.rules}
-        render={({ field }) => (
-          <Input
-            as="textarea"
-            className={cn(
-              props.errorMessage &&
-                'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500',
-            )}
-            id={props.fieldName}
-            leftIcon={props.icon}
-            value={field.value as string}
-            onChange={(e) => field.onChange(e.target.value)}
-            placeholder={`Enter ${props.fieldDef.label.toLowerCase()}`}
-            rows={3}
-          />
-        )}
+        render={({ field }) => {
+          const stringValue =
+            typeof field.value === 'string' ? field.value : field.value ? String(field.value) : ''
+          return (
+            <Input
+              as="textarea"
+              className={cn(
+                props.errorMessage &&
+                  'border-red-300 dark:border-red-600 focus:border-red-500 focus:ring-red-500',
+              )}
+              id={props.fieldName}
+              leftIcon={props.icon}
+              value={stringValue}
+              onChange={(e) => field.onChange(e.target.value)}
+              placeholder={`Enter ${props.fieldDef.label.toLowerCase()}`}
+              rows={3}
+            />
+          )
+        }}
       />
       {props.errorMessage && <p className="text-red-500 text-xs mt-1">{props.errorMessage}</p>}
     </div>

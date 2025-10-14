@@ -55,8 +55,8 @@ export function getCustomFieldDefaultValue(
     case CustomFieldType.TEXT:
     case CustomFieldType.TEXTAREA:
     case CustomFieldType.URL:
-      // Return undefined for text fields - let them be truly empty
-      return undefined
+      // Return empty string for text fields to prevent display issues
+      return ''
     default:
       return undefined
   }
