@@ -15,7 +15,7 @@ function ListingDetailsPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
         <div className="max-w-6xl mx-auto">
-          <LoadingSpinner text="Loading listing details..." />
+          <LoadingSpinner text="Loading Handheld Compatibility Report details..." />
         </div>
       </div>
     )

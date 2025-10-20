@@ -156,14 +156,14 @@ function EditPcListingModal(props: Props) {
           <>
             {pcListingQuery.isPending && (
               <div className="flex items-center justify-center py-8">
-                <LoadingSpinner text="Loading PC listing details..." />
+                <LoadingSpinner text="Loading PC Compatibility Report details..." />
               </div>
             )}
 
             {pcListingQuery.error && (
               <div className="text-center py-8">
                 <p className="text-red-600 dark:text-red-400">
-                  Failed to load PC listing details: {pcListingQuery.error.message}
+                  Failed to load PC Compatibility Report details: {pcListingQuery.error.message}
                 </p>
               </div>
             )}
@@ -175,7 +175,10 @@ function EditPcListingModal(props: Props) {
                     <strong>Enhanced Editing:</strong> You can now edit performance rating, PC
                     specifications, custom fields, and notes.
                     {props.isPending && (
-                      <span> You can edit anytime while your PC listing is pending approval.</span>
+                      <span>
+                        {' '}
+                        You can edit anytime while your PC Compatibility Report is pending approval.
+                      </span>
                     )}
                     {props.isApproved && (
                       <span>

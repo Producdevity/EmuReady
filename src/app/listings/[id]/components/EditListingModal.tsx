@@ -140,14 +140,14 @@ function EditListingModal(props: Props) {
           <>
             {listingQuery.isPending && (
               <div className="flex items-center justify-center py-8">
-                <LoadingSpinner text="Loading listing details..." />
+                <LoadingSpinner text="Loading Handheld Compatibility Report details..." />
               </div>
             )}
 
             {listingQuery.error && (
               <div className="text-center py-8">
                 <p className="text-red-600 dark:text-red-400">
-                  Failed to load listing details: {listingQuery.error.message}
+                  Failed to load Handheld Compatibility Report details: {listingQuery.error.message}
                 </p>
               </div>
             )}
@@ -159,7 +159,11 @@ function EditListingModal(props: Props) {
                     <strong>Enhanced Editing:</strong> You can now edit performance rating, custom
                     fields, and notes.
                     {props.isPending && (
-                      <span> You can edit anytime while your listing is pending approval.</span>
+                      <span>
+                        {' '}
+                        You can edit anytime while your Handheld Compatibility Report is pending
+                        approval.
+                      </span>
                     )}
                     {props.isApproved && (
                       <span>
