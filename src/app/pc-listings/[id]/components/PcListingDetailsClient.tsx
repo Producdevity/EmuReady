@@ -171,7 +171,6 @@ function PcListingDetailsClient(props: Props) {
                         icon={field.icon}
                         label={field.label}
                         value={<span className="block break-words text-pretty">{field.value}</span>}
-                        align="center"
                       />
                     ))}
                   </dl>
@@ -183,7 +182,6 @@ function PcListingDetailsClient(props: Props) {
               <CustomFieldsSection
                 title="Emulator-Specific Details"
                 fieldValues={props.pcListing?.customFieldValues ?? []}
-                alignItems="start"
               />
             </div>
 

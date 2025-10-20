@@ -120,7 +120,6 @@ function ListingDetailsClient(props: Props) {
               <CustomFieldsSection
                 title="Emulator-Specific Details"
                 fieldValues={props.listing?.customFieldValues ?? []}
-                alignItems="start"
               />
             </div>
             <div className="flex w-full flex-col items-center gap-4 md:w-auto md:min-w-[180px] md:items-start">

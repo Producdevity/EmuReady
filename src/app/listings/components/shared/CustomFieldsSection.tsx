@@ -19,14 +19,12 @@ import { sortCustomFieldsByCategory } from '@/utils/sortCustomFields'
 interface Props {
   title?: string
   fieldValues: (FieldValueLike & { id: string })[]
-  alignItems?: 'start' | 'center'
 }
 
 const TOGGLE_DELAY_MS = 400
 
 export function CustomFieldsSection(props: Props) {
   const title = props.title ?? 'Emulator-Specific Details'
-  const alignItems = props.alignItems ?? 'start'
   const hasFields = Array.isArray(props.fieldValues) && props.fieldValues.length > 0
 
   const [hideDefaults, setHideDefaults] = useLocalStorage(
@@ -151,7 +149,6 @@ export function CustomFieldsSection(props: Props) {
                       </AnimatePresence>
                       <dl className={cn(showIndicator && 'pr-10')}>
                         <DetailFieldRow
-                          align={alignItems}
                           label={fieldValue.customFieldDefinition.label ?? 'Field'}
                           value={<CustomFieldValue fieldValue={fieldValue} />}
                         />
