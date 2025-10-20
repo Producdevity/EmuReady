@@ -1,3 +1,5 @@
+'use client'
+
 import { useUser } from '@clerk/nextjs'
 import { Edit3, Image as ImageIconLucide, Copy } from 'lucide-react'
 import { useEffect, useState } from 'react'
