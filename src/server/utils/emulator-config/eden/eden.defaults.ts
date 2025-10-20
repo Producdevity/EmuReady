@@ -166,19 +166,34 @@ export const AUDIO_OUTPUT_ENGINE_MAPPING: Record<string, AudioOutputEngine> = {
 }
 
 // Resolution multiplier mapping for Eden resolution setup
+// TODO: update with new mappings from Eden, we added 0.25x
 export const RESOLUTION_MULTIPLIER_MAPPING: Record<string, ResolutionSetup> = {
+  '0.25': 0,
+  '0.25x': 0,
+  '0.5': 0,
   '0.5x': 0,
+  '0.75': 1,
   '0.75x': 1,
   '1x': 2,
   native: 2,
+  '1': 2,
+  '1.0': 2,
   '1.0x': 2,
+  '1.5': 3,
   '1.5x': 3,
+  '2': 4,
   '2x': 4,
+  '3': 5,
   '3x': 5,
+  '4': 6,
   '4x': 6,
+  '5': 7,
   '5x': 7,
+  '6': 8,
   '6x': 8,
+  '7': 9,
   '7x': 9,
+  '8': 10,
   '8x': 10,
 }
 
