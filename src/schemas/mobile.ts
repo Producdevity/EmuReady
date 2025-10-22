@@ -84,6 +84,17 @@ export const GetBestThreeDsTitleIdMobileSchema = z.object({
 
 export const GetThreeDsGamesStatsMobileSchema = z.object({}).optional()
 
+export const FindSteamAppIdMobileSchema = z.object({
+  gameName: z.string().min(2, 'Game name must be at least 2 characters'),
+  maxResults: z.number().min(1).max(20).default(5),
+})
+
+export const GetBestSteamAppIdMobileSchema = z.object({
+  gameName: z.string().min(2, 'Game name must be at least 2 characters'),
+})
+
+export const GetSteamGamesStatsMobileSchema = z.object({}).optional()
+
 export const GetListingCommentsSchema = z.object({
   listingId: z.string().uuid(),
 })

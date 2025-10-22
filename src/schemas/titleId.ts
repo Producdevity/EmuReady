@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const TITLE_ID_PLATFORM_IDS = ['nintendo_switch', 'nintendo_3ds'] as const
+export const TITLE_ID_PLATFORM_IDS = ['nintendo_switch', 'nintendo_3ds', 'steam'] as const
 
 export const TitleIdPlatformIdSchema = z.enum(TITLE_ID_PLATFORM_IDS)
 

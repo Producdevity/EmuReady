@@ -9,9 +9,17 @@ import {
   FindThreeDsTitleIdMobileSchema,
   GetBestThreeDsTitleIdMobileSchema,
   GetThreeDsGamesStatsMobileSchema,
+  FindSteamAppIdMobileSchema,
+  GetBestSteamAppIdMobileSchema,
+  GetSteamGamesStatsMobileSchema,
 } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
 import { GamesRepository } from '@/server/repositories/games.repository'
+import {
+  findSteamAppIdForGameName,
+  getBestSteamAppIdMatch,
+  getSteamGamesStats,
+} from '@/server/utils/steamGameSearch'
 import {
   findTitleIdForGameName,
   getBestTitleIdMatch,
@@ -180,6 +188,68 @@ export const mobileGamesRouter = createMobileTRPCRouter({
       } catch (error) {
         console.error('Error getting 3DS games stats:', error)
         return AppError.internalError('Failed to get 3DS games statistics')
+      }
+    }),
+
+  /**
+   * Find Steam App IDs by game name (fuzzy search)
+   */
+  findSteamAppId: mobilePublicProcedure
+    .input(FindSteamAppIdMobileSchema)
+    .query(async ({ input }) => {
+      const { gameName, maxResults } = input
+
+      try {
+        const results = await findSteamAppIdForGameName(gameName, maxResults)
+        return {
+          success: true,
+          results,
+          query: gameName,
+          totalResults: results.length,
+        }
+      } catch (error) {
+        console.error('Error finding Steam App ID:', error)
+        return AppError.internalError('Failed to search for Steam App ID')
+      }
+    }),
+
+  /**
+   * Get the best matching Steam App ID for a game name
+   */
+  getBestSteamAppId: mobilePublicProcedure
+    .input(GetBestSteamAppIdMobileSchema)
+    .query(async ({ input }) => {
+      const { gameName } = input
+
+      try {
+        const appId = await getBestSteamAppIdMatch(gameName)
+        return {
+          success: true,
+          appId,
+          query: gameName,
+          found: appId !== null,
+        }
+      } catch (error) {
+        console.error('Error getting Steam App ID match:', error)
+        return AppError.internalError('Failed to find Steam App ID match')
+      }
+    }),
+
+  /**
+   * Get Steam games cache statistics
+   */
+  getSteamGamesStats: mobilePublicProcedure
+    .input(GetSteamGamesStatsMobileSchema)
+    .query(async () => {
+      try {
+        const stats = await getSteamGamesStats()
+        return {
+          success: true,
+          ...stats,
+        }
+      } catch (error) {
+        console.error('Error getting Steam games stats:', error)
+        return AppError.internalError('Failed to get Steam games statistics')
       }
     }),
 })

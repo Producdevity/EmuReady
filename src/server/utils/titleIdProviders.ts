@@ -6,6 +6,11 @@ import {
   type TitleIdStats,
 } from '@/schemas/titleId'
 import {
+  findSteamAppIdForGameName,
+  getBestSteamAppIdMatch,
+  getSteamGamesStats,
+} from './steamGameSearch'
+import {
   findTitleIdForGameName as findSwitchTitleIds,
   getBestTitleIdMatch as getSwitchBestTitleId,
   getSwitchGamesStats,
@@ -58,6 +63,22 @@ function mapThreeDsResults(
   }))
 }
 
+function mapSteamResults(
+  providerId: TitleIdPlatformId,
+  results: Awaited<ReturnType<typeof findSteamAppIdForGameName>>,
+): TitleIdSearchResult[] {
+  return results.map((result) => ({
+    titleId: result.appId,
+    name: result.name,
+    normalizedTitle: result.normalizedTitle,
+    score: result.score,
+    region: undefined,
+    productCode: null,
+    providerId,
+    raw: result,
+  }))
+}
+
 const providers: TitleIdProvider[] = [
   {
     id: 'nintendo_switch',
@@ -96,6 +117,25 @@ const providers: TitleIdProvider[] = [
       return mapped[0] ?? null
     },
     stats: async () => getThreeDsGamesStats(),
+  },
+  {
+    id: 'steam',
+    label: 'Steam',
+    description: 'Fuzzy search against the Steam app catalog (App IDs).',
+    supportsStats: true,
+    search: async (gameName, maxResults) => {
+      const results = await findSteamAppIdForGameName(gameName, maxResults)
+      return mapSteamResults('steam', results)
+    },
+    bestMatch: async (gameName) => {
+      const bestAppId = await getBestSteamAppIdMatch(gameName)
+      if (!bestAppId) return null
+
+      const results = await findSteamAppIdForGameName(gameName, 1)
+      const mapped = mapSteamResults('steam', results)
+      return mapped[0] ?? null
+    },
+    stats: async () => getSteamGamesStats(),
   },
 ]
 

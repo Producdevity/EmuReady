@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  findSteamAppIdForGameName,
+  getBestSteamAppIdMatch,
+  getSteamGamesStats,
+} from './steamGameSearch'
+import {
   findTitleIdForGameName as findSwitchTitleIds,
   getBestTitleIdMatch as getSwitchBestTitleId,
   getSwitchGamesStats,
@@ -16,6 +21,12 @@ import {
   searchTitleIds,
 } from './titleIdProviders'
 
+vi.mock('./steamGameSearch', () => ({
+  findSteamAppIdForGameName: vi.fn(),
+  getBestSteamAppIdMatch: vi.fn(),
+  getSteamGamesStats: vi.fn(),
+}))
+
 vi.mock('./switchGameSearch', () => ({
   findTitleIdForGameName: vi.fn(),
   getBestTitleIdMatch: vi.fn(),
@@ -28,6 +39,9 @@ vi.mock('./threeDsGameSearch', () => ({
   getThreeDsGamesStats: vi.fn(),
 }))
 
+const mockSteamSearch = vi.mocked(findSteamAppIdForGameName)
+const mockSteamBest = vi.mocked(getBestSteamAppIdMatch)
+const mockSteamStats = vi.mocked(getSteamGamesStats)
 const mockSwitchSearch = vi.mocked(findSwitchTitleIds)
 const mockSwitchBest = vi.mocked(getSwitchBestTitleId)
 const mockSwitchStats = vi.mocked(getSwitchGamesStats)
@@ -43,9 +57,10 @@ describe('titleIdProviders', () => {
   it('returns provider metadata', () => {
     const providers = getTitleIdProviders()
 
-    expect(providers).toHaveLength(2)
+    expect(providers).toHaveLength(3)
     expect(providers[0]?.id).toBe('nintendo_switch')
     expect(providers[1]?.id).toBe('nintendo_3ds')
+    expect(providers[2]?.id).toBe('steam')
   })
 
   it('maps switch search results to unified shape', async () => {
@@ -156,5 +171,64 @@ describe('titleIdProviders', () => {
 
     expect(stats.totalGames).toBe(2500)
     expect(stats.cacheStatus).toBe('miss')
+  })
+
+  it('maps Steam search results to unified shape', async () => {
+    mockSteamSearch.mockResolvedValueOnce([
+      {
+        appId: '220',
+        name: 'Half-Life 2',
+        normalizedTitle: 'half life 2',
+        score: 95,
+      },
+    ])
+
+    const results = await searchTitleIds('steam', 'Half-Life 2', 5)
+
+    expect(results).toHaveLength(1)
+    expect(results[0]).toMatchObject({
+      titleId: '220',
+      providerId: 'steam',
+      productCode: null,
+      region: undefined,
+    })
+  })
+
+  it('uses provider best match logic for Steam', async () => {
+    mockSteamBest.mockResolvedValueOnce('730')
+    mockSteamSearch.mockResolvedValueOnce([
+      {
+        appId: '730',
+        name: 'Counter-Strike 2',
+        normalizedTitle: 'counter strike 2',
+        score: 98,
+      },
+    ])
+
+    const bestMatch = await getBestTitleIdResult('steam', 'Counter-Strike 2')
+
+    expect(mockSteamBest).toHaveBeenCalled()
+    expect(bestMatch?.titleId).toBe('730')
+  })
+
+  it('returns null when Steam provider does not return a best match', async () => {
+    mockSteamBest.mockResolvedValueOnce(null)
+
+    const bestMatch = await getBestTitleIdResult('steam', 'NonExistentGame')
+
+    expect(bestMatch).toBeNull()
+  })
+
+  it('returns Steam provider statistics', async () => {
+    mockSteamStats.mockResolvedValueOnce({
+      totalGames: 150000,
+      cacheStatus: 'hit',
+      lastUpdated: new Date('2025-10-20T08:00:00Z'),
+    })
+
+    const stats = await getTitleIdStats('steam')
+
+    expect(stats.totalGames).toBe(150000)
+    expect(stats.cacheStatus).toBe('hit')
   })
 })
