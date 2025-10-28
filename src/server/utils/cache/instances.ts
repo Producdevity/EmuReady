@@ -4,6 +4,7 @@
  */
 
 import MemoryCache from './MemoryCache'
+import type { BatchBySteamAppIdsResponse } from '@/server/api/routers/mobile/games'
 import type {
   NotificationMetrics,
   ChannelMetrics,
@@ -89,12 +90,6 @@ export const tgdbGameImagesCache = new MemoryCache<Record<string, GameImageOptio
   maxSize: 100,
 })
 
-// Generic cache for backwards compatibility during transition periods
-export const legacyCache = new MemoryCache<unknown>({
-  ttl: 10 * 60 * 1000, // 10 minutes
-  maxSize: 500,
-})
-
 // Driver version cache to avoid hitting GitHub rate limits
 export const driverVersionsCache = new MemoryCache<DriverVersionsResponse>({
   ttl: 30 * 60 * 1000, // 30 minutes
@@ -102,13 +97,7 @@ export const driverVersionsCache = new MemoryCache<DriverVersionsResponse>({
 })
 
 // Batch Steam App ID lookup cache - for GameHub Lite integration
-export const steamBatchQueryCache = new MemoryCache<{
-  success: true
-  results: unknown[]
-  totalRequested: number
-  totalFound: number
-  totalNotFound: number
-}>({
+export const steamBatchQueryCache = new MemoryCache<BatchBySteamAppIdsResponse>({
   ttl: 5 * 60 * 1000, // 5 minutes - listings data changes frequently
   maxSize: 100, // Cache up to 100 different batch queries
 })

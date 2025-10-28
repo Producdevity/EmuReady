@@ -111,9 +111,14 @@ export type BatchGameResult = {
 
 export type MinimalGameResult = {
   game_id: string | null
-  steam_appid: string
+  steam_app_id: string
   title: string | null
-  desc: string | null
+  performance: {
+    id: number
+    label: string
+    rank: number
+    description: string | null
+  } | null
   emulator: {
     id: string
     name: string
@@ -425,9 +430,9 @@ export const mobileGamesRouter = createMobileTRPCRouter({
               if (!result.game || result.game.listings.length === 0) {
                 return {
                   game_id: result.game?.id ?? null,
-                  steam_appid: result.steamAppId,
+                  steam_app_id: result.steamAppId,
                   title: result.game?.title ?? null,
-                  desc: null,
+                  performance: null,
                   emulator: null,
                   device: null,
                   listing: null,
@@ -437,9 +442,9 @@ export const mobileGamesRouter = createMobileTRPCRouter({
               const firstListing = result.game.listings[0]
               return {
                 game_id: result.game.id,
-                steam_appid: result.steamAppId,
+                steam_app_id: result.steamAppId,
                 title: result.game.title,
-                desc: firstListing?.performance?.description ?? null,
+                performance: firstListing?.performance ?? null,
                 emulator: firstListing?.emulator ?? null,
                 device: firstListing?.device ?? null,
                 listing: {
