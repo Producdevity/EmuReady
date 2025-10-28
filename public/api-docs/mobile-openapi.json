@@ -448,6 +448,45 @@
           }
         ]
       },
+      "BatchBySteamAppIdsSchema": {
+        "type": "object",
+        "properties": {
+          "steamAppIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 1000,
+            "description": "Steam App IDs to lookup (1-1000)"
+          },
+          "emulatorName": {
+            "type": "string",
+            "description": "Filter listings by emulator name"
+          },
+          "maxListingsPerGame": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 1,
+            "description": "Maximum listings per game (1-50)"
+          },
+          "showNsfw": {
+            "type": "boolean",
+            "default": false,
+            "description": "Include NSFW games"
+          },
+          "minimal": {
+            "type": "boolean",
+            "default": false,
+            "description": "Return minimal response with only essential fields"
+          }
+        },
+        "required": [
+          "steamAppIds"
+        ],
+        "additionalProperties": false
+      },
       "SearchSuggestionsSchema": {
         "type": "object",
         "properties": {
@@ -5946,6 +5985,148 @@
                             "code": "BAD_REQUEST",
                             "httpStatus": 400,
                             "path": "games.getSteamGamesStats",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/games.batchBySteamAppIds": {
+      "get": {
+        "summary": "Get Steam games cache statistics",
+        "description": "Get Steam games cache statistics",
+        "tags": [
+          "games"
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "SuperJSON wrapped input object"
+            },
+            "description": "SuperJSON wrapped input matching BatchBySteamAppIdsSchema schema. See components/schemas/BatchBySteamAppIdsSchema for structure.",
+            "example": "{\"json\":{\"steamAppIds\":[\"example1\",\"example2\"]}}"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from games.batchBySteamAppIds"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from games.batchBySteamAppIds",
+                          "data": {
+                            "id": "uuid-game",
+                            "title": "Super Mario Bros",
+                            "systemId": "uuid-system",
+                            "imageUrl": "https://example.com/game.jpg",
+                            "status": "APPROVED"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "games.batchBySteamAppIds",
                             "zodError": {
                               "formErrors": [
                                 "Required"
