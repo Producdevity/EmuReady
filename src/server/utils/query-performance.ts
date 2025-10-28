@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger'
+
 /**
  * Performance monitoring for database queries
  */
@@ -35,7 +37,7 @@ export class QueryPerformanceMonitor {
 
     // Log slow queries
     if (duration > 1000) {
-      console.warn(`Slow query detected: ${name} took ${duration.toFixed(2)}ms`)
+      logger.warn(`Slow query detected: ${name} took ${duration.toFixed(2)}ms`)
     }
   }
 
@@ -308,9 +310,7 @@ function countRelations(include: Record<string, unknown>): number {
 function countOrConditions(where: Record<string, unknown>): number {
   let count = 0
 
-  if (where.OR && Array.isArray(where.OR)) {
-    count += where.OR.length
-  }
+  if (where.OR && Array.isArray(where.OR)) count += where.OR.length
 
   Object.values(where).forEach((value) => {
     if (typeof value === 'object' && value !== null) {
@@ -328,29 +328,32 @@ interface QueryComplexityResult {
 }
 
 /**
- * Connection pool optimization settings
+ * Connection pool optimization settings for Supabase + pgBouncer
+ *
+ * Supabase best practices:
+ * - Use transaction mode (port 6543) for serverless
+ * - Set connection_limit=1 for Next.js/Vercel (serverless doesn't need many connections)
+ * - Add pgbouncer=true to disable prepared statements (incompatible with transaction mode)
+ * - Let pgBouncer handle pooling - don't add conflicting parameters
+ *
+ * @see https://supabase.com/docs/guides/database/prisma/prisma-troubleshooting
  */
 export function getOptimizedPoolSettings() {
   const isProduction = process.env.NODE_ENV === 'production'
 
   return {
-    // Connection pool size based on environment
-    connection_limit: isProduction ? 20 : 5,
+    // Supabase recommendation: Start with 1 connection for serverless
+    // pgBouncer handles the actual pooling
+    connection_limit: isProduction ? 1 : 2,
 
-    // Timeout settings
-    pool_timeout: 10,
-    timeout: 20000,
-
-    // Idle timeout to free up connections
-    idle_in_transaction_session_timeout: 5000,
-
-    // Statement timeout for long queries
-    statement_timeout: 30000,
+    // Connect timeout (20 seconds)
+    connect_timeout: 20,
   }
 }
 
 /**
- * Generate optimized DATABASE_URL with connection pool parameters
+ * Generate optimized DATABASE_URL for Supabase + pgBouncer
+ * Only adds essential parameters that don't conflict with pgBouncer
  */
 export function getOptimizedDatabaseUrl(baseUrl?: string): string {
   const url = baseUrl || process.env.DATABASE_URL
@@ -361,15 +364,15 @@ export function getOptimizedDatabaseUrl(baseUrl?: string): string {
   const settings = getOptimizedPoolSettings()
   const urlObj = new URL(url)
 
-  // Add optimized parameters to the URL
+  // Add pgbouncer=true to disable prepared statements
+  // Prepared statements are incompatible with pgBouncer transaction mode
+  if (!urlObj.searchParams.has('pgbouncer')) urlObj.searchParams.set('pgbouncer', 'true')
+
+  // Set minimal connection limit (pgBouncer handles pooling)
   urlObj.searchParams.set('connection_limit', settings.connection_limit.toString())
-  urlObj.searchParams.set('pool_timeout', settings.pool_timeout.toString())
-  urlObj.searchParams.set('connect_timeout', (settings.timeout / 1000).toString())
-  urlObj.searchParams.set(
-    'idle_in_transaction_session_timeout',
-    settings.idle_in_transaction_session_timeout.toString(),
-  )
-  urlObj.searchParams.set('statement_timeout', settings.statement_timeout.toString())
+
+  // Set connection timeout
+  urlObj.searchParams.set('connect_timeout', settings.connect_timeout.toString())
 
   return urlObj.toString()
 }
