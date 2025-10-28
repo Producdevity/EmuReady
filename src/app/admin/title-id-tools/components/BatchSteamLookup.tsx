@@ -1,7 +1,11 @@
 'use client'
 
 import { Copy, Sparkles } from 'lucide-react'
-import { type FormEvent, useState, useMemo, useEffect } from 'react'
+import { useTheme } from 'next-themes'
+import { type FormEvent, useState, useMemo } from 'react'
+import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter'
+import json from 'react-syntax-highlighter/dist/esm/languages/prism/json'
+import { solarizedDarkAtom, solarizedlight } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/form/Input'
@@ -9,6 +13,8 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
+
+SyntaxHighlighter.registerLanguage('json', json)
 
 const SAMPLE_STEAM_APP_IDS = `220
 500
@@ -32,11 +38,12 @@ interface BatchResult {
 }
 
 export function BatchSteamLookup() {
+  const { resolvedTheme } = useTheme()
   const [steamAppIds, setSteamAppIds] = useState('')
   const [emulatorName, setEmulatorName] = useState('')
   const [maxListingsPerGame, setMaxListingsPerGame] = useState(1)
   const [showNsfw, setShowNsfw] = useState(false)
-  const [minimal, setMinimal] = useState(false)
+  const [minimal, setMinimal] = useState(true)
 
   const [queryInput, setQueryInput] = useState<{
     steamAppIds: string[]
@@ -48,9 +55,7 @@ export function BatchSteamLookup() {
 
   const batchLookupQuery = api.mobile.games.batchBySteamAppIds.useQuery(
     queryInput ?? { steamAppIds: [] },
-    {
-      enabled: queryInput !== null,
-    },
+    { enabled: queryInput !== null },
   )
 
   const isLoading = batchLookupQuery.isFetching
@@ -78,22 +83,6 @@ export function BatchSteamLookup() {
 
   const isSuccess = isSuccessResponse(responseData)
   const results = isSuccess ? responseData.results : []
-
-  useEffect(() => {
-    if (batchLookupQuery.error) {
-      const message =
-        batchLookupQuery.error instanceof Error
-          ? batchLookupQuery.error.message
-          : 'Failed to lookup Steam App IDs'
-      toast.error(message)
-    }
-  }, [batchLookupQuery.error])
-
-  useEffect(() => {
-    if (isSuccess) {
-      toast.success(`Found ${responseData.totalFound} of ${responseData.totalRequested} games`)
-    }
-  }, [isSuccess, responseData])
 
   const parsedIds = useMemo(() => {
     return steamAppIds
@@ -321,90 +310,106 @@ export function BatchSteamLookup() {
               </Button>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-sm">
-                  <thead className="bg-gray-100 dark:bg-gray-900">
-                    <tr>
-                      <th className="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">
-                        Steam App ID
-                      </th>
-                      <th className="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">
-                        Game Title
-                      </th>
-                      <th className="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">
-                        Match Strategy
-                      </th>
-                      <th className="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">
-                        Listings
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {results.map((result, index) => {
-                      const isFound = result.game !== null
-                      return (
-                        <tr
-                          key={result.steamAppId}
-                          className={cn(
-                            index % 2 === 0
-                              ? 'bg-white dark:bg-gray-900'
-                              : 'bg-gray-50 dark:bg-gray-800/80',
-                            'text-gray-900 dark:text-gray-100',
-                          )}
-                        >
-                          <td className="px-4 py-3 font-mono text-xs">{result.steamAppId}</td>
-                          <td className="px-4 py-3">
-                            {isFound && result.game ? (
-                              <span>{result.game.title}</span>
-                            ) : (
-                              <span className="text-gray-500 dark:text-gray-400 italic">
-                                Not found
-                              </span>
+            {!minimal && (
+              <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-sm">
+                    <thead className="bg-gray-100 dark:bg-gray-900">
+                      <tr>
+                        <th className="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">
+                          Steam App ID
+                        </th>
+                        <th className="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">
+                          Game Title
+                        </th>
+                        <th className="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">
+                          Match Strategy
+                        </th>
+                        <th className="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">
+                          Listings
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {results.map((result, index) => {
+                        const isFound = result.game !== null
+                        return (
+                          <tr
+                            key={`${result.steamAppId}-${index}`}
+                            className={cn(
+                              index % 2 === 0
+                                ? 'bg-white dark:bg-gray-900'
+                                : 'bg-gray-50 dark:bg-gray-800/80',
+                              'text-gray-900 dark:text-gray-100',
                             )}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={cn(
-                                'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium',
-                                result.matchStrategy === 'metadata' &&
-                                  'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-                                result.matchStrategy === 'exact' &&
-                                  'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-                                result.matchStrategy === 'normalized' &&
-                                  'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-                                result.matchStrategy === 'not_found' &&
-                                  'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+                          >
+                            <td className="px-4 py-3 font-mono text-xs">{result.steamAppId}</td>
+                            <td className="px-4 py-3">
+                              {isFound && result.game ? (
+                                <span>{result.game.title}</span>
+                              ) : (
+                                <span className="text-gray-500 dark:text-gray-400 italic">
+                                  Not found
+                                </span>
                               )}
-                            >
-                              {result.matchStrategy}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            {isFound && result.game ? (
-                              <span className="text-gray-900 dark:text-gray-100">
-                                {result.game._count.listings}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={cn(
+                                  'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium',
+                                  result.matchStrategy === 'metadata' &&
+                                    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+                                  result.matchStrategy === 'exact' &&
+                                    'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+                                  result.matchStrategy === 'normalized' &&
+                                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+                                  result.matchStrategy === 'not_found' &&
+                                    'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+                                )}
+                              >
+                                {result.matchStrategy}
                               </span>
-                            ) : (
-                              <span className="text-gray-500 dark:text-gray-400">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                            </td>
+                            <td className="px-4 py-3">
+                              {isFound && result.game ? (
+                                <span className="text-gray-900 dark:text-gray-100">
+                                  {result.game._count.listings}
+                                </span>
+                              ) : (
+                                <span className="text-gray-500 dark:text-gray-400">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+            )}
 
             <details className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-700 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
               <summary className="cursor-pointer px-4 py-3 font-medium hover:bg-gray-100 dark:hover:bg-gray-800">
                 View raw response data
               </summary>
-              <div className="border-t border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-950">
-                <pre className="whitespace-pre-wrap break-all text-xs text-gray-800 dark:text-gray-200">
+              <div className="border-t border-gray-200 dark:border-gray-700">
+                <SyntaxHighlighter
+                  language="json"
+                  style={resolvedTheme === 'dark' ? solarizedDarkAtom : solarizedlight}
+                  customStyle={{
+                    margin: 0,
+                    padding: '1rem',
+                    borderRadius: 0,
+                    fontSize: '0.75rem',
+                    maxHeight: '400px',
+                    overflow: 'auto',
+                  }}
+                  showLineNumbers={false}
+                  wrapLines={true}
+                  wrapLongLines={true}
+                >
                   {JSON.stringify(batchLookupQuery.data, null, 2)}
-                </pre>
+                </SyntaxHighlighter>
               </div>
             </details>
           </div>
