@@ -386,7 +386,13 @@ export const mobileGamesRouter = createMobileTRPCRouter({
   batchBySteamAppIds: mobilePublicProcedure
     .input(BatchBySteamAppIdsSchema)
     .query(async ({ ctx, input }) => {
-      const { steamAppIds, emulatorName, maxListingsPerGame, showNsfw, minimal } = input
+      const {
+        steamAppIds,
+        emulatorName,
+        maxListingsPerGame,
+        showNsfw = false,
+        minimal = true,
+      } = input
 
       try {
         // Validate Steam App IDs
