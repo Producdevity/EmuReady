@@ -273,7 +273,7 @@ model Game {
   boxartUrl   String? // boxart image URL
   bannerUrl   String? // banner image URL
   tgdbGameId  Int? // TheGamesDB game ID for reliable duplicate detection
-  metadata    Json? // External provider IDs: { tgdbId?: number, rawgId?: number, igdbId?: number }
+  metadata    Json? // External provider IDs: { tgdbId?: number, rawgId?: number, igdbId?: number, steamAppId?: string }. Note: JSON fields not indexed - batch queries filter by title first, then by metadata in application layer
   isErotic    Boolean        @default(false)
   status      ApprovalStatus @default(APPROVED) // Existing games are auto-approved
   submittedBy String? // null for existing games, userId for new submissions

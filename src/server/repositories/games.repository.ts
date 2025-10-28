@@ -1,10 +1,20 @@
 import { PAGINATION } from '@/data/constants'
 import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
 import { buildShadowBanFilter } from '@/server/utils/query-builders'
+import { normalizeGameTitle } from '@/server/utils/steamGameBatcher'
 import { hasRolePermission } from '@/utils/permissions'
 import { Prisma, ApprovalStatus, Role } from '@orm'
 import { BaseRepository } from './base.repository'
-// Monitoring will be integrated after fixing TypeScript issues
+
+// Type guard for game metadata with Steam App ID
+function hasSteamAppId(metadata: unknown): metadata is { steamAppId: string } {
+  return (
+    typeof metadata === 'object' &&
+    metadata !== null &&
+    'steamAppId' in metadata &&
+    typeof (metadata as { steamAppId: unknown }).steamAppId === 'string'
+  )
+}
 
 // Repository filters that match the schema plus internal fields
 export interface GameFilters {
@@ -575,5 +585,203 @@ export class GamesRepository extends BaseRepository {
       default:
         return { title: this.sortOrder }
     }
+  }
+
+  /**
+   * Batch lookup games by Steam App IDs with their listings
+   * Optimized for large batches (up to 1000 Steam App IDs)
+   * Uses hybrid matching strategy: metadata → exact name → normalized name
+   *
+   * @param steamAppIdToName - Map of Steam App ID to Steam App Name
+   * @param options - Query options
+   * @param options.emulatorName - Filter listings by emulator name (optional)
+   * @param options.maxListingsPerGame - Maximum listings to return per game (default: 1)
+   * @param options.showNsfw - Include NSFW games (default: false)
+   * @returns Array of games with their Steam App ID and listings
+   */
+  async batchBySteamAppIds(
+    steamAppIdToName: Map<string, string>,
+    options: {
+      emulatorName?: string
+      maxListingsPerGame?: number
+      showNsfw?: boolean
+    } = {},
+  ) {
+    const { emulatorName, maxListingsPerGame = 1, showNsfw = false } = options
+
+    // Extract all Steam App names for the WHERE clause
+    const steamAppNames = Array.from(steamAppIdToName.values())
+
+    // Normalize Steam app names for fallback matching
+    const normalizedNamesMap = new Map<string, string>()
+    for (const [appId, name] of steamAppIdToName.entries()) {
+      normalizedNamesMap.set(normalizeGameTitle(name), appId)
+    }
+
+    // Build WHERE clause for efficient batch query
+    // Note: We can't filter by JSON metadata in the WHERE clause efficiently
+    // So we'll fetch all games matching names and filter by metadata after
+    const where: Prisma.GameWhereInput = {
+      status: ApprovalStatus.APPROVED,
+      ...(!showNsfw && { isErotic: false }),
+      title: {
+        in: steamAppNames,
+      },
+    }
+
+    // Build listings filter (for handheld devices only)
+    const listingsWhere: Prisma.ListingWhereInput = {
+      status: ApprovalStatus.APPROVED,
+      ...(emulatorName && {
+        emulator: {
+          name: {
+            equals: emulatorName,
+            mode: Prisma.QueryMode.insensitive,
+          },
+        },
+      }),
+    }
+
+    // Single optimized query for all games with their listings
+    const games = await this.prisma.game.findMany({
+      where,
+      select: {
+        ...GamesRepository.selects.mobile,
+        metadata: true, // Include metadata for Steam App ID extraction
+        listings: {
+          where: listingsWhere,
+          select: {
+            id: true,
+            deviceId: true,
+            gameId: true,
+            emulatorId: true,
+            performanceId: true,
+            notes: true,
+            upvoteCount: true,
+            downvoteCount: true,
+            voteCount: true,
+            successRate: true,
+            device: {
+              select: {
+                id: true,
+                modelName: true,
+                soc: {
+                  select: {
+                    id: true,
+                    name: true,
+                    manufacturer: true,
+                    architecture: true,
+                    processNode: true,
+                    cpuCores: true,
+                    gpuModel: true,
+                  },
+                },
+              },
+            },
+            emulator: {
+              select: {
+                id: true,
+                name: true,
+                logo: true,
+              },
+            },
+            performance: {
+              select: {
+                id: true,
+                label: true,
+                rank: true,
+                description: true,
+              },
+            },
+            customFieldValues: {
+              select: {
+                id: true,
+                listingId: true,
+                customFieldDefinitionId: true,
+                value: true,
+                customFieldDefinition: {
+                  select: {
+                    id: true,
+                    type: true,
+                    label: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: [{ successRate: Prisma.SortOrder.desc }, { voteCount: Prisma.SortOrder.desc }],
+          take: maxListingsPerGame,
+        },
+      },
+    })
+
+    // Create lookup maps for efficient matching
+    const gamesBySteamAppId = new Map<string, (typeof games)[0]>()
+    const gamesByTitle = new Map<string, (typeof games)[0]>()
+    const gamesByNormalizedTitle = new Map<string, (typeof games)[0]>()
+
+    for (const game of games) {
+      // Check for Steam App ID in metadata using type guard
+      if (hasSteamAppId(game.metadata)) {
+        gamesBySteamAppId.set(game.metadata.steamAppId, game)
+      }
+
+      // Index by title (exact match)
+      gamesByTitle.set(game.title, game)
+
+      // Index by normalized title
+      const normalizedTitle = normalizeGameTitle(game.title)
+      gamesByNormalizedTitle.set(normalizedTitle, game)
+    }
+
+    // Build result array with matched games
+    const results: {
+      steamAppId: string
+      game: (typeof games)[0] | null
+      matchStrategy: 'metadata' | 'exact' | 'normalized' | 'not_found'
+    }[] = []
+
+    for (const [steamAppId, steamAppName] of steamAppIdToName.entries()) {
+      // Try Strategy 1: Metadata lookup
+      if (gamesBySteamAppId.has(steamAppId)) {
+        results.push({
+          steamAppId,
+          game: gamesBySteamAppId.get(steamAppId)!,
+          matchStrategy: 'metadata',
+        })
+        continue
+      }
+
+      // Try Strategy 2: Exact name match
+      if (gamesByTitle.has(steamAppName)) {
+        results.push({
+          steamAppId,
+          game: gamesByTitle.get(steamAppName)!,
+          matchStrategy: 'exact',
+        })
+        continue
+      }
+
+      // Try Strategy 3: Normalized name match
+      const normalizedName = normalizeGameTitle(steamAppName)
+      if (gamesByNormalizedTitle.has(normalizedName)) {
+        results.push({
+          steamAppId,
+          game: gamesByNormalizedTitle.get(normalizedName)!,
+          matchStrategy: 'normalized',
+        })
+        continue
+      }
+
+      // No match found
+      results.push({
+        steamAppId,
+        game: null,
+        matchStrategy: 'not_found',
+      })
+    }
+
+    return results
   }
 }

@@ -95,6 +95,26 @@ export const GetBestSteamAppIdMobileSchema = z.object({
 
 export const GetSteamGamesStatsMobileSchema = z.object({}).optional()
 
+export const BatchBySteamAppIdsSchema = z.object({
+  steamAppIds: z
+    .array(z.string())
+    .min(1, 'At least one Steam App ID is required')
+    .max(1000, 'Maximum 1000 Steam App IDs per request')
+    .describe('Steam App IDs to lookup (1-1000)'),
+  emulatorName: z.string().optional().describe('Filter listings by emulator name'),
+  maxListingsPerGame: z
+    .number()
+    .min(1)
+    .max(50)
+    .default(1)
+    .describe('Maximum listings per game (1-50)'),
+  showNsfw: z.boolean().default(false).describe('Include NSFW games'),
+  minimal: z
+    .boolean()
+    .default(false)
+    .describe('Return minimal response with only essential fields'),
+})
+
 export const GetListingCommentsSchema = z.object({
   listingId: z.string().uuid(),
 })

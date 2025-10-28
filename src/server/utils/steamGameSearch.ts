@@ -83,7 +83,7 @@ async function fetchSteamGamesData(): Promise<SteamAppEntry[]> {
 /**
  * Gets cached Steam games data or fetches fresh data
  */
-async function getSteamGamesData(): Promise<SteamAppEntry[]> {
+export async function getSteamGamesData(): Promise<SteamAppEntry[]> {
   const cacheKey = 'steam-games-data'
 
   // Try to get from cache first

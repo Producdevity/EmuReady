@@ -100,3 +100,15 @@ export const driverVersionsCache = new MemoryCache<DriverVersionsResponse>({
   ttl: 30 * 60 * 1000, // 30 minutes
   maxSize: 1,
 })
+
+// Batch Steam App ID lookup cache - for GameHub Lite integration
+export const steamBatchQueryCache = new MemoryCache<{
+  success: true
+  results: unknown[]
+  totalRequested: number
+  totalFound: number
+  totalNotFound: number
+}>({
+  ttl: 5 * 60 * 1000, // 5 minutes - listings data changes frequently
+  maxSize: 100, // Cache up to 100 different batch queries
+})
