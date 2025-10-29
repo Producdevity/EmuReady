@@ -328,32 +328,33 @@ interface QueryComplexityResult {
 }
 
 /**
- * Connection pool optimization settings for Supabase + pgBouncer
- *
- * Supabase best practices:
- * - Use transaction mode (port 6543) for serverless
- * - Set connection_limit=1 for Next.js/Vercel (serverless doesn't need many connections)
- * - Add pgbouncer=true to disable prepared statements (incompatible with transaction mode)
- * - Let pgBouncer handle pooling - don't add conflicting parameters
- *
- * @see https://supabase.com/docs/guides/database/prisma/prisma-troubleshooting
+ * Connection pool optimization settings
  */
 export function getOptimizedPoolSettings() {
   const isProduction = process.env.NODE_ENV === 'production'
 
   return {
-    // Supabase recommendation: Start with 1 connection for serverless
-    // pgBouncer handles the actual pooling
-    connection_limit: isProduction ? 1 : 2,
+    // Connection pool size based on environment
+    connection_limit: isProduction ? 10 : 5,
 
-    // Connect timeout (20 seconds)
-    connect_timeout: 20,
+    // Timeout settings
+    pool_timeout: 10,
+    timeout: 20000,
+
+    // Idle timeout to free up connections
+    idle_in_transaction_session_timeout: 10000,
+
+    // Statement timeout for long queries
+    statement_timeout: 60000,
   }
 }
 
 /**
- * Generate optimized DATABASE_URL for Supabase + pgBouncer
- * Only adds essential parameters that don't conflict with pgBouncer
+ * Generate optimized DATABASE_URL with connection pool parameters
+ *
+ * NOTE: Returns the URL as-is without modifications for now.
+ * Custom parameters can cause issues with pgBouncer and interactive transactions.
+ * Use DATABASE_URL and DATABASE_DIRECT_URL from environment variables.
  */
 export function getOptimizedDatabaseUrl(baseUrl?: string): string {
   const url = baseUrl || process.env.DATABASE_URL
@@ -361,18 +362,6 @@ export function getOptimizedDatabaseUrl(baseUrl?: string): string {
     throw new Error('DATABASE_URL is required')
   }
 
-  const settings = getOptimizedPoolSettings()
-  const urlObj = new URL(url)
-
-  // Add pgbouncer=true to disable prepared statements
-  // Prepared statements are incompatible with pgBouncer transaction mode
-  if (!urlObj.searchParams.has('pgbouncer')) urlObj.searchParams.set('pgbouncer', 'true')
-
-  // Set minimal connection limit (pgBouncer handles pooling)
-  urlObj.searchParams.set('connection_limit', settings.connection_limit.toString())
-
-  // Set connection timeout
-  urlObj.searchParams.set('connect_timeout', settings.connect_timeout.toString())
-
-  return urlObj.toString()
+  // Return URL as-is - let environment variables handle pgBouncer configuration
+  return url
 }
