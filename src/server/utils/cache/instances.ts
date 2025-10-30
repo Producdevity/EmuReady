@@ -3,6 +3,7 @@
  * Each cache is typed for its specific use case
  */
 
+import { TIME_CONSTANTS } from '@/utils/time'
 import MemoryCache from './MemoryCache'
 import type { BatchBySteamAppIdsResponse } from '@/server/api/routers/mobile/games'
 import type {
@@ -28,7 +29,7 @@ export const gameStatsCache = new MemoryCache<{
   rejected: number
   total: number
 }>({
-  ttl: 5 * 60 * 1000, // 5 minutes
+  ttl: TIME_CONSTANTS.FIVE_MINUTES,
   maxSize: 100, // Small cache for stats
 })
 
@@ -39,7 +40,7 @@ export const listingStatsCache = new MemoryCache<{
   rejected: number
   total: number
 }>({
-  ttl: 5 * 60 * 1000, // 5 minutes
+  ttl: TIME_CONSTANTS.FIVE_MINUTES,
   maxSize: 100, // Small cache for stats
 })
 
@@ -57,23 +58,23 @@ export const notificationAnalyticsCache = new MemoryCache<
       clickRate: number
     }[]
 >({
-  ttl: 10 * 60 * 1000, // 10 minutes - analytics can be slightly stale
+  ttl: TIME_CONSTANTS.TEN_MINUTES, // analytics can be slightly stale
   maxSize: 200, // Analytics queries with different date ranges and params
 })
 
 // TGDB-specific caches with proper typing
 export const tgdbGamesCache = new MemoryCache<TGDBGamesByNameResponse>({
-  ttl: 10 * 60 * 1000, // 10 minutes for TGDB responses
+  ttl: TIME_CONSTANTS.TEN_MINUTES,
   maxSize: 200,
 })
 
 export const tgdbImagesCache = new MemoryCache<TGDBGamesImagesResponse>({
-  ttl: 10 * 60 * 1000, // 10 minutes for TGDB responses
+  ttl: TIME_CONSTANTS.TEN_MINUTES,
   maxSize: 200,
 })
 
 export const tgdbPlatformsCache = new MemoryCache<TGDBPlatformsResponse>({
-  ttl: 60 * 60 * 1000, // 1 hour for platforms (rarely change)
+  ttl: TIME_CONSTANTS.TEN_MINUTES, // rarely change
   maxSize: 10,
 })
 
@@ -81,23 +82,23 @@ export const tgdbImageUrlsCache = new MemoryCache<{
   boxartUrl?: string
   bannerUrl?: string
 }>({
-  ttl: 10 * 60 * 1000, // 10 minutes for image URLs
+  ttl: TIME_CONSTANTS.TEN_MINUTES,
   maxSize: 500,
 })
 
 export const tgdbGameImagesCache = new MemoryCache<Record<string, GameImageOption[]>>({
-  ttl: 10 * 60 * 1000, // 10 minutes for game images
+  ttl: TIME_CONSTANTS.TEN_MINUTES,
   maxSize: 100,
 })
 
 // Driver version cache to avoid hitting GitHub rate limits
 export const driverVersionsCache = new MemoryCache<DriverVersionsResponse>({
-  ttl: 30 * 60 * 1000, // 30 minutes
+  ttl: TIME_CONSTANTS.THIRTY_MINUTES,
   maxSize: 1,
 })
 
 // Batch Steam App ID lookup cache - for GameHub Lite integration
 export const steamBatchQueryCache = new MemoryCache<BatchBySteamAppIdsResponse>({
-  ttl: 5 * 60 * 1000, // 5 minutes - listings data changes frequently
+  ttl: TIME_CONSTANTS.TEN_MINUTES, // listings data changes frequently
   maxSize: 100, // Cache up to 100 different batch queries
 })
