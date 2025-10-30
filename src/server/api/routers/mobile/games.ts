@@ -407,9 +407,7 @@ export const mobileGamesRouter = createMobileTRPCRouter({
 
         // Check cache first
         const cachedResult = steamBatchQueryCache.get(cacheKey)
-        if (cachedResult) {
-          return cachedResult
-        }
+        if (cachedResult) return cachedResult
 
         // Match Steam App IDs to game names
         const matchResults = await matchSteamAppIdsToNames(steamAppIds)

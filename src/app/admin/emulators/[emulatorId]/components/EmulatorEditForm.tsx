@@ -25,6 +25,7 @@ interface Props {
 const logoOptions = [
   'aethersx2.png',
   'aps3e.png',
+  'armsx2.png',
   'azahar.png',
   'cemu.png',
   'citra.png',
@@ -43,6 +44,7 @@ const logoOptions = [
   'kenjinx.png',
   'lemuroid.png',
   'lime3ds.png',
+  'mame.png',
   'melonds.png',
   'melonx.png',
   'micewine.png',

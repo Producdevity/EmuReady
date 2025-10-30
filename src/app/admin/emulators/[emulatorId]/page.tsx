@@ -24,13 +24,15 @@ function EditEmulatorPage() {
   )
 
   const user = currentUser.data
-  const isLoading =
-    currentUser.isPending || emulatorsQuery.isLoading || verifiedDeveloperQuery.isLoading
-
   const hasManagePermission = hasPermission(user?.permissions, PERMISSIONS.MANAGE_CUSTOM_FIELDS)
   const isDeveloper = user?.role === Role.DEVELOPER
   const isVerifiedDeveloper = Boolean(verifiedDeveloperQuery.data)
   const hasAccess = Boolean(user && hasManagePermission && (!isDeveloper || isVerifiedDeveloper))
+
+  const systemsQuery = api.systems.get.useQuery({}, { enabled: !!user && hasAccess })
+
+  const isLoading =
+    currentUser.isPending || emulatorsQuery.isLoading || verifiedDeveloperQuery.isLoading
 
   if (isLoading) return <PageSkeletonLoading />
 
@@ -47,8 +49,6 @@ function EditEmulatorPage() {
       </div>
     )
   }
-
-  const systemsQuery = api.systems.get.useQuery({})
 
   if (systemsQuery.isPending) return <PageSkeletonLoading />
 

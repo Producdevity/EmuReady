@@ -18,6 +18,11 @@ const emulators: EmulatorData[] = [
     logo: 'aps3e.png',
   },
   {
+    name: 'ARMSX2',
+    supportedSystemNames: ['Sony PlayStation 2'],
+    logo: 'armsx2.png',
+  },
+  {
     name: 'Azahar',
     supportedSystemNames: ['Nintendo 3DS'],
     logo: 'azahar.png',
