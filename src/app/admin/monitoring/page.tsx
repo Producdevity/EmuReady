@@ -1,6 +1,8 @@
 import { type Metadata } from 'next'
+import { AdminPageLayout } from '@/components/admin'
 import { CacheMetrics } from '@/components/admin/CacheMetrics'
 import { BundleSizeMonitor } from './components/BundleSizeMonitor'
+import { DatabaseConnectionMonitor } from './components/DatabaseConnectionMonitor'
 import { MonitoringOverview } from './components/MonitoringOverview'
 import { PerformanceMetrics } from './components/PerformanceMetrics'
 import { SEOMetricsDashboard } from './components/SEOMetricsDashboard'
@@ -12,27 +14,23 @@ export const metadata: Metadata = {
 
 export default function MonitoringDashboard() {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">System Monitoring</h1>
-        <p className="text-muted-foreground mt-2">
-          Monitor system performance, cache metrics, and bundle sizes
-        </p>
+    <AdminPageLayout
+      title="System Monitoring"
+      description="Monitor system performance, cache metrics, and bundle sizes"
+    >
+      <MonitoringOverview />
+
+      <DatabaseConnectionMonitor />
+
+      {/* Main Dashboard Sections */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SEOMetricsDashboard />
+        <CacheMetrics />
       </div>
 
-      <div className="space-y-6">
-        <MonitoringOverview />
+      <PerformanceMetrics />
 
-        {/* Main Dashboard Sections */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <SEOMetricsDashboard />
-          <CacheMetrics />
-        </div>
-
-        <PerformanceMetrics />
-
-        <BundleSizeMonitor />
-      </div>
-    </div>
+      <BundleSizeMonitor />
+    </AdminPageLayout>
   )
 }

@@ -331,30 +331,23 @@ interface QueryComplexityResult {
  * Connection pool optimization settings
  */
 export function getOptimizedPoolSettings() {
-  const isProduction = process.env.NODE_ENV === 'production'
-
   return {
-    // Connection pool size based on environment
-    connection_limit: isProduction ? 10 : 5,
+    // Connection limit for serverless (1 connection per instance)
+    connection_limit: 1,
 
-    // Timeout settings
-    pool_timeout: 10,
-    timeout: 20000,
-
-    // Idle timeout to free up connections
-    idle_in_transaction_session_timeout: 10000,
-
-    // Statement timeout for long queries
-    statement_timeout: 60000,
+    // Connection timeout in seconds (how long to wait for initial connection)
+    connect_timeout: 10,
   }
 }
 
 /**
  * Generate optimized DATABASE_URL with connection pool parameters
  *
- * NOTE: Returns the URL as-is without modifications for now.
- * Custom parameters can cause issues with pgBouncer and interactive transactions.
- * Use DATABASE_URL and DATABASE_DIRECT_URL from environment variables.
+ * Automatically adds connection_limit=1 for remote databases to prevent
+ * connection exhaustion in serverless environments.
+ *
+ * IMPORTANT: Does NOT add pgbouncer=true - that must be in the environment variable
+ * to avoid breaking interactive transactions.
  */
 export function getOptimizedDatabaseUrl(baseUrl?: string): string {
   const url = baseUrl || process.env.DATABASE_URL
@@ -362,6 +355,37 @@ export function getOptimizedDatabaseUrl(baseUrl?: string): string {
     throw new Error('DATABASE_URL is required')
   }
 
-  // Return URL as-is - let environment variables handle pgBouncer configuration
-  return url
+  try {
+    const urlObj = new URL(url)
+    const hostname = urlObj.hostname.toLowerCase()
+
+    // Skip optimization for local databases
+    const isLocal =
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '0.0.0.0' ||
+      hostname === '::1'
+
+    if (isLocal) return url
+
+    // Get optimized settings
+    const settings = getOptimizedPoolSettings()
+
+    // Add connection_limit if not already set
+    if (!urlObj.searchParams.has('connection_limit')) {
+      urlObj.searchParams.set('connection_limit', settings.connection_limit.toString())
+      logger.info('Added connection_limit=1 to DATABASE_URL for optimal serverless performance')
+    }
+
+    // Add connect_timeout if not already set
+    if (!urlObj.searchParams.has('connect_timeout')) {
+      urlObj.searchParams.set('connect_timeout', settings.connect_timeout.toString())
+    }
+
+    return urlObj.toString()
+  } catch (error) {
+    // If URL parsing fails, return as-is
+    logger.error('Failed to parse DATABASE_URL', { error })
+    return url
+  }
 }
