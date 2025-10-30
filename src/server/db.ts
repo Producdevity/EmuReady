@@ -1,36 +1,33 @@
 import { PrismaClient } from '@orm'
 
 /**
- * Global instance of PrismaClient to prevent multiple instances in development
+ * Global instance of PrismaClient to prevent multiple instances
  *
- * NOTE: We do NOT override datasources here to allow Prisma to use both:
- * - DATABASE_URL (for regular queries via pgBouncer)
- * - DATABASE_DIRECT_URL (for transactions and migrations via direct connection)
+ * NOTE: Prisma automatically uses DATABASE_DIRECT_URL (from schema.prisma) for:
+ * - Interactive transactions
+ * - Migrations
  *
- * Add connection_limit=1 directly to DATABASE_URL in production env vars.
+ * Add connection_limit=1 to your DATABASE_URL in production env vars. I didn't do this and it's not fun.
  */
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-let prisma: PrismaClient
-
-if (process.env.NODE_ENV === 'production') {
-  // In production, create a new client
-  prisma = new PrismaClient({
-    log: ['error'],
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    log:
+      process.env.NODE_ENV === 'production'
+        ? ['error']
+        : process.env.PRISMA_DEBUG === 'true'
+          ? ['query', 'error', 'warn']
+          : ['error'],
     transactionOptions: {
-      timeout: 10000, // 10 seconds instead of 5
+      timeout: 10000, // 10 seconds instead of default 5 seconds
     },
   })
-} else {
-  // In development, reuse the client across hot reloads with minimal logging
-  globalForPrisma.prisma ??= new PrismaClient({
-    // Only log errors in development to improve performance
-    // Set PRISMA_DEBUG=true to enable query logging for debugging
-    log: process.env.PRISMA_DEBUG === 'true' ? ['query', 'error', 'warn'] : ['error'],
-  })
-  prisma = globalForPrisma.prisma
-}
 
-export { prisma }
+// Store in global only in development for hot-reload support
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma
+}
