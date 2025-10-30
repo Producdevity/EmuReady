@@ -441,12 +441,11 @@ export const mobileListingsRouter = createMobileTRPCRouter({
             }
           })()
 
-      if (!resolvedType) {
-        return AppError.badRequest('Unsupported emulator type')
-      }
+      if (!resolvedType) return AppError.badRequest('Unsupported emulator type')
 
       const configResult = generateEmulatorConfig({
         listingId: listing.id,
+        packageName: input.packageName || null,
         gameId: listing.game.id,
         emulatorName: listing.emulator.name,
         customFieldValues: listing.customFieldValues.map((cfv) => ({

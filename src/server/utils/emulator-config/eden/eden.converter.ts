@@ -14,14 +14,19 @@ import type {
 } from './eden.types'
 import type { Prisma } from '@orm'
 
-// Constants
-// TODO: IMPORTANT fix this for different eden versions
-const EDEN_ANDROID_BASE_PATH =
-  '/storage/emulated/0/Android/data/dev.eden.eden_emulator/files/gpu_drivers'
+const DEFAULT_PACKAGE_NAME = 'dev.eden.eden_emulator'
 
-function transformDriverValue(value: unknown): string | undefined {
+function getEdenAndroidBasePath(packageName: string | null = DEFAULT_PACKAGE_NAME) {
+  return `/storage/emulated/0/Android/data/${packageName}/files/gpu_drivers`
+}
+
+function transformDriverValue(
+  value: unknown,
+  opts: { packageName?: string | null },
+): string | undefined {
   const driverString = String(value).trim()
 
+  const EDEN_ANDROID_BASE_PATH = getEdenAndroidBasePath(opts?.packageName)
   if (EdenDefaults.isNoDriverValue(driverString)) return undefined
 
   if (driverString.includes('|||')) {
@@ -103,6 +108,7 @@ export interface CustomFieldValue {
 
 export interface EdenConfigInput {
   listingId: string
+  packageName?: string | null
   gameId: string
   customFieldValues: CustomFieldValue[]
 }
@@ -175,7 +181,9 @@ export function convertToEdenConfig(input: EdenConfigInput): EdenConfig {
 
     if (mapping) {
       if (mapping.key === 'driver_path') {
-        const driverPath = transformDriverValue(fieldValue.value)
+        const driverPath = transformDriverValue(fieldValue.value, {
+          packageName: input.packageName,
+        })
         if (driverPath !== undefined) {
           applyEdenMapping(config, mapping, driverPath)
         }

@@ -52,6 +52,14 @@ export const GetListingByIdSchema = z.object({
 export const GetListingEmulatorConfigSchema = z.object({
   listingId: z.string().uuid(),
   emulatorType: z.enum(['azahar', 'eden', 'gamenative']).optional(),
+  packageName: z
+    .enum([
+      'dev.eden.eden_emulator',
+      'dev.legacy.eden_emulator',
+      'com.miHoYo.Yuanshen',
+      'app.gamenative',
+    ])
+    .optional(),
 })
 
 export const GetListingsByGameSchema = z.object({

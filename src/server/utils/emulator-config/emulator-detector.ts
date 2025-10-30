@@ -93,13 +93,11 @@ export function detectEmulatorConfigType(emulatorName: string): EmulatorConfigTy
   )
 }
 
-/**
- * Generate configuration for a listing based on its emulator
- */
-export function generateEmulatorConfig(input: {
+interface EmulatorConfigInput {
   listingId: string
   gameId: string
   emulatorName: string
+  packageName?: string | null
   customFieldValues: {
     customFieldDefinition: {
       name: string
@@ -110,7 +108,11 @@ export function generateEmulatorConfig(input: {
     value: Prisma.JsonValue
   }[]
   configTypeOverride?: EmulatorConfigType
-}): EmulatorConfigResult {
+}
+/**
+ * Generate configuration for a listing based on its emulator
+ */
+export function generateEmulatorConfig(input: EmulatorConfigInput): EmulatorConfigResult {
   const configType = input.configTypeOverride ?? detectEmulatorConfigType(input.emulatorName)
 
   switch (configType) {
@@ -118,6 +120,7 @@ export function generateEmulatorConfig(input: {
       const config = convertToEdenConfig({
         listingId: input.listingId,
         gameId: input.gameId,
+        packageName: input.packageName,
         customFieldValues: input.customFieldValues,
       })
 
