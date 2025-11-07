@@ -32,6 +32,7 @@ const logoOptions = [
   'citron.png',
   'cxbx.png',
   'dolphin.png',
+  'dolphin_mmjr.png',
   'drastic.png',
   'duckstation.png',
   'eden.png',
