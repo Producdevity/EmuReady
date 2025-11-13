@@ -529,3 +529,86 @@ export const MobileAdminUpdateUserBanSchema = z.object({
   isActive: z.boolean().optional(),
   expiresAt: z.string().datetime().optional(),
 })
+
+// ===== Catalog Integration Schemas (RetroCatalog) =====
+
+export const GetDeviceCompatibilitySchema = z
+  .object({
+    deviceId: z.string().uuid().optional().describe('Device UUID to fetch compatibility data for'),
+    deviceModelName: z.string().optional().describe('Device model name (e.g., "Pocket 5")'),
+    deviceBrandName: z.string().optional().describe('Device brand name (e.g., "Retroid")'),
+    systemIds: z
+      .array(z.string().uuid())
+      .optional()
+      .describe('Filter results to specific system IDs'),
+    includeEmulatorBreakdown: z
+      .boolean()
+      .default(true)
+      .describe('Include per-emulator compatibility scores'),
+    minListingCount: z
+      .number()
+      .min(0)
+      .default(1)
+      .describe('Minimum number of listings required to include a system'),
+  })
+  .refine((data) => data.deviceId || (data.deviceModelName && data.deviceBrandName), {
+    message: 'Either deviceId or both deviceModelName and deviceBrandName must be provided',
+  })
+  .describe('Fetch device compatibility scores aggregated by system')
+
+export type GetDeviceCompatibilityInput = z.infer<typeof GetDeviceCompatibilitySchema>
+
+export const EmulatorCompatibilitySchema = z.object({
+  id: z.string().uuid().describe('Emulator UUID'),
+  name: z.string().describe('Emulator name'),
+  key: z.string().describe('Emulator key identifier'),
+  logoOption: z.string().nullable().describe('Emulator logo option'),
+  listingCount: z.number().describe('Number of listings for this emulator'),
+  avgCompatibilityScore: z.number().min(0).max(100).describe('Average compatibility score (0-100)'),
+  avgPerformanceRank: z.number().describe('Average performance rank (1=best, 8=worst)'),
+  avgSuccessRate: z.number().describe('Average success rate from community votes (0-1)'),
+  developerVerifiedCount: z.number().describe('Count of developer-verified listings'),
+})
+
+export const SystemCompatibilitySchema = z.object({
+  id: z.string().uuid().describe('System UUID'),
+  name: z.string().describe('System name (e.g., "Nintendo Switch")'),
+  key: z.string().describe('System key identifier (e.g., "nintendo_switch")'),
+  compatibilityScore: z
+    .number()
+    .min(0)
+    .max(100)
+    .describe('Overall compatibility score for this system (0-100)'),
+  confidence: z
+    .enum(['low', 'medium', 'high'])
+    .describe('Confidence level based on data quantity and quality'),
+  metrics: z.object({
+    totalListings: z.number().describe('Total number of approved listings'),
+    uniqueGames: z.number().describe('Number of unique games tested'),
+    avgPerformanceRank: z.number().describe('Average performance rank across all listings'),
+    avgSuccessRate: z.number().describe('Average success rate from votes'),
+    developerVerifiedCount: z.number().describe('Number of developer-verified listings'),
+    totalVotes: z.number().describe('Total community votes'),
+    authoredByDeveloperCount: z
+      .number()
+      .describe('Listings created by verified developers for this emulator'),
+  }),
+  emulators: z.array(EmulatorCompatibilitySchema).describe('Per-emulator compatibility breakdown'),
+  lastUpdated: z.date().describe('Most recent listing timestamp'),
+})
+
+export const DeviceCompatibilityResponseSchema = z.object({
+  device: z.object({
+    id: z.string().uuid().describe('Device UUID'),
+    modelName: z.string().describe('Device model name'),
+    brandName: z.string().describe('Device brand name'),
+    socName: z.string().nullable().describe('System-on-Chip name'),
+  }),
+  systems: z.array(SystemCompatibilitySchema).describe('System compatibility data'),
+  generatedAt: z.date().describe('Timestamp when this data was generated'),
+  cacheExpiresIn: z.number().describe('Seconds until cache expires'),
+})
+
+export type DeviceCompatibilityResponse = z.infer<typeof DeviceCompatibilityResponseSchema>
+export type SystemCompatibility = z.infer<typeof SystemCompatibilitySchema>
+export type EmulatorCompatibility = z.infer<typeof EmulatorCompatibilitySchema>

@@ -1,6 +1,7 @@
 import { createMobileTRPCRouter } from '@/server/api/mobileContext'
 import { mobileAdminRouter } from './mobile/admin'
 import { mobileAuthRouter } from './mobile/auth'
+import { mobileCatalogRouter } from './mobile/catalog'
 import { mobileCpusRouter } from './mobile/cpus'
 import { mobileCustomFieldDefinitionsRouter } from './mobile/customFieldDefinitions'
 import { mobileDevelopersRouter } from './mobile/developers'
@@ -25,6 +26,7 @@ import { mobileUsersRouter } from './mobile/users'
 export const mobileRouter = createMobileTRPCRouter({
   admin: mobileAdminRouter,
   auth: mobileAuthRouter,
+  catalog: mobileCatalogRouter,
   listings: mobileListingsRouter,
   pcListings: mobilePcListingsRouter,
   pcPresets: mobilePcPresetsRouter,

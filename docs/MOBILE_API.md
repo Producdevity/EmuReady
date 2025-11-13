@@ -1,10 +1,10 @@
 # EmuReady Mobile API (tRPC)
 
-*Auto-generated on: 2025-10-28T18:43:23.124Z*
+*Auto-generated on: 2025-11-13T15:34:31.912Z*
 
 ## Summary
-- **Total Endpoints**: 94
-- **Public Endpoints**: 58
+- **Total Endpoints**: 95
+- **Public Endpoints**: 59
 - **Protected Endpoints**: 36
 - **OpenAPI Version**: 3.0.0
 
@@ -30,399 +30,406 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Tags**: auth
 
 
-#### 2. **get**
+#### 2. **getDeviceCompatibility**
+- **Method**: GET
+- **Path**: `/catalog.getDeviceCompatibility`
+- **Description**: getDeviceCompatibility - catalog
+- **Tags**: catalog
+
+
+#### 3. **get**
 - **Method**: GET
 - **Path**: `/cpus.get`
 - **Description**: Get CPUs with search, filtering, and pagination
 - **Tags**: cpus
 
 
-#### 3. **getById**
+#### 4. **getById**
 - **Method**: GET
 - **Path**: `/cpus.getById`
 - **Description**: Get CPU by ID
 - **Tags**: cpus
 
 
-#### 4. **getByEmulator**
+#### 5. **getByEmulator**
 - **Method**: GET
 - **Path**: `/customFieldDefinitions.getByEmulator`
 - **Description**: Get custom field definitions by emulator (for mobile listing creation)
 - **Tags**: customFieldDefinitions
 
 
-#### 5. **get**
+#### 6. **get**
 - **Method**: GET
 - **Path**: `/deviceBrands.get`
 - **Description**: Get device brands with search and sorting
 - **Tags**: deviceBrands
 
 
-#### 6. **getById**
+#### 7. **getById**
 - **Method**: GET
 - **Path**: `/deviceBrands.getById`
 - **Description**: Get device brand by ID
 - **Tags**: deviceBrands
 
 
-#### 7. **get**
+#### 8. **get**
 - **Method**: GET
 - **Path**: `/devices.get`
 - **Description**: Get devices with optional search, brand filtering, and pagination
 - **Tags**: devices
 
 
-#### 8. **brands**
+#### 9. **brands**
 - **Method**: GET
 - **Path**: `/devices.brands`
 - **Description**: Get all device brands sorted alphabetically
 - **Tags**: devices
 
 
-#### 9. **socs**
+#### 10. **socs**
 - **Method**: GET
 - **Path**: `/devices.socs`
 - **Description**: Get SOCs (System on Chips)
 - **Tags**: devices
 
 
-#### 10. **byId**
+#### 11. **byId**
 - **Method**: GET
 - **Path**: `/devices.byId`
 - **Description**: Get device by ID
 - **Tags**: devices
 
 
-#### 11. **get**
+#### 12. **get**
 - **Method**: GET
 - **Path**: `/emulators.get`
 - **Description**: Get emulators with search and filtering
 - **Tags**: emulators
 
 
-#### 12. **byId**
+#### 13. **byId**
 - **Method**: GET
 - **Path**: `/emulators.byId`
 - **Description**: Get emulator by ID
 - **Tags**: emulators
 
 
-#### 13. **get**
+#### 14. **get**
 - **Method**: GET
 - **Path**: `/games.get`
 - **Description**: Get games with search and filtering
 - **Tags**: games
 
 
-#### 14. **getPopularGames**
+#### 15. **getPopularGames**
 - **Method**: GET
 - **Path**: `/games.getPopularGames`
 - **Description**: Get popular games
 - **Tags**: games
 
 
-#### 15. **searchGames**
+#### 16. **searchGames**
 - **Method**: GET
 - **Path**: `/games.searchGames`
 - **Description**: Search games
 - **Tags**: games
 
 
-#### 16. **byId**
+#### 17. **byId**
 - **Method**: GET
 - **Path**: `/games.byId`
 - **Description**: Get game by ID
 - **Tags**: games
 
 
-#### 17. **findSwitchTitleId**
+#### 18. **findSwitchTitleId**
 - **Method**: GET
 - **Path**: `/games.findSwitchTitleId`
 - **Description**: Find Nintendo Switch title IDs by game name (fuzzy search)
 - **Tags**: games
 
 
-#### 18. **getBestSwitchTitleId**
+#### 19. **getBestSwitchTitleId**
 - **Method**: GET
 - **Path**: `/games.getBestSwitchTitleId`
 - **Description**: Get the best matching Nintendo Switch title ID for a game name
 - **Tags**: games
 
 
-#### 19. **getSwitchGamesStats**
+#### 20. **getSwitchGamesStats**
 - **Method**: GET
 - **Path**: `/games.getSwitchGamesStats`
 - **Description**: Get Nintendo Switch games cache statistics
 - **Tags**: games
 
 
-#### 20. **findThreeDsTitleId**
+#### 21. **findThreeDsTitleId**
 - **Method**: GET
 - **Path**: `/games.findThreeDsTitleId`
 - **Description**: Find Nintendo 3DS title IDs by game name (fuzzy search)
 - **Tags**: games
 
 
-#### 21. **getBestThreeDsTitleId**
+#### 22. **getBestThreeDsTitleId**
 - **Method**: GET
 - **Path**: `/games.getBestThreeDsTitleId`
 - **Description**: Get the best matching Nintendo 3DS title ID for a game name
 - **Tags**: games
 
 
-#### 22. **getThreeDsGamesStats**
+#### 23. **getThreeDsGamesStats**
 - **Method**: GET
 - **Path**: `/games.getThreeDsGamesStats`
 - **Description**: Get Nintendo 3DS games cache statistics
 - **Tags**: games
 
 
-#### 23. **findSteamAppId**
+#### 24. **findSteamAppId**
 - **Method**: GET
 - **Path**: `/games.findSteamAppId`
 - **Description**: Find Steam App IDs by game name (fuzzy search)
 - **Tags**: games
 
 
-#### 24. **getBestSteamAppId**
+#### 25. **getBestSteamAppId**
 - **Method**: GET
 - **Path**: `/games.getBestSteamAppId`
 - **Description**: Get the best matching Steam App ID for a game name
 - **Tags**: games
 
 
-#### 25. **getSteamGamesStats**
+#### 26. **getSteamGamesStats**
 - **Method**: GET
 - **Path**: `/games.getSteamGamesStats`
 - **Description**: Get Steam games cache statistics
 - **Tags**: games
 
 
-#### 26. **batchBySteamAppIds**
+#### 27. **batchBySteamAppIds**
 - **Method**: GET
 - **Path**: `/games.batchBySteamAppIds`
 - **Description**: Get Steam games cache statistics
 - **Tags**: games
 
 
-#### 27. **stats**
+#### 28. **stats**
 - **Method**: GET
 - **Path**: `/general.stats`
 - **Description**: Get app statistics
 - **Tags**: general
 
 
-#### 28. **systems**
+#### 29. **systems**
 - **Method**: GET
 - **Path**: `/general.systems`
 - **Description**: Get all systems
 - **Tags**: general
 
 
-#### 29. **performanceScales**
+#### 30. **performanceScales**
 - **Method**: GET
 - **Path**: `/general.performanceScales`
 - **Description**: Get performance scales
 - **Tags**: general
 
 
-#### 30. **searchSuggestions**
+#### 31. **searchSuggestions**
 - **Method**: GET
 - **Path**: `/general.searchSuggestions`
 - **Description**: Get search suggestions
 - **Tags**: general
 
 
-#### 31. **trustLevels**
+#### 32. **trustLevels**
 - **Method**: GET
 - **Path**: `/general.trustLevels`
 - **Description**: Get trust levels (for mobile trust system integration)
 - **Tags**: general
 
 
-#### 32. **get**
+#### 33. **get**
 - **Method**: GET
 - **Path**: `/gpus.get`
 - **Description**: Get GPUs with search, filtering, and pagination
 - **Tags**: gpus
 
 
-#### 33. **getById**
+#### 34. **getById**
 - **Method**: GET
 - **Path**: `/gpus.getById`
 - **Description**: Get GPU by ID
 - **Tags**: gpus
 
 
-#### 34. **checkUserHasReports**
+#### 35. **checkUserHasReports**
 - **Method**: GET
 - **Path**: `/listingReports.checkUserHasReports`
 - **Description**: Check if a user has reports (for showing warnings)
 - **Tags**: listingReports
 
 
-#### 35. **driverVersions**
+#### 36. **driverVersions**
 - **Method**: GET
 - **Path**: `/listings.driverVersions`
 - **Description**: Get available driver versions (mirrors web listings.driverVersions)
 - **Tags**: listings
 
 
-#### 36. **get**
+#### 37. **get**
 - **Method**: GET
 - **Path**: `/listings.get`
 - **Description**: Get listings with pagination and filtering
 - **Tags**: listings
 
 
-#### 37. **getListings**
+#### 38. **getListings**
 - **Method**: GET
 - **Path**: `/listings.getListings`
 - **Description**: @deprecated Use 'get' instead - kept for backwards compatibility with Eden
 - **Tags**: listings
 
 
-#### 38. **featured**
+#### 39. **featured**
 - **Method**: GET
 - **Path**: `/listings.featured`
 - **Description**: Get featured listings
 - **Tags**: listings
 
 
-#### 39. **byGame**
+#### 40. **byGame**
 - **Method**: GET
 - **Path**: `/listings.byGame`
 - **Description**: Get listings by game
 - **Tags**: listings
 
 
-#### 40. **byId**
+#### 41. **byId**
 - **Method**: GET
 - **Path**: `/listings.byId`
 - **Description**: Get listing by ID
 - **Tags**: listings
 
 
-#### 41. **comments**
+#### 42. **comments**
 - **Method**: GET
 - **Path**: `/listings.comments`
 - **Description**: Get listing comments
 - **Tags**: listings
 
 
-#### 42. **getEmulatorConfig**
+#### 43. **getEmulatorConfig**
 - **Method**: GET
 - **Path**: `/listings.getEmulatorConfig`
 - **Description**: Delete a comment
 - **Tags**: listings
 
 
-#### 43. **byId**
+#### 44. **byId**
 - **Method**: GET
 - **Path**: `/pcListings.byId`
 - **Description**: byId - pcListings
 - **Tags**: pcListings
 
 
-#### 44. **get**
+#### 45. **get**
 - **Method**: GET
 - **Path**: `/pcListings.get`
 - **Description**: Get PC listings with pagination and filtering
 - **Tags**: pcListings
 
 
-#### 45. **cpus**
+#### 46. **cpus**
 - **Method**: GET
 - **Path**: `/pcListings.cpus`
 - **Description**: Get CPUs for mobile
 - **Tags**: pcListings
 
 
-#### 46. **gpus**
+#### 47. **gpus**
 - **Method**: GET
 - **Path**: `/pcListings.gpus`
 - **Description**: Get GPUs for mobile
 - **Tags**: pcListings
 
 
-#### 47. **searchGameImages**
+#### 48. **searchGameImages**
 - **Method**: GET
 - **Path**: `/rawg.searchGameImages`
 - **Description**: Search for game images in RAWG database
 - **Tags**: rawg
 
 
-#### 48. **searchGames**
+#### 49. **searchGames**
 - **Method**: GET
 - **Path**: `/rawg.searchGames`
 - **Description**: Search for games in RAWG database
 - **Tags**: rawg
 
 
-#### 49. **getGameImages**
+#### 50. **getGameImages**
 - **Method**: GET
 - **Path**: `/rawg.getGameImages`
 - **Description**: Get game images by ID
 - **Tags**: rawg
 
 
-#### 50. **get**
+#### 51. **get**
 - **Method**: GET
 - **Path**: `/socs.get`
 - **Description**: Get SoCs with search, filtering, and pagination
 - **Tags**: socs
 
 
-#### 51. **getById**
+#### 52. **getById**
 - **Method**: GET
 - **Path**: `/socs.getById`
 - **Description**: Get SoC by ID
 - **Tags**: socs
 
 
-#### 52. **searchGameImages**
+#### 53. **searchGameImages**
 - **Method**: GET
 - **Path**: `/tgdb.searchGameImages`
 - **Description**: Search for game images in TGDB database
 - **Tags**: tgdb
 
 
-#### 53. **searchGames**
+#### 54. **searchGames**
 - **Method**: GET
 - **Path**: `/tgdb.searchGames`
 - **Description**: Search for games in TGDB database
 - **Tags**: tgdb
 
 
-#### 54. **getGameImageUrls**
+#### 55. **getGameImageUrls**
 - **Method**: GET
 - **Path**: `/tgdb.getGameImageUrls`
 - **Description**: Get game image URLs for a specific game
 - **Tags**: tgdb
 
 
-#### 55. **getGameImages**
+#### 56. **getGameImages**
 - **Method**: GET
 - **Path**: `/tgdb.getGameImages`
 - **Description**: Get game images by game IDs
 - **Tags**: tgdb
 
 
-#### 56. **getPlatforms**
+#### 57. **getPlatforms**
 - **Method**: GET
 - **Path**: `/tgdb.getPlatforms`
 - **Description**: Get available platforms from TGDB
 - **Tags**: tgdb
 
 
-#### 57. **userInfo**
+#### 58. **userInfo**
 - **Method**: GET
 - **Path**: `/trust.userInfo`
 - **Description**: Get trust info for a specific user (public)
 - **Tags**: trust
 
 
-#### 58. **byId**
+#### 59. **byId**
 - **Method**: GET
 - **Path**: `/users.byId`
 - **Description**: Get user profile by ID (public user profiles)

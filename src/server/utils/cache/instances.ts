@@ -5,6 +5,7 @@
 
 import { TIME_CONSTANTS } from '@/utils/time'
 import MemoryCache from './MemoryCache'
+import type { DeviceCompatibilityResponse } from '@/schemas/mobile'
 import type { BatchBySteamAppIdsResponse } from '@/server/api/routers/mobile/games'
 import type {
   NotificationMetrics,
@@ -101,4 +102,10 @@ export const driverVersionsCache = new MemoryCache<DriverVersionsResponse>({
 export const steamBatchQueryCache = new MemoryCache<BatchBySteamAppIdsResponse>({
   ttl: TIME_CONSTANTS.TEN_MINUTES, // listings data changes frequently
   maxSize: 100, // Cache up to 100 different batch queries
+})
+
+// Catalog compatibility cache - for RetroCatalog integration
+export const catalogCompatibilityCache = new MemoryCache<DeviceCompatibilityResponse>({
+  ttl: TIME_CONSTANTS.TEN_MINUTES, // balance freshness with server load
+  maxSize: 500, // cache popular device queries
 })

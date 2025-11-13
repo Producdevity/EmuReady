@@ -221,6 +221,7 @@ export class ResourceError {
 
   static apiKey = {
     notFound: (): never => AppError.notFound('API key'),
+    invalid: (): never => AppError.unauthorized('Invalid or expired API key'),
   }
 
   static permission = {

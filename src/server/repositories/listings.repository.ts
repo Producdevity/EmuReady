@@ -155,6 +155,16 @@ export class ListingsRepository extends BaseRepository {
       author: { select: { id: true, name: true, profileImage: true } },
       _count: { select: { votes: true, comments: true } },
     } satisfies Prisma.ListingInclude,
+
+    forCompatibilityScoring: {
+      game: {
+        include: { system: { select: { id: true, name: true, key: true, tgdbPlatformId: true } } },
+      },
+      emulator: { select: { id: true, name: true, logo: true } },
+      performance: { select: { id: true, label: true, rank: true, description: true } },
+      author: { select: { id: true, verifiedDeveloperBy: true } },
+      developerVerifications: { include: { developer: { select: { id: true, name: true } } } },
+    } satisfies Prisma.ListingInclude,
   } as const
 
   /**
@@ -643,6 +653,44 @@ export class ListingsRepository extends BaseRepository {
       }
 
       return newListing
+    })
+  }
+
+  /**
+   * Fetches device compatibility data for catalog integration (RetroCatalog)
+   * Returns all approved listings for a device with complete scoring metadata
+   *
+   * @param deviceId - Device UUID to fetch compatibility data for
+   * @param options - Additional query options
+   * @param options.systemIds - Filter results to specific system IDs
+   * @param options.userRole - User role for shadow ban filtering
+   * @returns Listings with all data needed for compatibility scoring
+   */
+  async getDeviceCompatibilityData(
+    deviceId: string,
+    options?: {
+      systemIds?: string[]
+      userRole?: Role
+    },
+  ) {
+    const where: Prisma.ListingWhereInput = {
+      deviceId,
+      status: ApprovalStatus.APPROVED,
+    }
+
+    // Apply system filter if provided
+    if (options?.systemIds && options.systemIds.length > 0) {
+      where.game = { systemId: { in: options.systemIds } }
+    }
+
+    // Apply shadow ban filtering
+    const shadowBanFilter = buildShadowBanFilter(options?.userRole)
+    if (shadowBanFilter) where.author = shadowBanFilter
+
+    return this.prisma.listing.findMany({
+      where,
+      include: ListingsRepository.includes.forCompatibilityScoring,
+      orderBy: { createdAt: 'desc' },
     })
   }
 }

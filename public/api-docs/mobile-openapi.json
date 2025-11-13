@@ -153,6 +153,45 @@
         ],
         "additionalProperties": false
       },
+      "GetDeviceCompatibilitySchema": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Device UUID to fetch compatibility data for"
+          },
+          "deviceModelName": {
+            "type": "string",
+            "description": "Device model name (e.g., \"Pocket 5\")"
+          },
+          "deviceBrandName": {
+            "type": "string",
+            "description": "Device brand name (e.g., \"Retroid\")"
+          },
+          "systemIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Filter results to specific system IDs"
+          },
+          "includeEmulatorBreakdown": {
+            "type": "boolean",
+            "default": true,
+            "description": "Include per-emulator compatibility scores"
+          },
+          "minListingCount": {
+            "type": "number",
+            "minimum": 0,
+            "default": 1,
+            "description": "Minimum number of listings required to include a system"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Fetch device compatibility scores aggregated by system"
+      },
       "GetCpusSchema": {
         "type": "object",
         "properties": {
@@ -1179,6 +1218,15 @@
               "eden",
               "gamenative"
             ]
+          },
+          "packageName": {
+            "type": "string",
+            "enum": [
+              "dev.eden.eden_emulator",
+              "dev.legacy.eden_emulator",
+              "com.miHoYo.Yuanshen",
+              "app.gamenative"
+            ]
           }
         },
         "required": [
@@ -2041,6 +2089,10 @@
       "description": "Auth related endpoints"
     },
     {
+      "name": "catalog",
+      "description": "Catalog related endpoints"
+    },
+    {
       "name": "cpus",
       "description": "Cpus related endpoints"
     },
@@ -2552,6 +2604,144 @@
             "ClerkAuth": []
           }
         ]
+      }
+    },
+    "/catalog.getDeviceCompatibility": {
+      "get": {
+        "summary": "getDeviceCompatibility - catalog",
+        "tags": [
+          "catalog"
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "SuperJSON wrapped input object"
+            },
+            "description": "SuperJSON wrapped input matching GetDeviceCompatibilitySchema schema. See components/schemas/GetDeviceCompatibilitySchema for structure.",
+            "example": "{\"json\":{}}"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from catalog.getDeviceCompatibility"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from catalog.getDeviceCompatibility",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "catalog.getDeviceCompatibility",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
       }
     },
     "/cpus.get": {

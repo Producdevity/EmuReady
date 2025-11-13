@@ -217,6 +217,25 @@ export class DevicesRepository extends BaseRepository {
     })
   }
 
+  /**
+   * Find device by model name and brand name (for catalog integration)
+   * Case-insensitive search
+   */
+  async findByModelAndBrandName(
+    modelName: string,
+    brandName: string,
+  ): Promise<Prisma.DeviceGetPayload<{
+    include: typeof DevicesRepository.includes.default
+  }> | null> {
+    return this.prisma.device.findFirst({
+      where: {
+        modelName: { equals: modelName, mode: this.mode },
+        brand: { name: { equals: brandName, mode: this.mode } },
+      },
+      include: DevicesRepository.includes.default,
+    })
+  }
+
   async listMobile(filters: GetDevicesInput = {}): Promise<{
     devices: {
       id: string
