@@ -71,6 +71,7 @@ export default function ListingsFiltersContent(props: Props) {
         value={props.systemIds}
         onChange={props.onSystemChange}
         options={systemOptions(props.systems)}
+        color="blue"
         placeholder="All systems"
         maxDisplayed={1}
       />
@@ -91,6 +92,7 @@ export default function ListingsFiltersContent(props: Props) {
           value={props.deviceIds}
           onChange={props.onDeviceChange}
           options={deviceOptions(props.devices)}
+          color="green"
           placeholder="All devices"
           maxDisplayed={1}
         />
@@ -112,6 +114,7 @@ export default function ListingsFiltersContent(props: Props) {
           value={props.socIds}
           onChange={props.onSocChange}
           options={socOptions(props.socs)}
+          color="purple"
           placeholder="All SoCs"
           maxDisplayed={1}
         />
@@ -123,6 +126,7 @@ export default function ListingsFiltersContent(props: Props) {
         value={props.emulatorIds}
         onChange={props.onEmulatorChange}
         options={emulatorOptions(props.emulators)}
+        color="orange"
         placeholder="All emulators"
         maxDisplayed={1}
       />
@@ -133,6 +137,7 @@ export default function ListingsFiltersContent(props: Props) {
         value={props.performanceIds.map(String)}
         onChange={props.onPerformanceChange}
         options={performanceOptions(props.performanceScales)}
+        color="red"
         placeholder="All performance levels"
         maxDisplayed={1}
       />

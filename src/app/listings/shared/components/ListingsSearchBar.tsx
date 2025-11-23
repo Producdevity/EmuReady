@@ -16,7 +16,7 @@ export function ListingsSearchBar(props: Props) {
     <Input
       leftIcon={<Search className="w-5 h-5" />}
       type="text"
-      placeholder={props.placeholder ?? 'Search games, notes, emulators...'}
+      placeholder={props.placeholder ?? 'Search games, devices, emulators...'}
       value={props.value}
       onChange={(ev: ChangeEvent<HTMLInputElement>) => props.onChange(ev.target.value)}
       className={props.className ?? 'transition-all duration-200 focus:scale-[1.02]'}
