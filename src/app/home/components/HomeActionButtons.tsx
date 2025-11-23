@@ -1,12 +1,7 @@
-import { SignUpButton } from '@clerk/nextjs'
-import { ArrowRight, Gamepad2, Monitor, Users } from 'lucide-react'
+import { ArrowRight, Gamepad2, Monitor } from 'lucide-react'
 import Link from 'next/link'
 
-interface Props {
-  isSignedIn: boolean
-}
-
-export function HomeActionButtons(props: Props) {
+export function HomeActionButtons() {
   return (
     <div className="flex flex-col sm:flex-row justify-center gap-6 mb-16 px-2 sm:px-4">
       <Link
@@ -18,7 +13,7 @@ export function HomeActionButtons(props: Props) {
           Browse PC Compatibility
           <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
         </span>
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400 to-blue-600 blur opacity-0 group-hover:opacity-70 transition-opacity duration-300" />
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-400 to-blue-600 blur-lg opacity-0 group-hover:opacity-70 transition-opacity duration-300" />
       </Link>
 
       <Link
@@ -30,23 +25,8 @@ export function HomeActionButtons(props: Props) {
           Browse Handheld Compatibility
           <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
         </span>
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-green-400 to-green-600 blur opacity-0 group-hover:opacity-70 transition-opacity duration-300" />
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-green-400 to-green-600 blur-lg opacity-0 group-hover:opacity-70 transition-opacity duration-300" />
       </Link>
-
-      {!props.isSignedIn && (
-        <SignUpButton>
-          <button
-            type="button"
-            className="group relative px-8 py-4 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-900 dark:text-white font-bold text-lg rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm transition duration-300 transform hover:scale-105"
-          >
-            <span className="relative z-10 flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Join the Community
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-            </span>
-          </button>
-        </SignUpButton>
-      )}
     </div>
   )
 }

@@ -124,7 +124,7 @@ function Home() {
               across devices, emulators, and platforms.
             </p>
 
-            <HomeActionButtons isSignedIn={!!user} />
+            <HomeActionButtons />
 
             {/* Feature Highlights */}
             <HomeFeatureHighlights />
