@@ -35,7 +35,7 @@ export function gpuOptions(
 }
 
 export function socOptions(socs: { id: string; name: string; manufacturer: string }[]): Option[] {
-  return socs.map((s) => ({ id: s.id, name: `${s.manufacturer} ${s.name}` }))
+  return socs.map((s) => ({ id: s.id, name: `${s.manufacturer} ${s.name}`, badgeName: s.name }))
 }
 
 // Variant used in v2 filters where the display format is "Name (Manufacturer)"
