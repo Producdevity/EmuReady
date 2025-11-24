@@ -5,8 +5,7 @@ import { useState } from 'react'
 import { Button, Card, useConfirmDialog, LocalizedDate } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
-import { CustomFieldType } from '@orm'
-import type { JsonValue } from '@prisma/client/runtime/library'
+import { CustomFieldType, type Prisma } from '@orm'
 
 interface CustomFieldTemplateWithFields {
   id: string
@@ -19,7 +18,7 @@ interface CustomFieldTemplateWithFields {
     name: string
     label: string
     type: CustomFieldType
-    options: JsonValue
+    options: Prisma.JsonValue
     isRequired: boolean
     displayOrder: number
   }[]
@@ -101,7 +100,7 @@ function CustomFieldTemplateList(props: Props) {
     return typeMap[type] || type
   }
 
-  function getOptionsDisplay(options: JsonValue): string {
+  function getOptionsDisplay(options: Prisma.JsonValue): string {
     if (!options || !Array.isArray(options)) return ''
     return options
       .filter(

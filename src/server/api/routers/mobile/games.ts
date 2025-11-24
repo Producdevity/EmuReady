@@ -13,6 +13,7 @@ import {
   GetBestSteamAppIdMobileSchema,
   GetSteamGamesStatsMobileSchema,
   BatchBySteamAppIdsSchema,
+  type GetGamesResponse,
 } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
 import { GamesRepository } from '@/server/repositories/games.repository'
@@ -159,13 +160,15 @@ export const mobileGamesRouter = createMobileTRPCRouter({
   /**
    * Get games with search and filtering
    */
-  get: mobilePublicProcedure.input(GetGamesSchema).query(async ({ ctx, input }) => {
-    const repository = new GamesRepository(ctx.prisma)
-    return repository.listMobile({
-      ...input,
-      showNsfw: ctx.session?.user?.showNsfw ?? false,
-    })
-  }),
+  get: mobilePublicProcedure
+    .input(GetGamesSchema)
+    .query(async ({ ctx, input }): Promise<GetGamesResponse> => {
+      const repository = new GamesRepository(ctx.prisma)
+      return repository.listMobile({
+        ...input,
+        showNsfw: ctx.session?.user?.showNsfw ?? false,
+      })
+    }),
 
   /**
    * Get popular games

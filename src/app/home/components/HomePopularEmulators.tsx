@@ -80,20 +80,20 @@ export function HomePopularEmulators() {
                       className={cn(
                         'group relative flex flex-col items-center',
                         'rounded-xl sm:rounded-2xl bg-gradient-to-br',
-                        'from-white/90 to-gray-50/90 dark:from-slate-800/70 dark:to-slate-900/70',
+                        'from-white/90 to-gray-50/90 dark:from-slate-800/90 dark:to-slate-900/90',
                         'p-3 sm:p-4',
                         'transition-all duration-500 ease-out hover:-translate-y-2',
                         'overflow-hidden h-full w-full',
                         'backdrop-blur-md shadow-md hover:shadow-2xl',
                         'border border-gray-200/60 hover:border-gray-300/80',
-                        'dark:border-slate-700/20 dark:hover:border-slate-600/30',
+                        'dark:border-slate-700/50 dark:hover:border-slate-600/60',
                       )}
                     >
                       <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-all duration-500 group-hover:opacity-100">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 dark:from-blue-500/15 dark:via-purple-500/15 dark:to-pink-500/15" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 dark:from-blue-500/25 dark:via-purple-500/25 dark:to-pink-500/25 backdrop-blur-xl" />
                       </div>
 
-                      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md opacity-0 transition-all duration-300 group-hover:opacity-100">
+                      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl opacity-0 transition-all duration-300 group-hover:opacity-100">
                         <Link
                           href={`/listings?emulatorIds=${emulator.id}`}
                           onClick={() => {

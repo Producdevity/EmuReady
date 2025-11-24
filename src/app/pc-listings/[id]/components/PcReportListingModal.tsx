@@ -1,7 +1,9 @@
 'use client'
 
+import { useUser } from '@clerk/nextjs'
 import { useState, useEffect, type FormEvent } from 'react'
 import { Button, Modal } from '@/components/ui'
+import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
@@ -38,6 +40,7 @@ function PcReportListingModal(props: Props) {
   const [error, setError] = useState('')
 
   const createReport = api.pcListings.createReport.useMutation()
+  const { user } = useUser()
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -62,6 +65,16 @@ function PcReportListingModal(props: Props) {
         reason,
         description: description.trim() || undefined,
       } satisfies RouterInput['pcListings']['createReport'])
+
+      // Track content flagging in analytics
+      if (user?.id) {
+        analytics.contentQuality.contentFlagged({
+          entityType: 'listing',
+          entityId: props.pcListingId,
+          flaggedBy: user.id,
+          reason,
+        })
+      }
 
       toast.success('Report submitted successfully. Thank you for helping keep our community safe!')
       props.onSuccess()

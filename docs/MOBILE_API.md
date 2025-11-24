@@ -1,6 +1,6 @@
 # EmuReady Mobile API (tRPC)
 
-*Auto-generated on: 2025-11-24T10:13:50.464Z*
+*Auto-generated on: 2025-11-24T10:55:36.201Z*
 
 ## Summary
 - **Total Endpoints**: 95
@@ -33,7 +33,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 #### 2. **getDeviceCompatibility**
 - **Method**: GET
 - **Path**: `/catalog.getDeviceCompatibility`
-- **Description**: getDeviceCompatibility - catalog
+- **Description**: Get device compatibility scores by system Returns aggregated compatibility scores (0-100) for each system tested on a device. Scores are calculated from: - Performance ratings from authors - Community votes (Wilson score) - Developer verifications Results are cached for 10 minutes to reduce server load.
 - **Tags**: catalog
 
 
@@ -208,7 +208,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 #### 27. **batchBySteamAppIds**
 - **Method**: GET
 - **Path**: `/games.batchBySteamAppIds`
-- **Description**: Get Steam games cache statistics
+- **Description**: Batch lookup games by Steam App IDs Optimized for large batches (up to 1000 Steam App IDs) Returns games with their listings filtered by emulator if specified Results cached for 5 minutes to optimize repeated queries
 - **Tags**: games
 
 
@@ -320,14 +320,14 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 #### 43. **getEmulatorConfig**
 - **Method**: GET
 - **Path**: `/listings.getEmulatorConfig`
-- **Description**: Delete a comment
+- **Description**: Get emulator configuration for a listing Returns the configuration file content that the mobile app can use to launch the game with the correct settings
 - **Tags**: listings
 
 
 #### 44. **byId**
 - **Method**: GET
 - **Path**: `/pcListings.byId`
-- **Description**: byId - pcListings
+- **Description**: Get a single PC listing by ID (mobile) Matches web visibility rules and returns materialized stats + userVote
 - **Tags**: pcListings
 
 

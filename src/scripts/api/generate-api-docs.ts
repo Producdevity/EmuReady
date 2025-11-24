@@ -30,6 +30,18 @@ interface RouterInfo {
   }[]
 }
 
+/**
+ * Extracts return type annotation from procedure code
+ * E.g., `: Promise<DeviceCompatibilityResponse>` -> 'DeviceCompatibilityResponse'
+ */
+function extractReturnType(procedureBlock: string): string | null {
+  const returnTypeMatch = procedureBlock.match(/:\s*Promise<(\w+)>/)
+  if (returnTypeMatch) {
+    return returnTypeMatch[1]
+  }
+  return null
+}
+
 function analyzeReturnStructure(filePath: string, procedureName: string): string {
   try {
     const content = readFileSync(filePath, 'utf-8')
@@ -38,16 +50,29 @@ function analyzeReturnStructure(filePath: string, procedureName: string): string
     const startIndex = content.indexOf(`${procedureName}:`)
     if (startIndex === -1) return 'unknown'
 
-    // Find the end of this procedure (next procedure or closing brace)
-    const nextProcedureMatch = content.substring(startIndex + 1).search(/\w+:\s*\w+Procedure/)
-    const endIndex =
-      nextProcedureMatch === -1
-        ? content.lastIndexOf('})') // End of router
-        : startIndex + 1 + nextProcedureMatch
+    // Find enough of the procedure to extract return type annotation
+    // Look for the opening of the query/mutation function (where return type is declared)
+    const queryOrMutationStart = content.substring(startIndex).search(/\.(query|mutation)\s*\(/)
 
-    const procedureBlock = content.substring(startIndex, endIndex)
+    if (queryOrMutationStart === -1) return 'unknown'
 
-    // Analyze the return patterns in this procedure block
+    const signatureEnd = startIndex + queryOrMutationStart + 300
+    const procedureBlock = content.substring(startIndex, Math.min(signatureEnd, content.length))
+
+    const returnType = extractReturnType(procedureBlock)
+    if (returnType) {
+      const schemaName = `${returnType}Schema`
+      const schema =
+        (mobileSchemas as Record<string, unknown>)[schemaName] ||
+        (mobileAuthSchemas as Record<string, unknown>)[schemaName]
+      if (schema) return `schema:${returnType}`
+    }
+
+    return 'generic-object'
+
+    // Fallback pattern matching (disabled to prevent documentation inconsistencies)
+    // If you need to re-enable this, uncomment the code below and remove the early return above
+    /*
     if (procedureBlock.includes('ctx.prisma') && procedureBlock.includes('findMany')) {
       if (procedureBlock.includes('_count') && procedureBlock.includes('include')) {
         return 'array-with-relations-and-counts'
@@ -90,6 +115,7 @@ function analyzeReturnStructure(filePath: string, procedureName: string): string
     }
 
     return 'generic-object'
+    */
   } catch (error) {
     console.warn(
       `Could not analyze return structure for ${procedureName}:`,
@@ -104,7 +130,24 @@ function generateResponseExampleByStructure(
   procedureName: string,
   structure: string,
 ): unknown {
-  // Use structure analysis to generate accurate examples
+  if (structure.startsWith('schema:')) {
+    const returnType = structure.replace('schema:', '')
+    const schemaName = `${returnType}Schema`
+    const schema =
+      (mobileSchemas as Record<string, unknown>)[schemaName] ||
+      (mobileAuthSchemas as Record<string, unknown>)[schemaName]
+
+    if (schema) {
+      try {
+        const jsonSchema = zodToJsonSchema(schema as never, schemaName) as Record<string, unknown>
+        return generateExampleFromSchema(jsonSchema)
+      } catch (error) {
+        console.warn(`Failed to generate example from schema ${schemaName}:`, error)
+      }
+    }
+  }
+
+  // Fallback: Use structure analysis to generate examples for common patterns
   switch (structure) {
     case 'array-with-relations-and-counts':
       return createArrayWithRelationsAndCounts(routerName, procedureName)
@@ -377,11 +420,22 @@ function generateExampleFromSchema(jsonSchema: Record<string, unknown>): Record<
               example[propName] = ['example1', 'example2']
             } else if (itemType === 'number' || itemType === 'integer') {
               example[propName] = [1, 2]
+            } else if (itemType === 'object') {
+              // Recursively generate example for nested object
+              const nestedExample = generateExampleFromSchema(items)
+              example[propName] = Object.keys(nestedExample).length > 0 ? [nestedExample] : []
             } else {
               example[propName] = []
             }
           } else {
             example[propName] = []
+          }
+          break
+        case 'object':
+          // Recursively generate example for nested object
+          const nestedObjExample = generateExampleFromSchema(propSchema)
+          if (Object.keys(nestedObjExample).length > 0) {
+            example[propName] = nestedObjExample
           }
           break
         default:
@@ -465,12 +519,14 @@ function extractRouterInfo(filePath: string): RouterInfo | null {
 
       // Extract JSDoc comment for this procedure
       const beforeProcedure = content.substring(0, match.index)
-      const lastCommentMatch = beforeProcedure.match(/\/\*\*\s*\n\s*\*\s*(.+?)\s*\n\s*\*\//g)
+      const lastCommentMatch = beforeProcedure.match(/\/\*\*[\s\S]*?\*\//g)
       let description = lastCommentMatch
         ? lastCommentMatch[lastCommentMatch.length - 1]
-            .replace(/\/\*\*\s*\n\s*\*\s*|\s*\n\s*\*\//g, '')
-            .replace(/\s*\*\s*/g, ' ')
+            .replace(/\/\*\*|\*\//g, '') // Remove /** and */
+            .replace(/^\s*\*\s?/gm, '') // Remove leading * from each line
             .trim()
+            .replace(/\n\s*\n/g, '\n') // Remove empty lines
+            .replace(/\n/g, ' ') // Join lines with space
         : undefined
 
       // Skip comments that are clearly for nested routers, not procedures

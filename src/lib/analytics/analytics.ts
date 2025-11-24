@@ -1013,7 +1013,6 @@ const analytics = {
       })
     },
 
-    // TODO
     spamDetected: (params: {
       entityType: string
       entityId: string

@@ -244,6 +244,46 @@ export const GetGamesSchema = z
 
 export type GetGamesInput = z.infer<typeof GetGamesSchema>
 
+// Response schemas for documentation generation
+export const PaginationResultSchema = z.object({
+  total: z.number(),
+  pages: z.number(),
+  page: z.number(),
+  offset: z.number(),
+  limit: z.number(),
+  hasNextPage: z.boolean(),
+  hasPreviousPage: z.boolean(),
+})
+
+export const GameMobileSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  systemId: z.string().uuid(),
+  imageUrl: z.string().nullable(),
+  boxartUrl: z.string().nullable(),
+  bannerUrl: z.string().nullable(),
+  tgdbGameId: z.number().nullable(),
+  metadata: z.unknown(),
+  isErotic: z.boolean(),
+  status: z.string(),
+  createdAt: z.date(),
+  system: z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    key: z.string().nullable(),
+  }),
+  _count: z.object({
+    listings: z.number(),
+  }),
+})
+
+export const GetGamesResponseSchema = z.object({
+  games: z.array(GameMobileSchema),
+  pagination: PaginationResultSchema,
+})
+
+export type GetGamesResponse = z.infer<typeof GetGamesResponseSchema>
+
 export const GetDevicesSchema = z
   .object({
     search: z.string().optional().describe('Search devices by name'),

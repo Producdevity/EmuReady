@@ -2608,7 +2608,8 @@
     },
     "/catalog.getDeviceCompatibility": {
       "get": {
-        "summary": "getDeviceCompatibility - catalog",
+        "summary": "Get device compatibility scores by system Returns aggregated compatibility scores (0-100) for each system tested on a device. Scores are calculated from: - Performance ratings from authors - Community votes (Wilson score) - Developer verifications Results are cached for 10 minutes to reduce server load.",
+        "description": "Get device compatibility scores by system Returns aggregated compatibility scores (0-100) for each system tested on a device. Scores are calculated from: - Performance ratings from authors - Community votes (Wilson score) - Developer verifications Results are cached for 10 minutes to reduce server load.",
         "tags": [
           "catalog"
         ],
@@ -2653,11 +2654,43 @@
                     "value": {
                       "result": {
                         "data": {
-                          "message": "Response from catalog.getDeviceCompatibility",
-                          "data": {
-                            "id": "uuid-generic",
-                            "name": "Generic Item"
-                          }
+                          "device": {
+                            "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                            "modelName": "example",
+                            "brandName": "example"
+                          },
+                          "systems": [
+                            {
+                              "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                              "name": "example",
+                              "key": "example",
+                              "compatibilityScore": 1,
+                              "confidence": "example",
+                              "dataSource": "example",
+                              "metrics": {
+                                "totalListings": 1,
+                                "uniqueGames": 1,
+                                "avgPerformanceRank": 1,
+                                "developerVerifiedCount": 1,
+                                "totalVotes": 1,
+                                "authoredByDeveloperCount": 1
+                              },
+                              "emulators": [
+                                {
+                                  "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                                  "name": "example",
+                                  "key": "example",
+                                  "listingCount": 1,
+                                  "avgCompatibilityScore": 1,
+                                  "avgPerformanceRank": 1,
+                                  "developerVerifiedCount": 1
+                                }
+                              ],
+                              "lastUpdated": "example"
+                            }
+                          ],
+                          "generatedAt": "example",
+                          "cacheExpiresIn": 1
                         }
                       }
                     }
@@ -2920,8 +2953,11 @@
                     "value": {
                       "result": {
                         "data": {
-                          "id": "uuid-generic",
-                          "name": "Generic Item"
+                          "message": "Response from cpus.getById",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
                         }
                       }
                     }
@@ -3444,8 +3480,11 @@
                     "value": {
                       "result": {
                         "data": {
-                          "id": "uuid-generic",
-                          "name": "Generic Item"
+                          "message": "Response from deviceBrands.getById",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
                         }
                       }
                     }
@@ -4390,23 +4429,34 @@
                     "summary": "Successful response",
                     "value": {
                       "result": {
-                        "data": [
-                          {
-                            "id": "uuid-game",
-                            "title": "Super Mario Bros",
-                            "systemId": "uuid-system",
-                            "imageUrl": "https://example.com/game.jpg",
-                            "status": "APPROVED",
-                            "system": {
-                              "id": "uuid-system",
-                              "name": "Nintendo Entertainment System",
-                              "key": "nes"
-                            },
-                            "_count": {
-                              "listings": 45
+                        "data": {
+                          "games": [
+                            {
+                              "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                              "title": "example",
+                              "systemId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                              "isErotic": false,
+                              "status": "example",
+                              "createdAt": "example",
+                              "system": {
+                                "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                                "name": "example"
+                              },
+                              "_count": {
+                                "listings": 1
+                              }
                             }
+                          ],
+                          "pagination": {
+                            "total": 1,
+                            "pages": 1,
+                            "page": 1,
+                            "offset": 1,
+                            "limit": 10,
+                            "hasNextPage": false,
+                            "hasPreviousPage": false
                           }
-                        ]
+                        }
                       }
                     }
                   }
@@ -4528,23 +4578,16 @@
                     "summary": "Successful response",
                     "value": {
                       "result": {
-                        "data": [
-                          {
+                        "data": {
+                          "message": "Response from games.getPopularGames",
+                          "data": {
                             "id": "uuid-game",
                             "title": "Super Mario Bros",
                             "systemId": "uuid-system",
                             "imageUrl": "https://example.com/game.jpg",
-                            "status": "APPROVED",
-                            "system": {
-                              "id": "uuid-system",
-                              "name": "Nintendo Entertainment System",
-                              "key": "nes"
-                            },
-                            "_count": {
-                              "listings": 45
-                            }
+                            "status": "APPROVED"
                           }
-                        ]
+                        }
                       }
                     }
                   }
@@ -5103,23 +5146,16 @@
                     "summary": "Successful response",
                     "value": {
                       "result": {
-                        "data": [
-                          {
+                        "data": {
+                          "message": "Response from games.getBestSwitchTitleId",
+                          "data": {
                             "id": "uuid-game",
                             "title": "Super Mario Bros",
                             "systemId": "uuid-system",
                             "imageUrl": "https://example.com/game.jpg",
-                            "status": "APPROVED",
-                            "system": {
-                              "id": "uuid-system",
-                              "name": "Nintendo Entertainment System",
-                              "key": "nes"
-                            },
-                            "_count": {
-                              "listings": 45
-                            }
+                            "status": "APPROVED"
                           }
-                        ]
+                        }
                       }
                     }
                   }
@@ -5252,23 +5288,16 @@
                     "summary": "Successful response",
                     "value": {
                       "result": {
-                        "data": [
-                          {
+                        "data": {
+                          "message": "Response from games.getSwitchGamesStats",
+                          "data": {
                             "id": "uuid-game",
                             "title": "Super Mario Bros",
                             "systemId": "uuid-system",
                             "imageUrl": "https://example.com/game.jpg",
-                            "status": "APPROVED",
-                            "system": {
-                              "id": "uuid-system",
-                              "name": "Nintendo Entertainment System",
-                              "key": "nes"
-                            },
-                            "_count": {
-                              "listings": 45
-                            }
+                            "status": "APPROVED"
                           }
-                        ]
+                        }
                       }
                     }
                   }
@@ -5543,23 +5572,16 @@
                     "summary": "Successful response",
                     "value": {
                       "result": {
-                        "data": [
-                          {
+                        "data": {
+                          "message": "Response from games.getBestThreeDsTitleId",
+                          "data": {
                             "id": "uuid-game",
                             "title": "Super Mario Bros",
                             "systemId": "uuid-system",
                             "imageUrl": "https://example.com/game.jpg",
-                            "status": "APPROVED",
-                            "system": {
-                              "id": "uuid-system",
-                              "name": "Nintendo Entertainment System",
-                              "key": "nes"
-                            },
-                            "_count": {
-                              "listings": 45
-                            }
+                            "status": "APPROVED"
                           }
-                        ]
+                        }
                       }
                     }
                   }
@@ -5692,23 +5714,16 @@
                     "summary": "Successful response",
                     "value": {
                       "result": {
-                        "data": [
-                          {
+                        "data": {
+                          "message": "Response from games.getThreeDsGamesStats",
+                          "data": {
                             "id": "uuid-game",
                             "title": "Super Mario Bros",
                             "systemId": "uuid-system",
                             "imageUrl": "https://example.com/game.jpg",
-                            "status": "APPROVED",
-                            "system": {
-                              "id": "uuid-system",
-                              "name": "Nintendo Entertainment System",
-                              "key": "nes"
-                            },
-                            "_count": {
-                              "listings": 45
-                            }
+                            "status": "APPROVED"
                           }
-                        ]
+                        }
                       }
                     }
                   }
@@ -5983,23 +5998,16 @@
                     "summary": "Successful response",
                     "value": {
                       "result": {
-                        "data": [
-                          {
+                        "data": {
+                          "message": "Response from games.getBestSteamAppId",
+                          "data": {
                             "id": "uuid-game",
                             "title": "Super Mario Bros",
                             "systemId": "uuid-system",
                             "imageUrl": "https://example.com/game.jpg",
-                            "status": "APPROVED",
-                            "system": {
-                              "id": "uuid-system",
-                              "name": "Nintendo Entertainment System",
-                              "key": "nes"
-                            },
-                            "_count": {
-                              "listings": 45
-                            }
+                            "status": "APPROVED"
                           }
-                        ]
+                        }
                       }
                     }
                   }
@@ -6132,23 +6140,16 @@
                     "summary": "Successful response",
                     "value": {
                       "result": {
-                        "data": [
-                          {
+                        "data": {
+                          "message": "Response from games.getSteamGamesStats",
+                          "data": {
                             "id": "uuid-game",
                             "title": "Super Mario Bros",
                             "systemId": "uuid-system",
                             "imageUrl": "https://example.com/game.jpg",
-                            "status": "APPROVED",
-                            "system": {
-                              "id": "uuid-system",
-                              "name": "Nintendo Entertainment System",
-                              "key": "nes"
-                            },
-                            "_count": {
-                              "listings": 45
-                            }
+                            "status": "APPROVED"
                           }
-                        ]
+                        }
                       }
                     }
                   }
@@ -6236,8 +6237,8 @@
     },
     "/games.batchBySteamAppIds": {
       "get": {
-        "summary": "Get Steam games cache statistics",
-        "description": "Get Steam games cache statistics",
+        "summary": "Batch lookup games by Steam App IDs Optimized for large batches (up to 1000 Steam App IDs) Returns games with their listings filtered by emulator if specified Results cached for 5 minutes to optimize repeated queries",
+        "description": "Batch lookup games by Steam App IDs Optimized for large batches (up to 1000 Steam App IDs) Returns games with their listings filtered by emulator if specified Results cached for 5 minutes to optimize repeated queries",
         "tags": [
           "games"
         ],
@@ -7203,8 +7204,11 @@
                     "value": {
                       "result": {
                         "data": {
-                          "id": "uuid-generic",
-                          "name": "Generic Item"
+                          "message": "Response from gpus.getById",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
                         }
                       }
                     }
@@ -7876,52 +7880,15 @@
                     "value": {
                       "result": {
                         "data": {
-                          "listingss": [
-                            {
-                              "id": "uuid-listing",
-                              "gameId": "uuid-game",
-                              "deviceId": "uuid-device",
-                              "emulatorId": "uuid-emulator",
-                              "performanceId": 1,
-                              "notes": "Runs perfectly at 60fps",
-                              "status": "APPROVED",
-                              "game": {
-                                "id": "uuid-game",
-                                "title": "Super Mario Bros"
-                              },
-                              "device": {
-                                "id": "uuid-device",
-                                "modelName": "Steam Deck",
-                                "brand": {
-                                  "name": "Valve"
-                                }
-                              },
-                              "emulator": {
-                                "id": "uuid-emulator",
-                                "name": "RetroArch"
-                              },
-                              "performance": {
-                                "id": 1,
-                                "label": "Perfect",
-                                "rank": 1
-                              },
-                              "author": {
-                                "id": "uuid-user",
-                                "name": "GameTester"
-                              },
-                              "_count": {
-                                "votes": 12,
-                                "comments": 3
-                              }
-                            }
-                          ],
-                          "pagination": {
-                            "total": 156,
-                            "pages": 8,
-                            "page": 1,
-                            "limit": 20,
-                            "hasNextPage": true,
-                            "hasPreviousPage": false
+                          "message": "Response from listings.getListings",
+                          "data": {
+                            "id": "uuid-listing",
+                            "gameId": "uuid-game",
+                            "deviceId": "uuid-device",
+                            "emulatorId": "uuid-emulator",
+                            "performanceId": 1,
+                            "notes": "Runs perfectly at 60fps",
+                            "status": "APPROVED"
                           }
                         }
                       }
@@ -9935,8 +9902,8 @@
     },
     "/listings.getEmulatorConfig": {
       "get": {
-        "summary": "Delete a comment",
-        "description": "Delete a comment",
+        "summary": "Get emulator configuration for a listing Returns the configuration file content that the mobile app can use to launch the game with the correct settings",
+        "description": "Get emulator configuration for a listing Returns the configuration file content that the mobile app can use to launch the game with the correct settings",
         "tags": [
           "listings"
         ],
@@ -11095,7 +11062,8 @@
     },
     "/pcListings.byId": {
       "get": {
-        "summary": "byId - pcListings",
+        "summary": "Get a single PC listing by ID (mobile) Matches web visibility rules and returns materialized stats + userVote",
+        "description": "Get a single PC listing by ID (mobile) Matches web visibility rules and returns materialized stats + userVote",
         "tags": [
           "pcListings"
         ],
@@ -14367,8 +14335,11 @@
                     "value": {
                       "result": {
                         "data": {
-                          "id": "uuid-generic",
-                          "name": "Generic Item"
+                          "message": "Response from socs.getById",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
                         }
                       }
                     }
