@@ -2,6 +2,7 @@
 
 import { ChevronDown, X } from 'lucide-react'
 import { useState, useRef, useEffect, useMemo, type ReactNode } from 'react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { searchItems } from '@/utils/simpleSearch'
 
@@ -17,10 +18,24 @@ interface Props {
   value: string[]
   onChange: (values: string[]) => void
   options: Option[]
+  color?: keyof typeof badgeColors
   placeholder?: string
   className?: string
   maxDisplayed?: number
   showSelectedBadges?: boolean
+}
+
+const badgeColors = {
+  yellow:
+    'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-800 hover:bg-yellow-200 dark:hover:bg-yellow-900/50',
+  purple:
+    'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-800 hover:bg-purple-200 dark:hover:bg-purple-900/50',
+  blue: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50',
+  green:
+    'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800 hover:bg-green-200 dark:hover:bg-green-900/50',
+  orange:
+    'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 border-orange-200 dark:border-orange-800 hover:bg-orange-200 dark:hover:bg-orange-900/50',
+  red: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800 hover:bg-red-200 dark:hover:bg-red-900/50',
 }
 
 export function MultiSelect(props: Props) {
@@ -267,20 +282,17 @@ export function MultiSelect(props: Props) {
                           dark:bg-gray-700 dark:focus:ring-blue-600"
                       />
                       <span
-                        className={`text-sm select-none flex-1 transition-all duration-200
-                          ${
-                            isSelected
-                              ? 'text-blue-700 dark:text-blue-300 font-medium'
-                              : 'text-gray-700 dark:text-gray-300'
-                          }`}
+                        className={cn(
+                          'text-sm select-none flex-1 transition-all duration-200',
+                          isSelected
+                            ? 'text-blue-700 dark:text-blue-300 font-medium'
+                            : 'text-gray-700 dark:text-gray-300',
+                        )}
                       >
                         {option.name}
                       </span>
                       {isSelected && (
-                        <div
-                          className="w-2 h-2 bg-blue-500 rounded-full
-                          animate-in zoom-in-0 duration-200"
-                        />
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-in zoom-in-0 duration-200" />
                       )}
                     </label>
                   )
@@ -314,28 +326,32 @@ export function MultiSelect(props: Props) {
           </div>
           <div className="flex flex-wrap gap-2">
             {selectedOptions.map((option, index) => (
-              <div
-                key={option.id}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1
-                  bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200
-                  text-xs font-medium rounded-full border border-blue-200 dark:border-blue-800
-                  animate-in slide-in-from-bottom-2 fade-in-0
-                  hover:bg-blue-200 dark:hover:bg-blue-900/50
-                  transition-all duration-200 hover:scale-105 hover:shadow-sm"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <span className="truncate max-w-32">{option.badgeName ?? option.name}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveOption(option.id)}
-                  className="flex-shrink-0 p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800
+              <Tooltip key={option.id}>
+                <TooltipTrigger asChild>
+                  <div
+                    className={cn(
+                      'inline-flex items-center gap-1.5 px-2.5 py-1',
+                      'text-xs font-medium rounded-full border',
+                      'animate-in slide-in-from-bottom-2 fade-in-0 transition-all duration-200 hover:scale-105 hover:shadow-sm',
+                      badgeColors[props.color ?? 'blue'],
+                    )}
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <span className="truncate max-w-32">{option.badgeName ?? option.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveOption(option.id)}
+                      className="flex-shrink-0 p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800
                     rounded-full transition-all duration-200 hover:scale-110
                     focus:outline-none focus:ring-1 focus:ring-blue-400"
-                  aria-label={`Remove ${option.name}`}
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
+                      aria-label={`Remove ${option.name}`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>{option.name}</TooltipContent>
+              </Tooltip>
             ))}
           </div>
         </div>
