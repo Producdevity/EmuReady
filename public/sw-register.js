@@ -1,4 +1,4 @@
-const CACHE_NAME = 'emuready_v0.12.0'
+const CACHE_NAME = 'emuready_v0.12.1'
 
 // Service worker registration script
 if ('serviceWorker' in navigator) {
