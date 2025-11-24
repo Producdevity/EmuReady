@@ -16,8 +16,4 @@ export const navbarItems: NavbarItem[] = [
     href: '/pc-listings',
     label: 'PC',
   },
-  {
-    href: '/games',
-    label: 'Games',
-  },
 ]

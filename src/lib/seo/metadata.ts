@@ -2,7 +2,7 @@ import { escape } from 'html-escaper'
 import { type Metadata } from 'next'
 
 const appName = 'EmuReady'
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://emuready.com'
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.emuready.com'
 const appDescription = 'Find the perfect emulator settings for your games and devices'
 
 export const siteConfig = {
@@ -16,6 +16,9 @@ export const siteConfig = {
     'game compatibility',
     'retro gaming',
     'android emulator',
+    'emulation on android',
+    'Steam Deck Emulation',
+    'ROG Ally Emulation',
     'pc emulator',
     'game settings',
     'performance',
