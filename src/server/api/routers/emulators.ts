@@ -28,6 +28,11 @@ export const emulatorsRouter = createTRPCRouter({
     return repository.stats()
   }),
 
+  trending: publicProcedure.query(async ({ ctx }) => {
+    const repository = new EmulatorsRepository(ctx.prisma)
+    return repository.getTrending(12)
+  }),
+
   get: publicProcedure.input(GetEmulatorsSchema).query(async ({ ctx, input }) => {
     const repository = new EmulatorsRepository(ctx.prisma)
     return repository.list({

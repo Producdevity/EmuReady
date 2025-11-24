@@ -566,7 +566,10 @@ export const EmulatorCompatibilitySchema = z.object({
   listingCount: z.number().describe('Number of listings for this emulator'),
   avgCompatibilityScore: z.number().min(0).max(100).describe('Average compatibility score (0-100)'),
   avgPerformanceRank: z.number().describe('Average performance rank (1=best, 8=worst)'),
-  avgSuccessRate: z.number().describe('Average success rate from community votes (0-1)'),
+  avgSuccessRate: z
+    .number()
+    .nullable()
+    .describe('Average success rate from community votes (0-1), null if no votes'),
   developerVerifiedCount: z.number().describe('Count of developer-verified listings'),
 })
 
@@ -582,11 +585,25 @@ export const SystemCompatibilitySchema = z.object({
   confidence: z
     .enum(['low', 'medium', 'high'])
     .describe('Confidence level based on data quantity and quality'),
+  dataSource: z
+    .enum(['device', 'soc'])
+    .describe('Indicates if score is based on device-specific data or SoC fallback data'),
+  dataSourceInfo: z
+    .object({
+      deviceListingCount: z.number().describe('Number of listings from this specific device'),
+      socListingCount: z.number().describe('Number of listings from SoC fallback (other devices)'),
+      otherDevicesUsed: z.number().describe('Number of other devices that contributed SoC data'),
+    })
+    .optional()
+    .describe('Detailed breakdown of data sources used for scoring'),
   metrics: z.object({
     totalListings: z.number().describe('Total number of approved listings'),
     uniqueGames: z.number().describe('Number of unique games tested'),
     avgPerformanceRank: z.number().describe('Average performance rank across all listings'),
-    avgSuccessRate: z.number().describe('Average success rate from votes'),
+    avgSuccessRate: z
+      .number()
+      .nullable()
+      .describe('Average success rate from votes, null if no votes'),
     developerVerifiedCount: z.number().describe('Number of developer-verified listings'),
     totalVotes: z.number().describe('Total community votes'),
     authoredByDeveloperCount: z
