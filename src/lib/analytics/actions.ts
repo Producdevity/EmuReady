@@ -147,6 +147,13 @@ export const CONTENT_DISCOVERY_ACTIONS = {
   EXTERNAL_LINK_CLICKED: 'external_link_clicked',
   FILTER_APPLIED: 'filter_applied',
   SORT_APPLIED: 'sort_applied',
+  HOMEPAGE_EMULATOR_CLICKED: 'homepage_emulator_clicked',
+  HOMEPAGE_EMULATOR_HANDHELD_CLICKED: 'homepage_emulator_handheld_clicked',
+  HOMEPAGE_EMULATOR_PC_CLICKED: 'homepage_emulator_pc_clicked',
+  HOMEPAGE_DEVICE_CLICKED: 'homepage_device_clicked',
+  HOMEPAGE_VIEW_ALL_EMULATORS_CLICKED: 'homepage_view_all_emulators_clicked',
+  HOMEPAGE_VIEW_ALL_DEVICES_CLICKED: 'homepage_view_all_devices_clicked',
+  HOMEPAGE_GAME_SEARCH_PERFORMED: 'homepage_game_search_performed',
 } as const
 
 // Trust System Actions

@@ -787,7 +787,85 @@ const analytics = {
       })
     },
 
-    // TODO
+    homeEmulatorClicked: (params: {
+      emulatorId: string
+      emulatorName: string
+      systemCount: number
+      listingCount: number
+      actionType: 'card' | 'handheld' | 'pc'
+    }) => {
+      const actionMap = {
+        card: CONTENT_DISCOVERY_ACTIONS.HOMEPAGE_EMULATOR_CLICKED,
+        handheld: CONTENT_DISCOVERY_ACTIONS.HOMEPAGE_EMULATOR_HANDHELD_CLICKED,
+        pc: CONTENT_DISCOVERY_ACTIONS.HOMEPAGE_EMULATOR_PC_CLICKED,
+      }
+
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.CONTENT_DISCOVERY,
+        action: actionMap[params.actionType],
+        entityType: 'emulator',
+        entityId: params.emulatorId,
+        metadata: {
+          emulatorName: params.emulatorName,
+          systemCount: params.systemCount,
+          listingCount: params.listingCount,
+          source: 'homepage_popular_emulators',
+        },
+      })
+    },
+
+    homeDeviceClicked: (params: {
+      deviceId: string
+      brandName: string
+      modelName: string
+      socName?: string
+      recentListingCount: number
+    }) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.CONTENT_DISCOVERY,
+        action: CONTENT_DISCOVERY_ACTIONS.HOMEPAGE_DEVICE_CLICKED,
+        entityType: 'device',
+        entityId: params.deviceId,
+        metadata: filterUndefinedValues({
+          brandName: params.brandName,
+          modelName: params.modelName,
+          socName: params.socName,
+          recentListingCount: params.recentListingCount,
+          source: 'homepage_trending_devices',
+        }),
+      })
+    },
+
+    homeViewAllClicked: (params: { section: 'emulators' | 'devices' }) => {
+      const actionMap = {
+        emulators: CONTENT_DISCOVERY_ACTIONS.HOMEPAGE_VIEW_ALL_EMULATORS_CLICKED,
+        devices: CONTENT_DISCOVERY_ACTIONS.HOMEPAGE_VIEW_ALL_DEVICES_CLICKED,
+      }
+
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.CONTENT_DISCOVERY,
+        action: actionMap[params.section],
+        metadata: {
+          section: params.section,
+          source: 'homepage',
+        },
+      })
+    },
+
+    homeGameSearchPerformed: (params: { query: string; resultCount?: number; source?: string }) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.CONTENT_DISCOVERY,
+        action: CONTENT_DISCOVERY_ACTIONS.HOMEPAGE_GAME_SEARCH_PERFORMED,
+        searchQuery: params.query,
+        metadata: filterUndefinedValues({
+          queryLength: params.query.length,
+          hasResults: params.resultCount !== undefined ? params.resultCount > 0 : undefined,
+          resultCount: params.resultCount,
+          source: params.source ?? 'navbar_search',
+        }),
+      })
+    },
+
     externalLinkClicked: (params: { url: string; context: string; entityId?: string }) => {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.CONTENT_DISCOVERY,

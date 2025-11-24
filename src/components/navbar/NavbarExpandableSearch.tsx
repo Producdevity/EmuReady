@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from 'react'
+import analytics from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 
 function NavbarExpandableSearch() {
@@ -38,6 +39,10 @@ function NavbarExpandableSearch() {
     e.preventDefault()
     const trimmedQuery = searchQuery.trim()
     if (trimmedQuery) {
+      analytics.contentDiscovery.homeGameSearchPerformed({
+        query: trimmedQuery,
+        source: 'navbar_search',
+      })
       router.push(`/games?search=${encodeURIComponent(trimmedQuery)}`)
       setSearchQuery('')
       setIsExpanded(false)
@@ -49,6 +54,10 @@ function NavbarExpandableSearch() {
       e.preventDefault()
       const trimmedQuery = searchQuery.trim()
       if (trimmedQuery) {
+        analytics.contentDiscovery.homeGameSearchPerformed({
+          query: trimmedQuery,
+          source: 'navbar_search',
+        })
         router.push(`/games?search=${encodeURIComponent(trimmedQuery)}`)
         setSearchQuery('')
         setIsExpanded(false)
