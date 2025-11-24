@@ -34,6 +34,7 @@ import {
   detectEmulatorConfigType,
   generateEmulatorConfig,
 } from '@/server/utils/emulator-config/emulator-detector'
+import { SpamDetectionService } from '@/server/utils/spamDetection'
 import { updateListingVoteCounts } from '@/server/utils/vote-counts'
 import { isModerator } from '@/utils/permissions'
 import { ApprovalStatus, Prisma, TrustAction, type PrismaClient, type Role } from '@orm'
@@ -142,6 +143,28 @@ export const mobileListingsRouter = createMobileTRPCRouter({
   create: mobileProtectedProcedure.input(CreateListingSchema).mutation(async ({ ctx, input }) => {
     const { ...payload } = input
     const repository = new ListingsRepository(ctx.prisma)
+
+    // Spam detection
+    const spamDetector = new SpamDetectionService(ctx.prisma)
+    const spamResult = await spamDetector.detectSpam({
+      userId: ctx.session.user.id,
+      content: payload.notes || '',
+      entityType: 'listing',
+    })
+
+    if (spamResult.isSpam) {
+      // Track spam detection in analytics
+      analytics.contentQuality.spamDetected({
+        entityType: 'listing',
+        entityId: ctx.session.user.id, // Use userId as entityId since listing not created yet
+        confidence: spamResult.confidence,
+        method: spamResult.method,
+      })
+
+      throw AppError.badRequest(
+        `Spam detected: ${spamResult.reason || 'Your content appears to be spam. Please review our community guidelines.'}`,
+      )
+    }
 
     return await repository.create({
       authorId: ctx.session.user.id,
@@ -347,6 +370,28 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     .input(CreateCommentSchema)
     .mutation(async ({ ctx, input }) => {
       const { listingId, content, parentId } = input
+
+      // Spam detection
+      const spamDetector = new SpamDetectionService(ctx.prisma)
+      const spamResult = await spamDetector.detectSpam({
+        userId: ctx.session.user.id,
+        content,
+        entityType: 'comment',
+      })
+
+      if (spamResult.isSpam) {
+        // Track spam detection in analytics
+        analytics.contentQuality.spamDetected({
+          entityType: 'comment',
+          entityId: ctx.session.user.id, // Use userId as entityId since comment not created yet
+          confidence: spamResult.confidence,
+          method: spamResult.method,
+        })
+
+        throw AppError.badRequest(
+          `Spam detected: ${spamResult.reason || 'Your content appears to be spam. Please review our community guidelines.'}`,
+        )
+      }
 
       // If replying to a comment, validate parent existence and ownership
       if (parentId) {
