@@ -17,7 +17,7 @@ function LiteAppButton(props: ButtonState) {
       <TooltipTrigger asChild>
         <a
           href={env.EMUREADY_LITE_GITHUB_URL}
-          aria-label="Open the EmuReady Lite releases on GitHub"
+          aria-label="Open the EmuReady App releases on GitHub"
           className="group relative inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-500/25 bg-gradient-to-br from-emerald-500/15 via-blue-500/10 to-violet-500/15 px-4 py-2 text-left transition-all duration-200 hover:border-emerald-500/45 hover:shadow-lg hover:shadow-emerald-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 dark:border-emerald-400/25 dark:from-emerald-400/15 dark:via-blue-400/10 dark:to-violet-400/15 dark:hover:border-emerald-400/45 dark:hover:shadow-emerald-400/15"
           onClick={() => {
             analytics.conversion.appDownloadClicked({
@@ -28,7 +28,7 @@ function LiteAppButton(props: ButtonState) {
             })
           }}
         >
-          <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-emerald-400/20 via-blue-500/15 to-violet-500/20 opacity-0 transition-opacity duration-300 blur group-hover:opacity-100" />
+          <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-emerald-400/20 via-blue-500/15 to-violet-500/20 opacity-0 transition-opacity duration-300 blur-lg group-hover:opacity-100" />
           <div
             className={cn(
               'relative flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white transition-transform duration-300',
@@ -40,16 +40,16 @@ function LiteAppButton(props: ButtonState) {
             <Download className="h-4 w-4" />
           </div>
           <div className="relative text-left">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">EmuReady Lite App</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">EmuReady App</p>
             <p className="text-xs text-gray-600 dark:text-gray-300">GitHub releases</p>
           </div>
         </a>
       </TooltipTrigger>
       <TooltipContent side="top" className="max-w-xs">
         <div className="text-center">
-          <p className="font-medium mb-1">EmuReady Lite</p>
+          <p className="font-medium mb-1">EmuReady App</p>
           <p className="text-xs text-gray-600 dark:text-gray-400">
-            Browse the latest Lite builds on GitHub.
+            Browse the latest builds on GitHub.
           </p>
         </div>
       </TooltipContent>
@@ -76,7 +76,7 @@ function BetaAppButton(props: ButtonState) {
             })
           }}
         >
-          <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-400/20 via-indigo-500/15 to-purple-500/20 opacity-0 transition-opacity duration-300 blur group-hover:opacity-100" />
+          <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-400/20 via-indigo-500/15 to-purple-500/20 opacity-0 transition-opacity duration-300 blur-lg group-hover:opacity-100" />
           <div
             className={cn(
               'relative flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white transition-transform duration-300',
