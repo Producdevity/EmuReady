@@ -43,6 +43,26 @@ export function HomeAppFeatured() {
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <motion.a
+                  {...motionPresets.fadeInUp(0.22)}
+                  href={env.EMUREADY_LITE_GITHUB_URL}
+                  title="View EmuReady App releases on GitHub"
+                  className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 px-6 py-3 text-base font-semibold text-white shadow-lg transition-shadow duration-150 hover:shadow-xl"
+                  onClick={() => {
+                    analytics.conversion.appDownloadClicked({
+                      appName: 'EmuReady App',
+                      platform: 'android',
+                      location: 'homepage_lite_cta',
+                      url: env.EMUREADY_LITE_GITHUB_URL,
+                    })
+                  }}
+                  whileHover={{ scale: 1.02, transition: { duration: 0.12, ease: 'easeOut' } }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <Download className="h-5 w-5" />
+                  Get EmuReady
+                </motion.a>
+
+                <motion.a
                   {...motionPresets.fadeInUp(0.18)}
                   href={env.EMUREADY_BETA_URL}
                   title="Get the EmuReady Beta Android App on the Google Play Store"
@@ -63,33 +83,18 @@ export function HomeAppFeatured() {
                   <ArrowRight className="h-5 w-5" />
                   Get EmuReady Beta
                 </motion.a>
-                <motion.a
-                  {...motionPresets.fadeInUp(0.22)}
-                  href={env.EMUREADY_LITE_GITHUB_URL}
-                  title="View EmuReady Lite releases on GitHub"
-                  className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 px-6 py-3 text-base font-semibold text-white shadow-lg transition-shadow duration-150 hover:shadow-xl"
-                  onClick={() => {
-                    analytics.conversion.appDownloadClicked({
-                      appName: 'EmuReady Lite',
-                      platform: 'android',
-                      location: 'homepage_lite_cta',
-                      url: env.EMUREADY_LITE_GITHUB_URL,
-                    })
-                  }}
-                  whileHover={{ scale: 1.02, transition: { duration: 0.12, ease: 'easeOut' } }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <Download className="h-5 w-5" />
-                  View Lite Releases
-                </motion.a>
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                <b>EmuReady Beta</b> ships on Google Play with all the latest early access features
-                and automatic updates.
-              </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                <b>EmuReady Lite</b> is the free APK hosted here on emuready.com providing the core
-                functionality.
+                <b>EmuReady</b> is the free APK hosted on GitHub or available via the{' '}
+                <a href="https://play.google.com/store/apps/details?id=com.producdevity.emureadylite&pcampaignid=web_share">
+                  Google Play Store
+                </a>
+                .
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                <b>EmuReady Beta</b> contains all the latest experimental features and is available
+                to all our patreon supporters and to anyone who purchased EmuReady Beta from the
+                Google Play Store.
               </p>
             </motion.div>
 
