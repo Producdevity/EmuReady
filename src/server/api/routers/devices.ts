@@ -65,4 +65,9 @@ export const devicesRouter = createTRPCRouter({
     const repository = new DevicesRepository(ctx.prisma)
     return repository.stats()
   }),
+
+  trending: publicProcedure.query(async ({ ctx }) => {
+    const repository = new DevicesRepository(ctx.prisma)
+    return repository.getTrendingDevices(12)
+  }),
 })

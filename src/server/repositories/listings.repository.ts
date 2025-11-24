@@ -102,13 +102,7 @@ export class ListingsRepository extends BaseRepository {
               rangeUnit: true,
               categoryId: true,
               categoryOrder: true,
-              category: {
-                select: {
-                  id: true,
-                  name: true,
-                  displayOrder: true,
-                },
-              },
+              category: { select: { id: true, name: true, displayOrder: true } },
             },
           },
         },
@@ -134,13 +128,7 @@ export class ListingsRepository extends BaseRepository {
               rangeUnit: true,
               categoryId: true,
               categoryOrder: true,
-              category: {
-                select: {
-                  id: true,
-                  name: true,
-                  displayOrder: true,
-                },
-              },
+              category: { select: { id: true, name: true, displayOrder: true } },
             },
           },
         },
@@ -162,7 +150,7 @@ export class ListingsRepository extends BaseRepository {
       },
       emulator: { select: { id: true, name: true, logo: true } },
       performance: { select: { id: true, label: true, rank: true, description: true } },
-      author: { select: { id: true, verifiedDeveloperBy: true } },
+      author: { select: { id: true, trustScore: true, verifiedDeveloperBy: true } },
       developerVerifications: { include: { developer: { select: { id: true, name: true } } } },
     } satisfies Prisma.ListingInclude,
   } as const
@@ -213,29 +201,34 @@ export class ListingsRepository extends BaseRepository {
 
     // System filtering through game relationship
     if (filters.systemIds && filters.systemIds.length > 0) {
-      gameFilter = {
-        ...gameFilter,
-        systemId: { in: filters.systemIds },
-      }
+      gameFilter = { ...gameFilter, systemId: { in: filters.systemIds } }
     }
 
-    // Build comprehensive search conditions
+    // Build comprehensive search conditions with word-by-word matching
     if (filters.search) {
       const mode = Prisma.QueryMode.insensitive
-      const searchFilters: Prisma.ListingWhereInput[] = [
-        { game: { title: { contains: filters.search, mode } } },
-        { notes: { contains: filters.search, mode } },
-        { device: { modelName: { contains: filters.search, mode } } },
-        { device: { brand: { name: { contains: filters.search, mode } } } },
-        { emulator: { name: { contains: filters.search, mode } } },
-      ]
+      const searchWords = filters.search.trim().split(/\s+/)
+
+      // For each word, create OR conditions across all searchable fields
+      const wordFilters = searchWords.map((word) => ({
+        OR: [
+          { game: { title: { contains: word, mode } } },
+          { notes: { contains: word, mode } },
+          { device: { modelName: { contains: word, mode } } },
+          { device: { brand: { name: { contains: word, mode } } } },
+          { emulator: { name: { contains: word, mode } } },
+        ],
+      }))
+
+      // All words must match (AND), but each word can match any field (OR)
+      const searchFilter = wordFilters.length === 1 ? wordFilters[0] : { AND: wordFilters }
 
       // Combine search with existing OR conditions if present
       if (where.OR) {
-        where.AND = [{ OR: where.OR }, { OR: searchFilters }]
+        where.AND = [{ OR: where.OR }, searchFilter]
         delete where.OR
       } else {
-        where.OR = searchFilters
+        Object.assign(where, searchFilter)
       }
     }
 
@@ -264,9 +257,7 @@ export class ListingsRepository extends BaseRepository {
     }
 
     // Apply game filter if any conditions were added
-    if (Object.keys(gameFilter).length > 0) {
-      where.game = gameFilter
-    }
+    if (Object.keys(gameFilter).length > 0) where.game = gameFilter
 
     // Shadow ban filtering
     const shadowBanFilter = buildShadowBanFilter(filters.userRole, filters.userId)
@@ -685,7 +676,60 @@ export class ListingsRepository extends BaseRepository {
 
     // Apply shadow ban filtering
     const shadowBanFilter = buildShadowBanFilter(options?.userRole)
-    if (shadowBanFilter) where.author = shadowBanFilter
+    if (shadowBanFilter) {
+      where.author = shadowBanFilter
+    } else {
+      // Exclude listings from users with negative trust scores
+      where.author = { trustScore: { gte: 0 } }
+    }
+
+    return this.prisma.listing.findMany({
+      where,
+      include: ListingsRepository.includes.forCompatibilityScoring,
+      orderBy: { createdAt: 'desc' },
+    })
+  }
+
+  /**
+   * Get compatibility data for all devices with a specific SoC
+   * Used for SoC fallback when device-specific data is insufficient
+   *
+   * @param socId - SoC UUID to fetch listings for
+   * @param excludeDeviceId - Device ID to exclude (to avoid duplicate data)
+   * @param options - Additional query options
+   * @param options.systemIds - Filter results to specific system IDs
+   * @param options.userRole - User role for shadow ban filtering
+   * @returns Listings from other devices with the same SoC
+   */
+  async getSocCompatibilityData(
+    socId: string,
+    excludeDeviceId: string,
+    options?: {
+      systemIds?: string[]
+      userRole?: Role
+    },
+  ) {
+    const where: Prisma.ListingWhereInput = {
+      status: ApprovalStatus.APPROVED,
+      device: {
+        socId,
+        id: { not: excludeDeviceId },
+      },
+    }
+
+    // Apply system filter if provided
+    if (options?.systemIds && options.systemIds.length > 0) {
+      where.game = { systemId: { in: options.systemIds } }
+    }
+
+    // Apply shadow ban filtering
+    const shadowBanFilter = buildShadowBanFilter(options?.userRole)
+    if (shadowBanFilter) {
+      where.author = shadowBanFilter
+    } else {
+      // Exclude listings from users with negative trust scores
+      where.author = { trustScore: { gte: 0 } }
+    }
 
     return this.prisma.listing.findMany({
       where,

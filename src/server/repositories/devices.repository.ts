@@ -31,6 +31,15 @@ export class DevicesRepository extends BaseRepository {
     } satisfies Prisma.DeviceInclude,
   } as const
 
+  static readonly selects = {
+    trending: {
+      id: true,
+      modelName: true,
+      brand: { select: { id: true, name: true } },
+      soc: { select: { id: true, name: true, manufacturer: true } },
+    } satisfies Prisma.DeviceSelect,
+  } as const
+
   async byId(id: string): Promise<Prisma.DeviceGetPayload<{
     include: typeof DevicesRepository.includes.default
   }> | null> {
@@ -73,10 +82,7 @@ export class DevicesRepository extends BaseRepository {
     return this.handleDatabaseOperation(
       () =>
         this.prisma.device.create({
-          data: {
-            ...data,
-            socId: data.socId ?? null,
-          },
+          data: { ...data, socId: data.socId ?? null },
           include: DevicesRepository.includes.default,
         }),
       'Device',
@@ -100,9 +106,7 @@ export class DevicesRepository extends BaseRepository {
       const modelName = data.modelName ?? device.modelName
       const brandId = data.brandId ?? device.brandId
       const exists = await this.existsByModelAndBrand(modelName, brandId)
-      if (exists && exists !== id) {
-        throw ResourceError.device.alreadyExists(modelName)
-      }
+      if (exists && exists !== id) throw ResourceError.device.alreadyExists(modelName)
     }
 
     // Validate brand if being updated
@@ -121,10 +125,7 @@ export class DevicesRepository extends BaseRepository {
       () =>
         this.prisma.device.update({
           where: { id },
-          data: {
-            ...data,
-            socId: data.socId ?? undefined,
-          },
+          data: { ...data, socId: data.socId ?? undefined },
           include: DevicesRepository.includes.default,
         }),
       'Device',
@@ -277,11 +278,7 @@ export class DevicesRepository extends BaseRepository {
           modelName: true,
           brand: { select: { name: true } },
           soc: { select: { name: true } },
-          _count: {
-            select: {
-              listings: { where: { status: ApprovalStatus.APPROVED } },
-            },
-          },
+          _count: { select: { listings: { where: { status: ApprovalStatus.APPROVED } } } },
         },
         orderBy: [
           { listings: { _count: Prisma.SortOrder.desc } },
@@ -338,5 +335,40 @@ export class DevicesRepository extends BaseRepository {
       withListings,
       withoutListings,
     }
+  }
+
+  /**
+   * Get trending devices based on listings submitted in the last 30 days
+   */
+  async getTrendingDevices(limit: number = 12) {
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+    const devicesWithCounts = await this.prisma.device.findMany({
+      select: {
+        ...DevicesRepository.selects.trending,
+        _count: {
+          select: {
+            listings: {
+              where: { status: ApprovalStatus.APPROVED, createdAt: { gte: thirtyDaysAgo } },
+            },
+          },
+        },
+      },
+      where: {
+        listings: { some: { status: ApprovalStatus.APPROVED, createdAt: { gte: thirtyDaysAgo } } },
+      },
+      orderBy: { listings: { _count: Prisma.SortOrder.desc } },
+      take: limit,
+    })
+
+    return devicesWithCounts.map((device) => ({
+      id: device.id,
+      modelName: device.modelName,
+      brandName: device.brand.name,
+      brandId: device.brand.id,
+      socName: `${device.soc?.manufacturer} ${device.soc?.name}`,
+      recentListingCount: device._count.listings,
+    }))
   }
 }
