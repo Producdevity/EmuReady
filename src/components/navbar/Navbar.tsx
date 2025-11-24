@@ -1,7 +1,7 @@
 'use client'
 
 import { useUser, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, Search } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useCallback, useEffect } from 'react'
@@ -12,10 +12,13 @@ import analytics from '@/lib/analytics'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import { navbarItems } from './data'
+import MobileSearchOverlay from './MobileSearchOverlay'
+import NavbarExpandableSearch from './NavbarExpandableSearch'
 
 function Navbar() {
   const { user, isLoaded } = useUser()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const pathname = usePathname()
 
@@ -96,7 +99,7 @@ function Navbar() {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-2">
+          <div className="hidden md:flex items-center space-x-4">
             <div className="flex items-center space-x-1 bg-gray-50/50 dark:bg-gray-800/50 rounded-2xl p-1.5 backdrop-blur-sm">
               {navbarItems.map((item) => (
                 <Link
@@ -108,6 +111,7 @@ function Navbar() {
                   <span className="relative z-10">{item.label}</span>
                 </Link>
               ))}
+              <NavbarExpandableSearch />
             </div>
           </div>
 
@@ -195,6 +199,13 @@ function Navbar() {
           <div className="md:hidden flex items-center space-x-3">
             <ThemeToggle />
             {user && <NotificationCenter />}
+            <button
+              onClick={() => setMobileSearchOpen(true)}
+              className="inline-flex items-center justify-center p-2.5 rounded-xl text-gray-400 hover:text-blue-500 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all duration-300"
+              aria-label="Search games"
+            >
+              <Search className="w-5 h-5" />
+            </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="inline-flex items-center justify-center p-2.5 rounded-xl text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all duration-300"
@@ -299,6 +310,8 @@ function Navbar() {
           )}
         </div>
       </div>
+
+      <MobileSearchOverlay isOpen={mobileSearchOpen} onClose={() => setMobileSearchOpen(false)} />
     </nav>
   )
 }
