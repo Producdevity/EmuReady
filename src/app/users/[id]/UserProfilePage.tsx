@@ -212,7 +212,7 @@ function UserDetailsPage() {
               {/* Profile Image & Basic Info */}
               <div className="flex flex-col items-center lg:col-span-1 lg:items-start">
                 <div className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur opacity-25 group-hover:opacity-40 transition duration-1000" />
+                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur-lg opacity-25 group-hover:opacity-40 transition duration-1000" />
                   <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white dark:border-gray-700 shadow-lg">
                     <Image
                       src={userQuery.data.profileImage ?? '/placeholder/profile.svg'}
