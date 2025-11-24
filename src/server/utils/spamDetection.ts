@@ -118,7 +118,7 @@ export class SpamDetectionService {
   ): Promise<SpamDetectionResult> {
     const windowStart = new Date(Date.now() - this.config.rateLimitWindow! * 60 * 1000)
 
-    let count = 0
+    let count: number
     if (entityType === 'listing') {
       count = await this.prisma.listing.count({
         where: {
@@ -160,7 +160,7 @@ export class SpamDetectionService {
     )
     const normalizedContent = this.normalizeContent(content)
 
-    let duplicates = 0
+    let duplicates: number
     if (entityType === 'listing') {
       const recentListings = await this.prisma.listing.findMany({
         where: {
