@@ -8,7 +8,17 @@ import type { PerformanceScale, ListingDeveloperVerification, Game, System, Emul
  * - Performance scale (50% weight): Author's rating of compatibility
  * - Community consensus (30% weight): Wilson score from upvotes/downvotes
  * - Developer verification (20% weight): Verification by emulator developers
+ * - User trust score: Positive-only boost for trusted community members
+ *
+ * SoC Fallback Strategy:
+ * - When a device has fewer than MINIMUM_DEVICE_LISTINGS for a system,
+ *   fallback to aggregating data from all devices with the same SoC
  */
+
+/**
+ * Minimum device-specific listings required before using SoC fallback
+ */
+export const MINIMUM_DEVICE_LISTINGS = 5
 
 /**
  * Listing data structure needed for scoring calculations
@@ -24,6 +34,7 @@ export interface ScoringListing {
   developerVerifications?: ListingDeveloperVerification[]
   author?: {
     id: string
+    trustScore: number
   }
   emulator?: {
     id: string
@@ -120,25 +131,57 @@ export function getVerificationBoost(
 }
 
 /**
+ * Calculates trust score boost (0-5 points)
+ * Trust score can only positively impact the score
+ * Listings from users with negative trust score should be excluded before calling this
+ */
+export function calculateTrustBoost(userTrustScore: number): number {
+  if (userTrustScore <= 0) return 0
+
+  // Linear boost capped at 5 points
+  // 50 trust score = +5 points max
+  // 25 trust score = +2.5 points
+  // 10 trust score = +1 point
+  return Math.min(5, userTrustScore * 0.1)
+}
+
+/**
  * Calculates a single listing's compatibility score (0-100)
  *
  * Formula:
- * - Base Score = (Performance Quality * 0.5) + (Vote Confidence * 0.3)
- * - Final Score = Base Score + Developer Verification Boost (max 20)
+ * - When voteCount === 0:
+ *   Base Score = Performance Quality + Trust Boost + Developer Verification Boost
+ * - When voteCount > 0:
+ *   Base Score = (Performance Quality * 0.5) + (Vote Confidence * 0.3) + Developer Verification Boost
+ * - Final Score capped at 100
  */
 export function calculateListingScore(
   listing: ScoringListingWithMetadata,
   weights: ScoreWeights = DEFAULT_SCORE_WEIGHTS,
 ): number {
+  // Exclude listings from users with negative trust score
+  const userTrustScore = listing.author?.trustScore ?? 0
+  if (userTrustScore < 0) {
+    return 0
+  }
+
   // 1. Performance quality score (0-100)
   const performanceScore = getPerformanceQualityScore(listing.performance.rank)
 
-  // 2. Vote confidence from Wilson score (0-100)
-  // successRate is already 0.0-1.0, scale to 0-100
-  const voteConfidence = listing.successRate * 100
-
-  // 3. Developer verification boost (0-20)
+  // 2. Developer verification boost (0-20)
   const verificationBoost = getVerificationBoost(listing)
+
+  // 3. Handle zero-vote scenario differently
+  if (listing.voteCount === 0) {
+    // Use performance rating + trust score only (no vote confidence)
+    const trustBoost = calculateTrustBoost(userTrustScore)
+    const finalScore = Math.min(100, performanceScore + verificationBoost + trustBoost)
+    return Math.round(finalScore)
+  }
+
+  // 4. Has votes - use weighted formula
+  // Vote confidence from Wilson score (0-100)
+  const voteConfidence = listing.successRate * 100
 
   // Weighted combination
   const baseScore = performanceScore * weights.performance + voteConfidence * weights.voteConfidence
@@ -259,7 +302,7 @@ export interface EmulatorScoring {
   listings: ScoringListingWithMetadata[]
   avgCompatibilityScore: number
   avgPerformanceRank: number
-  avgSuccessRate: number
+  avgSuccessRate: number | null
   developerVerifiedCount: number
   authoredByDeveloperCount: number
 }
@@ -289,8 +332,11 @@ export function aggregateByEmulator(listings: ScoringListingWithMetadata[]): Emu
     const avgPerformanceRank =
       emulatorListings.reduce((sum, l) => sum + l.performance.rank, 0) / emulatorListings.length
 
+    const listingsWithVotes = emulatorListings.filter((l) => l.voteCount > 0)
     const avgSuccessRate =
-      emulatorListings.reduce((sum, l) => sum + l.successRate, 0) / emulatorListings.length
+      listingsWithVotes.length > 0
+        ? listingsWithVotes.reduce((sum, l) => sum + l.successRate, 0) / listingsWithVotes.length
+        : null
 
     const developerVerifiedCount = emulatorListings.filter(
       (l) => (l.developerVerifications?.length ?? 0) > 0,
@@ -323,7 +369,7 @@ export interface SystemScoring {
   uniqueGames: Set<string>
   compatibilityScore: number
   avgPerformanceRank: number
-  avgSuccessRate: number
+  avgSuccessRate: number | null
   developerVerifiedCount: number
   authoredByDeveloperCount: number
   totalVotes: number
@@ -357,16 +403,18 @@ export function aggregateBySystem(listings: ScoringListingWithMetadata[]): Syste
     const avgPerformanceRank =
       systemListings.reduce((sum, l) => sum + l.performance.rank, 0) / systemListings.length
 
+    const totalVotes = systemListings.reduce((sum, l) => sum + l.voteCount, 0)
+    const listingsWithVotes = systemListings.filter((l) => l.voteCount > 0)
     const avgSuccessRate =
-      systemListings.reduce((sum, l) => sum + l.successRate, 0) / systemListings.length
+      listingsWithVotes.length > 0
+        ? listingsWithVotes.reduce((sum, l) => sum + l.successRate, 0) / listingsWithVotes.length
+        : null
 
     const developerVerifiedCount = systemListings.filter(
       (l) => (l.developerVerifications?.length ?? 0) > 0,
     ).length
 
     const authoredByDeveloperCount = systemListings.filter((l) => l.isVerifiedDeveloper).length
-
-    const totalVotes = systemListings.reduce((sum, l) => sum + l.voteCount, 0)
 
     const lastUpdated = systemListings.reduce(
       (latest, l) => (l.createdAt > latest ? l.createdAt : latest),

@@ -4,14 +4,45 @@ import {
   getPerformanceQualityScore,
   getVerificationBoost,
   calculateListingScore,
+  calculateTrustBoost,
   calculateVoteWeight,
   calculateRecencyWeight,
   aggregateSystemScore,
   calculateConfidenceLevel,
   aggregateByEmulator,
   aggregateBySystem,
+  MINIMUM_DEVICE_LISTINGS,
   type ScoringListingWithMetadata,
 } from './compatibility-scoring'
+
+describe('MINIMUM_DEVICE_LISTINGS constant', () => {
+  it('should be set to 5 for SoC fallback threshold', () => {
+    expect(MINIMUM_DEVICE_LISTINGS).toBe(5)
+  })
+})
+
+describe('Trust Boost Calculation', () => {
+  it('should return 0 for negative trust scores', () => {
+    expect(calculateTrustBoost(-10)).toBe(0)
+    expect(calculateTrustBoost(-1)).toBe(0)
+  })
+
+  it('should return 0 for zero trust score', () => {
+    expect(calculateTrustBoost(0)).toBe(0)
+  })
+
+  it('should calculate linear boost for positive trust scores', () => {
+    expect(calculateTrustBoost(10)).toBe(1) // 10 * 0.1 = 1
+    expect(calculateTrustBoost(25)).toBe(2.5) // 25 * 0.1 = 2.5
+  })
+
+  it('should cap boost at 5 points', () => {
+    expect(calculateTrustBoost(50)).toBe(5) // 50 * 0.1 = 5 (max)
+    expect(calculateTrustBoost(60)).toBe(5) // Would be 6, but capped
+    expect(calculateTrustBoost(100)).toBe(5) // Would be 10, but capped
+    expect(calculateTrustBoost(1000)).toBe(5)
+  })
+})
 
 describe('Performance Quality Score', () => {
   it('should map rank 1 (Perfect) to 100', () => {
@@ -109,17 +140,79 @@ describe('calculateListingScore', () => {
     successRate: number,
     isVerified: boolean = false,
     devVerifications: number = 0,
+    voteCount: number = 10,
+    trustScore: number = 0,
   ): ScoringListingWithMetadata => ({
     id: 'test-id',
     performanceId: performanceRank,
     performance: { id: performanceRank, rank: performanceRank, label: 'Test', description: null },
     successRate,
-    voteCount: 10,
-    upvoteCount: 8,
-    downvoteCount: 2,
+    voteCount,
+    upvoteCount: voteCount > 0 ? Math.floor(voteCount * successRate) : 0,
+    downvoteCount: voteCount > 0 ? voteCount - Math.floor(voteCount * successRate) : 0,
+    author: { id: 'user-1', trustScore },
     isVerifiedDeveloper: isVerified,
     developerVerifications: Array(devVerifications).fill({ id: 'test' }) as never,
     createdAt: new Date(),
+  })
+
+  describe('Zero Votes Scenario', () => {
+    it('should exclude listings with negative trust score', () => {
+      const listing = createMockListing(1, 0, false, 0, 0, -10)
+      expect(calculateListingScore(listing)).toBe(0)
+    })
+
+    it('should score Perfect listing with 0 votes at 100', () => {
+      const listing = createMockListing(1, 0, false, 0, 0, 0)
+      // Perfect (100) + no trust (0) + no verification (0) = 100
+      expect(calculateListingScore(listing)).toBe(100)
+    })
+
+    it('should add trust boost to zero-vote Perfect listings (capped at 100)', () => {
+      const listing = createMockListing(1, 0, false, 0, 0, 50)
+      // Perfect (100) + trust (5) + no verification (0) = 105, capped at 100
+      expect(calculateListingScore(listing)).toBe(100)
+    })
+
+    it('should add trust boost to zero-vote Great listings', () => {
+      const listing = createMockListing(2, 0, false, 0, 0, 50)
+      // Great (85) + trust (5) + no verification (0) = 90
+      expect(calculateListingScore(listing)).toBe(90)
+    })
+
+    it('should add verification boost to zero-vote listings', () => {
+      const listing = createMockListing(2, 0, true, 0, 0, 0)
+      // Great (85) + no trust (0) + verification (10) = 95
+      expect(calculateListingScore(listing)).toBe(95)
+    })
+
+    it('should combine trust and verification for zero-vote listings', () => {
+      const listing = createMockListing(2, 0, true, 0, 0, 50)
+      // Great (85) + trust (5) + verification (10) = 100
+      expect(calculateListingScore(listing)).toBe(100)
+    })
+
+    it('should work for Poor performance with zero votes', () => {
+      const listing = createMockListing(4, 0, false, 0, 0, 20)
+      // Poor (40) + trust (2) + no verification (0) = 42
+      expect(calculateListingScore(listing)).toBe(42)
+    })
+
+    it('should cap score at 100 even with high boosts', () => {
+      const listing = createMockListing(1, 0, true, 3, 0, 100)
+      // Perfect (100) + trust (5, capped) + verification (20) = 125, capped at 100
+      expect(calculateListingScore(listing)).toBe(100)
+    })
+  })
+
+  describe('With Votes Scenario (Original Behavior)', () => {
+    it('should NOT use trust boost when votes exist', () => {
+      const listingNoTrust = createMockListing(1, 0.95, false, 0, 10, 0)
+      const listingHighTrust = createMockListing(1, 0.95, false, 0, 10, 100)
+
+      // Both should have same score since trust is ignored when votes exist
+      expect(calculateListingScore(listingNoTrust)).toBe(calculateListingScore(listingHighTrust))
+    })
   })
 
   it('should calculate score for Perfect performance with high votes', () => {
