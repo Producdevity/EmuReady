@@ -16,8 +16,7 @@ import { cn } from '@/lib/utils'
 
 // Generic Option type to allow flexibility for the consumer
 export interface AutocompleteOptionBase {
-  // Allow any other properties, but prefer unknown over any for better type safety
-  [key: string]: unknown
+  [key: string]: unknown // Allow any other properties
 }
 
 interface AutocompleteProps<T extends AutocompleteOptionBase> {
@@ -413,12 +412,22 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
       updateDropdownPosition()
     }
 
-    window.addEventListener('resize', handleReposition)
-    window.addEventListener('scroll', handleReposition, true)
+    window.addEventListener('resize', handleReposition, { passive: true })
+    window.addEventListener('scroll', handleReposition, { capture: true, passive: true })
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleReposition)
+      window.visualViewport.addEventListener('scroll', handleReposition)
+    }
 
     return () => {
       window.removeEventListener('resize', handleReposition)
       window.removeEventListener('scroll', handleReposition, true)
+
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleReposition)
+        window.visualViewport.removeEventListener('scroll', handleReposition)
+      }
     }
   }, [isOpen, updateDropdownPosition])
 
