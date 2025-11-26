@@ -69,9 +69,13 @@ export function BulkActions(props: BulkActionsProps) {
   const handleOpenInTabs = () => {
     if (!props.actions?.openInTabs) return
 
-    props.selectedIds.forEach((id) => {
-      const url = props.actions!.openInTabs!.getUrl(id)
-      window.open(url, '_blank', 'noopener,noreferrer')
+    const { getUrl } = props.actions.openInTabs
+
+    props.selectedIds.forEach((id, index) => {
+      setTimeout(() => {
+        const url = getUrl(id)
+        window.open(url, '_blank', 'noopener,noreferrer')
+      }, index * 100)
     })
   }
 
