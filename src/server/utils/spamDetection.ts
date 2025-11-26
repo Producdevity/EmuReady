@@ -275,30 +275,168 @@ export class SpamDetectionService {
   }
 
   /**
-   * Check for known spam patterns
+   * Check for known spam patterns using advanced detection techniques
+   * Based on 2024-2025 spam research including crypto scams, unicode obfuscation, and modern tactics
    */
   private checkSpamPatterns(content: string): SpamDetectionResult {
-    const spamPatterns = [
-      /\b(click here|buy now|limited time|act now|free money|get rich|work from home)\b/gi,
+    const normalizedContent = content.toLowerCase()
+    let spamScore = 0
+    const detectedPatterns: string[] = []
+
+    const classicSpamPatterns = [
+      /\b(click\s*here|buy\s*now|limited\s*time|act\s*now|free\s*money|get\s*rich|work\s*from\s*home)\b/gi,
       /\b(viagra|cialis|casino|poker|lottery)\b/gi,
-      /\b(congratulations! you['']?ve won|you are a winner)\b/gi,
-      /\b(cheap (meds|pills|drugs)|online pharmacy)\b/gi,
-      /\b(mlm|multi-level marketing|pyramid scheme)\b/gi,
+      /\b(congratulations[!]?\s*you['']?ve\s*won|you\s*are\s*a\s*winner)\b/gi,
+      /\b(cheap\s*(meds|pills|drugs)|online\s*pharmacy)\b/gi,
+      /\b(mlm|multi[-\s]level\s*marketing|pyramid\s*scheme)\b/gi,
     ]
 
-    for (const pattern of spamPatterns) {
+    const modernCryptoScamPatterns = [
+      /\b(airdrop|free\s*(nft|crypto|eth|btc|tokens?))\b/gi,
+      /\b(claim\s*your|exclusive\s*(offer|drop|mint))\b/gi,
+      /\b(stealth\s*launch|presale\s*now|whitelist\s*spot)\b/gi,
+      /\b(100x|moon|pump|lambo|wen\s*moon)\b/gi,
+      /\b(connect\s*wallet|verify\s*wallet|wallet\s*verification)\b/gi,
+      /\b(dm\s*me|check\s*dm|direct\s*message|telegram\s*me)\b/gi,
+      /\b(investment\s*opportunity|guaranteed\s*returns?|passive\s*income)\b/gi,
+      /\b(join\s*our\s*(discord|telegram)|private\s*group)\b/gi,
+    ]
+
+    const suspiciousTLDs = [
+      /\.(xyz|top|work|click|link|loan|gdn|racing|download|stream|win|bid)\b/gi,
+      /\.(gq|ml|ga|tk|cf)\b/gi,
+    ]
+
+    const shortenedUrlServices = [
+      /\b(bit\.ly|tinyurl|goo\.gl|ow\.ly|short\.link|tiny\.cc|is\.gd)\b/gi,
+      /\b(cutt\.ly|rebrand\.ly|t\.co|buff\.ly|clk\.sh)\b/gi,
+    ]
+
+    for (const pattern of classicSpamPatterns) {
       const matches = content.match(pattern)
       if (matches && matches.length > 0) {
-        return {
-          isSpam: true,
-          confidence: 0.85,
-          method: 'pattern_matching',
-          reason: `Matched known spam pattern: ${matches[0]}`,
-        }
+        spamScore += 0.75
+        detectedPatterns.push(`classic spam: "${matches[0]}"`)
+      }
+    }
+
+    for (const pattern of modernCryptoScamPatterns) {
+      const matches = content.match(pattern)
+      if (matches && matches.length > 0) {
+        spamScore += 0.8
+        detectedPatterns.push(`crypto scam: "${matches[0]}"`)
+      }
+    }
+
+    for (const pattern of suspiciousTLDs) {
+      const matches = content.match(pattern)
+      if (matches && matches.length > 0) {
+        spamScore += 0.7
+        detectedPatterns.push(`suspicious TLD: "${matches[0]}"`)
+      }
+    }
+
+    for (const pattern of shortenedUrlServices) {
+      const matches = content.match(pattern)
+      if (matches && matches.length > 0) {
+        spamScore += 0.75
+        detectedPatterns.push(`shortened URL: "${matches[0]}"`)
+      }
+    }
+
+    const leetSpeakScore = this.detectLeetspeakObfuscation(normalizedContent)
+    if (leetSpeakScore > 0) {
+      spamScore += leetSpeakScore
+      detectedPatterns.push('character substitution/leetspeak')
+    }
+
+    const unicodeScore = this.detectUnicodeObfuscation(content)
+    if (unicodeScore > 0) {
+      spamScore += unicodeScore
+      detectedPatterns.push('unicode obfuscation')
+    }
+
+    const urlCount = (content.match(/https?:\/\/[^\s]+/gi) || []).length
+    if (urlCount >= 3) {
+      spamScore += 0.4 * Math.min(urlCount - 2, 3)
+      detectedPatterns.push(`excessive URLs (${urlCount})`)
+    }
+
+    if (spamScore >= 0.7) {
+      return {
+        isSpam: true,
+        confidence: Math.min(spamScore, 0.99),
+        method: 'pattern_matching',
+        reason: `Spam patterns detected: ${detectedPatterns.join(', ')}`,
       }
     }
 
     return { isSpam: false, confidence: 0, method: 'pattern_matching' }
+  }
+
+  /**
+   * Detect leetspeak and character substitution obfuscation
+   * Common substitutions: a->@/4, e->3, i->1/!, o->0, s->$, t->7
+   */
+  private detectLeetspeakObfuscation(content: string): number {
+    const leetspeakPatterns = [
+      /\b[a-z]*[@4][a-z]*3[a-z]*[1!][a-z]*0[a-z]*\b/i,
+      /\b[a-z]*[@4][a-z]*\$[a-z]*[1!][a-z]*\b/i,
+      /\b(fr[e3][e3]|w[1!]n|c[a@4]$h|pr[1!]z[e3])\b/i,
+      /\b(b[1!]tc[o0][1!]n|[e3]th[e3]r[e3]um|cr[y1]pt[o0])\b/i,
+    ]
+
+    let score = 0
+    const substitutionCount = (content.match(/[@4$!]/g) || []).length
+    const contentLength = content.replace(/\s/g, '').length
+
+    if (substitutionCount >= 3 && substitutionCount / contentLength > 0.05) {
+      score += 0.3
+    }
+
+    let patternMatches = 0
+    for (const pattern of leetspeakPatterns) {
+      if (pattern.test(content)) {
+        patternMatches++
+      }
+    }
+
+    if (patternMatches >= 2) {
+      score += 0.7
+    } else if (patternMatches === 1) {
+      score += 0.4
+    }
+
+    return score
+  }
+
+  /**
+   * Detect unicode homoglyphs and obfuscation attempts
+   * Checks for mixed scripts and suspicious unicode ranges
+   */
+  private detectUnicodeObfuscation(content: string): number {
+    let score = 0
+
+    const cyrillicCount = (content.match(/[\u0400-\u04FF]/g) || []).length
+    const greekCount = (content.match(/[\u0370-\u03FF]/g) || []).length
+    const latinCount = (content.match(/[A-Za-z]/g) || []).length
+
+    if (latinCount > 5 && (cyrillicCount > 0 || greekCount > 0)) {
+      const mixedScriptRatio =
+        (cyrillicCount + greekCount) / (latinCount + cyrillicCount + greekCount)
+      if (mixedScriptRatio > 0.1 && mixedScriptRatio < 0.9) {
+        score += 0.6
+      }
+    }
+
+    const invisibleChars = (
+      content.match(/[\u200B-\u200D\uFEFF\u00AD\u061C\u180E\u2060-\u2069]/g) || []
+    ).length
+    if (invisibleChars > 2) {
+      score += 0.5
+    }
+
+    return score
   }
 
   /**

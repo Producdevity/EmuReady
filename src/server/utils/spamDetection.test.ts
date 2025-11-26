@@ -244,7 +244,7 @@ describe('SpamDetectionService', () => {
       })
 
       expect(result.isSpam).toBe(true)
-      expect(result.confidence).toBe(0.85)
+      expect(result.confidence).toBe(0.99)
       expect(result.method).toBe('pattern_matching')
       expect(result.reason?.toLowerCase()).toContain('click here')
     })
@@ -624,6 +624,97 @@ describe('SpamDetectionService', () => {
 
         expect(suspiciousResult.isSpam).toBe(true)
         expect(legitResult.isSpam).toBe(false)
+      })
+    })
+
+    describe('Advanced Pattern Detection', () => {
+      beforeEach(() => {
+        vi.mocked(mockPrisma.listing.count).mockResolvedValue(1)
+        vi.mocked(mockPrisma.comment.count).mockResolvedValue(1)
+        vi.mocked(mockPrisma.listing.findMany).mockResolvedValue([])
+        vi.mocked(mockPrisma.comment.findMany).mockResolvedValue([])
+      })
+
+      it('should detect modern crypto scam patterns', async () => {
+        const cryptoScams = [
+          'Free NFT airdrop! Claim your tokens now',
+          'Join our exclusive Discord for 100x gains',
+          'Connect wallet to verify ownership',
+          'DM me for whitelist spot',
+        ]
+
+        for (const scam of cryptoScams) {
+          const result = await service.detectSpam({
+            userId: 'user-123',
+            content: scam,
+            entityType: 'comment',
+          })
+          expect(result.isSpam).toBe(true)
+          expect(result.method).toBe('pattern_matching')
+        }
+      })
+
+      it('should detect suspicious TLDs', async () => {
+        const result = await service.detectSpam({
+          userId: 'user-123',
+          content: 'Check out this site example.xyz for amazing deals',
+          entityType: 'comment',
+        })
+
+        expect(result.isSpam).toBe(true)
+        expect(result.method).toBe('pattern_matching')
+      })
+
+      it('should detect leetspeak obfuscation', async () => {
+        const result = await service.detectSpam({
+          userId: 'user-123',
+          content: 'Fr33 b1tc0!n w1n c@$h pr1z3',
+          entityType: 'comment',
+        })
+
+        expect(result.isSpam).toBe(true)
+        expect(result.method).toBe('pattern_matching')
+      })
+
+      it('should detect excessive URLs', async () => {
+        const result = await service.detectSpam({
+          userId: 'user-123',
+          content:
+            'Check these links: https://example1.com https://example2.com https://example3.com https://example4.com',
+          entityType: 'comment',
+        })
+
+        expect(result.isSpam).toBe(true)
+        expect(result.method).toBe('pattern_matching')
+      })
+
+      it('should allow legitimate game discussion', async () => {
+        const legitContent = [
+          'This emulator runs Pokemon really well on my device',
+          'Great performance with RetroArch on Steam Deck',
+          'You can download the latest version from the official site',
+        ]
+
+        for (const content of legitContent) {
+          const result = await service.detectSpam({
+            userId: 'user-123',
+            content,
+            entityType: 'listing',
+          })
+          expect(result.isSpam).toBe(false)
+        }
+      })
+
+      it('should handle combined spam signals', async () => {
+        const result = await service.detectSpam({
+          userId: 'user-123',
+          content: 'FREE AIRDROP!!! bit.ly/crypto claim your tokens DM me now!!!',
+          entityType: 'comment',
+        })
+
+        expect(result.isSpam).toBe(true)
+        expect(result.confidence).toBeGreaterThan(0.9)
+        expect(result.method).toBe('content_analysis')
       })
     })
   })
