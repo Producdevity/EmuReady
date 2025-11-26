@@ -1,183 +1,163 @@
 'use client'
 
-import { Flag } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { EmulatorIcon, SystemIcon } from '@/components/icons'
+import { AlertTriangle, Flag } from 'lucide-react'
 import {
-  Button,
-  Modal,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  LocalizedDate,
-} from '@/components/ui'
+  GameInfoSection,
+  EmulatorInfoSection,
+  UserInfoSection,
+  PerformanceSection,
+  NotesSection,
+} from '@/app/listings/components/shared/approval/ApprovalModalSharedComponents'
+import { Button, Modal, Input } from '@/components/ui'
 import { useEmulatorLogos } from '@/hooks'
 import { type RouterOutput } from '@/types/trpc'
-import getImageUrl from '@/utils/getImageUrl'
+import { ApprovalStatus } from '@orm'
 
 type PendingPcListing = RouterOutput['pcListings']['pending']['pcListings'][number]
 
-interface ApprovalModalProps {
-  listing: PendingPcListing
-  onClose: () => void
-  onApprove: (id: string) => Promise<void>
-  isLoading: boolean
+interface Props {
+  showApprovalModal: boolean
+  closeApprovalModal: () => void
+  selectedPcListingForApproval: PendingPcListing
+  approvalDecision: ApprovalStatus
+  approvalNotes: string
+  setApprovalNotes: (notes: string) => void
+  handleApprovalSubmit: () => void
+  approveMutation: { isPending: boolean }
+  rejectMutation: { isPending: boolean }
 }
 
-function ApprovalModal(props: ApprovalModalProps) {
+function ApprovalModal(props: Props) {
   const emulatorLogos = useEmulatorLogos()
 
-  const handleApprove = async () => {
-    await props.onApprove(props.listing.id)
-    props.onClose()
+  const hasReports = (props.selectedPcListingForApproval._count?.reports ?? 0) > 0
+
+  const getModalTitle = () => {
+    const actionText = props.approvalDecision === ApprovalStatus.APPROVED ? 'Approve' : 'Reject'
+    return `${actionText} PC Listing: ${props.selectedPcListingForApproval.game.title}`
+  }
+
+  const getButtonVariant = () => {
+    if (props.approvalDecision === ApprovalStatus.REJECTED) return 'danger'
+    return hasReports ? 'destructive' : 'default'
+  }
+
+  const getButtonText = () => {
+    if (props.approvalDecision === ApprovalStatus.REJECTED) return 'Confirm Rejection'
+    return hasReports ? 'Approve Anyway' : 'Confirm Approval'
   }
 
   return (
-    <Modal isOpen onClose={props.onClose} title="Review PC Listing" size="lg">
-      <div className="space-y-6">
-        {/* User Warning Banner */}
-        {(props.listing._count?.reports ?? 0) > 0 && (
+    <Modal
+      isOpen={props.showApprovalModal}
+      onClose={props.closeApprovalModal}
+      title={getModalTitle()}
+      size="lg"
+    >
+      <div className="space-y-4">
+        {hasReports && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <div className="flex items-center gap-2 text-red-800 dark:text-red-200">
-              <Flag className="w-5 h-5" />
-              <p className="font-medium">Warning: This listing has active reports</p>
-            </div>
-            <p className="text-sm text-red-600 dark:text-red-300 mt-1">
-              Please review this PC listing carefully before approving.
-            </p>
-          </div>
-        )}
-
-        {/* Listing Details */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Game Info */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Game</h3>
-            <div className="flex items-center gap-3">
-              {props.listing.game.imageUrl && (
-                <Image
-                  src={getImageUrl(props.listing.game.imageUrl, props.listing.game.title)}
-                  alt={props.listing.game.title}
-                  width={48}
-                  height={48}
-                  className="object-cover rounded"
-                  unoptimized
-                />
-              )}
-              <div>
-                <p className="font-medium text-gray-900 dark:text-white">
-                  {props.listing.game.title}
+            <div className="flex items-start gap-3">
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                <Flag className="w-4 h-4 text-red-500" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-medium text-red-800 dark:text-red-200 mb-1">
+                  ⚠️ Reported Listing Warning
+                </h4>
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  This PC listing has{' '}
+                  <strong>
+                    {props.selectedPcListingForApproval._count?.reports ?? 0} active reports
+                  </strong>
+                  .
                 </p>
-                <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
-                  <SystemIcon
-                    systemKey={props.listing.game.system.key}
-                    name={props.listing.game.system.name}
-                    size="sm"
-                  />
-                  {props.listing.game.system.name}
-                </div>
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                  Please review this listing carefully before{' '}
+                  {props.approvalDecision === ApprovalStatus.APPROVED ? 'approval' : 'rejection'}.
+                  Consider checking the reports page for more details.
+                </p>
               </div>
             </div>
           </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <GameInfoSection game={props.selectedPcListingForApproval.game} />
 
           {/* Hardware Info */}
           <div>
             <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Hardware</h3>
             <div className="space-y-1">
               <p className="text-sm text-gray-900 dark:text-white">
-                <span className="font-medium">CPU:</span> {props.listing.cpu.brand.name}{' '}
-                {props.listing.cpu.modelName}
+                <span className="font-medium">CPU:</span>{' '}
+                {props.selectedPcListingForApproval.cpu.brand.name}{' '}
+                {props.selectedPcListingForApproval.cpu.modelName}
               </p>
-              <p className="text-sm text-gray-900 dark:text-white">
-                <span className="font-medium">GPU:</span> {props.listing.gpu?.brand.name}{' '}
-                {props.listing.gpu?.modelName}
-              </p>
-            </div>
-          </div>
-
-          {/* Emulator Info */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Emulator</h3>
-            <div className="flex items-center gap-2">
-              <EmulatorIcon
-                logo={props.listing.emulator.logo}
-                name={props.listing.emulator.name}
-                size="md"
-                showLogo={emulatorLogos.showEmulatorLogos}
-              />
-              <span className="text-gray-900 dark:text-white">{props.listing.emulator.name}</span>
-            </div>
-          </div>
-
-          {/* User Info */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-              Submitted By
-            </h3>
-            <div className="flex items-center gap-2">
-              <Link
-                href={`/user/${props.listing.author.id}`}
-                target="_blank"
-                className="text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300"
-              >
-                {props.listing.author.name}
-              </Link>
-              {(props.listing._count?.reports ?? 0) > 0 && (
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Flag className="w-4 h-4 text-red-500" />
-                  </TooltipTrigger>
-                  <TooltipContent>This listing has active reports</TooltipContent>
-                </Tooltip>
+              {props.selectedPcListingForApproval.gpu && (
+                <p className="text-sm text-gray-900 dark:text-white">
+                  <span className="font-medium">GPU:</span>{' '}
+                  {props.selectedPcListingForApproval.gpu.brand.name}{' '}
+                  {props.selectedPcListingForApproval.gpu.modelName}
+                </p>
               )}
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              <LocalizedDate date={props.listing.createdAt} format="dateTime" />
-            </p>
           </div>
+
+          <EmulatorInfoSection
+            emulator={props.selectedPcListingForApproval.emulator}
+            showLogo={emulatorLogos.showEmulatorLogos}
+          />
+
+          <UserInfoSection
+            author={props.selectedPcListingForApproval.author}
+            createdAt={props.selectedPcListingForApproval.createdAt}
+          />
         </div>
 
-        {/* Performance Score */}
-        {props.listing.performance && (
+        <PerformanceSection performance={props.selectedPcListingForApproval.performance} />
+
+        <NotesSection notes={props.selectedPcListingForApproval.notes} />
+
+        {/* Rejection Notes Input */}
+        {props.approvalDecision === ApprovalStatus.REJECTED && (
           <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-              Performance Score
-            </h3>
-            <div className="flex items-center gap-2">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {props.listing.performance.rank}
-              </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                {props.listing.performance.label}
-              </div>
-            </div>
+            <label
+              htmlFor="rejectionNotes"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Rejection Notes (Optional)
+            </label>
+            <Input
+              as="textarea"
+              id="rejectionNotes"
+              value={props.approvalNotes}
+              onChange={(ev) => props.setApprovalNotes(ev.target.value)}
+              rows={4}
+              placeholder="Reason for rejection..."
+              className="w-full mt-1"
+            />
           </div>
         )}
 
-        {/* Notes */}
-        {props.listing.notes && (
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Notes</h3>
-            <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
-              {props.listing.notes}
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Actions */}
-      <div className="mt-6 flex justify-end gap-3">
-        <Button variant="outline" onClick={props.onClose} disabled={props.isLoading}>
-          Cancel
-        </Button>
-        <Button
-          variant={(props.listing._count?.reports ?? 0) > 0 ? 'destructive' : 'default'}
-          onClick={handleApprove}
-          disabled={props.isLoading}
-        >
-          {(props.listing._count?.reports ?? 0) > 0 ? 'Approve Anyway' : 'Approve PC Listing'}
-        </Button>
+        <div className="flex justify-end space-x-3 pt-4 border-t dark:border-gray-700 mt-6">
+          <Button
+            variant="ghost"
+            onClick={props.closeApprovalModal}
+            disabled={props.approveMutation.isPending || props.rejectMutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant={getButtonVariant()}
+            onClick={props.handleApprovalSubmit}
+            isLoading={props.approveMutation.isPending || props.rejectMutation.isPending}
+            disabled={props.approveMutation.isPending || props.rejectMutation.isPending}
+          >
+            {getButtonText()}
+          </Button>
+        </div>
       </div>
     </Modal>
   )

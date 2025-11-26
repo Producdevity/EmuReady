@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef } from 'react'
+import { ListingApprovalActions } from '@/app/listings/components/shared/approval/ListingApprovalActions'
 import { CustomFieldsSection } from '@/app/listings/components/shared/CustomFieldsSection'
 import { ActionButtonsStack } from '@/app/listings/components/shared/details/ActionButtonsStack'
 import { AuthorPanel } from '@/app/listings/components/shared/details/AuthorPanel'
@@ -166,6 +167,11 @@ function ListingDetailsClient(props: Props) {
                 <ViewConfigButton
                   listingId={props.listing.id}
                   emulatorId={props.listing.emulatorId}
+                />
+                <ListingApprovalActions
+                  listing={props.listing}
+                  listingType="handheld"
+                  onApprovalSuccess={refreshData}
                 />
               </ActionButtonsStack>
             </div>

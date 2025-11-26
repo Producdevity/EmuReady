@@ -1,6 +1,6 @@
 'use client'
 
-import { Clock, Flag } from 'lucide-react'
+import { Clock, Flag, AlertTriangle } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -15,6 +15,7 @@ import {
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   ApproveButton,
+  Badge,
   ColumnVisibilityControl,
   DisplayToggleButton,
   LoadingSpinner,
@@ -36,11 +37,13 @@ import {
   useColumnVisibility,
   type ColumnDefinition,
 } from '@/hooks'
+import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
-import { type RouterOutput } from '@/types/trpc'
+import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import getImageUrl from '@/utils/getImageUrl'
+import { ApprovalStatus } from '@orm'
 import ApprovalModal from './components/ApprovalModal'
 
 type PendingPcListing = RouterOutput['pcListings']['pending']['pcListings'][number]
@@ -86,6 +89,10 @@ function PcListingApprovalsPage() {
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set())
   const [showModal, setShowModal] = useState(false)
   const [selectedListing, setSelectedListing] = useState<PendingPcListing | null>(null)
+  const [approvalDecision, setApprovalDecision] = useState<ApprovalStatus | null>(null)
+  const [approvalNotes, setApprovalNotes] = useState('')
+
+  const currentUserQuery = api.users.me.useQuery()
 
   const pendingPcListingsQuery = api.pcListings.pending.useQuery({
     page: table.page,
@@ -101,7 +108,16 @@ function PcListingApprovalsPage() {
 
   const utils = api.useUtils()
   const approveMutation = api.pcListings.approve.useMutation({
-    onSuccess: () => {
+    onSuccess: async (_result, variables) => {
+      toast.success('PC Listing approved successfully!')
+
+      analytics.admin.listingApproved({
+        listingId: variables.pcListingId,
+        adminId: currentUserQuery.data?.id ?? 'unknown',
+        gameId: selectedListing?.game.id,
+        systemId: selectedListing?.game.system.id,
+      })
+
       void utils.pcListings.pending.invalidate()
       void utils.pcListings.stats.invalidate()
       setSelectedRows(new Set())
@@ -112,7 +128,17 @@ function PcListingApprovalsPage() {
   })
 
   const rejectMutation = api.pcListings.reject.useMutation({
-    onSuccess: () => {
+    onSuccess: async (_result, variables) => {
+      toast.success('PC Listing rejected successfully!')
+
+      analytics.admin.listingRejected({
+        listingId: variables.pcListingId,
+        adminId: currentUserQuery.data?.id ?? 'unknown',
+        reason: variables.notes ?? undefined,
+        gameId: selectedListing?.game.id,
+        systemId: selectedListing?.game.system.id,
+      })
+
       void utils.pcListings.pending.invalidate()
       void utils.pcListings.stats.invalidate()
       setSelectedRows(new Set())
@@ -146,23 +172,33 @@ function PcListingApprovalsPage() {
     },
   })
 
-  const handleApprove = async (id: string) => {
-    await approveMutation.mutateAsync({ pcListingId: id })
+  const openApprovalModal = (listing: PendingPcListing, decision: ApprovalStatus) => {
+    setSelectedListing(listing)
+    setApprovalDecision(decision)
+    setApprovalNotes('')
+    setShowModal(true)
   }
 
-  const handleReject = async (id: string) => {
-    const listing = pendingPcListingsQuery.data?.pcListings.find((l) => l.id === id)
-    if (!listing) return
+  const closeApprovalModal = () => {
+    setShowModal(false)
+    setSelectedListing(null)
+    setApprovalNotes('')
+    setApprovalDecision(null)
+  }
 
-    const confirmed = await confirm({
-      title: 'Reject PC Listing',
-      description: `Are you sure you want to reject the PC listing for "${listing.game.title}"? This action will notify the user.`,
-      confirmText: 'Reject',
-    })
-
-    if (!confirmed) return
-
-    await rejectMutation.mutateAsync({ pcListingId: id })
+  const handleApprovalSubmit = () => {
+    if (!selectedListing || !approvalDecision) return
+    if (approvalDecision === ApprovalStatus.APPROVED) {
+      return approveMutation.mutate({
+        pcListingId: selectedListing.id,
+      } satisfies RouterInput['pcListings']['approve'])
+    }
+    if (approvalDecision === ApprovalStatus.REJECTED) {
+      return rejectMutation.mutate({
+        pcListingId: selectedListing.id,
+        notes: approvalNotes || undefined,
+      } satisfies RouterInput['pcListings']['reject'])
+    }
   }
 
   const handleBulkApprove = async () => {
@@ -222,11 +258,6 @@ function PcListingApprovalsPage() {
       newSet.add(id)
     }
     setSelectedRows(newSet)
-  }
-
-  const openModal = (listing: PendingPcListing) => {
-    setSelectedListing(listing)
-    setShowModal(true)
   }
 
   const renderRow = (listing: PendingPcListing) => (
@@ -298,20 +329,38 @@ function PcListingApprovalsPage() {
       )}
       {columnVisibility.isColumnVisible('user') && (
         <td className="px-6 py-4">
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/user/${listing.author.id}`}
-              className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300"
-            >
-              {listing.author.name}
-            </Link>
-            {(listing._count?.reports ?? 0) > 0 && (
-              <Tooltip>
-                <TooltipTrigger>
-                  <Flag className="w-4 h-4 text-red-500" />
-                </TooltipTrigger>
-                <TooltipContent>This listing has active reports</TooltipContent>
-              </Tooltip>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/user/${listing.author.id}`}
+                className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300"
+              >
+                {listing.author.name}
+              </Link>
+              {(listing._count?.reports ?? 0) > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1">
+                      <Flag className="w-4 h-4 text-red-500" />
+                      <AlertTriangle className="w-4 h-4 text-orange-500" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="text-sm">
+                      <p className="font-medium text-red-600 mb-1">⚠️ Reported Listing</p>
+                      <p>This listing has {listing._count?.reports ?? 0} active reports.</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Consider reviewing carefully before approval.
+                      </p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+            {listing.author?.userBans && listing.author.userBans.length > 0 && (
+              <Badge variant="danger" size="sm">
+                BANNED USER
+              </Badge>
             )}
           </div>
         </td>
@@ -333,12 +382,12 @@ function PcListingApprovalsPage() {
       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
         <div className="flex items-center justify-end space-x-2">
           <ApproveButton
-            onClick={() => openModal(listing)}
+            onClick={() => openApprovalModal(listing, ApprovalStatus.APPROVED)}
             disabled={approveMutation.isPending}
             title="Approve PC Listing"
           />
           <RejectButton
-            onClick={() => handleReject(listing.id)}
+            onClick={() => openApprovalModal(listing, ApprovalStatus.REJECTED)}
             disabled={rejectMutation.isPending}
             title="Reject PC Listing"
           />
@@ -522,15 +571,17 @@ function PcListingApprovalsPage() {
         />
       )}
 
-      {showModal && selectedListing && (
+      {showModal && selectedListing && approvalDecision && (
         <ApprovalModal
-          listing={selectedListing}
-          onClose={() => {
-            setShowModal(false)
-            setSelectedListing(null)
-          }}
-          onApprove={handleApprove}
-          isLoading={approveMutation.isPending}
+          showApprovalModal={showModal}
+          closeApprovalModal={closeApprovalModal}
+          selectedPcListingForApproval={selectedListing}
+          approvalDecision={approvalDecision}
+          approvalNotes={approvalNotes}
+          setApprovalNotes={setApprovalNotes}
+          handleApprovalSubmit={handleApprovalSubmit}
+          approveMutation={approveMutation}
+          rejectMutation={rejectMutation}
         />
       )}
     </AdminPageLayout>

@@ -1,9 +1,12 @@
 import { AlertTriangle, Flag } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { Modal, Button, Input, LocalizedDate, PerformanceBadge } from '@/components/ui'
+import {
+  GameInfoSection,
+  UserInfoSection,
+  PerformanceSection,
+  NotesSection,
+} from '@/app/listings/components/shared/approval/ApprovalModalSharedComponents'
+import { Modal, Button, Input } from '@/components/ui'
 import { type RouterOutput } from '@/types/trpc'
-import getImageUrl from '@/utils/getImageUrl'
 import { ApprovalStatus } from '@orm'
 
 type PendingListing = RouterOutput['listings']['getPending']['listings'][number]
@@ -61,33 +64,7 @@ function ApprovalModal(props: Props) {
 
         {/* Listing Details Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Game Info */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Game</h3>
-            <div className="flex items-center gap-3">
-              {props.selectedListingForApproval.game.imageUrl && (
-                <Image
-                  src={getImageUrl(
-                    props.selectedListingForApproval.game.imageUrl,
-                    props.selectedListingForApproval.game.title,
-                  )}
-                  alt={props.selectedListingForApproval.game.title}
-                  width={48}
-                  height={48}
-                  className="object-cover rounded"
-                  unoptimized
-                />
-              )}
-              <div>
-                <p className="font-medium text-gray-900 dark:text-white">
-                  {props.selectedListingForApproval.game.title}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {props.selectedListingForApproval.game.system.name}
-                </p>
-              </div>
-            </div>
-          </div>
+          <GameInfoSection game={props.selectedListingForApproval.game} />
 
           {/* Device Info */}
           <div>
@@ -106,52 +83,15 @@ function ApprovalModal(props: Props) {
             </p>
           </div>
 
-          {/* User Info */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-              Submitted By
-            </h3>
-            <div>
-              <Link
-                href={`/users/${props.selectedListingForApproval.author?.id}`}
-                target="_blank"
-                className="text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300"
-              >
-                {props.selectedListingForApproval.author?.name || 'Unknown'}
-              </Link>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                <LocalizedDate
-                  date={props.selectedListingForApproval.createdAt}
-                  format="dateTime"
-                />
-              </p>
-            </div>
-          </div>
+          <UserInfoSection
+            author={props.selectedListingForApproval.author}
+            createdAt={props.selectedListingForApproval.createdAt}
+          />
         </div>
 
-        {/* Performance Score */}
-        {props.selectedListingForApproval.performance && (
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-              Performance
-            </h3>
-            <PerformanceBadge
-              rank={props.selectedListingForApproval.performance.rank}
-              label={props.selectedListingForApproval.performance.label}
-              description={props.selectedListingForApproval.performance.description}
-            />
-          </div>
-        )}
+        <PerformanceSection performance={props.selectedListingForApproval.performance} />
 
-        {/* Notes */}
-        {props.selectedListingForApproval.notes && (
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Notes</h3>
-            <p className="text-gray-900 dark:text-white whitespace-pre-wrap">
-              {props.selectedListingForApproval.notes}
-            </p>
-          </div>
-        )}
+        <NotesSection notes={props.selectedListingForApproval.notes} />
         {props.approvalDecision === ApprovalStatus.REJECTED && (
           <div>
             <label

@@ -16,6 +16,7 @@ import {
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   ApproveButton,
+  Badge,
   BulkActions,
   Button,
   ColumnVisibilityControl,
@@ -510,33 +511,42 @@ function AdminApprovalsPage() {
                     )}
                     {columnVisibility.isColumnVisible('author') && (
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                        <div className="flex items-center gap-2">
-                          <span>{listing.author?.name ?? 'N/A'}</span>
-                          {listing.authorReportStats?.hasReports && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="flex items-center gap-1">
-                                  <Flag className="w-4 h-4 text-red-500" />
-                                  <AlertTriangle className="w-4 h-4 text-orange-500" />
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <div className="text-sm">
-                                  <p className="font-medium text-red-600 mb-1">⚠️ Reported User</p>
-                                  <p>
-                                    This user has {listing.authorReportStats.totalReports} active
-                                    reports
-                                  </p>
-                                  <p>
-                                    against {listing.authorReportStats.reportedListingsCount} of
-                                    their listings.
-                                  </p>
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    Consider reviewing carefully before approval.
-                                  </p>
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span>{listing.author?.name ?? 'N/A'}</span>
+                            {listing.authorReportStats?.hasReports && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center gap-1">
+                                    <Flag className="w-4 h-4 text-red-500" />
+                                    <AlertTriangle className="w-4 h-4 text-orange-500" />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="text-sm">
+                                    <p className="font-medium text-red-600 mb-1">
+                                      ⚠️ Reported User
+                                    </p>
+                                    <p>
+                                      This user has {listing.authorReportStats.totalReports} active
+                                      reports
+                                    </p>
+                                    <p>
+                                      against {listing.authorReportStats.reportedListingsCount} of
+                                      their listings.
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Consider reviewing carefully before approval.
+                                    </p>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
+                          {listing.author?.userBans && listing.author.userBans.length > 0 && (
+                            <Badge variant="danger" size="sm">
+                              BANNED USER
+                            </Badge>
                           )}
                         </div>
                       </td>

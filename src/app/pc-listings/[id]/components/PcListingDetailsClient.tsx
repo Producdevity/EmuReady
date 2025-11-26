@@ -5,6 +5,7 @@ import { ArrowLeft, Monitor, Cpu, HardDrive, Globe2, Hash } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef } from 'react'
 import { VoteReminderBanner } from '@/app/listings/[id]/components/vote-reminder/VoteReminderBanner'
+import { ListingApprovalActions } from '@/app/listings/components/shared/approval/ListingApprovalActions'
 import { CustomFieldsSection } from '@/app/listings/components/shared/CustomFieldsSection'
 import { ActionButtonsStack } from '@/app/listings/components/shared/details/ActionButtonsStack'
 import { AuthorPanel } from '@/app/listings/components/shared/details/AuthorPanel'
@@ -228,6 +229,11 @@ function PcListingDetailsClient(props: Props) {
                     )?.id
                   }
                   onSuccess={refreshData}
+                />
+                <ListingApprovalActions
+                  listing={props.pcListing}
+                  listingType="pc"
+                  onApprovalSuccess={refreshData}
                 />
               </ActionButtonsStack>
             </div>
