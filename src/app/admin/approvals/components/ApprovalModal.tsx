@@ -24,11 +24,29 @@ interface Props {
 }
 
 function ApprovalModal(props: Props) {
+  const hasReports = props.selectedListingForApproval.authorReportStats?.hasReports ?? false
+  const actionText = props.approvalDecision === ApprovalStatus.APPROVED ? 'Approve' : 'Reject'
+  const modalTitle = `${actionText} Listing: ${props.selectedListingForApproval.game.title}`
+
+  const buttonVariant =
+    props.approvalDecision === ApprovalStatus.REJECTED
+      ? 'danger'
+      : hasReports
+        ? 'destructive'
+        : 'default'
+
+  const buttonText =
+    props.approvalDecision === ApprovalStatus.REJECTED
+      ? 'Confirm Rejection'
+      : hasReports
+        ? 'Approve Anyway'
+        : 'Confirm Approval'
+
   return (
     <Modal
       isOpen={props.showApprovalModal}
       onClose={props.closeApprovalModal}
-      title={`${props.approvalDecision === ApprovalStatus.APPROVED ? 'Approve' : 'Reject'} Listing: ${props.selectedListingForApproval.game.title}`}
+      title={modalTitle}
       size="lg"
     >
       <div className="space-y-4">
@@ -120,24 +138,12 @@ function ApprovalModal(props: Props) {
             Cancel
           </Button>
           <Button
-            variant={(() => {
-              if (props.approvalDecision === ApprovalStatus.REJECTED) return 'danger'
-              // For approval, use destructive variant if author has any reports
-              const hasReports =
-                props.selectedListingForApproval.authorReportStats?.hasReports ?? false
-              return hasReports ? 'destructive' : 'default'
-            })()}
+            variant={buttonVariant}
             onClick={props.handleApprovalSubmit}
             isLoading={props.approveMutation.isPending || props.rejectMutation.isPending}
             disabled={props.approveMutation.isPending || props.rejectMutation.isPending}
           >
-            {(() => {
-              if (props.approvalDecision === ApprovalStatus.REJECTED) return 'Confirm Rejection'
-              // For approval, show warning text if author has reports
-              const hasReports =
-                props.selectedListingForApproval.authorReportStats?.hasReports ?? false
-              return hasReports ? 'Approve Anyway' : 'Confirm Approval'
-            })()}
+            {buttonText}
           </Button>
         </div>
       </div>
