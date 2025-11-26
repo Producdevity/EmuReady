@@ -25,7 +25,7 @@ export function HomePopularEmulators() {
             Most Popular Emulators
           </h2>
           <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
-            Explore the most tested emulators in our community. Click any emulator to see all
+            Explore the most trending emulators in our community. Click any emulator to see all
             compatibility reports and find the recommended settings for your games.
           </p>
         </div>
@@ -74,14 +74,14 @@ export function HomePopularEmulators() {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.05, duration: 0.3 }}
-                    className="aspect-square"
+                    className="aspect-[3/4]"
                   >
                     <div
                       className={cn(
                         'group relative flex flex-col items-center',
                         'rounded-xl sm:rounded-2xl bg-gradient-to-br',
                         'from-white/90 to-gray-50/90 dark:from-slate-800/90 dark:to-slate-900/90',
-                        'p-3 sm:p-4',
+                        'p-2 sm:p-3 md:p-4',
                         'transition-all duration-500 ease-out hover:-translate-y-2',
                         'overflow-hidden h-full w-full',
                         'backdrop-blur-md shadow-md hover:shadow-2xl',
@@ -128,9 +128,9 @@ export function HomePopularEmulators() {
                         </Link>
                       </div>
 
-                      <div className="relative z-10 flex w-full flex-col items-center justify-between h-full py-2 sm:py-3 min-h-0">
-                        <div className="flex-shrink-0 transition-all duration-500 ease-out group-hover:scale-110 group-hover:rotate-2 mb-3">
-                          <div className="relative h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24">
+                      <div className="relative z-10 flex w-full flex-col items-center justify-between h-full py-1 sm:py-2 md:py-3 min-h-0">
+                        <div className="flex-shrink-0 transition-all duration-500 ease-out group-hover:scale-110 group-hover:rotate-2 mb-2 sm:mb-3">
+                          <div className="relative h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24">
                             <EmulatorIcon
                               logo={emulator.logo}
                               name={emulator.name}
@@ -141,18 +141,18 @@ export function HomePopularEmulators() {
                           </div>
                         </div>
 
-                        <div className="flex flex-col items-center gap-1 sm:gap-1.5 w-full min-h-0 flex-shrink">
-                          <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 dark:text-white text-center leading-tight line-clamp-2 w-full px-1 transition-all duration-300 group-hover:text-blue-600 dark:group-hover:text-blue-200">
+                        <div className="flex flex-col items-center gap-0.5 sm:gap-1 md:gap-1.5 w-full min-h-0 flex-shrink">
+                          <h3 className="text-xs sm:text-sm md:text-base lg:text-lg font-bold text-gray-900 dark:text-white text-center leading-tight line-clamp-2 w-full px-0.5 sm:px-1 transition-all duration-300 group-hover:text-blue-600 dark:group-hover:text-blue-200">
                             {emulator.name}
                           </h3>
 
-                          <p className="text-xs sm:text-sm text-gray-600 dark:text-slate-300 text-center line-clamp-1 w-full px-1 transition-colors duration-300 group-hover:text-gray-700 dark:group-hover:text-slate-200">
+                          <p className="text-[10px] sm:text-xs md:text-sm text-gray-600 dark:text-slate-300 text-center line-clamp-1 w-full px-0.5 sm:px-1 transition-colors duration-300 group-hover:text-gray-700 dark:group-hover:text-slate-200">
                             {systemText}
                           </p>
 
-                          <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 mt-1 rounded-full bg-gray-100/80 dark:bg-slate-700/30 border border-gray-200/80 dark:border-slate-600/20 backdrop-blur-sm transition-all duration-300 group-hover:bg-gray-200/90 dark:group-hover:bg-slate-600/40 group-hover:border-gray-300 dark:group-hover:border-slate-500/30 group-hover:scale-105 flex-shrink-0">
+                          <div className="inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 md:px-2.5 py-0.5 sm:py-1 mt-0.5 sm:mt-1 rounded-full bg-gray-100/80 dark:bg-slate-700/30 border border-gray-200/80 dark:border-slate-600/20 backdrop-blur-sm transition-all duration-300 group-hover:bg-gray-200/90 dark:group-hover:bg-slate-600/40 group-hover:border-gray-300 dark:group-hover:border-slate-500/30 group-hover:scale-105 flex-shrink-0">
                             <div className="h-1 w-1 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse flex-shrink-0" />
-                            <span className="text-xs font-medium text-gray-600 dark:text-slate-400 group-hover:text-gray-700 dark:group-hover:text-slate-300 transition-colors whitespace-nowrap">
+                            <span className="text-[10px] sm:text-xs font-medium text-gray-600 dark:text-slate-400 group-hover:text-gray-700 dark:group-hover:text-slate-300 transition-colors whitespace-nowrap">
                               {emulator.listingCount.toLocaleString()} Reports
                             </span>
                           </div>
