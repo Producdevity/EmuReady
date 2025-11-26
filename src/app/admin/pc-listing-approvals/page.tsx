@@ -479,6 +479,10 @@ function PcListingApprovalsPage() {
           onSelectAll={handleSelectAll}
           onClearSelection={() => setSelectedRows(new Set<string>())}
           actions={{
+            openInTabs: {
+              label: 'Open in Tabs',
+              getUrl: (id) => `/pc-listings/${id}`,
+            },
             approve: {
               label: 'Approve Selected',
               onAction: handleBulkApprove,

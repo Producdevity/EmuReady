@@ -371,6 +371,10 @@ function AdminApprovalsPage() {
           onSelectAll={handleSelectAll}
           onClearSelection={() => setSelectedListingIds([])}
           actions={{
+            openInTabs: {
+              label: 'Open in Tabs',
+              getUrl: (id) => `/listings/${id}`,
+            },
             approve: {
               label: 'Approve Selected',
               onAction: handleBulkApprovalWithConfirmation,

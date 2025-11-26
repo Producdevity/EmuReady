@@ -1,8 +1,9 @@
 'use client'
 
-import { CheckCircle, XCircle, Trash2 } from 'lucide-react'
+import { CheckCircle, XCircle, Trash2, ExternalLink } from 'lucide-react'
 import { useState } from 'react'
 import { Button, Input } from '@/components/ui'
+import { logger } from '@/lib/logger'
 
 interface BulkActionsProps {
   selectedIds: string[]
@@ -25,6 +26,11 @@ interface BulkActionsProps {
       onAction: (ids: string[]) => Promise<void>
       disabled?: boolean
     }
+    openInTabs?: {
+      label: string
+      getUrl: (id: string) => string
+      disabled?: boolean
+    }
   }
 }
 
@@ -44,7 +50,7 @@ export function BulkActions(props: BulkActionsProps) {
       setShowRejectInput(false)
       setRejectionNotes('')
     } catch (error) {
-      console.error('Bulk action failed:', error)
+      logger.error(`Failed to perform bulk action:`, error)
     } finally {
       setIsLoading(false)
     }
@@ -54,15 +60,22 @@ export function BulkActions(props: BulkActionsProps) {
     if (!props.actions?.reject) return
 
     if (showRejectInput) {
-      handleAction(props.actions.reject.onAction, rejectionNotes)
+      handleAction(props.actions.reject.onAction, rejectionNotes).catch(console.error)
     } else {
       setShowRejectInput(true)
     }
   }
 
-  if (props.selectedIds.length === 0) {
-    return null
+  const handleOpenInTabs = () => {
+    if (!props.actions?.openInTabs) return
+
+    props.selectedIds.forEach((id) => {
+      const url = props.actions!.openInTabs!.getUrl(id)
+      window.open(url, '_blank', 'noopener,noreferrer')
+    })
   }
+
+  if (props.selectedIds.length === 0) return null
 
   return (
     <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
@@ -87,6 +100,19 @@ export function BulkActions(props: BulkActionsProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          {props.actions?.openInTabs && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleOpenInTabs}
+              disabled={isLoading || props.actions.openInTabs.disabled}
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              <ExternalLink className="w-4 h-4 mr-1" />
+              {props.actions.openInTabs.label}
+            </Button>
+          )}
+
           {props.actions?.approve && (
             <Button
               variant="primary"
