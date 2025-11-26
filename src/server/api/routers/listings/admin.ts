@@ -116,7 +116,20 @@ export const adminRouter = createTRPCRouter({
         game: { include: { system: true } },
         device: { include: { brand: true } },
         emulator: true,
-        author: { select: { id: true, name: true, email: true } },
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            userBans: {
+              where: {
+                isActive: true,
+                OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+              },
+              select: { id: true, reason: true, bannedAt: true, expiresAt: true },
+            },
+          },
+        },
         performance: true,
       },
       orderBy,

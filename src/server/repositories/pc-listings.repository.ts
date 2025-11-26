@@ -64,7 +64,17 @@ export class PcListingsRepository extends BaseRepository {
       gpu: { include: { brand: true } },
       emulator: true,
       performance: true,
-      author: true,
+      author: {
+        include: {
+          userBans: {
+            where: {
+              isActive: true,
+              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+            },
+            select: { id: true, reason: true, bannedAt: true, expiresAt: true },
+          },
+        },
+      },
       _count: { select: { reports: true, votes: true, comments: { where: { deletedAt: null } } } },
     } satisfies Prisma.PcListingInclude,
 
