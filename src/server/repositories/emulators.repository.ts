@@ -361,7 +361,7 @@ export class EmulatorsRepository extends BaseRepository {
   /**
    * Get trending emulators based on approved listing count
    */
-  async getTrending(limit: number = 12) {
+  async getTrending(limit: number = 8) {
     const emulators = await this.prisma.emulator.findMany({
       select: EmulatorsRepository.selects.trending,
       where: { listings: { some: { status: ApprovalStatus.APPROVED } } },
