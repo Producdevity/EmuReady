@@ -58,7 +58,7 @@ export const devicesRouter = createTRPCRouter({
 
     // Repository handles validation (device exists, not in use)
     await repository.delete(input.id)
-    return existingDevice // Return the deleted device
+    return existingDevice
   }),
 
   stats: viewStatisticsProcedure.query(async ({ ctx }) => {
@@ -68,6 +68,6 @@ export const devicesRouter = createTRPCRouter({
 
   trending: publicProcedure.query(async ({ ctx }) => {
     const repository = new DevicesRepository(ctx.prisma)
-    return repository.getTrendingDevices(12)
+    return repository.getTrendingDevices(6)
   }),
 })

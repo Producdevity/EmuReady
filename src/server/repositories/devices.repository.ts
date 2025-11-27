@@ -340,7 +340,7 @@ export class DevicesRepository extends BaseRepository {
   /**
    * Get trending devices based on listings submitted in the last 30 days
    */
-  async getTrendingDevices(limit: number = 12) {
+  async getTrendingDevices(limit: number = 6) {
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
