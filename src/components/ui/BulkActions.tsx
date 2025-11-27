@@ -1,7 +1,7 @@
 'use client'
 
 import { CheckCircle, XCircle, Trash2, ExternalLink } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button, Input } from '@/components/ui'
 import { logger } from '@/lib/logger'
 
@@ -38,6 +38,11 @@ export function BulkActions(props: BulkActionsProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [rejectionNotes, setRejectionNotes] = useState('')
   const [showRejectInput, setShowRejectInput] = useState(false)
+  const [openedTabsCount, setOpenedTabsCount] = useState(0)
+
+  useEffect(() => {
+    setOpenedTabsCount(0)
+  }, [props.selectedIds.length])
 
   const handleAction = async (
     actionFn: (ids: string[], notes?: string) => Promise<void>,
@@ -66,18 +71,45 @@ export function BulkActions(props: BulkActionsProps) {
     }
   }
 
-  const handleOpenInTabs = () => {
+  const handleOpenNextTab = () => {
+    if (!props.actions?.openInTabs) return
+
+    const { getUrl } = props.actions.openInTabs
+    const currentId = props.selectedIds[openedTabsCount]
+
+    if (!currentId) return
+
+    const link = document.createElement('a')
+    link.href = getUrl(currentId)
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    setOpenedTabsCount((prev) => prev + 1)
+  }
+
+  const handleOpenAllTabs = () => {
     if (!props.actions?.openInTabs) return
 
     const { getUrl } = props.actions.openInTabs
 
-    props.selectedIds.forEach((id, index) => {
-      setTimeout(() => {
-        const url = getUrl(id)
-        window.open(url, '_blank', 'noopener,noreferrer')
-      }, index * 100)
+    props.selectedIds.forEach((id) => {
+      const link = document.createElement('a')
+      link.href = getUrl(id)
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
     })
+
+    setOpenedTabsCount(props.selectedIds.length)
   }
+
+  const remainingTabs = props.selectedIds.length - openedTabsCount
+  const allTabsOpened = openedTabsCount >= props.selectedIds.length
 
   if (props.selectedIds.length === 0) return null
 
@@ -105,16 +137,32 @@ export function BulkActions(props: BulkActionsProps) {
 
         <div className="flex items-center gap-2">
           {props.actions?.openInTabs && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleOpenInTabs}
-              disabled={isLoading || props.actions.openInTabs.disabled}
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-            >
-              <ExternalLink className="w-4 h-4 mr-1" />
-              {props.actions.openInTabs.label}
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleOpenAllTabs}
+                disabled={isLoading || props.actions.openInTabs.disabled || allTabsOpened}
+                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                <ExternalLink className="w-4 h-4 mr-1" />
+                Open All Tabs (it may work)
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleOpenNextTab}
+                disabled={isLoading || props.actions.openInTabs.disabled || allTabsOpened}
+                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                <ExternalLink className="w-4 h-4 mr-1" />
+                {allTabsOpened
+                  ? 'All Opened ✓'
+                  : openedTabsCount === 0
+                    ? 'Open Next Tab'
+                    : `Next Tab (${remainingTabs})`}
+              </Button>
+            </>
           )}
 
           {props.actions?.approve && (
