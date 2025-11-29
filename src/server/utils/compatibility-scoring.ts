@@ -71,6 +71,32 @@ export const DEFAULT_SCORE_WEIGHTS: ScoreWeights = {
 }
 
 /**
+ * Scoring configuration (wip, still doesn't feel right)
+ */
+export const SCORING_CONFIG = {
+  verification: {
+    authorIsVerifiedDeveloper: 10, // Points if author is verified developer for the emulator
+    perExplicitVerification: 5, // Points per explicit developer verification
+    maxFromVerifications: 10, // Max points from explicit verifications (regardless of count)
+    totalCap: 20, // Hard cap on total verification boost
+  },
+  trust: {
+    // TODO: maybe lower this since so many new users joined
+    maxBoost: 5, // Max points from user trust score
+    multiplier: 0.1, // Trust score * multiplier = points (e.g., 50 trust = 5 points)
+  },
+  voteWeight: {
+    logBase: 10, // Logarithm base for vote count weighting
+    offset: 10, // Offset added to vote count before log (prevents log(0))
+  },
+  recencyWeight: {
+    // new listings are more relevant
+    halfLifeDays: 180, // Days until listing weight decays to 90%
+    decayRate: 0.9, // Weight multiplier per half-life period
+  },
+} as const
+
+/**
  * Maps performance scale rank (1-8) to quality score (0-100)
  * Lower rank = better performance
  */
@@ -114,16 +140,24 @@ export function getPerformanceQualityScore(performanceRank: number): number {
 export function getVerificationBoost(
   listing: Pick<ScoringListingWithMetadata, 'isVerifiedDeveloper' | 'developerVerifications'>,
 ): number {
+  const config = SCORING_CONFIG.verification
   let boost = 0
 
-  // Author is verified developer for this emulator (+10 points)
-  if (listing.isVerifiedDeveloper) boost += 10
+  // Author is verified developer for this emulator
+  if (listing.isVerifiedDeveloper) {
+    boost += config.authorIsVerifiedDeveloper
+  }
 
-  // Explicit developer verifications (+5 points each, capped at 10)
+  // Explicit developer verifications
   const verificationCount = listing.developerVerifications?.length ?? 0
-  if (verificationCount > 0) boost += Math.min(verificationCount * 5, 10)
+  if (verificationCount > 0) {
+    boost += Math.min(
+      verificationCount * config.perExplicitVerification,
+      config.maxFromVerifications,
+    )
+  }
 
-  return Math.min(boost, 20) // Hard cap at 20 points
+  return Math.min(boost, config.totalCap)
 }
 
 /**
@@ -134,11 +168,11 @@ export function getVerificationBoost(
 export function calculateTrustBoost(userTrustScore: number): number {
   if (userTrustScore <= 0) return 0
 
-  // Linear boost capped at 5 points
-  // 50 trust score = +5 points max
-  // 25 trust score = +2.5 points
-  // 10 trust score = +1 point
-  return Math.min(5, userTrustScore * 0.1)
+  const config = SCORING_CONFIG.trust
+
+  // Linear boost: trustScore * multiplier, capped at maxBoost
+  // Default: 50 trust score = +5 points max, 25 trust = +2.5 points, 10 trust = +1 point
+  return Math.min(config.maxBoost, userTrustScore * config.multiplier)
 }
 
 /**
@@ -203,16 +237,18 @@ export const DEFAULT_AGGREGATION_WEIGHTS: AggregationWeights = {
 
 /**
  * Calculates a logarithmic weight based on vote count
- * More votes = more weight, but with diminishing returns (I guess this works like i think it does)
+ * More votes = more weight, but with diminishing returns
  */
 export function calculateVoteWeight(voteCount: number): number {
-  // log10(voteCount + 10) gives us:
+  const config = SCORING_CONFIG.voteWeight
+
+  // log10(voteCount + offset) with defaults gives:
   // 0 votes -> weight of 1.0
   // 1 vote -> weight of 1.04
   // 10 votes -> weight of 1.3
   // 100 votes -> weight of 2.04
   // 1000 votes -> weight of 3.0
-  return Math.log10(voteCount + 10)
+  return Math.log(voteCount + config.offset) / Math.log(config.logBase)
 }
 
 /**
@@ -220,14 +256,15 @@ export function calculateVoteWeight(voteCount: number): number {
  * Newer listings get slightly higher weight
  */
 export function calculateRecencyWeight(createdAt: Date, now: Date = new Date()): number {
+  const config = SCORING_CONFIG.recencyWeight
   const ageInDays = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)
 
-  // Exponential decay: listings lose 10% weight every 180 days
+  // Exponential decay: listings lose weight over time
+  // Default (halfLife=180, decay=0.9):
   // 0 days old -> weight of 1.0
   // 180 days old -> weight of 0.9
   // 360 days old -> weight of 0.81
-  const halfLife = 180
-  return Math.pow(0.9, ageInDays / halfLife)
+  return Math.pow(config.decayRate, ageInDays / config.halfLifeDays)
 }
 
 /**
