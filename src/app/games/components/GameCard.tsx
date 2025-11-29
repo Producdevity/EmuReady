@@ -1,6 +1,12 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Badge, ApprovalStatusBadge } from '@/components/ui'
+import {
+  Badge,
+  ApprovalStatusBadge,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/components/ui'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
 import { type Game, ApprovalStatus } from '@orm'
 
@@ -13,6 +19,8 @@ interface Props {
 }
 
 function GameCard(props: Props) {
+  const totalListings = props.game._count.listings + props.game._count.pcListings
+
   return (
     <Link
       key={props.game.id}
@@ -31,9 +39,14 @@ function GameCard(props: Props) {
         />
       </div>
       <div className="p-6">
-        <h2 className="text-xl font-bold mb-2 text-gray-900 dark:text-white truncate">
-          {props.game.title}
-        </h2>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <h2 className="text-xl font-bold mb-2 text-gray-900 dark:text-white truncate">
+              {props.game.title}
+            </h2>
+          </TooltipTrigger>
+          <TooltipContent>{props.game.title}</TooltipContent>
+        </Tooltip>
         <div className="flex items-center justify-between mb-2">
           <Badge variant="default">{props.game.system?.name ?? 'Unknown System'}</Badge>
           {props.game.status && props.game.status !== ApprovalStatus.APPROVED && (
@@ -41,10 +54,7 @@ function GameCard(props: Props) {
           )}
         </div>
         <div className="text-sm text-gray-500 dark:text-gray-400">
-          {(() => {
-            const totalListings = props.game._count.listings + props.game._count.pcListings
-            return `${totalListings} ${totalListings === 1 ? 'listing' : 'listings'}`
-          })()}
+          {`${totalListings} ${totalListings === 1 ? 'listing' : 'listings'}`}
         </div>
       </div>
     </Link>
