@@ -61,9 +61,7 @@ export async function getDeviceCompatibility(
     device = await devicesRepo.findByModelAndBrandName(input.deviceModelName, input.deviceBrandName)
   }
 
-  if (!device) {
-    throw ResourceError.device.notFound()
-  }
+  if (!device) throw ResourceError.device.notFound()
 
   // Create cache key from device ID and input parameters (include SoC in key)
   const cacheKey = `device:${device.id}:systems:${input.systemIds?.sort().join(',') ?? 'all'}:breakdown:${input.includeEmulatorBreakdown ?? true}:min:${input.minListingCount ?? 1}:soc:${device.socId ?? 'none'}`
@@ -84,7 +82,9 @@ export async function getDeviceCompatibility(
         id: device.id,
         modelName: device.modelName,
         brandName: device.brand.name,
+        socId: device.soc?.id ?? null,
         socName: device.soc?.name ?? null,
+        socManufacturer: device.soc?.manufacturer ?? null,
       },
       systems: [],
       generatedAt: new Date(),
@@ -197,7 +197,7 @@ export async function getDeviceCompatibility(
             id: emulatorAgg.emulator.id,
             name: emulatorAgg.emulator.name,
             key: emulatorAgg.emulator.name.toLowerCase().replace(/\s+/g, '_'),
-            logoOption: emulatorAgg.emulator.logo,
+            emulatorLogo: emulatorAgg.emulator.logo,
             listingCount: emulatorAgg.listings.length,
             avgCompatibilityScore: emulatorAgg.avgCompatibilityScore,
             avgPerformanceRank: Math.round(emulatorAgg.avgPerformanceRank * 100) / 100,
@@ -246,6 +246,8 @@ export async function getDeviceCompatibility(
       id: device.id,
       modelName: device.modelName,
       brandName: device.brand.name,
+      socId: device.soc?.id ?? null,
+      socManufacturer: device.soc?.manufacturer ?? null,
       socName: device.soc?.name ?? null,
     },
     systems,
@@ -253,8 +255,7 @@ export async function getDeviceCompatibility(
     cacheExpiresIn: 600, // 10 minutes
   }
 
-  // Cache the response
-  catalogCompatibilityCache.set(cacheKey, response)
+  catalogCompatibilityCache.set(cacheKey, response) // Cache the response
 
   return response
 }

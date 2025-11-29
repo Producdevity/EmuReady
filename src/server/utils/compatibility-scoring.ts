@@ -117,15 +117,11 @@ export function getVerificationBoost(
   let boost = 0
 
   // Author is verified developer for this emulator (+10 points)
-  if (listing.isVerifiedDeveloper) {
-    boost += 10
-  }
+  if (listing.isVerifiedDeveloper) boost += 10
 
   // Explicit developer verifications (+5 points each, capped at 10)
   const verificationCount = listing.developerVerifications?.length ?? 0
-  if (verificationCount > 0) {
-    boost += Math.min(verificationCount * 5, 10)
-  }
+  if (verificationCount > 0) boost += Math.min(verificationCount * 5, 10)
 
   return Math.min(boost, 20) // Hard cap at 20 points
 }
@@ -207,7 +203,7 @@ export const DEFAULT_AGGREGATION_WEIGHTS: AggregationWeights = {
 
 /**
  * Calculates a logarithmic weight based on vote count
- * More votes = more weight, but with diminishing returns
+ * More votes = more weight, but with diminishing returns (I guess this works like i think it does)
  */
 export function calculateVoteWeight(voteCount: number): number {
   // log10(voteCount + 10) gives us:
