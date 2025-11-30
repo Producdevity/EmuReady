@@ -34,6 +34,7 @@ describe('GamesRepository - batchBySteamAppIds', () => {
   const mockGame1 = {
     id: 'game-1',
     title: 'Half-Life 2',
+    normalizedTitle: 'half-life 2',
     systemId: 'pc',
     imageUrl: 'https://example.com/hl2.jpg',
     boxartUrl: null,
@@ -41,6 +42,7 @@ describe('GamesRepository - batchBySteamAppIds', () => {
     tgdbGameId: null,
     metadata: { steamAppId: '220' },
     isErotic: false,
+    ageRating: null,
     status: ApprovalStatus.APPROVED,
     submittedBy: null,
     submittedAt: null,
@@ -55,6 +57,7 @@ describe('GamesRepository - batchBySteamAppIds', () => {
   const mockGame2 = {
     id: 'game-2',
     title: 'Counter-Strike 2',
+    normalizedTitle: 'counter-strike 2',
     systemId: 'pc',
     imageUrl: 'https://example.com/cs2.jpg',
     boxartUrl: null,
@@ -62,6 +65,7 @@ describe('GamesRepository - batchBySteamAppIds', () => {
     tgdbGameId: null,
     metadata: null,
     isErotic: false,
+    ageRating: null,
     status: ApprovalStatus.APPROVED,
     submittedBy: null,
     submittedAt: null,

@@ -451,6 +451,7 @@ describe('Aggregate by Emulator', () => {
     game: {
       id: 'game-1',
       title: 'Test Game',
+      normalizedTitle: 'test game',
       systemId: 'system-1',
       system: mockSystem,
       createdAt: new Date(),
@@ -461,6 +462,7 @@ describe('Aggregate by Emulator', () => {
       tgdbGameId: null,
       metadata: null,
       isErotic: false,
+      ageRating: null,
       submittedBy: null,
       submittedAt: null,
       approvedAt: null,
@@ -561,6 +563,7 @@ describe('Aggregate by System', () => {
     game: {
       id: gameId,
       title: 'Game',
+      normalizedTitle: 'game',
       systemId,
       system: systemId === 'system-1' ? mockSystem1 : mockSystem2,
       createdAt: new Date(),
@@ -571,6 +574,7 @@ describe('Aggregate by System', () => {
       tgdbGameId: null,
       metadata: null,
       isErotic: false,
+      ageRating: null,
       submittedBy: null,
       submittedAt: null,
       approvedAt: null,

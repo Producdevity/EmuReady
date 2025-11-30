@@ -411,6 +411,7 @@ export const gamesRouter = createTRPCRouter({
       if (!existingGame) return ResourceError.game.notFound()
 
       // Verify ownership and pending status
+      // TODO: maybe move this into a middleware of some sort
       if (existingGame!.submittedBy !== ctx.session.user.id) {
         return ResourceError.game.canOnlyEditOwn()
       }
@@ -506,6 +507,7 @@ export const gamesRouter = createTRPCRouter({
           select: {
             id: true,
             title: true,
+            normalizedTitle: true,
             systemId: true,
             imageUrl: true,
             boxartUrl: true,
@@ -513,6 +515,7 @@ export const gamesRouter = createTRPCRouter({
             tgdbGameId: true,
             metadata: true,
             isErotic: true,
+            ageRating: true,
             status: true,
             submittedBy: true,
             submittedAt: true,
@@ -883,8 +886,7 @@ export const gamesRouter = createTRPCRouter({
         },
       })
 
-      // Invalidate cache when game status changes
-      gameStatsCache.delete(GAME_STATS_CACHE_KEY)
+      gameStatsCache.delete(GAME_STATS_CACHE_KEY) // Invalidate cache when game status changes
 
       // Invalidate SEO cache
       await invalidateGameRelatedContent(gameId)
@@ -945,8 +947,7 @@ export const gamesRouter = createTRPCRouter({
         },
       })
 
-      // Invalidate cache when game status changes
-      gameStatsCache.delete(GAME_STATS_CACHE_KEY)
+      gameStatsCache.delete(GAME_STATS_CACHE_KEY) // Invalidate cache when game status changes
 
       // Invalidate SEO cache
       await invalidateGameRelatedContent(gameId)

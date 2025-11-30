@@ -109,8 +109,8 @@ model User {
   pcListingVotes              PcListingVote[]
   pcListingComments           PcListingComment[]
   pcListingCommentVotes       PcListingCommentVote[]
-  pinnedListings              Listing[]                    @relation("ListingPinnedBy")
-  pinnedPcListings            PcListing[]                  @relation("PcListingPinnedBy")
+  pinnedListings              Listing[]                         @relation("ListingPinnedBy")
+  pinnedPcListings            PcListing[]                       @relation("PcListingPinnedBy")
   devicePreferences           UserDevicePreference[]
   socPreferences              UserSocPreference[]
   pcPresets                   UserPcPreset[]
@@ -152,25 +152,25 @@ model User {
 }
 
 model ApiKey {
-  id             String          @id @default(uuid())
-  userId         String
-  name           String?
-  prefix         String          @unique
-  secretHash     String
-  salt           String
-  monthlyQuota   Int             @default(10000)
-  weeklyQuota    Int             @default(2500)
-  burstQuota     Int             @default(100)
-  requestCount   Int             @default(0)
-  isSystemKey    Boolean         @default(false)
-  expiresAt      DateTime?
-  revokedAt      DateTime?
-  lastUsedAt     DateTime?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id           String    @id @default(uuid())
+  userId       String
+  name         String?
+  prefix       String    @unique
+  secretHash   String
+  salt         String
+  monthlyQuota Int       @default(10000)
+  weeklyQuota  Int       @default(2500)
+  burstQuota   Int       @default(100)
+  requestCount Int       @default(0)
+  isSystemKey  Boolean   @default(false)
+  expiresAt    DateTime?
+  revokedAt    DateTime?
+  lastUsedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  usageWindows   ApiKeyUsage[]
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usageWindows ApiKeyUsage[]
 
   @@index([userId])
   @@index([isSystemKey])
@@ -178,15 +178,15 @@ model ApiKey {
 }
 
 model ApiKeyUsage {
-  id          String         @id @default(uuid())
-  apiKeyId    String
-  period      ApiUsagePeriod
-  windowStart DateTime
-  requestCount Int          @default(0)
-  firstRequestAt DateTime?  @default(now())
-  lastRequestAt  DateTime?  @default(now())
+  id             String         @id @default(uuid())
+  apiKeyId       String
+  period         ApiUsagePeriod
+  windowStart    DateTime
+  requestCount   Int            @default(0)
+  firstRequestAt DateTime?      @default(now())
+  lastRequestAt  DateTime?      @default(now())
 
-  apiKey      ApiKey        @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  apiKey ApiKey @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
 
   @@unique([apiKeyId, period, windowStart])
   @@index([apiKeyId, period])
@@ -266,26 +266,28 @@ model System {
 }
 
 model Game {
-  id          String         @id @default(uuid())
-  title       String
-  systemId    String
-  imageUrl    String? // Fallback image URL
-  boxartUrl   String? // boxart image URL
-  bannerUrl   String? // banner image URL
-  tgdbGameId  Int? // TheGamesDB game ID for reliable duplicate detection
-  metadata    Json? // External provider IDs: { tgdbId?: number, rawgId?: number, igdbId?: number, steamAppId?: string }. Note: JSON fields not indexed - batch queries filter by title first, then by metadata in application layer
-  isErotic    Boolean        @default(false)
-  status      ApprovalStatus @default(APPROVED) // Existing games are auto-approved
-  submittedBy String? // null for existing games, userId for new submissions
-  submittedAt DateTime?
-  approvedBy  String?
-  approvedAt  DateTime?
-  createdAt   DateTime       @default(now())
-  system      System         @relation(fields: [systemId], references: [id])
-  listings    Listing[]
-  pcListings  PcListing[]
-  submitter   User?          @relation("GamesSubmittedByUser", fields: [submittedBy], references: [id])
-  approver    User?          @relation("GamesApprovedByAdmin", fields: [approvedBy], references: [id])
+  id              String         @id @default(uuid())
+  title           String
+  normalizedTitle String? // Lowercase, accent-stripped version of title for search
+  systemId        String
+  imageUrl        String? // Fallback image URL
+  boxartUrl       String? // boxart image URL
+  bannerUrl       String? // banner image URL
+  tgdbGameId      Int? // TheGamesDB game ID for reliable duplicate detection
+  metadata        Json? // External provider IDs: { tgdbId?: number, rawgId?: number, igdbId?: number, steamAppId?: string }. Note: JSON fields not indexed - batch queries filter by title first, then by metadata in application layer
+  isErotic        Boolean        @default(false)
+  ageRating       String?
+  status          ApprovalStatus @default(APPROVED) // Existing games are auto-approved
+  submittedBy     String? // null for existing games, userId for new submissions
+  submittedAt     DateTime?
+  approvedBy      String?
+  approvedAt      DateTime?
+  createdAt       DateTime       @default(now())
+  system          System         @relation(fields: [systemId], references: [id])
+  listings        Listing[]
+  pcListings      PcListing[]
+  submitter       User?          @relation("GamesSubmittedByUser", fields: [submittedBy], references: [id])
+  approver        User?          @relation("GamesApprovedByAdmin", fields: [approvedBy], references: [id])
 
   @@unique([title, systemId])
   @@index([status])
@@ -294,16 +296,17 @@ model Game {
   @@index([status, submittedAt])
   @@index([systemId, status])
   @@index([tgdbGameId])
+  @@index([normalizedTitle])
 }
 
 model CustomFieldCategory {
-  id           String                    @id @default(uuid())
+  id           String                  @id @default(uuid())
   emulatorId   String
   name         String
-  displayOrder Int                       @default(0)
-  createdAt    DateTime                  @default(now())
-  updatedAt    DateTime                  @updatedAt
-  emulator     Emulator                  @relation(fields: [emulatorId], references: [id], onDelete: Cascade)
+  displayOrder Int                     @default(0)
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  emulator     Emulator                @relation(fields: [emulatorId], references: [id], onDelete: Cascade)
   fields       CustomFieldDefinition[]
 
   @@unique([emulatorId, name])
@@ -379,8 +382,8 @@ model CustomFieldTemplateField {
 }
 
 model Emulator {
-  id                     String                    @id @default(uuid())
-  name                   String                    @unique
+  id                     String                  @id @default(uuid())
+  name                   String                  @unique
   logo                   String? // Logo filename (e.g., "aethersx2.png")
   description            String? // Markdown description/notes
   repositoryUrl          String? // Repository/source code URL
@@ -416,7 +419,7 @@ model Listing {
   processedAt       DateTime?
   processedNotes    String?
   processedByUserId String?
-  pinnedCommentId   String? @unique
+  pinnedCommentId   String?        @unique
   pinnedByUserId    String?
   pinnedAt          DateTime?
 
@@ -475,7 +478,7 @@ model Comment {
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   votes     CommentVote[]
   score     Int           @default(0)
-  pinnedOn Listing?       @relation("ListingPinnedComment")
+  pinnedOn  Listing?      @relation("ListingPinnedComment")
 
   @@index([listingId])
   @@index([userId])
@@ -925,7 +928,7 @@ model PcListing {
   processedAt       DateTime?
   processedNotes    String?
   processedByUserId String?
-  pinnedCommentId   String? @unique
+  pinnedCommentId   String?        @unique
   pinnedByUserId    String?
   pinnedAt          DateTime?
   memorySize        Int // in GB
@@ -954,8 +957,8 @@ model PcListing {
   reports                PcListingReport[]
   votes                  PcListingVote[]
   comments               PcListingComment[]
-  pinnedComment          PcListingComment?             @relation("PcListingPinnedComment", fields: [pinnedCommentId], references: [id], onDelete: SetNull)
-  pinnedByUser           User?                         @relation("PcListingPinnedBy", fields: [pinnedByUserId], references: [id], onDelete: SetNull)
+  pinnedComment          PcListingComment?                 @relation("PcListingPinnedComment", fields: [pinnedCommentId], references: [id], onDelete: SetNull)
+  pinnedByUser           User?                             @relation("PcListingPinnedBy", fields: [pinnedByUserId], references: [id], onDelete: SetNull)
 
   @@index([processedByUserId])
   @@index([status])
@@ -1079,7 +1082,7 @@ model PcListingComment {
   pcListing PcListing              @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
   user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   votes     PcListingCommentVote[]
-  pinnedOn PcListing?              @relation("PcListingPinnedComment")
+  pinnedOn  PcListing?             @relation("PcListingPinnedComment")
 
   @@index([pcListingId])
   @@index([userId])
@@ -1220,18 +1223,18 @@ enum EntitlementStatus {
 }
 
 model Entitlement {
-  id           String            @id @default(uuid())
-  userId       String
-  source       EntitlementSource
-  status       EntitlementStatus @default(ACTIVE)
-  referenceId  String?
-  amountCents  Int?
-  currency     String?
-  grantedAt    DateTime          @default(now())
-  revokedAt    DateTime?
-  notes        String?
+  id          String            @id @default(uuid())
+  userId      String
+  source      EntitlementSource
+  status      EntitlementStatus @default(ACTIVE)
+  referenceId String?
+  amountCents Int?
+  currency    String?
+  grantedAt   DateTime          @default(now())
+  revokedAt   DateTime?
+  notes       String?
 
-  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([source, referenceId])
@@ -1248,19 +1251,19 @@ model Release {
   createdAt   DateTime @default(now())
   notes       String?
 
-  downloads   Download[]
+  downloads Download[]
 
   @@unique([channel, versionCode])
   @@index([createdAt])
 }
 
 model Download {
-  id         String   @id @default(uuid())
-  userId     String
-  releaseId  String
-  ip         String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  releaseId String
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   release Release @relation(fields: [releaseId], references: [id], onDelete: Cascade)
@@ -1270,13 +1273,13 @@ model Download {
 }
 
 model ExternalAccount {
-  id          String   @id @default(uuid())
-  userId      String
-  provider    String
-  externalId  String
-  email       String?
-  linkedAt    DateTime @default(now())
-  data        Json?
+  id         String   @id @default(uuid())
+  userId     String
+  provider   String
+  externalId String
+  email      String?
+  linkedAt   DateTime @default(now())
+  data       Json?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -1285,14 +1288,14 @@ model ExternalAccount {
 }
 
 model WebhookEvent {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   source      String
   eventId     String
   payload     Json
   status      String
   error       String?
   processedAt DateTime?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 
   @@unique([source, eventId])
 }

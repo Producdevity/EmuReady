@@ -3,6 +3,7 @@ import { type PaginationResult, paginate, calculateOffset } from '@/server/utils
 import { buildShadowBanFilter } from '@/server/utils/query-builders'
 import { normalizeGameTitle } from '@/server/utils/steamGameBatcher'
 import { hasRolePermission } from '@/utils/permissions'
+import { normalizeString } from '@/utils/text'
 import { Prisma, ApprovalStatus, Role } from '@orm'
 import { BaseRepository } from './base.repository'
 
@@ -91,6 +92,7 @@ export class GamesRepository extends BaseRepository {
     listingFields: {
       id: true,
       title: true,
+      normalizedTitle: true,
       systemId: true,
       imageUrl: true,
       boxartUrl: true,
@@ -98,6 +100,7 @@ export class GamesRepository extends BaseRepository {
       tgdbGameId: true,
       metadata: true,
       isErotic: true,
+      ageRating: true,
       status: true,
       submittedBy: true,
       submittedAt: true,
@@ -109,6 +112,7 @@ export class GamesRepository extends BaseRepository {
     withCounts: {
       id: true,
       title: true,
+      normalizedTitle: true,
       systemId: true,
       imageUrl: true,
       boxartUrl: true,
@@ -116,6 +120,7 @@ export class GamesRepository extends BaseRepository {
       tgdbGameId: true,
       metadata: true,
       isErotic: true,
+      ageRating: true,
       status: true,
       submittedBy: true,
       submittedAt: true,
@@ -129,6 +134,7 @@ export class GamesRepository extends BaseRepository {
     withSubmitter: {
       id: true,
       title: true,
+      normalizedTitle: true,
       systemId: true,
       imageUrl: true,
       boxartUrl: true,
@@ -136,6 +142,7 @@ export class GamesRepository extends BaseRepository {
       tgdbGameId: true,
       metadata: true,
       isErotic: true,
+      ageRating: true,
       status: true,
       submittedBy: true,
       submittedAt: true,
@@ -150,6 +157,7 @@ export class GamesRepository extends BaseRepository {
     mobile: {
       id: true,
       title: true,
+      normalizedTitle: true,
       systemId: true,
       imageUrl: true,
       boxartUrl: true,
@@ -157,6 +165,7 @@ export class GamesRepository extends BaseRepository {
       tgdbGameId: true,
       metadata: true,
       isErotic: true,
+      ageRating: true,
       status: true,
       createdAt: true,
       system: { select: { id: true, name: true, key: true } },
@@ -263,9 +272,10 @@ export class GamesRepository extends BaseRepository {
     }
 
     if (search?.trim()) {
-      const searchWords = search.trim().split(/\s+/)
+      const normalizedSearch = normalizeString(search)
+      const searchWords = normalizedSearch.split(/\s+/)
       where.AND = searchWords.map((word) => ({
-        title: { contains: word, mode: Prisma.QueryMode.insensitive },
+        normalizedTitle: { contains: word, mode: Prisma.QueryMode.insensitive },
       }))
     }
 
@@ -339,9 +349,10 @@ export class GamesRepository extends BaseRepository {
     }
 
     if (query?.trim()) {
-      const searchWords = query.trim().split(/\s+/)
+      const normalizedSearch = normalizeString(query)
+      const searchWords = normalizedSearch.split(/\s+/)
       where.AND = searchWords.map((word) => ({
-        title: { contains: word, mode: this.mode },
+        normalizedTitle: { contains: word, mode: this.mode },
       }))
     }
 
@@ -546,11 +557,12 @@ export class GamesRepository extends BaseRepository {
       where.status = ApprovalStatus.APPROVED
     }
 
-    // Search: all words must appear in title
+    // Search: all words must appear in normalizedTitle (accent-insensitive)
     if (search?.trim()) {
-      const searchWords = search.trim().split(/\s+/)
+      const normalizedSearch = normalizeString(search)
+      const searchWords = normalizedSearch.split(/\s+/)
       where.AND = searchWords.map((word) => ({
-        title: { contains: word, mode: this.mode },
+        normalizedTitle: { contains: word, mode: this.mode },
       }))
     }
 

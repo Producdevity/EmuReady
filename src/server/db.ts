@@ -1,3 +1,4 @@
+import { normalizeString } from '@/utils/text'
 import { PrismaClient } from '@orm'
 
 /**
@@ -13,7 +14,7 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-export const prisma =
+const basePrisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     log:
@@ -27,7 +28,50 @@ export const prisma =
     },
   })
 
+/**
+ * Extended Prisma Client with auto-population middleware
+ * Automatically normalizes game titles for accent-insensitive search
+ */
+const extendedClient = basePrisma.$extends({
+  query: {
+    game: {
+      async create({ args, query }) {
+        if (args.data.title) {
+          args.data.normalizedTitle = normalizeString(args.data.title)
+        }
+        return query(args)
+      },
+      async update({ args, query }) {
+        if (args.data.title) {
+          args.data.normalizedTitle = normalizeString(args.data.title as string)
+        }
+        return query(args)
+      },
+      async createMany({ args, query }) {
+        if (Array.isArray(args.data)) {
+          args.data = args.data.map((item) => ({
+            ...item,
+            normalizedTitle: item.title ? normalizeString(item.title) : item.normalizedTitle,
+          }))
+        } else if (args.data.title) {
+          args.data.normalizedTitle = normalizeString(args.data.title)
+        }
+        return query(args)
+      },
+      async updateMany({ args, query }) {
+        if (args.data.title) {
+          args.data.normalizedTitle = normalizeString(args.data.title as string)
+        }
+        return query(args)
+      },
+    },
+  },
+})
+
+export const prisma = extendedClient as unknown as PrismaClient
+export type ExtendedPrismaClient = typeof extendedClient
+
 // Store in global only in development for hot-reload support
 if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma
+  globalForPrisma.prisma = basePrisma
 }
