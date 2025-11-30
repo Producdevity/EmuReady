@@ -95,7 +95,7 @@ export function MobileFilterSheet({ onClose, ...props }: Props) {
           </div>
 
           <div className="h-full overflow-y-auto">
-            <div className="p-6">{props.children}</div>
+            <div className="p-6 pb-36">{props.children}</div>
           </div>
 
           {/* End sentinel to wrap focus forward */}
