@@ -17,6 +17,7 @@ interface Env {
   ENABLE_SW: boolean
   VERCEL_ANALYTICS_ENABLED: boolean
   DISABLE_COOKIE_BANNER: boolean
+  IS_BETA: boolean
   IS_PROD: boolean
   IS_DEV: boolean
   IS_TEST: boolean
@@ -64,6 +65,7 @@ export const env = {
 
   DISABLE_COOKIE_BANNER: process.env.NEXT_PUBLIC_DISABLE_COOKIE_BANNER === 'true',
 
+  IS_BETA: process.env.NEXT_PUBLIC_IS_BETA === 'true',
   IS_PROD: process.env.NODE_ENV === 'production',
   IS_DEV: process.env.NODE_ENV === 'development',
   IS_TEST: process.env.NODE_ENV === 'test',

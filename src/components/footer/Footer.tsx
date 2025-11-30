@@ -190,7 +190,7 @@ function Footer() {
         </div>
       </div>
 
-      <FooterBetaBadge />
+      {env.IS_BETA && <FooterBetaBadge />}
     </footer>
   )
 }
