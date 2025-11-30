@@ -1,3 +1,4 @@
+import { normalizeString } from '@/utils/text'
 import { ApprovalStatus, Role, type PrismaClient } from '@orm'
 
 type GameData = {
@@ -924,6 +925,7 @@ async function gamesSeeder(prisma: PrismaClient) {
       where: { title_systemId: { title: game.title, systemId } },
       update: {
         imageUrl: game.imageUrl,
+        normalizedTitle: normalizeString(game.title),
         status: ApprovalStatus.PENDING,
         submittedBy: submitter?.id ?? null,
         submittedAt: submittedAt,
@@ -932,6 +934,7 @@ async function gamesSeeder(prisma: PrismaClient) {
       },
       create: {
         title: game.title,
+        normalizedTitle: normalizeString(game.title),
         imageUrl: game.imageUrl,
         systemId,
         status: ApprovalStatus.PENDING,

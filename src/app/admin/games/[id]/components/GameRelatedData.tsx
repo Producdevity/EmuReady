@@ -22,11 +22,13 @@ export function GameRelatedData(props: Props) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
       <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-        Related Listings ({props.game.listings.length})
+        Related Compatibility Reports ({props.game.listings.length})
       </h2>
 
       {props.game.listings.length === 0 ? (
-        <p className="text-gray-500 dark:text-gray-400">No listings for this game yet.</p>
+        <p className="text-gray-500 dark:text-gray-400">
+          No Compatibility Reports for this game yet.
+        </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -82,7 +84,7 @@ export function GameRelatedData(props: Props) {
                     {hasPermission(userQuery.data?.permissions, PERMISSIONS.EDIT_ANY_LISTING) && (
                       <EditButton
                         href={`/admin/listings/${listing.id}/edit`}
-                        title="Edit Listing"
+                        title="Edit Compatibility Report"
                       />
                     )}
                     <ViewButton href={`/listings/${listing.id}`} title="View Details" />
