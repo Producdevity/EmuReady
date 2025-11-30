@@ -6,6 +6,7 @@ import { Button, Card, LoadingSpinner, useConfirmDialog } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { formatCountLabel } from '@/utils/text'
 import CategoryFormModal from './CategoryFormModal'
 
 interface CategoryManagerProps {
@@ -63,7 +64,7 @@ export default function CategoryManager(props: CategoryManagerProps) {
       title: 'Delete Category',
       description: `Are you sure you want to delete the category "${categoryName}"? ${
         fieldCount > 0
-          ? `${fieldCount} field${fieldCount === 1 ? '' : 's'} will be moved to Uncategorized.`
+          ? `${formatCountLabel('field', fieldCount)} will be moved to Uncategorized.`
           : 'This action cannot be undone.'
       }`,
       confirmText: 'Delete',

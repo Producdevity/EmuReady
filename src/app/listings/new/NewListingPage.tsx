@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils'
 import { type RouterInput } from '@/types/trpc'
 import { parseCustomFieldOptions, getCustomFieldDefaultValue } from '@/utils/custom-fields'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { formatCountLabel } from '@/utils/text'
 import {
   CustomFieldsFormSection,
   type DeviceOption,
@@ -168,7 +169,7 @@ function AddListingPage() {
 
       if (changedCount > 0) {
         toast.success(
-          `Imported Eden configuration. Filled ${changedCount} field${changedCount === 1 ? '' : 's'}.`,
+          `Imported Eden configuration. Filled ${formatCountLabel('field', changedCount)}.`,
         )
       } else {
         toast.success('Imported Eden configuration.')
@@ -588,7 +589,7 @@ function AddListingPage() {
                 )}
                 {importSummary && (
                   <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-                    Filled {importSummary.filled} field{importSummary.filled === 1 ? '' : 's'}.
+                    Filled {formatCountLabel('field', importSummary.filled)}.
                     {importSummary.missing.length > 0 && (
                       <> Missing: {importSummary.missing.join(', ')}.</>
                     )}

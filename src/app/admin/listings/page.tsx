@@ -386,7 +386,7 @@ function AdminListingsPage() {
               {listingsQuery.isPending ? (
                 <tr>
                   <td colSpan={visibleColumnCount} className="py-12">
-                    <LoadingSpinner text="Loading Listings..." />
+                    <LoadingSpinner text="Loading Compatibility Reports..." />
                   </td>
                 </tr>
               ) : listings.length === 0 ? (
@@ -395,8 +395,8 @@ function AdminListingsPage() {
                     <div className="text-center">
                       <p className="text-gray-600 dark:text-gray-400 text-lg">
                         {table.search || filters.status || filters.systemId || filters.emulatorId
-                          ? 'No listings found matching your filters.'
-                          : 'No listings found.'}
+                          ? 'No compatibility reports found matching your filters.'
+                          : 'No compatibility reports found.'}
                       </p>
                     </div>
                   </td>
@@ -509,7 +509,7 @@ function AdminListingsPage() {
                           ) && (
                             <EditButton
                               href={`/admin/listings/${listing.id}/edit`}
-                              title="Edit Listing"
+                              title="Edit Compatibility Report"
                             />
                           )}
                           <ViewButton
@@ -532,7 +532,7 @@ function AdminListingsPage() {
                             PERMISSIONS.DELETE_ANY_LISTING,
                           ) && (
                             <DeleteButton
-                              title="Delete Listing"
+                              title="Delete Compatibility Report"
                               onClick={() => handleDelete(listing.id)}
                             />
                           )}
