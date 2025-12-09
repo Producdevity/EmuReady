@@ -22,8 +22,7 @@ interface Props {
 
 export function GameImage(props: Props) {
   const [imageError, setImageError] = useState(false)
-  // Prioritize boxart > banner > imageUrl as per the existing utility function logic
-  const displayImageUrl = props.game.boxartUrl ?? props.game.bannerUrl ?? props.game.imageUrl
+  const displayImageUrl = props.game.bannerUrl ?? props.game.imageUrl ?? props.game.boxartUrl
   const rawImageUrl = getImageUrl(displayImageUrl ?? null, props.game.title)
   const imageUrl = (() => {
     if (!rawImageUrl.startsWith('/api/proxy-image')) return rawImageUrl
