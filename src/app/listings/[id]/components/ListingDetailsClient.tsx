@@ -98,6 +98,7 @@ function ListingDetailsClient(props: Props) {
               <div className="mb-6">
                 <GameImage
                   game={props.listing.game}
+                  prioritizeBanner={true}
                   className="w-full aspect-video rounded-lg shadow-md"
                   aspectRatio="video"
                   showFallback={true}

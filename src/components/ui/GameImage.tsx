@@ -14,6 +14,7 @@ interface Props {
     bannerUrl?: string | null
   }
   className?: string
+  prioritizeBanner?: boolean
   sizes?: string
   priority?: boolean
   aspectRatio?: 'square' | 'video' | 'poster' | 'auto'
@@ -22,7 +23,9 @@ interface Props {
 
 export function GameImage(props: Props) {
   const [imageError, setImageError] = useState(false)
-  const displayImageUrl = props.game.bannerUrl ?? props.game.imageUrl ?? props.game.boxartUrl
+  const displayImageUrl = props.prioritizeBanner
+    ? (props.game.bannerUrl ?? props.game.boxartUrl ?? props.game.imageUrl)
+    : (props.game.boxartUrl ?? props.game.bannerUrl ?? props.game.imageUrl)
   const rawImageUrl = getImageUrl(displayImageUrl ?? null, props.game.title)
   const imageUrl = (() => {
     if (!rawImageUrl.startsWith('/api/proxy-image')) return rawImageUrl

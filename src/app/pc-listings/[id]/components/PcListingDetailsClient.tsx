@@ -139,6 +139,7 @@ function PcListingDetailsClient(props: Props) {
               {/* Game Image */}
               <div className="mb-6">
                 <GameImage
+                  prioritizeBanner={true}
                   game={props.pcListing.game}
                   className="w-full aspect-video rounded-lg shadow-md"
                   aspectRatio="video"
