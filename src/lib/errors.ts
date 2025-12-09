@@ -17,6 +17,15 @@ export const ERROR_CODES = {
   UNAUTHORIZED: 'UNAUTHORIZED',
 } as const
 
+// Specific error identifiers for client-side error handling
+// These are used in error.cause to identify specific error types
+export const APP_ERROR_CODES = {
+  GAME_ALREADY_EXISTS: 'GAME_ALREADY_EXISTS',
+  GAME_SUBMISSION_LIMIT_EXCEEDED: 'GAME_SUBMISSION_LIMIT_EXCEEDED',
+} as const
+
+export type AppErrorCode = (typeof APP_ERROR_CODES)[keyof typeof APP_ERROR_CODES]
+
 export type ErrorCode = keyof typeof ERROR_CODES
 
 // Define common error scenarios with default messages
@@ -110,15 +119,16 @@ export class AppError {
     throw new TRPCError({ code: ERROR_CODES.CONFLICT, message })
   }
 
-  static conflict(message: string): never {
-    throw new TRPCError({ code: ERROR_CODES.CONFLICT, message })
+  static conflict(message: string, cause?: Record<string, unknown>): never {
+    throw new TRPCError({ code: ERROR_CODES.CONFLICT, message, cause })
   }
 
   // Validation errors
-  static badRequest(message?: string): never {
+  static badRequest(message?: string, cause?: Record<string, unknown>): never {
     throw new TRPCError({
       code: ERROR_CODES.BAD_REQUEST,
       message: message ?? ERROR_MESSAGES.INVALID_INPUT,
+      cause,
     })
   }
 
@@ -254,11 +264,29 @@ export class ResourceError {
   static game = {
     notFound: () => AppError.notFound('Game'),
     inUse: (count: number) => AppError.resourceInUse('game', count),
-    alreadyExists: (title: string, systemName: string) =>
-      AppError.conflict(`A game titled "${title}" already exists for the system "${systemName}"`),
+    alreadyExists: (title: string, systemName: string, existingGameId?: string) =>
+      AppError.conflict(`A game titled "${title}" already exists for the system "${systemName}"`, {
+        code: APP_ERROR_CODES.GAME_ALREADY_EXISTS,
+        existingGameId,
+        existingGameTitle: title,
+        systemName,
+      }),
     alreadyProcessed: () => AppError.badRequest('Game has already been processed'),
     canOnlyEditOwn: () => AppError.forbidden('You can only edit your own games'),
     canOnlyEditPending: () => AppError.forbidden('You can only edit pending games'),
+    submissionLimitExceeded: (gamesCount: number, listingsCount: number, buffer: number) =>
+      AppError.badRequest(
+        `You've submitted ${gamesCount} games but only ${listingsCount} compatibility reports. ` +
+          `Please add ${gamesCount - listingsCount - buffer + 1} more compatibility report(s) before adding new games. ` +
+          `This helps ensure every game has useful compatibility data.`,
+        {
+          code: APP_ERROR_CODES.GAME_SUBMISSION_LIMIT_EXCEEDED,
+          gamesCount,
+          listingsCount,
+          buffer,
+          reportsNeeded: gamesCount - listingsCount - buffer + 1,
+        },
+      ),
   }
 
   static emulator = {

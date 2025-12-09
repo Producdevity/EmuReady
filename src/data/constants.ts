@@ -28,6 +28,16 @@ export const RATE_LIMITS = {
   WINDOW_SIZE_MS: ms.minutes(1),
 } as const
 
+// Game submission limits
+// Users can only add this many more games than they have listings (listings + pc-listings)
+// This encourages users to contribute compatibility reports rather than just adding games
+// AUTHOR role and above are exempt from this limit
+export const GAME_SUBMISSION_LIMITS = {
+  // Buffer: how many more games a user can add compared to their total listings
+  // e.g., with buffer=5: user with 3 listings can have up to 8 games
+  BUFFER: 5,
+} as const
+
 export const API_KEY_LIMITS = {
   DEFAULT_MONTHLY: 10_000,
   DEFAULT_WEEKLY: 2_500,

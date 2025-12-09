@@ -17,6 +17,7 @@ import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import GamePreviewModal from './components/GamePreviewModal'
 import { useGameSearch } from './hooks/useGameSearch'
+import { handleGameCreationError } from './utils/gameCreationErrors'
 import NotSignedInMessage from '../components/NotSignedInMessage'
 import { extractBoxartUrl } from './utils/boxartHelpers'
 import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
@@ -199,22 +200,9 @@ function TGDBSearchContent() {
         toast.success('Game added successfully!')
         router.push(`/listings/new?gameId=${newGame.id}`)
       } catch (error) {
-        // Check if the game already exists and get the existing game ID
-        const errorMessage = getErrorMessage(error, 'Failed to add game')
-
-        // Check if this is a duplicate game error
-        if (errorMessage.includes('already exists for the system')) {
-          // Extract the existing game ID from the error if available
-          const cause = (error as Error & { cause?: { existingGameId?: string } })?.cause
-          if (cause?.existingGameId) {
-            toast.info('Game already exists. Redirecting...')
-            router.push(`/listings/new?gameId=${cause.existingGameId}`)
-          } else {
-            // If we can't get the ID, just show the error
-            toast.error(errorMessage)
-          }
-        } else {
-          toast.error(errorMessage)
+        const result = handleGameCreationError(error)
+        if (result.type === 'duplicate') {
+          router.push(`/listings/new?gameId=${result.existingGameId}`)
         }
       } finally {
         setIsSelecting(false)

@@ -1,4 +1,5 @@
 import { AppError, ResourceError } from '@/lib/errors'
+import { logger } from '@/lib/logger'
 import { TrustService } from '@/lib/trust/service'
 import {
   ApproveGameSchema,
@@ -49,6 +50,7 @@ import {
   sanitizeInput,
   validateNonEmptyArray,
 } from '@/server/utils/security-validation'
+import { getSubmissionBalance } from '@/server/utils/submission-balance'
 import {
   findTitleIdForGameName,
   getBestTitleIdMatch,
@@ -296,26 +298,28 @@ export const gamesRouter = createTRPCRouter({
 
     if (!system) return ResourceError.system.notFound()
 
+    // Check submission balance for non-AUTHOR users
+    // Users can only submit games up to a buffer limit compared to their listings count
+    const isAuthorOrHigher = roleIncludesRole(ctx.session.user.role, Role.AUTHOR)
+    if (!isAuthorOrHigher) {
+      const balance = await getSubmissionBalance(ctx.prisma, ctx.session.user.id)
+      if (!balance.canSubmitGame) {
+        return ResourceError.game.submissionLimitExceeded(
+          balance.gamesCount,
+          balance.totalListingsCount,
+          balance.buffer,
+        )
+      }
+    }
+
     // Check if game with same title already exists for this system
     const existingGame = await ctx.prisma.game.findFirst({
       where: { title: input.title, systemId: input.systemId },
     })
 
     if (existingGame) {
-      // Use AppError.conflict with cause for duplicate game error
-      const error = AppError.conflict(
-        `A game titled "${input.title}" already exists for the system "${system.name}"`,
-      )
-      // Add cause information for frontend duplicate handling
-      ;(error as Error & { cause?: Record<string, unknown> }).cause = {
-        existingGameId: existingGame.id,
-        existingGameTitle: existingGame.title,
-        systemName: system.name,
-      }
-      throw error
+      return ResourceError.game.alreadyExists(input.title, system.name, existingGame.id)
     }
-
-    const isAuthor = roleIncludesRole(ctx.session.user.role, Role.AUTHOR)
 
     try {
       const { igdbGameId, ...gameData } = input
@@ -330,10 +334,10 @@ export const gamesRouter = createTRPCRouter({
         data: {
           ...gameData,
           metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-          status: isAuthor ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING,
+          status: isAuthorOrHigher ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING,
           submittedBy: ctx.session.user.id,
           submittedAt: new Date(),
-          ...(isAuthor && {
+          ...(isAuthorOrHigher && {
             approvedBy: ctx.session.user.id,
             approvedAt: new Date(),
           }),
@@ -355,7 +359,7 @@ export const gamesRouter = createTRPCRouter({
           revalidateByTag('games'),
           revalidateByTag(`system-${input.systemId}`),
         ]).catch((error) => {
-          console.error('[Games Router] Cache invalidation failed:', error)
+          logger.error('[Games Router] Cache invalidation failed:', error)
         })
       }
 
@@ -432,7 +436,7 @@ export const gamesRouter = createTRPCRouter({
         revalidateByTag(`game-${id}`),
         revalidateByTag(`system-${result.systemId}`),
       ]).catch((error) => {
-        console.error('[Games Router] Cache invalidation failed after update:', error)
+        logger.error('[Games Router] Cache invalidation failed after update:', error)
       })
 
       return result
@@ -446,17 +450,14 @@ export const gamesRouter = createTRPCRouter({
 
     if (!game) return ResourceError.game.notFound()
 
-    if (game.listings.length > 0) {
-      return ResourceError.game.inUse(game.listings.length)
-    }
+    if (game.listings.length > 0) return ResourceError.game.inUse(game.listings.length)
 
     try {
       const result = await ctx.prisma.game.delete({
         where: { id: input.id },
       })
 
-      // Invalidate cache when game is deleted
-      gameStatsCache.delete(GAME_STATS_CACHE_KEY)
+      gameStatsCache.delete(GAME_STATS_CACHE_KEY) // Invalidate cache when game is deleted
 
       return result
     } catch (error) {
@@ -522,15 +523,9 @@ export const gamesRouter = createTRPCRouter({
             approvedBy: true,
             approvedAt: true,
             createdAt: true,
-            system: {
-              select: { id: true, name: true, key: true, tgdbPlatformId: true },
-            },
-            submitter: {
-              select: { id: true, name: true, email: true, profileImage: true },
-            },
-            approver: {
-              select: { id: true, name: true, email: true, profileImage: true },
-            },
+            system: { select: { id: true, name: true, key: true, tgdbPlatformId: true } },
+            submitter: { select: { id: true, name: true, email: true, profileImage: true } },
+            approver: { select: { id: true, name: true, email: true, profileImage: true } },
           },
           orderBy: orderBy as Prisma.GameOrderByWithRelationInput,
           skip: actualOffset,
@@ -689,7 +684,7 @@ export const gamesRouter = createTRPCRouter({
         invalidateSitemap(),
         revalidateByTag('games'),
       ]).catch((error) => {
-        console.error('[Games Router] Cache invalidation failed:', error)
+        logger.error('[Games Router] Cache invalidation failed:', error)
       })
 
       return {

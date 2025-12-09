@@ -18,6 +18,7 @@ import { hasRolePermission } from '@/utils/permissions'
 import { getIGDBPlatformId } from '@/utils/system-platform-mapping'
 import { Role } from '@orm'
 import { useGameSearch } from '../hooks/useGameSearch'
+import { handleGameCreationError } from '../utils/gameCreationErrors'
 import IGDBGamePreviewModal from './components/IGDBGamePreviewModal'
 import NotSignedInMessage from '../../components/NotSignedInMessage'
 
@@ -159,22 +160,9 @@ function IGDBSearchContent() {
         toast.success('Game added successfully!')
         await showGameCreatedConfirmation(newGame.id)
       } catch (error) {
-        // Check if the game already exists and get the existing game ID
-        const errorMessage = getErrorMessage(error, 'Failed to add game')
-
-        // Check if this is a duplicate game error
-        if (errorMessage.includes('already exists for the system')) {
-          // Extract the existing game ID from the error if available
-          const cause = (error as Error & { cause?: { existingGameId?: string } })?.cause
-          if (cause?.existingGameId) {
-            toast.info('Game already exists.')
-            await showGameCreatedConfirmation(cause.existingGameId)
-          } else {
-            // Show error if ID is unavailable
-            toast.error(errorMessage)
-          }
-        } else {
-          toast.error(errorMessage)
+        const result = handleGameCreationError(error)
+        if (result.type === 'duplicate') {
+          await showGameCreatedConfirmation(result.existingGameId)
         }
       } finally {
         setIsSelecting(false)
