@@ -517,7 +517,19 @@ function AdminApprovalsPage() {
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
-                            <span>{listing.author?.name ?? 'N/A'}</span>
+                            <span>
+                              {listing.author ? (
+                                <Link
+                                  href={`/admin/users?userId=${listing.author.id}`}
+                                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+                                  title="View user details"
+                                >
+                                  {listing.author.name}
+                                </Link>
+                              ) : (
+                                'N/A'
+                              )}
+                            </span>
                             {listing.authorReportStats?.hasReports && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
