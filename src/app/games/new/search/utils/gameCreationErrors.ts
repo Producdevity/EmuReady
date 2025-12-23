@@ -1,5 +1,5 @@
 import { toast } from 'sonner'
-import { APP_ERROR_CODES } from '@/lib/errors'
+import { APP_ERROR_CODES, type AppErrorCode } from '@/lib/errors'
 import getErrorMessage from '@/utils/getErrorMessage'
 
 export type GameCreationErrorResult =
@@ -9,7 +9,7 @@ export type GameCreationErrorResult =
   | { type: 'generic' }
 
 interface ErrorCause {
-  code?: string
+  code?: AppErrorCode
   existingGameId?: string
   reportsNeeded?: number
 }

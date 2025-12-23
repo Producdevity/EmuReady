@@ -17,10 +17,10 @@ import getErrorMessage from '@/utils/getErrorMessage'
 import { hasRolePermission } from '@/utils/permissions'
 import { getIGDBPlatformId } from '@/utils/system-platform-mapping'
 import { Role } from '@orm'
+import NotSignedInMessage from '../../components/NotSignedInMessage'
 import { useGameSearch } from '../hooks/useGameSearch'
 import { handleGameCreationError } from '../utils/gameCreationErrors'
 import IGDBGamePreviewModal from './components/IGDBGamePreviewModal'
-import NotSignedInMessage from '../../components/NotSignedInMessage'
 
 // Extended IGDB game result that extends BaseGameResult
 interface IGDBGameResult extends BaseGameResult {
@@ -74,8 +74,7 @@ function IGDBSearchContent() {
 
       setIsSearching(true)
 
-      // Update URL with search parameters
-      updateSearchParams(query, systemId)
+      updateSearchParams(query, systemId) // Update URL with search parameters
 
       try {
         const results = await utils.igdb.searchGames.fetch({

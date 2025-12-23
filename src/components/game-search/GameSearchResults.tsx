@@ -2,40 +2,11 @@
 
 import { motion } from 'framer-motion'
 import { Calendar, Gamepad2, AlertCircle, Check } from 'lucide-react'
-import Image from 'next/image'
-import { useState } from 'react'
+import { GameSearchResultImage } from '@/components/game-search/GameSearchResultImage'
 import { Badge } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { formatReleaseYear } from '@/utils/date'
 import type { GameSearchResultsProps, BaseGameResult } from './types'
-
-interface GameImageProps {
-  src: string
-  alt: string
-}
-
-function GameImage(props: GameImageProps) {
-  const [hasError, setHasError] = useState(false)
-
-  if (hasError) {
-    return (
-      <div className="absolute inset-0 flex items-center justify-center">
-        <Gamepad2 className="h-16 w-16 text-slate-300 dark:text-slate-600" />
-      </div>
-    )
-  }
-
-  return (
-    <Image
-      src={props.src}
-      alt={props.alt}
-      fill
-      className="object-cover"
-      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-      onError={() => setHasError(true)}
-    />
-  )
-}
 
 export function GameSearchResults<T extends BaseGameResult>(props: GameSearchResultsProps<T>) {
   if (!props.results) return null
@@ -97,7 +68,10 @@ export function GameSearchResults<T extends BaseGameResult>(props: GameSearchRes
               {/* Image */}
               <div className="aspect-[3/4] relative bg-slate-100 dark:bg-slate-900">
                 {game.imageUrl || game.boxartUrl ? (
-                  <GameImage src={game.imageUrl || game.boxartUrl || ''} alt={game.name} />
+                  <GameSearchResultImage
+                    src={game.imageUrl || game.boxartUrl || ''}
+                    alt={game.name}
+                  />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Gamepad2 className="h-16 w-16 text-slate-300 dark:text-slate-600" />

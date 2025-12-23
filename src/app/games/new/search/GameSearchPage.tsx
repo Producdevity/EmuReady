@@ -17,9 +17,9 @@ import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import GamePreviewModal from './components/GamePreviewModal'
 import { useGameSearch } from './hooks/useGameSearch'
+import { extractBoxartUrl } from './utils/boxartHelpers'
 import { handleGameCreationError } from './utils/gameCreationErrors'
 import NotSignedInMessage from '../components/NotSignedInMessage'
-import { extractBoxartUrl } from './utils/boxartHelpers'
 import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
 
 // Extended TGDB game result that extends BaseGameResult

@@ -1,4 +1,5 @@
 export * from './GameSearchForm'
-export * from './GameSearchResults'
 export * from './GameSearchHeader'
+export * from './GameSearchResults'
+export * from './GameSearchResultImage'
 export * from './types'
