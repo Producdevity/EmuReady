@@ -204,7 +204,6 @@ function ListingDetailsClient(props: Props) {
         </Card>
       </motion.div>
 
-      {/* Vote Reminder Banner */}
       <VoteReminderBanner
         listingId={props.listing.id}
         onVoteClick={scrollToVoteSection}
