@@ -1,6 +1,7 @@
 export * from './ActiveFiltersSummary'
 export * from './CollapsedBadges'
 export * from './FilterSidebarShell'
+export * from './GameImage'
 export * from './ListingsSearchBar'
 export * from './MobileFiltersFab'
 export * from './MobileFilterSheet'
