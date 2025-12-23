@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { HOME_PAGE_LIMITS } from '@/data/constants'
 import { SortDirection } from '@/schemas/soc'
 
 export const DeviceSortField = z.enum(['brand', 'modelName', 'soc', 'listings'])
@@ -33,6 +34,10 @@ export const UpdateDeviceSchema = z.object({
 })
 
 export const DeleteDeviceSchema = z.object({ id: z.string().uuid() })
+
+export const GetTrendingDevicesSummarySchema = z.object({
+  limit: z.number().int().min(1).max(20).default(HOME_PAGE_LIMITS.TRENDING_DEVICES),
+})
 
 // Type exports for repository use
 export type GetDevicesInput = z.input<typeof GetDevicesSchema>

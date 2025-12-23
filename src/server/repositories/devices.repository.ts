@@ -1,8 +1,26 @@
+import { startOfMonth, subDays } from 'date-fns'
+import { HOME_PAGE_LIMITS } from '@/data/constants'
 import { ResourceError } from '@/lib/errors'
 import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
 import { Prisma, ApprovalStatus } from '@orm'
 import { BaseRepository } from './base.repository'
+import type { TimeRangeId } from '@/app/home/components/TimeRangeTabs'
 import type { GetDevicesInput, CreateDeviceInput, UpdateDeviceInput } from '@/schemas/device'
+
+export interface TrendingDevice {
+  id: string
+  modelName: string
+  brandName: string
+  brandId: string
+  socName: string | null
+  recentListingCount: number
+}
+
+export interface TrendingDevicesSummary {
+  allTime: TrendingDevice[]
+  thisMonth: TrendingDevice[]
+  thisWeek: TrendingDevice[]
+}
 
 /**
  * Repository for Device data access
@@ -245,12 +263,7 @@ export class DevicesRepository extends BaseRepository {
       socName: string | null
       listingsCount: number
     }[]
-    pagination: {
-      total: number
-      pages: number
-      page: number
-      limit: number
-    }
+    pagination: PaginationResult
   }> {
     const limit = filters.limit ?? 20
     const page = filters.page ?? 1
@@ -291,8 +304,6 @@ export class DevicesRepository extends BaseRepository {
       this.prisma.device.count({ where }),
     ])
 
-    const pagination = paginate({ total: total, page, limit: limit })
-
     return {
       devices: devices.map((device) => ({
         id: device.id,
@@ -301,7 +312,7 @@ export class DevicesRepository extends BaseRepository {
         socName: device.soc?.name ?? null,
         listingsCount: device._count.listings,
       })),
-      pagination,
+      pagination: paginate({ total, page, limit }),
     }
   }
 
@@ -338,11 +349,26 @@ export class DevicesRepository extends BaseRepository {
   }
 
   /**
-   * Get trending devices based on listings submitted in the last 30 days
+   * Resolves a time range ID to a start date
    */
-  async getTrendingDevices(limit: number = 6) {
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  private resolveTimeRange(timeRange: TimeRangeId): Date | undefined {
+    if (timeRange === 'allTime') return undefined
+
+    const now = new Date()
+
+    if (timeRange === 'thisWeek') return subDays(now, 7)
+
+    return startOfMonth(now)
+  }
+
+  /**
+   * Get trending devices based on listings submitted since a given date
+   */
+  async getTrendingDevices(
+    limit: number = HOME_PAGE_LIMITS.TRENDING_DEVICES,
+    sinceDate?: Date,
+  ): Promise<TrendingDevice[]> {
+    const dateFilter = sinceDate ? { gte: sinceDate } : undefined
 
     const devicesWithCounts = await this.prisma.device.findMany({
       select: {
@@ -350,13 +376,21 @@ export class DevicesRepository extends BaseRepository {
         _count: {
           select: {
             listings: {
-              where: { status: ApprovalStatus.APPROVED, createdAt: { gte: thirtyDaysAgo } },
+              where: {
+                status: ApprovalStatus.APPROVED,
+                ...(dateFilter ? { createdAt: dateFilter } : {}),
+              },
             },
           },
         },
       },
       where: {
-        listings: { some: { status: ApprovalStatus.APPROVED, createdAt: { gte: thirtyDaysAgo } } },
+        listings: {
+          some: {
+            status: ApprovalStatus.APPROVED,
+            ...(dateFilter ? { createdAt: dateFilter } : {}),
+          },
+        },
       },
       orderBy: { listings: { _count: Prisma.SortOrder.desc } },
       take: limit,
@@ -367,8 +401,24 @@ export class DevicesRepository extends BaseRepository {
       modelName: device.modelName,
       brandName: device.brand.name,
       brandId: device.brand.id,
-      socName: `${device.soc?.manufacturer} ${device.soc?.name}`,
+      socName: device.soc ? `${device.soc.manufacturer} ${device.soc.name}` : null,
       recentListingCount: device._count.listings,
     }))
+  }
+
+  /**
+   * Get trending devices for all time ranges
+   */
+  async getTrendingDevicesSummary(
+    limit: number = HOME_PAGE_LIMITS.TRENDING_DEVICES,
+  ): Promise<TrendingDevicesSummary> {
+    const timeRanges: TimeRangeId[] = ['allTime', 'thisMonth', 'thisWeek']
+
+    const results = await Promise.all(
+      timeRanges.map((range) => this.getTrendingDevices(limit, this.resolveTimeRange(range))),
+    )
+    const [allTime, thisMonth, thisWeek] = results
+
+    return { allTime, thisMonth, thisWeek }
   }
 }

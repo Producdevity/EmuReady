@@ -8,14 +8,7 @@ import { useState, useMemo } from 'react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { formatters, getLocale } from '@/utils/date'
-
-const contributorTabs = [
-  { id: 'allTime' as const, label: 'All Time' },
-  { id: 'thisMonth' as const, label: 'This Month' },
-  { id: 'thisWeek' as const, label: 'This Week' },
-]
-
-type ContributorTab = (typeof contributorTabs)[number]['id']
+import { TimeRangeTabs, type TimeRangeId } from './TimeRangeTabs'
 
 const rankThemes = [
   {
@@ -47,7 +40,7 @@ const rankThemes = [
 export function HomeCommunityMvp() {
   const topContributorsQuery = api.users.topContributorsSummary.useQuery({ limit: 3 })
 
-  const [activeContributorRange, setActiveContributorRange] = useState<ContributorTab>('thisMonth')
+  const [activeContributorRange, setActiveContributorRange] = useState<TimeRangeId>('thisMonth')
 
   const contributors = useMemo(
     () => topContributorsQuery.data?.[activeContributorRange] ?? [],
@@ -72,24 +65,7 @@ export function HomeCommunityMvp() {
               compatibility reports an upvote, or share your feedback.
             </p>
           </div>
-          <div className="flex w-full items-center justify-around gap-2 rounded-full bg-gray-100 p-1 text-sm font-medium dark:bg-gray-900/70 lg:w-auto">
-            {contributorTabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveContributorRange(tab.id)}
-                className={cn(
-                  activeContributorRange === tab.id
-                    ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white'
-                    : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white',
-                  'rounded-full px-4 py-1.5 transition-colors',
-                )}
-                aria-pressed={activeContributorRange === tab.id}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          <TimeRangeTabs value={activeContributorRange} onChange={setActiveContributorRange} />
         </div>
 
         <div className="mt-8">

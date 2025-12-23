@@ -53,6 +53,12 @@ export const UI_CONSTANTS = {
   ANIMATION_DURATION: 200,
 } as const
 
+// Home page display limits
+export const HOME_PAGE_LIMITS = {
+  TRENDING_DEVICES: 6,
+  TOP_CONTRIBUTORS: 3,
+} as const
+
 // Character limits
 export const CHAR_LIMITS = {
   GAME_TITLE: 100,

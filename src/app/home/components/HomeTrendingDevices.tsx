@@ -3,33 +3,54 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { TrendingUp, ChevronRight, Smartphone, Cpu } from 'lucide-react'
 import Link from 'next/link'
+import { useState, useMemo } from 'react'
+import { HOME_PAGE_LIMITS } from '@/data/constants'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { TimeRangeTabs, type TimeRangeId } from './TimeRangeTabs'
+
+const TIME_RANGE_LABELS: Record<TimeRangeId, string> = {
+  allTime: 'All Time',
+  thisMonth: 'This Month',
+  thisWeek: 'This Week',
+}
 
 export function HomeTrendingDevices() {
-  const trendingDevicesQuery = api.devices.trending.useQuery()
+  const trendingDevicesQuery = api.devices.trendingSummary.useQuery({
+    limit: HOME_PAGE_LIMITS.TRENDING_DEVICES,
+  })
 
-  const devices = trendingDevicesQuery.data ?? []
+  const [activeTimeRange, setActiveTimeRange] = useState<TimeRangeId>('thisMonth')
+
+  const devices = useMemo(
+    () => trendingDevicesQuery.data?.[activeTimeRange] ?? [],
+    [trendingDevicesQuery.data, activeTimeRange],
+  )
 
   return (
     <section className="mb-20 px-2 sm:px-4">
       <div className="rounded-3xl border border-gray-200/60 bg-white/80 p-6 shadow-xl backdrop-blur-sm dark:border-gray-700/60 dark:bg-gray-800/80 lg:p-8">
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300">
-            <TrendingUp className="h-4 w-4" />
-            Trending This Month
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="mb-8 lg:mb-0">
+            <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300">
+              <TrendingUp className="h-4 w-4" />
+              Trending {TIME_RANGE_LABELS[activeTimeRange]}
+            </div>
+            <h2 className="mt-4 text-3xl font-bold text-gray-900 dark:text-white">
+              Popular Devices
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
+              Discover the most active handheld gaming devices. These are the devices getting the
+              most new compatibility reports from our community.
+            </p>
           </div>
-          <h2 className="mt-4 text-3xl font-bold text-gray-900 dark:text-white">Popular Devices</h2>
-          <p className="mt-2 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
-            Discover the most active handheld gaming devices from the past 30 days. These are the
-            devices getting the most new compatibility reports from our community.
-          </p>
+          <TimeRangeTabs value={activeTimeRange} onChange={setActiveTimeRange} />
         </div>
 
         {trendingDevicesQuery.isPending ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {[...Array(12)].map((_, index) => (
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {[...Array(HOME_PAGE_LIMITS.TRENDING_DEVICES)].map((_, index) => (
               <div
                 key={`device-skeleton-${index}`}
                 className="rounded-2xl border border-gray-200 bg-white/70 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800/70"
@@ -44,17 +65,18 @@ export function HomeTrendingDevices() {
             ))}
           </div>
         ) : devices.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-300 bg-white/70 p-8 text-center text-gray-600 dark:border-gray-600 dark:bg-gray-900/60 dark:text-gray-300">
-            No trending devices this month. Be the first to contribute!
+          <div className="mt-8 rounded-2xl border border-dashed border-gray-300 bg-white/70 p-8 text-center text-gray-600 dark:border-gray-600 dark:bg-gray-900/60 dark:text-gray-300">
+            No trending devices for this time period. Be the first to contribute!
           </div>
         ) : (
           <AnimatePresence mode="wait">
             <motion.div
+              key={activeTimeRange}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+              className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
             >
               {devices.map((device, index) => (
                 <motion.div
@@ -106,7 +128,8 @@ export function HomeTrendingDevices() {
                       <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 dark:bg-emerald-900/30">
                         <TrendingUp className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
                         <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                          {device.recentListingCount} new
+                          {device.recentListingCount}{' '}
+                          {activeTimeRange === 'allTime' ? 'total' : 'new'}
                         </span>
                       </div>
                       <ChevronRight className="h-4 w-4 text-gray-400 transition-transform duration-300 group-hover:translate-x-1 group-hover:text-emerald-500 dark:text-gray-500 dark:group-hover:text-emerald-400" />

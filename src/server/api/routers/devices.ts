@@ -5,6 +5,7 @@ import {
   GetDeviceByIdSchema,
   GetDevicesByIdsSchema,
   GetDevicesSchema,
+  GetTrendingDevicesSummarySchema,
   UpdateDeviceSchema,
 } from '@/schemas/device'
 import {
@@ -68,6 +69,13 @@ export const devicesRouter = createTRPCRouter({
 
   trending: publicProcedure.query(async ({ ctx }) => {
     const repository = new DevicesRepository(ctx.prisma)
-    return repository.getTrendingDevices(6)
+    return repository.getTrendingDevices()
   }),
+
+  trendingSummary: publicProcedure
+    .input(GetTrendingDevicesSummarySchema)
+    .query(async ({ ctx, input }) => {
+      const repository = new DevicesRepository(ctx.prisma)
+      return repository.getTrendingDevicesSummary(input.limit)
+    }),
 })
