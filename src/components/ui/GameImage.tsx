@@ -26,16 +26,7 @@ export function GameImage(props: Props) {
   const displayImageUrl = props.prioritizeBanner
     ? (props.game.bannerUrl ?? props.game.boxartUrl ?? props.game.imageUrl)
     : (props.game.boxartUrl ?? props.game.bannerUrl ?? props.game.imageUrl)
-  const rawImageUrl = getImageUrl(displayImageUrl ?? null, props.game.title)
-  const imageUrl = (() => {
-    if (!rawImageUrl.startsWith('/api/proxy-image')) return rawImageUrl
-    const qIndex = rawImageUrl.indexOf('?')
-    if (qIndex === -1) return rawImageUrl
-    const search = rawImageUrl.slice(qIndex + 1)
-    const params = new URLSearchParams(search)
-    return params.get('url') || rawImageUrl
-  })()
-  const hasImage = !!(props.game.boxartUrl || props.game.bannerUrl || props.game.imageUrl)
+  const imageUrl = getImageUrl(displayImageUrl ?? null, props.game.title)
 
   // Determine aspect ratio class based on prop
   const aspectRatioClass = {
@@ -46,10 +37,10 @@ export function GameImage(props: Props) {
   }[props.aspectRatio ?? 'auto']
 
   // If no image is available and we're not showing fallback, return null
-  if (!hasImage && !props.showFallback) return null
+  if (!displayImageUrl && !props.showFallback) return null
 
   // If there's an error or no image, show fallback
-  if (imageError || !hasImage) {
+  if (imageError || !displayImageUrl) {
     return (
       <div
         className={cn(
