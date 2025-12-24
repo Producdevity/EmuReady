@@ -146,7 +146,7 @@ describe('Eden Converter', () => {
         { input: '2x', expected: 4, description: '2x multiplier' },
         { input: '0.5x', expected: 0, description: '0.5x multiplier' },
         { input: '4x', expected: 6, description: '4x multiplier' },
-        { input: '3', expected: 3, description: 'Direct number' },
+        { input: '3', expected: 5, description: '3x multiplier (no suffix)' },
         { input: '10', expected: 10, description: 'Max value' },
         { input: '1.5x', expected: 3, description: '1.5x multiplier' },
         { input: '2.5 x', expected: 4, description: 'With space' },

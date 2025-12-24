@@ -173,9 +173,9 @@ describe('getCustomFieldDefaultValue', () => {
   })
 
   describe('TEXT type', () => {
-    it('should return undefined when no default value', () => {
+    it('should return empty string when no default value', () => {
       const field = { type: CustomFieldType.TEXT }
-      expect(getCustomFieldDefaultValue(field)).toBeUndefined()
+      expect(getCustomFieldDefaultValue(field)).toBe('')
     })
 
     it('should return actual defaultValue when set', () => {
@@ -183,9 +183,9 @@ describe('getCustomFieldDefaultValue', () => {
       expect(getCustomFieldDefaultValue(field)).toBe('default text')
     })
 
-    it('should fall back to undefined if defaultValue is null', () => {
+    it('should fall back to empty string if defaultValue is null', () => {
       const field = { type: CustomFieldType.TEXT, defaultValue: null }
-      expect(getCustomFieldDefaultValue(field)).toBeUndefined()
+      expect(getCustomFieldDefaultValue(field)).toBe('')
     })
 
     it('should return empty string if that is the defaultValue', () => {
@@ -195,9 +195,9 @@ describe('getCustomFieldDefaultValue', () => {
   })
 
   describe('TEXTAREA type', () => {
-    it('should return undefined when no default value', () => {
+    it('should return empty string when no default value', () => {
       const field = { type: CustomFieldType.TEXTAREA }
-      expect(getCustomFieldDefaultValue(field)).toBeUndefined()
+      expect(getCustomFieldDefaultValue(field)).toBe('')
     })
 
     it('should return actual defaultValue when set', () => {
@@ -207,9 +207,9 @@ describe('getCustomFieldDefaultValue', () => {
   })
 
   describe('URL type', () => {
-    it('should return undefined when no default value', () => {
+    it('should return empty string when no default value', () => {
       const field = { type: CustomFieldType.URL }
-      expect(getCustomFieldDefaultValue(field)).toBeUndefined()
+      expect(getCustomFieldDefaultValue(field)).toBe('')
     })
 
     it('should return actual defaultValue when set', () => {

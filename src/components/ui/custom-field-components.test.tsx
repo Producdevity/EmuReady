@@ -140,8 +140,11 @@ describe('SelectFieldOptions', () => {
       />,
     )
 
-    const deleteButton = screen.getByRole('button', { name: '' })
-    fireEvent.click(deleteButton)
+    // Find the delete button by its destructive variant class (excludes drag handle)
+    const buttons = screen.getAllByRole('button')
+    const deleteButton = buttons.find((btn) => btn.className.includes('bg-destructive'))
+    expect(deleteButton).toBeDefined()
+    fireEvent.click(deleteButton!)
     expect(onRemoveOption).toHaveBeenCalledWith(0)
   })
 

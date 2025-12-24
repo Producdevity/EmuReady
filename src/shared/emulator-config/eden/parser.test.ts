@@ -104,7 +104,7 @@ use_docked_mode=true
         { id: 'cpu_accuracy', value: 'Accurate' },
         { id: 'gpu_backend', value: 'OpenGL' },
         { id: 'use_disk_shader_cache', value: false },
-        { id: 'resolution_setup', value: 4 },
+        { id: 'resolution_setup', value: '2.0x' },
         { id: 'docked_mode', value: true },
         { id: 'extended_dynamic_state', value: 2 },
         { id: 'enhanced_frame_pacing', value: true },
