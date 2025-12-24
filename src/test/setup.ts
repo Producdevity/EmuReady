@@ -11,6 +11,11 @@ process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test'
 
 // Mock the entire Prisma client module to prevent database initialization
 vi.mock('@orm', () => ({
+  // Prisma namespace for raw SQL tagged templates
+  Prisma: {
+    sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
+    empty: { strings: [''], values: [] },
+  },
   PrismaClient: vi.fn().mockImplementation(() => ({
     $transaction: vi.fn(),
     customFieldDefinition: {
