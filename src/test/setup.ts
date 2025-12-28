@@ -13,8 +13,11 @@ process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test'
 vi.mock('@orm', () => ({
   // Prisma namespace for raw SQL tagged templates
   Prisma: {
-    sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
-    empty: { strings: [''], values: [] },
+    sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
+      strings: Array.from(strings),
+      values,
+      text: strings.join('?'),
+    }),
   },
   PrismaClient: vi.fn().mockImplementation(() => ({
     $transaction: vi.fn(),
