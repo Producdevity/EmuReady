@@ -36,7 +36,6 @@ pnpm-lock.yaml
 dist/
 build/
 public/api-docs/
-public/assets/
 prisma/generated/
 
 # Logs
