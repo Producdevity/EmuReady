@@ -1,5 +1,5 @@
 import { startOfMonth, subDays } from 'date-fns'
-import { ApprovalStatus, type PrismaClient, type Role } from '@orm'
+import { Prisma, ApprovalStatus, type PrismaClient, type Role } from '@orm'
 
 export type ContributorTimeframe = 'all_time' | 'this_month' | 'this_week'
 
@@ -7,7 +7,7 @@ export interface ContributionBreakdown {
   listings: number
   pcListings: number
   games: number
-  total: number
+  total: number // listings + pcListings
   lastContributionAt: Date | null
 }
 
@@ -59,13 +59,6 @@ export interface ContributorUserDetails {
   trustScore: number
   bio: string | null
   createdAt: Date
-}
-
-export function getActiveBanFilter(now: Date) {
-  return {
-    isActive: true,
-    OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-  }
 }
 
 export function resolveContributorTimeframe(timeframe: ContributorTimeframe): Date | undefined {
@@ -199,24 +192,110 @@ export async function aggregateContributions(
   return contributionMap
 }
 
+/**
+ * Get top contributors using optimized raw SQL.
+ * Aggregates listings + pcListings for ranking (games tracked separately).
+ * Excludes banned users at the database level.
+ */
 export async function getTopContributorsRaw(
   prisma: PrismaClient,
   timeframe: ContributorTimeframe,
   limit: number,
 ): Promise<RawContributor[]> {
   const startDate = resolveContributorTimeframe(timeframe)
-  const aggregates = await aggregateContributions(prisma, { startDate })
 
-  const sorted = Object.entries(aggregates)
-    .filter(([, breakdown]) => breakdown.total > 0)
-    .sort(([, a], [, b]) => {
-      if (b.total !== a.total) return b.total - a.total
-      const timeA = a.lastContributionAt?.getTime() ?? 0
-      const timeB = b.lastContributionAt?.getTime() ?? 0
-      return timeB - timeA
-    })
+  // Build date filter SQL fragments - use Prisma.sql`` for empty to avoid issues with Prisma.empty
+  const listingDateFilter = startDate ? Prisma.sql`AND l."createdAt" >= ${startDate}` : Prisma.sql``
+  const pcListingDateFilter = startDate
+    ? Prisma.sql`AND pc."createdAt" >= ${startDate}`
+    : Prisma.sql``
+  const gameDateFilter = startDate
+    ? Prisma.sql`AND (g."approvedAt" >= ${startDate} OR (g."approvedAt" IS NULL AND g."submittedAt" >= ${startDate}))`
+    : Prisma.sql``
 
-  return sorted.slice(0, limit).map(([userId, breakdown]) => ({ userId, breakdown }))
+  const results = await prisma.$queryRaw<
+    {
+      userId: string
+      listings: bigint
+      pcListings: bigint
+      games: bigint
+      total: bigint
+      lastContributionAt: Date | null
+    }[]
+  >(Prisma.sql`
+    WITH listing_counts AS (
+      SELECT
+        l."authorId" as "userId",
+        COUNT(*) as count,
+        MAX(l."createdAt") as "lastDate"
+      FROM "Listing" l
+      WHERE l.status IN ('APPROVED', 'PENDING')
+        ${listingDateFilter}
+      GROUP BY l."authorId"
+    ),
+    pc_listing_counts AS (
+      SELECT
+        pc."authorId" as "userId",
+        COUNT(*) as count,
+        MAX(pc."createdAt") as "lastDate"
+      FROM "pc_listings" pc
+      WHERE pc.status IN ('APPROVED', 'PENDING')
+        ${pcListingDateFilter}
+      GROUP BY pc."authorId"
+    ),
+    game_counts AS (
+      SELECT
+        g."submittedBy" as "userId",
+        COUNT(*) as count,
+        MAX(COALESCE(g."approvedAt", g."submittedAt")) as "lastDate"
+      FROM "Game" g
+      WHERE g.status != 'REJECTED'
+        AND g."submittedBy" IS NOT NULL
+        ${gameDateFilter}
+      GROUP BY g."submittedBy"
+    ),
+    active_bans AS (
+      SELECT DISTINCT "userId"
+      FROM "user_bans"
+      WHERE "isActive" = true
+        AND ("expiresAt" IS NULL OR "expiresAt" > NOW())
+    ),
+    combined AS (
+      SELECT
+        COALESCE(l."userId", pc."userId", g."userId") as "userId",
+        COALESCE(l.count, 0) as listings,
+        COALESCE(pc.count, 0) as "pcListings",
+        COALESCE(g.count, 0) as games,
+        COALESCE(l.count, 0) + COALESCE(pc.count, 0) as total,
+        GREATEST(l."lastDate", pc."lastDate", g."lastDate") as "lastContributionAt"
+      FROM listing_counts l
+      FULL OUTER JOIN pc_listing_counts pc ON l."userId" = pc."userId"
+      FULL OUTER JOIN game_counts g ON COALESCE(l."userId", pc."userId") = g."userId"
+    )
+    SELECT
+      c."userId",
+      c.listings,
+      c."pcListings",
+      c.games,
+      c.total,
+      c."lastContributionAt"
+    FROM combined c
+    WHERE c.total > 0
+      AND c."userId" NOT IN (SELECT "userId" FROM active_bans)
+    ORDER BY c.total DESC, c."lastContributionAt" DESC NULLS LAST
+    LIMIT ${limit}
+  `)
+
+  return results.map((row) => ({
+    userId: row.userId,
+    breakdown: {
+      listings: Number(row.listings),
+      pcListings: Number(row.pcListings),
+      games: Number(row.games),
+      total: Number(row.total),
+      lastContributionAt: row.lastContributionAt,
+    },
+  }))
 }
 
 export function formatContributors(

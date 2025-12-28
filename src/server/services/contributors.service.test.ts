@@ -16,6 +16,7 @@ const createMockPrisma = () => ({
   game: {
     groupBy: vi.fn(),
   },
+  $queryRaw: vi.fn(),
 })
 
 describe('contributors.service', () => {
@@ -65,20 +66,24 @@ describe('contributors.service', () => {
 
   it('returns top contributors sorted by total contributions and recency', async () => {
     const recent = new Date('2025-02-01T00:00:00Z')
-    const older = new Date('2025-01-01T00:00:00Z')
 
-    prisma.listing.groupBy.mockResolvedValue([
-      { authorId: 'user-1', _count: { _all: 1 }, _max: { createdAt: older } },
-      { authorId: 'user-2', _count: { _all: 1 }, _max: { createdAt: recent } },
-    ])
-    prisma.pcListing.groupBy.mockResolvedValue([
-      { authorId: 'user-1', _count: { _all: 1 }, _max: { createdAt: older } },
-    ])
-    prisma.game.groupBy.mockResolvedValue([
+    // Mock the raw SQL query result
+    prisma.$queryRaw.mockResolvedValue([
       {
-        submittedBy: 'user-2',
-        _count: { _all: 1 },
-        _max: { approvedAt: recent, submittedAt: recent },
+        userId: 'user-1',
+        listings: BigInt(2),
+        pcListings: BigInt(0),
+        games: BigInt(0),
+        total: BigInt(2),
+        lastContributionAt: recent,
+      },
+      {
+        userId: 'user-2',
+        listings: BigInt(1),
+        pcListings: BigInt(0),
+        games: BigInt(1),
+        total: BigInt(1),
+        lastContributionAt: recent,
       },
     ])
 
@@ -86,7 +91,9 @@ describe('contributors.service', () => {
 
     expect(top).toHaveLength(2)
     expect(top[0]?.userId).toBe('user-1')
+    expect(top[0]?.breakdown.total).toBe(2)
     expect(top[1]?.userId).toBe('user-2')
+    expect(top[1]?.breakdown.total).toBe(1)
   })
 
   it('returns zeroed contribution breakdown when user has no records', async () => {
@@ -103,5 +110,97 @@ describe('contributors.service', () => {
       total: 0,
       lastContributionAt: null,
     })
+  })
+
+  it('returns empty array when no contributors exist', async () => {
+    prisma.$queryRaw.mockResolvedValue([])
+
+    const top = await getTopContributorsRaw(prisma, 'all_time', 10)
+
+    expect(top).toHaveLength(0)
+    expect(top).toEqual([])
+  })
+
+  it('applies date filter for this_month timeframe', async () => {
+    const recent = new Date('2025-02-01T00:00:00Z')
+
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        userId: 'user-1',
+        listings: BigInt(5),
+        pcListings: BigInt(3),
+        games: BigInt(2),
+        total: BigInt(8),
+        lastContributionAt: recent,
+      },
+    ])
+
+    const top = await getTopContributorsRaw(prisma, 'this_month', 5)
+
+    expect(top).toHaveLength(1)
+    expect(top[0]?.userId).toBe('user-1')
+    expect(top[0]?.breakdown.total).toBe(8)
+    expect(prisma.$queryRaw).toHaveBeenCalled()
+  })
+
+  it('applies date filter for this_week timeframe', async () => {
+    const recent = new Date('2025-02-01T00:00:00Z')
+
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        userId: 'user-1',
+        listings: BigInt(2),
+        pcListings: BigInt(1),
+        games: BigInt(0),
+        total: BigInt(3),
+        lastContributionAt: recent,
+      },
+    ])
+
+    const top = await getTopContributorsRaw(prisma, 'this_week', 3)
+
+    expect(top).toHaveLength(1)
+    expect(top[0]?.userId).toBe('user-1')
+    expect(top[0]?.breakdown.total).toBe(3)
+    expect(prisma.$queryRaw).toHaveBeenCalled()
+  })
+
+  it('correctly converts BigInt values to numbers in breakdown', async () => {
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        userId: 'user-1',
+        listings: BigInt(100),
+        pcListings: BigInt(50),
+        games: BigInt(25),
+        total: BigInt(150),
+        lastContributionAt: new Date('2025-01-15T00:00:00Z'),
+      },
+    ])
+
+    const top = await getTopContributorsRaw(prisma, 'all_time', 1)
+
+    expect(top[0]?.breakdown.listings).toBe(100)
+    expect(top[0]?.breakdown.pcListings).toBe(50)
+    expect(top[0]?.breakdown.games).toBe(25)
+    expect(top[0]?.breakdown.total).toBe(150)
+    expect(typeof top[0]?.breakdown.listings).toBe('number')
+    expect(typeof top[0]?.breakdown.total).toBe('number')
+  })
+
+  it('handles null lastContributionAt in results', async () => {
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        userId: 'user-1',
+        listings: BigInt(1),
+        pcListings: BigInt(0),
+        games: BigInt(0),
+        total: BigInt(1),
+        lastContributionAt: null,
+      },
+    ])
+
+    const top = await getTopContributorsRaw(prisma, 'all_time', 1)
+
+    expect(top[0]?.breakdown.lastContributionAt).toBeNull()
   })
 })

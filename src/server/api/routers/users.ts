@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs'
 import analytics from '@/lib/analytics'
 import { ResourceError } from '@/lib/errors'
 import {
@@ -22,7 +23,6 @@ import {
   aggregateContributions,
   buildTopContributorsSummary,
   EMPTY_TOP_CONTRIBUTORS_SUMMARY,
-  getActiveBanFilter,
   getTopContributorsRaw,
   getUserContributionBreakdown,
   type RawContributor,
@@ -105,9 +105,10 @@ export const usersRouter = createTRPCRouter({
 
       try {
         rawResults = await Promise.all(
-          timeframes.map((timeframe) => getTopContributorsRaw(ctx.prisma, timeframe, limit * 3)),
+          timeframes.map((timeframe) => getTopContributorsRaw(ctx.prisma, timeframe, limit)),
         )
       } catch (error) {
+        Sentry.captureException(error, { tags: { endpoint: 'topContributorsSummary' } })
         console.error('Failed to load top contributors summary', error)
         return EMPTY_TOP_CONTRIBUTORS_SUMMARY
       }
@@ -118,16 +119,14 @@ export const usersRouter = createTRPCRouter({
 
       if (candidateIds.length === 0) return EMPTY_TOP_CONTRIBUTORS_SUMMARY
 
+      // Fetch lifetime contributions for badge display
       const lifetimeContributions = await aggregateContributions(ctx.prisma, {
         userIds: candidateIds,
       })
       const lifetimeContributionMap = new Map(Object.entries(lifetimeContributions))
 
       const users = await ctx.prisma.user.findMany({
-        where: {
-          id: { in: candidateIds },
-          userBans: { none: getActiveBanFilter(new Date()) },
-        },
+        where: { id: { in: candidateIds } }, // ban filter applied in SQL
         select: {
           id: true,
           name: true,

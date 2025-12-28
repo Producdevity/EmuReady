@@ -362,47 +362,53 @@ export class DevicesRepository extends BaseRepository {
   }
 
   /**
-   * Get trending devices based on listings submitted since a given date
+   * Get trending devices based on listings submitted since a given date.
+   * Uses raw SQL to properly order by filtered listing count.
    */
   async getTrendingDevices(
     limit: number = HOME_PAGE_LIMITS.TRENDING_DEVICES,
     sinceDate?: Date,
   ): Promise<TrendingDevice[]> {
-    const dateFilter = sinceDate ? { gte: sinceDate } : undefined
+    // Build the date filter condition
+    const dateFilter = sinceDate ? Prisma.sql`AND l."createdAt" >= ${sinceDate}` : Prisma.sql``
 
-    const devicesWithCounts = await this.prisma.device.findMany({
-      select: {
-        ...DevicesRepository.selects.trending,
-        _count: {
-          select: {
-            listings: {
-              where: {
-                status: ApprovalStatus.APPROVED,
-                ...(dateFilter ? { createdAt: dateFilter } : {}),
-              },
-            },
-          },
-        },
-      },
-      where: {
-        listings: {
-          some: {
-            status: ApprovalStatus.APPROVED,
-            ...(dateFilter ? { createdAt: dateFilter } : {}),
-          },
-        },
-      },
-      orderBy: { listings: { _count: Prisma.SortOrder.desc } },
-      take: limit,
-    })
+    const results = await this.prisma.$queryRaw<
+      {
+        id: string
+        modelName: string
+        brandId: string
+        brandName: string
+        socManufacturer: string | null
+        socName: string | null
+        listingCount: bigint
+      }[]
+    >(Prisma.sql`
+      SELECT
+        d.id,
+        d."modelName",
+        b.id as "brandId",
+        b.name as "brandName",
+        s.manufacturer as "socManufacturer",
+        s.name as "socName",
+        COUNT(l.id) as "listingCount"
+      FROM "Device" d
+      INNER JOIN "DeviceBrand" b ON d."brandId" = b.id
+      LEFT JOIN "SoC" s ON d."socId" = s.id
+      INNER JOIN "Listing" l ON l."deviceId" = d.id
+      WHERE l.status = 'APPROVED'
+        ${dateFilter}
+      GROUP BY d.id, b.id, b.name, s.manufacturer, s.name
+      ORDER BY "listingCount" DESC
+      LIMIT ${limit}
+    `)
 
-    return devicesWithCounts.map((device) => ({
-      id: device.id,
-      modelName: device.modelName,
-      brandName: device.brand.name,
-      brandId: device.brand.id,
-      socName: device.soc ? `${device.soc.manufacturer} ${device.soc.name}` : null,
-      recentListingCount: device._count.listings,
+    return results.map((row) => ({
+      id: row.id,
+      modelName: row.modelName,
+      brandName: row.brandName,
+      brandId: row.brandId,
+      socName: row.socManufacturer && row.socName ? `${row.socManufacturer} ${row.socName}` : null,
+      recentListingCount: Number(row.listingCount),
     }))
   }
 
