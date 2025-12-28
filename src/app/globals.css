@@ -41,6 +41,7 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-brand-retrocatalog: var(--brand-retrocatalog);
 
   /* Custom animations */
   --animate-pulse-slow: pulse-slow 5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -106,6 +107,7 @@
   --brand-kofi-alt: 255 142 83; /* #ff8e53 */
   --brand-patreon: 255 66 77; /* #FF424D */
   --brand-patreon-alt: 255 138 91; /* #FF8A5B */
+  --brand-retrocatalog: 83 208 149; /* #53d095 */
 }
 
 .dark {
@@ -146,6 +148,7 @@
   --brand-kofi-alt: 255 142 83; /* #ff8e53 */
   --brand-patreon: 255 66 77; /* #FF424D */
   --brand-patreon-alt: 255 138 91; /* #FF8A5B */
+  --brand-retrocatalog: 12 136 118; /* #0c8876 */
 
   /* Aurora backgrounds */
   --hero-glow:

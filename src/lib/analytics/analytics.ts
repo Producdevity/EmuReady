@@ -877,6 +877,33 @@ const analytics = {
         }),
       })
     },
+
+    retroCatalogSpecsClicked: (params: {
+      deviceId: string
+      brandName: string
+      modelName: string
+      source:
+        | 'device_view_modal'
+        | 'listing_details'
+        | 'devices_table'
+        | 'listing_card'
+        | 'trending_devices'
+      retroCatalogUrl: string
+    }) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.CONTENT_DISCOVERY,
+        action: CONTENT_DISCOVERY_ACTIONS.RETROCATALOG_SPECS_CLICKED,
+        entityType: 'device',
+        entityId: params.deviceId,
+        url: params.retroCatalogUrl,
+        metadata: filterUndefinedValues({
+          brandName: params.brandName,
+          modelName: params.modelName,
+          source: params.source,
+          partner: 'retrocatalog',
+        }),
+      })
+    },
   },
 
   // Trust System events

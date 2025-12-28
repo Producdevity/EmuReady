@@ -154,6 +154,7 @@ export const CONTENT_DISCOVERY_ACTIONS = {
   HOMEPAGE_VIEW_ALL_EMULATORS_CLICKED: 'homepage_view_all_emulators_clicked',
   HOMEPAGE_VIEW_ALL_DEVICES_CLICKED: 'homepage_view_all_devices_clicked',
   HOMEPAGE_GAME_SEARCH_PERFORMED: 'homepage_game_search_performed',
+  RETROCATALOG_SPECS_CLICKED: 'retrocatalog_specs_clicked',
 } as const
 
 // Trust System Actions
