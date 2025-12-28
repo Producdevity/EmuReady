@@ -14,7 +14,7 @@
     "clean:all": "npm run clean && rm -rf node_modules",
     "db:backup": "./scripts/db-backup.sh",
     "db:backup:supabase": "./scripts/db-backup-supabase.sh",
-    "db:generate": "prisma generate",
+    "db:generate": "prisma generate --sql",
     "db:migrate:create": "./scripts/db-cmd.sh prisma migrate dev --create-only",
     "db:migrate:deploy": "./scripts/db-cmd.sh npx prisma migrate deploy",
     "db:migrate:dev": "./scripts/db-cmd.sh npx prisma migrate dev",

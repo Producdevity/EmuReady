@@ -9,6 +9,12 @@ import { vi, beforeEach, afterEach } from 'vitest'
 // Set up test environment variables
 process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test'
 
+// Mock TypedSQL functions
+vi.mock('@orm/sql', () => ({
+  getTrendingDevices: vi.fn(() => ({ sql: 'getTrendingDevices', params: [] })),
+  getTopContributors: vi.fn(() => ({ sql: 'getTopContributors', params: [] })),
+}))
+
 // Mock the entire Prisma client module to prevent database initialization
 vi.mock('@orm', () => ({
   // Prisma namespace for raw SQL tagged templates
@@ -21,6 +27,7 @@ vi.mock('@orm', () => ({
   },
   PrismaClient: vi.fn().mockImplementation(() => ({
     $transaction: vi.fn(),
+    $queryRawTyped: vi.fn().mockResolvedValue([]),
     customFieldDefinition: {
       findMany: vi.fn(),
       findUnique: vi.fn(),

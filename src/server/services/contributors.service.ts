@@ -1,5 +1,6 @@
 import { startOfMonth, subDays } from 'date-fns'
-import { Prisma, ApprovalStatus, type PrismaClient, type Role } from '@orm'
+import { ApprovalStatus, type PrismaClient, type Role } from '@orm'
+import { getTopContributors } from '@orm/sql'
 
 export type ContributorTimeframe = 'all_time' | 'this_month' | 'this_week'
 
@@ -193,7 +194,7 @@ export async function aggregateContributions(
 }
 
 /**
- * Get top contributors using optimized raw SQL.
+ * Get top contributors using TypedSQL.
  * Aggregates listings + pcListings for ranking (games tracked separately).
  * Excludes banned users at the database level.
  */
@@ -204,98 +205,20 @@ export async function getTopContributorsRaw(
 ): Promise<RawContributor[]> {
   const startDate = resolveContributorTimeframe(timeframe)
 
-  // Build date filter SQL fragments - use Prisma.sql`` for empty to avoid issues with Prisma.empty
-  const listingDateFilter = startDate ? Prisma.sql`AND l."createdAt" >= ${startDate}` : Prisma.sql``
-  const pcListingDateFilter = startDate
-    ? Prisma.sql`AND pc."createdAt" >= ${startDate}`
-    : Prisma.sql``
-  const gameDateFilter = startDate
-    ? Prisma.sql`AND (g."approvedAt" >= ${startDate} OR (g."approvedAt" IS NULL AND g."submittedAt" >= ${startDate}))`
-    : Prisma.sql``
+  const results = await prisma.$queryRawTyped(getTopContributors(startDate ?? null, limit))
 
-  const results = await prisma.$queryRaw<
-    {
-      userId: string
-      listings: bigint
-      pcListings: bigint
-      games: bigint
-      total: bigint
-      lastContributionAt: Date | null
-    }[]
-  >(Prisma.sql`
-    WITH listing_counts AS (
-      SELECT
-        l."authorId" as "userId",
-        COUNT(*) as count,
-        MAX(l."createdAt") as "lastDate"
-      FROM "Listing" l
-      WHERE l.status IN ('APPROVED', 'PENDING')
-        ${listingDateFilter}
-      GROUP BY l."authorId"
-    ),
-    pc_listing_counts AS (
-      SELECT
-        pc."authorId" as "userId",
-        COUNT(*) as count,
-        MAX(pc."createdAt") as "lastDate"
-      FROM "pc_listings" pc
-      WHERE pc.status IN ('APPROVED', 'PENDING')
-        ${pcListingDateFilter}
-      GROUP BY pc."authorId"
-    ),
-    game_counts AS (
-      SELECT
-        g."submittedBy" as "userId",
-        COUNT(*) as count,
-        MAX(COALESCE(g."approvedAt", g."submittedAt")) as "lastDate"
-      FROM "Game" g
-      WHERE g.status != 'REJECTED'
-        AND g."submittedBy" IS NOT NULL
-        ${gameDateFilter}
-      GROUP BY g."submittedBy"
-    ),
-    active_bans AS (
-      SELECT DISTINCT "userId"
-      FROM "user_bans"
-      WHERE "isActive" = true
-        AND ("expiresAt" IS NULL OR "expiresAt" > NOW())
-    ),
-    combined AS (
-      SELECT
-        COALESCE(l."userId", pc."userId", g."userId") as "userId",
-        COALESCE(l.count, 0) as listings,
-        COALESCE(pc.count, 0) as "pcListings",
-        COALESCE(g.count, 0) as games,
-        COALESCE(l.count, 0) + COALESCE(pc.count, 0) as total,
-        GREATEST(l."lastDate", pc."lastDate", g."lastDate") as "lastContributionAt"
-      FROM listing_counts l
-      FULL OUTER JOIN pc_listing_counts pc ON l."userId" = pc."userId"
-      FULL OUTER JOIN game_counts g ON COALESCE(l."userId", pc."userId") = g."userId"
-    )
-    SELECT
-      c."userId",
-      c.listings,
-      c."pcListings",
-      c.games,
-      c.total,
-      c."lastContributionAt"
-    FROM combined c
-    WHERE c.total > 0
-      AND c."userId" NOT IN (SELECT "userId" FROM active_bans)
-    ORDER BY c.total DESC, c."lastContributionAt" DESC NULLS LAST
-    LIMIT ${limit}
-  `)
-
-  return results.map((row) => ({
-    userId: row.userId,
-    breakdown: {
-      listings: Number(row.listings),
-      pcListings: Number(row.pcListings),
-      games: Number(row.games),
-      total: Number(row.total),
-      lastContributionAt: row.lastContributionAt,
-    },
-  }))
+  return results
+    .filter((row): row is typeof row & { userId: string } => row.userId !== null)
+    .map((row) => ({
+      userId: row.userId,
+      breakdown: {
+        listings: row.listings ?? 0,
+        pcListings: row.pcListings ?? 0,
+        games: row.games ?? 0,
+        total: row.total ?? 0,
+        lastContributionAt: row.lastContributionAt,
+      },
+    }))
 }
 
 export function formatContributors(

@@ -16,7 +16,8 @@
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./src/*"],
-      "@orm": ["./prisma/generated/client"]
+      "@orm": ["./prisma/generated/client"],
+      "@orm/sql": ["./prisma/generated/client/sql"]
     }
   },
   "include": [

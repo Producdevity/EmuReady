@@ -16,7 +16,7 @@ const createMockPrisma = () => ({
   game: {
     groupBy: vi.fn(),
   },
-  $queryRaw: vi.fn(),
+  $queryRawTyped: vi.fn(),
 })
 
 describe('contributors.service', () => {
@@ -67,22 +67,22 @@ describe('contributors.service', () => {
   it('returns top contributors sorted by total contributions and recency', async () => {
     const recent = new Date('2025-02-01T00:00:00Z')
 
-    // Mock the raw SQL query result
-    prisma.$queryRaw.mockResolvedValue([
+    // Mock the TypedSQL query result (values are numbers due to ::int cast in SQL)
+    prisma.$queryRawTyped.mockResolvedValue([
       {
         userId: 'user-1',
-        listings: BigInt(2),
-        pcListings: BigInt(0),
-        games: BigInt(0),
-        total: BigInt(2),
+        listings: 2,
+        pcListings: 0,
+        games: 0,
+        total: 2,
         lastContributionAt: recent,
       },
       {
         userId: 'user-2',
-        listings: BigInt(1),
-        pcListings: BigInt(0),
-        games: BigInt(1),
-        total: BigInt(1),
+        listings: 1,
+        pcListings: 0,
+        games: 1,
+        total: 1,
         lastContributionAt: recent,
       },
     ])
@@ -113,7 +113,7 @@ describe('contributors.service', () => {
   })
 
   it('returns empty array when no contributors exist', async () => {
-    prisma.$queryRaw.mockResolvedValue([])
+    prisma.$queryRawTyped.mockResolvedValue([])
 
     const top = await getTopContributorsRaw(prisma, 'all_time', 10)
 
@@ -124,13 +124,13 @@ describe('contributors.service', () => {
   it('applies date filter for this_month timeframe', async () => {
     const recent = new Date('2025-02-01T00:00:00Z')
 
-    prisma.$queryRaw.mockResolvedValue([
+    prisma.$queryRawTyped.mockResolvedValue([
       {
         userId: 'user-1',
-        listings: BigInt(5),
-        pcListings: BigInt(3),
-        games: BigInt(2),
-        total: BigInt(8),
+        listings: 5,
+        pcListings: 3,
+        games: 2,
+        total: 8,
         lastContributionAt: recent,
       },
     ])
@@ -140,19 +140,19 @@ describe('contributors.service', () => {
     expect(top).toHaveLength(1)
     expect(top[0]?.userId).toBe('user-1')
     expect(top[0]?.breakdown.total).toBe(8)
-    expect(prisma.$queryRaw).toHaveBeenCalled()
+    expect(prisma.$queryRawTyped).toHaveBeenCalled()
   })
 
   it('applies date filter for this_week timeframe', async () => {
     const recent = new Date('2025-02-01T00:00:00Z')
 
-    prisma.$queryRaw.mockResolvedValue([
+    prisma.$queryRawTyped.mockResolvedValue([
       {
         userId: 'user-1',
-        listings: BigInt(2),
-        pcListings: BigInt(1),
-        games: BigInt(0),
-        total: BigInt(3),
+        listings: 2,
+        pcListings: 1,
+        games: 0,
+        total: 3,
         lastContributionAt: recent,
       },
     ])
@@ -162,17 +162,17 @@ describe('contributors.service', () => {
     expect(top).toHaveLength(1)
     expect(top[0]?.userId).toBe('user-1')
     expect(top[0]?.breakdown.total).toBe(3)
-    expect(prisma.$queryRaw).toHaveBeenCalled()
+    expect(prisma.$queryRawTyped).toHaveBeenCalled()
   })
 
-  it('correctly converts BigInt values to numbers in breakdown', async () => {
-    prisma.$queryRaw.mockResolvedValue([
+  it('returns correct number types from TypedSQL', async () => {
+    prisma.$queryRawTyped.mockResolvedValue([
       {
         userId: 'user-1',
-        listings: BigInt(100),
-        pcListings: BigInt(50),
-        games: BigInt(25),
-        total: BigInt(150),
+        listings: 100,
+        pcListings: 50,
+        games: 25,
+        total: 150,
         lastContributionAt: new Date('2025-01-15T00:00:00Z'),
       },
     ])
@@ -188,13 +188,13 @@ describe('contributors.service', () => {
   })
 
   it('handles null lastContributionAt in results', async () => {
-    prisma.$queryRaw.mockResolvedValue([
+    prisma.$queryRawTyped.mockResolvedValue([
       {
         userId: 'user-1',
-        listings: BigInt(1),
-        pcListings: BigInt(0),
-        games: BigInt(0),
-        total: BigInt(1),
+        listings: 1,
+        pcListings: 0,
+        games: 0,
+        total: 1,
         lastContributionAt: null,
       },
     ])

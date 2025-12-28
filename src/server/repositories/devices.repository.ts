@@ -3,6 +3,7 @@ import { HOME_PAGE_LIMITS } from '@/data/constants'
 import { ResourceError } from '@/lib/errors'
 import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
 import { Prisma, ApprovalStatus } from '@orm'
+import { getTrendingDevices } from '@orm/sql'
 import { BaseRepository } from './base.repository'
 import type { TimeRangeId } from '@/app/home/components/TimeRangeTabs'
 import type { GetDevicesInput, CreateDeviceInput, UpdateDeviceInput } from '@/schemas/device'
@@ -363,52 +364,22 @@ export class DevicesRepository extends BaseRepository {
 
   /**
    * Get trending devices based on listings submitted since a given date.
-   * Uses raw SQL to properly order by filtered listing count.
+   * Uses TypedSQL for type-safe raw SQL queries.
    */
   async getTrendingDevices(
     limit: number = HOME_PAGE_LIMITS.TRENDING_DEVICES,
     sinceDate?: Date,
   ): Promise<TrendingDevice[]> {
-    // Build the date filter condition
-    const dateFilter = sinceDate ? Prisma.sql`AND l."createdAt" >= ${sinceDate}` : Prisma.sql``
-
-    const results = await this.prisma.$queryRaw<
-      {
-        id: string
-        modelName: string
-        brandId: string
-        brandName: string
-        socManufacturer: string | null
-        socName: string | null
-        listingCount: bigint
-      }[]
-    >(Prisma.sql`
-      SELECT
-        d.id,
-        d."modelName",
-        b.id as "brandId",
-        b.name as "brandName",
-        s.manufacturer as "socManufacturer",
-        s.name as "socName",
-        COUNT(l.id) as "listingCount"
-      FROM "Device" d
-      INNER JOIN "DeviceBrand" b ON d."brandId" = b.id
-      LEFT JOIN "SoC" s ON d."socId" = s.id
-      INNER JOIN "Listing" l ON l."deviceId" = d.id
-      WHERE l.status = 'APPROVED'
-        ${dateFilter}
-      GROUP BY d.id, b.id, b.name, s.manufacturer, s.name
-      ORDER BY "listingCount" DESC
-      LIMIT ${limit}
-    `)
+    const results = await this.prisma.$queryRawTyped(getTrendingDevices(sinceDate ?? null, limit))
 
     return results.map((row) => ({
       id: row.id,
       modelName: row.modelName,
       brandName: row.brandName,
       brandId: row.brandId,
+      // socManufacturer/socName can be null from LEFT JOIN (TypedSQL infers non-null from column type)
       socName: row.socManufacturer && row.socName ? `${row.socManufacturer} ${row.socName}` : null,
-      recentListingCount: Number(row.listingCount),
+      recentListingCount: row.listingCount ?? 0,
     }))
   }
 
