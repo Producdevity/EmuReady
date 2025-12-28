@@ -1,3 +1,4 @@
+-- noinspection SqlResolve
 -- @param {DateTime} $1:sinceDate? Optional date filter for contributions
 -- @param {Int} $2:contributorLimit Maximum number of contributors to return
 

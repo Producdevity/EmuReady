@@ -1,3 +1,4 @@
+-- noinspection SqlResolve
 -- @param {DateTime} $1:sinceDate? Optional date filter for recent listings
 -- @param {Int} $2:deviceLimit Maximum number of devices to return
 
