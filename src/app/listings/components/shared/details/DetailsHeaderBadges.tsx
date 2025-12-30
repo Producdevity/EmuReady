@@ -1,5 +1,6 @@
 import { useRouter } from 'next/navigation'
 import { hasHandheldDevice } from '@/app/listings/components/shared/utils/universal-listing'
+import { RetroCatalogButton } from '@/components/retrocatalog'
 import {
   ApprovalStatusBadge,
   Badge,
@@ -47,6 +48,16 @@ export function DetailsHeaderBadges(props: Props) {
             >
               Device: {handheldDevice.brand?.name} {handheldDevice.modelName}
             </Badge>
+          ) : null,
+          handheldDevice ? (
+            <RetroCatalogButton
+              key="retrocatalog"
+              deviceId={handheldDevice.id}
+              brandName={handheldDevice.brand?.name ?? ''}
+              modelName={handheldDevice.modelName}
+              variant="badge"
+              analyticsSource="listing_details"
+            />
           ) : null,
           <Badge
             key="emulator"

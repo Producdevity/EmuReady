@@ -2,6 +2,7 @@ import { ExternalLink, Clock, Heart, MessageSquare, ThumbsUp } from 'lucide-reac
 import { useRouter } from 'next/navigation'
 import { useState, type MouseEvent } from 'react'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
+import { RetroCatalogButton } from '@/components/retrocatalog'
 import {
   Button,
   PerformanceBadge,
@@ -175,13 +176,27 @@ export function ListingCard({
 
             {/* Device & Emulator Info */}
             <div className="space-y-2 mb-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 group/device">
                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                   Device
                 </span>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate flex-1">
                   {deviceName}
                 </span>
+                {listing.device && (
+                  <div
+                    className="opacity-0 group-hover/device:opacity-100 sm:opacity-0 sm:group-hover/device:opacity-100 transition-opacity duration-200"
+                    onClick={(ev) => ev.stopPropagation()}
+                  >
+                    <RetroCatalogButton
+                      deviceId={listing.device.id}
+                      brandName={listing.device.brand.name}
+                      modelName={listing.device.modelName}
+                      variant="icon-only"
+                      analyticsSource="listing_card"
+                    />
+                  </div>
+                )}
               </div>
 
               {listing.emulator && (
@@ -293,7 +308,7 @@ export function ListingCard({
 
                 {/* System and Device Info - Responsive layout */}
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400 flex-wrap">
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400 flex-wrap group/device-list">
                     <span className="flex items-center flex-shrink-0">
                       {showSystemIcons && listing.game.system?.key ? (
                         <SystemIcon
@@ -306,7 +321,21 @@ export function ListingCard({
                       )}
                     </span>
                     <span className="text-gray-400 flex-shrink-0">•</span>
-                    <span className="truncate flex-1 min-w-0">{deviceName}</span>
+                    <span className="truncate min-w-0">{deviceName}</span>
+                    {listing.device && (
+                      <div
+                        className="opacity-0 group-hover/device-list:opacity-100 transition-opacity duration-200 flex-shrink-0"
+                        onClick={(ev) => ev.stopPropagation()}
+                      >
+                        <RetroCatalogButton
+                          deviceId={listing.device.id}
+                          brandName={listing.device.brand.name}
+                          modelName={listing.device.modelName}
+                          variant="icon-only"
+                          analyticsSource="listing_card"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {listing.emulator && (

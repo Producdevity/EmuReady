@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { TrendingUp, ChevronRight, Smartphone, Cpu } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useMemo } from 'react'
+import { RetroCatalogIndicator } from '@/components/retrocatalog'
 import { HOME_PAGE_LIMITS } from '@/data/constants'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
@@ -113,6 +114,12 @@ export function HomeTrendingDevices() {
                           </h3>
                         </div>
                       </div>
+                      <RetroCatalogIndicator
+                        size="md"
+                        brandName={device.brandName}
+                        modelName={device.modelName}
+                        className="flex-shrink-0"
+                      />
                     </div>
 
                     <div className="mb-3 flex-1">

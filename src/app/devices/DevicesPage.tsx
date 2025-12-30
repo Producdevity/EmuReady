@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect, useMemo, type ChangeEvent, Suspense } from 'react'
 import { isEmpty } from 'remeda'
+import { RetroCatalogButton } from '@/components/retrocatalog'
 import {
   Button,
   Input,
@@ -29,6 +30,7 @@ const DEVICES_COLUMNS: ColumnDefinition[] = [
   { key: 'model', label: 'Model', defaultVisible: true },
   { key: 'soc', label: 'SoC', defaultVisible: true },
   { key: 'listings', label: 'Reports', defaultVisible: true },
+  { key: 'external', label: 'External', defaultVisible: false },
 ]
 
 function DevicesPage() {
@@ -205,6 +207,11 @@ function DevicesPage() {
                       Reports
                     </th>
                   )}
+                  {columnVisibility.isColumnVisible('external') && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      External
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -254,13 +261,27 @@ function DevicesPage() {
                         </div>
                       </td>
                     )}
+                    {columnVisibility.isColumnVisible('external') && (
+                      <td
+                        className="px-6 py-4 whitespace-nowrap text-sm"
+                        onClick={(ev) => ev.stopPropagation()}
+                      >
+                        <RetroCatalogButton
+                          deviceId={device.id}
+                          brandName={device.brand.name}
+                          modelName={device.modelName}
+                          variant="pill"
+                          analyticsSource="devices_table"
+                        />
+                      </td>
+                    )}
                   </tr>
                 ))}
 
                 {!devicesQuery.isPending && devices.length === 0 && (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={DEVICES_COLUMNS.length}
                       className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                     >
                       <Smartphone className="mx-auto h-12 w-12 text-gray-400 mb-4" />
