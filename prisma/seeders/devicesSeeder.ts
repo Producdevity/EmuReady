@@ -222,6 +222,7 @@ const devices: DeviceData[] = [
   },
   { brandName: 'Retroid', modelName: 'Pocket 4', socName: 'Dimensity 900' },
   { brandName: 'Retroid', modelName: 'Pocket 5', socName: 'Snapdragon 865' },
+  { brandName: 'Retroid', modelName: 'Pocket 6', scoName: 'Snapdragon 8 Gen 2'},
   {
     brandName: 'Retroid',
     modelName: 'Pocket Classic',
