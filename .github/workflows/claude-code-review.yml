@@ -6,6 +6,17 @@ on:
 
 jobs:
   claude-review:
+    # Only run for trusted contributors or when 'claude-review' label is added
+    # Skip PRs with [skip-review] or [WIP] in the title
+    if: |
+      !contains(github.event.pull_request.title, '[skip-review]') &&
+      !contains(github.event.pull_request.title, '[WIP]') &&
+      (
+        github.event.pull_request.author_association == 'OWNER' ||
+        github.event.pull_request.author_association == 'MEMBER' ||
+        github.event.pull_request.author_association == 'COLLABORATOR' ||
+        contains(github.event.pull_request.labels.*.name, 'claude-review')
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: read
