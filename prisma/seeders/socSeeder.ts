@@ -1164,11 +1164,19 @@ const socs: SoCData[] = [
 
   // Google Tensor SoCs
   {
+    name: 'Tensor G5',
+    manufacturer: 'Google',
+    architecture: 'ARM64',
+    processNode: '3nm',
+    cpuCores: 8,
+    gpuModel: 'PowerVR DXT-48-1536',
+  },
+  {
     name: 'Tensor G4',
     manufacturer: 'Google',
     architecture: 'ARM64',
     processNode: '4nm',
-    cpuCores: 9,
+    cpuCores: 8,
     gpuModel: 'Mali-G715',
   },
   {
