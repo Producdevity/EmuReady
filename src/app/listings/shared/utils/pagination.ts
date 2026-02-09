@@ -1,4 +1,4 @@
-import { PAGE_SIZE_OPTIONS, PAGINATION, type PageSizeOption } from '@/data/constants'
+import { PAGE_SIZE_OPTIONS, type PageSizeOption, PAGINATION } from '@/data/constants'
 
 /**
  * Parse and validate limit from URL or localStorage
@@ -16,8 +16,7 @@ export function parseLimit(value: string | null, maxLimit: number): PageSizeOpti
   }
 
   // Find closest valid option
-  const closest = validOptions.reduce((prev, curr) =>
+  return validOptions.reduce((prev, curr) =>
     Math.abs(curr - parsed) < Math.abs(prev - parsed) ? curr : prev,
   )
-  return closest
 }
