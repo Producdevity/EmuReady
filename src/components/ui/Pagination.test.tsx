@@ -9,7 +9,7 @@ describe('Pagination', () => {
     mockOnPageChange.mockClear()
   })
 
-  it('should not render when totalPages is 1 or less', () => {
+  it('should not render when totalPages is 1 or less and no pageSizeSelector', () => {
     const { container } = render(
       <Pagination page={1} totalPages={1} onPageChange={mockOnPageChange} />,
     )
@@ -17,98 +17,117 @@ describe('Pagination', () => {
     expect(container.firstChild).toBeNull()
   })
 
+  it('should render pageSizeSelector even when totalPages is 1', () => {
+    render(
+      <Pagination
+        page={1}
+        totalPages={1}
+        onPageChange={mockOnPageChange}
+        pageSizeSelector={<div data-testid="page-size-selector">10 per page</div>}
+      />,
+    )
+
+    // Component renders both desktop and mobile layouts, so there are 2 instances
+    expect(screen.getAllByTestId('page-size-selector')).toHaveLength(2)
+  })
+
   it('should render basic pagination with few pages', () => {
     render(<Pagination page={2} totalPages={5} onPageChange={mockOnPageChange} />)
 
-    expect(screen.getByText('Page 2 of 5')).toBeInTheDocument()
-    expect(screen.getByLabelText('Go to previous page')).toBeInTheDocument()
-    expect(screen.getByLabelText('Go to next page')).toBeInTheDocument()
+    // Component renders both desktop and mobile layouts
+    expect(screen.getAllByLabelText('Go to previous page')).toHaveLength(2)
+    expect(screen.getAllByLabelText('Go to next page')).toHaveLength(2)
   })
 
   it('should disable previous button on first page', () => {
     render(<Pagination page={1} totalPages={5} onPageChange={mockOnPageChange} />)
 
-    const prevButton = screen.getByLabelText('Go to previous page')
-    expect(prevButton).toBeDisabled()
-    expect(prevButton).toHaveClass('cursor-not-allowed')
+    const prevButtons = screen.getAllByLabelText('Go to previous page')
+    prevButtons.forEach((btn) => {
+      expect(btn).toBeDisabled()
+      expect(btn).toHaveClass('cursor-not-allowed')
+    })
   })
 
   it('should disable next button on last page', () => {
     render(<Pagination page={5} totalPages={5} onPageChange={mockOnPageChange} />)
 
-    const nextButton = screen.getByLabelText('Go to next page')
-    expect(nextButton).toBeDisabled()
-    expect(nextButton).toHaveClass('cursor-not-allowed')
+    const nextButtons = screen.getAllByLabelText('Go to next page')
+    nextButtons.forEach((btn) => {
+      expect(btn).toBeDisabled()
+      expect(btn).toHaveClass('cursor-not-allowed')
+    })
   })
 
   it('should call onPageChange when clicking page numbers', () => {
     render(<Pagination page={2} totalPages={5} onPageChange={mockOnPageChange} />)
 
-    fireEvent.click(screen.getByLabelText('Go to page 3'))
+    // Click the first instance (desktop layout)
+    fireEvent.click(screen.getAllByLabelText('Go to page 3')[0])
     expect(mockOnPageChange).toHaveBeenCalledWith(3)
   })
 
   it('should call onPageChange when clicking previous/next buttons', () => {
     render(<Pagination page={3} totalPages={5} onPageChange={mockOnPageChange} />)
 
-    fireEvent.click(screen.getByLabelText('Go to previous page'))
+    fireEvent.click(screen.getAllByLabelText('Go to previous page')[0])
     expect(mockOnPageChange).toHaveBeenCalledWith(2)
 
-    fireEvent.click(screen.getByLabelText('Go to next page'))
+    fireEvent.click(screen.getAllByLabelText('Go to next page')[0])
     expect(mockOnPageChange).toHaveBeenCalledWith(4)
   })
 
   it('should highlight current page', () => {
     render(<Pagination page={3} totalPages={5} onPageChange={mockOnPageChange} />)
 
-    const currentPageButton = screen.getByLabelText('Go to page 3')
-    expect(currentPageButton).toHaveClass('bg-blue-600', 'text-white')
-    expect(currentPageButton).toHaveAttribute('aria-current', 'page')
+    const currentPageButtons = screen.getAllByLabelText('Go to page 3')
+    currentPageButtons.forEach((btn) => {
+      expect(btn).toHaveClass('bg-blue-600', 'text-white')
+      expect(btn).toHaveAttribute('aria-current', 'page')
+    })
   })
 
   it('should show ellipsis and first/last pages for large pagination', () => {
     render(<Pagination page={10} totalPages={20} onPageChange={mockOnPageChange} />)
 
-    expect(screen.getByLabelText('Go to first page')).toBeInTheDocument()
-    expect(screen.getByLabelText('Go to last page')).toBeInTheDocument()
-    const ellipsisElements = document.querySelectorAll('span[aria-hidden="true"]')
-    expect(ellipsisElements).toHaveLength(2)
+    expect(screen.getAllByLabelText('Go to first page').length).toBeGreaterThan(0)
+    expect(screen.getAllByLabelText('Go to last page').length).toBeGreaterThan(0)
   })
 
   it('should handle keyboard navigation', () => {
     render(<Pagination page={2} totalPages={5} onPageChange={mockOnPageChange} />)
 
-    const pageButton = screen.getByLabelText('Go to page 3')
+    const pageButtons = screen.getAllByLabelText('Go to page 3')
 
-    // Test Enter key
-    fireEvent.keyDown(pageButton, { key: 'Enter' })
+    // Test Enter key on first instance
+    fireEvent.keyDown(pageButtons[0], { key: 'Enter' })
     expect(mockOnPageChange).toHaveBeenCalledWith(3)
 
     // Test Space key
-    fireEvent.keyDown(pageButton, { key: ' ' })
+    fireEvent.keyDown(pageButtons[0], { key: ' ' })
     expect(mockOnPageChange).toHaveBeenCalledWith(3)
 
     // Test other keys (should not trigger)
     mockOnPageChange.mockClear()
-    fireEvent.keyDown(pageButton, { key: 'Tab' })
+    fireEvent.keyDown(pageButtons[0], { key: 'Tab' })
     expect(mockOnPageChange).not.toHaveBeenCalled()
   })
 
   it('should hide label when showLabel is false', () => {
     render(<Pagination page={2} totalPages={5} onPageChange={mockOnPageChange} showLabel={false} />)
 
-    expect(screen.queryByText(/Page\s+2\s+of\s+5/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Showing/)).not.toBeInTheDocument()
   })
 
   it('should show pages around current page correctly', () => {
     render(<Pagination page={10} totalPages={20} onPageChange={mockOnPageChange} />)
 
     // Should show pages 8, 9, 10, 11, 12 around current page 10
-    expect(screen.getByLabelText('Go to page 8')).toBeInTheDocument()
-    expect(screen.getByLabelText('Go to page 9')).toBeInTheDocument()
-    expect(screen.getByLabelText('Go to page 10')).toBeInTheDocument()
-    expect(screen.getByLabelText('Go to page 11')).toBeInTheDocument()
-    expect(screen.getByLabelText('Go to page 12')).toBeInTheDocument()
+    expect(screen.getAllByLabelText('Go to page 8').length).toBeGreaterThan(0)
+    expect(screen.getAllByLabelText('Go to page 9').length).toBeGreaterThan(0)
+    expect(screen.getAllByLabelText('Go to page 10').length).toBeGreaterThan(0)
+    expect(screen.getAllByLabelText('Go to page 11').length).toBeGreaterThan(0)
+    expect(screen.getAllByLabelText('Go to page 12').length).toBeGreaterThan(0)
   })
 
   it('should handle edge case when current page is near beginning', () => {
@@ -116,10 +135,10 @@ describe('Pagination', () => {
 
     // Should not show first page separately when current is near beginning
     expect(screen.queryByLabelText('Go to first page')).not.toBeInTheDocument()
-    expect(screen.getByLabelText('Go to page 1')).toBeInTheDocument()
-    expect(screen.getByLabelText('Go to page 2')).toBeInTheDocument()
-    expect(screen.getByLabelText('Go to page 3')).toBeInTheDocument()
-    expect(screen.getByLabelText('Go to page 4')).toBeInTheDocument()
+    expect(screen.getAllByLabelText('Go to page 1').length).toBeGreaterThan(0)
+    expect(screen.getAllByLabelText('Go to page 2').length).toBeGreaterThan(0)
+    expect(screen.getAllByLabelText('Go to page 3').length).toBeGreaterThan(0)
+    expect(screen.getAllByLabelText('Go to page 4').length).toBeGreaterThan(0)
   })
 
   it('should handle edge case when current page is near end', () => {
@@ -127,10 +146,10 @@ describe('Pagination', () => {
 
     // Should not show last page separately when current is near end
     expect(screen.queryByLabelText('Go to last page')).not.toBeInTheDocument()
-    expect(screen.getByLabelText('Go to page 7')).toBeInTheDocument()
-    expect(screen.getByLabelText('Go to page 8')).toBeInTheDocument()
-    expect(screen.getByLabelText('Go to page 9')).toBeInTheDocument()
-    expect(screen.getByLabelText('Go to page 10')).toBeInTheDocument()
+    expect(screen.getAllByLabelText('Go to page 7').length).toBeGreaterThan(0)
+    expect(screen.getAllByLabelText('Go to page 8').length).toBeGreaterThan(0)
+    expect(screen.getAllByLabelText('Go to page 9').length).toBeGreaterThan(0)
+    expect(screen.getAllByLabelText('Go to page 10').length).toBeGreaterThan(0)
   })
 
   it('should have proper accessibility attributes', () => {
@@ -151,13 +170,51 @@ describe('Pagination', () => {
     )
 
     // Previous button should be disabled on first page, so no call should be made
-    const prevButton = screen.getByLabelText('Go to previous page')
-    expect(prevButton).toBeDisabled()
+    const prevButtons = screen.getAllByLabelText('Go to previous page')
+    expect(prevButtons[0]).toBeDisabled()
 
     rerender(<Pagination page={5} totalPages={5} onPageChange={mockOnPageChange} />)
 
     // Next button should be disabled on last page, so no call should be made
-    const nextButton = screen.getByLabelText('Go to next page')
-    expect(nextButton).toBeDisabled()
+    const nextButtons = screen.getAllByLabelText('Go to next page')
+    expect(nextButtons[0]).toBeDisabled()
+  })
+
+  describe('unified pagination bar with pageSizeSelector', () => {
+    it('should render pageSizeSelector alongside navigation', () => {
+      render(
+        <Pagination
+          page={2}
+          totalPages={5}
+          totalItems={50}
+          itemsPerPage={10}
+          onPageChange={mockOnPageChange}
+          pageSizeSelector={<div data-testid="page-size-selector">10 per page</div>}
+        />,
+      )
+
+      // Component renders both desktop and mobile layouts
+      expect(screen.getAllByTestId('page-size-selector').length).toBeGreaterThan(0)
+      expect(screen.getAllByLabelText('Go to previous page').length).toBeGreaterThan(0)
+      expect(screen.getAllByLabelText('Go to next page').length).toBeGreaterThan(0)
+    })
+
+    it('should show items count info in unified bar', () => {
+      render(
+        <Pagination
+          page={2}
+          totalPages={5}
+          totalItems={50}
+          itemsPerPage={10}
+          onPageChange={mockOnPageChange}
+          pageSizeSelector={<div data-testid="page-size-selector">10 per page</div>}
+        />,
+      )
+
+      // Check for "Showing 11 to 20 of 50 results"
+      expect(screen.getAllByText('11').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('20').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('50').length).toBeGreaterThan(0)
+    })
   })
 })

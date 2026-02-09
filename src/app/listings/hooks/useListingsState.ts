@@ -1,10 +1,10 @@
-import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
-import { useUrlSearch } from '@/hooks/useUrlState'
+import { PAGINATION } from '@/data/constants'
+import storageKeys from '@/data/storageKeys'
 import analytics from '@/lib/analytics'
-import { type SortDirection } from '@/types/api'
 import { type RouterInput } from '@/types/trpc'
 import { parseArrayParam, parseNumberArrayParam } from '@/utils/parse-params'
+import { useUrlFilterState } from '../shared/hooks/useUrlFilterState'
 
 type SortField = NonNullable<RouterInput['listings']['get']['sortField']>
 
@@ -13,202 +13,107 @@ type SortField = NonNullable<RouterInput['listings']['get']['sortField']>
  * Uses proper URL state management without hacks
  */
 function useListingsState() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
+  const baseState = useUrlFilterState<SortField>({
+    basePath: '/listings',
+    storageKey: storageKeys.pagination.listingsPageSize,
+    maxLimit: PAGINATION.PUBLIC_MAX_LIMIT_LISTINGS,
+  })
 
-  // Use proper URL state management for search with debouncing
-  const [searchInput, setSearchInternal, search] = useUrlSearch(300)
+  // Parse domain-specific filter values from URL
+  const systemIds = parseArrayParam(baseState.getParam('systemIds'))
+  const deviceIds = parseArrayParam(baseState.getParam('deviceIds'))
+  const socIds = parseArrayParam(baseState.getParam('socIds'))
+  const emulatorIds = parseArrayParam(baseState.getParam('emulatorIds'))
+  const performanceIds = parseNumberArrayParam(baseState.getParam('performanceIds'))
 
-  // Parse filter values from URL
-  const systemIds = parseArrayParam(searchParams.get('systemIds'))
-  const page = Math.max(1, Number(searchParams.get('page')) || 1)
-  const deviceIds = parseArrayParam(searchParams.get('deviceIds'))
-  const socIds = parseArrayParam(searchParams.get('socIds'))
-  const emulatorIds = parseArrayParam(searchParams.get('emulatorIds'))
-  const performanceIds = parseNumberArrayParam(searchParams.get('performanceIds'))
-  const sortField = (searchParams.get('sortField') as SortField) ?? null
-  const sortDirection = (searchParams.get('sortDirection') as SortDirection) ?? null
-  const myListings = searchParams.get('myListings') === 'true'
-
-  // Helper to update URL with new filters
-  const updateFilters = useCallback(
+  // Wrap updateFilters to add analytics tracking for this page
+  const updateFiltersWithAnalytics = useCallback(
     (updates: Record<string, unknown>, shouldPush = false) => {
-      const params = new URLSearchParams(searchParams.toString())
-
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value === null || value === '' || value === undefined) {
-          params.delete(key)
-        } else if (Array.isArray(value)) {
-          if (value.length === 0) {
-            params.delete(key)
-          } else {
-            params.set(key, JSON.stringify(value))
-          }
-        } else {
-          params.set(key, String(value))
-        }
-      })
-
-      // Reset page when changing filters (unless explicitly setting page)
-      if (!('page' in updates)) {
-        params.delete('page')
-      }
-
-      const url = params.toString() ? `?${params.toString()}` : '/listings'
-      if (shouldPush) {
-        router.push(url)
-      } else {
-        router.replace(url)
-      }
-
+      baseState.updateFilters(updates, shouldPush)
       analytics.filter.listingsCombined(updates)
     },
-    [router, searchParams],
+    [baseState],
   )
 
-  const setSearch = useCallback(
-    (value: string) => {
-      setSearchInternal(value)
-    },
-    [setSearchInternal],
-  )
-
+  // Domain-specific setters
   const setSystemIds = useCallback(
     (values: string[]) => {
-      updateFilters({ systemIds: values })
+      updateFiltersWithAnalytics({ systemIds: values })
     },
-    [updateFilters],
-  )
-
-  const setPage = useCallback(
-    (value: number) => {
-      updateFilters({ page: value }, true) // Use push for pagination
-      analytics.filter.page({ prevPage: page, nextPage: value })
-    },
-    [page, updateFilters],
+    [updateFiltersWithAnalytics],
   )
 
   const setDeviceIds = useCallback(
     (values: string[]) => {
-      updateFilters({ deviceIds: values })
+      updateFiltersWithAnalytics({ deviceIds: values })
     },
-    [updateFilters],
+    [updateFiltersWithAnalytics],
   )
 
   const setSocIds = useCallback(
     (values: string[]) => {
-      updateFilters({ socIds: values })
+      updateFiltersWithAnalytics({ socIds: values })
     },
-    [updateFilters],
+    [updateFiltersWithAnalytics],
   )
 
   const setEmulatorIds = useCallback(
     (values: string[]) => {
-      updateFilters({ emulatorIds: values })
+      updateFiltersWithAnalytics({ emulatorIds: values })
     },
-    [updateFilters],
+    [updateFiltersWithAnalytics],
   )
 
   const setPerformanceIds = useCallback(
     (values: number[]) => {
-      updateFilters({ performanceIds: values })
+      updateFiltersWithAnalytics({ performanceIds: values })
     },
-    [updateFilters],
-  )
-
-  const setSortField = useCallback(
-    (value: SortField | null) => {
-      updateFilters({ sortField: value })
-      analytics.filter.sort(value ?? undefined)
-    },
-    [updateFilters],
-  )
-
-  const setSortDirection = useCallback(
-    (value: SortDirection | null) => {
-      updateFilters({ sortDirection: value })
-    },
-    [updateFilters],
-  )
-
-  const setMyListings = useCallback(
-    (value: boolean) => {
-      updateFilters({ myListings: value ? true : null })
-      analytics.filter.myListings(value)
-    },
-    [updateFilters],
-  )
-
-  // Helper for toggling sort direction
-  const handleSort = useCallback(
-    (field: string) => {
-      let newSortField: SortField | null = sortField
-      let newSortDirection: SortDirection | null
-
-      if (sortField === field) {
-        if (sortDirection === 'asc') {
-          newSortDirection = 'desc'
-        } else if (sortDirection === 'desc') {
-          newSortField = null
-          newSortDirection = null
-        } else {
-          newSortDirection = 'asc'
-        }
-      } else {
-        newSortField = field as SortField
-        newSortDirection = 'asc'
-      }
-
-      updateFilters({
-        sortField: newSortField,
-        sortDirection: newSortDirection,
-      })
-    },
-    [sortDirection, sortField, updateFilters],
+    [updateFiltersWithAnalytics],
   )
 
   const clearAllFilters = useCallback(() => {
-    // Clear all filters including search via updateFilters (which updates URL immediately)
-    updateFilters({
+    updateFiltersWithAnalytics({
       systemIds: [],
       deviceIds: [],
       socIds: [],
       emulatorIds: [],
       performanceIds: [],
-      search: null, // Use null to trigger deletion
+      search: null,
     })
-  }, [updateFilters])
+  }, [updateFiltersWithAnalytics])
 
   return {
     // Current filter values from URL for actual filtering
     systemIds,
-    search, // URL value for actual filtering
-    page,
+    search: baseState.search,
+    page: baseState.page,
+    limit: baseState.limit,
     deviceIds,
     socIds,
     emulatorIds,
     performanceIds,
-    sortField,
-    sortDirection,
-    myListings,
+    sortField: baseState.sortField,
+    sortDirection: baseState.sortDirection,
+    myListings: baseState.myListings,
 
     // Local input value for responsive UI
-    searchInput, // Local value for input field
+    searchInput: baseState.searchInput,
 
     // Individual setter functions
     setSystemIds,
-    setSearch,
-    setPage,
+    setSearch: baseState.setSearch,
+    setPage: baseState.setPage,
+    setLimit: baseState.setLimit,
     setDeviceIds,
     setSocIds,
     setEmulatorIds,
     setPerformanceIds,
-    setSortField,
-    setSortDirection,
-    setMyListings,
+    setSortField: baseState.setSortField,
+    setSortDirection: baseState.setSortDirection,
+    setMyListings: baseState.setMyListings,
 
     // Helpers
-    handleSort,
+    handleSort: baseState.handleSort,
     clearAllFilters,
   }
 }

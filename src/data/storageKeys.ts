@@ -20,6 +20,10 @@ const storageKeys = {
     analyticsEnabled: `${PREFIX}analytics_enabled`,
     performanceEnabled: `${PREFIX}performance_enabled`,
   },
+  pagination: {
+    listingsPageSize: `${PREFIX}listings_page_size`,
+    pcListingsPageSize: `${PREFIX}pc_listings_page_size`,
+  },
   columnVisibility: {
     listings: `${PREFIX}listings_column_visibility`,
     games: `${PREFIX}games_column_visibility`,
