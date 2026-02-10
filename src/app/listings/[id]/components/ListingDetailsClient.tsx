@@ -13,6 +13,7 @@ import { DetailsHeaderBadges } from '@/app/listings/components/shared/details/De
 import { VotingSection } from '@/app/listings/components/shared/details/VotingSection'
 import { NotesSection } from '@/app/listings/components/shared/NotesSection'
 import { GameImage } from '@/app/listings/shared/components'
+import CommunitySupportBanner from '@/components/banners/CommunitySupportBanner'
 import { Card, Button, Badge } from '@/components/ui'
 import { api } from '@/lib/api'
 import { logger } from '@/lib/logger'
@@ -90,6 +91,8 @@ function ListingDetailsClient(props: Props) {
             Back
           </Button>
         </div>
+
+        <CommunitySupportBanner variant="detail" page="listing-detail" />
 
         <Card className="w-full p-4 lg:p-8 shadow-2xl rounded-2xl lg:rounded-3xl border-0 bg-white dark:bg-gray-900 overflow-hidden">
           <div className="flex w-full flex-col items-start gap-6 lg:gap-8 md:flex-row">

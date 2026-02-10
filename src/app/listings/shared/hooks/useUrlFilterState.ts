@@ -1,5 +1,5 @@
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { PAGINATION, type PageSizeOption } from '@/data/constants'
 import { useUrlSearch } from '@/hooks/useUrlState'
 import analytics from '@/lib/analytics'
@@ -23,24 +23,22 @@ export function useUrlFilterState<TSortField extends string>(config: Config) {
   const myListings = searchParams.get('myListings') === 'true'
 
   const urlLimit = searchParams.get('limit')
-  const initializedFromStorage = useRef(false)
+  const [storedLimit, setStoredLimit] = useState<PageSizeOption | null>(null)
 
-  const limit = (() => {
-    if (urlLimit) return parseLimit(urlLimit, config.maxLimit)
-    if (typeof window !== 'undefined' && !initializedFromStorage.current) {
-      const stored = localStorage.getItem(config.storageKey)
-      if (stored) return parseLimit(stored, config.maxLimit)
-    }
-    return PAGINATION.PUBLIC_DEFAULT_LIMIT as PageSizeOption
-  })()
+  const limit: PageSizeOption = urlLimit
+    ? parseLimit(urlLimit, config.maxLimit)
+    : (storedLimit ?? (PAGINATION.PUBLIC_DEFAULT_LIMIT as PageSizeOption))
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    initializedFromStorage.current = true
     if (urlLimit) {
-      localStorage.setItem(config.storageKey, String(limit))
+      localStorage.setItem(config.storageKey, String(parseLimit(urlLimit, config.maxLimit)))
+      return
     }
-  }, [config.storageKey, limit, urlLimit])
+    const stored = localStorage.getItem(config.storageKey)
+    if (stored) {
+      setStoredLimit(parseLimit(stored, config.maxLimit))
+    }
+  }, [config.storageKey, config.maxLimit, urlLimit])
 
   const updateFilters = useCallback(
     (updates: Record<string, unknown>, shouldPush = false) => {

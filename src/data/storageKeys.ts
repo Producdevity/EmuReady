@@ -12,6 +12,7 @@ const storageKeys = {
     stopKillingGamesDismissed: `${PREFIX}stop_killing_games_dismissed`,
     voteReminderDismissed: `${PREFIX}vote_reminder_dismissed`,
     betaWarningDismissed: `${PREFIX}beta_warning_dismissed_v2`,
+    supportBannerDismissed: `${PREFIX}support_banner_dismissed`,
   },
   cookies: {
     preferences: `${PREFIX}cookie_preferences`,

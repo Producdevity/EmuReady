@@ -10,6 +10,7 @@ import {
   MobileFilterSheet,
   ListingsTableSkeleton,
 } from '@/app/listings/shared/components'
+import CommunitySupportBanner from '@/components/banners/CommunitySupportBanner'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   PerformanceBadge,
@@ -330,6 +331,8 @@ function PcListingsPage() {
               </div>
             </div>
           </div>
+
+          <CommunitySupportBanner variant="list" page="pc-listings" />
 
           <div className="overflow-x-auto rounded-2xl shadow-xl bg-white/90 dark:bg-gray-900/90">
             <table className="table-auto lg:table-fixed min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">

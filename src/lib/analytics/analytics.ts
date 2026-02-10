@@ -403,6 +403,45 @@ const analytics = {
       })
     },
 
+    supportBannerShown: (params: { variant: string; page: string }) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.ENGAGEMENT,
+        action: ENGAGEMENT_ACTIONS.SUPPORT_BANNER_SHOWN,
+        entityType: 'banner',
+        metadata: { variant: params.variant, page: params.page },
+      })
+    },
+
+    supportBannerDismissed: (params: {
+      variant: string
+      page: string
+      timeToInteraction: number
+    }) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.ENGAGEMENT,
+        action: ENGAGEMENT_ACTIONS.SUPPORT_BANNER_DISMISSED,
+        entityType: 'banner',
+        metadata: {
+          variant: params.variant,
+          page: params.page,
+          timeToInteraction: params.timeToInteraction,
+        },
+      })
+    },
+
+    supportBannerCTA: (params: { variant: string; page: string; timeToInteraction: number }) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.ENGAGEMENT,
+        action: ENGAGEMENT_ACTIONS.SUPPORT_BANNER_CTA,
+        entityType: 'banner',
+        metadata: {
+          variant: params.variant,
+          page: params.page,
+          timeToInteraction: params.timeToInteraction,
+        },
+      })
+    },
+
     voteReminderDismissed: (params: { listingId: string; timeOnPage: number }) => {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.ENGAGEMENT,
