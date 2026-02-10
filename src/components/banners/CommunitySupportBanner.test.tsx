@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
+import { type ReactNode } from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import CommunitySupportBanner from './CommunitySupportBanner'
 
@@ -23,8 +24,9 @@ vi.mock('@/lib/env', () => ({
   },
 }))
 
+// noinspection JSUnusedGlobalSymbols
 vi.mock('framer-motion', () => ({
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  AnimatePresence: ({ children }: { children: ReactNode }) => <>{children}</>,
   motion: {
     aside: ({
       children,
@@ -32,10 +34,11 @@ vi.mock('framer-motion', () => ({
       role,
       'aria-label': ariaLabel,
     }: {
-      children: React.ReactNode
+      children: ReactNode
       className?: string
       role?: string
       'aria-label'?: string
+      // noinspection JSUnusedLocalSymbols
       [key: string]: unknown
     }) => (
       <aside className={className} role={role} aria-label={ariaLabel}>
