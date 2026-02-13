@@ -146,7 +146,10 @@ function CookieConsent() {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[70] flex items-end justify-center pointer-events-none p-4">
+      <div
+        data-testid="cookie-consent"
+        className="fixed inset-0 z-[70] flex items-end justify-center pointer-events-none p-4"
+      >
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}

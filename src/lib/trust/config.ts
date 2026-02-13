@@ -57,6 +57,10 @@ export const TRUST_ACTIONS = {
     weight: 0, // Dynamic weight set by admin
     description: 'Manual trust score decrease by admin',
   },
+  [TrustAction.VOTE_NULLIFICATION_REVERSAL]: {
+    weight: 0, // Dynamic weight set during nullification
+    description: 'Trust reversal due to vote nullification or restoration',
+  },
 } as const
 
 export const TRUST_LEVELS = [

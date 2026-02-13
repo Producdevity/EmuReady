@@ -8,15 +8,10 @@ export class CookieBanner {
   }
 
   get cookieBanner() {
-    // Look for the specific cookie banner structure from CookieConsent.tsx
-    return this.page
-      .locator('.fixed.inset-0.z-\\[70\\]')
-      .filter({ hasText: /Cookie Preferences/i })
-      .first()
+    return this.page.getByTestId('cookie-consent')
   }
 
   get acceptButton() {
-    // More specific selector for "Accept All" button
     return this.page.getByRole('button', { name: /accept all/i })
   }
 
@@ -32,22 +27,8 @@ export class CookieBanner {
     return this.page.getByRole('button', { name: /close cookie banner/i })
   }
 
-  get declineButton() {
-    return this.page.getByRole('button', { name: /decline|reject/i })
-  }
-
-  get overlay() {
-    // More specific selector to avoid matching navigation and other fixed elements
-    return this.page
-      .locator('.fixed.inset-0')
-      .filter({
-        has: this.page.locator('[class*="cookie"], [class*="consent"], [class*="gdpr"]'),
-      })
-      .or(
-        this.page.locator(
-          '[class*="overlay"][class*="cookie"], [class*="backdrop"][class*="cookie"]',
-        ),
-      )
+  get backdrop() {
+    return this.cookieBanner.locator('.bg-black\\/30')
   }
 
   async isVisible(): Promise<boolean> {
@@ -61,60 +42,44 @@ export class CookieBanner {
   async acceptCookies() {
     if (await this.isVisible()) {
       await this.acceptButton.click()
-      // Wait for banner to disappear
-      await this.cookieBanner.waitFor({ state: 'hidden', timeout: 5000 })
-    }
-  }
-
-  async declineCookies() {
-    if (await this.isVisible()) {
-      await this.declineButton.click()
-      // Wait for banner to disappear
       await this.cookieBanner.waitFor({ state: 'hidden', timeout: 5000 })
     }
   }
 
   async dismissIfPresent() {
     try {
-      // Check if cookie banner is visible
       const bannerVisible = await this.cookieBanner.isVisible({ timeout: 2000 }).catch(() => false)
       if (!bannerVisible) {
         return
       }
 
-      console.log('Cookie banner detected, attempting to dismiss...')
-
-      // Try clicking Accept All first
+      // Click "Accept All" to dismiss
       const acceptAllVisible = await this.acceptButton
         .isVisible({ timeout: 1000 })
         .catch(() => false)
       if (acceptAllVisible) {
         await this.acceptButton.click()
-        await this.page.waitForTimeout(500)
+        await this.cookieBanner.waitFor({ state: 'hidden', timeout: 2000 }).catch(() => {})
         return
       }
 
-      // Try clicking the close button
-      const closeButtonVisible = await this.page
-        .getByLabel('Close cookie banner')
+      // Fall back to the close button (X icon)
+      const closeButtonVisible = await this.closeButton
         .isVisible({ timeout: 1000 })
         .catch(() => false)
       if (closeButtonVisible) {
-        await this.page.getByLabel('Close cookie banner').click()
-        await this.page.waitForTimeout(500)
+        await this.closeButton.click()
+        await this.cookieBanner.waitFor({ state: 'hidden', timeout: 2000 }).catch(() => {})
         return
       }
 
-      // Try clicking the backdrop to dismiss
-      const backdrop = this.page.locator('.absolute.inset-0.bg-black\\/30.backdrop-blur-\\[2px\\]')
-      const backdropVisible = await backdrop.isVisible({ timeout: 1000 }).catch(() => false)
+      // Fall back to clicking the backdrop overlay
+      const backdropVisible = await this.backdrop.isVisible({ timeout: 1000 }).catch(() => false)
       if (backdropVisible) {
-        await backdrop.click({ force: true })
-        await this.page.waitForTimeout(500)
+        await this.backdrop.click({ force: true })
+        await this.cookieBanner.waitFor({ state: 'hidden', timeout: 2000 }).catch(() => {})
         return
       }
-
-      console.log('Unable to dismiss cookie banner through normal methods')
     } catch (error) {
       console.log('Error dismissing cookie banner:', error)
     }

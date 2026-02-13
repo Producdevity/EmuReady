@@ -84,7 +84,8 @@ export class NavigationHelpers {
     await menuButton.click()
 
     // Wait for menu to open
-    await this.page.waitForTimeout(500)
+    const mobileMenu = this.page.locator('nav').locator('.md\\:hidden').last()
+    await mobileMenu.waitFor({ state: 'visible', timeout: 2000 }).catch(() => {})
   }
 
   /**
@@ -100,14 +101,14 @@ export class NavigationHelpers {
         const isExpanded = await menuButton.getAttribute('aria-expanded')
         if (isExpanded === 'true') {
           await menuButton.click()
-          await this.page.waitForTimeout(500)
+          await this.page.waitForLoadState('domcontentloaded')
           return
         }
       }
 
       // Approach 2: Try pressing Escape key
       await this.page.keyboard.press('Escape')
-      await this.page.waitForTimeout(300)
+      await this.page.waitForLoadState('domcontentloaded')
 
       // Approach 3: Try clicking on overlay/backdrop
       const overlaySelectors = ['.menu-overlay', '.mobile-overlay', '.backdrop', '[data-overlay]']
@@ -115,18 +116,18 @@ export class NavigationHelpers {
         const overlay = this.page.locator(selector)
         if ((await overlay.count()) > 0 && (await overlay.first().isVisible({ timeout: 300 }))) {
           await overlay.first().click()
-          await this.page.waitForTimeout(300)
+          await this.page.waitForLoadState('domcontentloaded')
           return
         }
       }
 
       // Approach 4: Try clicking outside the navigation area (on body)
       await this.page.locator('body').click({ position: { x: 50, y: 200 }, force: true })
-      await this.page.waitForTimeout(300)
+      await this.page.waitForLoadState('domcontentloaded')
     } catch (error) {
       console.log('Error closing mobile menu:', error)
-      // Fallback: wait and hope menu closes automatically
-      await this.page.waitForTimeout(1000)
+      // Fallback: wait for DOM to stabilize
+      await this.page.waitForLoadState('domcontentloaded')
     }
   }
 
@@ -136,7 +137,7 @@ export class NavigationHelpers {
   async isMobileMenuOpen(): Promise<boolean> {
     try {
       // Wait for potential animations to complete
-      await this.page.waitForTimeout(300)
+      await this.page.waitForLoadState('domcontentloaded')
 
       // Try multiple approaches to detect if mobile menu is open
 

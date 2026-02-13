@@ -10,6 +10,7 @@ import {
   AdminStatsDisplay,
   AdminSearchFilters,
   AdminTableContainer,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   Badge,
@@ -132,20 +133,11 @@ function AdminUsersPage() {
   }
 
   const openRoleModal = (user: AdminUser) => {
-    setSelectedUserForRole({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    })
+    setSelectedUserForRole({ id: user.id, name: user.name, email: user.email, role: user.role })
   }
 
   const openBadgeModal = (user: AdminUser) => {
-    setSelectedUserForBadge({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    })
+    setSelectedUserForBadge({ id: user.id, name: user.name, email: user.email })
   }
 
   const openUserDetailsModal = (userId: string) => {
@@ -226,7 +218,9 @@ function AdminUsersPage() {
 
       <AdminTableContainer>
         {usersQuery.isPending ? (
-          <LoadingSpinner />
+          <LoadingSpinner text="Loading users..." />
+        ) : users.length === 0 ? (
+          <AdminTableNoResults icon={User} hasQuery={!!table.search} />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -405,24 +399,6 @@ function AdminUsersPage() {
                     )}
                   </tr>
                 ))}
-
-                {users.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={8}
-                      className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                    >
-                      <div className="flex flex-col items-center">
-                        <User className="h-12 w-12 text-gray-400 mb-4" />
-                        <p className="text-lg">
-                          {table.search
-                            ? 'No users found matching your search.'
-                            : 'No users found.'}
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
@@ -461,6 +437,7 @@ function AdminUsersPage() {
 
       {/* User Details Modal */}
       <UserDetailsModal
+        key={userIdFromUrl}
         userId={userIdFromUrl}
         isOpen={!!userIdFromUrl}
         onClose={closeUserDetailsModal}

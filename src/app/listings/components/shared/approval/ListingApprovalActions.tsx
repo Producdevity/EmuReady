@@ -5,6 +5,7 @@ import { ApproveButton, RejectButton } from '@/components/ui'
 import { api } from '@/lib/api'
 import { logger } from '@/lib/logger'
 import toast from '@/lib/toast'
+import { type ListingType } from '@/schemas/common'
 import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { roleIncludesRole } from '@/utils/permission-system'
@@ -16,7 +17,7 @@ type PcListing = RouterOutput['pcListings']['byId']
 
 interface Props {
   listing: HandheldListing | PcListing
-  listingType: 'handheld' | 'pc'
+  listingType: ListingType
   onApprovalSuccess?: () => void | Promise<void>
   className?: string
 }

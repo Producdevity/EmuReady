@@ -152,6 +152,14 @@ export class AppError {
     })
   }
 
+  // Shadow ban enforcement — deliberately vague to not reveal ban status
+  static shadowBanned(): never {
+    throw new TRPCError({
+      code: ERROR_CODES.FORBIDDEN,
+      message: 'Unable to perform this action',
+    })
+  }
+
   // Business logic errors
   static resourceInUse(resource: string, count?: number): never {
     const message = count

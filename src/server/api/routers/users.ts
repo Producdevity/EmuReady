@@ -226,6 +226,8 @@ export const usersRouter = createTRPCRouter({
       votesPage = 1,
       votesLimit = 12,
       votesSearch,
+      trustActionsPage = 1,
+      trustActionsLimit = 10,
     } = input
 
     // Check if user exists and get ban status
@@ -303,11 +305,6 @@ export const usersRouter = createTRPCRouter({
         role: true,
         trustScore: true,
         createdAt: true,
-        trustActionLogs: {
-          select: { id: true, action: true, weight: true, createdAt: true },
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        },
         // Include ban status for moderators
         ...(canViewBannedUsers && {
           userBans: {
@@ -385,30 +382,41 @@ export const usersRouter = createTRPCRouter({
       ctx.prisma.vote.count({ where: { userId, ...votesWhere } }),
     ])
 
-    // Get filter options (for frontend dropdowns)
-    const [availableDevices, availableEmulators, contributionSummary, voteSummary] =
-      await Promise.all([
-        ctx.prisma.listing.findMany({
-          where: { authorId: userId },
-          select: {
-            device: {
-              select: {
-                id: true,
-                modelName: true,
-                brand: { select: { name: true } },
-              },
-            },
+    // Get filter options, contribution data, and paginated trust actions
+    const trustActionsSkip = (trustActionsPage - 1) * trustActionsLimit
+    const [
+      availableDevices,
+      availableEmulators,
+      contributionSummary,
+      voteSummary,
+      trustActionLogs,
+      trustActionsTotal,
+    ] = await Promise.all([
+      ctx.prisma.listing.findMany({
+        where: { authorId: userId },
+        select: {
+          device: {
+            select: { id: true, modelName: true, brand: { select: { name: true } } },
           },
-          distinct: ['deviceId'],
-        }),
-        ctx.prisma.listing.findMany({
-          where: { authorId: userId },
-          select: { emulator: { select: { name: true } } },
-          distinct: ['emulatorId'],
-        }),
-        getUserContributionBreakdown(ctx.prisma, userId),
-        getUserVoteSummary(ctx.prisma, userId),
-      ])
+        },
+        distinct: ['deviceId'],
+      }),
+      ctx.prisma.listing.findMany({
+        where: { authorId: userId },
+        select: { emulator: { select: { name: true } } },
+        distinct: ['emulatorId'],
+      }),
+      getUserContributionBreakdown(ctx.prisma, userId),
+      getUserVoteSummary(ctx.prisma, userId),
+      ctx.prisma.trustActionLog.findMany({
+        where: { userId },
+        select: { id: true, action: true, weight: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+        skip: trustActionsSkip,
+        take: trustActionsLimit,
+      }),
+      ctx.prisma.trustActionLog.count({ where: { userId } }),
+    ])
 
     return {
       ...user,
@@ -419,6 +427,14 @@ export const usersRouter = createTRPCRouter({
       votes: {
         items: votes,
         pagination: paginate({ total: votesTotal, page: votesPage, limit: votesLimit }),
+      },
+      trustActionLogs: {
+        items: trustActionLogs,
+        pagination: paginate({
+          total: trustActionsTotal,
+          page: trustActionsPage,
+          limit: trustActionsLimit,
+        }),
       },
       filterOptions: {
         devices: availableDevices

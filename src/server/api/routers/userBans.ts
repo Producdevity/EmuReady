@@ -18,6 +18,7 @@ import {
 } from '@/server/api/trpc'
 import { UserBansRepository } from '@/server/repositories/user-bans.repository'
 import { logAudit, buildDiff } from '@/server/services/audit.service'
+import { nullifyUserVotes, restoreUserVotes } from '@/server/services/vote-nullification.service'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
 import { AuditAction, AuditEntityType, Role } from '@orm'
@@ -63,7 +64,7 @@ export const userBansRouter = createTRPCRouter({
     }
 
     const repository = new UserBansRepository(ctx.prisma)
-    const { userId, reason, notes, expiresAt } = input
+    const { userId, reason, notes, expiresAt, nullifyVotes: shouldNullifyVotes } = input
     if (userId === ctx.session.user.id) return ResourceError.userBan.insufficientPermissions()
     const bannedById = ctx.session.user.id
 
@@ -91,6 +92,24 @@ export const userBansRouter = createTRPCRouter({
       notes,
       expiresAt,
     })
+
+    // Nullify votes if requested
+    let nullificationResult: Awaited<ReturnType<typeof nullifyUserVotes>> | null = null
+    if (shouldNullifyVotes) {
+      nullificationResult = await nullifyUserVotes(ctx.prisma, {
+        userId,
+        adminUserId: ctx.session.user.id,
+        reason: `Ban: ${reason}`,
+        includeCommentVotes: true,
+        headers: ctx.headers,
+      })
+
+      await ctx.prisma.userBan.update({
+        where: { id: created.id },
+        data: { votesNullified: true },
+      })
+    }
+
     // Fire-and-forget audit log
     void logAudit(ctx.prisma, {
       actorId: ctx.session.user.id,
@@ -98,7 +117,11 @@ export const userBansRouter = createTRPCRouter({
       entityType: AuditEntityType.USER_BAN,
       entityId: created.id,
       targetUserId: userId,
-      metadata: { reason, expiresAt },
+      metadata: {
+        reason,
+        expiresAt,
+        ...(nullificationResult ? { nullificationResult } : {}),
+      },
       headers: ctx.headers,
     })
     return created
@@ -202,13 +225,28 @@ export const userBansRouter = createTRPCRouter({
       isActive: lifted.isActive,
     }
 
+    // Auto-restore votes if they were nullified during this ban
+    let restorationResult: Awaited<ReturnType<typeof restoreUserVotes>> | null = null
+    if (ban.votesNullified) {
+      restorationResult = await restoreUserVotes(ctx.prisma, {
+        userId: ban.userId,
+        adminUserId: ctx.session.user.id,
+        reason: `Ban lifted: ${ban.reason}`,
+        headers: ctx.headers,
+      })
+    }
+
     void logAudit(ctx.prisma, {
       actorId: ctx.session.user.id,
       action: AuditAction.UNBAN,
       entityType: AuditEntityType.USER_BAN,
       entityId: id,
       targetUserId: lifted.user.id,
-      metadata: { notes: notes || undefined, diff: buildDiff(prev, next) },
+      metadata: {
+        notes: notes || undefined,
+        diff: buildDiff(prev, next),
+        ...(restorationResult ? { restorationResult } : {}),
+      },
       headers: ctx.headers,
     })
     return lifted

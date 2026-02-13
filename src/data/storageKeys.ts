@@ -57,6 +57,7 @@ const storageKeys = {
     adminApiKeys: `${PREFIX}admin_api_keys_column_visibility`,
     developerApiKeys: `${PREFIX}developer_api_keys_column_visibility`,
     adminEntitlements: `${PREFIX}admin_entitlements_column_visibility`,
+    adminVoteInvestigation: `${PREFIX}admin_vote_investigation_column_visibility`,
   },
 } as const
 

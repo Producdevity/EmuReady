@@ -194,6 +194,12 @@ export const superAdminNavItems: AdminNavItem[] = [
     exact: true,
     description: 'Manage user badges and assignments.',
   },
+  {
+    href: ADMIN_ROUTES.VOTE_INVESTIGATION,
+    label: 'Vote Investigation',
+    exact: true,
+    description: 'Investigate vote manipulation and nullify abusive votes.',
+  },
 ]
 
 export const moderatorNavItems: AdminNavItem[] = [
@@ -268,6 +274,12 @@ export const moderatorNavItems: AdminNavItem[] = [
     label: 'User Bans',
     exact: true,
     description: 'Manage user bans and suspensions.',
+  },
+  {
+    href: ADMIN_ROUTES.VOTE_INVESTIGATION,
+    label: 'Vote Investigation',
+    exact: true,
+    description: 'Investigate vote manipulation and nullify abusive votes.',
   },
 ]
 

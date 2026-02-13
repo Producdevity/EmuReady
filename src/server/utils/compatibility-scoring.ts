@@ -1,3 +1,4 @@
+import { type Severity } from '@/schemas/common'
 import type { PerformanceScale, ListingDeveloperVerification, Game, System, Emulator } from '@orm'
 
 /**
@@ -308,7 +309,7 @@ export function calculateConfidenceLevel(
   listingCount: number,
   totalVotes: number,
   thresholds: ConfidenceThresholds = DEFAULT_CONFIDENCE_THRESHOLDS,
-): 'low' | 'medium' | 'high' {
+): Severity {
   if (
     listingCount >= thresholds.mediumToHigh.listings &&
     totalVotes >= thresholds.mediumToHigh.votes

@@ -62,6 +62,7 @@ import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.r
 import { logAudit } from '@/server/services/audit.service'
 import { listingStatsCache } from '@/server/utils/cache'
 import { paginate } from '@/server/utils/pagination'
+import { isUserBanned } from '@/server/utils/query-builders'
 import { validatePagination } from '@/server/utils/security-validation'
 import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
 import { PERMISSIONS, roleIncludesRole } from '@/utils/permission-system'
@@ -764,6 +765,10 @@ export const pcListingsRouter = createTRPCRouter({
     const { pcListingId, value } = input
     const userId = ctx.session.user.id
 
+    if (await isUserBanned(ctx.prisma, userId)) {
+      return AppError.shadowBanned()
+    }
+
     const pcListing = await ctx.prisma.pcListing.findUnique({
       where: { id: pcListingId },
     })
@@ -1102,6 +1107,11 @@ export const pcListingsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { commentId, value } = input
       const userId = ctx.session.user.id
+
+      // Block banned users from voting (vague error preserves shadow ban)
+      if (await isUserBanned(ctx.prisma, userId)) {
+        return AppError.shadowBanned()
+      }
 
       const comment = await ctx.prisma.pcListingComment.findUnique({
         where: { id: commentId },

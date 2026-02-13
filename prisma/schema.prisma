@@ -453,14 +453,18 @@ model Listing {
 }
 
 model Vote {
-  id        String  @id @default(uuid())
-  value     Boolean
-  userId    String
-  listingId String
-  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String    @id @default(uuid())
+  value       Boolean
+  userId      String
+  listingId   String
+  createdAt   DateTime  @default(now())
+  nullifiedAt DateTime?
+  listing     Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, listingId])
+  @@index([userId])
+  @@index([listingId])
 }
 
 model Comment {
@@ -486,15 +490,17 @@ model Comment {
 }
 
 model CommentVote {
-  id        String   @id @default(uuid())
-  value     Boolean // true = upvote, false = downvote
-  userId    String
-  commentId String
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  id          String    @id @default(uuid())
+  value       Boolean // true = upvote, false = downvote
+  userId      String
+  commentId   String
+  createdAt   DateTime  @default(now())
+  nullifiedAt DateTime?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment     Comment   @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@unique([userId, commentId])
+  @@index([userId])
 }
 
 model ListingCustomFieldValue {
@@ -678,6 +684,7 @@ enum TrustAction {
   HELPFUL_COMMENT
   ADMIN_ADJUSTMENT_POSITIVE
   ADMIN_ADJUSTMENT_NEGATIVE
+  VOTE_NULLIFICATION_REVERSAL
 
   @@map("trust_action")
 }
@@ -851,9 +858,10 @@ model UserBan {
   bannedAt     DateTime  @default(now())
   expiresAt    DateTime?
   unbannedAt   DateTime?
-  unbannedById String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  unbannedById   String?
+  votesNullified Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   user       User  @relation("UserBans", fields: [userId], references: [id], onDelete: Cascade)
   bannedBy   User  @relation("BansCreated", fields: [bannedById], references: [id])
@@ -1051,11 +1059,12 @@ model PcListingReport {
 }
 
 model PcListingVote {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   value       Boolean // true = upvote, false = downvote
   userId      String
   pcListingId String
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
+  nullifiedAt DateTime?
 
   pcListing PcListing @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1093,11 +1102,12 @@ model PcListingComment {
 }
 
 model PcListingCommentVote {
-  id        String   @id @default(uuid())
-  value     Boolean // true = upvote, false = downvote
-  userId    String
-  commentId String
-  createdAt DateTime @default(now())
+  id          String    @id @default(uuid())
+  value       Boolean // true = upvote, false = downvote
+  userId      String
+  commentId   String
+  createdAt   DateTime  @default(now())
+  nullifiedAt DateTime?
 
   user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   comment PcListingComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
@@ -1161,6 +1171,7 @@ enum AuditEntityType {
   COMMENT
   REPORT
   EMULATOR
+  VOTE
   OTHER
 
   @@map("audit_entity_type")
@@ -1179,6 +1190,8 @@ enum AuditAction {
   UNBAN
   PIN
   UNPIN
+  NULLIFY_VOTES
+  RESTORE_VOTES
 
   @@map("audit_action")
 }

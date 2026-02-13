@@ -17,7 +17,6 @@ export interface CommentFilters {
 }
 
 export class CommentsRepository extends BaseRepository {
-  // Static query shapes for this repository
   static readonly includes = {
     default: {
       user: { select: { id: true, name: true, profileImage: true } },

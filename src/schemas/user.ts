@@ -36,6 +36,9 @@ export const GetUserByIdSchema = z.object({
   votesPage: z.number().int().min(1).default(1),
   votesLimit: z.number().int().min(1).max(50).default(12),
   votesSearch: z.string().optional(),
+  // Pagination for trust actions
+  trustActionsPage: z.number().int().min(1).default(1),
+  trustActionsLimit: z.number().int().min(1).max(50).default(10),
 })
 
 export const UpdateUserSchema = z.object({

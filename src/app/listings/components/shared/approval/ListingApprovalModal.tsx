@@ -4,6 +4,7 @@ import { AlertTriangle, Flag } from 'lucide-react'
 import { useMemo } from 'react'
 import { Modal, Button, Input } from '@/components/ui'
 import { useEmulatorLogos } from '@/hooks'
+import { type ListingType } from '@/schemas/common'
 import { type RouterOutput } from '@/types/trpc'
 import {
   GameInfoSection,
@@ -18,7 +19,7 @@ type PcListing = RouterOutput['pcListings']['byId']
 
 interface Props {
   listing: HandheldListing | PcListing
-  listingType: 'handheld' | 'pc'
+  listingType: ListingType
   action: 'approve' | 'reject'
   rejectionNotes: string
   onRejectionNotesChange: (notes: string) => void

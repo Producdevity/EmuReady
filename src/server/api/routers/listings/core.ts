@@ -28,9 +28,11 @@ import {
 import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
 import { getDriverVersions } from '@/server/utils/driver-versions'
+import { isUserBanned } from '@/server/utils/query-builders'
 import { sanitizeInput, validatePagination } from '@/server/utils/security-validation'
 import { withSavepoint } from '@/server/utils/transactions'
 import { updateListingVoteCounts } from '@/server/utils/vote-counts'
+import { handleVoteTrustEffects } from '@/server/utils/vote-trust-effects'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { ms } from '@/utils/time'
 import { ApprovalStatus, Prisma, Role, TrustAction } from '@orm'
@@ -231,6 +233,10 @@ export const coreRouter = createTRPCRouter({
   vote: protectedProcedure.input(CreateVoteSchema).mutation(async ({ ctx, input }) => {
     const userId = ctx.session.user.id
 
+    if (await isUserBanned(ctx.prisma, userId)) {
+      return AppError.shadowBanned()
+    }
+
     // Verify CAPTCHA if token is provided
     if (input.recaptchaToken) {
       const clientIP = ctx.headers ? getClientIP(ctx.headers) : undefined
@@ -296,27 +302,18 @@ export const coreRouter = createTRPCRouter({
       return { vote: updatedVote, action: 'updated' as const, previousValue: existingVote.value }
     })
 
-    // Handle post-transaction operations based on action
+    // Handle trust effects for all vote actions
+    await handleVoteTrustEffects({
+      action: voteResult.action,
+      currentValue: input.value,
+      previousValue: voteResult.previousValue,
+      userId,
+      listingId: input.listingId,
+      authorId: listing.authorId,
+    })
+
+    // Handle post-transaction side effects for created/updated votes (TODO: consider abstracting)
     if (voteResult.action === 'created' || voteResult.action === 'updated') {
-      // Apply trust action for the voter
-      await applyTrustAction({
-        userId,
-        action: input.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE,
-        context: { listingId: input.listingId },
-      })
-
-      // Apply trust action for the listing creator (only if not voting on their own listing)
-      if (listing.authorId && listing.authorId !== userId) {
-        await applyTrustAction({
-          userId: listing.authorId,
-          action: input.value
-            ? TrustAction.LISTING_RECEIVED_UPVOTE
-            : TrustAction.LISTING_RECEIVED_DOWNVOTE,
-          context: { listingId: input.listingId, voterId: userId },
-        })
-      }
-
-      // Emit notification event
       if (voteResult.vote) {
         notificationEventEmitter.emitNotificationEvent({
           eventType: NOTIFICATION_EVENTS.LISTING_VOTED,

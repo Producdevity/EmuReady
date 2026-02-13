@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test'
 import { CookieBanner } from './CookieBanner'
 import { TEST_CONFIG, waitForPageStability } from '../helpers/test-config'
 import type { Page } from '@playwright/test'
@@ -34,6 +35,11 @@ export abstract class BasePage {
 
   get gamesLink() {
     return this.page.getByRole('link', { name: /^games$/i }).first()
+  }
+
+  // Navbar search button (expands into search input, submits to /games?search=)
+  get searchButton() {
+    return this.page.getByRole('button', { name: /search games/i }).first()
   }
 
   // Authentication elements
@@ -77,7 +83,6 @@ export abstract class BasePage {
         )
 
         await this.homeLink.scrollIntoViewIfNeeded()
-        await this.page.waitForTimeout(500)
 
         try {
           await this.homeLink.click({ timeout: 5000 })
@@ -88,10 +93,9 @@ export abstract class BasePage {
       }
     }
 
-    await this.page.waitForURL('/', {
-      timeout: 15000,
-      waitUntil: 'domcontentloaded',
-    })
+    // Use expect().toHaveURL which auto-retries without needing a 'load' event —
+    // waitForURL hangs on client-side navigation (pushState) since no load fires
+    await expect(this.page).toHaveURL('/', { timeout: 15000 })
   }
 
   async navigateToHandheld() {
@@ -105,7 +109,7 @@ export abstract class BasePage {
 
       if (mobileMenuVisible) {
         await this.mobileMenuButton.click()
-        await this.page.waitForTimeout(600)
+        await this.mobileMenu.waitFor({ state: 'visible', timeout: 2000 }).catch(() => {})
         const mobileHandheldLink = this.page.getByRole('link', { name: /handheld/i }).last()
         await mobileHandheldLink.click()
       } else {
@@ -123,7 +127,6 @@ export abstract class BasePage {
         )
 
         await this.handheldLink.scrollIntoViewIfNeeded()
-        await this.page.waitForTimeout(500)
 
         try {
           await this.handheldLink.click({ timeout: 5000 })
@@ -134,7 +137,7 @@ export abstract class BasePage {
       }
     }
 
-    await this.page.waitForURL('/listings', { timeout: 15000 })
+    await expect(this.page).toHaveURL('/listings', { timeout: 15000 })
   }
 
   async navigateToPC() {
@@ -148,7 +151,7 @@ export abstract class BasePage {
 
       if (mobileMenuVisible) {
         await this.mobileMenuButton.click()
-        await this.page.waitForTimeout(600)
+        await this.mobileMenu.waitFor({ state: 'visible', timeout: 2000 }).catch(() => {})
         const mobilePCLink = this.page.getByRole('link', { name: /^pc$/i }).last()
         await mobilePCLink.click()
       } else {
@@ -166,7 +169,6 @@ export abstract class BasePage {
         )
 
         await this.pcLink.scrollIntoViewIfNeeded()
-        await this.page.waitForTimeout(500)
 
         try {
           await this.pcLink.click({ timeout: 5000 })
@@ -177,60 +179,40 @@ export abstract class BasePage {
       }
     }
 
-    await this.page.waitForURL('/pc-listings', { timeout: 15000 })
+    await expect(this.page).toHaveURL('/pc-listings', { timeout: 15000 })
   }
 
   async navigateToGames() {
+    // No direct "Games" link in the navbar; the navbar has a search button
+    // that navigates to /games?search=<query>. For clean navigation without
+    // a search query, use direct goto.
+    await this.page.goto('/games')
+
+    await expect(this.page).toHaveURL(/\/games/, { timeout: 15000 })
+  }
+
+  async searchViaNavbar(query: string) {
     const isMobile = this.page.viewportSize()?.width ? this.page.viewportSize()!.width < 768 : false
 
     if (isMobile) {
-      // On mobile, we need to open the mobile menu first
-      const mobileMenuVisible = await this.mobileMenuButton
-        .isVisible({ timeout: 1000 })
-        .catch(() => false)
+      // Mobile uses a search icon that opens a full-screen overlay
+      await this.searchButton.click()
 
-      if (mobileMenuVisible) {
-        // Open mobile menu
-        await this.mobileMenuButton.click()
-        await this.page.waitForTimeout(600) // Wait for menu animation
-
-        // Find games link in mobile menu
-        const mobileGamesLink = this.page.getByRole('link', { name: /^games$/i }).last()
-        await mobileGamesLink.click()
-      } else {
-        // Fallback to direct navigation if menu not available
-        await this.page.goto('/games')
-      }
+      const searchInput = this.page.getByPlaceholder(/search games/i).last()
+      await searchInput.waitFor({ state: 'visible', timeout: 3000 })
+      await searchInput.fill(query)
+      await searchInput.press('Enter')
     } else {
-      // Desktop navigation
-      await this.waitForOverlaysToDisappear()
+      // Desktop: click search button to expand, then type and submit
+      await this.searchButton.click()
 
-      try {
-        await this.gamesLink.click({ timeout: 5000 })
-      } catch (error) {
-        console.log(
-          'First click failed, trying alternative approach:',
-          error instanceof Error ? error.message : String(error),
-        )
-
-        // Try scrolling into view and clicking
-        await this.gamesLink.scrollIntoViewIfNeeded()
-        await this.page.waitForTimeout(500)
-
-        try {
-          await this.gamesLink.click({ timeout: 5000 })
-        } catch {
-          // Last resort: force click
-          console.log('Regular click failed, using force click')
-          await this.gamesLink.click({ force: true })
-        }
-      }
+      const searchInput = this.page.getByPlaceholder(/search games/i).first()
+      await searchInput.waitFor({ state: 'visible', timeout: 3000 })
+      await searchInput.fill(query)
+      await searchInput.press('Enter')
     }
 
-    await this.page.waitForURL('/games', {
-      timeout: 15000,
-      waitUntil: 'domcontentloaded',
-    })
+    await expect(this.page).toHaveURL(/\/games\?search=/, { timeout: 15000 })
   }
 
   async clickLogo() {
@@ -255,7 +237,7 @@ export abstract class BasePage {
       }
     }
 
-    await this.page.waitForURL('/', { timeout: 10000 })
+    await expect(this.page).toHaveURL('/', { timeout: 10000 })
   }
 
   async openMobileMenu() {
@@ -265,101 +247,27 @@ export abstract class BasePage {
 
     if (!isOpen) {
       await this.mobileMenuButton.click()
-      // Wait for menu animation
-      await this.page.waitForTimeout(600)
+      await this.mobileMenu.waitFor({ state: 'visible', timeout: 2000 }).catch(() => {})
     }
   }
 
   async waitForPageLoad() {
-    const browserName = this.page.context().browser()?.browserType().name()
-
-    // Use optimized wait strategy for production builds
-    try {
-      if (browserName === 'webkit') {
-        // Webkit needs more aggressive waiting
-        await this.page.waitForLoadState('networkidle', {
-          timeout: TEST_CONFIG.timeouts.pageLoad,
-        })
-        await this.page.waitForTimeout(1000)
-      } else {
-        // For other browsers, use stability helper
-        await waitForPageStability(this.page, TEST_CONFIG.timeouts.pageLoad)
-      }
-    } catch {
-      console.log('Page load timeout, continuing with DOM ready state')
-      await this.page.waitForLoadState('domcontentloaded', { timeout: 5000 })
-    }
-
-    // Dismiss cookie banner if present
+    await waitForPageStability(this.page, TEST_CONFIG.timeouts.pageLoad)
     await this.cookieBanner.dismissIfPresent()
-
-    // Short wait to ensure banner is fully dismissed
-    await this.page.waitForTimeout(300)
   }
 
   async waitForOverlaysToDisappear() {
-    const browserName = this.page.context().browser()?.browserType().name()
-    const isMobile = this.page.viewportSize()?.width ? this.page.viewportSize()!.width < 768 : false
+    // Dismiss Clerk authentication modals if present
+    const clerkModal = this.page.locator('.cl-modal, .cl-modalContent')
+    const count = await clerkModal.count().catch(() => 0)
 
-    // Mobile needs extra time for animations
-    if (isMobile) {
-      await this.page.waitForTimeout(1000)
-    }
-
-    // Different browsers may handle animations differently
-    if (browserName === 'webkit') {
-      // Safari/WebKit needs extra time for some animations
-      await this.page.waitForTimeout(500)
-    }
-
-    // Wait for any overlays or modals to disappear
-    const overlaySelectors = [
-      '.fixed.inset-0.z-[70]', // Cookie banner overlay
-      '[class*="backdrop"][class*="pointer-events-auto"]',
-      '.absolute.inset-0.bg-black/30.backdrop-blur-[2px].pointer-events-auto',
-      '.cl-modal', // Clerk modals
-      '.cl-modalContent',
-    ]
-
-    // First, wait a bit for any animations to start
-    await this.page.waitForTimeout(300)
-
-    for (const selector of overlaySelectors) {
-      try {
-        const overlays = this.page.locator(selector)
-        const count = await overlays.count()
-
-        if (count > 0) {
-          // Wait for all matching overlays to be hidden
-          for (let i = 0; i < count; i++) {
-            await overlays
-              .nth(i)
-              .waitFor({ state: 'hidden', timeout: 5000 })
-              .catch(() => {})
-          }
-        }
-      } catch {
-        // Overlay not present, continue
+    if (count > 0) {
+      for (let i = 0; i < count; i++) {
+        await clerkModal
+          .nth(i)
+          .waitFor({ state: 'hidden', timeout: 3000 })
+          .catch(() => {})
       }
-    }
-
-    // For mobile, dismiss any sticky elements that might interfere
-    if (isMobile) {
-      // Try to scroll page to clear any sticky headers
-      await this.page.evaluate(() => window.scrollTo(0, 100))
-      await this.page.waitForTimeout(300)
-      await this.page.evaluate(() => window.scrollTo(0, 0))
-      await this.page.waitForTimeout(300)
-    }
-
-    // Also ensure navigation is not being intercepted
-    const nav = this.page.locator('nav').first()
-    try {
-      // Wait for navigation to be stable
-      await nav.waitFor({ state: 'visible', timeout: 2000 })
-      await this.page.waitForTimeout(300)
-    } catch {
-      // Navigation might not be visible on some pages
     }
   }
 

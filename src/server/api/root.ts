@@ -38,6 +38,7 @@ import { userBansRouter } from './routers/userBans'
 import { userPreferencesRouter } from './routers/userPreferences'
 import { usersRouter } from './routers/users'
 import { verifiedDevelopersRouter } from './routers/verifiedDevelopers'
+import { voteInvestigationRouter } from './routers/voteInvestigation'
 
 export const appRouter = createTRPCRouter({
   activity: activityRouter,
@@ -79,6 +80,7 @@ export const appRouter = createTRPCRouter({
   entitlements: entitlementsRouter,
   adminReleases: adminReleasesRouter,
   adminEntitlements: adminEntitlementsRouter,
+  voteInvestigation: voteInvestigationRouter,
 })
 
 export type AppRouter = typeof appRouter

@@ -3,6 +3,7 @@
 import { useUser } from '@clerk/nextjs'
 import { Search, AlertTriangle, ShieldOff } from 'lucide-react'
 import { useState, useRef, useEffect, type FormEvent } from 'react'
+import { ADMIN_ROUTES } from '@/app/admin/config/routes'
 import { Button, Modal, Badge, Input } from '@/components/ui'
 import { CHAR_LIMITS } from '@/data/constants'
 import { api } from '@/lib/api'
@@ -33,6 +34,7 @@ function CreateBanModal(props: Props) {
   const [isPermanent, setIsPermanent] = useState(true)
   const [expirationDate, setExpirationDate] = useState('')
   const [expirationTime, setExpirationTime] = useState('23:59')
+  const [nullifyVotes, setNullifyVotes] = useState(false)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -105,6 +107,7 @@ function CreateBanModal(props: Props) {
     setIsPermanent(true)
     setExpirationDate('')
     setExpirationTime('23:59')
+    setNullifyVotes(false)
     props.onClose()
   }
 
@@ -112,6 +115,21 @@ function CreateBanModal(props: Props) {
     setSelectedUser(user)
     setUserSearch(user.name || user.email)
     setShowUserDropdown(false)
+  }
+
+  const handleSearchChange = (value: string) => {
+    if (props.userId) return
+
+    setUserSearch(value)
+    if (!selectedUser && value.length >= 2) {
+      setShowUserDropdown(true)
+    } else if (value.length < 2) {
+      setShowUserDropdown(false)
+    }
+
+    if (selectedUser && value !== (selectedUser.name || selectedUser.email)) {
+      setSelectedUser(null)
+    }
   }
 
   const handleSubmit = async (ev: FormEvent) => {
@@ -154,6 +172,7 @@ function CreateBanModal(props: Props) {
       reason: reason.trim(),
       notes: notes.trim() || undefined,
       expiresAt: expiresAt || undefined,
+      nullifyVotes,
     } satisfies RouterInput['userBans']['create'])
   }
 
@@ -229,24 +248,7 @@ function CreateBanModal(props: Props) {
                 ref={searchInputRef}
                 type="text"
                 value={userSearch}
-                onChange={(ev) => {
-                  // Don't allow changes if user is pre-selected from props
-                  if (props.userId) return
-
-                  setUserSearch(ev.target.value)
-                  if (!selectedUser && ev.target.value.length >= 2) {
-                    setShowUserDropdown(true)
-                  } else if (ev.target.value.length < 2) {
-                    setShowUserDropdown(false)
-                  }
-                  // Clear selection if user starts typing again
-                  if (
-                    selectedUser &&
-                    ev.target.value !== (selectedUser.name || selectedUser.email)
-                  ) {
-                    setSelectedUser(null)
-                  }
-                }}
+                onChange={(ev) => handleSearchChange(ev.target.value)}
                 disabled={!!props.userId}
                 placeholder="Search users by name or email..."
                 leftIcon={<Search className="w-5 h-5" />}
@@ -434,6 +436,37 @@ function CreateBanModal(props: Props) {
                 />
               </div>
             </div>
+          )}
+        </div>
+
+        {/* Vote Nullification */}
+        <div className="space-y-2">
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={nullifyVotes}
+              onChange={(ev) => setNullifyVotes(ev.target.checked)}
+              className="mt-1 text-blue-600 focus:ring-blue-500"
+            />
+            <div>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Nullify all votes by this user
+              </span>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Removes all votes cast by this user, recalculates affected listing scores, and
+                reverses trust score impacts. Nullified votes are preserved for investigation.
+              </p>
+            </div>
+          </label>
+          {selectedUser && (
+            <a
+              href={`${ADMIN_ROUTES.VOTE_INVESTIGATION}?userId=${selectedUser.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block text-xs text-blue-600 dark:text-blue-400 hover:underline ml-7"
+            >
+              View voting patterns for this user
+            </a>
           )}
         </div>
 

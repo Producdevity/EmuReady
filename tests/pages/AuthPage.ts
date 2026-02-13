@@ -85,7 +85,7 @@ export class AuthPage extends BasePage {
     await this.fillSignInForm(email, password)
     await this.submitSignIn()
     // Wait for authentication to complete
-    await this.page.waitForTimeout(2000)
+    await this.page.waitForLoadState('domcontentloaded')
   }
 
   async openUserMenu() {
@@ -97,7 +97,7 @@ export class AuthPage extends BasePage {
     await this.openUserMenu()
     await this.signOutButton.click()
     // Wait for sign out to complete
-    await this.page.waitForTimeout(2000)
+    await this.page.waitForLoadState('domcontentloaded')
   }
 
   // Verification methods
@@ -120,19 +120,19 @@ export class AuthPage extends BasePage {
 
   async verifyUserNotAuthenticated() {
     // Wait for page to stabilize first
-    await this.page.waitForLoadState('networkidle', { timeout: 10000 })
+    await this.page.waitForLoadState('domcontentloaded')
 
-    // Try multiple selectors for sign in button
-    const signInVisible = await this.signInButton.isVisible({ timeout: 5000 }).catch(() => false)
+    // Wait for auth UI to render (either sign in button or user button from Clerk)
+    await this.signInButton.or(this.userButton).waitFor({ state: 'visible', timeout: 10000 })
 
+    // Verify sign in button is visible
+    const signInVisible = await this.signInButton.isVisible().catch(() => false)
     if (!signInVisible) {
       // Try alternative selectors for webkit
       const altSignIn = this.page.getByText(/sign in/i).first()
-      const altVisible = await altSignIn.isVisible({ timeout: 2000 }).catch(() => false)
-
-      if (!altVisible) {
+      await altSignIn.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {
         throw new Error('Sign in button not found with any selector')
-      }
+      })
     }
 
     await this.signUpButton.waitFor({ state: 'visible', timeout: 5000 })

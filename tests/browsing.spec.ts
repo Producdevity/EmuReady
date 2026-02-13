@@ -14,12 +14,11 @@ test.describe('Modern Browsing Tests', () => {
     // Verify latest listings section
     await homePage.verifyLatestListingsVisible()
 
-    // Check if browse reports link works
-    try {
-      await homePage.clickBrowseReports()
-      await expect(page).toHaveURL('/listings')
-    } catch {
-      console.log('Browse reports link not found or not functional')
+    // Check if browse links work
+    const browseLink = page.getByRole('link', { name: /browse.*compatibility/i }).first()
+    if (await browseLink.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await browseLink.click()
+      await expect(page).toHaveURL(/\/(listings|pc-listings)/)
     }
   })
 
@@ -35,15 +34,13 @@ test.describe('Modern Browsing Tests', () => {
 
     // Check that we have game content
     const gameCount = await gamesPage.getGameCount()
-    console.log(`Found ${gameCount} games on the page`)
+    test.skip(gameCount === 0, 'No games available for this test')
 
-    if (gameCount > 0) {
-      // Verify first game is clickable
-      await expect(gamesPage.gameItems.first()).toBeVisible()
+    // Verify first game is clickable
+    await expect(gamesPage.gameItems.first()).toBeVisible()
 
-      // Verify game headings exist
-      await gamesPage.verifyGameHeadingsVisible()
-    }
+    // Verify game headings exist
+    await gamesPage.verifyGameHeadingsVisible()
   })
 
   test('should display compatibility listings with content', async ({ page }) => {
@@ -61,12 +58,10 @@ test.describe('Modern Browsing Tests', () => {
 
     // Check that we have listing content
     const listingCount = await listingsPage.getListingCount()
-    console.log(`Found ${listingCount} listings on the page`)
+    test.skip(listingCount === 0, 'No listings available for this test')
 
-    if (listingCount > 0) {
-      // Verify first listing is clickable
-      await expect(listingsPage.listingItems.first()).toBeVisible()
-    }
+    // Verify first listing is clickable
+    await expect(listingsPage.listingItems.first()).toBeVisible()
   })
 
   test('should navigate between different content areas', async ({ page }) => {
@@ -102,11 +97,10 @@ test.describe('Modern Browsing Tests', () => {
 
     // Wait for page to fully load and dismiss any overlays
     await homePage.waitForPageLoad()
-    await page.waitForTimeout(2000)
 
     // Navigate directly to PC listings
     await page.goto('/pc-listings')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
 
     // Verify we're on PC listings page
     await expect(page).toHaveURL('/pc-listings')
@@ -147,109 +141,66 @@ test.describe('Modern Browsing Tests', () => {
     const gamesPage = new GamesPage(page)
     await gamesPage.goto()
 
-    // Wait for games to load
-    await gamesPage.verifyGamesVisible()
+    await gamesPage.verifyPageLoaded()
+    await page
+      .getByText(/loading/i)
+      .waitFor({ state: 'hidden', timeout: 15000 })
+      .catch(() => {})
 
     const gameCount = await gamesPage.getGameCount()
+    test.skip(gameCount === 0, 'No games available to test navigation')
 
-    if (gameCount > 0) {
-      try {
-        // Dismiss cookie banner if present before clicking
-        await gamesPage.cookieBanner.dismissIfPresent()
+    await gamesPage.cookieBanner.dismissIfPresent()
 
-        // Click on first game with proper error handling
-        const firstGame = gamesPage.gameItems.first()
-        await firstGame.waitFor({ state: 'visible', timeout: 5000 })
-        const firstGameHref = await firstGame.getAttribute('href')
+    const firstGame = gamesPage.gameItems.first()
+    await firstGame.waitFor({ state: 'visible', timeout: 5000 })
+    const href = await firstGame.getAttribute('href')
+    await firstGame.click({ force: true })
 
-        // Use force click to bypass any overlays
-        await firstGame.click({ force: true })
-
-        // Wait for navigation with timeout and catch if it fails
-        try {
-          await page.waitForURL(new RegExp('/games/[^/]+$'), { timeout: 5000 })
-
-          // Should see game detail content
-          const hasGameContent = await page.locator('h1, h2').first().isVisible({ timeout: 5000 })
-          expect(hasGameContent).toBe(true)
-
-          console.log(`Successfully navigated to game detail: ${firstGameHref}`)
-        } catch {
-          // Check if we're on an error page or auth page instead
-          const currentUrl = page.url()
-          console.log(`Navigation did not complete as expected. Current URL: ${currentUrl}`)
-          // Pass the test anyway - navigation was attempted
-          expect(true).toBe(true)
-        }
-      } catch {
-        console.log(
-          'Could not navigate to game detail - may require authentication or no games available',
-        )
-        // Not a test failure - this is expected when no games are accessible
-        expect(true).toBe(true)
+    try {
+      await expect(page).toHaveURL(/\/games\/[^/?]+/, { timeout: 5000 })
+    } catch {
+      // Client-side navigation may have been absorbed; use direct navigation
+      if (href) {
+        await page.goto(href)
+        await expect(page).toHaveURL(/\/games\/[^/?]+/, { timeout: 5000 })
       }
-    } else {
-      console.log('No games available to test navigation')
-      // Pass the test when no games are available
-      expect(true).toBe(true)
     }
+
+    await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 5000 })
   })
 
   test('should handle listing detail navigation', async ({ page }) => {
     const listingsPage = new ListingsPage(page)
     await listingsPage.goto()
 
-    // Wait for listings to load
-    await listingsPage.verifyListingsVisible()
+    await listingsPage.verifyPageLoaded()
+    await page
+      .getByText(/loading/i)
+      .waitFor({ state: 'hidden', timeout: 15000 })
+      .catch(() => {})
 
     const listingCount = await listingsPage.getListingCount()
+    test.skip(listingCount === 0, 'No listings available to test navigation')
 
-    if (listingCount > 0) {
-      try {
-        // Dismiss cookie banner if present before clicking
-        await listingsPage.cookieBanner.dismissIfPresent()
+    await listingsPage.cookieBanner.dismissIfPresent()
 
-        // Click on first listing with proper error handling
-        const firstListing = listingsPage.listingItems.first()
-        await firstListing.waitFor({ state: 'visible', timeout: 5000 })
-        const firstListingHref = await firstListing.getAttribute('href')
+    const firstListing = listingsPage.listingItems.first()
+    await firstListing.waitFor({ state: 'visible', timeout: 5000 })
+    const href = await firstListing.getAttribute('href')
+    await firstListing.click({ force: true })
 
-        // Use force click to bypass any overlays
-        await firstListing.click({ force: true })
-
-        // Wait for navigation with timeout and catch if it fails
-        try {
-          await page.waitForURL(new RegExp('/listings/[^/]+$'), {
-            timeout: 5000,
-          })
-
-          // Should see listing detail content
-          const hasListingContent = await page
-            .locator('h1, h2')
-            .first()
-            .isVisible({ timeout: 5000 })
-          expect(hasListingContent).toBe(true)
-
-          console.log(`Successfully navigated to listing detail: ${firstListingHref}`)
-        } catch {
-          // Check if we're on an error page or auth page instead
-          const currentUrl = page.url()
-          console.log(`Navigation did not complete as expected. Current URL: ${currentUrl}`)
-          // Pass the test anyway - navigation was attempted
-          expect(true).toBe(true)
-        }
-      } catch {
-        console.log(
-          'Could not navigate to listing detail - may require authentication or no listings available',
-        )
-        // Not a test failure - this is expected when no listings are accessible
-        expect(true).toBe(true)
+    try {
+      await expect(page).toHaveURL(/\/listings\/[^/?]+/, { timeout: 5000 })
+    } catch {
+      // Client-side navigation may have been absorbed; use direct navigation
+      if (href) {
+        await page.goto(href)
+        await expect(page).toHaveURL(/\/listings\/[^/?]+/, { timeout: 5000 })
       }
-    } else {
-      console.log('No listings available to test navigation')
-      // Pass the test when no listings are available
-      expect(true).toBe(true)
     }
+
+    await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 5000 })
   })
 })
 
@@ -266,7 +217,7 @@ test.describe('Modern Content Display Tests', () => {
 
     for (const pageInfo of pages) {
       await page.goto(pageInfo.path)
-      await page.waitForLoadState('networkidle')
+      await page.waitForLoadState('domcontentloaded')
 
       // Should see EmuReady branding - might be in logo or mobile menu
       const brandingVisible =
@@ -294,13 +245,11 @@ test.describe('Modern Content Display Tests', () => {
           .catch(() => false)
         expect(mobileMenuVisible || navLinksVisible).toBe(true)
       } else {
-        // Desktop should have visible nav links
+        // Desktop should have visible nav links (Home, Handheld, PC)
         await expect(homePage.homeLink).toBeVisible()
         await expect(homePage.handheldLink).toBeVisible()
-        await expect(homePage.gamesLink).toBeVisible()
+        await expect(homePage.pcLink).toBeVisible()
       }
-
-      console.log(`Verified branding on ${pageInfo.name} page`)
     }
   })
 
@@ -325,13 +274,7 @@ test.describe('Modern Content Display Tests', () => {
 
         // At least some footer content should be present
         expect(hasAboutLink || hasCommunityLink || hasCopyright).toBe(true)
-
-        console.log(`Verified footer content on ${pagePath}`)
       } catch {
-        console.log(
-          `Footer not immediately visible on ${pagePath}, checking for alternative footer structure`,
-        )
-
         // Fallback: check if page has any footer-like content at the bottom
         const hasCopyright = await page.getByText(/© \d{4} emuready/i).isVisible({ timeout: 2000 })
         // Use nth() to avoid multiple element matches
@@ -345,26 +288,19 @@ test.describe('Modern Content Display Tests', () => {
   })
 
   test('should handle empty states appropriately', async ({ page }) => {
-    // This test would check how the application handles scenarios with no content
     const gamesPage = new GamesPage(page)
     await gamesPage.goto()
 
     const gameCount = await gamesPage.getGameCount()
+    test.skip(gameCount > 0, 'Games page has content - empty state test not applicable')
 
-    if (gameCount === 0) {
-      // Should show appropriate empty state
-      console.log('Testing empty state for games page')
+    // Page should still be functional
+    await gamesPage.verifyPageLoaded()
 
-      // Page should still be functional
-      await gamesPage.verifyPageLoaded()
-
-      // Should have appropriate messaging
-      const bodyText = await page.textContent('body')
-      expect(bodyText).toBeTruthy()
-      expect(bodyText!.length).toBeGreaterThan(100) // Should have meaningful content
-    } else {
-      console.log(`Games page has content (${gameCount} games) - empty state test not applicable`)
-    }
+    // Should have appropriate messaging
+    const bodyText = await page.textContent('body')
+    expect(bodyText).toBeTruthy()
+    expect(bodyText!.length).toBeGreaterThan(100)
   })
 
   test('should display page titles correctly', async ({ page }) => {
@@ -379,8 +315,6 @@ test.describe('Modern Content Display Tests', () => {
 
       const title = await page.title()
       expect(title).toMatch(pageInfo.expectedTitle)
-
-      console.log(`Page title for ${pageInfo.path}: "${title}"`)
     }
   })
 })
@@ -403,8 +337,6 @@ test.describe('Modern Responsive Design Tests', () => {
 
     const gamesPage = new GamesPage(page)
     await gamesPage.verifyPageLoaded()
-
-    console.log('Tablet viewport test completed successfully')
   })
 
   test('should work correctly on mobile viewport', async ({ page }) => {
@@ -452,18 +384,8 @@ test.describe('Modern Responsive Design Tests', () => {
       .isVisible({ timeout: 2000 })
       .catch(() => false)
     if (hasMobileMenu) {
-      console.log('Mobile menu found - testing interaction')
-      try {
-        await homePage.openMobileMenu()
-        console.log('Mobile menu opened successfully')
-      } catch {
-        console.log('Mobile menu interaction failed - may be expected in some implementations')
-      }
-    } else {
-      console.log('Mobile menu not found - desktop navigation may be shown')
+      await homePage.openMobileMenu()
     }
-
-    console.log('Mobile viewport test completed successfully')
   })
 
   test('should handle viewport changes gracefully', async ({ page }) => {
@@ -484,7 +406,5 @@ test.describe('Modern Responsive Design Tests', () => {
 
     // Page should remain functional throughout
     await expect(page.getByText(/emuready/i).first()).toBeVisible()
-
-    console.log('Viewport change test completed successfully')
   })
 })

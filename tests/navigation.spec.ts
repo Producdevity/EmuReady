@@ -42,27 +42,13 @@ test.describe('Modern Navigation Tests', () => {
     await homePage.goto()
 
     await expect(homePage.heroHeading).toBeVisible()
-    await expect(homePage.trustedReportsSection).toBeVisible()
-    await expect(homePage.performanceMetricsSection).toBeVisible()
-    await expect(homePage.communityDrivenSection).toBeVisible()
+    await expect(homePage.latestReportsSection).toBeVisible()
 
     // Test Games Page
     const gamesPage = new GamesPage(page)
     await gamesPage.goto()
 
     await expect(gamesPage.pageHeading).toBeVisible()
-    // Wait for games to load before checking headings
-    await page.waitForTimeout(2000)
-    // Games page has individual game headings, not a filters heading
-    const gameHeadingCount = await gamesPage.gameHeadings.count()
-    // Games page might be empty, which is okay
-    if (gameHeadingCount === 0) {
-      console.log('No games found on games page - empty state')
-      // Verify at least the page heading is visible
-      await expect(gamesPage.pageHeading).toBeVisible()
-    } else {
-      expect(gameHeadingCount).toBeGreaterThan(0)
-    }
 
     // Test Listings Page
     const listingsPage = new ListingsPage(page)
@@ -168,7 +154,7 @@ test.describe('Modern Page Content Tests', () => {
 
       // Verify search was performed (URL change or results update)
       // The page should either show results or no results message
-      await page.waitForTimeout(2000)
+      await page.waitForLoadState('domcontentloaded')
 
       const hasResults = (await gamesPage.getGameCount()) > 0
       const hasNoResults = await gamesPage.noGamesMessage.isVisible()
@@ -176,8 +162,8 @@ test.describe('Modern Page Content Tests', () => {
       // Either results or no results message should be shown
       expect(hasResults || hasNoResults).toBe(true)
     } catch {
-      // Search not available on this page, which is fine
-      console.log('Search functionality not available on games page')
+      // Search not available on this page - verify page is still functional
+      await gamesPage.verifyPageLoaded()
     }
   })
 
@@ -188,21 +174,24 @@ test.describe('Modern Page Content Tests', () => {
     // Focus on first navigation link
     await page.keyboard.press('Tab')
 
-    // Navigate through main menu items with Tab
+    // Navigate through main menu items with Tab and collect focused link texts
     const navigationLinks = ['Home', 'Handheld', 'PC', 'Games', 'Emulators']
+    const focusedTexts: string[] = []
 
-    for (const linkText of navigationLinks) {
-      // Check if the expected link is focused
-      const focusedElement = await page.locator(':focus')
+    for (const _linkText of navigationLinks) {
+      const focusedElement = page.locator(':focus')
       const text = await focusedElement.textContent()
-
-      if (text?.toLowerCase().includes(linkText.toLowerCase())) {
-        // Expected link is focused
-        expect(true).toBe(true)
+      if (text) {
+        focusedTexts.push(text.trim().toLowerCase())
       }
-
       await page.keyboard.press('Tab')
     }
+
+    // At least one navigation link should have received focus during tabbing
+    const matchedLinks = navigationLinks.filter((link) =>
+      focusedTexts.some((text) => text.includes(link.toLowerCase())),
+    )
+    expect(matchedLinks.length).toBeGreaterThan(0)
   })
 
   test('should handle browser back and forward navigation', async ({ page }) => {
@@ -247,16 +236,14 @@ test.describe('Modern Page Content Tests', () => {
     // Open mobile menu
     await homePage.mobileMenuButton.click()
 
-    // Wait for animation and verify menu is visible
-    await page.waitForTimeout(600) // Wait for 500ms animation
+    // Verify menu is visible after animation
     const mobileMenuDiv = page.locator('.md\\:hidden').filter({ hasText: 'Handheld' }).last()
     await expect(mobileMenuDiv).toHaveClass(/opacity-100/)
 
     // Close menu by clicking the button again (toggle)
     await homePage.mobileMenuButton.click()
 
-    // Wait for animation and verify menu is hidden
-    await page.waitForTimeout(600)
+    // Verify menu is hidden after animation
     await expect(mobileMenuDiv).toHaveClass(/opacity-0/)
   })
 })
