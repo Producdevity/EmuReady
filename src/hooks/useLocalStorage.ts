@@ -11,21 +11,7 @@ export function useLocalStorage<T>(
 ) {
   const [isHydrated, setIsHydrated] = useState(false)
 
-  const [storedValue, setStoredValue] = useState<T>(() => {
-    if (!enabled || typeof window === 'undefined') return initialValue
-    try {
-      const item = window.localStorage.getItem(key)
-      if (!item) return initialValue
-
-      if (schema) {
-        return safeParseJSON(item, schema, initialValue)
-      }
-      return JSON.parse(item)
-    } catch {
-      // Silent fail during initialization, handle errors in useEffect
-      return initialValue
-    }
-  })
+  const [storedValue, setStoredValue] = useState<T>(initialValue)
 
   // Use a ref to store the current value to avoid circular dependencies
   const storedValueRef = useRef(storedValue)

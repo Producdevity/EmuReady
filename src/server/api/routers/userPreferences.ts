@@ -1,4 +1,3 @@
-import { ResourceError, AppError } from '@/lib/errors'
 import {
   UpdateUserPreferencesSchema,
   AddDevicePreferenceSchema,
@@ -7,242 +6,47 @@ import {
   BulkUpdateSocPreferencesSchema,
 } from '@/schemas/userPreferences'
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/api/trpc'
-import { sanitizeBio } from '@/utils/sanitization'
+import { UserPreferencesRepository } from '@/server/repositories/user-preferences.repository'
 
 export const userPreferencesRouter = createTRPCRouter({
   get: publicProcedure.query(async ({ ctx }) => {
-    const sessionUser = ctx.session?.user
+    if (!ctx.session?.user) return null
 
-    if (!sessionUser) return null
-
-    const user = await ctx.prisma.user.findUnique({
-      where: { id: sessionUser.id },
-      select: {
-        id: true,
-        bio: true,
-        defaultToUserDevices: true,
-        defaultToUserSocs: true,
-        notifyOnNewListings: true,
-        showNsfw: true,
-        devicePreferences: {
-          select: {
-            id: true,
-            deviceId: true,
-            device: {
-              select: {
-                id: true,
-                modelName: true,
-                brand: { select: { id: true, name: true } },
-                soc: { select: { id: true, name: true, manufacturer: true } },
-              },
-            },
-          },
-        },
-        socPreferences: {
-          select: {
-            id: true,
-            socId: true,
-            soc: { select: { id: true, name: true, manufacturer: true } },
-          },
-        },
-      },
-    })
-
-    return user ?? ResourceError.user.notFound()
+    const repository = new UserPreferencesRepository(ctx.prisma)
+    return repository.get(ctx.session.user.id)
   }),
 
   update: protectedProcedure.input(UpdateUserPreferencesSchema).mutation(async ({ ctx, input }) => {
-    const user = await ctx.prisma.user.findUnique({
-      where: { id: ctx.session.user.id },
-    })
-
-    if (!user) return ResourceError.user.notFound()
-
-    // Sanitize bio if provided
-    const updateData: {
-      defaultToUserDevices?: boolean
-      defaultToUserSocs?: boolean
-      notifyOnNewListings?: boolean
-      showNsfw?: boolean
-      bio?: string
-    } = {}
-
-    if (input.defaultToUserDevices !== undefined) {
-      updateData.defaultToUserDevices = input.defaultToUserDevices
-    }
-    if (input.defaultToUserSocs !== undefined) {
-      updateData.defaultToUserSocs = input.defaultToUserSocs
-    }
-    if (input.notifyOnNewListings !== undefined) {
-      updateData.notifyOnNewListings = input.notifyOnNewListings
-    }
-    if (input.showNsfw !== undefined) {
-      updateData.showNsfw = input.showNsfw
-    }
-    if (input.bio !== undefined) {
-      updateData.bio = sanitizeBio(input.bio)
-    }
-
-    return ctx.prisma.user.update({
-      where: { id: user.id },
-      data: updateData,
-      select: {
-        id: true,
-        bio: true,
-        defaultToUserDevices: true,
-        defaultToUserSocs: true,
-        notifyOnNewListings: true,
-        showNsfw: true,
-      },
-    })
+    const repository = new UserPreferencesRepository(ctx.prisma)
+    return repository.update(ctx.session.user.id, input)
   }),
 
   addDevice: protectedProcedure
     .input(AddDevicePreferenceSchema)
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: ctx.session.user.id },
-      })
-
-      if (!user) return ResourceError.user.notFound()
-
-      // Check if device exists
-      const device = await ctx.prisma.device.findUnique({
-        where: { id: input.deviceId },
-      })
-
-      if (!device) return ResourceError.device.notFound()
-
-      // Check if preference already exists
-      const existingPreference = await ctx.prisma.userDevicePreference.findUnique({
-        where: {
-          userId_deviceId: {
-            userId: user.id,
-            deviceId: input.deviceId,
-          },
-        },
-      })
-
-      if (existingPreference) return ResourceError.userDevicePreference.alreadyExists()
-
-      return ctx.prisma.userDevicePreference.create({
-        data: { userId: user.id, deviceId: input.deviceId },
-        include: { device: { include: { brand: true, soc: true } } },
-      })
+      const repository = new UserPreferencesRepository(ctx.prisma)
+      return repository.addDevice(ctx.session.user.id, input.deviceId)
     }),
 
   removeDevice: protectedProcedure
     .input(RemoveDevicePreferenceSchema)
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: ctx.session.user.id },
-      })
-
-      if (!user) return ResourceError.user.notFound()
-
-      const preference = await ctx.prisma.userDevicePreference.findUnique({
-        where: {
-          userId_deviceId: { userId: user.id, deviceId: input.deviceId },
-        },
-      })
-
-      if (!preference) {
-        return ResourceError.userDevicePreference.notInPreferences()
-      }
-
-      await ctx.prisma.userDevicePreference.delete({
-        where: { id: preference.id },
-      })
-
-      return { success: true }
+      const repository = new UserPreferencesRepository(ctx.prisma)
+      return repository.removeDevice(ctx.session.user.id, input.deviceId)
     }),
 
   bulkUpdateDevices: protectedProcedure
     .input(BulkUpdateDevicePreferencesSchema)
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: ctx.session.user.id },
-      })
-
-      if (!user) return ResourceError.user.notFound()
-
-      // Validate all devices exist
-      if (input.deviceIds.length > 0) {
-        const devices = await ctx.prisma.device.findMany({
-          where: { id: { in: input.deviceIds } },
-        })
-
-        if (devices.length !== input.deviceIds.length) {
-          const foundIds = new Set(devices.map((d) => d.id))
-          const missingIds = input.deviceIds.filter((id) => !foundIds.has(id))
-          return AppError.badRequest(`Device(s) not found: ${missingIds.join(', ')}`)
-        }
-      }
-
-      // Remove existing preferences
-      await ctx.prisma.userDevicePreference.deleteMany({
-        where: { userId: user.id },
-      })
-
-      // Add new preferences
-      if (input.deviceIds.length > 0) {
-        await ctx.prisma.userDevicePreference.createMany({
-          data: input.deviceIds.map((deviceId) => ({
-            userId: user.id,
-            deviceId,
-          })),
-        })
-      }
-
-      // Return updated preferences
-      return ctx.prisma.userDevicePreference.findMany({
-        where: { userId: user.id },
-        include: { device: { include: { brand: true, soc: true } } },
-      })
+      const repository = new UserPreferencesRepository(ctx.prisma)
+      return repository.bulkUpdateDevices(ctx.session.user.id, input.deviceIds)
     }),
 
   bulkUpdateSocs: protectedProcedure
     .input(BulkUpdateSocPreferencesSchema)
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: ctx.session.user.id },
-      })
-
-      if (!user) return ResourceError.user.notFound()
-
-      // Validate all SOCs exist
-      if (input.socIds.length > 0) {
-        const socs = await ctx.prisma.soC.findMany({
-          where: { id: { in: input.socIds } },
-        })
-
-        if (socs.length !== input.socIds.length) {
-          const foundIds = new Set(socs.map((s) => s.id))
-          const missingIds = input.socIds.filter((id) => !foundIds.has(id))
-          return AppError.badRequest(`SOC(s) not found: ${missingIds.join(', ')}`)
-        }
-      }
-
-      // Remove existing preferences
-      await ctx.prisma.userSocPreference.deleteMany({
-        where: { userId: user.id },
-      })
-
-      // Add new preferences
-      if (input.socIds.length > 0) {
-        await ctx.prisma.userSocPreference.createMany({
-          data: input.socIds.map((socId) => ({
-            userId: user.id,
-            socId,
-          })),
-        })
-      }
-
-      // Return updated preferences
-      return ctx.prisma.userSocPreference.findMany({
-        where: { userId: user.id },
-        include: { soc: true },
-      })
+      const repository = new UserPreferencesRepository(ctx.prisma)
+      return repository.bulkUpdateSocs(ctx.session.user.id, input.socIds)
     }),
 })
 

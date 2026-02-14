@@ -17,6 +17,7 @@ interface Props {
   label?: string
   className?: string
   triggerClassName?: string
+  position?: 'bottom' | 'top'
 }
 
 export function Dropdown(props: Props) {
@@ -68,7 +69,12 @@ export function Dropdown(props: Props) {
       </button>
 
       {isOpen && (
-        <div className="absolute z-20 mt-1 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-xl backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900">
+        <div
+          className={cn(
+            'absolute z-50 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-xl backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900',
+            props.position === 'top' ? 'bottom-full mb-1' : 'mt-1',
+          )}
+        >
           {props.options.map((option) => (
             <div
               key={option.value}

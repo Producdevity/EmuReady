@@ -1,7 +1,7 @@
 'use client'
 
 import { notFound, useParams } from 'next/navigation'
-import { LoadingSpinner } from '@/components/ui'
+import { ListingDetailSkeleton } from '@/app/listings/shared/components'
 import { api } from '@/lib/api'
 import sanitizeForClient from '@/utils/sanitizeForClient'
 import PcListingDetailsClient from './components/PcListingDetailsClient'
@@ -14,13 +14,7 @@ function PcListingDetailsPage() {
   })
 
   if (pcListingQuery.isPending) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
-        <div className="max-w-6xl mx-auto">
-          <LoadingSpinner text="Loading PC Compatibility Report details..." />
-        </div>
-      </div>
-    )
+    return <ListingDetailSkeleton variant="pc" />
   }
 
   if (pcListingQuery.error || !pcListingQuery.data) return notFound()

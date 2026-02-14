@@ -1,14 +1,14 @@
 {
   "name": "emuready",
-  "version": "0.12.9",
+  "version": "0.12.10",
   "private": false,
   "license": "GPL-3.0-or-later",
   "author": "Producdevity",
   "scripts": {
     "analyze": "ANALYZE=true next build",
     "analyze:turbo": "ANALYZE=true next build --turbopack",
-    "build": "next build",
-    "build:turbo": "next build --turbopack",
+    "build": "npm run db:generate && next build",
+    "build:turbo": "npm run db:generate && next build --turbopack",
     "check": "npm run lint:fix && npm run types",
     "clean": "rm -rf .next && rm -rf node_modules/.cache && rm -rf .eslintcache && rm -rf tsconfig.tsbuildinfo",
     "clean:all": "npm run clean && rm -rf node_modules",

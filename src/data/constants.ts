@@ -12,7 +12,15 @@ export const PAGINATION = {
   MAX_LIMIT: 100,
   ADMIN_TABLE_LIMIT: 20,
   LARGE_BATCH_SIZE: 50,
+  // Public page limits
+  PUBLIC_DEFAULT_LIMIT: 10,
+  PUBLIC_MAX_LIMIT_LISTINGS: 100,
+  PUBLIC_MAX_LIMIT_PC_LISTINGS: 50,
 } as const
+
+// Page size options for public listings pages
+export const PAGE_SIZE_OPTIONS = [10, 25, 50] as const
+export type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number]
 
 // Cache durations in milliseconds TODO: use wherever possible
 export const CACHE_DURATIONS = {

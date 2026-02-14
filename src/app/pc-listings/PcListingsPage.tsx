@@ -5,10 +5,16 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Suspense, useState } from 'react'
 import NoListingsFound from '@/app/listings/components/NoListingsFound'
-import { MobileFiltersFab, MobileFilterSheet } from '@/app/listings/shared/components'
+import {
+  MobileFiltersFab,
+  MobileFilterSheet,
+  ListingsTableSkeleton,
+} from '@/app/listings/shared/components'
+import CommunitySupportBanner from '@/components/banners/CommunitySupportBanner'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   PerformanceBadge,
+  PageSizeSelector,
   Pagination,
   LoadingSpinner,
   LocalizedDate,
@@ -95,7 +101,7 @@ function PcListingsPage() {
 
   const filterParams: RouterInput['pcListings']['get'] = {
     page: listingsState.page,
-    limit: 10,
+    limit: listingsState.limit,
     ...filterNullAndEmpty({
       cpuIds: listingsState.cpuIds.length > 0 ? listingsState.cpuIds : undefined,
       gpuIds: listingsState.gpuIds.length > 0 ? listingsState.gpuIds : undefined,
@@ -112,7 +118,9 @@ function PcListingsPage() {
     }),
   }
 
-  const listingsQuery = api.pcListings.get.useQuery(filterParams)
+  const listingsQuery = api.pcListings.get.useQuery(filterParams, {
+    placeholderData: (previous) => previous,
+  })
 
   const handleCpuChange = (values: string[]) => {
     listingsState.setCpuIds(values)
@@ -155,7 +163,7 @@ function PcListingsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <main className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="lg:flex">
         {/* Desktop Sidebar */}
         <div className="hidden lg:block">
@@ -324,116 +332,128 @@ function PcListingsPage() {
             </div>
           </div>
 
+          <CommunitySupportBanner variant="list" page="pc-listings" />
+
           <div className="overflow-x-auto rounded-2xl shadow-xl bg-white/90 dark:bg-gray-900/90">
-            {listingsQuery.isPending ? (
-              <LoadingSpinner text="Loading PC listings..." />
-            ) : (
-              <table className="table-auto lg:table-fixed min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
-                <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
-                  <tr>
-                    {columnVisibility.isColumnVisible('game') && (
-                      <SortableHeader
-                        label="Game"
-                        field="game.title"
-                        currentSortField={listingsState.sortField}
-                        currentSortDirection={listingsState.sortDirection}
-                        onSort={listingsState.handleSort}
-                      />
-                    )}
-                    {columnVisibility.isColumnVisible('system') && (
-                      <SortableHeader
-                        label="System"
-                        field="game.system.name"
-                        currentSortField={listingsState.sortField}
-                        currentSortDirection={listingsState.sortDirection}
-                        onSort={listingsState.handleSort}
-                      />
-                    )}
-                    {columnVisibility.isColumnVisible('cpu') && (
-                      <SortableHeader
-                        label="CPU"
-                        field="cpu"
-                        currentSortField={listingsState.sortField}
-                        currentSortDirection={listingsState.sortDirection}
-                        onSort={listingsState.handleSort}
-                      />
-                    )}
-                    {columnVisibility.isColumnVisible('gpu') && (
-                      <SortableHeader
-                        label="GPU"
-                        field="gpu"
-                        currentSortField={listingsState.sortField}
-                        currentSortDirection={listingsState.sortDirection}
-                        onSort={listingsState.handleSort}
-                      />
-                    )}
-                    {columnVisibility.isColumnVisible('memory') && (
-                      <SortableHeader
-                        label="Memory"
-                        field="memorySize"
-                        currentSortField={listingsState.sortField}
-                        currentSortDirection={listingsState.sortDirection}
-                        onSort={listingsState.handleSort}
-                      />
-                    )}
-                    {columnVisibility.isColumnVisible('os') && (
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                        OS
-                      </th>
-                    )}
-                    {columnVisibility.isColumnVisible('emulator') && (
-                      <SortableHeader
-                        label="Emulator"
-                        field="emulator.name"
-                        currentSortField={listingsState.sortField}
-                        currentSortDirection={listingsState.sortDirection}
-                        onSort={listingsState.handleSort}
-                      />
-                    )}
-                    {columnVisibility.isColumnVisible('performance') && (
-                      <SortableHeader
-                        label="Performance"
-                        field="performance.rank"
-                        currentSortField={listingsState.sortField}
-                        currentSortDirection={listingsState.sortDirection}
-                        onSort={listingsState.handleSort}
-                      />
-                    )}
-                    {columnVisibility.isColumnVisible('verified') && (
-                      <SortableHeader
-                        label="Verified"
-                        field="successRate"
-                        currentSortField={listingsState.sortField}
-                        currentSortDirection={listingsState.sortDirection}
-                        onSort={listingsState.handleSort}
-                      />
-                    )}
-                    {columnVisibility.isColumnVisible('author') && (
-                      <SortableHeader
-                        label="Author"
-                        field="author.name"
-                        currentSortField={listingsState.sortField}
-                        currentSortDirection={listingsState.sortDirection}
-                        onSort={listingsState.handleSort}
-                      />
-                    )}
-                    {columnVisibility.isColumnVisible('posted') && (
-                      <SortableHeader
-                        label="Posted"
-                        field="createdAt"
-                        currentSortField={listingsState.sortField}
-                        currentSortDirection={listingsState.sortDirection}
-                        onSort={listingsState.handleSort}
-                      />
-                    )}
-                    {columnVisibility.isColumnVisible('actions') && (
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                        Actions
-                      </th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            <table className="table-auto lg:table-fixed min-w-full divide-y divide-gray-200 dark:divide-gray-800 rounded-2xl">
+              <thead className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800">
+                <tr>
+                  {columnVisibility.isColumnVisible('game') && (
+                    <SortableHeader
+                      label="Game"
+                      field="game.title"
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
+                      onSort={listingsState.handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('system') && (
+                    <SortableHeader
+                      label="System"
+                      field="game.system.name"
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
+                      onSort={listingsState.handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('cpu') && (
+                    <SortableHeader
+                      label="CPU"
+                      field="cpu"
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
+                      onSort={listingsState.handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('gpu') && (
+                    <SortableHeader
+                      label="GPU"
+                      field="gpu"
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
+                      onSort={listingsState.handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('memory') && (
+                    <SortableHeader
+                      label="Memory"
+                      field="memorySize"
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
+                      onSort={listingsState.handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('os') && (
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                      OS
+                    </th>
+                  )}
+                  {columnVisibility.isColumnVisible('emulator') && (
+                    <SortableHeader
+                      label="Emulator"
+                      field="emulator.name"
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
+                      onSort={listingsState.handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('performance') && (
+                    <SortableHeader
+                      label="Performance"
+                      field="performance.rank"
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
+                      onSort={listingsState.handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('verified') && (
+                    <SortableHeader
+                      label="Verified"
+                      field="successRate"
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
+                      onSort={listingsState.handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('author') && (
+                    <SortableHeader
+                      label="Author"
+                      field="author.name"
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
+                      onSort={listingsState.handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('posted') && (
+                    <SortableHeader
+                      label="Posted"
+                      field="createdAt"
+                      currentSortField={listingsState.sortField}
+                      currentSortDirection={listingsState.sortDirection}
+                      onSort={listingsState.handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('actions') && (
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                      Actions
+                    </th>
+                  )}
+                </tr>
+              </thead>
+              {listingsQuery.isPending && !listingsQuery.data ? (
+                <ListingsTableSkeleton
+                  rowCount={listingsState.limit}
+                  visibleColumns={PC_LISTINGS_COLUMNS.filter((col) =>
+                    columnVisibility.isColumnVisible(col.key),
+                  ).map((col) => col.key)}
+                />
+              ) : (
+                <tbody
+                  className={cn(
+                    'divide-y divide-gray-200 dark:divide-gray-700 transition-opacity duration-200',
+                    listingsQuery.isFetching && 'opacity-50',
+                  )}
+                >
                   {listingsQuery.data?.pcListings.map((listing) => (
                     <tr
                       key={listing.id}
@@ -591,15 +611,15 @@ function PcListingsPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            )}
+              )}
+            </table>
 
             {!listingsQuery.isPending && listingsQuery.data?.pcListings.length === 0 && (
               <NoListingsFound />
             )}
           </div>
 
-          {listingsQuery.data?.pagination && listingsQuery.data?.pagination?.pages > 1 && (
+          {listingsQuery.data?.pagination && (
             <Pagination
               page={listingsState.page}
               totalPages={listingsQuery.data.pagination.pages}
@@ -608,6 +628,13 @@ function PcListingsPage() {
               onPageChange={(newPage) => {
                 listingsState.setPage(newPage)
               }}
+              pageSizeSelector={
+                <PageSizeSelector
+                  value={listingsState.limit}
+                  onChange={listingsState.setLimit}
+                  disabled={listingsQuery.isFetching}
+                />
+              }
             />
           )}
         </section>

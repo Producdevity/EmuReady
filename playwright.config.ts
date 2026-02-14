@@ -5,6 +5,8 @@ import dotenv from 'dotenv'
 /** Read environment variables from file. */
 dotenv.config({ path: path.resolve(__dirname, '.env.test.local') })
 
+const isCI = !!process.env.CI
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -15,13 +17,13 @@ export default defineConfig({
   /* Fail the build on CI when test.only is left on. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only - 1 retry helps catch flaky tests without hiding consistent issues */
-  retries: process.env.CI ? 1 : 0,
+  retries: isCI ? 1 : 0,
   /* Conservative approach for CI stability - 1 worker ensures each test gets full resources */
-  workers: process.env.CI ? 1 : undefined,
+  workers: isCI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'list',
   /* Test timeout */
-  timeout: process.env.CI ? 60 * 1000 : 30 * 1000, // 60 seconds in CI, 30 locally
+  timeout: isCI ? 60 * 1000 : 30 * 1000, // 60 seconds in CI, 30 locally
 
   /* Global setup - runs once before all tests */
   globalSetup: require.resolve('./tests/global.setup.ts'),
@@ -60,10 +62,12 @@ export default defineConfig({
   webServer: process.env.PWTEST_SKIP_WEBSERVER
     ? undefined
     : {
-        command: process.env.CI ? 'npm run build:turbo && npm run start' : 'npm run dev',
+        command:
+          process.env.PWTEST_SERVER_COMMAND ||
+          (isCI ? 'npm run start' : 'npm run build && npm run start'),
         url: 'http://localhost:3000',
-        reuseExistingServer: !process.env.CI,
-        timeout: process.env.CI ? 180 * 1000 : 120 * 1000, // 3 minutes in CI, 2 minutes locally
+        reuseExistingServer: !isCI,
+        timeout: isCI ? 180 * 1000 : 300 * 1000, // 3 minutes in CI, 5 minutes locally (includes build)
         stdout: 'pipe',
         stderr: 'pipe',
       },
