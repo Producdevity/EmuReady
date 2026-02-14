@@ -222,6 +222,7 @@ const devices: DeviceData[] = [
   },
   { brandName: 'Retroid', modelName: 'Pocket 4', socName: 'Dimensity 900' },
   { brandName: 'Retroid', modelName: 'Pocket 5', socName: 'Snapdragon 865' },
+  { brandName: 'Retroid', modelName: 'Pocket 6', socName: 'Snapdragon 8 Gen 2' },
   {
     brandName: 'Retroid',
     modelName: 'Pocket Classic',
@@ -474,9 +475,13 @@ const devices: DeviceData[] = [
   },
 
   // Google Pixel
+  { brandName: 'Google', modelName: 'Pixel 10 Pro XL', socName: 'Tensor G5' },
+  { brandName: 'Google', modelName: 'Pixel 10 Pro', socName: 'Tensor G5' },
+  { brandName: 'Google', modelName: 'Pixel 10', socName: 'Tensor G5' },
   { brandName: 'Google', modelName: 'Pixel 9 Pro XL', socName: 'Tensor G4' },
   { brandName: 'Google', modelName: 'Pixel 9 Pro', socName: 'Tensor G4' },
   { brandName: 'Google', modelName: 'Pixel 9', socName: 'Tensor G4' },
+  { brandName: 'Google', modelName: 'Pixel 9a', socName: 'Tensor G4' },
   { brandName: 'Google', modelName: 'Pixel 8a', socName: 'Tensor G3' },
   { brandName: 'Google', modelName: 'Pixel 8 Pro', socName: 'Tensor G3' },
   { brandName: 'Google', modelName: 'Pixel 8', socName: 'Tensor G3' },
