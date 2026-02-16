@@ -1,4 +1,4 @@
-import { clerkMiddleware } from '@clerk/nextjs/server'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { getAllowedOrigins } from '@/lib/cors'
 import { ms } from '@/utils/time'
@@ -189,7 +189,13 @@ function protectTRPCAPI(req: NextRequest): NextResponse | null {
   return response
 }
 
-const handleClerkAuth = clerkMiddleware((auth, req) => {
+const isAdminRoute = createRouteMatcher(['/admin(.*)'])
+
+const handleClerkAuth = clerkMiddleware(async (auth, req) => {
+  if (isAdminRoute(req)) {
+    await auth.protect()
+  }
+
   const apiProtectionResponse = protectTRPCAPI(req)
   if (apiProtectionResponse) return apiProtectionResponse
   return
