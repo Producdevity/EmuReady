@@ -1,6 +1,5 @@
 'use client'
 
-import { useMemo } from 'react'
 import { AuthorRiskWarningBanner, Modal, Button, Input } from '@/components/ui'
 import { useEmulatorLogos } from '@/hooks'
 import { type AuthorRiskProfile } from '@/schemas/authorRisk'
@@ -39,12 +38,7 @@ export function ListingApprovalModal(props: Props) {
   const emulatorLogos = useEmulatorLogos()
   const isHandheld = isHandheldListing(props.listing)
 
-  const hasRisk = useMemo(() => {
-    if (props.authorRiskProfile) {
-      return props.authorRiskProfile.highestSeverity !== null
-    }
-    return false
-  }, [props.authorRiskProfile])
+  const hasRisk = props.authorRiskProfile?.highestSeverity != null
 
   const actionText = props.action === 'approve' ? 'Approve' : 'Reject'
   const listingTypeText = isHandheld ? 'Handheld' : 'PC'
