@@ -2,7 +2,23 @@ import { ResourceError } from '@/lib/errors'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { Role } from '@orm'
 import { BaseRepository } from './base.repository'
-import type { Prisma, PrismaClient } from '@orm'
+import type { Prisma, PrismaClient, UserBan } from '@orm'
+
+type BanWithDetails = UserBan & {
+  user: {
+    id: string
+    name: string | null
+    email: string
+    profileImage: string | null
+    role: Role
+    createdAt: Date
+  }
+  bannedBy: { id: string; name: string | null; email: string }
+  unbannedBy: { id: string; name: string | null; email: string } | null
+}
+
+type BanStatusDetailed = { isBanned: boolean; ban: BanWithDetails | null }
+type BanStatusBasic = { isBanned: boolean; ban: UserBan | null }
 
 export class UserBansRepository extends BaseRepository {
   private static readonly ROLE_HIERARCHY = [
@@ -54,20 +70,27 @@ export class UserBansRepository extends BaseRepository {
     return { total, active, expired, permanent, temporary }
   }
 
+  async checkBanStatus(userId: string, includeDetails: true): Promise<BanStatusDetailed>
+  async checkBanStatus(userId: string, includeDetails?: false): Promise<BanStatusBasic>
   async checkBanStatus(userId: string, includeDetails = false) {
-    const ban = await this.prisma.userBan.findFirst({
-      where: {
-        userId,
-        isActive: true,
-        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-      },
-      include: includeDetails ? UserBansRepository.includes.default : undefined,
-    })
+    const activeBanFilter = {
+      userId,
+      isActive: true,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+    } satisfies Prisma.UserBanWhereInput
 
-    return {
-      isBanned: !!ban,
-      ban,
+    if (includeDetails) {
+      const ban = await this.prisma.userBan.findFirst({
+        where: activeBanFilter,
+        include: UserBansRepository.includes.default,
+      })
+      return { isBanned: !!ban, ban } as BanStatusDetailed
     }
+
+    const ban = await this.prisma.userBan.findFirst({
+      where: activeBanFilter,
+    })
+    return { isBanned: !!ban, ban } as BanStatusBasic
   }
 
   async create(data: {

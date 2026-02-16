@@ -2,7 +2,7 @@
 
 import { type UserResource } from '@clerk/types'
 import { motion } from 'framer-motion'
-import { Pencil, ExternalLink, Shield, Calendar, UserIcon, Award } from 'lucide-react'
+import { ExternalLink, Shield, Calendar, UserIcon, Award } from 'lucide-react'
 import Link from 'next/link'
 import { Button, TrustLevelBadge, LocalizedDate } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -16,8 +16,6 @@ interface Props {
   profileData?: RouterOutput['users']['getProfile'] | null
   currentImage?: string | null
   onImageUpload?: (imageUrl: string) => void
-  isEditing?: boolean
-  onEditToggle?: () => void
 }
 
 function ProfileHeader(props: Props) {
@@ -85,23 +83,10 @@ function ProfileHeader(props: Props) {
                     size="sm"
                     rounded
                     asChild
-                    className="bg-white/15 hover:bg-white/25 text-white backdrop-blur-sm"
+                    icon={ExternalLink}
+                    className="bg-white/15 hover:bg-white/25 text-white shadow-lg backdrop-blur-sm"
                   >
-                    <Link href={`/users/${props.profileData.id}`}>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      View Public Profile
-                    </Link>
-                  </Button>
-                )}
-                {props.onEditToggle && (
-                  <Button
-                    variant="ghost"
-                    rounded
-                    onClick={props.onEditToggle}
-                    className="bg-white/20 hover:bg-white/30 text-white shadow-lg backdrop-blur-sm"
-                  >
-                    <Pencil className="w-4 h-4" />
-                    {props.isEditing ? 'Cancel' : 'Edit Profile'}
+                    <Link href={`/users/${props.profileData.id}`}>View Public Profile</Link>
                   </Button>
                 )}
               </div>
