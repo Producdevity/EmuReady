@@ -19,7 +19,16 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Modal, Code, Button, Badge, LoadingSpinner, Input, LocalizedDate } from '@/components/ui'
+import {
+  Modal,
+  Code,
+  Button,
+  Badge,
+  LoadingSpinner,
+  Input,
+  LocalizedDate,
+  UserBadgeItem,
+} from '@/components/ui'
 import { UI_CONSTANTS } from '@/data/constants'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { api } from '@/lib/api'
@@ -702,25 +711,14 @@ function UserDetailsModal(props: Props) {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {userQuery.data.userBadges.map((userBadge) => (
-                    <div
+                    <UserBadgeItem
                       key={userBadge.id}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200"
-                      title={userBadge.badge.description || userBadge.badge.name}
-                    >
-                      <div
-                        className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold"
-                        style={{
-                          backgroundColor: userBadge.color || userBadge.badge.color,
-                          fontSize: '11px',
-                        }}
-                      >
-                        {userBadge.badge.icon?.charAt(0) ||
-                          userBadge.badge.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                        {userBadge.badge.name}
-                      </span>
-                    </div>
+                      name={userBadge.badge.name}
+                      color={userBadge.color || userBadge.badge.color}
+                      icon={userBadge.badge.icon}
+                      description={userBadge.badge.description}
+                      size="md"
+                    />
                   ))}
                 </div>
               </div>

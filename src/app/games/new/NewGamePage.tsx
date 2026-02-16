@@ -1,7 +1,7 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { Database, Edit, Sparkles, ArrowRight } from 'lucide-react'
+import { Database, Pencil, PencilLine, Sparkles, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, type FormEvent } from 'react'
@@ -133,7 +133,7 @@ function AddGamePage() {
     },
     {
       id: 'manual',
-      icon: Edit,
+      icon: PencilLine,
       title: 'Manual Entry',
       badge: 'CURRENT',
       badgeColor: 'bg-blue-600',
@@ -227,7 +227,7 @@ function AddGamePage() {
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-2">
-              <Edit className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <Pencil className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Manual Entry Form
               </h2>

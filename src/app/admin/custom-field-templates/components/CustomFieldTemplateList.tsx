@@ -1,6 +1,6 @@
 'use client'
 
-import { Edit, Trash2, Eye, Copy } from 'lucide-react'
+import { Pencil, Trash2, Eye, Copy } from 'lucide-react'
 import { useState } from 'react'
 import { Button, Card, useConfirmDialog, LocalizedDate } from '@/components/ui'
 import { api } from '@/lib/api'
@@ -137,7 +137,7 @@ function CustomFieldTemplateList(props: Props) {
                   {expandedTemplates.has(template.id) ? 'Hide' : 'Show'} Fields
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => props.onEdit(template.id)}>
-                  <Edit className="h-4 w-4" />
+                  <Pencil className="h-4 w-4" />
                   Edit
                 </Button>
                 <Button

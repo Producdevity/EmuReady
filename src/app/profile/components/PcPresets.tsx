@@ -1,6 +1,6 @@
 'use client'
 
-import { Computer, Plus, Edit, Trash2 } from 'lucide-react'
+import { Computer, Plus, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Button, LoadingSpinner, useConfirmDialog, Card } from '@/components/ui'
 import { PC_OS_LABELS } from '@/data/pc-os'
@@ -119,7 +119,7 @@ function PcPresets() {
                       onClick={() => openModal(preset)}
                       className="h-8 w-8 p-0"
                     >
-                      <Edit className="w-4 h-4" />
+                      <Pencil className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="ghost"

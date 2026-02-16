@@ -2,8 +2,9 @@
 
 import { type UserResource } from '@clerk/types'
 import { motion } from 'framer-motion'
-import { Edit, Shield, Calendar, UserIcon, Award } from 'lucide-react'
-import { TrustLevelBadge, LocalizedDate } from '@/components/ui'
+import { Pencil, ExternalLink, Shield, Calendar, UserIcon, Award } from 'lucide-react'
+import Link from 'next/link'
+import { Button, TrustLevelBadge, LocalizedDate } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { type RouterOutput } from '@/types/trpc'
 import { getRoleColor } from '@/utils/badge-colors'
@@ -77,17 +78,33 @@ function ProfileHeader(props: Props) {
                 </div>
               </div>
 
-              {props.onEditToggle && (
-                <motion.button
-                  onClick={props.onEditToggle}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-2 px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-xl font-medium transition-all duration-200 shadow-lg backdrop-blur-sm"
-                >
-                  <Edit className="w-4 h-4" />
-                  {props.isEditing ? 'Cancel' : 'Edit Profile'}
-                </motion.button>
-              )}
+              <div className="flex items-center gap-3">
+                {props.profileData?.id && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    rounded
+                    asChild
+                    className="bg-white/15 hover:bg-white/25 text-white backdrop-blur-sm"
+                  >
+                    <Link href={`/users/${props.profileData.id}`}>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      View Public Profile
+                    </Link>
+                  </Button>
+                )}
+                {props.onEditToggle && (
+                  <Button
+                    variant="ghost"
+                    rounded
+                    onClick={props.onEditToggle}
+                    className="bg-white/20 hover:bg-white/30 text-white shadow-lg backdrop-blur-sm"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    {props.isEditing ? 'Cancel' : 'Edit Profile'}
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
