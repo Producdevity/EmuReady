@@ -15,8 +15,8 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { useState, useCallback, useMemo } from 'react'
+import { useParams, useSearchParams } from 'next/navigation'
+import { useEffect, useState, useMemo } from 'react'
 import { isArray, isString } from 'remeda'
 import { z } from 'zod'
 import { SystemIcon } from '@/components/icons'
@@ -27,6 +27,7 @@ import {
   PerformanceBadge,
   Pagination,
   LocalizedDate,
+  SuccessRateBar,
   TrustLevelBadge,
 } from '@/components/ui'
 import { Dropdown } from '@/components/ui/Dropdown'
@@ -51,32 +52,46 @@ interface ContributionHighlight {
 
 function UserDetailsPage() {
   const params = useParams()
-  const router = useRouter()
   const searchParams = useSearchParams()
 
   const userId = isString(params.id) ? params.id : isArray(params.id) ? params.id[0] : ''
 
-  // Get current tab from URL params
-  const activeTab = (searchParams.get('tab') as 'listings' | 'votes') || 'listings'
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-
-  // Pagination and filter state
-  const listingsPage = validateClientData(
-    parseInt(searchParams.get('listingsPage') || '1'),
-    z.number().int().positive(),
-    1,
+  const [activeTab, setActiveTab] = useState<'listings' | 'votes'>(
+    (searchParams.get('tab') as 'listings' | 'votes') || 'listings',
   )
-  const votesPage = validateClientData(
-    parseInt(searchParams.get('votesPage') || '1'),
-    z.number().int().positive(),
-    1,
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [listingsPage, setListingsPage] = useState(
+    validateClientData(
+      parseInt(searchParams.get('listingsPage') || '1'),
+      z.number().int().positive(),
+      1,
+    ),
+  )
+  const [votesPage, setVotesPage] = useState(
+    validateClientData(
+      parseInt(searchParams.get('votesPage') || '1'),
+      z.number().int().positive(),
+      1,
+    ),
   )
   const [searchFilter, setSearchFilter] = useState(searchParams.get('search') || '')
   const [deviceFilter, setDeviceFilter] = useState(searchParams.get('device') || '')
   const [emulatorFilter, setEmulatorFilter] = useState(searchParams.get('emulator') || '')
 
-  // Use proper debouncing - not useMemo with setTimeout
   const debouncedSearch = useDebouncedValue(searchFilter, 300)
+
+  // Keep URL in sync with state for shareability
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (activeTab !== 'listings') params.set('tab', activeTab)
+    if (listingsPage > 1) params.set('listingsPage', String(listingsPage))
+    if (votesPage > 1) params.set('votesPage', String(votesPage))
+    if (debouncedSearch) params.set('search', debouncedSearch)
+    if (deviceFilter) params.set('device', deviceFilter)
+    if (emulatorFilter) params.set('emulator', emulatorFilter)
+    const qs = params.toString()
+    window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname)
+  }, [activeTab, listingsPage, votesPage, debouncedSearch, deviceFilter, emulatorFilter])
 
   const userQuery = api.users.getUserById.useQuery({
     userId,
@@ -93,48 +108,26 @@ function UserDetailsPage() {
   const currentUserQuery = api.users.me.useQuery()
   const canViewBannedUsers = roleIncludesRole(currentUserQuery.data?.role, Role.MODERATOR)
 
-  // Update URL params when filters change
-  const updateUrlParams = useCallback(
-    (
-      updates: Partial<
-        Record<
-          'search' | 'tab' | 'device' | 'emulator' | 'listingsPage' | 'votesPage',
-          string | number | undefined
-        >
-      >,
-    ) => {
-      const newSearchParams = new URLSearchParams(searchParams.toString())
-
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value === undefined || value === '' || value === 1) {
-          newSearchParams.delete(key)
-        } else {
-          newSearchParams.set(key, String(value))
-        }
-      })
-
-      router.replace(`/users/${userId}?${newSearchParams.toString()}`)
-    },
-    [router, userId, searchParams],
-  )
-
   const handleTabChange = (tab: 'listings' | 'votes') => {
-    updateUrlParams({ tab, listingsPage: 1, votesPage: 1 })
+    setActiveTab(tab)
+    setListingsPage(1)
+    setVotesPage(1)
   }
 
   const handleSearchChange = (value: string) => {
     setSearchFilter(value)
-    updateUrlParams({ search: value, listingsPage: 1, votesPage: 1 })
+    setListingsPage(1)
+    setVotesPage(1)
   }
 
   const handleDeviceChange = (value: string) => {
     setDeviceFilter(value)
-    updateUrlParams({ device: value, listingsPage: 1 })
+    setListingsPage(1)
   }
 
   const handleEmulatorChange = (value: string) => {
     setEmulatorFilter(value)
-    updateUrlParams({ emulator: value, listingsPage: 1 })
+    setListingsPage(1)
   }
 
   const deviceOptions = useMemo(() => {
@@ -542,6 +535,13 @@ function UserDetailsPage() {
 
                               <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                                 <LocalizedDate date={listing.createdAt} format="timeAgo" />
+                                {listing._count.votes > 0 && (
+                                  <SuccessRateBar
+                                    rate={listing.successRate * 100}
+                                    voteCount={listing._count.votes}
+                                    compact
+                                  />
+                                )}
                               </div>
                             </div>
                           </Link>
@@ -570,7 +570,7 @@ function UserDetailsPage() {
                         totalPages={userQuery.data.listings.pagination.pages}
                         totalItems={userQuery.data.listings.pagination.total}
                         itemsPerPage={userQuery.data.listings.pagination.limit}
-                        onPageChange={(page) => updateUrlParams({ listingsPage: page })}
+                        onPageChange={setListingsPage}
                       />
                     </div>
                   )}
@@ -645,7 +645,7 @@ function UserDetailsPage() {
                         totalPages={userQuery.data.votes.pagination.pages}
                         totalItems={userQuery.data.votes.pagination.total}
                         itemsPerPage={userQuery.data.votes.pagination.limit}
-                        onPageChange={(page) => updateUrlParams({ votesPage: page })}
+                        onPageChange={setVotesPage}
                       />
                     </div>
                   )}

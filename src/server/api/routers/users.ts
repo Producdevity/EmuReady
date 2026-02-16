@@ -341,6 +341,8 @@ export const usersRouter = createTRPCRouter({
           id: true,
           createdAt: true,
           status: true,
+          successRate: true,
+          _count: { select: { votes: true } },
           device: { select: { brand: { select: { id: true, name: true } }, modelName: true } },
           game: {
             select: { title: true, system: { select: { id: true, name: true, key: true } } },
