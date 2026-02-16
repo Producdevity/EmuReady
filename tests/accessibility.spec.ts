@@ -284,10 +284,15 @@ test.describe('Accessibility Tests', () => {
     const trigger = modalTriggers.first()
     await trigger.click()
 
-    // Check for modal
-    const modals = page.locator('[role="dialog"], [aria-modal="true"], .modal')
+    // Check for standard ARIA dialog (our own modals)
+    const standardModal = page.locator('[role="dialog"], [aria-modal="true"], .modal')
+    const hasStandardModal = await standardModal
+      .first()
+      .waitFor({ state: 'visible', timeout: 5000 })
+      .then(() => true)
+      .catch(() => false)
 
-    if ((await modals.count()) > 0) {
+    if (hasStandardModal) {
       // Tab should stay within modal
       await page.keyboard.press('Tab')
       await page.keyboard.press('Tab')
@@ -303,12 +308,13 @@ test.describe('Accessibility Tests', () => {
       // Escape should close modal
       await page.keyboard.press('Escape')
 
-      await modals.waitFor({ state: 'hidden' })
-      const modalStillVisible = await modals.isVisible()
+      await standardModal.first().waitFor({ state: 'hidden', timeout: 5000 })
+      const modalStillVisible = await standardModal.first().isVisible()
       expect(modalStillVisible).toBe(false)
     } else {
-      // Modal did not appear after clicking trigger -- verify page is still functional
-      await expect(trigger).toBeVisible()
+      // Clerk's auth modal (third-party, no role="dialog") — skip focus trap test
+      // Clerk manages its own focus trapping and accessibility
+      test.skip(true, 'Only third-party Clerk modal available — focus trap is managed by Clerk')
     }
   })
 

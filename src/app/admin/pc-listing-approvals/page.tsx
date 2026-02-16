@@ -1,8 +1,9 @@
 'use client'
 
-import { Clock, Flag, AlertTriangle } from 'lucide-react'
+import { Clock } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useAdminTable } from '@/app/admin/hooks'
 import {
@@ -15,7 +16,7 @@ import {
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   ApproveButton,
-  Badge,
+  AuthorRiskIndicator,
   ColumnVisibilityControl,
   DisplayToggleButton,
   LoadingSpinner,
@@ -68,6 +69,8 @@ const PC_APPROVALS_COLUMNS: ColumnDefinition[] = [
 ]
 
 function PcListingApprovalsPage() {
+  const router = useRouter()
+
   const table = useAdminTable<ApprovalSortField>({
     defaultLimit: 20,
     defaultSortField: 'createdAt',
@@ -121,6 +124,7 @@ function PcListingApprovalsPage() {
       void utils.pcListings.pending.invalidate()
       void utils.pcListings.stats.invalidate()
       setSelectedRows(new Set())
+      closeApprovalModal()
     },
     onError: (error) => {
       toast.error(getErrorMessage(error))
@@ -142,6 +146,7 @@ function PcListingApprovalsPage() {
       void utils.pcListings.pending.invalidate()
       void utils.pcListings.stats.invalidate()
       setSelectedRows(new Set())
+      closeApprovalModal()
     },
     onError: (error) => {
       toast.error(getErrorMessage(error))
@@ -154,6 +159,7 @@ function PcListingApprovalsPage() {
       void utils.pcListings.stats.invalidate()
       setSelectedRows(new Set())
       toast.success(`Approved ${data.count} PC listings`)
+      closeApprovalModal()
     },
     onError: (error) => {
       toast.error(getErrorMessage(error))
@@ -166,6 +172,7 @@ function PcListingApprovalsPage() {
       void utils.pcListings.stats.invalidate()
       setSelectedRows(new Set())
       toast.success(`Rejected ${data.count} PC listings`)
+      closeApprovalModal()
     },
     onError: (error) => {
       toast.error(getErrorMessage(error))
@@ -202,15 +209,18 @@ function PcListingApprovalsPage() {
   }
 
   const handleBulkApprove = async () => {
-    const hasReportedUsers = pendingPcListingsQuery.data?.pcListings.some(
-      (listing) => listing.id && selectedRows.has(listing.id) && (listing._count?.reports ?? 0) > 0,
+    const riskyListings = pendingPcListingsQuery.data?.pcListings.filter(
+      (listing) =>
+        listing.id &&
+        selectedRows.has(listing.id) &&
+        listing.authorRiskProfile?.highestSeverity !== null,
     )
 
-    if (hasReportedUsers) {
+    if (riskyListings && riskyListings.length > 0) {
       const confirmed = await confirm({
-        title: 'Approve PC Listings from Reported Users?',
-        description:
-          'Some selected PC listings are from users with active reports. Are you sure you want to approve them?',
+        title: 'Approve PC Listings from Flagged Authors?',
+        description: `Some selected PC listings (${riskyListings.length}) are from authors with risk signals. Are you sure you want to approve them?`,
+        confirmText: 'Approve Selected',
       })
       if (!confirmed) return
     } else {
@@ -329,39 +339,20 @@ function PcListingApprovalsPage() {
       )}
       {columnVisibility.isColumnVisible('user') && (
         <td className="px-6 py-4">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <Link
-                href={`/user/${listing.author.id}`}
-                className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300"
-              >
-                {listing.author.name}
-              </Link>
-              {(listing._count?.reports ?? 0) > 0 && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1">
-                      <Flag className="w-4 h-4 text-red-500" />
-                      <AlertTriangle className="w-4 h-4 text-orange-500" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div className="text-sm">
-                      <p className="font-medium text-red-600 mb-1">⚠️ Reported Listing</p>
-                      <p>This listing has {listing._count?.reports ?? 0} active reports.</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Consider reviewing carefully before approval.
-                      </p>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </div>
-            {listing.author?.userBans && listing.author.userBans.length > 0 && (
-              <Badge variant="danger" size="sm">
-                BANNED USER
-              </Badge>
-            )}
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/admin/users?userId=${listing.author.id}`}
+              className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300"
+            >
+              {listing.author.name}
+            </Link>
+            <AuthorRiskIndicator
+              riskProfile={listing.authorRiskProfile}
+              size="sm"
+              onInvestigate={(authorId) =>
+                router.push(`/admin/users?userId=${authorId}&tab=reports`)
+              }
+            />
           </div>
         </td>
       )}

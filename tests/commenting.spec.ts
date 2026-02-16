@@ -44,16 +44,16 @@ test.describe('Commenting System Tests', () => {
     await listingsPage.clickFirstListing()
     await page.waitForLoadState('domcontentloaded')
 
+    // Wait for comments section to load before checking the prompt
+    const commentsHeading = page.getByRole('heading', { name: /comments/i })
+    await expect(commentsHeading).toBeVisible({ timeout: 15000 })
+
     // Unauthenticated users see "Please sign in to leave a comment."
     // The text is split across elements (sign in is inside a button), so match the container
     const signInPrompt = page
       .locator('p, div')
-      .filter({
-        hasText: /sign in/i,
-      })
-      .filter({
-        hasText: /to leave a comment/i,
-      })
+      .filter({ hasText: /sign in/i })
+      .filter({ hasText: /to leave a comment/i })
       .first()
     await expect(signInPrompt).toBeVisible({ timeout: 10000 })
   })

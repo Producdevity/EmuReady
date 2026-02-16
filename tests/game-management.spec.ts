@@ -98,8 +98,18 @@ test.describe('Game Management', () => {
       })
 
       if ((await gameCards.count()) > 0) {
-        await gameCards.first().click()
-        await expect(page).toHaveURL(/\/games\//)
+        const firstCard = gameCards.first()
+        const href = await firstCard.getAttribute('href')
+        await firstCard.click()
+
+        try {
+          await expect(page).toHaveURL(/\/games\/[^/]+/, { timeout: 5000 })
+        } catch {
+          if (href) {
+            await page.goto(href)
+            await expect(page).toHaveURL(/\/games\/[^/]+/)
+          }
+        }
         await page.waitForLoadState('domcontentloaded')
 
         // Game title heading

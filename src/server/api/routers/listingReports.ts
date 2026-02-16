@@ -5,6 +5,7 @@ import {
   DeleteReportSchema,
   GetListingReportsSchema,
   GetReportByIdSchema,
+  GetUserReportsSchema,
   GetUserReportStatsSchema,
   UpdateReportStatusSchema,
 } from '@/schemas/listingReport'
@@ -14,6 +15,7 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
+import { getAuthorReportCounts } from '@/server/services/report-stats.service'
 import { paginate } from '@/server/utils/pagination'
 import { batchQueries } from '@/server/utils/query-performance'
 import { validateEnum, sanitizeInput, validatePagination } from '@/server/utils/security-validation'
@@ -283,38 +285,121 @@ export const listingReportsRouter = createTRPCRouter({
   getUserReportStats: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
     .input(GetUserReportStatsSchema)
     .query(async ({ ctx, input }) => {
-      const { userId } = input
+      return getAuthorReportCounts(ctx.prisma, input.userId)
+    }),
 
-      const [reportedListingsCount, totalReports] = await batchQueries([
-        ctx.prisma.listingReport.count({ where: { listing: { authorId: userId } } }),
-        ctx.prisma.listingReport.count({
-          where: {
-            listing: { authorId: userId },
-            status: { in: [ReportStatus.RESOLVED, ReportStatus.UNDER_REVIEW] },
+  getUserReports: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
+    .input(GetUserReportsSchema)
+    .query(async ({ ctx, input }) => {
+      const { userId, status, page, limit } = input
+
+      const handheldWhere: Prisma.ListingReportWhereInput = {
+        listing: { authorId: userId },
+        ...(status ? { status } : {}),
+      }
+
+      const pcWhere: Prisma.PcListingReportWhereInput = {
+        pcListing: { authorId: userId },
+        ...(status ? { status } : {}),
+      }
+
+      const [handheldReports, pcReports, handheldCount, pcCount] = await batchQueries([
+        ctx.prisma.listingReport.findMany({
+          where: handheldWhere,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            listing: {
+              include: {
+                game: { select: { id: true, title: true } },
+              },
+            },
+            reportedBy: { select: { id: true, name: true } },
+            reviewedBy: { select: { id: true, name: true } },
           },
         }),
+        ctx.prisma.pcListingReport.findMany({
+          where: pcWhere,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            pcListing: {
+              include: {
+                game: { select: { id: true, title: true } },
+              },
+            },
+            reportedBy: { select: { id: true, name: true } },
+            reviewedBy: { select: { id: true, name: true } },
+          },
+        }),
+        ctx.prisma.listingReport.count({ where: handheldWhere }),
+        ctx.prisma.pcListingReport.count({ where: pcWhere }),
       ])
 
+      type UnifiedReport = {
+        id: string
+        listingType: 'handheld' | 'pc'
+        listingId: string
+        gameTitle: string
+        reason: ReportReason
+        description: string | null
+        status: ReportStatus
+        reportedBy: { id: string; name: string | null }
+        reviewedBy: { id: string; name: string | null } | null
+        reviewNotes: string | null
+        reviewedAt: Date | null
+        createdAt: Date
+      }
+
+      const unified: UnifiedReport[] = [
+        ...handheldReports.map((r) => ({
+          id: r.id,
+          listingType: 'handheld' as const,
+          listingId: r.listingId,
+          gameTitle: r.listing.game.title,
+          reason: r.reason,
+          description: r.description,
+          status: r.status,
+          reportedBy: r.reportedBy,
+          reviewedBy: r.reviewedBy,
+          reviewNotes: r.reviewNotes,
+          reviewedAt: r.reviewedAt,
+          createdAt: r.createdAt,
+        })),
+        ...pcReports.map((r) => ({
+          id: r.id,
+          listingType: 'pc' as const,
+          listingId: r.pcListingId,
+          gameTitle: r.pcListing.game.title,
+          reason: r.reason,
+          description: r.description,
+          status: r.status,
+          reportedBy: r.reportedBy,
+          reviewedBy: r.reviewedBy,
+          reviewNotes: r.reviewNotes,
+          reviewedAt: r.reviewedAt,
+          createdAt: r.createdAt,
+        })),
+      ]
+
+      unified.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+
+      const total = handheldCount + pcCount
+      const offset = (page - 1) * limit
+      const paginatedItems = unified.slice(offset, offset + limit)
+
       return {
-        reportedListingsCount,
-        totalReports,
-        hasReports: totalReports > 0,
+        reports: paginatedItems,
+        pagination: paginate({ total, page, limit }),
       }
     }),
 
   checkUserHasReports: publicProcedure
     .input(GetUserReportStatsSchema)
     .query(async ({ ctx, input }) => {
-      const reportCount = await ctx.prisma.listingReport.count({
-        where: {
-          listing: { authorId: input.userId },
-          status: { in: [ReportStatus.RESOLVED, ReportStatus.UNDER_REVIEW] },
-        },
-      })
+      const { totalReports, hasReports } = await getAuthorReportCounts(ctx.prisma, input.userId)
 
       return {
-        hasReports: reportCount > 0,
-        reportCount,
+        hasReports,
+        reportCount: totalReports,
       }
     }),
 })

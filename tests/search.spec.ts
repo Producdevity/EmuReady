@@ -100,14 +100,15 @@ test.describe('Search Functionality Tests', () => {
     // Navigate to a game detail if available
     const gameCount = await gamesPage.getGameCount()
     if (gameCount > 0) {
-      // Click first game
       await gamesPage.clickFirstGame()
 
-      // Go back
       await page.goBack()
       await page.waitForLoadState('domcontentloaded')
 
-      // Search state may be preserved in the input field or in URL query params
+      // Wait for games page to fully load after back navigation
+      await gamesPage.pageHeading.waitFor({ state: 'visible', timeout: 10000 })
+
+      // Search state should be preserved in URL query params or restored in input
       const searchValue = await gamesPage.searchInput.inputValue().catch(() => '')
       const currentUrl = page.url()
       const urlHasSearch =

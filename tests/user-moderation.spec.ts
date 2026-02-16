@@ -11,18 +11,26 @@ import { test, expect } from '@playwright/test'
 
 test.describe('User Ban & Moderation System', () => {
   test.describe('Admin Ban Management Page', () => {
-    test.use({ storageState: 'tests/.auth/admin.json' })
+    test.use({ storageState: 'tests/.auth/super_admin.json' })
 
     test('should access user ban management page', async ({ page }) => {
       await page.goto('/admin/user-bans')
       await page.waitForLoadState('domcontentloaded')
 
+      // Wait for data to load (page shows LoadingSpinner while query is pending)
+      await page
+        .getByText(/loading/i)
+        .waitFor({ state: 'hidden', timeout: 15000 })
+        .catch(() => {})
+
       // Page heading
-      await expect(page.getByRole('heading', { name: /user ban management/i })).toBeVisible()
+      await expect(page.getByRole('heading', { name: /user ban management/i })).toBeVisible({
+        timeout: 10000,
+      })
 
       // Stats display: Total Bans, Active, Expired, Permanent
       const statsText = page.locator('text=/total bans|active|expired|permanent/i')
-      await expect(statsText.first()).toBeVisible()
+      await expect(statsText.first()).toBeVisible({ timeout: 10000 })
     })
 
     test('should display ban statistics', async ({ page }) => {

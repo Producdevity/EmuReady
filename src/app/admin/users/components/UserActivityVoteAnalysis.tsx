@@ -1,11 +1,16 @@
 'use client'
 
-import { AlertTriangle, RotateCcw, Shield, ThumbsDown, ThumbsUp, TrendingDown } from 'lucide-react'
-import { Badge, Button, LoadingSpinner, SeverityBadge, useConfirmDialog } from '@/components/ui'
+import { AlertTriangle, RotateCcw, Shield, ThumbsDown, ThumbsUp } from 'lucide-react'
+import {
+  Badge,
+  Button,
+  LoadingSpinner,
+  severityBadgeVariant,
+  useConfirmDialog,
+} from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
-import UserActivityMiniStat from './UserActivityMiniStat'
 
 interface Props {
   userId: string
@@ -78,7 +83,7 @@ function UserActivityVoteAnalysis(props: Props) {
 
   if (patternsQuery.isLoading) {
     return (
-      <div className="flex justify-center py-6">
+      <div className="flex justify-center py-4">
         <LoadingSpinner />
       </div>
     )
@@ -86,12 +91,13 @@ function UserActivityVoteAnalysis(props: Props) {
 
   if (!patternsQuery.data) return null
 
+  const { summary, flags, targetedAuthors } = patternsQuery.data
   const isMutating = nullifyMutation.isPending || restoreMutation.isPending
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* Suspicious Flags */}
-      {patternsQuery.data.flags.length > 0 && (
+      {flags.length > 0 && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
           <div className="flex items-start gap-2 mb-2">
             <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
@@ -100,79 +106,72 @@ function UserActivityVoteAnalysis(props: Props) {
             </span>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {patternsQuery.data.flags.map((flag, i) => (
-              <SeverityBadge key={i} severity={flag.severity}>
+            {flags.map((flag, i) => (
+              <Badge key={i} variant={severityBadgeVariant[flag.severity]} size="sm">
                 {flag.description}
-              </SeverityBadge>
+              </Badge>
             ))}
           </div>
         </div>
       )}
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-4 gap-2">
-        <UserActivityMiniStat label="Total" value={patternsQuery.data.summary.totalVotes} />
-        <UserActivityMiniStat
-          label="Upvotes"
-          value={patternsQuery.data.summary.upvotes}
-          icon={<ThumbsUp className="w-3 h-3 text-green-500" />}
-        />
-        <UserActivityMiniStat
-          label="Downvotes"
-          value={patternsQuery.data.summary.downvotes}
-          icon={<ThumbsDown className="w-3 h-3 text-red-500" />}
-        />
-        <UserActivityMiniStat
-          label="Down %"
-          value={`${patternsQuery.data.summary.downvotePercentage}%`}
-          icon={<TrendingDown className="w-3 h-3 text-orange-500" />}
-        />
-      </div>
-
-      <div className="grid grid-cols-3 gap-2">
-        <UserActivityMiniStat label="Last 24h" value={patternsQuery.data.summary.votesLast24h} />
-        <UserActivityMiniStat label="Last 7d" value={patternsQuery.data.summary.votesLast7d} />
-        <UserActivityMiniStat
-          label="Avg/Day"
-          value={patternsQuery.data.summary.averageVotesPerDay}
-        />
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex gap-2">
-        {patternsQuery.data.summary.totalVotes > 0 && (
+      {/* Compact Stats + Actions Row */}
+      <div className="flex items-center justify-between gap-3 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2">
+        <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-300">
+          <span className="flex items-center gap-1">
+            <ThumbsUp className="w-3 h-3 text-green-500" />
+            {summary.upvotes}
+          </span>
+          <span className="flex items-center gap-1">
+            <ThumbsDown className="w-3 h-3 text-red-500" />
+            {summary.downvotes}
+          </span>
+          <span className="text-gray-400 dark:text-gray-500">|</span>
+          <span>{summary.downvotePercentage}% down</span>
+          <span className="text-gray-400 dark:text-gray-500">|</span>
+          <span>24h: {summary.votesLast24h}</span>
+          <span>7d: {summary.votesLast7d}</span>
+          <span className="text-gray-400 dark:text-gray-500">|</span>
+          <span>avg: {summary.averageVotesPerDay}/day</span>
+          <span className="font-medium text-gray-900 dark:text-white">
+            Total: {summary.totalVotes}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {summary.totalVotes > 0 && (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleNullify}
+              isLoading={nullifyMutation.isPending}
+              disabled={isMutating}
+              className="text-xs"
+            >
+              <Shield className="w-3.5 h-3.5 mr-1" />
+              Nullify ({summary.totalVotes})
+            </Button>
+          )}
           <Button
-            variant="danger"
+            variant="outline"
             size="sm"
-            onClick={handleNullify}
-            isLoading={nullifyMutation.isPending}
+            onClick={handleRestore}
+            isLoading={restoreMutation.isPending}
             disabled={isMutating}
             className="text-xs"
           >
-            <Shield className="w-3.5 h-3.5 mr-1" />
-            Nullify All Votes ({patternsQuery.data.summary.totalVotes})
+            <RotateCcw className="w-3.5 h-3.5 mr-1" />
+            Restore
           </Button>
-        )}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRestore}
-          isLoading={restoreMutation.isPending}
-          disabled={isMutating}
-          className="text-xs"
-        >
-          <RotateCcw className="w-3.5 h-3.5 mr-1" />
-          Restore Nullified
-        </Button>
+        </div>
       </div>
 
-      {/* Targeted Authors */}
-      {patternsQuery.data.targetedAuthors.length > 0 && (
-        <div>
-          <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-            Targeted Authors
-          </h4>
-          <div className="border dark:border-gray-700 rounded-md overflow-hidden">
+      {/* Targeted Authors — collapsible, default open when suspicious flags present */}
+      {targetedAuthors.length > 0 && (
+        <details open={flags.length > 0 || undefined}>
+          <summary className="text-xs font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none hover:text-gray-900 dark:hover:text-white py-1">
+            Targeted Authors ({targetedAuthors.length})
+          </summary>
+          <div className="border dark:border-gray-700 rounded-md overflow-hidden mt-1">
             <table className="w-full text-xs">
               <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
@@ -191,7 +190,7 @@ function UserActivityVoteAnalysis(props: Props) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {patternsQuery.data.targetedAuthors.slice(0, 10).map((author) => (
+                {targetedAuthors.slice(0, 10).map((author) => (
                   <tr key={author.authorId} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                     <td className="px-3 py-1.5 text-gray-900 dark:text-white truncate max-w-[140px]">
                       {author.authorName ?? 'Unknown'}
@@ -224,7 +223,7 @@ function UserActivityVoteAnalysis(props: Props) {
               </tbody>
             </table>
           </div>
-        </div>
+        </details>
       )}
     </div>
   )

@@ -29,11 +29,12 @@ import {
   revalidateByTag,
 } from '@/server/cache/invalidation'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
+import { computeAuthorRiskProfiles } from '@/server/services/author-risk.service'
 import { listingStatsCache } from '@/server/utils/cache/instances'
 import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
 import { paginate } from '@/server/utils/pagination'
 import { hasRolePermission } from '@/utils/permissions'
-import { Prisma, ApprovalStatus, TrustAction, ReportStatus, Role } from '@orm'
+import { Prisma, ApprovalStatus, TrustAction, Role } from '@orm'
 
 const LISTING_STATS_CACHE_KEY = 'listing-stats'
 
@@ -137,55 +138,40 @@ export const adminRouter = createTRPCRouter({
       take: limit,
     })
 
-    // Get report statistics for each unique author
+    // Compute author risk profiles
     const uniqueAuthorIds = [...new Set(listings.map((l) => l.authorId))]
-    const authorReportStats = await Promise.all(
-      uniqueAuthorIds.map(async (authorId) => {
-        const [reportedListingsCount, totalReports] = await Promise.all([
-          ctx.prisma.listingReport.count({
-            where: {
-              listing: {
-                authorId,
-              },
-            },
-          }),
-          ctx.prisma.listingReport.count({
-            where: {
-              listing: { authorId },
-              status: {
-                in: [ReportStatus.RESOLVED, ReportStatus.UNDER_REVIEW],
-              },
-            },
-          }),
-        ])
-
-        return {
-          authorId,
-          reportedListingsCount,
-          totalReports,
-          hasReports: totalReports > 0,
-        }
-      }),
+    const existingBansMap = new Map<string, { reason: string }[]>()
+    for (const listing of listings) {
+      if (
+        listing.author?.userBans &&
+        listing.author.userBans.length > 0 &&
+        !existingBansMap.has(listing.authorId)
+      ) {
+        existingBansMap.set(
+          listing.authorId,
+          listing.author.userBans.map((b) => ({ reason: b.reason })),
+        )
+      }
+    }
+    const riskProfiles = await computeAuthorRiskProfiles(
+      ctx.prisma,
+      uniqueAuthorIds,
+      existingBansMap,
     )
 
-    // Create a map for quick lookup
-    const reportStatsMap = new Map(authorReportStats.map((stat) => [stat.authorId, stat]))
-
-    // Add report statistics to each listing
-    const listingsWithReports = listings.map((listing) => ({
+    const listingsWithRiskProfiles = listings.map((listing) => ({
       ...listing,
-      authorReportStats: reportStatsMap.get(listing.authorId) || {
+      authorRiskProfile: riskProfiles.get(listing.authorId) ?? {
         authorId: listing.authorId,
-        reportedListingsCount: 0,
-        totalReports: 0,
-        hasReports: false,
+        signals: [],
+        highestSeverity: null,
       },
     }))
 
     const totalListings = await ctx.prisma.listing.count({ where })
 
     return {
-      listings: listingsWithReports,
+      listings: listingsWithRiskProfiles,
       pagination: paginate({ total: totalListings, page, limit: limit }),
     }
   }),

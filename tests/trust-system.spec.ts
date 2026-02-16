@@ -39,16 +39,24 @@ test.describe('Trust System', () => {
   })
 
   test.describe('Admin Trust Logs', () => {
-    test.use({ storageState: 'tests/.auth/admin.json' })
+    test.use({ storageState: 'tests/.auth/super_admin.json' })
 
     test('should access trust system logs page', async ({ page }) => {
       await page.goto('/admin/trust-logs', { waitUntil: 'domcontentloaded' })
 
+      // Wait for page to fully hydrate
+      await page
+        .getByText(/loading/i)
+        .waitFor({ state: 'hidden', timeout: 15000 })
+        .catch(() => {})
+
       // Page heading
-      await expect(page.getByRole('heading', { name: /trust system logs/i })).toBeVisible()
+      await expect(page.getByRole('heading', { name: /trust system logs/i })).toBeVisible({
+        timeout: 10000,
+      })
 
       // Search and filter controls
-      await expect(page.getByPlaceholder(/search users/i)).toBeVisible()
+      await expect(page.getByPlaceholder(/search users/i)).toBeVisible({ timeout: 10000 })
     })
 
     test('should display trust logs table', async ({ page }) => {
@@ -61,8 +69,7 @@ test.describe('Trust System', () => {
         .catch(() => {})
 
       const table = page.locator('table')
-      const emptyState = page.getByText(/no.*logs|no.*results|no.*data/i)
-      await table.or(emptyState).waitFor({ state: 'visible', timeout: 10000 })
+      await table.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
 
       const hasTable = await table.isVisible().catch(() => false)
       test.skip(!hasTable, 'Trust logs table not visible — may be empty or still loading')
@@ -75,20 +82,32 @@ test.describe('Trust System', () => {
     test('should show search and filter controls', async ({ page }) => {
       await page.goto('/admin/trust-logs', { waitUntil: 'domcontentloaded' })
 
+      // Wait for page to fully hydrate
+      await page
+        .getByText(/loading/i)
+        .waitFor({ state: 'hidden', timeout: 15000 })
+        .catch(() => {})
+
       // Search input for users
       const searchInput = page.locator('input[type="text"]').first()
-      await expect(searchInput).toBeVisible()
+      await expect(searchInput).toBeVisible({ timeout: 10000 })
 
       // Action filter dropdown
       const actionFilter = page.locator('select').first()
-      await expect(actionFilter).toBeVisible()
+      await expect(actionFilter).toBeVisible({ timeout: 10000 })
     })
 
     test('should show Run Monthly Bonus button', async ({ page }) => {
       await page.goto('/admin/trust-logs', { waitUntil: 'domcontentloaded' })
 
+      // Wait for page to fully hydrate before checking for button
+      await page
+        .getByText(/loading/i)
+        .waitFor({ state: 'hidden', timeout: 15000 })
+        .catch(() => {})
+
       const monthlyBonusButton = page.getByRole('button', { name: /run monthly bonus/i })
-      await expect(monthlyBonusButton).toBeVisible()
+      await expect(monthlyBonusButton).toBeVisible({ timeout: 10000 })
     })
   })
 })

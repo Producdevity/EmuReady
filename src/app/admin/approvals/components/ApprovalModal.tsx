@@ -1,11 +1,10 @@
-import { AlertTriangle, Flag } from 'lucide-react'
 import {
   GameInfoSection,
   UserInfoSection,
   PerformanceSection,
   NotesSection,
 } from '@/app/listings/components/shared/approval/ApprovalModalSharedComponents'
-import { Modal, Button, Input } from '@/components/ui'
+import { AuthorRiskWarningBanner, Modal, Button, Input } from '@/components/ui'
 import { type RouterOutput } from '@/types/trpc'
 import { ApprovalStatus } from '@orm'
 
@@ -24,21 +23,21 @@ interface Props {
 }
 
 function ApprovalModal(props: Props) {
-  const hasReports = props.selectedListingForApproval.authorReportStats?.hasReports ?? false
+  const hasRisk = props.selectedListingForApproval.authorRiskProfile?.highestSeverity !== null
   const actionText = props.approvalDecision === ApprovalStatus.APPROVED ? 'Approve' : 'Reject'
   const modalTitle = `${actionText} Listing: ${props.selectedListingForApproval.game.title}`
 
   const buttonVariant =
     props.approvalDecision === ApprovalStatus.REJECTED
       ? 'danger'
-      : hasReports
+      : hasRisk
         ? 'destructive'
         : 'default'
 
   const buttonText =
     props.approvalDecision === ApprovalStatus.REJECTED
       ? 'Confirm Rejection'
-      : hasReports
+      : hasRisk
         ? 'Approve Anyway'
         : 'Confirm Approval'
 
@@ -50,35 +49,7 @@ function ApprovalModal(props: Props) {
       size="lg"
     >
       <div className="space-y-4">
-        {/* Report Warning */}
-        {props.selectedListingForApproval.authorReportStats?.hasReports && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                <Flag className="w-4 h-4 text-red-500" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-sm font-medium text-red-800 dark:text-red-200 mb-1">
-                  ⚠️ Reported User Warning
-                </h4>
-                <p className="text-sm text-red-700 dark:text-red-300">
-                  The author of this listing ({props.selectedListingForApproval.author?.name}) has{' '}
-                  <strong>
-                    {props.selectedListingForApproval.authorReportStats.totalReports} active reports
-                  </strong>{' '}
-                  against {props.selectedListingForApproval.authorReportStats.reportedListingsCount}{' '}
-                  of their listings.
-                </p>
-                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                  Please review this listing carefully before{' '}
-                  {props.approvalDecision === ApprovalStatus.APPROVED ? 'approval' : 'rejection'}.
-                  Consider checking the reports page for more details.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+        <AuthorRiskWarningBanner riskProfile={props.selectedListingForApproval.authorRiskProfile} />
 
         {/* Listing Details Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

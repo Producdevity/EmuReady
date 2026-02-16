@@ -31,13 +31,14 @@ import { copyToClipboard } from '@/utils/copyToClipboard'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { canBanUser } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
-import { Role } from '@orm'
+import { type ReportStatus, Role } from '@orm'
 import UserActivityListingsTab from './UserActivityListingsTab'
+import UserActivityReportsTab from './UserActivityReportsTab'
 import UserActivityTrustActionsTab from './UserActivityTrustActionsTab'
 import UserActivityVotesTab from './UserActivityVotesTab'
 import UserEntitlementsPanel from './UserEntitlementsPanel'
 
-type ActivityTab = 'listings' | 'votes' | 'trustActions'
+export type ActivityTab = 'listings' | 'votes' | 'trustActions' | 'reports'
 
 const ITEMS_PER_PAGE = 10
 
@@ -45,6 +46,7 @@ interface Props {
   userId: string | null
   isOpen: boolean
   onClose: () => void
+  initialTab?: ActivityTab
 }
 
 function UserDetailsModal(props: Props) {
@@ -52,7 +54,7 @@ function UserDetailsModal(props: Props) {
   const router = useRouter()
 
   // Activity tab state
-  const [activeTab, setActiveTab] = useState<ActivityTab>('listings')
+  const [activeTab, setActiveTab] = useState<ActivityTab>(props.initialTab ?? 'listings')
 
   // Listings pagination/filter state
   const [listingsPage, setListingsPage] = useState(1)
@@ -66,6 +68,10 @@ function UserDetailsModal(props: Props) {
 
   // Trust actions pagination state
   const [trustActionsPage, setTrustActionsPage] = useState(1)
+
+  // Reports pagination/filter state
+  const [reportsPage, setReportsPage] = useState(1)
+  const [reportsStatus, setReportsStatus] = useState<ReportStatus | undefined>()
 
   // Debounce search inputs
   const debouncedListingsSearch = useDebouncedValue(listingsSearch, UI_CONSTANTS.DEBOUNCE_DELAY)
@@ -109,6 +115,11 @@ function UserDetailsModal(props: Props) {
   const reportStatsQuery = api.listingReports.getUserReportStats.useQuery(
     { userId: props.userId! },
     { enabled: !!props.userId },
+  )
+
+  const reportsQuery = api.listingReports.getUserReports.useQuery(
+    { userId: props.userId!, page: reportsPage, limit: ITEMS_PER_PAGE, status: reportsStatus },
+    { enabled: !!props.userId && activeTab === 'reports' },
   )
 
   // Trust score adjustment state
@@ -169,6 +180,11 @@ function UserDetailsModal(props: Props) {
     setVotesPage(1)
   }
 
+  function handleReportsStatusChange(status: ReportStatus | undefined) {
+    setReportsStatus(status)
+    setReportsPage(1)
+  }
+
   if (!props.isOpen) return null
 
   const TABS: { id: ActivityTab; label: string; icon: typeof GamepadIcon; count: number }[] = [
@@ -189,6 +205,12 @@ function UserDetailsModal(props: Props) {
       label: 'Trust Actions',
       icon: TrendingUp,
       count: userQuery.data?.trustActionLogs?.pagination?.total ?? 0,
+    },
+    {
+      id: 'reports',
+      label: 'Reports',
+      icon: Flag,
+      count: reportStatsQuery.data?.totalReports ?? 0,
     },
   ]
 
@@ -316,7 +338,11 @@ function UserDetailsModal(props: Props) {
                 </p>
               </div>
 
-              <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setActiveTab('reports')}
+                className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg text-left hover:ring-2 hover:ring-red-300 dark:hover:ring-red-700 transition-all cursor-pointer"
+              >
                 <div className="flex items-center gap-2 mb-2">
                   <Flag className="w-5 h-5 text-red-600 dark:text-red-400" />
                   <span className="text-sm font-medium text-red-800 dark:text-red-300">
@@ -329,7 +355,7 @@ function UserDetailsModal(props: Props) {
                 <p className="text-xs text-red-700 dark:text-red-300">
                   {reportStatsQuery.data?.reportedListingsCount ?? 0} listings reported
                 </p>
-              </div>
+              </button>
             </div>
 
             {/* User Information */}
@@ -540,6 +566,21 @@ function UserDetailsModal(props: Props) {
                     onPageChange={setTrustActionsPage}
                     isFetching={userQuery.isFetching}
                   />
+                )}
+                {activeTab === 'reports' && reportsQuery.data && (
+                  <UserActivityReportsTab
+                    reports={reportsQuery.data}
+                    page={reportsPage}
+                    onPageChange={setReportsPage}
+                    status={reportsStatus}
+                    onStatusChange={handleReportsStatusChange}
+                    isFetching={reportsQuery.isFetching}
+                  />
+                )}
+                {activeTab === 'reports' && reportsQuery.isPending && (
+                  <div className="flex items-center justify-center py-8">
+                    <LoadingSpinner />
+                  </div>
                 )}
               </div>
             </div>

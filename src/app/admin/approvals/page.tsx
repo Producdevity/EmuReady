@@ -1,7 +1,8 @@
 'use client'
 
-import { Clock, Flag, AlertTriangle } from 'lucide-react'
+import { Clock } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
@@ -16,7 +17,7 @@ import {
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   ApproveButton,
-  Badge,
+  AuthorRiskIndicator,
   BulkActions,
   Button,
   ColumnVisibilityControl,
@@ -68,6 +69,8 @@ const APPROVALS_COLUMNS: ColumnDefinition[] = [
 ]
 
 function AdminApprovalsPage() {
+  const router = useRouter()
+
   const table = useAdminTable<ApprovalSortField>({
     defaultLimit: 20,
     defaultSortField: 'createdAt',
@@ -202,25 +205,28 @@ function AdminApprovalsPage() {
     },
   })
 
-  // Handle bulk approval with confirmation for reported users
+  // Handle bulk approval with confirmation for risky authors
   const handleBulkApprovalWithConfirmation = async (listingIds: string[]) => {
     const selectedListings = listings.filter((listing) => listingIds.includes(listing.id))
-    const reportedUserListings = selectedListings.filter(
-      (listing) => listing.authorReportStats?.hasReports,
+    const riskyListings = selectedListings.filter(
+      (listing) => listing.authorRiskProfile?.highestSeverity !== null,
     )
 
-    if (reportedUserListings.length > 0) {
-      const reportedUsers = [
-        ...new Set(reportedUserListings.map((l) => l.author?.name || 'Unknown')),
-      ]
-      const totalReports = reportedUserListings.reduce(
-        (sum, l) => sum + (l.authorReportStats?.totalReports || 0),
-        0,
-      )
+    if (riskyListings.length > 0) {
+      const riskyAuthors = [...new Set(riskyListings.map((l) => l.author?.name || 'Unknown'))]
+      const highestRisk = riskyListings.reduce<string | null>((max, l) => {
+        const severity = l.authorRiskProfile?.highestSeverity
+        if (!severity) return max
+        if (!max) return severity
+        const order = { low: 1, medium: 2, high: 3 }
+        return order[severity as keyof typeof order] > order[max as keyof typeof order]
+          ? severity
+          : max
+      }, null)
 
       const confirmed = await confirm({
         title: 'Bulk Approval Warning',
-        description: `You are about to approve ${listingIds.length} listings, including ${reportedUserListings.length} from reported users.\n\nReported users in this selection:\n• ${reportedUsers.join('\n• ')}\n\nThese users have a total of ${totalReports} active reports against their listings.\n\nAre you sure you want to proceed with the bulk approval?`,
+        description: `You are about to approve ${listingIds.length} listings, including ${riskyListings.length} from authors with risk signals (highest: ${highestRisk}).\n\nFlagged authors:\n${riskyAuthors.map((name) => `  ${name}`).join('\n')}\n\nAre you sure you want to proceed?`,
         confirmText: 'Approve Selected',
       })
 
@@ -515,55 +521,27 @@ function AdminApprovalsPage() {
                     )}
                     {columnVisibility.isColumnVisible('author') && (
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            <span>
-                              {listing.author ? (
-                                <Link
-                                  href={`/admin/users?userId=${listing.author.id}`}
-                                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
-                                  title="View user details"
-                                >
-                                  {listing.author.name}
-                                </Link>
-                              ) : (
-                                'N/A'
-                              )}
-                            </span>
-                            {listing.authorReportStats?.hasReports && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="flex items-center gap-1">
-                                    <Flag className="w-4 h-4 text-red-500" />
-                                    <AlertTriangle className="w-4 h-4 text-orange-500" />
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <div className="text-sm">
-                                    <p className="font-medium text-red-600 mb-1">
-                                      ⚠️ Reported User
-                                    </p>
-                                    <p>
-                                      This user has {listing.authorReportStats.totalReports} active
-                                      reports
-                                    </p>
-                                    <p>
-                                      against {listing.authorReportStats.reportedListingsCount} of
-                                      their listings.
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      Consider reviewing carefully before approval.
-                                    </p>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
+                        <div className="flex items-center gap-2">
+                          <span>
+                            {listing.author ? (
+                              <Link
+                                href={`/admin/users?userId=${listing.author.id}`}
+                                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+                                title="View user details"
+                              >
+                                {listing.author.name}
+                              </Link>
+                            ) : (
+                              'N/A'
                             )}
-                          </div>
-                          {listing.author?.userBans && listing.author.userBans.length > 0 && (
-                            <Badge variant="danger" size="sm">
-                              BANNED USER
-                            </Badge>
-                          )}
+                          </span>
+                          <AuthorRiskIndicator
+                            riskProfile={listing.authorRiskProfile}
+                            size="sm"
+                            onInvestigate={(authorId) =>
+                              router.push(`/admin/users?userId=${authorId}&tab=reports`)
+                            }
+                          />
                         </div>
                       </td>
                     )}

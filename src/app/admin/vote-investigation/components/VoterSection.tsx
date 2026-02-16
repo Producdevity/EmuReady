@@ -24,8 +24,8 @@ import {
   LoadingSpinner,
   LocalizedDate,
   Pagination,
-  SeverityBadge,
   SortableHeader,
+  severityBadgeVariant,
   useConfirmDialog,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
@@ -290,9 +290,9 @@ function VoterSection() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {patternsQuery.data.flags.map((flag, i) => (
-                  <SeverityBadge key={i} severity={flag.severity}>
+                  <Badge key={i} variant={severityBadgeVariant[flag.severity]} size="sm">
                     {flag.description}
-                  </SeverityBadge>
+                  </Badge>
                 ))}
               </div>
             </div>

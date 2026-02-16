@@ -1,6 +1,5 @@
 'use client'
 
-import { AlertTriangle, Flag } from 'lucide-react'
 import {
   GameInfoSection,
   EmulatorInfoSection,
@@ -8,7 +7,7 @@ import {
   PerformanceSection,
   NotesSection,
 } from '@/app/listings/components/shared/approval/ApprovalModalSharedComponents'
-import { Button, Modal, Input } from '@/components/ui'
+import { AuthorRiskWarningBanner, Button, Modal, Input } from '@/components/ui'
 import { useEmulatorLogos } from '@/hooks'
 import { type RouterOutput } from '@/types/trpc'
 import { ApprovalStatus } from '@orm'
@@ -30,7 +29,7 @@ interface Props {
 function ApprovalModal(props: Props) {
   const emulatorLogos = useEmulatorLogos()
 
-  const hasReports = (props.selectedPcListingForApproval._count?.reports ?? 0) > 0
+  const hasRisk = props.selectedPcListingForApproval.authorRiskProfile?.highestSeverity !== null
 
   const getModalTitle = () => {
     const actionText = props.approvalDecision === ApprovalStatus.APPROVED ? 'Approve' : 'Reject'
@@ -39,12 +38,12 @@ function ApprovalModal(props: Props) {
 
   const getButtonVariant = () => {
     if (props.approvalDecision === ApprovalStatus.REJECTED) return 'danger'
-    return hasReports ? 'destructive' : 'default'
+    return hasRisk ? 'destructive' : 'default'
   }
 
   const getButtonText = () => {
     if (props.approvalDecision === ApprovalStatus.REJECTED) return 'Confirm Rejection'
-    return hasReports ? 'Approve Anyway' : 'Confirm Approval'
+    return hasRisk ? 'Approve Anyway' : 'Confirm Approval'
   }
 
   return (
@@ -55,33 +54,9 @@ function ApprovalModal(props: Props) {
       size="lg"
     >
       <div className="space-y-4">
-        {hasReports && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                <Flag className="w-4 h-4 text-red-500" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-sm font-medium text-red-800 dark:text-red-200 mb-1">
-                  ⚠️ Reported Listing Warning
-                </h4>
-                <p className="text-sm text-red-700 dark:text-red-300">
-                  This PC listing has{' '}
-                  <strong>
-                    {props.selectedPcListingForApproval._count?.reports ?? 0} active reports
-                  </strong>
-                  .
-                </p>
-                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                  Please review this listing carefully before{' '}
-                  {props.approvalDecision === ApprovalStatus.APPROVED ? 'approval' : 'rejection'}.
-                  Consider checking the reports page for more details.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+        <AuthorRiskWarningBanner
+          riskProfile={props.selectedPcListingForApproval.authorRiskProfile}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <GameInfoSection game={props.selectedPcListingForApproval.game} />

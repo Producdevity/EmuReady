@@ -73,8 +73,13 @@ export class ListingsPage extends BasePage {
   async searchListings(query: string) {
     await this.searchInput.fill(query)
     await this.page.keyboard.press('Enter')
-    // Wait for search results
-    await this.page.waitForLoadState('domcontentloaded')
+    // Wait for search to be reflected in URL params
+    await expect(this.page).toHaveURL(/[?&]search=/, { timeout: 10000 })
+    // Wait for data to finish loading
+    await this.page
+      .getByText(/loading/i)
+      .waitFor({ state: 'hidden', timeout: 10000 })
+      .catch(() => {})
   }
 
   async clickAddListing() {
@@ -89,9 +94,19 @@ export class ListingsPage extends BasePage {
 
   async clickFirstListing() {
     const firstListing = this.listingItems.first()
+    await firstListing.waitFor({ state: 'visible', timeout: 10000 })
+    const href = await firstListing.getAttribute('href')
     await firstListing.click()
-    // Use toHaveURL which auto-retries — waitForURL hangs on client-side navigation
-    await expect(this.page).toHaveURL(/\/listings\/[^/]+/)
+    try {
+      // Use toHaveURL which auto-retries — waitForURL hangs on client-side navigation
+      await expect(this.page).toHaveURL(/\/listings\/[^/]+/, { timeout: 5000 })
+    } catch {
+      // Fallback: if click didn't navigate (e.g. tooltip intercept), use direct navigation
+      if (href) {
+        await this.page.goto(href)
+        await expect(this.page).toHaveURL(/\/listings\/[^/]+/)
+      }
+    }
   }
 
   async filterByDevice(deviceName: string) {

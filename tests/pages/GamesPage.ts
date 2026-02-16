@@ -51,9 +51,10 @@ export class GamesPage extends BasePage {
 
   async searchGames(query: string) {
     await this.searchInput.fill(query)
-    await this.page.keyboard.press('Enter')
-    // Wait for search results
-    await this.page.waitForLoadState('domcontentloaded')
+    // Search is debounced (500ms) — wait for URL to reflect the search param
+    await expect(this.page).toHaveURL(/[?&]search=/, { timeout: 10000 })
+    // Wait for search results to load (resolves immediately if loading indicator never appeared)
+    await this.page.getByText(/loading/i).waitFor({ state: 'hidden', timeout: 10000 })
   }
 
   async clickAddGame() {

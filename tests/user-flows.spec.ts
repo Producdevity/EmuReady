@@ -78,7 +78,6 @@ test.describe('User Flow Tests', () => {
 
     // Search for listings
     await listingsPage.searchListings('Pokemon')
-    await page.waitForLoadState('domcontentloaded')
 
     // Apply a filter if available
     if (await listingsPage.performanceFilter.isVisible({ timeout: 2000 })) {

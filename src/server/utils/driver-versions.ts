@@ -27,9 +27,14 @@ const repos: Repo[] = [
     sortMode: 'PublishTime',
   },
   {
-    name: 'Weab-Chan Freedreno',
-    path: 'Weab-chan/freedreno_turnip-CI',
-    sort: 3,
+    name: 'whitebelyash',
+    path: 'whitebelyash/freedreno_turnip-CI',
+    sort: 4,
+  },
+  {
+    name: 'StevenMXZ',
+    path: 'StevenMXZ/freedreno_turnip-CI',
+    sort: 5,
   },
 ]
 

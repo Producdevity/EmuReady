@@ -60,6 +60,7 @@ import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifica
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
 import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
 import { logAudit } from '@/server/services/audit.service'
+import { computeAuthorRiskProfiles } from '@/server/services/author-risk.service'
 import { listingStatsCache } from '@/server/utils/cache'
 import { paginate } from '@/server/utils/pagination'
 import { isUserBanned } from '@/server/utils/query-builders'
@@ -443,8 +444,36 @@ export const pcListingsRouter = createTRPCRouter({
       canSeeBannedUsers: true, // Moderators can see listings from banned users
     })
 
+    // Compute author risk profiles
+    const uniqueAuthorIds = [...new Set(result.pcListings.map((l) => l.authorId))]
+    const existingBansMap = new Map<string, { reason: string }[]>()
+    for (const listing of result.pcListings) {
+      if (
+        listing.author?.userBans &&
+        listing.author.userBans.length > 0 &&
+        !existingBansMap.has(listing.authorId)
+      ) {
+        existingBansMap.set(
+          listing.authorId,
+          listing.author.userBans.map((b) => ({ reason: b.reason })),
+        )
+      }
+    }
+    const riskProfiles = await computeAuthorRiskProfiles(
+      ctx.prisma,
+      uniqueAuthorIds,
+      existingBansMap,
+    )
+
     return {
-      pcListings: result.pcListings,
+      pcListings: result.pcListings.map((listing) => ({
+        ...listing,
+        authorRiskProfile: riskProfiles.get(listing.authorId) ?? {
+          authorId: listing.authorId,
+          signals: [],
+          highestSeverity: null,
+        },
+      })),
       pagination: result.pagination,
     }
   }),

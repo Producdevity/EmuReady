@@ -243,7 +243,8 @@ test.describe('Admin Dashboard Data Visualizations - Requires Admin Role', () =>
   })
 
   test('should support data refresh functionality', async ({ page }) => {
-    const refreshButton = page.locator('button').filter({ hasText: /refresh/i })
+    // ActivityCard refresh button uses aria-label="Refresh"
+    const refreshButton = page.locator('button[aria-label="Refresh"]')
     const hasRefresh = await refreshButton
       .first()
       .isVisible({ timeout: 5000 })

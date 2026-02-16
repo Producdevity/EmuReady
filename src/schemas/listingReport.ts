@@ -39,6 +39,13 @@ export const DeleteReportSchema = z.object({
   id: z.string().uuid(),
 })
 
+export const GetUserReportsSchema = z.object({
+  userId: z.string().uuid(),
+  status: ReportStatusSchema.optional(),
+  page: z.number().int().min(1).default(1),
+  limit: z.number().int().min(1).max(50).default(10),
+})
+
 export const GetUserReportStatsSchema = z.object({
   userId: z.string().uuid(),
 })

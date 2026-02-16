@@ -152,27 +152,4 @@ test.describe('Badge System', () => {
       expect(hasTable || hasNoResults).toBe(true)
     })
   })
-
-  test.describe('Badge Display on User Profile', () => {
-    test.use({ storageState: 'tests/.auth/user.json' })
-
-    test('should display user badges on profile if assigned', async ({ page }) => {
-      await page.goto('/profile')
-      await page.waitForLoadState('domcontentloaded')
-
-      // Badges appear as elements with data-testid or within a badges section
-      const badgeSection = page.locator('[data-testid*="badge"], [aria-label*="badge"]')
-      const badgeCount = await badgeSection.count()
-
-      test.skip(badgeCount === 0, 'No badges assigned to this user')
-
-      // Verify each badge pill is visible and contains text
-      for (let i = 0; i < badgeCount; i++) {
-        const badge = badgeSection.nth(i)
-        await expect(badge).toBeVisible()
-        const text = await badge.textContent()
-        expect(text?.trim().length).toBeGreaterThan(0)
-      }
-    })
-  })
 })

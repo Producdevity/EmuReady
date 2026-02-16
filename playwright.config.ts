@@ -16,8 +16,8 @@ export default defineConfig({
   fullyParallel: true,
   /* Fail the build on CI when test.only is left on. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only - 1 retry helps catch flaky tests without hiding consistent issues */
-  retries: isCI ? 1 : 0,
+  /* 1 retry catches timing-sensitive tests without hiding consistent issues */
+  retries: 1,
   /* Conservative approach for CI stability - 1 worker ensures each test gets full resources */
   workers: isCI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */

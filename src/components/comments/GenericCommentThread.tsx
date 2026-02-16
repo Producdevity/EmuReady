@@ -493,8 +493,8 @@ export function GenericCommentThread(props: GenericCommentThreadProps) {
         )}
       </div>
 
-      {/* Add Comment Form */}
-      {user && props.renderForm({ onSuccess: props.onRefresh })}
+      {/* Add Comment Form — rendered for all users; the form itself shows a sign-in prompt when unauthenticated */}
+      {props.renderForm({ onSuccess: props.onRefresh })}
 
       {props.pinnedComment && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10 p-4 space-y-2">

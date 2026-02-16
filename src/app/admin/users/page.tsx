@@ -35,7 +35,7 @@ import { PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
 import { type Role, Role as RoleEnum } from '@orm'
 import UserBadgeModal from './components/UserBadgeModal'
-import UserDetailsModal from './components/UserDetailsModal'
+import UserDetailsModal, { type ActivityTab } from './components/UserDetailsModal'
 import UserRoleModal from './components/UserRoleModal'
 
 type AdminUser = RouterOutput['users']['get']['users'][number]
@@ -149,6 +149,7 @@ function AdminUsersPage() {
   const closeUserDetailsModal = () => {
     const params = new URLSearchParams(searchParams.toString())
     params.delete('userId')
+    params.delete('tab')
     const newUrl = params.toString() ? `?${params.toString()}` : '/admin/users'
     router.replace(newUrl, { scroll: false })
   }
@@ -441,6 +442,7 @@ function AdminUsersPage() {
         userId={userIdFromUrl}
         isOpen={!!userIdFromUrl}
         onClose={closeUserDetailsModal}
+        initialTab={(searchParams.get('tab') as ActivityTab) ?? undefined}
       />
     </AdminPageLayout>
   )

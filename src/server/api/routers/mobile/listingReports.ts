@@ -5,7 +5,7 @@ import {
   mobileProtectedProcedure,
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
-import { ReportStatus } from '@orm'
+import { getAuthorReportCounts } from '@/server/services/report-stats.service'
 
 export const mobileListingReportsRouter = createMobileTRPCRouter({
   /**
@@ -64,16 +64,11 @@ export const mobileListingReportsRouter = createMobileTRPCRouter({
   checkUserHasReports: mobilePublicProcedure
     .input(GetUserReportStatsSchema)
     .query(async ({ ctx, input }) => {
-      const reportCount = await ctx.prisma.listingReport.count({
-        where: {
-          listing: { authorId: input.userId },
-          status: { in: [ReportStatus.RESOLVED, ReportStatus.UNDER_REVIEW] },
-        },
-      })
+      const { totalReports, hasReports } = await getAuthorReportCounts(ctx.prisma, input.userId)
 
       return {
-        hasReports: reportCount > 0,
-        reportCount,
+        hasReports,
+        reportCount: totalReports,
       }
     }),
 })
