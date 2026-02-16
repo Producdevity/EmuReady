@@ -1,6 +1,6 @@
 'use client'
 
-import { User, Save, X, Edit } from 'lucide-react'
+import { User, Save, X, Pencil } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Button, Input } from '@/components/ui'
 import { api } from '@/lib/api'
@@ -91,19 +91,11 @@ function ProfileInformation(props: Props) {
           variant="ghost"
           size="sm"
           onClick={() => setIsEditing((prevState) => !prevState)}
+          icon={isEditing ? X : Pencil}
           className="flex items-center gap-2"
+          isLoading={updateProfile.isPending}
         >
-          {isEditing ? (
-            <>
-              <X className="w-4 h-4" />
-              Cancel
-            </>
-          ) : (
-            <>
-              <Edit className="w-4 h-4" />
-              Edit
-            </>
-          )}
+          {isEditing ? 'Cancel' : 'Edit'}
         </Button>
       </div>
 
