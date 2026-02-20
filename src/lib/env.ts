@@ -21,6 +21,7 @@ interface Env {
   IS_PROD: boolean
   IS_DEV: boolean
   IS_TEST: boolean
+  ENABLE_V2_LISTINGS: boolean
   ENABLE_PATREON_VERIFICATION: boolean
   ENABLE_ANDROID_DOWNLOADS: boolean
   ANDROID_LATEST_JSON_URL: string
@@ -70,6 +71,7 @@ export const env = {
   IS_DEV: process.env.NODE_ENV === 'development',
   IS_TEST: process.env.NODE_ENV === 'test',
 
+  ENABLE_V2_LISTINGS: process.env.NEXT_PUBLIC_ENABLE_V2_LISTINGS === 'true',
   ENABLE_PATREON_VERIFICATION: process.env.NEXT_PUBLIC_ENABLE_PATREON_VERIFICATION === 'true',
   ENABLE_ANDROID_DOWNLOADS: process.env.NEXT_PUBLIC_ENABLE_ANDROID_DOWNLOADS === 'true',
   ANDROID_LATEST_JSON_URL:
