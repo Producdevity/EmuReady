@@ -1,4 +1,5 @@
 import { createTRPCRouter } from '@/server/api/trpc'
+import { accountRouter } from './routers/account'
 import { activityRouter } from './routers/admin/activity'
 import { adminEntitlementsRouter } from './routers/admin/entitlements'
 import { adminReleasesRouter } from './routers/admin/releases'
@@ -29,6 +30,7 @@ import { permissionLogsRouter } from './routers/permissionLogs'
 import { permissionsRouter } from './routers/permissions'
 import { rawgRouter } from './routers/rawg'
 import { releasesRouter } from './routers/releases'
+import { socialRouter } from './routers/social'
 import { socsRouter } from './routers/socs'
 import { systemRouter } from './routers/system'
 import { systemsRouter } from './routers/systems'
@@ -41,6 +43,7 @@ import { verifiedDevelopersRouter } from './routers/verifiedDevelopers'
 import { voteInvestigationRouter } from './routers/voteInvestigation'
 
 export const appRouter = createTRPCRouter({
+  account: accountRouter,
   activity: activityRouter,
   listings: listingsRouter,
   pcListings: pcListingsRouter,
@@ -81,6 +84,7 @@ export const appRouter = createTRPCRouter({
   adminReleases: adminReleasesRouter,
   adminEntitlements: adminEntitlementsRouter,
   voteInvestigation: voteInvestigationRouter,
+  social: socialRouter,
 })
 
 export type AppRouter = typeof appRouter

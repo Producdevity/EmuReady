@@ -16,6 +16,12 @@ export const UpdateNotificationPreferenceSchema = z.object({
   emailEnabled: z.boolean().optional(),
 })
 
+export const BulkUpdateNotificationPreferencesSchema = z.object({
+  types: z.array(z.nativeEnum(NotificationType)).min(1).max(50),
+  inAppEnabled: z.boolean().optional(),
+  emailEnabled: z.boolean().optional(),
+})
+
 export const UpdateListingNotificationPreferenceSchema = z.object({
   listingId: z.string().uuid(),
   isEnabled: z.boolean(),

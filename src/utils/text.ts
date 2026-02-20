@@ -33,3 +33,15 @@ export function normalizeString(str: string): string {
 export function normalizeStrings(strings: string[]): string[] {
   return strings.map(normalizeString)
 }
+
+/**
+ * Pretty formats a byte size into a human-readable string (e.g., "1.5 MB").
+ * @param bytes
+ */
+export function bytesToHuman(bytes?: number): string | null {
+  if (!bytes || bytes <= 0) return null
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), sizes.length - 1)
+  const val = bytes / Math.pow(1024, i)
+  return `${val.toFixed(1)} ${sizes[i]}`
+}

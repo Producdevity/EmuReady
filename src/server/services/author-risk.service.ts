@@ -6,7 +6,7 @@ import {
 } from '@/schemas/authorRisk'
 import { type Severity } from '@/schemas/common'
 import { TIME_CONSTANTS } from '@/utils/time'
-import { type PrismaClient } from '@orm'
+import { ApprovalStatus, type PrismaClient } from '@orm'
 import { getAuthorReportStats, getAuthorVoteStats, getAuthorsWithApprovedListings } from '@orm/sql'
 
 interface ExistingBan {
@@ -106,6 +106,49 @@ async function batchCheckNewAuthors(
   return new Set(authorIds.filter((id) => !authorsWithApproved.has(id)))
 }
 
+async function batchGetTrustScores(
+  prisma: PrismaClient,
+  authorIds: string[],
+): Promise<Map<string, number>> {
+  const users = await prisma.user.findMany({
+    where: { id: { in: authorIds } },
+    select: { id: true, trustScore: true },
+  })
+
+  const trustScoreMap = new Map<string, number>()
+  for (const user of users) {
+    trustScoreMap.set(user.id, user.trustScore)
+  }
+  return trustScoreMap
+}
+
+async function batchGetRejectionCounts(
+  prisma: PrismaClient,
+  authorIds: string[],
+): Promise<Map<string, number>> {
+  const [listingRejections, pcListingRejections] = await Promise.all([
+    prisma.listing.groupBy({
+      by: ['authorId'],
+      where: { authorId: { in: authorIds }, status: ApprovalStatus.REJECTED },
+      _count: true,
+    }),
+    prisma.pcListing.groupBy({
+      by: ['authorId'],
+      where: { authorId: { in: authorIds }, status: ApprovalStatus.REJECTED },
+      _count: true,
+    }),
+  ])
+
+  const rejectionMap = new Map<string, number>()
+  for (const row of listingRejections) {
+    rejectionMap.set(row.authorId, (rejectionMap.get(row.authorId) ?? 0) + row._count)
+  }
+  for (const row of pcListingRejections) {
+    rejectionMap.set(row.authorId, (rejectionMap.get(row.authorId) ?? 0) + row._count)
+  }
+  return rejectionMap
+}
+
 export async function computeAuthorRiskProfiles(
   prisma: PrismaClient,
   authorIds: string[],
@@ -117,10 +160,12 @@ export async function computeAuthorRiskProfiles(
 
   const uniqueIds = [...new Set(authorIds)]
 
-  const [reportStats, voteStats, newAuthors] = await Promise.all([
+  const [reportStats, voteStats, newAuthors, trustScores, rejectionCounts] = await Promise.all([
     batchGetAuthorReportStats(prisma, uniqueIds),
     batchCheckVoteFlags(prisma, uniqueIds),
     batchCheckNewAuthors(prisma, uniqueIds),
+    batchGetTrustScores(prisma, uniqueIds),
+    batchGetRejectionCounts(prisma, uniqueIds),
   ])
 
   for (const authorId of uniqueIds) {
@@ -226,6 +271,68 @@ export async function computeAuthorRiskProfiles(
           'low',
           'New Author',
           'No previously approved listings',
+        ),
+      )
+    }
+
+    // NEGATIVE_TRUST_SCORE
+    const trustScore = trustScores.get(authorId) ?? 0
+    if (trustScore < -50) {
+      signals.push(
+        createSignal(
+          RISK_SIGNAL_TYPES.NEGATIVE_TRUST_SCORE,
+          'high',
+          'Negative Trust',
+          `Trust score: ${trustScore}`,
+        ),
+      )
+    } else if (trustScore < -20) {
+      signals.push(
+        createSignal(
+          RISK_SIGNAL_TYPES.NEGATIVE_TRUST_SCORE,
+          'medium',
+          'Negative Trust',
+          `Trust score: ${trustScore}`,
+        ),
+      )
+    } else if (trustScore < 0) {
+      signals.push(
+        createSignal(
+          RISK_SIGNAL_TYPES.NEGATIVE_TRUST_SCORE,
+          'low',
+          'Negative Trust',
+          `Trust score: ${trustScore}`,
+        ),
+      )
+    }
+
+    // PREVIOUSLY_REJECTED
+    const rejectedCount = rejectionCounts.get(authorId) ?? 0
+    if (rejectedCount >= 6) {
+      signals.push(
+        createSignal(
+          RISK_SIGNAL_TYPES.PREVIOUSLY_REJECTED,
+          'high',
+          'Previously Rejected',
+          `${rejectedCount} rejected listings`,
+        ),
+      )
+    } else if (rejectedCount >= 3) {
+      signals.push(
+        createSignal(
+          RISK_SIGNAL_TYPES.PREVIOUSLY_REJECTED,
+          'medium',
+          'Previously Rejected',
+          `${rejectedCount} rejected listings`,
+        ),
+      )
+    } else if (rejectedCount >= 1) {
+      signals.push(
+        createSignal(
+          RISK_SIGNAL_TYPES.PREVIOUSLY_REJECTED,
+          'low',
+          'Previously Rejected',
+          `${rejectedCount} rejected listing${rejectedCount > 1 ? 's' : ''}`,
         ),
       )
     }

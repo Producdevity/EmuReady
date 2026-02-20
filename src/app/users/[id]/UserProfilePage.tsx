@@ -2,16 +2,17 @@
 
 import { formatDistanceToNow } from 'date-fns'
 import {
+  Award,
   Calendar,
   GamepadIcon,
   Grid3X3,
   List,
+  Monitor,
+  Settings,
+  Shield,
   Star,
-  ThumbsDown,
   ThumbsUp,
   TrendingUp,
-  Monitor,
-  Award,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -19,27 +20,30 @@ import { useParams, useSearchParams } from 'next/navigation'
 import { useEffect, useState, useMemo } from 'react'
 import { isArray, isString } from 'remeda'
 import { z } from 'zod'
-import { SystemIcon } from '@/components/icons'
 import {
   Badge,
   Button,
   Input,
-  PerformanceBadge,
   Pagination,
   LocalizedDate,
-  SuccessRateBar,
+  SegmentedTabs,
   TrustLevelBadge,
   UserBadgeItem,
 } from '@/components/ui'
 import { Dropdown } from '@/components/ui/Dropdown'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { api } from '@/lib/api'
+import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import { getRoleVariant } from '@/utils/badge-colors'
 import { validateClientData } from '@/utils/client-validation'
 import { formatUserRole } from '@/utils/format'
+import getErrorMessage from '@/utils/getErrorMessage'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role } from '@orm'
+import FollowListModal from './components/FollowListModal'
+import ProfileListingCard from './components/ProfileListingCard'
+import ProfileVoteCard from './components/ProfileVoteCard'
 import UserDetailsPageError from './components/UserDetailsPageError'
 import UserProfilePageSkeleton from './components/UserProfilePageSkeleton'
 import type { ReactNode } from 'react'
@@ -57,13 +61,21 @@ function UserDetailsPage() {
 
   const userId = isString(params.id) ? params.id : isArray(params.id) ? params.id[0] : ''
 
-  const [activeTab, setActiveTab] = useState<'listings' | 'votes'>(
-    (searchParams.get('tab') as 'listings' | 'votes') || 'listings',
+  type ProfileTab = 'listings' | 'pcListings' | 'votes'
+  const [activeTab, setActiveTab] = useState<ProfileTab>(
+    (searchParams.get('tab') as ProfileTab) || 'listings',
   )
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [listingsPage, setListingsPage] = useState(
     validateClientData(
       parseInt(searchParams.get('listingsPage') || '1'),
+      z.number().int().positive(),
+      1,
+    ),
+  )
+  const [pcListingsPage, setPcListingsPage] = useState(
+    validateClientData(
+      parseInt(searchParams.get('pcListingsPage') || '1'),
       z.number().int().positive(),
       1,
     ),
@@ -78,6 +90,10 @@ function UserDetailsPage() {
   const [searchFilter, setSearchFilter] = useState(searchParams.get('search') || '')
   const [deviceFilter, setDeviceFilter] = useState(searchParams.get('device') || '')
   const [emulatorFilter, setEmulatorFilter] = useState(searchParams.get('emulator') || '')
+  const [followListModal, setFollowListModal] = useState<{
+    open: boolean
+    type: 'followers' | 'following'
+  }>({ open: false, type: 'followers' })
 
   const debouncedSearch = useDebouncedValue(searchFilter, 300)
 
@@ -86,13 +102,22 @@ function UserDetailsPage() {
     const params = new URLSearchParams()
     if (activeTab !== 'listings') params.set('tab', activeTab)
     if (listingsPage > 1) params.set('listingsPage', String(listingsPage))
+    if (pcListingsPage > 1) params.set('pcListingsPage', String(pcListingsPage))
     if (votesPage > 1) params.set('votesPage', String(votesPage))
     if (debouncedSearch) params.set('search', debouncedSearch)
     if (deviceFilter) params.set('device', deviceFilter)
     if (emulatorFilter) params.set('emulator', emulatorFilter)
     const qs = params.toString()
     window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname)
-  }, [activeTab, listingsPage, votesPage, debouncedSearch, deviceFilter, emulatorFilter])
+  }, [
+    activeTab,
+    listingsPage,
+    pcListingsPage,
+    votesPage,
+    debouncedSearch,
+    deviceFilter,
+    emulatorFilter,
+  ])
 
   const userQuery = api.users.getUserById.useQuery({
     userId,
@@ -101,17 +126,49 @@ function UserDetailsPage() {
     listingsSearch: debouncedSearch || undefined,
     listingsDevice: deviceFilter || undefined,
     listingsEmulator: emulatorFilter || undefined,
+    pcListingsPage,
+    pcListingsLimit: 12,
+    pcListingsSearch: activeTab === 'pcListings' ? debouncedSearch || undefined : undefined,
     votesPage,
     votesLimit: 12,
     votesSearch: debouncedSearch || undefined,
   })
 
+  const utils = api.useUtils()
   const currentUserQuery = api.users.me.useQuery()
   const canViewBannedUsers = roleIncludesRole(currentUserQuery.data?.role, Role.MODERATOR)
+  const isOwnProfile = currentUserQuery.data?.id === userId
+  const isAuthenticated = Boolean(currentUserQuery.data?.id)
 
-  const handleTabChange = (tab: 'listings' | 'votes') => {
+  const followQuery = api.social.isFollowing.useQuery(
+    { userId },
+    { enabled: isAuthenticated && !isOwnProfile },
+  )
+  const followCountsQuery = api.social.getFollowCounts.useQuery({ userId })
+
+  const followMutation = api.social.follow.useMutation({
+    onSuccess: () => {
+      utils.social.isFollowing.invalidate({ userId }).catch(console.error)
+      utils.social.getFollowCounts.invalidate({ userId }).catch(console.error)
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error))
+    },
+  })
+  const unfollowMutation = api.social.unfollow.useMutation({
+    onSuccess: () => {
+      utils.social.isFollowing.invalidate({ userId }).catch(console.error)
+      utils.social.getFollowCounts.invalidate({ userId }).catch(console.error)
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error))
+    },
+  })
+
+  const handleTabChange = (tab: ProfileTab) => {
     setActiveTab(tab)
     setListingsPage(1)
+    setPcListingsPage(1)
     setVotesPage(1)
   }
 
@@ -149,6 +206,29 @@ function UserDetailsPage() {
     ]
   }, [userQuery.data?.filterOptions.emulators])
 
+  const showVotesTab =
+    isOwnProfile ||
+    canViewBannedUsers ||
+    !userQuery.data ||
+    !('showVotingActivity' in userQuery.data) ||
+    userQuery.data.showVotingActivity !== false
+
+  const activityTabs = useMemo(() => {
+    const tabs = [
+      { id: 'listings', label: 'Handheld', count: userQuery.data?._count?.listings ?? 0 },
+      { id: 'pcListings', label: 'PC', count: userQuery.data?._count?.pcListings ?? 0 },
+    ]
+    if (showVotesTab) {
+      tabs.push({ id: 'votes', label: 'Votes', count: userQuery.data?.voteSummary?.total ?? 0 })
+    }
+    return tabs
+  }, [
+    userQuery.data?._count?.listings,
+    userQuery.data?._count?.pcListings,
+    showVotesTab,
+    userQuery.data?.voteSummary?.total,
+  ])
+
   if (userQuery.isPending) return <UserProfilePageSkeleton />
 
   if (userQuery.error || !userQuery.data) {
@@ -156,35 +236,28 @@ function UserDetailsPage() {
   }
 
   const contributionSummary = userQuery.data.contributionSummary
-  const voteSummaryData = (
-    userQuery.data as {
-      voteSummary?: { total: number; upvotes: number; downvotes: number }
-    }
-  ).voteSummary
-  const voteSummary: { total: number; upvotes: number; downvotes: number } = voteSummaryData ?? {
-    total: 0,
-    upvotes: 0,
-    downvotes: 0,
-  }
+  const voteSummary = userQuery.data.voteSummary
   const positiveVoteRatio =
-    voteSummary.total > 0 ? Math.round((voteSummary.upvotes / voteSummary.total) * 100) : 0
+    voteSummary && voteSummary.total > 0
+      ? Math.round((voteSummary.upvotes / voteSummary.total) * 100)
+      : 0
 
   const contributionStats: ContributionHighlight[] = [
     {
       label: 'Total Contributions',
-      value: contributionSummary.total,
+      value: contributionSummary?.total ?? 0,
       icon: <Award className="h-5 w-5" />,
       accent: 'from-yellow-400 to-amber-500',
     },
     {
       label: 'Handheld Reports',
-      value: contributionSummary.listings,
+      value: contributionSummary?.listings ?? 0,
       icon: <GamepadIcon className="h-5 w-5" />,
       accent: 'from-blue-500 to-blue-600',
     },
     {
       label: 'PC Reports',
-      value: contributionSummary.pcListings,
+      value: contributionSummary?.pcListings ?? 0,
       icon: <Monitor className="h-5 w-5" />,
       accent: 'from-purple-500 to-purple-600',
     },
@@ -244,6 +317,57 @@ function UserDetailsPage() {
                       <LocalizedDate date={userQuery.data.createdAt ?? new Date()} format="date" />
                     </span>
                   </div>
+                  {followCountsQuery.data && (
+                    <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 justify-center lg:justify-start mb-3">
+                      <button
+                        type="button"
+                        onClick={() => setFollowListModal({ open: true, type: 'followers' })}
+                        className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      >
+                        <span className="font-semibold text-gray-900 dark:text-white">
+                          {followCountsQuery.data.followersCount}
+                        </span>{' '}
+                        {followCountsQuery.data.followersCount === 1 ? 'follower' : 'followers'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFollowListModal({ open: true, type: 'following' })}
+                        className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      >
+                        <span className="font-semibold text-gray-900 dark:text-white">
+                          {followCountsQuery.data.followingCount}
+                        </span>{' '}
+                        following
+                      </button>
+                    </div>
+                  )}
+                  {!isOwnProfile &&
+                    isAuthenticated &&
+                    (userQuery.data.allowFollows !== false || followQuery.data?.isFollowing) && (
+                      <div className="mb-3 flex justify-center lg:justify-start">
+                        {followQuery.data?.isFollowing ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            rounded
+                            onClick={() => unfollowMutation.mutate({ userId })}
+                            disabled={unfollowMutation.isPending}
+                          >
+                            Following
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            rounded
+                            onClick={() => followMutation.mutate({ userId })}
+                            disabled={followMutation.isPending}
+                          >
+                            Follow
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   {/* User Badges */}
                   {userQuery.data.userBadges && userQuery.data.userBadges.length > 0 && (
                     <div className="flex flex-wrap gap-2 justify-center lg:justify-start mt-3">
@@ -263,6 +387,20 @@ function UserDetailsPage() {
                       {userQuery.data.bio}
                     </p>
                   ) : null}
+                  {isOwnProfile && (
+                    <div className="mt-4">
+                      <Button variant="outline" size="sm" rounded asChild icon={Settings}>
+                        <Link href="/profile">Account Settings</Link>
+                      </Button>
+                    </div>
+                  )}
+                  {canViewBannedUsers && !isOwnProfile && (
+                    <div className="mt-2">
+                      <Button variant="outline" size="sm" rounded asChild icon={Shield}>
+                        <Link href={`/admin/users?userId=${userId}`}>Manage User</Link>
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -286,6 +424,7 @@ function UserDetailsPage() {
                         {stat.label}
                       </p>
                       {stat.label === 'Total Contributions' &&
+                        contributionSummary &&
                         contributionSummary.lastContributionAt && (
                           <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
                             Last contribution{' '}
@@ -306,7 +445,7 @@ function UserDetailsPage() {
                       </div>
                       <div>
                         <p className="text-2xl font-bold text-indigo-900 dark:text-indigo-100">
-                          {voteSummary.total.toLocaleString()}
+                          {(voteSummary?.total ?? 0).toLocaleString()}
                         </p>
                         <p className="text-sm font-medium text-indigo-700 dark:text-indigo-200">
                           Votes Cast
@@ -340,34 +479,13 @@ function UserDetailsPage() {
             {/* Tabs and Controls */}
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                <div className="w-full xl:w-auto">
-                  <div className="flex h-11 w-full items-center gap-2 rounded-xl border border-gray-200 bg-gray-100/70 p-1 shadow-sm dark:border-gray-700 dark:bg-gray-900/60 xl:w-auto">
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleTabChange('listings')}
-                      className={cn(
-                        'h-10 flex-1 rounded-lg text-sm font-semibold transition',
-                        activeTab === 'listings'
-                          ? 'bg-white text-gray-900 shadow-md dark:bg-gray-800 dark:text-gray-100'
-                          : 'text-gray-600 hover:bg-white/70 dark:text-gray-300 dark:hover:bg-gray-800/70',
-                      )}
-                    >
-                      Reports ({userQuery.data._count?.listings ?? 0})
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleTabChange('votes')}
-                      className={cn(
-                        'h-10 flex-1 rounded-lg text-sm font-semibold transition',
-                        activeTab === 'votes'
-                          ? 'bg-white text-gray-900 shadow-md dark:bg-gray-800 dark:text-gray-100'
-                          : 'text-gray-600 hover:bg-white/70 dark:text-gray-300 dark:hover:bg-gray-800/70',
-                      )}
-                    >
-                      Votes ({voteSummary.total})
-                    </Button>
-                  </div>
-                </div>
+                <SegmentedTabs
+                  tabs={activityTabs}
+                  activeTab={activeTab}
+                  onTabChange={(tab) => handleTabChange(tab as ProfileTab)}
+                  layoutId="profile-activity-tabs"
+                  className="w-full xl:w-auto"
+                />
 
                 <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
                   <Input
@@ -435,123 +553,41 @@ function UserDetailsPage() {
 
             {/* Content */}
             <div className="p-6">
-              {activeTab === 'listings' ? (
+              {activeTab === 'listings' && (
                 <>
                   {userQuery.data.listings.items.length > 0 ? (
                     <div
                       className={cn(
-                        'gap-6',
+                        'gap-4',
                         viewMode === 'grid'
                           ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
-                          : 'flex flex-col space-y-4',
+                          : 'flex flex-col',
                       )}
                     >
-                      {userQuery.data.listings.items.map((listing, index) => {
-                        const deviceName = [listing.device?.brand.name, listing.device?.modelName]
-                          .filter(Boolean)
-                          .join(' ')
-                          .trim()
-
-                        return (
-                          <Link
-                            key={listing.id}
-                            href={`/listings/${listing.id}`}
-                            className={cn(
-                              'animate-fade-in-up group relative overflow-hidden rounded-2xl border transition-all duration-300',
-                              'border-slate-200/70 bg-gradient-to-br from-white/95 via-slate-50/90 to-slate-100/90 hover:-translate-y-1 hover:border-blue-400/40 hover:shadow-xl dark:border-white/5 dark:from-slate-900/70 dark:via-slate-900/60 dark:to-slate-900/45 dark:hover:border-blue-500/40',
-                              viewMode === 'list' ? 'p-5' : 'p-6',
-                            )}
-                            style={{ animationDelay: `${index * 50}ms` }}
-                          >
-                            <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:bg-gradient-to-br dark:from-blue-600/10 dark:via-purple-500/10 dark:to-transparent" />
-                            <div className="relative flex flex-col gap-4">
-                              <div className="flex items-start gap-4">
-                                <div className="relative flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-white/85 ring-1 ring-slate-900/10 shadow-md dark:bg-slate-900/70 dark:ring-white/10">
-                                  {listing.game?.system?.key ? (
-                                    <SystemIcon
-                                      systemKey={listing.game.system.key}
-                                      name={listing.game.system.name}
-                                      size="md"
-                                    />
-                                  ) : (
-                                    <div className="flex h-full w-full items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/90 to-purple-600/90 text-white">
-                                      <GamepadIcon className="h-5 w-5" />
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="min-w-0 flex-1 space-y-3">
-                                  <div className="flex items-start justify-between gap-3">
-                                    <div className="min-w-0 space-y-1">
-                                      <h3 className="truncate font-semibold text-slate-900 transition-colors duration-200 group-hover:text-blue-600 dark:text-slate-100 dark:group-hover:text-blue-300">
-                                        {listing.game?.title}
-                                      </h3>
-                                      <p className="truncate text-sm text-slate-500 dark:text-slate-400">
-                                        {deviceName || 'Unknown device'}
-                                      </p>
-                                    </div>
-                                    {listing.performance ? (
-                                      <PerformanceBadge
-                                        rank={listing.performance.rank}
-                                        label={listing.performance.label}
-                                        pill
-                                        className="hidden shrink-0 text-sm sm:block"
-                                      />
-                                    ) : null}
-                                  </div>
-
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    {listing.emulator?.name ? (
-                                      <Badge
-                                        variant="primary"
-                                        size="sm"
-                                        pill
-                                        className="shadow-sm dark:bg-blue-900/40 dark:text-blue-200"
-                                      >
-                                        {listing.emulator.name}
-                                      </Badge>
-                                    ) : null}
-                                    {listing.performance ? (
-                                      <PerformanceBadge
-                                        rank={listing.performance.rank}
-                                        label={listing.performance.label}
-                                        pill
-                                        className="sm:hidden"
-                                      />
-                                    ) : null}
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                                <LocalizedDate date={listing.createdAt} format="timeAgo" />
-                                {listing._count.votes > 0 && (
-                                  <SuccessRateBar
-                                    rate={listing.successRate * 100}
-                                    voteCount={listing._count.votes}
-                                    compact
-                                  />
-                                )}
-                              </div>
-                            </div>
-                          </Link>
-                        )
-                      })}
+                      {userQuery.data.listings.items.map((listing, index) => (
+                        <ProfileListingCard
+                          key={listing.id}
+                          report={listing}
+                          variant="handheld"
+                          viewMode={viewMode}
+                          index={index}
+                        />
+                      ))}
                     </div>
                   ) : (
                     <div className="text-center py-12">
                       <GamepadIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                        No Compatibility Reports found
+                        No Handheld Reports found
                       </h3>
                       <p className="text-gray-600 dark:text-gray-400">
                         {searchFilter || deviceFilter || emulatorFilter
                           ? 'Try adjusting your filters'
-                          : "This user hasn't submitted any Compatibility Reports yet"}
+                          : "This user hasn't submitted any handheld reports yet"}
                       </p>
                     </div>
                   )}
 
-                  {/* Listings Pagination */}
                   {userQuery.data.listings.pagination.pages > 1 && (
                     <div className="mt-8 flex justify-center">
                       <Pagination
@@ -564,7 +600,58 @@ function UserDetailsPage() {
                     </div>
                   )}
                 </>
-              ) : (
+              )}
+
+              {activeTab === 'pcListings' && (
+                <>
+                  {userQuery.data.pcListings.items.length > 0 ? (
+                    <div
+                      className={cn(
+                        'gap-4',
+                        viewMode === 'grid'
+                          ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
+                          : 'flex flex-col',
+                      )}
+                    >
+                      {userQuery.data.pcListings.items.map((pcListing, index) => (
+                        <ProfileListingCard
+                          key={pcListing.id}
+                          report={pcListing}
+                          variant="pc"
+                          viewMode={viewMode}
+                          index={index}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Monitor className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                        No PC Reports found
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        {searchFilter
+                          ? 'Try adjusting your search'
+                          : "This user hasn't submitted any PC reports yet"}
+                      </p>
+                    </div>
+                  )}
+
+                  {userQuery.data.pcListings.pagination.pages > 1 && (
+                    <div className="mt-8 flex justify-center">
+                      <Pagination
+                        page={userQuery.data.pcListings.pagination.page}
+                        totalPages={userQuery.data.pcListings.pagination.pages}
+                        totalItems={userQuery.data.pcListings.pagination.total}
+                        itemsPerPage={userQuery.data.pcListings.pagination.limit}
+                        onPageChange={setPcListingsPage}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+
+              {activeTab === 'votes' && (
                 <>
                   {userQuery.data.votes.items.length > 0 ? (
                     <div
@@ -572,44 +659,16 @@ function UserDetailsPage() {
                         'gap-4',
                         viewMode === 'grid'
                           ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
-                          : 'flex flex-col space-y-3',
+                          : 'flex flex-col',
                       )}
                     >
                       {userQuery.data.votes.items.map((vote, index) => (
-                        <Link
+                        <ProfileVoteCard
                           key={vote.id}
-                          href={`/listings/${vote.listing.id}`}
-                          className={cn(
-                            'group bg-gradient-to-br from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1',
-                            'animate-fade-in-up',
-                          )}
-                          style={{ animationDelay: `${index * 30}ms` }}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={cn(
-                                'flex-shrink-0 p-2 rounded-lg',
-                                vote.value
-                                  ? 'bg-green-100 dark:bg-green-900/30'
-                                  : 'bg-red-100 dark:bg-red-900/30',
-                              )}
-                            >
-                              {vote.value ? (
-                                <ThumbsUp className="w-4 h-4 text-green-600 dark:text-green-400" />
-                              ) : (
-                                <ThumbsDown className="w-4 h-4 text-red-600 dark:text-red-400" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200 truncate">
-                                {vote.listing.game?.title}
-                              </p>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                {vote.listing.device?.brand.name} {vote.listing.device?.modelName}
-                              </p>
-                            </div>
-                          </div>
-                        </Link>
+                          vote={vote}
+                          viewMode={viewMode}
+                          index={index}
+                        />
                       ))}
                     </div>
                   ) : (
@@ -621,12 +680,11 @@ function UserDetailsPage() {
                       <p className="text-gray-600 dark:text-gray-400">
                         {searchFilter
                           ? 'Try adjusting your search'
-                          : "This user hasn't voted on any Compatibility Reports yet"}
+                          : "This user hasn't voted on any compatibility reports yet"}
                       </p>
                     </div>
                   )}
 
-                  {/* Votes Pagination */}
                   {userQuery.data.votes.pagination.pages > 1 && (
                     <div className="mt-8 flex justify-center">
                       <Pagination
@@ -644,6 +702,13 @@ function UserDetailsPage() {
           </div>
         </div>
       </div>
+
+      <FollowListModal
+        userId={userId}
+        type={followListModal.type}
+        open={followListModal.open}
+        onOpenChange={(open) => setFollowListModal((prev) => ({ ...prev, open }))}
+      />
     </div>
   )
 }

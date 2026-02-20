@@ -40,7 +40,13 @@ async function createSessionFromClerkUserId(userId: string): Promise<Nullable<Se
   // Find user in database - they should exist due to webhook sync
   let user = await prisma.user.findUnique({
     where: { clerkId: userId },
-    select: { id: true, email: true, name: true, role: true, showNsfw: true },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      settings: { select: { showNsfw: true } },
+    },
   })
 
   // If the user doesn't exist, create them automatically
@@ -68,9 +74,16 @@ async function createSessionFromClerkUserId(userId: string): Promise<Nullable<Se
               email: primaryEmail.email_address,
               name: clerkData.username || clerkData.first_name || null,
               profileImage: clerkData.image_url || null,
-              role: Role.USER, // Default role
+              role: Role.USER,
+              settings: { create: {} },
             },
-            select: { id: true, email: true, name: true, role: true, showNsfw: true },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              role: true,
+              settings: { select: { showNsfw: true } },
+            },
           })
         }
       }
@@ -112,7 +125,7 @@ async function createSessionFromClerkUserId(userId: string): Promise<Nullable<Se
       name: user.name,
       role: user.role,
       permissions,
-      showNsfw: user.showNsfw,
+      showNsfw: user.settings?.showNsfw ?? false,
     },
   }
 }

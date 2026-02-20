@@ -13,10 +13,12 @@ import {
   UpdateListingAdminSchema,
   GetAllListingsAdminSchema,
   GetListingByIdSchema,
+  ResetListingToPendingSchema,
 } from '@/schemas/listing'
 import {
   createTRPCRouter,
   deleteAnyListingProcedure,
+  moderatorProcedure,
   superAdminProcedure,
   developerProcedure,
   viewStatisticsProcedure,
@@ -396,6 +398,37 @@ export const adminRouter = createTRPCRouter({
 
     return updatedListing
   }),
+
+  resetToPending: moderatorProcedure
+    .input(ResetListingToPendingSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { listingId } = input
+
+      const listing = await ctx.prisma.listing.findUnique({
+        where: { id: listingId },
+        select: { id: true, status: true },
+      })
+
+      if (!listing) return ResourceError.listing.notFound()
+
+      if (listing.status === ApprovalStatus.PENDING) {
+        return ResourceError.listing.alreadyPending()
+      }
+
+      const updatedListing = await ctx.prisma.listing.update({
+        where: { id: listingId },
+        data: {
+          status: ApprovalStatus.PENDING,
+          processedByUserId: null,
+          processedAt: null,
+          processedNotes: null,
+        },
+      })
+
+      listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
+
+      return updatedListing
+    }),
 
   getProcessed: superAdminProcedure.input(GetProcessedSchema).query(async ({ ctx, input }) => {
     const { page, limit, filterStatus, search } = input

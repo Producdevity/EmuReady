@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatCountLabel, normalizeString, normalizeStrings } from './text'
+import { formatCountLabel, normalizeString, normalizeStrings, bytesToHuman } from './text'
 
 describe('formatCountLabel', () => {
   it('should format count label correctly', () => {
@@ -91,5 +91,23 @@ describe('normalizeStrings', () => {
     const input = ['CAFÉ', 'naïve', 'hello world']
     const expected = ['cafe', 'naive', 'hello world']
     expect(normalizeStrings(input)).toEqual(expected)
+  })
+})
+
+describe('bytesToHuman', () => {
+  it('should return null for undefined or non-positive values', () => {
+    expect(bytesToHuman()).toBeNull()
+    expect(bytesToHuman(0)).toBeNull()
+    expect(bytesToHuman(-100)).toBeNull()
+  })
+
+  it('should format bytes correctly', () => {
+    expect(bytesToHuman(500)).toBe('500.0 B')
+    expect(bytesToHuman(1024)).toBe('1.0 KB')
+    expect(bytesToHuman(1536)).toBe('1.5 KB')
+    expect(bytesToHuman(1048576)).toBe('1.0 MB')
+    expect(bytesToHuman(1572864)).toBe('1.5 MB')
+    expect(bytesToHuman(1073741824)).toBe('1.0 GB')
+    expect(bytesToHuman(1610612736)).toBe('1.5 GB')
   })
 })

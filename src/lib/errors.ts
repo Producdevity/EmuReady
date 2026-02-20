@@ -312,6 +312,7 @@ export class ResourceError {
     alreadyExists: () =>
       AppError.conflict('A report for this game, device, and emulator combination already exists'),
     notPending: () => AppError.notFound('Pending report not found or already processed'),
+    alreadyPending: () => AppError.badRequest('Report is already in pending status'),
     canOnlyEditOwn: () => AppError.forbidden('You can only edit your own report'),
     cannotEditRejected: () => AppError.badRequest('Rejected reports cannot be edited'),
     notAccessible: () => AppError.forbidden('This listing is not accessible.'),
@@ -345,6 +346,7 @@ export class ResourceError {
         'A PC report for this game, CPU, GPU, and emulator combination already exists',
       ),
     notPending: () => AppError.notFound('Pending PC report not found or already processed'),
+    alreadyPending: () => AppError.badRequest('PC report is already in pending status'),
     canOnlyEditOwn: () => AppError.forbidden('You can only edit your own PC report'),
     canOnlyDeleteOwn: () => AppError.forbidden('You can only delete your own PC listings'),
     cannotEditRejected: () => AppError.badRequest('Rejected PC reports cannot be edited'),
@@ -497,6 +499,26 @@ export class ResourceError {
     canOnlyViewOwn: () => AppError.forbidden('You can only view your own PC presets'),
     canOnlyEditOwn: () => AppError.forbidden('You can only edit your own PC presets'),
     canOnlyDeleteOwn: () => AppError.forbidden('You can only delete your own PC presets'),
+  }
+
+  static social = {
+    cannotFollowSelf: () => AppError.badRequest('Cannot follow yourself'),
+    cannotFriendSelf: () => AppError.badRequest('Cannot send friend request to yourself'),
+    cannotBlockSelf: () => AppError.badRequest('Cannot block yourself'),
+    alreadyFriends: () => AppError.conflict('Already friends with this user'),
+    friendRequestPending: () => AppError.conflict('Friend request already pending'),
+    friendRequestNotFound: () => AppError.notFound('Friend request'),
+    canOnlyRespondToOwnRequests: () =>
+      AppError.forbidden('You can only respond to requests sent to you'),
+    requestAlreadyResponded: () =>
+      AppError.badRequest('This request has already been responded to'),
+    userBlocked: () => AppError.forbidden('Cannot interact with this user'),
+    followsDisabled: () => AppError.forbidden('This user does not accept new followers'),
+    friendRequestsDisabled: () => AppError.forbidden('This user does not accept friend requests'),
+  }
+
+  static account = {
+    sessionNotFound: () => AppError.notFound('Session'),
   }
 
   static verification = {

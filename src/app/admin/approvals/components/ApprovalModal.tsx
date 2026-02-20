@@ -3,8 +3,9 @@ import {
   UserInfoSection,
   PerformanceSection,
   NotesSection,
+  RejectionNotesInput,
 } from '@/app/listings/components/shared/approval/ApprovalModalSharedComponents'
-import { AuthorRiskWarningBanner, Modal, Button, Input } from '@/components/ui'
+import { AuthorRiskWarningBanner, Modal, Button } from '@/components/ui'
 import { type RouterOutput } from '@/types/trpc'
 import { ApprovalStatus } from '@orm'
 
@@ -82,23 +83,11 @@ function ApprovalModal(props: Props) {
 
         <NotesSection notes={props.selectedListingForApproval.notes} />
         {props.approvalDecision === ApprovalStatus.REJECTED && (
-          <div>
-            <label
-              htmlFor="approvalNotes"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Rejection Notes (Optional)
-            </label>
-            <Input
-              as="textarea"
-              id="approvalNotes"
-              value={props.approvalNotes}
-              onChange={(ev) => props.setApprovalNotes(ev.target.value)}
-              rows={4}
-              placeholder="Reason for rejection..."
-              className="w-full mt-1"
-            />
-          </div>
+          <RejectionNotesInput
+            id="approvalNotes"
+            value={props.approvalNotes}
+            onChange={props.setApprovalNotes}
+          />
         )}
         <div className="flex justify-end space-x-3 pt-4 border-t dark:border-gray-700 mt-6">
           <Button

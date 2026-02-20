@@ -12,29 +12,38 @@ import {
 } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
+import { logger } from '@/lib/logger'
+import toast from '@/lib/toast'
 import { copyToClipboard } from '@/utils/copyToClipboard'
+import { bytesToHuman } from '@/utils/text'
 import EligibilityPanel from './EligibilityPanel'
-import { bytesToHuman } from './utils'
+import type { RouterOutput } from '@/types/trpc'
 
-interface LatestJson {
-  channel: 'stable' | 'beta'
-  versionCode: number
-  versionName: string
-  apkUrl: string
-  sha256?: string
-  sizeBytes?: number
-  notesUrl?: string
-  id?: string
-}
+type LatestRelease = NonNullable<RouterOutput['releases']['latest']>
 
 export default function DownloadsSection() {
   const latestQuery = api.releases.latest.useQuery({})
-  const latest = (latestQuery.data ?? null) as LatestJson | null
+  const latest: LatestRelease | null = latestQuery.data ?? null
   const entitlementQuery = api.entitlements.getMy.useQuery()
   const eligible = entitlementQuery.data?.eligible ?? false
   const signDownload = api.releases.signDownload.useMutation()
 
-  // derive href if present (DB release), else none
+  const handleClickDownload = async () => {
+    try {
+      if (!latest?.id) return toast.error('No available release to download.')
+
+      const { url } = await signDownload.mutateAsync({ releaseId: latest.id })
+      analytics.conversion.appDownloadClicked({
+        appName: 'EmuReady Beta',
+        platform: 'android',
+        location: 'profile_downloads',
+        url,
+      })
+      window.location.href = url
+    } catch (error) {
+      logger.error('[DownloadsSection] No available release to download.', error)
+    }
+  }
 
   if (latestQuery.isPending) {
     return (
@@ -111,20 +120,7 @@ export default function DownloadsSection() {
           <div className="flex flex-col items-start gap-3 md:items-end">
             {eligible ? (
               latest?.id ? (
-                <Button
-                  onClick={async () => {
-                    try {
-                      const { url } = await signDownload.mutateAsync({ releaseId: latest.id! })
-                      analytics.conversion.appDownloadClicked({
-                        appName: 'EmuReady Beta',
-                        platform: 'android',
-                        location: 'profile_downloads',
-                        url,
-                      })
-                      window.location.href = url
-                    } catch {}
-                  }}
-                >
+                <Button onClick={handleClickDownload}>
                   <Download className="w-4 h-4" /> Download APK
                 </Button>
               ) : (

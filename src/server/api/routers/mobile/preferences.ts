@@ -9,6 +9,7 @@ import {
   UpdateUserPreferencesSchema,
 } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobileProtectedProcedure } from '@/server/api/mobileContext'
+import { checkProfileAccess } from '@/server/services/user-profile.service'
 import { sanitizeBio } from '@/utils/sanitization'
 
 export const mobilePreferencesRouter = createMobileTRPCRouter({
@@ -18,7 +19,15 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
   get: mobileProtectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.prisma.user.findUnique({
       where: { id: ctx.session.user.id },
-      include: {
+      select: {
+        id: true,
+        settings: {
+          select: {
+            defaultToUserDevices: true,
+            defaultToUserSocs: true,
+            notifyOnNewListings: true,
+          },
+        },
         devicePreferences: {
           include: {
             device: {
@@ -42,9 +51,9 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
     return {
       devicePreferences: user.devicePreferences,
       socPreferences: user.socPreferences,
-      defaultToUserDevices: user.defaultToUserDevices,
-      defaultToUserSocs: user.defaultToUserSocs,
-      notifyOnNewListings: user.notifyOnNewListings,
+      defaultToUserDevices: user.settings?.defaultToUserDevices ?? false,
+      defaultToUserSocs: user.settings?.defaultToUserSocs ?? false,
+      notifyOnNewListings: user.settings?.notifyOnNewListings ?? true,
     }
   }),
 
@@ -54,43 +63,64 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
   update: mobileProtectedProcedure
     .input(UpdateUserPreferencesSchema)
     .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
       const user = await ctx.prisma.user.findUnique({
-        where: { id: ctx.session.user.id },
+        where: { id: userId },
+        select: { id: true },
       })
 
       if (!user) return ResourceError.user.notFound()
 
-      // Sanitize bio if provided
-      const updateData: {
-        defaultToUserDevices?: boolean
-        defaultToUserSocs?: boolean
-        notifyOnNewListings?: boolean
-        bio?: string
-      } = {}
-
+      const settingsData: Record<string, boolean> = {}
       if (input.defaultToUserDevices !== undefined) {
-        updateData.defaultToUserDevices = input.defaultToUserDevices
+        settingsData.defaultToUserDevices = input.defaultToUserDevices
       }
       if (input.defaultToUserSocs !== undefined) {
-        updateData.defaultToUserSocs = input.defaultToUserSocs
+        settingsData.defaultToUserSocs = input.defaultToUserSocs
       }
       if (input.notifyOnNewListings !== undefined) {
-        updateData.notifyOnNewListings = input.notifyOnNewListings
-      }
-      if (input.bio !== undefined) {
-        updateData.bio = sanitizeBio(input.bio)
+        settingsData.notifyOnNewListings = input.notifyOnNewListings
       }
 
-      return ctx.prisma.user.update({
-        where: { id: user.id },
-        data: updateData,
-        select: {
-          id: true,
-          bio: true,
-          defaultToUserDevices: true,
-          defaultToUserSocs: true,
-          notifyOnNewListings: true,
-        },
+      // Atomic: bio + settings + re-read in a single transaction
+      return ctx.prisma.$transaction(async (tx) => {
+        if (input.bio !== undefined) {
+          await tx.user.update({
+            where: { id: userId },
+            data: { bio: sanitizeBio(input.bio) },
+          })
+        }
+
+        if (Object.keys(settingsData).length > 0) {
+          await tx.userSettings.upsert({
+            where: { userId },
+            create: { userId, ...settingsData },
+            update: settingsData,
+          })
+        }
+
+        const updated = await tx.user.findUniqueOrThrow({
+          where: { id: userId },
+          select: {
+            id: true,
+            bio: true,
+            settings: {
+              select: {
+                defaultToUserDevices: true,
+                defaultToUserSocs: true,
+                notifyOnNewListings: true,
+              },
+            },
+          },
+        })
+
+        return {
+          id: updated.id,
+          bio: updated.bio,
+          defaultToUserDevices: updated.settings?.defaultToUserDevices ?? false,
+          defaultToUserSocs: updated.settings?.defaultToUserSocs ?? false,
+          notifyOnNewListings: updated.settings?.notifyOnNewListings ?? true,
+        }
       })
     }),
 
@@ -351,6 +381,24 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
    * Get user profile by ID
    */
   profile: mobileProtectedProcedure.input(GetUserProfileSchema).query(async ({ ctx, input }) => {
+    const access = await checkProfileAccess(ctx.prisma, input.userId, {
+      currentUserId: ctx.session.user.id,
+      currentUserRole: ctx.session.user.role,
+    })
+
+    if (!access.accessible) {
+      if (access.reason === 'not_found') return null
+      if (access.reason === 'banned') return ResourceError.user.profileNotAccessible()
+
+      // Private profile: return minimal data with zeroed counts
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { id: true, name: true, createdAt: true },
+      })
+      if (!user) return null
+      return { ...user, bio: null, _count: { listings: 0, votes: 0, comments: 0 } }
+    }
+
     return await ctx.prisma.user.findUnique({
       where: { id: input.userId },
       select: {

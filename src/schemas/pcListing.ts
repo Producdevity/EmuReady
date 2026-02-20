@@ -91,6 +91,10 @@ export const OverridePcApprovalStatusSchema = z.object({
   overrideNotes: z.string().optional(),
 })
 
+export const ResetPcListingToPendingSchema = z.object({
+  pcListingId: z.string().uuid(),
+})
+
 export const ApprovePcListingSchema = z.object({
   pcListingId: z.string().uuid(),
 })

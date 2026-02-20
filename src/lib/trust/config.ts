@@ -64,7 +64,7 @@ export const TRUST_ACTIONS = {
 } as const
 
 export const TRUST_LEVELS = [
-  { name: null, minScore: 0 },
+  { name: 'Newcomer', minScore: 0 },
   { name: 'Contributor', minScore: 100 },
   { name: 'Trusted', minScore: 250 },
   { name: 'Verified', minScore: 500 },

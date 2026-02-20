@@ -1,12 +1,12 @@
 'use client'
 
 import { Upload } from 'lucide-react'
-import { useMemo, useState, useCallback, type DragEvent } from 'react'
+import { useMemo, useState, useCallback, type DragEvent, type ChangeEvent } from 'react'
 import { digestSha256 } from '@/app/admin/releases/utils/digestSha256'
-import { bytesToHuman } from '@/app/profile/components/downloads/utils'
 import { Card, Button, Dropdown, Input, Toggle } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
+import { bytesToHuman } from '@/utils/text'
 
 interface ChannelOption {
   value: 'stable' | 'beta'
@@ -124,36 +124,33 @@ export default function CreateReleaseCard() {
     }
   }
 
-  const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handleDragOver = useCallback((ev: DragEvent<HTMLDivElement>) => {
+    ev.preventDefault()
+    ev.stopPropagation()
     setIsDragging(true)
   }, [])
 
-  const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handleDragLeave = useCallback((ev: DragEvent<HTMLDivElement>) => {
+    ev.preventDefault()
+    ev.stopPropagation()
     setIsDragging(false)
   }, [])
 
-  const handleDrop = useCallback((e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handleDrop = useCallback((ev: DragEvent<HTMLDivElement>) => {
+    ev.preventDefault()
+    ev.stopPropagation()
     setIsDragging(false)
 
-    const droppedFile = e.dataTransfer.files[0]
-    if (droppedFile && droppedFile.name.endsWith('.apk')) {
-      setFile(droppedFile)
-    } else {
-      toast.error('Please drop a valid .apk file')
+    const [droppedFile] = ev.dataTransfer.files
+    if (!droppedFile || droppedFile.name.endsWith('.apk')) {
+      return toast.error('Please drop a valid .apk file')
     }
+    setFile(droppedFile)
   }, [])
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0]
-    if (selectedFile) {
-      setFile(selectedFile)
-    }
+  const handleFileSelect = useCallback((ev: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = ev.target.files?.[0]
+    if (selectedFile) setFile(selectedFile)
   }, [])
 
   return (
@@ -289,7 +286,7 @@ export default function CreateReleaseCard() {
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">R2 Key</label>
             <Input
               value={fileKey}
-              onChange={(e) => setFileKey((e.target as HTMLInputElement).value)}
+              onChange={(ev) => setFileKey((ev.target as HTMLInputElement).value)}
               placeholder="android/stable/emuready_0.10.31.apk"
               readOnly={!fileKey}
             />
@@ -298,7 +295,7 @@ export default function CreateReleaseCard() {
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">SHA‑256</label>
             <Input
               value={fileSha256}
-              onChange={(e) => setFileSha256((e.target as HTMLInputElement).value)}
+              onChange={(ev) => setFileSha256((ev.target as HTMLInputElement).value)}
               placeholder="Computed after upload"
               readOnly={!fileSha256}
             />
@@ -309,7 +306,7 @@ export default function CreateReleaseCard() {
               inputMode="numeric"
               pattern="[0-9]*"
               value={sizeBytes}
-              onChange={(e) => setSizeBytes((e.target as HTMLInputElement).value)}
+              onChange={(ev) => setSizeBytes((ev.target as HTMLInputElement).value)}
               placeholder="Bytes"
               readOnly={!sizeBytes}
             />
@@ -323,7 +320,7 @@ export default function CreateReleaseCard() {
           <textarea
             rows={3}
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={(ev) => setNotes(ev.target.value)}
             placeholder="Internal notes for this release"
             className="w-full rounded-xl border border-gray-200 bg-white/80 py-2 px-3 text-gray-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800/80 dark:text-white"
           />
@@ -348,8 +345,12 @@ export default function CreateReleaseCard() {
           >
             Reset
           </Button>
-          <Button onClick={handleCreate} disabled={!canCreate} isLoading={createMutation.isPending}>
-            {createMutation.isPending ? 'Creating…' : 'Create release'}
+          <Button
+            onClick={handleCreate}
+            disabled={!canCreate || createMutation.isPending}
+            isLoading={createMutation.isPending}
+          >
+            Create release
           </Button>
         </div>
       </div>

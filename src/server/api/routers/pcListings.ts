@@ -9,6 +9,7 @@ import {
   CreatePcListingReportSchema,
   CreatePcListingSchema,
   CreatePcPresetSchema,
+  ResetPcListingToPendingSchema,
   DeletePcListingCommentSchema,
   DeletePcListingSchema,
   DeletePcPresetSchema,
@@ -38,6 +39,7 @@ import {
 } from '@/schemas/pcListing'
 import {
   createTRPCRouter,
+  moderatorProcedure,
   permissionProcedure,
   protectedProcedure,
   publicProcedure,
@@ -559,6 +561,33 @@ export const pcListingsRouter = createTRPCRouter({
 
     return rejectedListing
   }),
+
+  resetToPending: moderatorProcedure
+    .input(ResetPcListingToPendingSchema)
+    .mutation(async ({ ctx, input }) => {
+      const repository = new PcListingsRepository(ctx.prisma)
+      const pcListing = await repository.getById(input.pcListingId)
+
+      if (!pcListing) return ResourceError.pcListing.notFound()
+
+      if (pcListing.status === ApprovalStatus.PENDING) {
+        return ResourceError.pcListing.alreadyPending()
+      }
+
+      const updatedListing = await ctx.prisma.pcListing.update({
+        where: { id: input.pcListingId },
+        data: {
+          status: ApprovalStatus.PENDING,
+          processedByUserId: null,
+          processedAt: null,
+          processedNotes: null,
+        },
+      })
+
+      listingStatsCache.delete('pc-listing-stats')
+
+      return updatedListing
+    }),
 
   bulkApprove: protectedProcedure
     .input(BulkApprovePcListingsSchema)

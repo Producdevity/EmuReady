@@ -16,6 +16,36 @@ vi.mock('@orm', async () => {
 
 const now = new Date()
 
+const mockSettings = {
+  defaultToUserDevices: false,
+  defaultToUserSocs: false,
+  notifyOnNewListings: true,
+  showNsfw: false,
+  lastUsedDeviceId: null,
+  profilePublic: true,
+  showActivityInFeed: true,
+  showVotingActivity: true,
+  allowFollows: true,
+  allowFriendRequests: true,
+  followersVisible: true,
+  followingVisible: true,
+}
+
+const mockUserWithSettings = {
+  id: 'user-1',
+  bio: 'Hello world',
+  settings: mockSettings,
+  devicePreferences: [] as never[],
+  socPreferences: [] as never[],
+} as never
+
+const mockUserBasicWithSettings = {
+  id: 'user-1',
+  bio: 'Hello world',
+  settings: mockSettings,
+} as never
+
+// Full User mock for device/soc operations (includes fields still on User model)
 const mockUser = {
   id: 'user-1',
   clerkId: 'clerk-1',
@@ -32,8 +62,6 @@ const mockUser = {
   notifyOnNewListings: true,
   showNsfw: false,
   lastUsedDeviceId: null,
-  devicePreferences: [],
-  socPreferences: [],
 }
 
 const mockDevice = {
@@ -59,6 +87,9 @@ function createMockPrisma() {
     user: {
       findUnique: vi.fn(),
       update: vi.fn(),
+    },
+    userSettings: {
+      upsert: vi.fn(),
     },
     device: {
       findUnique: vi.fn(),
@@ -95,12 +126,18 @@ describe('UserPreferencesRepository', () => {
   })
 
   describe('get', () => {
-    it('should return user preferences', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(mockUser)
+    it('should return user preferences flattened from settings', async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(mockUserWithSettings)
 
       const result = await repository.get('user-1')
 
-      expect(result).toEqual(mockUser)
+      expect(result).toEqual({
+        id: 'user-1',
+        bio: 'Hello world',
+        ...mockSettings,
+        devicePreferences: [],
+        socPreferences: [],
+      })
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
         where: { id: 'user-1' },
         select: UserPreferencesRepository.selects.preferences,
@@ -115,49 +152,53 @@ describe('UserPreferencesRepository', () => {
   })
 
   describe('update', () => {
-    it('should update boolean preferences', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(mockUser)
-      vi.mocked(prisma.user.update).mockResolvedValueOnce({
-        ...mockUser,
-        showNsfw: true,
+    it('should update boolean preferences via userSettings upsert', async () => {
+      vi.mocked(prisma.user.findUnique)
+        .mockResolvedValueOnce({ id: 'user-1' } as never)
+        .mockResolvedValueOnce(mockUserBasicWithSettings)
+      vi.mocked(prisma.userSettings.upsert).mockResolvedValueOnce({} as never)
+
+      const result = await repository.update('user-1', { showNsfw: true })
+
+      expect(prisma.userSettings.upsert).toHaveBeenCalledWith({
+        where: { userId: 'user-1' },
+        create: { userId: 'user-1', showNsfw: true },
+        update: { showNsfw: true },
       })
-
-      await repository.update('user-1', { showNsfw: true })
-
-      expect(prisma.user.update).toHaveBeenCalledWith({
-        where: { id: 'user-1' },
-        data: { showNsfw: true },
-        select: UserPreferencesRepository.selects.preferencesBasic,
+      expect(result).toEqual({
+        id: 'user-1',
+        bio: 'Hello world',
+        ...mockSettings,
       })
     })
 
-    it('should sanitize bio on update', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(mockUser)
-      vi.mocked(prisma.user.update).mockResolvedValueOnce({
-        ...mockUser,
-        bio: 'Clean bio',
-      })
+    it('should sanitize bio on update via user.update', async () => {
+      vi.mocked(prisma.user.findUnique)
+        .mockResolvedValueOnce({ id: 'user-1' } as never)
+        .mockResolvedValueOnce(mockUserBasicWithSettings)
+      vi.mocked(prisma.user.update).mockResolvedValueOnce({} as never)
 
       await repository.update('user-1', { bio: '<script>alert("xss")</script>Clean bio' })
 
-      expect(prisma.user.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: { bio: 'alert("xss")Clean bio' },
-        }),
-      )
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { bio: 'alert("xss")Clean bio' },
+      })
     })
 
-    it('should only include provided fields in updateData', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(mockUser)
-      vi.mocked(prisma.user.update).mockResolvedValueOnce(mockUser)
+    it('should only include provided settings fields in upsert', async () => {
+      vi.mocked(prisma.user.findUnique)
+        .mockResolvedValueOnce({ id: 'user-1' } as never)
+        .mockResolvedValueOnce(mockUserBasicWithSettings)
+      vi.mocked(prisma.userSettings.upsert).mockResolvedValueOnce({} as never)
 
       await repository.update('user-1', { notifyOnNewListings: false })
 
-      expect(prisma.user.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: { notifyOnNewListings: false },
-        }),
-      )
+      expect(prisma.userSettings.upsert).toHaveBeenCalledWith({
+        where: { userId: 'user-1' },
+        create: { userId: 'user-1', notifyOnNewListings: false },
+        update: { notifyOnNewListings: false },
+      })
     })
 
     it('should throw when user not found', async () => {

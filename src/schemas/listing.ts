@@ -126,6 +126,8 @@ export const UnpinCommentSchema = z.object({
   listingId: z.string().uuid(),
 })
 
+export const ResetListingToPendingSchema = z.object({ listingId: z.string().uuid() })
+
 export const ApproveListingSchema = z.object({ listingId: z.string().uuid() })
 export const RejectListingSchema = z.object({
   listingId: z.string().uuid(),

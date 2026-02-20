@@ -1,11 +1,11 @@
 # EmuReady Mobile API (tRPC)
 
-*Auto-generated on: 2025-11-24T10:55:36.201Z*
+*Auto-generated on: 2026-02-17T20:21:36.450Z*
 
 ## Summary
-- **Total Endpoints**: 95
-- **Public Endpoints**: 59
-- **Protected Endpoints**: 36
+- **Total Endpoints**: 112
+- **Public Endpoints**: 65
+- **Protected Endpoints**: 47
 - **OpenAPI Version**: 3.0.0
 
 ## Base URL
@@ -373,63 +373,105 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Tags**: rawg
 
 
-#### 51. **get**
+#### 51. **getFollowers**
+- **Method**: GET
+- **Path**: `/social.getFollowers`
+- **Description**: getFollowers - social
+- **Tags**: social
+
+
+#### 52. **getFollowing**
+- **Method**: GET
+- **Path**: `/social.getFollowing`
+- **Description**: getFollowing - social
+- **Tags**: social
+
+
+#### 53. **isFollowing**
+- **Method**: GET
+- **Path**: `/social.isFollowing`
+- **Description**: isFollowing - social
+- **Tags**: social
+
+
+#### 54. **getFollowCounts**
+- **Method**: GET
+- **Path**: `/social.getFollowCounts`
+- **Description**: getFollowCounts - social
+- **Tags**: social
+
+
+#### 55. **getBulkFollowStatuses**
+- **Method**: GET
+- **Path**: `/social.getBulkFollowStatuses`
+- **Description**: getBulkFollowStatuses - social
+- **Tags**: social
+
+
+#### 56. **getRelationshipStatus**
+- **Method**: GET
+- **Path**: `/social.getRelationshipStatus`
+- **Description**: getRelationshipStatus - social
+- **Tags**: social
+
+
+#### 57. **get**
 - **Method**: GET
 - **Path**: `/socs.get`
 - **Description**: Get SoCs with search, filtering, and pagination
 - **Tags**: socs
 
 
-#### 52. **getById**
+#### 58. **getById**
 - **Method**: GET
 - **Path**: `/socs.getById`
 - **Description**: Get SoC by ID
 - **Tags**: socs
 
 
-#### 53. **searchGameImages**
+#### 59. **searchGameImages**
 - **Method**: GET
 - **Path**: `/tgdb.searchGameImages`
 - **Description**: Search for game images in TGDB database
 - **Tags**: tgdb
 
 
-#### 54. **searchGames**
+#### 60. **searchGames**
 - **Method**: GET
 - **Path**: `/tgdb.searchGames`
 - **Description**: Search for games in TGDB database
 - **Tags**: tgdb
 
 
-#### 55. **getGameImageUrls**
+#### 61. **getGameImageUrls**
 - **Method**: GET
 - **Path**: `/tgdb.getGameImageUrls`
 - **Description**: Get game image URLs for a specific game
 - **Tags**: tgdb
 
 
-#### 56. **getGameImages**
+#### 62. **getGameImages**
 - **Method**: GET
 - **Path**: `/tgdb.getGameImages`
 - **Description**: Get game images by game IDs
 - **Tags**: tgdb
 
 
-#### 57. **getPlatforms**
+#### 63. **getPlatforms**
 - **Method**: GET
 - **Path**: `/tgdb.getPlatforms`
 - **Description**: Get available platforms from TGDB
 - **Tags**: tgdb
 
 
-#### 58. **userInfo**
+#### 64. **userInfo**
 - **Method**: GET
 - **Path**: `/trust.userInfo`
 - **Description**: Get trust info for a specific user (public)
 - **Tags**: trust
 
 
-#### 59. **byId**
+#### 65. **byId**
 - **Method**: GET
 - **Path**: `/users.byId`
 - **Description**: Get user profile by ID (public user profiles)
@@ -743,7 +785,95 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 - **Content-Type**: application/json
 - **Authentication**: Bearer token required
 
-#### 36. **myInfo**
+#### 36. **follow**
+- **Method**: POST
+- **Path**: `/social.follow`
+- **Description**: follow - social
+- **Tags**: social
+
+- **Authentication**: Bearer token required
+
+#### 37. **unfollow**
+- **Method**: POST
+- **Path**: `/social.unfollow`
+- **Description**: unfollow - social
+- **Tags**: social
+
+- **Authentication**: Bearer token required
+
+#### 38. **removeFollower**
+- **Method**: POST
+- **Path**: `/social.removeFollower`
+- **Description**: removeFollower - social
+- **Tags**: social
+
+- **Authentication**: Bearer token required
+
+#### 39. **sendFriendRequest**
+- **Method**: POST
+- **Path**: `/social.sendFriendRequest`
+- **Description**: sendFriendRequest - social
+- **Tags**: social
+
+- **Authentication**: Bearer token required
+
+#### 40. **respondFriendRequest**
+- **Method**: POST
+- **Path**: `/social.respondFriendRequest`
+- **Description**: respondFriendRequest - social
+- **Tags**: social
+
+- **Authentication**: Bearer token required
+
+#### 41. **getFriendRequests**
+- **Method**: GET
+- **Path**: `/social.getFriendRequests`
+- **Description**: getFriendRequests - social
+- **Tags**: social
+
+- **Authentication**: Bearer token required
+
+#### 42. **getFriends**
+- **Method**: GET
+- **Path**: `/social.getFriends`
+- **Description**: getFriends - social
+- **Tags**: social
+
+- **Authentication**: Bearer token required
+
+#### 43. **blockUser**
+- **Method**: POST
+- **Path**: `/social.blockUser`
+- **Description**: blockUser - social
+- **Tags**: social
+
+- **Authentication**: Bearer token required
+
+#### 44. **unblockUser**
+- **Method**: POST
+- **Path**: `/social.unblockUser`
+- **Description**: unblockUser - social
+- **Tags**: social
+
+- **Authentication**: Bearer token required
+
+#### 45. **getBlockedUsers**
+- **Method**: GET
+- **Path**: `/social.getBlockedUsers`
+- **Description**: getBlockedUsers - social
+- **Tags**: social
+
+- **Authentication**: Bearer token required
+
+#### 46. **getActivityFeed**
+- **Method**: GET
+- **Path**: `/social.getActivityFeed`
+- **Description**: getActivityFeed - social
+- **Tags**: social
+
+- **Authentication**: Bearer token required
+
+#### 47. **myInfo**
 - **Method**: GET
 - **Path**: `/trust.myInfo`
 - **Description**: Get current user's trust score and level

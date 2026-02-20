@@ -178,8 +178,8 @@ test.describe('Error Handling Tests', () => {
   })
 
   test('should show user-friendly error messages', async ({ page }) => {
-    // Force an error by going to a malformed URL
-    await page.goto('/games/../../admin/secret')
+    // Navigate to a non-existent page to trigger 404
+    await page.goto('/this-page-does-not-exist-at-all')
 
     // Should not expose sensitive error details
     const technicalErrors = [

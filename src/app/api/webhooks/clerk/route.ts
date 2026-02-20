@@ -53,6 +53,7 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
         name: displayName,
         profileImage: data.image_url ?? null,
         role: role,
+        settings: { create: {} },
       },
     })
 

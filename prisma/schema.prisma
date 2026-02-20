@@ -98,6 +98,7 @@ model User {
   showNsfw                    Boolean                           @default(false)
   lastUsedDeviceId            String? // Track the last used device
   // Relations
+  settings                    UserSettings?
   comments                    Comment[]
   listings                    Listing[]
   pcListings                  PcListing[]
@@ -150,6 +151,37 @@ model User {
   entitlements                Entitlement[]
   downloads                   Download[]
   externalAccounts            ExternalAccount[]
+  // Social relations
+  following                   UserFollow[]                      @relation("UserFollowing")
+  followers                   UserFollow[]                      @relation("UserFollowers")
+  sentRelationships           UserRelationship[]                @relation("RelationshipSender")
+  receivedRelationships       UserRelationship[]                @relation("RelationshipReceiver")
+}
+
+model UserSettings {
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  // Content preferences
+  defaultToUserDevices Boolean  @default(false)
+  defaultToUserSocs    Boolean  @default(false)
+  notifyOnNewListings  Boolean  @default(true)
+  showNsfw             Boolean  @default(false)
+  lastUsedDeviceId     String?
+  // Privacy
+  profilePublic        Boolean  @default(true)
+  showActivityInFeed   Boolean  @default(true)
+  showVotingActivity   Boolean  @default(true)
+  allowFollows         Boolean  @default(true)
+  allowFriendRequests  Boolean  @default(true)
+  followersVisible     Boolean  @default(true)
+  followingVisible     Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
 }
 
 model ApiKey {
@@ -636,6 +668,13 @@ enum NotificationType {
   REPORT_STATUS_CHANGED
   VERIFIED_DEVELOPER
 
+  // Social notifications
+  NEW_FOLLOWER
+  FRIEND_REQUEST_RECEIVED
+  FRIEND_REQUEST_ACCEPTED
+  FOLLOWED_USER_NEW_LISTING
+  FOLLOWED_USER_NEW_PC_LISTING
+
   @@map("notification_type")
 }
 
@@ -644,6 +683,7 @@ enum NotificationCategory {
   CONTENT
   SYSTEM
   MODERATION
+  SOCIAL
 
   @@map("notification_category")
 }
@@ -1312,4 +1352,55 @@ model WebhookEvent {
   createdAt   DateTime  @default(now())
 
   @@unique([source, eventId])
+}
+
+// ─── Social ──────────────────────────────────────────────────
+
+model UserFollow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("user_follows")
+}
+
+enum RelationshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  BLOCKED
+
+  @@map("relationship_status")
+}
+
+enum RelationshipType {
+  FRIEND
+
+  @@map("relationship_type")
+}
+
+model UserRelationship {
+  id         String             @id @default(uuid())
+  senderId   String
+  receiverId String
+  type       RelationshipType   @default(FRIEND)
+  status     RelationshipStatus @default(PENDING)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  sender   User @relation("RelationshipSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("RelationshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId, type])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([status])
+  @@map("user_relationships")
 }

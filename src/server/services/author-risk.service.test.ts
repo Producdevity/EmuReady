@@ -16,39 +16,42 @@ vi.mock('@orm/sql', () => ({
   }),
 }))
 
-/**
- * Mock Prisma client that stubs $queryRawTyped.
- *
- * computeAuthorRiskProfiles calls $queryRawTyped exactly 3 times via Promise.all
- * in this deterministic order:
- *   1. batchGetAuthorReportStats → report rows
- *   2. batchCheckVoteFlags       → vote stats rows
- *   3. batchCheckNewAuthors      → rows of authors WITH approved listings
- */
 function createMockPrisma() {
   return {
     $queryRawTyped: vi.fn().mockResolvedValue([]),
+    user: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    listing: {
+      groupBy: vi.fn().mockResolvedValue([]),
+    },
+    pcListing: {
+      groupBy: vi.fn().mockResolvedValue([]),
+    },
   }
 }
 
-/**
- * Sets up the three $queryRawTyped mock responses in the correct call order.
- *
- * @param reportRows    - Rows with { authorId, reportCount }
- * @param voteRows      - Rows with { userId, totalVotes, downvotes, votesLast24h }
- * @param approvedRows  - Rows with { authorId } for authors who HAVE approved listings
- *                        (authors NOT in this list are flagged as NEW_AUTHOR)
- */
+interface SetupMocksOptions {
+  reportRows?: { authorId: string; reportCount: number }[]
+  voteRows?: { userId: string; totalVotes: number; downvotes: number; votesLast24h: number }[]
+  approvedRows?: { authorId: string }[]
+  trustScoreRows?: { id: string; trustScore: number }[]
+  listingRejections?: { authorId: string; _count: number }[]
+  pcListingRejections?: { authorId: string; _count: number }[]
+}
+
 function setupQueryMocks(
   prisma: ReturnType<typeof createMockPrisma>,
-  reportRows: { authorId: string; reportCount: number }[] = [],
-  voteRows: { userId: string; totalVotes: number; downvotes: number; votesLast24h: number }[] = [],
-  approvedRows: { authorId: string }[] = [],
+  options: SetupMocksOptions = {},
 ) {
   prisma.$queryRawTyped
-    .mockResolvedValueOnce(reportRows)
-    .mockResolvedValueOnce(voteRows)
-    .mockResolvedValueOnce(approvedRows)
+    .mockResolvedValueOnce(options.reportRows ?? [])
+    .mockResolvedValueOnce(options.voteRows ?? [])
+    .mockResolvedValueOnce(options.approvedRows ?? [])
+
+  prisma.user.findMany.mockResolvedValueOnce(options.trustScoreRows ?? [])
+  prisma.listing.groupBy.mockResolvedValueOnce(options.listingRejections ?? [])
+  prisma.pcListing.groupBy.mockResolvedValueOnce(options.pcListingRejections ?? [])
 }
 
 const AUTHOR_A = 'author-a'
@@ -69,7 +72,7 @@ describe('computeAuthorRiskProfiles', () => {
   })
 
   it('returns only NEW_AUTHOR signal when author has no risk factors and no approved listings', async () => {
-    setupQueryMocks(prisma, [], [], [])
+    setupQueryMocks(prisma)
 
     const result = await computeAuthorRiskProfiles(
       prisma as unknown as PrismaClient,
@@ -85,7 +88,7 @@ describe('computeAuthorRiskProfiles', () => {
   })
 
   it('returns no signals when author has approved listings and no risk factors', async () => {
-    setupQueryMocks(prisma, [], [], [{ authorId: AUTHOR_A }])
+    setupQueryMocks(prisma, { approvedRows: [{ authorId: AUTHOR_A }] })
 
     const result = await computeAuthorRiskProfiles(
       prisma as unknown as PrismaClient,
@@ -101,7 +104,7 @@ describe('computeAuthorRiskProfiles', () => {
 
   it('detects active ban as high severity', async () => {
     const bansMap = new Map([[AUTHOR_A, [{ reason: 'spam content' }]]])
-    setupQueryMocks(prisma, [], [], [{ authorId: AUTHOR_A }])
+    setupQueryMocks(prisma, { approvedRows: [{ authorId: AUTHOR_A }] })
 
     const result = await computeAuthorRiskProfiles(
       prisma as unknown as PrismaClient,
@@ -118,7 +121,7 @@ describe('computeAuthorRiskProfiles', () => {
   })
 
   it('detects 1 active report as low severity', async () => {
-    setupQueryMocks(prisma, [{ authorId: AUTHOR_A, reportCount: 1 }], [], [])
+    setupQueryMocks(prisma, { reportRows: [{ authorId: AUTHOR_A, reportCount: 1 }] })
 
     const result = await computeAuthorRiskProfiles(
       prisma as unknown as PrismaClient,
@@ -133,7 +136,7 @@ describe('computeAuthorRiskProfiles', () => {
   })
 
   it('detects 4 active reports as medium severity', async () => {
-    setupQueryMocks(prisma, [{ authorId: AUTHOR_A, reportCount: 4 }], [], [])
+    setupQueryMocks(prisma, { reportRows: [{ authorId: AUTHOR_A, reportCount: 4 }] })
 
     const result = await computeAuthorRiskProfiles(
       prisma as unknown as PrismaClient,
@@ -148,7 +151,7 @@ describe('computeAuthorRiskProfiles', () => {
   })
 
   it('detects 8 active reports as high severity', async () => {
-    setupQueryMocks(prisma, [{ authorId: AUTHOR_A, reportCount: 8 }], [], [])
+    setupQueryMocks(prisma, { reportRows: [{ authorId: AUTHOR_A, reportCount: 8 }] })
 
     const result = await computeAuthorRiskProfiles(
       prisma as unknown as PrismaClient,
@@ -163,7 +166,7 @@ describe('computeAuthorRiskProfiles', () => {
   })
 
   it('detects new author with no approved listings as low severity', async () => {
-    setupQueryMocks(prisma, [], [], [])
+    setupQueryMocks(prisma)
 
     const result = await computeAuthorRiskProfiles(
       prisma as unknown as PrismaClient,
@@ -178,7 +181,7 @@ describe('computeAuthorRiskProfiles', () => {
   })
 
   it('does not flag author with approved listings as new', async () => {
-    setupQueryMocks(prisma, [], [], [{ authorId: AUTHOR_A }])
+    setupQueryMocks(prisma, { approvedRows: [{ authorId: AUTHOR_A }] })
 
     const result = await computeAuthorRiskProfiles(
       prisma as unknown as PrismaClient,
@@ -192,13 +195,10 @@ describe('computeAuthorRiskProfiles', () => {
   })
 
   it('detects >90% downvote ratio as medium suspicious voting', async () => {
-    // 92% downvotes (23 out of 25)
-    setupQueryMocks(
-      prisma,
-      [],
-      [{ userId: AUTHOR_A, totalVotes: 25, downvotes: 23, votesLast24h: 0 }],
-      [{ authorId: AUTHOR_A }],
-    )
+    setupQueryMocks(prisma, {
+      voteRows: [{ userId: AUTHOR_A, totalVotes: 25, downvotes: 23, votesLast24h: 0 }],
+      approvedRows: [{ authorId: AUTHOR_A }],
+    })
 
     const result = await computeAuthorRiskProfiles(
       prisma as unknown as PrismaClient,
@@ -213,13 +213,10 @@ describe('computeAuthorRiskProfiles', () => {
   })
 
   it('detects >95% downvote ratio as high suspicious voting', async () => {
-    // 97% downvotes (29 out of 30)
-    setupQueryMocks(
-      prisma,
-      [],
-      [{ userId: AUTHOR_A, totalVotes: 30, downvotes: 29, votesLast24h: 0 }],
-      [{ authorId: AUTHOR_A }],
-    )
+    setupQueryMocks(prisma, {
+      voteRows: [{ userId: AUTHOR_A, totalVotes: 30, downvotes: 29, votesLast24h: 0 }],
+      approvedRows: [{ authorId: AUTHOR_A }],
+    })
 
     const result = await computeAuthorRiskProfiles(
       prisma as unknown as PrismaClient,
@@ -234,12 +231,10 @@ describe('computeAuthorRiskProfiles', () => {
   })
 
   it('detects high vote volume (>50 in 24h) as high severity', async () => {
-    setupQueryMocks(
-      prisma,
-      [],
-      [{ userId: AUTHOR_A, totalVotes: 55, downvotes: 0, votesLast24h: 55 }],
-      [{ authorId: AUTHOR_A }],
-    )
+    setupQueryMocks(prisma, {
+      voteRows: [{ userId: AUTHOR_A, totalVotes: 55, downvotes: 0, votesLast24h: 55 }],
+      approvedRows: [{ authorId: AUTHOR_A }],
+    })
 
     const result = await computeAuthorRiskProfiles(
       prisma as unknown as PrismaClient,
@@ -256,10 +251,9 @@ describe('computeAuthorRiskProfiles', () => {
   })
 
   it('picks highest severity across multiple signals', async () => {
-    // Ban = high, reports = low, new author = low
     const bansMap = new Map([[AUTHOR_A, [{ reason: 'spam' }]]])
 
-    setupQueryMocks(prisma, [{ authorId: AUTHOR_A, reportCount: 1 }], [], [])
+    setupQueryMocks(prisma, { reportRows: [{ authorId: AUTHOR_A, reportCount: 1 }] })
 
     const result = await computeAuthorRiskProfiles(
       prisma as unknown as PrismaClient,
@@ -275,8 +269,10 @@ describe('computeAuthorRiskProfiles', () => {
   it('processes multiple authors in a single batch', async () => {
     const bansMap = new Map([[AUTHOR_B, [{ reason: 'abuse' }]]])
 
-    // Author A has 1 report, Author C has approved listings
-    setupQueryMocks(prisma, [{ authorId: AUTHOR_A, reportCount: 1 }], [], [{ authorId: AUTHOR_C }])
+    setupQueryMocks(prisma, {
+      reportRows: [{ authorId: AUTHOR_A, reportCount: 1 }],
+      approvedRows: [{ authorId: AUTHOR_C }],
+    })
 
     const result = await computeAuthorRiskProfiles(
       prisma as unknown as PrismaClient,
@@ -307,7 +303,7 @@ describe('computeAuthorRiskProfiles', () => {
   })
 
   it('deduplicates author IDs', async () => {
-    setupQueryMocks(prisma, [], [], [])
+    setupQueryMocks(prisma)
 
     const result = await computeAuthorRiskProfiles(
       prisma as unknown as PrismaClient,
@@ -318,8 +314,8 @@ describe('computeAuthorRiskProfiles', () => {
     expect(result.size).toBe(1)
   })
 
-  it('makes exactly 3 database queries per call', async () => {
-    setupQueryMocks(prisma, [], [], [])
+  it('makes exactly 3 TypedSQL queries and 3 Prisma queries per call', async () => {
+    setupQueryMocks(prisma)
 
     await computeAuthorRiskProfiles(
       prisma as unknown as PrismaClient,
@@ -328,5 +324,170 @@ describe('computeAuthorRiskProfiles', () => {
     )
 
     expect(prisma.$queryRawTyped).toHaveBeenCalledTimes(3)
+    expect(prisma.user.findMany).toHaveBeenCalledTimes(1)
+    expect(prisma.listing.groupBy).toHaveBeenCalledTimes(1)
+    expect(prisma.pcListing.groupBy).toHaveBeenCalledTimes(1)
+  })
+
+  // NEGATIVE_TRUST_SCORE signal tests
+  it('detects trust score < 0 as low severity', async () => {
+    setupQueryMocks(prisma, {
+      approvedRows: [{ authorId: AUTHOR_A }],
+      trustScoreRows: [{ id: AUTHOR_A, trustScore: -5 }],
+    })
+
+    const result = await computeAuthorRiskProfiles(
+      prisma as unknown as PrismaClient,
+      [AUTHOR_A],
+      new Map(),
+    )
+
+    const profile = result.get(AUTHOR_A)
+    const trustSignal = profile!.signals.find(
+      (s) => s.type === RISK_SIGNAL_TYPES.NEGATIVE_TRUST_SCORE,
+    )
+    expect(trustSignal).toBeDefined()
+    expect(trustSignal!.severity).toBe('low')
+    expect(trustSignal!.description).toContain('-5')
+  })
+
+  it('detects trust score < -20 as medium severity', async () => {
+    setupQueryMocks(prisma, {
+      approvedRows: [{ authorId: AUTHOR_A }],
+      trustScoreRows: [{ id: AUTHOR_A, trustScore: -30 }],
+    })
+
+    const result = await computeAuthorRiskProfiles(
+      prisma as unknown as PrismaClient,
+      [AUTHOR_A],
+      new Map(),
+    )
+
+    const profile = result.get(AUTHOR_A)
+    const trustSignal = profile!.signals.find(
+      (s) => s.type === RISK_SIGNAL_TYPES.NEGATIVE_TRUST_SCORE,
+    )
+    expect(trustSignal).toBeDefined()
+    expect(trustSignal!.severity).toBe('medium')
+  })
+
+  it('detects trust score < -50 as high severity', async () => {
+    setupQueryMocks(prisma, {
+      approvedRows: [{ authorId: AUTHOR_A }],
+      trustScoreRows: [{ id: AUTHOR_A, trustScore: -75 }],
+    })
+
+    const result = await computeAuthorRiskProfiles(
+      prisma as unknown as PrismaClient,
+      [AUTHOR_A],
+      new Map(),
+    )
+
+    const profile = result.get(AUTHOR_A)
+    const trustSignal = profile!.signals.find(
+      (s) => s.type === RISK_SIGNAL_TYPES.NEGATIVE_TRUST_SCORE,
+    )
+    expect(trustSignal).toBeDefined()
+    expect(trustSignal!.severity).toBe('high')
+  })
+
+  it('does not flag trust score >= 0', async () => {
+    setupQueryMocks(prisma, {
+      approvedRows: [{ authorId: AUTHOR_A }],
+      trustScoreRows: [{ id: AUTHOR_A, trustScore: 50 }],
+    })
+
+    const result = await computeAuthorRiskProfiles(
+      prisma as unknown as PrismaClient,
+      [AUTHOR_A],
+      new Map(),
+    )
+
+    const profile = result.get(AUTHOR_A)
+    const trustSignal = profile!.signals.find(
+      (s) => s.type === RISK_SIGNAL_TYPES.NEGATIVE_TRUST_SCORE,
+    )
+    expect(trustSignal).toBeUndefined()
+  })
+
+  // PREVIOUSLY_REJECTED signal tests
+  it('detects 1-2 rejections as low severity', async () => {
+    setupQueryMocks(prisma, {
+      approvedRows: [{ authorId: AUTHOR_A }],
+      listingRejections: [{ authorId: AUTHOR_A, _count: 2 }],
+    })
+
+    const result = await computeAuthorRiskProfiles(
+      prisma as unknown as PrismaClient,
+      [AUTHOR_A],
+      new Map(),
+    )
+
+    const profile = result.get(AUTHOR_A)
+    const rejectedSignal = profile!.signals.find(
+      (s) => s.type === RISK_SIGNAL_TYPES.PREVIOUSLY_REJECTED,
+    )
+    expect(rejectedSignal).toBeDefined()
+    expect(rejectedSignal!.severity).toBe('low')
+  })
+
+  it('detects 3-5 rejections as medium severity', async () => {
+    setupQueryMocks(prisma, {
+      approvedRows: [{ authorId: AUTHOR_A }],
+      listingRejections: [{ authorId: AUTHOR_A, _count: 3 }],
+      pcListingRejections: [{ authorId: AUTHOR_A, _count: 1 }],
+    })
+
+    const result = await computeAuthorRiskProfiles(
+      prisma as unknown as PrismaClient,
+      [AUTHOR_A],
+      new Map(),
+    )
+
+    const profile = result.get(AUTHOR_A)
+    const rejectedSignal = profile!.signals.find(
+      (s) => s.type === RISK_SIGNAL_TYPES.PREVIOUSLY_REJECTED,
+    )
+    expect(rejectedSignal).toBeDefined()
+    expect(rejectedSignal!.severity).toBe('medium')
+  })
+
+  it('detects 6+ rejections as high severity', async () => {
+    setupQueryMocks(prisma, {
+      approvedRows: [{ authorId: AUTHOR_A }],
+      listingRejections: [{ authorId: AUTHOR_A, _count: 4 }],
+      pcListingRejections: [{ authorId: AUTHOR_A, _count: 3 }],
+    })
+
+    const result = await computeAuthorRiskProfiles(
+      prisma as unknown as PrismaClient,
+      [AUTHOR_A],
+      new Map(),
+    )
+
+    const profile = result.get(AUTHOR_A)
+    const rejectedSignal = profile!.signals.find(
+      (s) => s.type === RISK_SIGNAL_TYPES.PREVIOUSLY_REJECTED,
+    )
+    expect(rejectedSignal).toBeDefined()
+    expect(rejectedSignal!.severity).toBe('high')
+  })
+
+  it('does not flag 0 rejections', async () => {
+    setupQueryMocks(prisma, {
+      approvedRows: [{ authorId: AUTHOR_A }],
+    })
+
+    const result = await computeAuthorRiskProfiles(
+      prisma as unknown as PrismaClient,
+      [AUTHOR_A],
+      new Map(),
+    )
+
+    const profile = result.get(AUTHOR_A)
+    const rejectedSignal = profile!.signals.find(
+      (s) => s.type === RISK_SIGNAL_TYPES.PREVIOUSLY_REJECTED,
+    )
+    expect(rejectedSignal).toBeUndefined()
   })
 })

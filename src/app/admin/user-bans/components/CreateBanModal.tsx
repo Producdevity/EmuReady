@@ -56,7 +56,7 @@ function CreateBanModal(props: Props) {
 
   // Fetch user details if userId is provided
   const preselectedUserQuery = api.users.getUserById.useQuery(
-    { userId: props.userId! },
+    { userId: props.userId ?? '' },
     { enabled: !!props.userId },
   )
 

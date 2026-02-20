@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
-import { LocalizedDate, PerformanceBadge } from '@/components/ui'
+import { Badge, Input, LocalizedDate, PerformanceBadge } from '@/components/ui'
 import getImageUrl from '@/utils/getImageUrl'
 
 interface GameInfoSectionProps {
@@ -129,6 +129,50 @@ export function NotesSection(props: NotesSectionProps) {
     <div>
       <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Notes</h3>
       <p className="text-gray-900 dark:text-white whitespace-pre-wrap">{props.notes}</p>
+    </div>
+  )
+}
+
+const REJECTION_PRESETS = ['Low effort', 'Missing information', 'Incorrect information'] as const
+
+interface RejectionNotesInputProps {
+  id: string
+  value: string
+  onChange: (value: string) => void
+}
+
+export function RejectionNotesInput(props: RejectionNotesInputProps) {
+  return (
+    <div>
+      <label
+        htmlFor={props.id}
+        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+      >
+        Rejection Notes (Optional)
+      </label>
+      <div className="flex flex-wrap gap-1.5 mb-2">
+        {REJECTION_PRESETS.map((preset) => (
+          <Badge
+            key={preset}
+            variant={props.value === preset ? 'primary' : 'default'}
+            size="sm"
+            pill
+            onClick={() => props.onChange(props.value === preset ? '' : preset)}
+            className="transition-colors"
+          >
+            {preset}
+          </Badge>
+        ))}
+      </div>
+      <Input
+        as="textarea"
+        id={props.id}
+        value={props.value}
+        onChange={(ev) => props.onChange(ev.target.value)}
+        rows={4}
+        placeholder="Reason for rejection..."
+        className="w-full"
+      />
     </div>
   )
 }

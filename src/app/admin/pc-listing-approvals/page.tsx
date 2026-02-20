@@ -30,6 +30,7 @@ import {
   BulkActions,
   Button,
   LocalizedDate,
+  ViewUserButton,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import {
@@ -44,6 +45,7 @@ import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import getImageUrl from '@/utils/getImageUrl'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus } from '@orm'
 import ApprovalModal from './components/ApprovalModal'
 
@@ -372,16 +374,27 @@ function PcListingApprovalsPage() {
       )}
       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
         <div className="flex items-center justify-end space-x-2">
-          <ApproveButton
-            onClick={() => openApprovalModal(listing, ApprovalStatus.APPROVED)}
-            disabled={approveMutation.isPending}
-            title="Approve PC Listing"
-          />
-          <RejectButton
-            onClick={() => openApprovalModal(listing, ApprovalStatus.REJECTED)}
-            disabled={rejectMutation.isPending}
-            title="Reject PC Listing"
-          />
+          {hasPermission(currentUserQuery.data?.permissions, PERMISSIONS.APPROVE_LISTINGS) && (
+            <ApproveButton
+              title="Approve PC Listing"
+              onClick={() => openApprovalModal(listing, ApprovalStatus.APPROVED)}
+              disabled={approveMutation.isPending}
+            />
+          )}
+          {hasPermission(currentUserQuery.data?.permissions, PERMISSIONS.APPROVE_LISTINGS) && (
+            <RejectButton
+              title="Reject PC Listing"
+              onClick={() => openApprovalModal(listing, ApprovalStatus.REJECTED)}
+              disabled={rejectMutation.isPending}
+            />
+          )}
+          {hasPermission(currentUserQuery.data?.permissions, PERMISSIONS.MANAGE_USERS) && (
+            <ViewUserButton
+              title="View User Details"
+              href={`/admin/users?userId=${listing.author.id}`}
+            />
+          )}
+
           <ViewButton href={`/pc-listings/${listing.id}`} title="View PC Listing" />
         </div>
       </td>

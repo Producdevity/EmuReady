@@ -2,6 +2,7 @@ import { logger } from '@/lib/logger'
 import { prisma } from '@/server/db'
 import { notificationAnalyticsService } from '@/server/notifications/analyticsService'
 import { notificationBatchingService } from '@/server/notifications/batchingService'
+import { NotificationPreferencesRepository } from '@/server/repositories/notification-preferences.repository'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { hasRolePermission } from '@/utils/permissions'
 import { ms } from '@/utils/time'
@@ -11,6 +12,7 @@ import {
   NotificationDeliveryStatus,
   NotificationType,
   type Prisma,
+  RelationshipStatus,
   Role,
 } from '@orm'
 import { createEmailService } from './emailService'
@@ -28,6 +30,7 @@ import type {
 export class NotificationService {
   private config: NotificationServiceConfig
   private emailService = createEmailService()
+  private prefRepo = new NotificationPreferencesRepository(prisma)
   private listenersSetup = false
   private systemRoles: Role[] = [Role.MODERATOR, Role.ADMIN, Role.SUPER_ADMIN]
   private aliasPreferenceMap: Partial<Record<NotificationType, NotificationType>> = {
@@ -263,24 +266,16 @@ export class NotificationService {
     notificationType: NotificationType,
     eventData: NotificationEventData,
   ): Promise<boolean> {
-    // Check global preferences
-    const preference = await prisma.notificationPreference.findUnique({
-      where: { userId_type: { userId, type: notificationType } },
-    })
+    const preference = await this.prefRepo.getByType(userId, notificationType)
 
     // If no preference exists and this type has an alias, check alias preference
     const aliasType = this.aliasPreferenceMap[notificationType]
     const aliasPreference =
-      !preference && aliasType
-        ? await prisma.notificationPreference.findUnique({
-            where: { userId_type: { userId, type: aliasType } },
-          })
-        : null
+      !preference && aliasType ? await this.prefRepo.getByType(userId, aliasType) : null
 
     // If no preference exists, default to enabled for most notification types
     // Only default to disabled for system notifications for non-admin users
     if (!preference && !aliasPreference) {
-      // Check if user is admin for system notifications
       if (
         notificationType === NotificationType.MAINTENANCE_NOTICE ||
         notificationType === NotificationType.FEATURE_ANNOUNCEMENT ||
@@ -290,19 +285,18 @@ export class NotificationService {
           where: { id: userId },
           select: { role: true },
         })
-        // Only send system notifications to moderators and above
         return user ? hasRolePermission(user.role, Role.MODERATOR) : false
       }
-      return true // Default to enabled for other notification types
+      return true
     }
     if (!(preference?.inAppEnabled ?? aliasPreference?.inAppEnabled ?? true)) return false
 
     // Check per-listing preferences for listing-related notifications
     if (eventData.payload?.listingId) {
-      const listingPreference = await prisma.listingNotificationPreference.findUnique({
-        where: { userId_listingId: { userId, listingId: eventData.payload.listingId } },
-      })
-
+      const listingPreference = await this.prefRepo.getListingPreference(
+        userId,
+        eventData.payload.listingId,
+      )
       if (listingPreference && !listingPreference.isEnabled) return false
     }
 
@@ -464,18 +458,7 @@ export class NotificationService {
     preferences: { inAppEnabled?: boolean; emailEnabled?: boolean },
   ): Promise<void> {
     const canonicalType = this.aliasPreferenceMap[type] ?? type
-    await prisma.notificationPreference.upsert({
-      where: {
-        userId_type: { userId, type: canonicalType },
-      },
-      update: preferences,
-      create: {
-        userId,
-        type: canonicalType,
-        inAppEnabled: preferences.inAppEnabled ?? true,
-        emailEnabled: preferences.emailEnabled ?? false,
-      },
-    })
+    await this.prefRepo.upsertPreference(userId, canonicalType, preferences)
   }
 
   async updateListingNotificationPreference(
@@ -483,17 +466,7 @@ export class NotificationService {
     listingId: string,
     isEnabled: boolean,
   ): Promise<void> {
-    await prisma.listingNotificationPreference.upsert({
-      where: {
-        userId_listingId: { userId, listingId },
-      },
-      update: { isEnabled },
-      create: {
-        userId,
-        listingId,
-        isEnabled,
-      },
-    })
+    await this.prefRepo.upsertListingPreference(userId, listingId, isEnabled)
   }
 
   setupEventListeners(): void {
@@ -516,9 +489,63 @@ export class NotificationService {
       )
 
       await Promise.allSettled(notificationPromises)
+
+      // On approval, also notify users whose hardware preferences match the listing
+      if (eventData.eventType === 'listing.approved' && eventData.payload?.listingId) {
+        await this.notifyMatchingHardwareUsers(eventData, userIds)
+      }
     } catch (error) {
       console.error('Error handling notification event:', error)
     }
+  }
+
+  /**
+   * Finds users whose device/SoC preferences match the approved listing
+   * and sends them NEW_DEVICE_LISTING / NEW_SOC_LISTING notifications.
+   */
+  private async notifyMatchingHardwareUsers(
+    eventData: NotificationEventData,
+    alreadyNotifiedIds: string[],
+  ): Promise<void> {
+    const listing = await prisma.listing.findUnique({
+      where: { id: eventData.payload?.listingId as string },
+      select: { deviceId: true, device: { select: { socId: true } } },
+    })
+    if (!listing) return
+
+    const payload: NotificationEventPayload = {
+      ...eventData.payload,
+      deviceId: listing.deviceId,
+      socId: listing.device.socId ?? undefined,
+    }
+
+    const matchingUsers = await this.getUsersWithMatchingPreferences(payload)
+    const excludeSet = new Set(alreadyNotifiedIds)
+    if (eventData.triggeredBy) excludeSet.add(eventData.triggeredBy)
+
+    const hardwareUserIds = matchingUsers.map((u) => u.id).filter((id) => !excludeSet.has(id))
+
+    if (hardwareUserIds.length === 0) return
+
+    const filteredIds = await this.filterBannedUsers(hardwareUserIds)
+    const finalIds = await this.filterBlockedUsers(filteredIds, eventData.triggeredBy)
+
+    // Build a synthetic event so createNotificationFromEvent resolves to
+    // NEW_DEVICE_LISTING (the mapping for 'listing.created')
+    const hardwareEvent: NotificationEventData = {
+      ...eventData,
+      eventType: 'listing.created',
+      payload: {
+        ...eventData.payload,
+        deviceId: listing.deviceId,
+        socId: listing.device.socId ?? undefined,
+      },
+    }
+
+    const promises = finalIds.map((userId) =>
+      this.createNotificationFromEvent(hardwareEvent, userId),
+    )
+    await Promise.allSettled(promises)
   }
 
   private async getUsersForEvent(eventData: NotificationEventData): Promise<string[]> {
@@ -580,11 +607,7 @@ export class NotificationService {
         break
 
       case 'listing.created':
-        // Get users with matching device/SOC preferences
-        if (eventData.payload?.deviceId || eventData.payload?.socId) {
-          const users = await this.getUsersWithMatchingPreferences(eventData.payload)
-          userIds.push(...users.map((u) => u.id))
-        }
+        // Hardware-match notifications are sent on approval, not creation
         break
 
       case 'user.mentioned':
@@ -624,6 +647,20 @@ export class NotificationService {
         break
 
       case 'listing.approved':
+        // Get listing author + users with matching hardware preferences
+        if (eventData.payload?.listingId) {
+          const listing = await prisma.listing.findUnique({
+            where: { id: eventData.payload.listingId },
+            select: { authorId: true, deviceId: true, device: { select: { socId: true } } },
+          })
+          if (listing) {
+            userIds.push(listing.authorId)
+            // Hardware-match users are handled separately in handleNotificationEvent
+            // because they need a different notification type (NEW_DEVICE_LISTING)
+          }
+        }
+        break
+
       case 'listing.rejected':
         // Get listing author
         if (eventData.payload?.listingId) {
@@ -662,14 +699,17 @@ export class NotificationService {
     }
 
     // Filter out banned users - they should not receive notifications
-    return await this.filterBannedUsers(userIds)
+    const afterBanFilter = await this.filterBannedUsers(userIds)
+
+    // Filter out users who have blocked the triggering user
+    return await this.filterBlockedUsers(afterBanFilter, eventData.triggeredBy)
   }
 
   private async getUsersWithMatchingPreferences(
     payload: NotificationEventPayload,
   ): Promise<{ id: string }[]> {
     const where: Prisma.UserWhereInput = {
-      notifyOnNewListings: true,
+      settings: { notifyOnNewListings: true },
     }
 
     if (payload.deviceId) where.devicePreferences = { some: { deviceId: payload.deviceId } }
@@ -711,6 +751,42 @@ export class NotificationService {
       console.error('Error filtering banned users from notifications:', error)
       // If we can't filter banned users, return all userIds to avoid breaking notifications entirely
       // This is a fallback - in production, you might want to handle this differently
+      return userIds
+    }
+  }
+
+  /**
+   * Filter out recipients who have blocked the triggering user.
+   * If a recipient blocked the actor, they should not receive notifications from that actor.
+   */
+  private async filterBlockedUsers(
+    userIds: string[],
+    triggeringUserId?: string,
+  ): Promise<string[]> {
+    if (userIds.length === 0 || !triggeringUserId) return userIds
+
+    try {
+      const blockedRelations = await prisma.userRelationship.findMany({
+        where: {
+          senderId: { in: userIds },
+          receiverId: triggeringUserId,
+          status: RelationshipStatus.BLOCKED,
+        },
+        select: { senderId: true },
+      })
+
+      if (blockedRelations.length === 0) return userIds
+
+      const blockerIds = new Set(blockedRelations.map((r) => r.senderId))
+      const filtered = userIds.filter((id) => !blockerIds.has(id))
+
+      logger.log(
+        `Filtered out ${blockedRelations.length} users who blocked the triggering user from notification targeting`,
+      )
+
+      return filtered
+    } catch (error) {
+      logger.error('Error filtering blocked users from notifications:', error)
       return userIds
     }
   }

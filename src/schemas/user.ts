@@ -32,6 +32,10 @@ export const GetUserByIdSchema = z.object({
   listingsSearch: z.string().optional(),
   listingsDevice: z.string().optional(),
   listingsEmulator: z.string().optional(),
+  // Pagination for PC listings
+  pcListingsPage: z.number().int().min(1).default(1),
+  pcListingsLimit: z.number().int().min(1).max(50).default(12),
+  pcListingsSearch: z.string().optional(),
   // Pagination for votes
   votesPage: z.number().int().min(1).default(1),
   votesLimit: z.number().int().min(1).max(50).default(12),

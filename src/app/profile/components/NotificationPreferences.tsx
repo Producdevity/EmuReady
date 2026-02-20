@@ -1,43 +1,59 @@
 'use client'
 
-import { Bell } from 'lucide-react'
+import { Bell, Filter } from 'lucide-react'
 import { AnimatedToggle } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { NotificationType } from '@orm'
+import SettingsSection from './SettingsSection'
 
 const allTypes = [
   NotificationType.ACCOUNT_WARNING,
   NotificationType.COMMENT_REPLY,
+  NotificationType.COMMENT_DOWNVOTED,
+  NotificationType.COMMENT_UPVOTED,
   NotificationType.CONTENT_FLAGGED,
   NotificationType.EMULATOR_UPDATED,
   NotificationType.FEATURE_ANNOUNCEMENT,
+  NotificationType.FOLLOWED_USER_NEW_LISTING,
+  NotificationType.FOLLOWED_USER_NEW_PC_LISTING,
+  NotificationType.FRIEND_REQUEST_ACCEPTED,
+  NotificationType.FRIEND_REQUEST_RECEIVED,
   NotificationType.GAME_ADDED,
   NotificationType.LISTING_APPROVED,
   NotificationType.LISTING_COMMENT,
   NotificationType.LISTING_REJECTED,
   NotificationType.LISTING_VOTE_DOWN,
   NotificationType.LISTING_VOTE_UP,
-  NotificationType.COMMENT_UPVOTED,
-  NotificationType.COMMENT_DOWNVOTED,
   NotificationType.MAINTENANCE_NOTICE,
-  NotificationType.WEEKLY_DIGEST,
   NotificationType.MONTHLY_ACTIVE_BONUS,
   NotificationType.NEW_DEVICE_LISTING,
+  NotificationType.NEW_FOLLOWER,
   NotificationType.NEW_SOC_LISTING,
   NotificationType.POLICY_UPDATE,
+  NotificationType.REPORT_CREATED,
+  NotificationType.REPORT_STATUS_CHANGED,
   NotificationType.ROLE_CHANGED,
-  NotificationType.VERIFIED_DEVELOPER,
+  NotificationType.USER_BANNED,
   NotificationType.USER_MENTION,
+  NotificationType.USER_UNBANNED,
+  NotificationType.VERIFIED_DEVELOPER,
+  NotificationType.WEEKLY_DIGEST,
 ]
 
 type NotificationPreferencesData = RouterOutput['notifications']['getPreferences']
+type UserPreferencesData = RouterOutput['userPreferences']['get']
 
 interface Props {
   notificationPreferencesQuery: {
     data?: NotificationPreferencesData
+    isPending: boolean
+    error?: unknown
+  }
+  preferencesQuery: {
+    data?: UserPreferencesData
     isPending: boolean
     error?: unknown
   }
@@ -46,18 +62,36 @@ interface Props {
 function NotificationPreferences(props: Props) {
   const utils = api.useUtils()
 
-  const updateNotificationPreference = api.notifications.updatePreference.useMutation({
+  const updateSinglePreference = api.notifications.updatePreference.useMutation({
     onSuccess: () => {
       utils.notifications.getPreferences.invalidate().catch(console.error)
       toast.success('Notification preference updated!')
     },
     onError: (error) => {
-      console.error('Error updating notification preference:', error)
       toast.error(`Failed to update preference: ${getErrorMessage(error)}`)
     },
   })
 
-  // Helper function to get preference value
+  const bulkUpdatePreferences = api.notifications.bulkUpdatePreferences.useMutation({
+    onSuccess: () => {
+      utils.notifications.getPreferences.invalidate().catch(console.error)
+      toast.success('All notification preferences updated!')
+    },
+    onError: (error) => {
+      toast.error(`Failed to update preferences: ${getErrorMessage(error)}`)
+    },
+  })
+
+  const updateUserPreferences = api.userPreferences.update.useMutation({
+    onSuccess: () => {
+      utils.userPreferences.get.invalidate().catch(console.error)
+      toast.success('Preference updated!')
+    },
+    onError: (error) => {
+      toast.error(`Failed to update preference: ${getErrorMessage(error)}`)
+    },
+  })
+
   function getPreferenceValue(type: string, field: 'inAppEnabled' | 'emailEnabled'): boolean {
     if (type === 'general') {
       return allTypes.every(
@@ -70,21 +104,21 @@ function NotificationPreferences(props: Props) {
     return props.notificationPreferencesQuery.data?.find((p) => p.type === type)?.[field] ?? true
   }
 
-  // Helper function to update preference
   function updatePreference(type: string, field: 'inAppEnabled' | 'emailEnabled', value: boolean) {
-    if (type !== 'general') {
-      return updateNotificationPreference.mutate({
-        type: type as NotificationType,
+    if (type === 'general') {
+      bulkUpdatePreferences.mutate({
+        types: allTypes,
         [field]: value,
       })
+      return
     }
-    allTypes.forEach((notifType) => {
-      updateNotificationPreference.mutate({
-        type: notifType as NotificationType,
-        [field]: value,
-      })
+    updateSinglePreference.mutate({
+      type: type as NotificationType,
+      [field]: value,
     })
   }
+
+  const isMutating = updateSinglePreference.isPending || bulkUpdatePreferences.isPending
 
   if (props.notificationPreferencesQuery.isPending) {
     return (
@@ -122,18 +156,18 @@ function NotificationPreferences(props: Props) {
       items: [
         {
           key: NotificationType.LISTING_COMMENT,
-          label: 'Listing Comments',
-          description: 'When someone comments on your listings',
+          label: 'Report Comments',
+          description: 'When someone comments on your reports',
         },
         {
           key: NotificationType.LISTING_VOTE_UP,
           label: 'Upvotes',
-          description: 'When someone upvotes your listings',
+          description: 'When someone upvotes your reports',
         },
         {
           key: NotificationType.LISTING_VOTE_DOWN,
           label: 'Downvotes',
-          description: 'When someone downvotes your listings',
+          description: 'When someone downvotes your reports',
         },
         {
           key: NotificationType.COMMENT_REPLY,
@@ -163,12 +197,12 @@ function NotificationPreferences(props: Props) {
       items: [
         {
           key: NotificationType.NEW_DEVICE_LISTING,
-          label: 'New Device Listings',
+          label: 'New Device Reports',
           description: 'When new devices are added',
         },
         {
           key: NotificationType.NEW_SOC_LISTING,
-          label: 'New SOC Listings',
+          label: 'New SOC Reports',
           description: 'When new SOCs are added',
         },
         {
@@ -180,6 +214,37 @@ function NotificationPreferences(props: Props) {
           key: NotificationType.EMULATOR_UPDATED,
           label: 'Emulator Updates',
           description: 'When emulators are updated',
+        },
+      ],
+    },
+    {
+      title: 'Social',
+      description: 'Notifications about followers and friends',
+      items: [
+        {
+          key: NotificationType.NEW_FOLLOWER,
+          label: 'New Followers',
+          description: 'When someone follows you',
+        },
+        {
+          key: NotificationType.FRIEND_REQUEST_RECEIVED,
+          label: 'Friend Requests',
+          description: 'When someone sends you a friend request',
+        },
+        {
+          key: NotificationType.FRIEND_REQUEST_ACCEPTED,
+          label: 'Friend Request Accepted',
+          description: 'When someone accepts your friend request',
+        },
+        {
+          key: NotificationType.FOLLOWED_USER_NEW_LISTING,
+          label: 'Followed User Reports',
+          description: 'When a user you follow submits a new handheld report',
+        },
+        {
+          key: NotificationType.FOLLOWED_USER_NEW_PC_LISTING,
+          label: 'Followed User PC Reports',
+          description: 'When a user you follow submits a new PC report',
         },
       ],
     },
@@ -220,13 +285,13 @@ function NotificationPreferences(props: Props) {
       items: [
         {
           key: NotificationType.LISTING_APPROVED,
-          label: 'Listing Approved',
-          description: 'When your listings are approved',
+          label: 'Report Approved',
+          description: 'When your reports are approved',
         },
         {
           key: NotificationType.LISTING_REJECTED,
-          label: 'Listing Rejected',
-          description: 'When your listings are rejected',
+          label: 'Report Rejected',
+          description: 'When your reports are rejected',
         },
         {
           key: NotificationType.CONTENT_FLAGGED,
@@ -268,72 +333,76 @@ function NotificationPreferences(props: Props) {
   ]
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <Bell className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-          Notification Preferences
-        </h2>
-      </div>
-
-      <div className="space-y-8">
-        {notificationCategories.map((category) => (
-          <div key={category.title}>
-            <div className="mb-4">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                {category.title}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{category.description}</p>
+    <div className="space-y-6">
+      {props.preferencesQuery.data && (
+        <SettingsSection
+          title="Device & SOC Alerts"
+          description="Get notified when new reports match your hardware preferences"
+          icon={<Filter className="w-6 h-6" />}
+          delay={0}
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                Notify on New Reports
+              </h4>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Get notified when new compatibility reports match your preferred devices/SOCs
+              </p>
             </div>
+            <AnimatedToggle
+              checked={props.preferencesQuery.data.notifyOnNewListings}
+              onChange={(value) => updateUserPreferences.mutate({ notifyOnNewListings: value })}
+              disabled={updateUserPreferences.isPending}
+            />
+          </div>
+        </SettingsSection>
+      )}
 
-            <div className="space-y-4">
-              {category.items.map((item) => (
-                <div
-                  key={item.key}
-                  className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4">
-                      <div className="flex-1">
-                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                          {item.label}
-                        </h4>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          {item.description}
-                        </p>
-                      </div>
+      {notificationCategories.map((category, index) => (
+        <SettingsSection
+          key={category.title}
+          title={category.title}
+          description={category.description}
+          icon={<Bell className="w-6 h-6" />}
+          delay={(index + 1) * 0.05}
+        >
+          <div className="space-y-4">
+            {category.items.map((item) => (
+              <div key={item.key} className="flex items-center justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                    {item.label}
+                  </h4>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">{item.description}</p>
+                </div>
 
-                      <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-2">
-                          <AnimatedToggle
-                            checked={getPreferenceValue(item.key, 'inAppEnabled')}
-                            onChange={(checked) =>
-                              updatePreference(item.key, 'inAppEnabled', checked)
-                            }
-                            size="sm"
-                          />
-                          <span className="text-xs text-gray-600 dark:text-gray-400">In-App</span>
-                        </div>
+                <div className="flex items-center gap-6 flex-shrink-0">
+                  <div className="flex items-center gap-2">
+                    <AnimatedToggle
+                      checked={getPreferenceValue(item.key, 'inAppEnabled')}
+                      onChange={(checked) => updatePreference(item.key, 'inAppEnabled', checked)}
+                      size="sm"
+                      disabled={isMutating}
+                    />
+                    <span className="text-xs text-gray-600 dark:text-gray-400">In-App</span>
+                  </div>
 
-                        <div className="flex items-center gap-2">
-                          <AnimatedToggle
-                            checked={getPreferenceValue(item.key, 'emailEnabled')}
-                            onChange={(checked) =>
-                              updatePreference(item.key, 'emailEnabled', checked)
-                            }
-                            size="sm"
-                          />
-                          <span className="text-xs text-gray-600 dark:text-gray-400">Email</span>
-                        </div>
-                      </div>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <AnimatedToggle
+                      checked={getPreferenceValue(item.key, 'emailEnabled')}
+                      onChange={(checked) => updatePreference(item.key, 'emailEnabled', checked)}
+                      size="sm"
+                      disabled={isMutating}
+                    />
+                    <span className="text-xs text-gray-600 dark:text-gray-400">Email</span>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </SettingsSection>
+      ))}
     </div>
   )
 }

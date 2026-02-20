@@ -88,7 +88,7 @@ function UserDetailsModal(props: Props) {
 
   const userQuery = api.users.getUserById.useQuery(
     {
-      userId: props.userId!,
+      userId: props.userId ?? '',
       listingsPage,
       listingsLimit: ITEMS_PER_PAGE,
       listingsSearch: debouncedListingsSearch || undefined,
@@ -117,17 +117,17 @@ function UserDetailsModal(props: Props) {
 
   // Get ban status and report statistics
   const banStatusQuery = api.userBans.checkUserBanStatus.useQuery(
-    { userId: props.userId! },
+    { userId: props.userId ?? '' },
     { enabled: !!props.userId },
   )
 
   const reportStatsQuery = api.listingReports.getUserReportStats.useQuery(
-    { userId: props.userId! },
+    { userId: props.userId ?? '' },
     { enabled: !!props.userId },
   )
 
   const reportsQuery = api.listingReports.getUserReports.useQuery(
-    { userId: props.userId!, page: reportsPage, limit: ITEMS_PER_PAGE, status: reportsStatus },
+    { userId: props.userId ?? '', page: reportsPage, limit: ITEMS_PER_PAGE, status: reportsStatus },
     { enabled: !!props.userId && activeTab === 'reports' },
   )
 
@@ -199,7 +199,7 @@ function UserDetailsModal(props: Props) {
   const TABS: { id: ActivityTab; label: string; icon: typeof GamepadIcon; count: number }[] = [
     {
       id: 'listings',
-      label: 'Listings',
+      label: 'Reports',
       icon: GamepadIcon,
       count: userQuery.data?._count?.listings ?? 0,
     },
@@ -297,7 +297,7 @@ function UserDetailsModal(props: Props) {
                 <div className="flex items-center gap-2 mb-2">
                   <GamepadIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   <span className="text-sm font-medium text-blue-800 dark:text-blue-300">
-                    Listings
+                    Reports
                   </span>
                 </div>
                 <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
@@ -362,7 +362,7 @@ function UserDetailsModal(props: Props) {
                   {reportStatsQuery.data?.totalReports ?? 0}
                 </p>
                 <p className="text-xs text-red-700 dark:text-red-300">
-                  {reportStatsQuery.data?.reportedListingsCount ?? 0} listings reported
+                  {reportStatsQuery.data?.reportedListingsCount ?? 0} reports flagged
                 </p>
               </button>
             </div>
@@ -547,7 +547,7 @@ function UserDetailsModal(props: Props) {
                   <UserActivityVotesTab
                     votes={userQuery.data.votes}
                     totalCount={userQuery.data._count?.votes ?? 0}
-                    userId={props.userId!}
+                    userId={props.userId ?? ''}
                     page={votesPage}
                     onPageChange={setVotesPage}
                     search={votesSearch}

@@ -11,48 +11,26 @@ function StatSkeleton() {
   )
 }
 
-function ListingCardSkeleton() {
+function CardSkeleton() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-slate-200/70 bg-gradient-to-br from-white/95 via-slate-50/90 to-slate-100/90 p-6 shadow-lg dark:border-white/5 dark:from-slate-900/70 dark:via-slate-900/60 dark:to-slate-900/45">
-      <div className="flex items-start gap-4">
-        <div className="h-12 w-12 rounded-xl bg-gray-200 dark:bg-gray-700 animate-pulse" />
-        <div className="flex-1 space-y-3">
-          <div className="h-5 w-3/4 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
-          <div className="h-4 w-1/2 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
-          <div className="flex gap-2">
-            <div className="h-5 w-20 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
-            <div className="h-5 w-16 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+    <div className="overflow-hidden rounded-2xl border border-gray-200/70 bg-white p-5 dark:border-white/[0.06] dark:bg-gray-800/60">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start gap-3.5">
+          <div className="h-11 w-11 rounded-xl bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          <div className="flex-1 space-y-2">
+            <div className="h-5 w-3/4 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+            <div className="h-4 w-1/2 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
           </div>
         </div>
-      </div>
-      <div className="mt-4 flex items-center justify-between text-xs text-gray-400 dark:text-gray-600">
-        <div className="h-3 w-24 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
-        <div className="h-4 w-16 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
-      </div>
-    </div>
-  )
-}
-
-function VotesTableSkeleton() {
-  return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700">
-      <div className="grid grid-cols-4 gap-4 border-b border-gray-200 bg-gray-50 p-4 text-sm font-medium text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-        <div className="h-4 w-16 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
-        <div className="h-4 w-20 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
-        <div className="h-4 w-12 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
-        <div className="h-4 w-10 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
-      </div>
-      {[...Array(3)].map((_, index) => (
-        <div
-          key={index}
-          className="grid grid-cols-4 gap-4 border-b border-gray-100 p-4 dark:border-gray-800"
-        >
-          <div className="h-4 w-3/4 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
-          <div className="h-4 w-2/3 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
-          <div className="h-4 w-1/2 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
-          <div className="h-4 w-1/4 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+        <div className="flex gap-2">
+          <div className="h-5 w-20 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          <div className="h-5 w-16 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
         </div>
-      ))}
+        <div className="flex items-center justify-between">
+          <div className="h-3 w-24 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          <div className="h-3 w-16 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+        </div>
+      </div>
     </div>
   )
 }
@@ -122,18 +100,13 @@ function UserProfilePageSkeleton() {
           <div className="rounded-2xl border border-gray-100 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800">
             <div className="border-b border-gray-200 p-6 dark:border-gray-700">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                <div className="w-full xl:w-auto">
-                  <div className="flex h-11 w-full items-center gap-2 rounded-xl border border-gray-200 bg-gray-100/70 p-1 shadow-sm dark:border-gray-700 dark:bg-gray-900/60">
-                    <div className="h-10 flex-1 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse" />
-                    <div className="h-10 flex-1 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse" />
-                  </div>
+                <div className="inline-flex w-full items-center rounded-xl border border-gray-200 bg-gray-100 p-1 gap-1 xl:w-auto dark:border-gray-700 dark:bg-gray-900/60">
+                  <div className="h-9 flex-1 rounded-lg bg-white shadow-sm dark:bg-gray-800 animate-pulse" />
+                  <div className="h-9 flex-1 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                  <div className="h-9 flex-1 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse" />
                 </div>
                 <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
                   <div className="h-11 w-full rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse sm:w-72" />
-                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                    <div className="h-11 w-full rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse sm:w-44" />
-                    <div className="h-11 w-full rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse sm:w-44" />
-                  </div>
                   <div className="flex h-11 items-center gap-1 rounded-xl border border-gray-200 bg-white/80 px-1 shadow-sm dark:border-gray-700 dark:bg-gray-900/60">
                     <div className="h-9 w-9 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
                     <div className="h-9 w-9 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
@@ -144,13 +117,11 @@ function UserProfilePageSkeleton() {
             <div className="p-6">
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {[...Array(6)].map((_, index) => (
-                  <ListingCardSkeleton key={index} />
+                  <CardSkeleton key={index} />
                 ))}
               </div>
             </div>
           </div>
-
-          <VotesTableSkeleton />
         </div>
       </div>
     </div>

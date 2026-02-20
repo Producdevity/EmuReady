@@ -579,7 +579,7 @@ const analytics = {
 
     preferencesUpdated: (params: {
       userId: string
-      preferenceType: 'device' | 'soc' | 'notification' | 'general'
+      preferenceType: 'device' | 'soc' | 'notification' | 'general' | 'privacy'
       action: 'added' | 'removed' | 'updated'
       entityId?: string
     }) => {

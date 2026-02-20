@@ -2,7 +2,7 @@ import { ResourceError } from '@/lib/errors'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { Role } from '@orm'
 import { BaseRepository } from './base.repository'
-import type { Prisma, PrismaClient, UserBan } from '@orm'
+import type { Prisma, UserBan } from '@orm'
 
 type BanWithDetails = UserBan & {
   user: {
@@ -48,10 +48,6 @@ export class UserBansRepository extends BaseRepository {
 
     minimal: { bannedBy: { select: { name: true } } } satisfies Prisma.UserBanInclude,
   } as const
-
-  constructor(prisma: PrismaClient | Prisma.TransactionClient) {
-    super(prisma as PrismaClient)
-  }
 
   async stats() {
     const [total, active, expired, permanent, temporary] = await Promise.all([

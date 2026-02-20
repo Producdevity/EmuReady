@@ -2,7 +2,7 @@
 
 import { type UserResource } from '@clerk/types'
 import { motion } from 'framer-motion'
-import { ExternalLink, Shield, Calendar, UserIcon, Award } from 'lucide-react'
+import { Download, ExternalLink, Shield, Calendar, UserIcon, Award, BarChart3 } from 'lucide-react'
 import Link from 'next/link'
 import { Button, TrustLevelBadge, LocalizedDate } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -10,6 +10,14 @@ import { type RouterOutput } from '@/types/trpc'
 import { getRoleColor } from '@/utils/badge-colors'
 import { formatUserRole } from '@/utils/format'
 import ProfileUpload from './ProfileUpload'
+
+function maskEmail(email: string | undefined | null): string {
+  if (!email) return ''
+  const [local, domain] = email.split('@')
+  if (!local || !domain) return email
+  const visible = local.length <= 2 ? local[0] : local.slice(0, 2)
+  return `${visible}${'*'.repeat(Math.max(local.length - 2, 1))}@${domain}`
+}
 
 interface Props {
   clerkUser: UserResource
@@ -48,7 +56,7 @@ function ProfileHeader(props: Props) {
                 <motion.h1
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
+                  transition={{ delay: 0.05 }}
                   className="text-3xl lg:text-4xl font-bold text-white mb-2"
                 >
                   {props.profileData?.name ?? props.clerkUser.fullName ?? 'Anonymous User'}
@@ -56,14 +64,16 @@ function ProfileHeader(props: Props) {
 
                 <div className="flex flex-wrap items-center gap-3 mb-4">
                   <span className="text-blue-100 font-medium">
-                    {props.clerkUser.primaryEmailAddress?.emailAddress ?? props.profileData?.email}
+                    {maskEmail(
+                      props.clerkUser.primaryEmailAddress?.emailAddress ?? props.profileData?.email,
+                    )}
                   </span>
 
                   {props.profileData?.role && (
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ delay: 0.3 }}
+                      transition={{ delay: 0.1 }}
                       className={cn(
                         'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-white text-sm font-semibold shadow-lg',
                         getRoleColor(props.profileData.role),
@@ -77,6 +87,18 @@ function ProfileHeader(props: Props) {
               </div>
 
               <div className="flex items-center gap-3">
+                {process.env.NEXT_PUBLIC_ENABLE_ANDROID_DOWNLOADS === 'true' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    rounded
+                    asChild
+                    icon={Download}
+                    className="bg-white/15 hover:bg-white/25 text-white shadow-lg backdrop-blur-sm"
+                  >
+                    <Link href="/downloads">Downloads</Link>
+                  </Button>
+                )}
                 {props.profileData?.id && (
                   <Button
                     variant="ghost"
@@ -96,20 +118,22 @@ function ProfileHeader(props: Props) {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.15 }}
                 className="bg-white/10 rounded-xl p-4 backdrop-blur-sm"
               >
                 <div className="flex items-center gap-3 mb-2">
-                  <UserIcon className="w-5 h-5 text-blue-200" />
-                  <span className="text-blue-100 font-medium">Profile</span>
+                  <BarChart3 className="w-5 h-5 text-blue-200" />
+                  <span className="text-blue-100 font-medium">Contributions</span>
                 </div>
-                <p className="text-white text-lg font-semibold">Active</p>
+                <p className="text-white text-lg font-semibold">
+                  {(props.profileData?._count?.listings ?? 0).toLocaleString()}
+                </p>
               </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
+                transition={{ delay: 0.2 }}
                 className="bg-white/10 rounded-xl p-4 backdrop-blur-sm"
               >
                 <div className="flex items-center gap-3 mb-2">
@@ -131,7 +155,7 @@ function ProfileHeader(props: Props) {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
+                transition={{ delay: 0.25 }}
                 className="bg-white/10 rounded-xl p-4 backdrop-blur-sm"
               >
                 <div className="flex items-center gap-3 mb-2">
@@ -147,7 +171,7 @@ function ProfileHeader(props: Props) {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7 }}
+                  transition={{ delay: 0.3 }}
                   className="bg-white/10 rounded-xl p-4 backdrop-blur-sm"
                 >
                   <div className="flex items-center gap-3 mb-2">

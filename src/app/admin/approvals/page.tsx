@@ -32,6 +32,7 @@ import {
   TooltipTrigger,
   TooltipContent,
   useConfirmDialog,
+  ViewUserButton,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import {
@@ -180,7 +181,7 @@ function AdminApprovalsPage() {
       setSelectedListingIds([])
     },
     onError: (err) => {
-      console.error('Failed to bulk approve listings:', err)
+      logger.error('Failed to bulk approve listings:', err)
       toast.error(`Failed to bulk approve listings: ${getErrorMessage(err)}`)
     },
   })
@@ -200,7 +201,7 @@ function AdminApprovalsPage() {
       setSelectedListingIds([])
     },
     onError: (err) => {
-      console.error('Failed to bulk reject listings:', err)
+      logger.error('Failed to bulk reject listings:', err)
       toast.error(`Failed to bulk reject listings: ${getErrorMessage(err)}`)
     },
   })
@@ -286,6 +287,7 @@ function AdminApprovalsPage() {
     }
   }
 
+  // TODO: extract this to a generic Admin error component
   if (pendingListingsQuery.error) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -584,19 +586,29 @@ function AdminApprovalsPage() {
                             <ApproveButton
                               title="Approve Listing"
                               onClick={() => openApprovalModal(listing, ApprovalStatus.APPROVED)}
+                              disabled={approveMutation.isPending}
                             />
                           )}
-
                           {hasPermission(
                             currentUserQuery.data?.permissions,
                             PERMISSIONS.APPROVE_LISTINGS,
                           ) && (
                             <RejectButton
-                              onClick={() => openApprovalModal(listing, ApprovalStatus.REJECTED)}
                               title="Reject Listing"
+                              onClick={() => openApprovalModal(listing, ApprovalStatus.REJECTED)}
+                              disabled={rejectMutation.isPending}
                             />
                           )}
-                          <ViewButton href={`/listings/${listing.id}`} title="View Details" />
+                          {hasPermission(
+                            currentUserQuery.data?.permissions,
+                            PERMISSIONS.MANAGE_USERS,
+                          ) && (
+                            <ViewUserButton
+                              title="View User Details"
+                              href={`/admin/users?userId=${listing.author.id}`}
+                            />
+                          )}
+                          <ViewButton title="View Details" href={`/listings/${listing.id}`} />
                         </div>
                       </td>
                     )}

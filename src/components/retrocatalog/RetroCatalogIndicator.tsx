@@ -1,6 +1,6 @@
 'use client'
 
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { RetroCatalogIconAnimated } from './RetroCatalogIconAnimated'
 import { useRetroCatalogDevice } from './useRetroCatalogDevice'
@@ -32,9 +32,10 @@ export function RetroCatalogIndicator(props: Props) {
   if (isLoading || !exists) return null
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
           className={cn(
             'inline-flex items-center justify-center rounded-full',
             'bg-brand-retrocatalog/10',
@@ -49,9 +50,9 @@ export function RetroCatalogIndicator(props: Props) {
           onMouseDown={(ev) => ev.stopPropagation()}
         >
           <RetroCatalogIconAnimated size={size} showAccent className="text-brand-retrocatalog" />
-        </div>
-      </TooltipTrigger>
-      <TooltipContent side="top">
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="top" className="w-auto max-w-xs p-3">
         <div className="text-center">
           <p className="font-medium text-xs">Specs on RetroCatalog</p>
           <p className="text-xs opacity-70 mt-0.5">
@@ -67,7 +68,7 @@ export function RetroCatalogIndicator(props: Props) {
             </a>
           </p>
         </div>
-      </TooltipContent>
-    </Tooltip>
+      </PopoverContent>
+    </Popover>
   )
 }

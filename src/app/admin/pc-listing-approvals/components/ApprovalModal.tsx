@@ -6,8 +6,9 @@ import {
   UserInfoSection,
   PerformanceSection,
   NotesSection,
+  RejectionNotesInput,
 } from '@/app/listings/components/shared/approval/ApprovalModalSharedComponents'
-import { AuthorRiskWarningBanner, Button, Modal, Input } from '@/components/ui'
+import { AuthorRiskWarningBanner, Button, Modal } from '@/components/ui'
 import { useEmulatorLogos } from '@/hooks'
 import { type RouterOutput } from '@/types/trpc'
 import { ApprovalStatus } from '@orm'
@@ -95,25 +96,12 @@ function ApprovalModal(props: Props) {
 
         <NotesSection notes={props.selectedPcListingForApproval.notes} />
 
-        {/* Rejection Notes Input */}
         {props.approvalDecision === ApprovalStatus.REJECTED && (
-          <div>
-            <label
-              htmlFor="rejectionNotes"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Rejection Notes (Optional)
-            </label>
-            <Input
-              as="textarea"
-              id="rejectionNotes"
-              value={props.approvalNotes}
-              onChange={(ev) => props.setApprovalNotes(ev.target.value)}
-              rows={4}
-              placeholder="Reason for rejection..."
-              className="w-full mt-1"
-            />
-          </div>
+          <RejectionNotesInput
+            id="rejectionNotes"
+            value={props.approvalNotes}
+            onChange={props.setApprovalNotes}
+          />
         )}
 
         <div className="flex justify-end space-x-3 pt-4 border-t dark:border-gray-700 mt-6">

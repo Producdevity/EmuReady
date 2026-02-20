@@ -24,8 +24,8 @@ export abstract class BaseRepository {
   protected readonly mode: Prisma.QueryMode = Prisma.QueryMode.insensitive
   protected readonly sortOrder: Prisma.SortOrder = Prisma.SortOrder.asc
 
-  constructor(prisma: PrismaClient) {
-    this.prisma = prisma
+  constructor(prisma: PrismaClient | Prisma.TransactionClient) {
+    this.prisma = prisma as PrismaClient
   }
 
   /**
