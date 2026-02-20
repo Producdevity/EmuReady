@@ -43,6 +43,7 @@ import {
 } from '@/hooks'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
+import { logger } from '@/lib/logger'
 import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
