@@ -110,6 +110,7 @@ export function PerformanceSection(props: PerformanceSectionProps) {
     <div>
       <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Performance</h3>
       <PerformanceBadge
+        className="justify-start"
         rank={props.performance.rank}
         label={props.performance.label}
         description={props.performance.description}
