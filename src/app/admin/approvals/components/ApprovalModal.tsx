@@ -4,6 +4,7 @@ import {
   PerformanceSection,
   NotesSection,
   RejectionNotesInput,
+  CustomFieldsApprovalSection,
 } from '@/app/listings/components/shared/approval/ApprovalModalSharedComponents'
 import { AuthorRiskWarningBanner, Modal, Button } from '@/components/ui'
 import { type RouterOutput } from '@/types/trpc'
@@ -82,6 +83,11 @@ function ApprovalModal(props: Props) {
         <PerformanceSection performance={props.selectedListingForApproval.performance} />
 
         <NotesSection notes={props.selectedListingForApproval.notes} />
+
+        <CustomFieldsApprovalSection
+          fieldValues={props.selectedListingForApproval.customFieldValues}
+        />
+
         {props.approvalDecision === ApprovalStatus.REJECTED && (
           <RejectionNotesInput
             id="approvalNotes"

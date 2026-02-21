@@ -1,8 +1,12 @@
+'use client'
+
 import Image from 'next/image'
 import Link from 'next/link'
+import { useState } from 'react'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import { Badge, Input, LocalizedDate, PerformanceBadge } from '@/components/ui'
 import getImageUrl from '@/utils/getImageUrl'
+import { CustomFieldValue, type FieldValueLike } from '../CustomFieldValue'
 
 interface GameInfoSectionProps {
   game: {
@@ -174,6 +178,74 @@ export function RejectionNotesInput(props: RejectionNotesInputProps) {
         placeholder="Reason for rejection..."
         className="w-full"
       />
+    </div>
+  )
+}
+
+interface CustomFieldsApprovalSectionProps {
+  fieldValues: FieldValueLike[] | undefined
+}
+
+export function CustomFieldsApprovalSection(props: CustomFieldsApprovalSectionProps) {
+  const [expanded, setExpanded] = useState(false)
+
+  if (!props.fieldValues || props.fieldValues.length === 0) return null
+
+  const nonEmpty = props.fieldValues.filter((fv) => {
+    if (fv.value === null || fv.value === undefined || fv.value === '') return false
+    if (typeof fv.value === 'string' && fv.value.trim() === '') return false
+    return true
+  })
+
+  if (nonEmpty.length === 0) return null
+
+  const firstField = nonEmpty[0]
+  const remainingFields = nonEmpty.slice(1)
+
+  return (
+    <div>
+      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+        Emulator Settings
+      </h3>
+      <dl className="text-sm space-y-1">
+        <div className="flex items-baseline gap-2">
+          <dt className="text-gray-500 dark:text-gray-400 shrink-0">
+            {firstField.customFieldDefinition.label}
+          </dt>
+          <dd className="text-gray-900 dark:text-white">
+            <CustomFieldValue fieldValue={firstField} />
+          </dd>
+        </div>
+        {remainingFields.length > 0 && !expanded && (
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="text-xs text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300"
+          >
+            Show {remainingFields.length} more setting{remainingFields.length > 1 ? 's' : ''}
+          </button>
+        )}
+        {expanded &&
+          remainingFields.map((fv) => (
+            <div key={fv.customFieldDefinition.label} className="flex items-baseline gap-2">
+              <dt className="text-gray-500 dark:text-gray-400 shrink-0">
+                {fv.customFieldDefinition.label}
+              </dt>
+              <dd className="text-gray-900 dark:text-white">
+                <CustomFieldValue fieldValue={fv} />
+              </dd>
+            </div>
+          ))}
+        {expanded && remainingFields.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            className="text-xs text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300"
+          >
+            Hide settings
+          </button>
+        )}
+      </dl>
     </div>
   )
 }

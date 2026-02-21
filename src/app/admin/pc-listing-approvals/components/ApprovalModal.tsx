@@ -7,6 +7,7 @@ import {
   PerformanceSection,
   NotesSection,
   RejectionNotesInput,
+  CustomFieldsApprovalSection,
 } from '@/app/listings/components/shared/approval/ApprovalModalSharedComponents'
 import { AuthorRiskWarningBanner, Button, Modal } from '@/components/ui'
 import { useEmulatorLogos } from '@/hooks'
@@ -95,6 +96,10 @@ function ApprovalModal(props: Props) {
         <PerformanceSection performance={props.selectedPcListingForApproval.performance} />
 
         <NotesSection notes={props.selectedPcListingForApproval.notes} />
+
+        <CustomFieldsApprovalSection
+          fieldValues={props.selectedPcListingForApproval.customFieldValues}
+        />
 
         {props.approvalDecision === ApprovalStatus.REJECTED && (
           <RejectionNotesInput
