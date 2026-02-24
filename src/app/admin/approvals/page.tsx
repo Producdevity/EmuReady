@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
+import { confirmBulkApproval } from '@/app/admin/utils'
 import {
   AdminPageLayout,
   AdminTableContainer,
@@ -207,43 +208,10 @@ function AdminApprovalsPage() {
     },
   })
 
-  // Handle bulk approval with confirmation for risky authors
   const handleBulkApprovalWithConfirmation = async (listingIds: string[]) => {
-    const selectedListings = listings.filter((listing) => listingIds.includes(listing.id))
-    const riskyListings = selectedListings.filter(
-      (listing) => listing.authorRiskProfile?.highestSeverity !== null,
-    )
+    const confirmed = await confirmBulkApproval(listings, listingIds, confirm, 'listings')
+    if (!confirmed) return
 
-    if (riskyListings.length > 0) {
-      const riskyAuthors = [...new Set(riskyListings.map((l) => l.author?.name || 'Unknown'))]
-      const highestRisk = riskyListings.reduce<string | null>((max, l) => {
-        const severity = l.authorRiskProfile?.highestSeverity
-        if (!severity) return max
-        if (!max) return severity
-        const order = { low: 1, medium: 2, high: 3 }
-        return order[severity as keyof typeof order] > order[max as keyof typeof order]
-          ? severity
-          : max
-      }, null)
-
-      const confirmed = await confirm({
-        title: 'Bulk Approval Warning',
-        description: `You are about to approve ${listingIds.length} listings, including ${riskyListings.length} from authors with risk signals (highest: ${highestRisk}).\n\nFlagged authors:\n${riskyAuthors.map((name) => `  ${name}`).join('\n')}\n\nAre you sure you want to proceed?`,
-        confirmText: 'Approve Selected',
-      })
-
-      if (!confirmed) return
-    } else {
-      const confirmed = await confirm({
-        title: 'Bulk Approval Confirmation',
-        description: `You are about to approve ${listingIds.length} listings. Are you sure you want to proceed?`,
-        confirmText: 'Approve Selected',
-      })
-
-      if (!confirmed) return
-    }
-
-    // Proceed with bulk approval
     await bulkApproveMutation.mutateAsync({ listingIds })
     await invalidateQueries()
     closeApprovalModal()
