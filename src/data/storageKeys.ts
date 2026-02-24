@@ -31,6 +31,7 @@ const storageKeys = {
     devices: `${PREFIX}devices_column_visibility`,
     emulators: `${PREFIX}emulators_column_visibility`,
     adminApprovals: `${PREFIX}admin_approvals_column_visibility`,
+    adminPcListingApprovals: `${PREFIX}admin_pc_listing_approvals_column_visibility`,
     adminGameApprovals: `${PREFIX}admin_game_approvals_column_visibility`,
     adminBrands: `${PREFIX}admin_brands_column_visibility`,
     adminDevices: `${PREFIX}admin_devices_column_visibility`,
