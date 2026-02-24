@@ -64,7 +64,7 @@ export const adminRouter = createTRPCRouter({
         // Developer has no verified emulators, return empty result
         return {
           listings: [],
-          pagination: paginate({ total: 0, page, limit: limit }),
+          pagination: paginate({ total: 0, page, limit }),
         }
       }
 
@@ -87,7 +87,7 @@ export const adminRouter = createTRPCRouter({
 
     // Build orderBy clause
     let orderBy: Prisma.ListingOrderByWithRelationInput = {
-      createdAt: 'desc', // Default sorting
+      createdAt: 'asc', // Default sorting
     }
 
     if (sortField && sortDirection) {

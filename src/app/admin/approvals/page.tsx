@@ -76,7 +76,7 @@ function AdminApprovalsPage() {
   const table = useAdminTable<ApprovalSortField>({
     defaultLimit: 20,
     defaultSortField: 'createdAt',
-    defaultSortDirection: 'desc',
+    defaultSortDirection: 'asc',
   })
 
   const columnVisibility = useColumnVisibility(APPROVALS_COLUMNS, {

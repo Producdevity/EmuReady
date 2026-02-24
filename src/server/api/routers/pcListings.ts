@@ -431,7 +431,7 @@ export const pcListingsRouter = createTRPCRouter({
         // Developer has no assigned emulators, return empty results
         return {
           pcListings: [],
-          pagination: paginate({ total: 0, page: page, limit: limit }),
+          pagination: paginate({ total: 0, page, limit }),
         }
       }
     }

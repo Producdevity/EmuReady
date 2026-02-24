@@ -76,7 +76,7 @@ function PcListingApprovalsPage() {
   const table = useAdminTable<ApprovalSortField>({
     defaultLimit: 20,
     defaultSortField: 'createdAt',
-    defaultSortDirection: 'desc',
+    defaultSortDirection: 'asc',
   })
 
   const columnVisibility = useColumnVisibility(PC_APPROVALS_COLUMNS, {
