@@ -256,7 +256,7 @@ function CookieConsent() {
                         size="sm"
                       >
                         <Check className="w-4 h-4 mr-1.5" />
-                        Accept All
+                        Yeah man, I wanna do it!
                       </Button>
                     </div>
                   </div>
