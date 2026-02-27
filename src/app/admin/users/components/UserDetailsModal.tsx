@@ -1,5 +1,6 @@
 import {
   User,
+  Users,
   ShieldUser,
   Calendar,
   ThumbsUp,
@@ -43,11 +44,12 @@ import { hasRolePermission } from '@/utils/permissions'
 import { type ReportStatus, Role } from '@orm'
 import UserActivityListingsTab from './UserActivityListingsTab'
 import UserActivityReportsTab from './UserActivityReportsTab'
+import UserActivitySocialTab from './UserActivitySocialTab'
 import UserActivityTrustActionsTab from './UserActivityTrustActionsTab'
 import UserActivityVotesTab from './UserActivityVotesTab'
 import UserEntitlementsPanel from './UserEntitlementsPanel'
 
-export type ActivityTab = 'listings' | 'votes' | 'trustActions' | 'reports'
+export type ActivityTab = 'listings' | 'votes' | 'trustActions' | 'reports' | 'social'
 
 const ITEMS_PER_PAGE = 10
 
@@ -129,6 +131,11 @@ function UserDetailsModal(props: Props) {
   const reportsQuery = api.listingReports.getUserReports.useQuery(
     { userId: props.userId ?? '', page: reportsPage, limit: ITEMS_PER_PAGE, status: reportsStatus },
     { enabled: !!props.userId && activeTab === 'reports' },
+  )
+
+  const socialOverviewQuery = api.users.getSocialOverview.useQuery(
+    { userId: props.userId ?? '' },
+    { enabled: !!props.userId && activeTab === 'social' },
   )
 
   // Trust score adjustment state
@@ -220,6 +227,12 @@ function UserDetailsModal(props: Props) {
       label: 'Reports',
       icon: Flag,
       count: reportStatsQuery.data?.totalReports ?? 0,
+    },
+    {
+      id: 'social',
+      label: 'Social',
+      icon: Users,
+      count: (userQuery.data?._count?.followers ?? 0) + (userQuery.data?._count?.following ?? 0),
     },
   ]
 
@@ -575,6 +588,18 @@ function UserDetailsModal(props: Props) {
                   />
                 )}
                 {activeTab === 'reports' && reportsQuery.isPending && (
+                  <div className="flex items-center justify-center py-8">
+                    <LoadingSpinner />
+                  </div>
+                )}
+                {activeTab === 'social' && socialOverviewQuery.data && props.userId && (
+                  <UserActivitySocialTab
+                    data={socialOverviewQuery.data}
+                    userId={props.userId}
+                    isFetching={socialOverviewQuery.isFetching}
+                  />
+                )}
+                {activeTab === 'social' && socialOverviewQuery.isPending && (
                   <div className="flex items-center justify-center py-8">
                     <LoadingSpinner />
                   </div>

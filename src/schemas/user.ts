@@ -69,6 +69,10 @@ export const SearchUsersSchema = z.object({
   minRole: z.nativeEnum(Role).optional(),
 })
 
+export const GetUserSocialOverviewSchema = z.object({
+  userId: z.string().uuid(),
+})
+
 export const IsVerifiedDeveloperSchema = z.object({
   emulatorId: z.string().uuid(),
 })

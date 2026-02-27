@@ -1,6 +1,7 @@
 import { ResourceError } from '@/lib/errors'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { hasRolePermission } from '@/utils/permissions'
+import { TIME_CONSTANTS } from '@/utils/time'
 import { ApprovalStatus, RelationshipStatus, RelationshipType, Role } from '@orm'
 import { BaseRepository } from './base.repository'
 import type { Prisma } from '@orm'
@@ -633,6 +634,150 @@ export class SocialRepository extends BaseRepository {
     const total = listingCount + pcListingCount
 
     return { items: paged, pagination: paginate({ total, page, limit }) }
+  }
+
+  // ─── Admin ─────────────────────────────────────────────
+
+  private static readonly ADMIN_PREVIEW_LIMIT = 10
+
+  async adminGetSocialOverview(userId: string) {
+    const now = Date.now()
+    const last24h = new Date(now - TIME_CONSTANTS.ONE_DAY)
+    const last7d = new Date(now - TIME_CONSTANTS.ONE_WEEK)
+
+    const [
+      followersCount,
+      followingCount,
+      friendsCount,
+      blockingCount,
+      blockedByCount,
+      pendingSentCount,
+      pendingReceivedCount,
+      followsSentLast24h,
+      followsSentLast7d,
+      followsReceivedLast24h,
+      followsReceivedLast7d,
+      friendRequestsSentLast24h,
+      friendRequestsSentLast7d,
+      recentFollowers,
+      recentFollowing,
+      friends,
+      blockedUsers,
+    ] = await Promise.all([
+      this.prisma.userFollow.count({ where: { followingId: userId } }),
+      this.prisma.userFollow.count({ where: { followerId: userId } }),
+      this.prisma.userRelationship.count({
+        where: {
+          type: RelationshipType.FRIEND,
+          status: RelationshipStatus.ACCEPTED,
+          OR: [{ senderId: userId }, { receiverId: userId }],
+        },
+      }),
+      this.prisma.userRelationship.count({
+        where: { senderId: userId, status: RelationshipStatus.BLOCKED },
+      }),
+      this.prisma.userRelationship.count({
+        where: { receiverId: userId, status: RelationshipStatus.BLOCKED },
+      }),
+      this.prisma.userRelationship.count({
+        where: {
+          senderId: userId,
+          type: RelationshipType.FRIEND,
+          status: RelationshipStatus.PENDING,
+        },
+      }),
+      this.prisma.userRelationship.count({
+        where: {
+          receiverId: userId,
+          type: RelationshipType.FRIEND,
+          status: RelationshipStatus.PENDING,
+        },
+      }),
+      this.prisma.userFollow.count({
+        where: { followerId: userId, createdAt: { gte: last24h } },
+      }),
+      this.prisma.userFollow.count({
+        where: { followerId: userId, createdAt: { gte: last7d } },
+      }),
+      this.prisma.userFollow.count({
+        where: { followingId: userId, createdAt: { gte: last24h } },
+      }),
+      this.prisma.userFollow.count({
+        where: { followingId: userId, createdAt: { gte: last7d } },
+      }),
+      this.prisma.userRelationship.count({
+        where: {
+          senderId: userId,
+          type: RelationshipType.FRIEND,
+          status: RelationshipStatus.PENDING,
+          createdAt: { gte: last24h },
+        },
+      }),
+      this.prisma.userRelationship.count({
+        where: {
+          senderId: userId,
+          type: RelationshipType.FRIEND,
+          status: RelationshipStatus.PENDING,
+          createdAt: { gte: last7d },
+        },
+      }),
+      this.prisma.userFollow.findMany({
+        where: { followingId: userId },
+        select: SocialRepository.includes.followerWithUser,
+        orderBy: { createdAt: 'desc' },
+        take: SocialRepository.ADMIN_PREVIEW_LIMIT,
+      }),
+      this.prisma.userFollow.findMany({
+        where: { followerId: userId },
+        select: SocialRepository.includes.followingWithUser,
+        orderBy: { createdAt: 'desc' },
+        take: SocialRepository.ADMIN_PREVIEW_LIMIT,
+      }),
+      this.prisma.userRelationship.findMany({
+        where: {
+          type: RelationshipType.FRIEND,
+          status: RelationshipStatus.ACCEPTED,
+          OR: [{ senderId: userId }, { receiverId: userId }],
+        },
+        select: SocialRepository.includes.relationshipWithUsers,
+        orderBy: { createdAt: 'desc' },
+        take: SocialRepository.ADMIN_PREVIEW_LIMIT,
+      }),
+      this.prisma.userRelationship.findMany({
+        where: { senderId: userId, status: RelationshipStatus.BLOCKED },
+        select: {
+          id: true,
+          createdAt: true,
+          receiver: { select: SocialRepository.selects.user },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: SocialRepository.ADMIN_PREVIEW_LIMIT,
+      }),
+    ])
+
+    return {
+      counts: {
+        followers: followersCount,
+        following: followingCount,
+        friends: friendsCount,
+        blocking: blockingCount,
+        blockedBy: blockedByCount,
+        pendingFriendRequestsSent: pendingSentCount,
+        pendingFriendRequestsReceived: pendingReceivedCount,
+      },
+      rateIndicators: {
+        followsSentLast24h,
+        followsSentLast7d,
+        followsReceivedLast24h,
+        followsReceivedLast7d,
+        friendRequestsSentLast24h,
+        friendRequestsSentLast7d,
+      },
+      recentFollowers,
+      recentFollowing,
+      friends,
+      blockedUsers,
+    }
   }
 
   // ─── Helpers ────────────────────────────────────────────

@@ -5,6 +5,7 @@ import {
   DeleteUserSchema,
   GetAllUsersSchema,
   GetUserByIdSchema,
+  GetUserSocialOverviewSchema,
   SearchUsersSchema,
   UpdateUserRoleSchema,
   UpdateUserSchema,
@@ -19,6 +20,7 @@ import {
 } from '@/server/api/trpc'
 import { invalidateUser } from '@/server/cache/invalidation'
 import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
+import { SocialRepository } from '@/server/repositories/social.repository'
 import {
   aggregateContributions,
   buildTopContributorsSummary,
@@ -268,7 +270,14 @@ export const usersRouter = createTRPCRouter({
             orderBy: { assignedAt: 'desc' },
           },
           _count: {
-            select: { listings: true, pcListings: true, submittedGames: true, votes: true },
+            select: {
+              listings: true,
+              pcListings: true,
+              submittedGames: true,
+              votes: true,
+              followers: true,
+              following: true,
+            },
           },
         },
       })
@@ -396,7 +405,16 @@ export const usersRouter = createTRPCRouter({
           },
           orderBy: { assignedAt: 'desc' },
         },
-        _count: { select: { listings: true, pcListings: true, submittedGames: true, votes: true } },
+        _count: {
+          select: {
+            listings: true,
+            pcListings: true,
+            submittedGames: true,
+            votes: true,
+            followers: true,
+            following: true,
+          },
+        },
       },
     })
 
@@ -701,6 +719,13 @@ export const usersRouter = createTRPCRouter({
         users,
         pagination: paginate({ total: totalUsers, page, limit }),
       }
+    }),
+
+  getSocialOverview: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
+    .input(GetUserSocialOverviewSchema)
+    .query(async ({ ctx, input }) => {
+      const socialRepo = new SocialRepository(ctx.prisma)
+      return socialRepo.adminGetSocialOverview(input.userId)
     }),
 
   stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
