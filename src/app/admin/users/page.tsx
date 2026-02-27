@@ -48,6 +48,8 @@ type UserSortField =
   | 'votesCount'
   | 'commentsCount'
   | 'trustScore'
+  | 'followersCount'
+  | 'followingCount'
 
 interface UserForModal {
   id: string
@@ -65,6 +67,8 @@ const USERS_COLUMNS: ColumnDefinition[] = [
   { key: 'listingsCount', label: 'Listings', defaultVisible: false },
   { key: 'votesCount', label: 'Votes', defaultVisible: false },
   { key: 'commentsCount', label: 'Comments', defaultVisible: false },
+  { key: 'followersCount', label: 'Followers', defaultVisible: false },
+  { key: 'followingCount', label: 'Following', defaultVisible: false },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
@@ -299,6 +303,24 @@ function AdminUsersPage() {
                       onSort={table.handleSort}
                     />
                   )}
+                  {columnVisibility.isColumnVisible('followersCount') && (
+                    <SortableHeader
+                      label="Followers"
+                      field="followersCount"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('followingCount') && (
+                    <SortableHeader
+                      label="Following"
+                      field="followingCount"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                    />
+                  )}
                   {columnVisibility.isColumnVisible('actions') && (
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Actions
@@ -356,6 +378,16 @@ function AdminUsersPage() {
                     {columnVisibility.isColumnVisible('commentsCount') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {user._count.comments}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('followersCount') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {user._count.followers}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('followingCount') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {user._count.following}
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('actions') && (

@@ -659,6 +659,8 @@ export const usersRouter = createTRPCRouter({
         votesCount: (dir: 'asc' | 'desc') => ({ votes: { _count: dir } }),
         commentsCount: (dir: 'asc' | 'desc') => ({ comments: { _count: dir } }),
         trustScore: (dir: 'asc' | 'desc') => ({ trustScore: dir }),
+        followersCount: (dir: 'asc' | 'desc') => ({ followers: { _count: dir } }),
+        followingCount: (dir: 'asc' | 'desc') => ({ following: { _count: dir } }),
       }
 
       const orderBy = buildOrderBy<Prisma.UserOrderByWithRelationInput>(
@@ -678,7 +680,15 @@ export const usersRouter = createTRPCRouter({
             role: true,
             trustScore: true,
             createdAt: true,
-            _count: { select: { listings: true, votes: true, comments: true } },
+            _count: {
+              select: {
+                listings: true,
+                votes: true,
+                comments: true,
+                followers: true,
+                following: true,
+              },
+            },
           },
           orderBy,
           skip,
