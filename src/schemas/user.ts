@@ -73,6 +73,14 @@ export const GetUserSocialOverviewSchema = z.object({
   userId: z.string().uuid(),
 })
 
+export const AdminGetSocialListSchema = z.object({
+  userId: z.string().uuid(),
+  section: z.enum(['followers', 'following', 'friends', 'blocked']),
+  search: z.string().optional(),
+  page: z.number().int().min(1).default(1),
+  limit: z.number().int().min(1).max(50).default(10),
+})
+
 export const IsVerifiedDeveloperSchema = z.object({
   emulatorId: z.string().uuid(),
 })

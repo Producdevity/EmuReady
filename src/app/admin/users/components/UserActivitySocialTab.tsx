@@ -1,7 +1,11 @@
 'use client'
 
-import { Users, UserPlus, UserCheck, Ban, ShieldBan, Clock } from 'lucide-react'
+import { Users, UserPlus, UserCheck, Ban, ShieldBan, Clock, Search } from 'lucide-react'
 import { useState } from 'react'
+import { Input, LoadingSpinner, Pagination } from '@/components/ui'
+import { UI_CONSTANTS } from '@/data/constants'
+import useDebouncedValue from '@/hooks/useDebouncedValue'
+import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { type RouterOutput } from '@/types/trpc'
 import SocialUserRow from './SocialUserRow'
@@ -10,6 +14,15 @@ import UserActivityMiniStat from './UserActivityMiniStat'
 type SocialOverview = RouterOutput['users']['getSocialOverview']
 
 type ListSection = 'followers' | 'following' | 'friends' | 'blocked'
+
+const ITEMS_PER_PAGE = 10
+
+const EMPTY_MESSAGES: Record<ListSection, string> = {
+  followers: 'No followers',
+  following: 'Not following anyone',
+  friends: 'No friends',
+  blocked: 'No blocked users',
+}
 
 interface Props {
   data: SocialOverview
@@ -41,6 +54,31 @@ const RATE_INDICATORS = [
 
 function UserActivitySocialTab(props: Props) {
   const [activeSection, setActiveSection] = useState<ListSection>('followers')
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const debouncedSearch = useDebouncedValue(search, UI_CONSTANTS.DEBOUNCE_DELAY)
+
+  const listQuery = api.users.adminGetSocialList.useQuery(
+    {
+      userId: props.userId,
+      section: activeSection,
+      search: debouncedSearch || undefined,
+      page,
+      limit: ITEMS_PER_PAGE,
+    },
+    { placeholderData: (previous) => previous },
+  )
+
+  function handleSectionChange(section: ListSection) {
+    setActiveSection(section)
+    setSearch('')
+    setPage(1)
+  }
+
+  function handleSearchChange(value: string) {
+    setSearch(value)
+    setPage(1)
+  }
 
   const sections: { id: ListSection; label: string; count: number; icon: typeof Users }[] = [
     { id: 'followers', label: 'Followers', count: props.data.counts.followers, icon: Users },
@@ -48,8 +86,6 @@ function UserActivitySocialTab(props: Props) {
     { id: 'friends', label: 'Friends', count: props.data.counts.friends, icon: UserCheck },
     { id: 'blocked', label: 'Blocked', count: props.data.counts.blocking, icon: Ban },
   ]
-
-  const activeItems = getActiveItems(props.data, activeSection, props.userId)
 
   return (
     <div className={cn('space-y-4', props.isFetching && 'opacity-60 transition-opacity')}>
@@ -128,7 +164,7 @@ function UserActivitySocialTab(props: Props) {
             <button
               key={section.id}
               type="button"
-              onClick={() => setActiveSection(section.id)}
+              onClick={() => handleSectionChange(section.id)}
               className={cn(
                 'flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors -mb-px',
                 activeSection === section.id
@@ -153,63 +189,53 @@ function UserActivitySocialTab(props: Props) {
         })}
       </div>
 
-      {/* Section Content */}
-      <div className="min-h-[100px]">
-        {activeItems.length === 0 ? (
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Input
+          placeholder="Search by name..."
+          value={search}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          className="pl-9 h-8 text-xs"
+        />
+      </div>
+
+      {/* List Content */}
+      <div className={cn('min-h-[100px]', listQuery.isFetching && 'opacity-60 transition-opacity')}>
+        {listQuery.isPending ? (
+          <div className="flex items-center justify-center py-6">
+            <LoadingSpinner />
+          </div>
+        ) : listQuery.data && listQuery.data.items.length === 0 ? (
           <div className="flex items-center justify-center py-6">
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {activeSection === 'followers' && 'No followers'}
-              {activeSection === 'following' && 'Not following anyone'}
-              {activeSection === 'friends' && 'No friends'}
-              {activeSection === 'blocked' && 'No blocked users'}
+              {debouncedSearch
+                ? `No results for "${debouncedSearch}"`
+                : EMPTY_MESSAGES[activeSection]}
             </p>
           </div>
-        ) : (
+        ) : listQuery.data ? (
           <div className="space-y-1">
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
-              Showing {activeItems.length} most recent
-            </p>
-            {activeItems.map((item) => (
+            {listQuery.data.items.map((item) => (
               <SocialUserRow key={item.id} user={item.user} date={item.date} />
             ))}
+          </div>
+        ) : null}
+
+        {listQuery.data && listQuery.data.pagination.pages > 1 && (
+          <div className="mt-3">
+            <Pagination
+              page={page}
+              totalPages={listQuery.data.pagination.pages}
+              totalItems={listQuery.data.pagination.total}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setPage}
+            />
           </div>
         )}
       </div>
     </div>
   )
-}
-
-function getActiveItems(
-  data: SocialOverview,
-  section: ListSection,
-  userId: string,
-): { id: string; user: SocialOverview['recentFollowers'][number]['follower']; date: Date }[] {
-  switch (section) {
-    case 'followers':
-      return data.recentFollowers.map((item) => ({
-        id: item.id,
-        user: item.follower,
-        date: item.createdAt,
-      }))
-    case 'following':
-      return data.recentFollowing.map((item) => ({
-        id: item.id,
-        user: item.following,
-        date: item.createdAt,
-      }))
-    case 'friends':
-      return data.friends.map((friendship) => ({
-        id: friendship.id,
-        user: friendship.sender.id === userId ? friendship.receiver : friendship.sender,
-        date: friendship.createdAt,
-      }))
-    case 'blocked':
-      return data.blockedUsers.map((item) => ({
-        id: item.id,
-        user: item.receiver,
-        date: item.createdAt,
-      }))
-  }
 }
 
 export default UserActivitySocialTab

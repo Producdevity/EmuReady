@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/nextjs'
 import analytics from '@/lib/analytics'
 import { ResourceError } from '@/lib/errors'
 import {
+  AdminGetSocialListSchema,
   DeleteUserSchema,
   GetAllUsersSchema,
   GetUserByIdSchema,
@@ -726,6 +727,19 @@ export const usersRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const socialRepo = new SocialRepository(ctx.prisma)
       return socialRepo.adminGetSocialOverview(input.userId)
+    }),
+
+  adminGetSocialList: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
+    .input(AdminGetSocialListSchema)
+    .query(async ({ ctx, input }) => {
+      const socialRepo = new SocialRepository(ctx.prisma)
+      return socialRepo.adminGetSocialList(
+        input.userId,
+        input.section,
+        input.page,
+        input.limit,
+        input.search,
+      )
     }),
 
   stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {

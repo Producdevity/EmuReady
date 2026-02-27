@@ -638,8 +638,6 @@ export class SocialRepository extends BaseRepository {
 
   // ─── Admin ─────────────────────────────────────────────
 
-  private static readonly ADMIN_PREVIEW_LIMIT = 10
-
   async adminGetSocialOverview(userId: string) {
     const now = Date.now()
     const last24h = new Date(now - TIME_CONSTANTS.ONE_DAY)
@@ -659,10 +657,6 @@ export class SocialRepository extends BaseRepository {
       followsReceivedLast7d,
       friendRequestsSentLast24h,
       friendRequestsSentLast7d,
-      recentFollowers,
-      recentFollowing,
-      friends,
-      blockedUsers,
     ] = await Promise.all([
       this.prisma.userFollow.count({ where: { followingId: userId } }),
       this.prisma.userFollow.count({ where: { followerId: userId } }),
@@ -721,38 +715,6 @@ export class SocialRepository extends BaseRepository {
           createdAt: { gte: last7d },
         },
       }),
-      this.prisma.userFollow.findMany({
-        where: { followingId: userId },
-        select: SocialRepository.includes.followerWithUser,
-        orderBy: { createdAt: 'desc' },
-        take: SocialRepository.ADMIN_PREVIEW_LIMIT,
-      }),
-      this.prisma.userFollow.findMany({
-        where: { followerId: userId },
-        select: SocialRepository.includes.followingWithUser,
-        orderBy: { createdAt: 'desc' },
-        take: SocialRepository.ADMIN_PREVIEW_LIMIT,
-      }),
-      this.prisma.userRelationship.findMany({
-        where: {
-          type: RelationshipType.FRIEND,
-          status: RelationshipStatus.ACCEPTED,
-          OR: [{ senderId: userId }, { receiverId: userId }],
-        },
-        select: SocialRepository.includes.relationshipWithUsers,
-        orderBy: { createdAt: 'desc' },
-        take: SocialRepository.ADMIN_PREVIEW_LIMIT,
-      }),
-      this.prisma.userRelationship.findMany({
-        where: { senderId: userId, status: RelationshipStatus.BLOCKED },
-        select: {
-          id: true,
-          createdAt: true,
-          receiver: { select: SocialRepository.selects.user },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: SocialRepository.ADMIN_PREVIEW_LIMIT,
-      }),
     ])
 
     return {
@@ -773,10 +735,115 @@ export class SocialRepository extends BaseRepository {
         friendRequestsSentLast24h,
         friendRequestsSentLast7d,
       },
-      recentFollowers,
-      recentFollowing,
-      friends,
-      blockedUsers,
+    }
+  }
+
+  async adminGetSocialList(
+    userId: string,
+    section: 'followers' | 'following' | 'friends' | 'blocked',
+    page: number,
+    limit: number,
+    search?: string,
+  ) {
+    const offset = calculateOffset({ page }, limit)
+    const nameFilter = search
+      ? { name: { contains: search, mode: this.mode } as Prisma.StringFilter }
+      : undefined
+
+    switch (section) {
+      case 'followers': {
+        const where: Prisma.UserFollowWhereInput = {
+          followingId: userId,
+          ...(nameFilter ? { follower: nameFilter } : {}),
+        }
+        const [items, total] = await Promise.all([
+          this.prisma.userFollow.findMany({
+            where,
+            select: SocialRepository.includes.followerWithUser,
+            orderBy: { createdAt: 'desc' },
+            skip: offset,
+            take: limit,
+          }),
+          this.prisma.userFollow.count({ where }),
+        ])
+        return {
+          items: items.map((i) => ({ id: i.id, user: i.follower, date: i.createdAt })),
+          pagination: paginate({ total, page, limit }),
+        }
+      }
+      case 'following': {
+        const where: Prisma.UserFollowWhereInput = {
+          followerId: userId,
+          ...(nameFilter ? { following: nameFilter } : {}),
+        }
+        const [items, total] = await Promise.all([
+          this.prisma.userFollow.findMany({
+            where,
+            select: SocialRepository.includes.followingWithUser,
+            orderBy: { createdAt: 'desc' },
+            skip: offset,
+            take: limit,
+          }),
+          this.prisma.userFollow.count({ where }),
+        ])
+        return {
+          items: items.map((i) => ({ id: i.id, user: i.following, date: i.createdAt })),
+          pagination: paginate({ total, page, limit }),
+        }
+      }
+      case 'friends': {
+        const where: Prisma.UserRelationshipWhereInput = {
+          type: RelationshipType.FRIEND,
+          status: RelationshipStatus.ACCEPTED,
+          OR: [
+            { senderId: userId, ...(nameFilter ? { receiver: nameFilter } : {}) },
+            { receiverId: userId, ...(nameFilter ? { sender: nameFilter } : {}) },
+          ],
+        }
+        const [items, total] = await Promise.all([
+          this.prisma.userRelationship.findMany({
+            where,
+            select: SocialRepository.includes.relationshipWithUsers,
+            orderBy: { createdAt: 'desc' },
+            skip: offset,
+            take: limit,
+          }),
+          this.prisma.userRelationship.count({ where }),
+        ])
+        return {
+          items: items.map((i) => ({
+            id: i.id,
+            user: i.sender.id === userId ? i.receiver : i.sender,
+            date: i.createdAt,
+          })),
+          pagination: paginate({ total, page, limit }),
+        }
+      }
+      case 'blocked': {
+        const where: Prisma.UserRelationshipWhereInput = {
+          senderId: userId,
+          status: RelationshipStatus.BLOCKED,
+          ...(nameFilter ? { receiver: nameFilter } : {}),
+        }
+        const [items, total] = await Promise.all([
+          this.prisma.userRelationship.findMany({
+            where,
+            select: {
+              id: true,
+              createdAt: true,
+              receiver: { select: SocialRepository.selects.user },
+            },
+            orderBy: { createdAt: 'desc' },
+            skip: offset,
+            take: limit,
+          }),
+          this.prisma.userRelationship.count({ where }),
+        ])
+        return {
+          items: items.map((i) => ({ id: i.id, user: i.receiver, date: i.createdAt })),
+          pagination: paginate({ total, page, limit }),
+        }
+      }
     }
   }
 
