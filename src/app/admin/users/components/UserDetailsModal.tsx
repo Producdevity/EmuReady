@@ -708,7 +708,7 @@ function UserDetailsModal(props: Props) {
             )}
 
             {/* Entitlements */}
-            <div>{props.userId && <UserEntitlementsPanel userId={props.userId} />}</div>
+            {props.userId && <UserEntitlementsPanel userId={props.userId} />}
 
             {/* User Badges */}
             {userQuery.data.userBadges && userQuery.data.userBadges.length > 0 && (
@@ -737,38 +737,30 @@ function UserDetailsModal(props: Props) {
               </div>
             )}
 
-            {/* Quick Actions */}
-            <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <Link
-                href={`/users/${userQuery.data.id}`}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
-              >
-                <ExternalLink className="w-4 h-4" />
-                View Public Profile
-              </Link>
-              {!canBanTarget && hasRolePermission(currentUserQuery.data?.role, Role.MODERATOR) && (
-                <span className="text-xs text-gray-600 dark:text-gray-400">
-                  You cannot ban users with {userQuery.data.role} role or higher.
-                </span>
-              )}
-            </div>
-
             {/* Action Buttons */}
-            <div className="flex justify-between items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button size="sm" variant="ghost" asChild icon={ExternalLink}>
+                <Link href={`/users/${userQuery.data.id}`}>View Profile</Link>
+              </Button>
               {canBanTarget && !banStatusQuery.data?.isBanned && (
                 <Button
+                  size="sm"
                   variant="danger"
                   onClick={() => {
                     router.push(`/admin/user-bans?action=ban&userId=${props.userId}`)
                   }}
-                  className="flex items-center gap-2"
+                  icon={Gavel}
                 >
-                  <Gavel className="w-4 h-4" />
                   Ban User
                 </Button>
               )}
-              <div className="flex gap-3 ml-auto">
-                <Button variant="outline" onClick={props.onClose} className="min-w-[100px]">
+              {!canBanTarget && hasRolePermission(currentUserQuery.data?.role, Role.MODERATOR) && (
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Cannot ban {userQuery.data.role} role or higher
+                </span>
+              )}
+              <div className="ml-auto">
+                <Button size="sm" variant="outline" onClick={props.onClose}>
                   Close
                 </Button>
               </div>

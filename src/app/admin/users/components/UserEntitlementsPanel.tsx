@@ -1,15 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import {
-  Badge,
-  Button,
-  Card,
-  Input,
-  LoadingSpinner,
-  useConfirmDialog,
-  Dropdown,
-} from '@/components/ui'
+import { Badge, Button, Input, LoadingSpinner, useConfirmDialog, Dropdown } from '@/components/ui'
 import { api } from '@/lib/api'
 import { EntitlementSource } from '@orm'
 
@@ -58,45 +50,50 @@ export default function UserEntitlementsPanel(props: Props) {
   }
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="font-semibold">Entitlements</h4>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Entitlements</span>
         {listQuery.isPending && <LoadingSpinner size="sm" />}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {listQuery.data?.length ? (
           listQuery.data.map((e) => (
             <div
               key={e.id}
-              className="flex items-center justify-between border rounded-md px-3 py-2"
+              className="flex items-center justify-between border border-gray-200 dark:border-gray-700 rounded-md px-3 py-1.5"
             >
-              <div className="flex items-center gap-3">
-                <Badge variant={e.status === 'ACTIVE' ? 'primary' : 'default'}>{e.status}</Badge>
-                <span className="text-sm">{e.source}</span>
-                {e.referenceId && <span className="text-xs text-gray-500">{e.referenceId}</span>}
-              </div>
               <div className="flex items-center gap-2">
-                {e.status === 'ACTIVE' && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleRevoke(e.id)}
-                    isLoading={revokeMutation.isPending}
-                  >
-                    Revoke
-                  </Button>
+                <Badge size="sm" variant={e.status === 'ACTIVE' ? 'primary' : 'default'}>
+                  {e.status}
+                </Badge>
+                <span className="text-xs text-gray-700 dark:text-gray-300">{e.source}</span>
+                {e.referenceId && (
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{e.referenceId}</span>
                 )}
               </div>
+              {e.status === 'ACTIVE' && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleRevoke(e.id)}
+                  isLoading={revokeMutation.isPending}
+                  className="h-7 px-2 text-xs"
+                >
+                  Revoke
+                </Button>
+              )}
             </div>
           ))
         ) : (
-          <div className="text-sm text-gray-500">No entitlements</div>
+          <p className="text-xs text-gray-500 dark:text-gray-400">No entitlements</p>
         )}
       </div>
 
-      <div className="mt-4 border-t pt-4 space-y-3">
-        <h5 className="text-sm font-medium">Grant Entitlement</h5>
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
+        <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+          Grant Entitlement
+        </span>
         <div className="flex flex-wrap items-center gap-2">
           <Dropdown
             options={[
@@ -106,24 +103,30 @@ export default function UserEntitlementsPanel(props: Props) {
             ]}
             value={source}
             onChange={(v) => setSource(v as EntitlementSource)}
+            triggerClassName="py-1.5 text-xs"
           />
           <Input
             placeholder="Reference (optional)"
             value={referenceId}
             onChange={(e) => setReferenceId((e.target as HTMLInputElement).value)}
-            className="w-64"
+            className="h-8 text-xs w-48"
           />
           <Input
             placeholder="Notes (optional)"
             value={notes}
             onChange={(e) => setNotes((e.target as HTMLInputElement).value)}
-            className="flex-1"
+            className="h-8 text-xs flex-1"
           />
-          <Button onClick={handleGrant} isLoading={grantMutation.isPending}>
+          <Button
+            size="sm"
+            onClick={handleGrant}
+            isLoading={grantMutation.isPending}
+            className="h-8 text-xs"
+          >
             Grant
           </Button>
         </div>
       </div>
-    </Card>
+    </div>
   )
 }
