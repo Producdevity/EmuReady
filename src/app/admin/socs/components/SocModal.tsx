@@ -10,7 +10,7 @@ import getErrorMessage from '@/utils/getErrorMessage'
 const commonNames = ['Snapdragon', 'Exynos', 'Dimensity', 'Helio']
 const commonManufacturers = ['Qualcomm', 'MediaTek', 'Samsung', 'Apple', 'AMD', 'NVIDIA']
 const commonArchitectures = ['ARM64', 'x86_64'] as const
-const commonProcessNodes = ['4nm', '5nm', '6nm', '7nm', '10nm', '12nm', '14nm']
+const commonProcessNodes = ['3nm', '4nm', '5nm', '6nm', '7nm', '10nm', '12nm', '14nm']
 const commonGpuModels = ['Adreno', 'Mali']
 
 type SocData = RouterOutput['socs']['get']['socs'][number]
