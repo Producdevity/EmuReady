@@ -760,7 +760,6 @@ function UserDetailsModal(props: Props) {
                   variant="danger"
                   onClick={() => {
                     router.push(`/admin/user-bans?action=ban&userId=${props.userId}`)
-                    props.onClose()
                   }}
                   className="flex items-center gap-2"
                 >
