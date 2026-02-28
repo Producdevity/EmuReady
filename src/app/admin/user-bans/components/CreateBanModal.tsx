@@ -1,10 +1,10 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { Search, AlertTriangle, ShieldOff } from 'lucide-react'
+import { Search, AlertTriangle, ShieldOff, ExternalLink } from 'lucide-react'
 import { useState, useRef, useEffect, type FormEvent } from 'react'
 import { ADMIN_ROUTES } from '@/app/admin/config/routes'
-import { Button, Modal, Badge, Input } from '@/components/ui'
+import { Button, Modal, ModalCommonButton, Badge, Input } from '@/components/ui'
 import { CHAR_LIMITS } from '@/data/constants'
 import { api } from '@/lib/api'
 import { logger } from '@/lib/logger'
@@ -14,6 +14,15 @@ import { formatUserRole } from '@/utils/format'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { canBanUser, hasAllPermissions, PERMISSIONS } from '@/utils/permission-system'
 import { Role } from '@orm'
+
+const COMMON_BAN_REASONS = [
+  'Spam',
+  'Harassment',
+  'Multiple accounts',
+  'Vote manipulation',
+  'Inappropriate content',
+  'Bot/automated activity',
+]
 
 interface Props {
   isOpen: boolean
@@ -254,7 +263,7 @@ function CreateBanModal(props: Props) {
                 leftIcon={<Search className="w-5 h-5" />}
                 className="w-full pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
               />
-              {userSearchQuery.isPending && !selectedUser && (
+              {userSearchQuery.isFetching && !selectedUser && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                   <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full" />
                 </div>
@@ -267,7 +276,7 @@ function CreateBanModal(props: Props) {
                 {userSearchQuery.data?.map((user) => {
                   const canBan = canBanUser(currentUserQuery.data?.role, user.role)
                   return (
-                    <Button
+                    <button
                       key={user.id}
                       type="button"
                       onClick={() => canBan && handleUserSelect(user)}
@@ -296,7 +305,7 @@ function CreateBanModal(props: Props) {
                         </div>
                         <Badge>{user.role}</Badge>
                       </div>
-                    </Button>
+                    </button>
                   )
                 })}
               </div>
@@ -315,6 +324,26 @@ function CreateBanModal(props: Props) {
                         {selectedUser.email}
                       </div>
                     )}
+                    <div className="flex items-center gap-3 mt-1">
+                      <a
+                        href={`/users/${selectedUser.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        View Profile
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                      <a
+                        href={`${ADMIN_ROUTES.USERS}?userId=${selectedUser.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        Admin Details
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge>{selectedUser.role}</Badge>
@@ -348,7 +377,7 @@ function CreateBanModal(props: Props) {
             {showUserDropdown &&
               userSearch.length >= 2 &&
               userSearchQuery.data?.length === 0 &&
-              !userSearchQuery.isPending && (
+              !userSearchQuery.isFetching && (
                 <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg p-4 text-center text-gray-500 dark:text-gray-400">
                   No users found matching &quot;{userSearch}&quot;
                 </div>
@@ -363,9 +392,12 @@ function CreateBanModal(props: Props) {
 
         {/* Ban Reason */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Reason for Ban *
           </label>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+            Internal only — not visible to the banned user
+          </p>
           <Input
             as="textarea"
             value={reason}
@@ -378,6 +410,16 @@ function CreateBanModal(props: Props) {
           />
           <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 text-right">
             {reason.length}/{CHAR_LIMITS.BAN_NOTES} characters
+          </div>
+          <div className="flex flex-wrap gap-1 mt-2">
+            {COMMON_BAN_REASONS.map((preset) => (
+              <ModalCommonButton
+                key={preset}
+                onClick={setReason}
+                label={preset}
+                isSelected={reason === preset}
+              />
+            ))}
           </div>
         </div>
 
@@ -470,11 +512,14 @@ function CreateBanModal(props: Props) {
           )}
         </div>
 
-        {/* Additional Notes */}
+        {/* Internal Notes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Additional Notes (Optional)
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Internal Notes (Optional)
           </label>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+            For moderation records only
+          </p>
           <Input
             as="textarea"
             value={notes}
