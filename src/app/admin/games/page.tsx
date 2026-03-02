@@ -9,19 +9,23 @@ import ImageIndicators from '@/app/admin/components/ImageIndicators'
 import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
 import { useAdminTable } from '@/app/admin/hooks'
 import { useAdminFilters } from '@/app/admin/hooks/useAdminFilters'
-import { AdminPageLayout, AdminStatsDisplay, AdminTableContainer } from '@/components/admin'
+import {
+  AdminPageLayout,
+  AdminStatsDisplay,
+  AdminTableContainer,
+  AdminSearchFilters,
+} from '@/components/admin'
 import {
   ApprovalStatusBadge,
   ApproveButton,
   Badge,
   Button,
   DeleteButton,
+  Dropdown,
   EditButton,
-  Input,
   LoadingSpinner,
   Pagination,
   RejectButton,
-  SelectInput,
   SortableHeader,
   Tooltip,
   TooltipContent,
@@ -196,20 +200,19 @@ function AdminGamesPage() {
     })
   }
 
-  // Prepare options for SelectInput components
-  const systemOptions = [
-    { id: '', name: 'All Systems' },
+  const SYSTEM_OPTIONS = [
+    { value: '', label: 'All Systems' },
     ...(systemsQuery.data?.map((system) => ({
-      id: system.id,
-      name: system.name,
+      value: system.id,
+      label: system.name,
     })) ?? []),
   ]
 
-  const statusOptions = [
-    { id: '', name: 'All Status' },
-    { id: ApprovalStatus.APPROVED, name: 'Approved' },
-    { id: ApprovalStatus.PENDING, name: 'Pending' },
-    { id: ApprovalStatus.REJECTED, name: 'Rejected' },
+  const STATUS_OPTIONS = [
+    { value: '', label: 'All Status' },
+    { value: ApprovalStatus.APPROVED, label: 'Approved' },
+    { value: ApprovalStatus.PENDING, label: 'Pending' },
+    { value: ApprovalStatus.REJECTED, label: 'Rejected' },
   ]
 
   return (
@@ -249,45 +252,24 @@ function AdminGamesPage() {
         isLoading={gameStatsQuery.isPending}
       />
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <Input
-              placeholder="Search games by title..."
-              value={table.search}
-              onChange={table.handleSearchChange}
-              className="w-full"
-            />
-          </div>
-          <div className="flex gap-2">
-            <SelectInput
-              label="System Filter"
-              hideLabel={true}
-              value={filters.systemId}
-              onChange={(ev) => handleSystemChange(ev.target.value)}
-              options={systemOptions}
-            />
-            <SelectInput
-              label="Status Filter"
-              hideLabel={true}
-              value={filters.status ?? ''}
-              onChange={(ev) => handleStatusFilterChange(ev.target.value)}
-              options={statusOptions}
-            />
-            <Button
-              variant="outline"
-              className="h-full"
-              onClick={() => {
-                table.setSearch('')
-                clearAll()
-                table.setPage(1)
-              }}
-            >
-              Clear
-            </Button>
-          </div>
+      <AdminSearchFilters<GameSortField>
+        table={table}
+        searchPlaceholder="Search games by title..."
+        onClear={() => clearAll()}
+      >
+        <div className="flex gap-2">
+          <Dropdown
+            options={SYSTEM_OPTIONS}
+            value={filters.systemId}
+            onChange={(value) => handleSystemChange(value)}
+          />
+          <Dropdown
+            options={STATUS_OPTIONS}
+            value={filters.status ?? ''}
+            onChange={(value) => handleStatusFilterChange(value)}
+          />
         </div>
-      </div>
+      </AdminSearchFilters>
 
       <AdminTableContainer>
         {gamesQuery.isPending ? (

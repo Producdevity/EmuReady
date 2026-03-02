@@ -1,13 +1,17 @@
 'use client'
 
-import { Search } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
 import { useAdminFilters } from '@/app/admin/hooks/useAdminFilters'
-import { AdminPageLayout, AdminTableContainer, AdminStatsDisplay } from '@/components/admin'
+import {
+  AdminPageLayout,
+  AdminTableContainer,
+  AdminStatsDisplay,
+  AdminSearchFilters,
+} from '@/components/admin'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   ApprovalStatusBadge,
@@ -15,11 +19,10 @@ import {
   ColumnVisibilityControl,
   DeleteButton,
   DisplayToggleButton,
+  Dropdown,
   EditButton,
-  Input,
   LoadingSpinner,
   Pagination,
-  SelectInput,
   SortableHeader,
   ViewButton,
   useConfirmDialog,
@@ -62,11 +65,11 @@ const LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
-const statusOptions = [
-  { id: '', name: 'All Statuses' },
-  { id: ApprovalStatus.PENDING, name: 'Pending' },
-  { id: ApprovalStatus.APPROVED, name: 'Approved' },
-  { id: ApprovalStatus.REJECTED, name: 'Rejected' },
+const STATUS_OPTIONS = [
+  { value: '', label: 'All Statuses' },
+  { value: ApprovalStatus.PENDING, label: 'Pending' },
+  { value: ApprovalStatus.APPROVED, label: 'Approved' },
+  { value: ApprovalStatus.REJECTED, label: 'Rejected' },
 ]
 
 function AdminListingsPage() {
@@ -140,12 +143,6 @@ function AdminListingsPage() {
       0,
     ),
   )
-
-  const clearFilters = () => {
-    table.setSearch('')
-    clearAll()
-    table.setPage(1)
-  }
 
   const handleDelete = async (id: string) => {
     if (deleteConfirmId !== id) return setDeleteConfirmId(id)
@@ -231,63 +228,41 @@ function AdminListingsPage() {
         />
       )}
 
-      {/* Search and Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
-                placeholder="Search listings, games, or authors..."
-                value={table.search}
-                onChange={table.handleSearchChange}
-                className="w-full pl-10"
-              />
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <SelectInput
-              hideLabel
-              label="Status Filter"
-              options={statusOptions}
-              value={filters.status}
-              onChange={(ev) => setFilter('status', ev.target.value as ApprovalStatus | '')}
-              className="min-w-[140px]"
-            />
-            <SelectInput
-              hideLabel
-              label="System Filter"
-              options={[
-                { id: '', name: 'All Systems' },
-                ...(systemsQuery.data?.map((system) => ({
-                  id: system.id,
-                  name: system.name,
-                })) ?? []),
-              ]}
-              value={filters.systemId}
-              onChange={(ev) => setFilter('systemId', ev.target.value)}
-              className="min-w-[140px]"
-            />
-            <SelectInput
-              hideLabel
-              label="Emulator Filter"
-              options={[
-                { id: '', name: 'All Emulators' },
-                ...(emulatorsQuery.data?.emulators?.map((emulator) => ({
-                  id: emulator.id,
-                  name: emulator.name,
-                })) ?? []),
-              ]}
-              value={filters.emulatorId}
-              onChange={(ev) => setFilter('emulatorId', ev.target.value)}
-              className="min-w-[140px]"
-            />
-            <Button variant="outline" onClick={clearFilters}>
-              Clear
-            </Button>
-          </div>
+      <AdminSearchFilters<ListingSortField>
+        table={table}
+        searchPlaceholder="Search listings, games, or authors..."
+        onClear={() => clearAll()}
+      >
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Dropdown
+            options={STATUS_OPTIONS}
+            value={filters.status}
+            onChange={(value) => setFilter('status', value as ApprovalStatus | '')}
+          />
+          <Dropdown
+            options={[
+              { value: '', label: 'All Systems' },
+              ...(systemsQuery.data?.map((system) => ({
+                value: system.id,
+                label: system.name,
+              })) ?? []),
+            ]}
+            value={filters.systemId}
+            onChange={(value) => setFilter('systemId', value)}
+          />
+          <Dropdown
+            options={[
+              { value: '', label: 'All Emulators' },
+              ...(emulatorsQuery.data?.emulators?.map((emulator) => ({
+                value: emulator.id,
+                label: emulator.name,
+              })) ?? []),
+            ]}
+            value={filters.emulatorId}
+            onChange={(value) => setFilter('emulatorId', value)}
+          />
         </div>
-      </div>
+      </AdminSearchFilters>
 
       {/* Listings Table */}
       <AdminTableContainer>

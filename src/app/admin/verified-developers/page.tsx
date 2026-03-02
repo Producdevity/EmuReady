@@ -1,17 +1,21 @@
 'use client'
 
-import { Shield, UserCheck, Search } from 'lucide-react'
+import { Shield, UserCheck } from 'lucide-react'
 import Image from 'next/image'
 import { useState } from 'react'
 import { useAdminTable } from '@/app/admin/hooks'
-import { AdminTableContainer, AdminStatsDisplay } from '@/components/admin'
+import {
+  AdminPageLayout,
+  AdminTableContainer,
+  AdminStatsDisplay,
+  AdminSearchFilters,
+} from '@/components/admin'
 import { EmulatorIcon } from '@/components/icons'
 import {
   Button,
   ColumnVisibilityControl,
   DeleteButton,
   EditButton,
-  Input,
   LoadingSpinner,
   Autocomplete,
   SortableHeader,
@@ -134,12 +138,6 @@ function AdminVerifiedDevelopersPage() {
     setSelectedDeveloper(null)
   }
 
-  const handleClearFilters = () => {
-    table.setSearch('')
-    setEmulatorFilter('')
-    table.setPage(1)
-  }
-
   const emulatorFilterOptions = [
     { id: '', name: 'All Emulators' },
     ...(emulatorsQuery.data?.emulators.map((emulator) => ({
@@ -153,15 +151,11 @@ function AdminVerifiedDevelopersPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Verified Developers</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage verified developers for emulators
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
+    <AdminPageLayout
+      title="Verified Developers"
+      description="Manage verified developers for emulators"
+      headerActions={
+        <>
           <ColumnVisibilityControl
             columns={VERIFIED_DEVELOPERS_COLUMNS}
             columnVisibility={columnVisibility}
@@ -172,9 +166,9 @@ function AdminVerifiedDevelopersPage() {
               Verify Developer
             </Button>
           )}
-        </div>
-      </div>
-
+        </>
+      }
+    >
       {verifiedDevelopersQuery.data && (
         <AdminStatsDisplay
           stats={[
@@ -202,39 +196,25 @@ function AdminVerifiedDevelopersPage() {
         />
       )}
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
-                placeholder="Search developers, emulators, or notes..."
-                value={table.search}
-                onChange={(e) => table.setSearch(e.target.value)}
-                className="w-full pl-10"
-              />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Autocomplete
-              value={emulatorFilter}
-              onChange={(value) => {
-                setEmulatorFilter(value || '')
-                table.setPage(1)
-              }}
-              items={emulatorFilterOptions}
-              optionToValue={(emulator) => emulator.id}
-              optionToLabel={(emulator) => emulator.name}
-              className="w-full md:w-64"
-              placeholder="Filter by emulator"
-              filterKeys={['name']}
-            />
-            <Button variant="outline" onClick={handleClearFilters} className="h-full">
-              Clear
-            </Button>
-          </div>
-        </div>
-      </div>
+      <AdminSearchFilters<VerifiedDeveloperSortField>
+        table={table}
+        searchPlaceholder="Search developers, emulators, or notes..."
+        onClear={() => setEmulatorFilter('')}
+      >
+        <Autocomplete
+          value={emulatorFilter}
+          onChange={(value) => {
+            setEmulatorFilter(value || '')
+            table.setPage(1)
+          }}
+          items={emulatorFilterOptions}
+          optionToValue={(emulator) => emulator.id}
+          optionToLabel={(emulator) => emulator.name}
+          className="w-full md:w-64"
+          placeholder="Filter by emulator"
+          filterKeys={['name']}
+        />
+      </AdminSearchFilters>
 
       <AdminTableContainer>
         {verifiedDevelopersQuery.isPending ? (
@@ -410,7 +390,7 @@ function AdminVerifiedDevelopersPage() {
         onSuccess={handleModalSuccess}
         verifiedDeveloper={selectedDeveloper}
       />
-    </div>
+    </AdminPageLayout>
   )
 }
 

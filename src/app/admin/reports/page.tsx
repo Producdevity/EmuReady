@@ -22,6 +22,7 @@ import {
   Pagination,
   LocalizedDate,
   Code,
+  Dropdown,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -240,30 +241,22 @@ function AdminReportsPage() {
       <AdminSearchFilters<ReportSortField>
         table={table}
         searchPlaceholder="Search reports by listing, user, or description..."
+        onClear={() => {
+          setSelectedReason('')
+          setSelectedStatus('')
+        }}
       >
         <div className="flex gap-2">
-          <select
+          <Dropdown
+            options={[...REPORT_REASONS]}
             value={selectedReason}
-            onChange={(ev) => setSelectedReason(ev.target.value as ReportReasonType | '')}
-            className="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-          >
-            {REPORT_REASONS.map((reason) => (
-              <option key={reason.value} value={reason.value}>
-                {reason.label}
-              </option>
-            ))}
-          </select>
-          <select
+            onChange={(value) => setSelectedReason(value as ReportReasonType | '')}
+          />
+          <Dropdown
+            options={[...REPORT_STATUSES]}
             value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value as ReportStatusType | '')}
-            className="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-          >
-            {REPORT_STATUSES.map((status) => (
-              <option key={status.value} value={status.value}>
-                {status.label}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setSelectedStatus(value as ReportStatusType | '')}
+          />
         </div>
       </AdminSearchFilters>
 

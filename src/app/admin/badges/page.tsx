@@ -1,13 +1,18 @@
 'use client'
 
-import { Search, Plus, Users } from 'lucide-react'
+import { Plus, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useAdminTable } from '@/app/admin/hooks'
-import { AdminPageLayout, AdminTableContainer, AdminStatsDisplay } from '@/components/admin'
+import {
+  AdminPageLayout,
+  AdminTableContainer,
+  AdminStatsDisplay,
+  AdminSearchFilters,
+} from '@/components/admin'
 import {
   Button,
-  Input,
   Badge,
+  Dropdown,
   Pagination,
   SortableHeader,
   ColumnVisibilityControl,
@@ -199,43 +204,21 @@ export default function AdminBadgesPage() {
         />
       )}
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
-                placeholder="Search badges…"
-                value={table.search}
-                onChange={table.handleSearchChange}
-                className="w-full pl-10"
-              />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-            <Button
-              variant="outline"
-              onClick={() => {
-                table.setSearch('')
-                setStatusFilter('all')
-                table.setPage(1)
-              }}
-            >
-              Clear
-            </Button>
-          </div>
-        </div>
-      </div>
+      <AdminSearchFilters<BadgeSortField>
+        table={table}
+        searchPlaceholder="Search badges…"
+        onClear={() => setStatusFilter('all')}
+      >
+        <Dropdown
+          options={[
+            { value: 'all', label: 'All Status' },
+            { value: 'active', label: 'Active' },
+            { value: 'inactive', label: 'Inactive' },
+          ]}
+          value={statusFilter}
+          onChange={(value) => setStatusFilter(value as 'all' | 'active' | 'inactive')}
+        />
+      </AdminSearchFilters>
 
       {/* Bulk Actions */}
       {badges.length > 0 && (

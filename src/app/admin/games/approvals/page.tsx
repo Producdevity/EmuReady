@@ -1,17 +1,19 @@
 'use client'
 
-import { Search } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
 import { useAdminTable } from '@/app/admin/hooks'
-import { AdminPageLayout, AdminTableContainer, AdminStatsDisplay } from '@/components/admin'
+import {
+  AdminPageLayout,
+  AdminTableContainer,
+  AdminStatsDisplay,
+  AdminSearchFilters,
+} from '@/components/admin'
 import { SystemIcon } from '@/components/icons'
 import {
-  Button,
-  Input,
   ApprovalStatusBadge,
   Pagination,
   SortableHeader,
@@ -299,34 +301,10 @@ function GameApprovalsPage() {
         />
       )}
 
-      {/* Search and Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
-                placeholder="Search games, systems, or submitters..."
-                value={table.search}
-                onChange={table.handleSearchChange}
-                className="w-full pl-10"
-              />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="h-full"
-              onClick={() => {
-                table.setSearch('')
-                table.setPage(1)
-              }}
-            >
-              Clear
-            </Button>
-          </div>
-        </div>
-      </div>
+      <AdminSearchFilters<GameSortField>
+        table={table}
+        searchPlaceholder="Search games, systems, or submitters..."
+      />
 
       {/* Bulk Actions */}
       {filteredGames.length > 0 && (
