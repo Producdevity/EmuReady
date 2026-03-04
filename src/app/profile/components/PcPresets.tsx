@@ -88,8 +88,7 @@ function PcPresets() {
             Save your PC configurations for quick PC listing creation
           </p>
         </div>
-        <Button onClick={() => openModal()} className="flex items-center gap-2">
-          <Plus className="w-4 h-4" />
+        <Button icon={Plus} onClick={() => openModal()}>
           Add Preset
         </Button>
       </div>

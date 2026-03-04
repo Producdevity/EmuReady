@@ -30,9 +30,13 @@ function EditPcListingButton(props: Props) {
   // Show loading state
   if (canEditQuery.isPending) {
     return (
-      <Button variant="outline" size="sm" disabled title="Checking edit permissions...">
-        <Clock className="w-4 h-4" />
-      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        icon={Clock}
+        disabled
+        title="Checking edit permissions..."
+      />
     )
   }
 

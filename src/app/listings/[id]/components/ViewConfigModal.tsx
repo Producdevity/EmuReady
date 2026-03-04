@@ -106,35 +106,17 @@ function ViewConfigModal(props: Props) {
             <Button
               variant="outline"
               size="sm"
+              icon={copied ? Check : Copy}
               onClick={handleCopyToClipboard}
-              className="flex items-center gap-2"
             >
-              {copied ? (
-                <>
-                  <Check className="h-4 w-4" />
-                  Copied
-                </>
-              ) : (
-                <>
-                  <Copy className="h-4 w-4" />
-                  Copy
-                </>
-              )}
+              {copied ? 'Copied' : 'Copy'}
             </Button>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSaveFile}
-              className="flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
+            <Button variant="outline" size="sm" icon={Download} onClick={handleSaveFile}>
               Save File
             </Button>
 
-            <Button variant="ghost" size="sm" onClick={props.onClose} className="p-2">
-              <X className="h-4 w-4" />
-            </Button>
+            <Button variant="ghost" size="sm" icon={X} onClick={props.onClose} className="p-2" />
           </div>
         </div>
 

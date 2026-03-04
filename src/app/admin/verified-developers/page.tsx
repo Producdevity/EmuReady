@@ -161,8 +161,7 @@ function AdminVerifiedDevelopersPage() {
             columnVisibility={columnVisibility}
           />
           {canManageVD && (
-            <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-2">
-              <UserCheck className="w-4 h-4" />
+            <Button icon={UserCheck} onClick={() => setShowAddModal(true)}>
               Verify Developer
             </Button>
           )}

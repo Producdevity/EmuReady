@@ -116,13 +116,10 @@ function BanDetailsContent(props: { ban: UserBanWithDetails; onClose: () => void
                   <Button
                     size="sm"
                     variant="ghost"
+                    icon={Copy}
                     onClick={() => copyToClipboard(props.ban.user.id, 'User ID')}
-                    className="p-1 h-6 w-6"
-                  >
-                    <Copy
-                      className={`w-3 h-3 ${copiedId === props.ban.user.id ? 'text-green-600' : ''}`}
-                    />
-                  </Button>
+                    className={`p-1 h-6 w-6 ${copiedId === props.ban.user.id ? 'text-green-600' : ''}`}
+                  />
                 </div>
               </div>
               {props.ban.user.createdAt && (
@@ -140,11 +137,11 @@ function BanDetailsContent(props: { ban: UserBanWithDetails; onClose: () => void
               <Button
                 size="sm"
                 variant="outline"
+                icon={ExternalLink}
                 onClick={() => {
                   window.open(`/admin/users?search=${props.ban.user.email}`, '_blank')
                 }}
               >
-                <ExternalLink className="w-4 h-4 mr-1" />
                 View in User Management
               </Button>
             </div>
@@ -344,13 +341,10 @@ function BanDetailsContent(props: { ban: UserBanWithDetails; onClose: () => void
                 <Button
                   size="sm"
                   variant="ghost"
+                  icon={Copy}
                   onClick={() => copyToClipboard(props.ban.id, 'Ban ID')}
-                  className="p-1 h-6 w-6"
-                >
-                  <Copy
-                    className={`w-3 h-3 ${copiedId === props.ban.id ? 'text-green-600' : ''}`}
-                  />
-                </Button>
+                  className={`p-1 h-6 w-6 ${copiedId === props.ban.id ? 'text-green-600' : ''}`}
+                />
               </div>
             </div>
           </div>
@@ -377,6 +371,7 @@ function BanDetailsContent(props: { ban: UserBanWithDetails; onClose: () => void
           {props.ban.isActive && (
             <Button
               variant="default"
+              icon={ShieldOff}
               onClick={async () => {
                 const ok = await confirm({
                   title: 'Lift this ban?',
@@ -391,7 +386,7 @@ function BanDetailsContent(props: { ban: UserBanWithDetails; onClose: () => void
               }}
               isLoading={liftBan.isPending}
             >
-              <ShieldOff className="w-4 h-4 mr-1" /> Lift Ban
+              Lift Ban
             </Button>
           )}
           <Button variant="outline" onClick={props.onClose}>

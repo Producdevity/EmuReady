@@ -179,11 +179,10 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
             <Button
               type="submit"
               size="sm"
+              icon={Send}
               disabled={isLoading || !content.trim() || content.length > maxLength}
               isLoading={isLoading}
-              className="flex items-center gap-2"
             >
-              <Send size={16} />
               {props.editingComment ? 'Update' : isReply ? 'Reply' : 'Post Comment'}
             </Button>
           </div>

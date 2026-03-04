@@ -185,9 +185,13 @@ function SortableOptionItem({
         placeholder="Display Label"
         className={errors[`option-${index}-label`] ? 'border-red-300 dark:border-red-600' : ''}
       />
-      <Button type="button" variant="destructive" size="sm" onClick={() => onRemove(index)}>
-        <Trash2 className="h-4 w-4" />
-      </Button>
+      <Button
+        type="button"
+        variant="destructive"
+        size="sm"
+        icon={Trash2}
+        onClick={() => onRemove(index)}
+      />
     </div>
   )
 }

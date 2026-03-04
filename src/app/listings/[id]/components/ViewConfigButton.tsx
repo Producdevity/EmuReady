@@ -78,13 +78,11 @@ function ViewConfigButton(props: Props) {
       <Button
         variant="outline"
         size="sm"
+        icon={Settings}
         onClick={handleViewConfig}
-        disabled={fetchConfigQuery.isFetching}
+        isLoading={fetchConfigQuery.isFetching}
       >
-        <Settings className="w-4 h-4" />
-        <span className="ml-1 hidden sm:inline">
-          {fetchConfigQuery.isFetching ? 'Loading...' : 'Emulator Config'}
-        </span>
+        Emulator Config
       </Button>
 
       {isModalOpen && configData && (

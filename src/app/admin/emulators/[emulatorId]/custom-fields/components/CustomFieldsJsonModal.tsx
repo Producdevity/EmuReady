@@ -95,13 +95,7 @@ export default function CustomFieldsJsonModal(props: Props) {
             <div className="mt-1">Fields: {props.customFields?.length ?? 0}</div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopy}
-              className="flex items-center gap-2"
-            >
-              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            <Button variant="outline" size="sm" icon={copied ? Check : Copy} onClick={handleCopy}>
               {copied ? 'Copied' : 'Copy JSON'}
             </Button>
           </div>

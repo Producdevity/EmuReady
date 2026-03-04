@@ -132,30 +132,38 @@ function CustomFieldTemplateList(props: Props) {
                 </p>
               </div>
               <div className="flex space-x-2">
-                <Button variant="outline" size="sm" onClick={() => toggleExpanded(template.id)}>
-                  <Eye className="h-4 w-4" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={Eye}
+                  onClick={() => toggleExpanded(template.id)}
+                >
                   {expandedTemplates.has(template.id) ? 'Hide' : 'Show'} Fields
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => props.onEdit(template.id)}>
-                  <Pencil className="h-4 w-4" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={Pencil}
+                  onClick={() => props.onEdit(template.id)}
+                >
                   Edit
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
+                  icon={Copy}
                   onClick={() => handleDuplicate(template.id, template.name)}
                   disabled={duplicateTemplateMutation.isPending}
                 >
-                  <Copy className="h-4 w-4" />
                   Duplicate
                 </Button>
                 <Button
                   variant="destructive"
                   size="sm"
+                  icon={Trash2}
                   onClick={() => handleDelete(template.id, template.name)}
                   disabled={deleteTemplateMutation.isPending}
                 >
-                  <Trash2 className="h-4 w-4" />
                   Delete
                 </Button>
               </div>

@@ -166,8 +166,7 @@ export default function AdminBadgesPage() {
       headerActions={
         <>
           {canManageBadges && (
-            <Button onClick={() => setIsCreateModalOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
+            <Button icon={Plus} onClick={() => setIsCreateModalOpen(true)}>
               Create Badge
             </Button>
           )}

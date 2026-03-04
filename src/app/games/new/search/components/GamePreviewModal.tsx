@@ -142,6 +142,7 @@ function GamePreviewModal(props: GamePreviewModalProps) {
             Close Preview
           </Button>
           <Button
+            icon={Plus}
             onClick={() =>
               props.game &&
               props.onSelect(props.game, {
@@ -152,7 +153,6 @@ function GamePreviewModal(props: GamePreviewModalProps) {
             variant="primary"
             className="flex-1"
           >
-            <Plus className="h-4 w-4 mr-2" />
             Add This Game
           </Button>
         </div>

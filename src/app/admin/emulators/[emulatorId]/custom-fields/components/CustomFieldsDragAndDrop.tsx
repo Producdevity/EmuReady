@@ -321,8 +321,8 @@ export default function CustomFieldsDragAndDrop(props: Props) {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Categories</h2>
-              <Button onClick={() => setIsCategoryModalOpen(true)} size="sm">
-                <PlusCircle className="mr-2 h-4 w-4" /> Create Category
+              <Button icon={PlusCircle} onClick={() => setIsCategoryModalOpen(true)} size="sm">
+                Create Category
               </Button>
             </div>
 

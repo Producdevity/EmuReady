@@ -29,9 +29,14 @@ function EditListingButton(props: Props) {
   // Show loading state while checking permissions
   if (canEditQuery.isPending || canEditQuery.isLoading) {
     return (
-      <Button variant="outline" size="sm" disabled title="Checking edit permissions...">
-        <Clock className="w-4 h-4" />
-        <span className="ml-1 hidden sm:inline">Loading...</span>
+      <Button
+        variant="outline"
+        size="sm"
+        icon={Clock}
+        disabled
+        title="Checking edit permissions..."
+      >
+        <span className="hidden sm:inline">Loading...</span>
       </Button>
     )
   }
@@ -69,13 +74,13 @@ function EditListingButton(props: Props) {
       <Button
         variant="outline"
         size="sm"
+        icon={Edit3}
         onClick={() => setIsModalOpen(true)}
         disabled={!canEdit}
         title={buttonTitle}
         className={canEdit ? '' : 'opacity-50'}
       >
-        <Edit3 className="w-4 h-4" />
-        <span className="ml-1 hidden sm:inline">Edit</span>
+        <span className="hidden sm:inline">Edit</span>
       </Button>
 
       <EditListingModal

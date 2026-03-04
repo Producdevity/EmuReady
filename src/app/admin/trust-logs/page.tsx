@@ -124,11 +124,11 @@ function AdminTrustLogsPage() {
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
+            icon={Calendar}
             onClick={() => runMonthlyBonusMutation.mutate({})}
             disabled={runMonthlyBonusMutation.isPending}
             isLoading={runMonthlyBonusMutation.isPending}
           >
-            <Calendar className="h-4 w-4 mr-2" />
             Run Monthly Bonus
           </Button>
           <ColumnVisibilityControl

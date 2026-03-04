@@ -345,12 +345,12 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
                 {!includeScreenshots && (
                   <div className="mt-2">
                     <Button
+                      icon={Camera}
                       onClick={enableScreenshots}
                       variant="outline"
                       size="sm"
-                      className="text-sm flex items-center gap-1"
+                      className="text-sm"
                     >
-                      <Camera className="h-4 w-4" />
                       Include screenshots in search
                     </Button>
                   </div>

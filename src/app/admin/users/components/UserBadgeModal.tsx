@@ -216,12 +216,12 @@ export default function UserBadgeModal(props: Props) {
                 />
 
                 <Button
+                  icon={Award}
                   onClick={handleAssignBadge}
                   isLoading={assignBadgeMutation.isPending}
                   disabled={!selectedBadgeId || assignBadgeMutation.isPending}
                   className="w-full"
                 >
-                  <Award className="w-4 h-4 mr-2" />
                   Assign Badge
                 </Button>
               </div>

@@ -140,12 +140,7 @@ function ProfileInformation(props: Props) {
 
         {isEditing && (
           <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <Button
-              onClick={handleFormSubmit}
-              isLoading={updateProfile.isPending}
-              className="flex items-center gap-2"
-            >
-              <Save className="w-4 h-4" />
+            <Button icon={Save} onClick={handleFormSubmit} isLoading={updateProfile.isPending}>
               Save Changes
             </Button>
             <Button variant="outline" onClick={handleFormReset} disabled={updateProfile.isPending}>

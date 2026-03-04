@@ -359,8 +359,7 @@ export default function TestingPage() {
           </div>
 
           <div className="flex gap-2 mt-4">
-            <Button onClick={exportAsMarkdown} variant="primary">
-              <Download className="w-4 h-4 mr-2" />
+            <Button icon={Download} onClick={exportAsMarkdown} variant="primary">
               Export All Results
             </Button>
             <Button onClick={clearAll} variant="destructive">

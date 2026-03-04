@@ -14,20 +14,10 @@ export function DisplayToggleButton(props: Props) {
     <Button
       variant="outline"
       size="sm"
-      className="flex items-center gap-2"
+      icon={props.showLogos ? Type : ImageIcon}
       onClick={props.onToggle}
     >
-      {props.showLogos ? (
-        <>
-          <Type className="w-4 h-4" />
-          {props.isHydrated ? props.nameLabel : '...'}
-        </>
-      ) : (
-        <>
-          <ImageIcon className="w-4 h-4" />
-          {props.isHydrated ? props.logoLabel : '...'}
-        </>
-      )}
+      {props.isHydrated ? (props.showLogos ? props.nameLabel : props.logoLabel) : '...'}
     </Button>
   )
 }

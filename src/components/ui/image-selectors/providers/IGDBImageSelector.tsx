@@ -157,12 +157,12 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
             className="flex-1"
           />
           <Button
+            icon={Search}
             onClick={handleSearch}
             disabled={!searchTerm.trim() || isLoading}
             size="sm"
             className="px-4"
           >
-            <Search className="h-4 w-4 mr-1" />
             Search
           </Button>
         </div>
@@ -280,13 +280,13 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
                     <Button
                       variant="secondary"
                       size="sm"
+                      icon={Eye}
                       className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto"
                       onClick={(ev) => {
                         ev.stopPropagation()
                         setPreviewImage(image)
                       }}
                     >
-                      <Eye className="h-4 w-4 mr-1" />
                       Preview
                     </Button>
                   </div>

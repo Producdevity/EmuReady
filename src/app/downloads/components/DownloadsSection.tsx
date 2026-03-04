@@ -120,8 +120,8 @@ export default function DownloadsSection() {
           <div className="flex flex-col items-start gap-3 md:items-end">
             {eligible ? (
               latest?.id ? (
-                <Button onClick={handleClickDownload}>
-                  <Download className="w-4 h-4" /> Download APK
+                <Button icon={Download} onClick={handleClickDownload}>
+                  Download APK
                 </Button>
               ) : (
                 <div className="text-sm text-gray-600 dark:text-gray-400">

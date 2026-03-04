@@ -149,12 +149,11 @@ export default function GenericVerifyButton(props: Props) {
             <Button
               variant="outline"
               size="sm"
+              icon={ShieldCheck}
               disabled={isLoading}
               onClick={() => setIsUnverifyDialogOpen(true)}
               className="text-green-600 hover:text-green-700 border-green-200 hover:border-green-300"
-            >
-              <ShieldCheck className="h-4 w-4" />
-            </Button>
+            />
           </TooltipTrigger>
           <TooltipContent>Remove verification</TooltipContent>
         </Tooltip>
@@ -191,12 +190,11 @@ export default function GenericVerifyButton(props: Props) {
           <Button
             variant="outline"
             size="sm"
+            icon={Shield}
             disabled={isLoading}
             onClick={() => setIsVerifyDialogOpen(true)}
             className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300"
-          >
-            <Shield className="h-4 w-4" />
-          </Button>
+          />
         </TooltipTrigger>
         <TooltipContent>Verify this {listingType}</TooltipContent>
       </Tooltip>

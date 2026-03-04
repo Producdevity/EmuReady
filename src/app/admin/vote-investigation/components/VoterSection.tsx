@@ -250,8 +250,7 @@ function VoterSection() {
             </div>
             <div className="flex gap-2">
               <Link href={`${ADMIN_ROUTES.USER_BANS}?userId=${selectedUser.id}`}>
-                <Button size="sm" variant="outline">
-                  <Ban className="w-3 h-3 mr-1" />
+                <Button size="sm" variant="outline" icon={Ban}>
                   Ban User
                 </Button>
               </Link>
@@ -385,21 +384,21 @@ function VoterSection() {
             {patternsQuery.data.summary.totalVotes > 0 && (
               <Button
                 variant="danger"
+                icon={Shield}
                 onClick={handleNullify}
                 isLoading={nullifyMutation.isPending}
                 disabled={nullifyMutation.isPending || restoreMutation.isPending}
               >
-                <Shield className="w-4 h-4 mr-1" />
                 Nullify All Votes ({patternsQuery.data.summary.totalVotes})
               </Button>
             )}
             <Button
               variant="outline"
+              icon={RotateCcw}
               onClick={handleRestore}
               isLoading={restoreMutation.isPending}
               disabled={nullifyMutation.isPending || restoreMutation.isPending}
             >
-              <RotateCcw className="w-4 h-4 mr-1" />
               Restore Nullified Votes
             </Button>
           </div>

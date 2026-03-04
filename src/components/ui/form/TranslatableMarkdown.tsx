@@ -103,11 +103,11 @@ export function TranslatableMarkdown(props: Props) {
           <Button
             variant="ghost"
             size="sm"
+            icon={ButtonIcon}
             onClick={toggleTranslation}
             disabled={isTranslating}
             className="text-xs h-7 px-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
           >
-            <ButtonIcon className="w-3 h-3 mr-1" />
             {getButtonLabel()}
           </Button>
 

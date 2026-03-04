@@ -488,6 +488,7 @@ export default function GameDetailsModal(props: Props) {
             </Button>
             <Button
               variant="danger"
+              icon={XCircle}
               onClick={() => {
                 if (!props.selectedGame?.id) return toast.warning('No game selected')
                 props.onShowConfirmation(props.selectedGame.id, 'reject')
@@ -496,11 +497,11 @@ export default function GameDetailsModal(props: Props) {
               isLoading={props.processingAction === 'reject'}
               className="min-w-[100px] transition-all duration-200 hover:scale-105"
             >
-              <XCircle className="w-4 h-4 mr-2" />
               Reject
             </Button>
             <Button
               variant="primary"
+              icon={CheckCircle}
               onClick={() => {
                 if (!props.selectedGame?.id) return toast.warning('No game selected')
                 props.onShowConfirmation(props.selectedGame.id, 'approve')
@@ -509,7 +510,6 @@ export default function GameDetailsModal(props: Props) {
               isLoading={props.processingAction === 'approve'}
               className="min-w-[100px] transition-all duration-200 hover:scale-105"
             >
-              <CheckCircle className="w-4 h-4 mr-2" />
               Approve
             </Button>
           </div>

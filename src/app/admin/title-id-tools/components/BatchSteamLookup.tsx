@@ -161,10 +161,10 @@ export function BatchSteamLookup() {
                     type="button"
                     variant="ghost"
                     size="sm"
+                    icon={Sparkles}
                     onClick={handleUseSampleIds}
                     className="text-xs"
                   >
-                    <Sparkles className="h-3 w-3" />
                     Use sample IDs
                   </Button>
                 </div>
@@ -304,8 +304,7 @@ export function BatchSteamLookup() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Results</h3>
-              <Button variant="ghost" size="sm" onClick={handleCopyResults}>
-                <Copy className="h-4 w-4" />
+              <Button variant="ghost" size="sm" icon={Copy} onClick={handleCopyResults}>
                 Copy Results
               </Button>
             </div>

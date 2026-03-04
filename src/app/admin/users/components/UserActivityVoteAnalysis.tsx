@@ -142,24 +142,24 @@ function UserActivityVoteAnalysis(props: Props) {
             <Button
               variant="danger"
               size="sm"
+              icon={Shield}
               onClick={handleNullify}
               isLoading={nullifyMutation.isPending}
               disabled={isMutating}
               className="text-xs"
             >
-              <Shield className="w-3.5 h-3.5 mr-1" />
               Nullify ({summary.totalVotes})
             </Button>
           )}
           <Button
             variant="outline"
             size="sm"
+            icon={RotateCcw}
             onClick={handleRestore}
             isLoading={restoreMutation.isPending}
             disabled={isMutating}
             className="text-xs"
           >
-            <RotateCcw className="w-3.5 h-3.5 mr-1" />
             Restore
           </Button>
         </div>
