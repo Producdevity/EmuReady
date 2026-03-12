@@ -247,6 +247,11 @@ const devices: DeviceData[] = [
   // Xiaomi
   {
     brandName: 'Xiaomi',
+    modelName: 'Black Shark 4 Pro',
+    socName: 'Snapdragon 888',
+  },
+  {
+    brandName: 'Xiaomi',
     modelName: 'Black Shark 4',
     socName: 'Snapdragon 870',
   },
@@ -534,6 +539,7 @@ const devices: DeviceData[] = [
   { brandName: 'Xiaomi', modelName: '10T', socName: 'Snapdragon 865' },
   { brandName: 'Xiaomi', modelName: '10 Pro', socName: 'Snapdragon 865' },
   { brandName: 'Xiaomi', modelName: '10', socName: 'Snapdragon 865' },
+  { brandName: 'Xiaomi', modelName: 'POCO F8 Pro', socName: 'Snapdragon 8 Elite' },
   {
     brandName: 'Xiaomi',
     modelName: 'POCO F6 Pro',
@@ -557,6 +563,7 @@ const devices: DeviceData[] = [
   { brandName: 'Xiaomi', modelName: 'POCO X6', socName: 'Snapdragon 7s Gen 2' },
   { brandName: 'Xiaomi', modelName: 'POCO X5 Pro', socName: 'Snapdragon 778G' },
   { brandName: 'Xiaomi', modelName: 'POCO X5', socName: 'Snapdragon 695' },
+  { brandName: 'Xiaomi', modelName: 'POCO M8', socName: 'Snapdragon 6 Gen 3' },
 
   // Huawei
   { brandName: 'Huawei', modelName: 'Mate 60 Pro+', socName: 'Kirin 9000S' },
