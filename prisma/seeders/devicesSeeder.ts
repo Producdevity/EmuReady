@@ -503,6 +503,7 @@ const devices: DeviceData[] = [
   { brandName: 'Google', modelName: 'Pixel 3', socName: 'Snapdragon 845' },
 
   // Additional Xiaomi devices
+  { brandName: 'Xiaomi', modelName: '17 Pro', socName: 'Snapdragon 8 Elite Gen 5' },
   { brandName: 'Xiaomi', modelName: '15 Pro', socName: 'Snapdragon 8 Elite' },
   { brandName: 'Xiaomi', modelName: '15', socName: 'Snapdragon 8 Elite' },
   { brandName: 'Xiaomi', modelName: '14 Ultra', socName: 'Snapdragon 8 Gen 3' },
