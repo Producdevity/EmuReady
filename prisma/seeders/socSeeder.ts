@@ -832,6 +832,14 @@ const socs: SoCData[] = [
     gpuModel: 'Adreno 720',
   },
   {
+    name: 'Snapdragon 6 Gen 3',
+    manufacturer: 'Qualcomm',
+    architecture: 'ARM64',
+    processNode: '4nm',
+    cpuCores: 8,
+    gpuModel: 'Adreno 710',
+  },
+  {
     name: 'Snapdragon 6 Gen 1',
     manufacturer: 'Qualcomm',
     architecture: 'ARM64',
