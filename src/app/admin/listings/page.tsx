@@ -86,7 +86,7 @@ function AdminListingsPage() {
 
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
     storageKeys.showSystemIcons,
-    false,
+    true,
   )
 
   const emulatorLogos = useEmulatorLogos()

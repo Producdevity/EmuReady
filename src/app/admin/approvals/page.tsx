@@ -64,7 +64,7 @@ type ApprovalSortField =
 const APPROVALS_COLUMNS: ColumnDefinition[] = [
   { key: 'game', label: 'Game', defaultVisible: true },
   { key: 'system', label: 'System', defaultVisible: true },
-  { key: 'author', label: 'Author', defaultVisible: false },
+  { key: 'author', label: 'Author', defaultVisible: true },
   { key: 'device', label: 'Device', defaultVisible: true },
   { key: 'emulator', label: 'Emulator', defaultVisible: true },
   { key: 'submittedAt', label: 'Submitted', defaultVisible: false },
@@ -86,7 +86,7 @@ function AdminApprovalsPage() {
 
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
     storageKeys.showSystemIcons,
-    false,
+    true,
   )
 
   const emulatorLogos = useEmulatorLogos()

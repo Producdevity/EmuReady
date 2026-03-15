@@ -71,7 +71,7 @@ const PC_APPROVALS_COLUMNS: ColumnDefinition[] = [
   { key: 'cpu', label: 'CPU', defaultVisible: true },
   { key: 'gpu', label: 'GPU', defaultVisible: true },
   { key: 'emulator', label: 'Emulator', defaultVisible: true },
-  { key: 'user', label: 'User', defaultVisible: false },
+  { key: 'user', label: 'User', defaultVisible: true },
   { key: 'createdAt', label: 'Submitted', defaultVisible: false },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
@@ -91,7 +91,7 @@ function PcListingApprovalsPage() {
 
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
     storageKeys.showSystemIcons,
-    false,
+    true,
   )
 
   const emulatorLogos = useEmulatorLogos()

@@ -98,7 +98,7 @@ function GameApprovalsPage() {
 
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
     storageKeys.showSystemIcons,
-    false,
+    true,
   )
 
   const pendingGamesQuery = api.games.getPendingGames.useQuery({
