@@ -30,7 +30,7 @@ async function authenticateUser(page: Page, email: string, password: string, rol
       },
     })
 
-    await page.reload({ waitUntil: 'networkidle' })
+    await page.reload({ waitUntil: 'domcontentloaded' })
     await page.waitForSelector(userButtonSelector, { timeout: 8000 })
 
     console.log(`✅ Successfully authenticated ${role}: ${email}`)

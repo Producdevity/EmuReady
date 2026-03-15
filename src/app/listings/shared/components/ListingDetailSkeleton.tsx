@@ -1,7 +1,8 @@
 import { Skeleton } from '@/components/ui/Skeleton'
+import { type ListingType } from '@/schemas/common'
 
 interface Props {
-  variant: 'handheld' | 'pc'
+  variant: ListingType
 }
 
 function SpecFieldRowSkeleton() {

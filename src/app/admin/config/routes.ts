@@ -49,6 +49,9 @@ export const ADMIN_ROUTES = {
 
   // Custom Fields
   FIELD_TEMPLATES: '/admin/custom-field-templates',
+
+  // Investigation
+  VOTE_INVESTIGATION: '/admin/vote-investigation',
 } as const
 
 export type AdminRoute = (typeof ADMIN_ROUTES)[keyof typeof ADMIN_ROUTES]

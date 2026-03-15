@@ -37,13 +37,13 @@ export function TranslatableMarkdown(props: Props) {
       return (
         <div
           className={cn(
-            'prose dark:prose-invert max-w-none',
+            'prose dark:prose-invert max-w-none overflow-hidden',
             'prose-headings:text-gray-800 dark:prose-headings:text-gray-200',
             'prose-p:text-gray-700 dark:prose-p:text-gray-300',
             'prose-strong:text-gray-800 dark:prose-strong:text-gray-200',
             'prose-code:text-blue-600 dark:prose-code:text-blue-400',
             'prose-code:bg-gray-100 dark:prose-code:bg-gray-800',
-            'prose-code:px-1 prose-code:py-0.5 prose-code:rounded',
+            'prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:break-all',
             'prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800',
             'prose-blockquote:border-blue-200 dark:prose-blockquote:border-blue-700',
             'prose-blockquote:bg-blue-50 dark:prose-blockquote:bg-blue-900/20',
@@ -103,11 +103,11 @@ export function TranslatableMarkdown(props: Props) {
           <Button
             variant="ghost"
             size="sm"
+            icon={ButtonIcon}
             onClick={toggleTranslation}
             disabled={isTranslating}
             className="text-xs h-7 px-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
           >
-            <ButtonIcon className="w-3 h-3 mr-1" />
             {getButtonLabel()}
           </Button>
 

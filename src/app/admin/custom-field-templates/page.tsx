@@ -63,8 +63,8 @@ function CustomFieldTemplatesPage() {
       title="Custom Field Templates"
       description="Create reusable templates for custom fields that can be applied to multiple emulators"
       headerActions={
-        <Button onClick={handleOpenCreateModal}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Create Template
+        <Button icon={PlusCircle} onClick={handleOpenCreateModal}>
+          Create Template
         </Button>
       }
     >
@@ -105,8 +105,8 @@ function CustomFieldTemplatesPage() {
           <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
             Create your first template to get started.
           </p>
-          <Button onClick={handleOpenCreateModal} className="mt-4">
-            <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Template
+          <Button icon={PlusCircle} onClick={handleOpenCreateModal} className="mt-4">
+            Create Your First Template
           </Button>
         </div>
       )}

@@ -138,10 +138,8 @@ function AdminAuditLogsPage() {
       description="System-wide audit trail for sensitive operations"
       headerActions={
         <>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href={ADMIN_ROUTES.PERMISSION_LOGS}>
-              <Shield className="w-4 h-4" /> Permission Logs
-            </Link>
+          <Button variant="ghost" size="sm" icon={Shield} asChild>
+            <Link href={ADMIN_ROUTES.PERMISSION_LOGS}>Permission Logs</Link>
           </Button>
           <ColumnVisibilityControl
             columns={AUDIT_LOG_COLUMNS}

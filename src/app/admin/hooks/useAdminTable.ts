@@ -1,5 +1,5 @@
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useState, useEffect, useCallback, type ChangeEvent } from 'react'
+import { useState, useEffect, useCallback, useRef, type ChangeEvent } from 'react'
 import { PAGINATION, UI_CONSTANTS } from '@/data/constants'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { AdminTableParamsSchema } from '@/schemas/common'
@@ -45,6 +45,8 @@ export interface UseAdminTableReturn<TSortField extends string> {
   resetFilters: () => void
 }
 
+const STANDARD_TABLE_PARAMS = ['search', 'page', 'sortField', 'sortDirection']
+
 export function useAdminTable<TSortField extends string>(
   opts: UseAdminTableOptions<TSortField> = {},
 ): UseAdminTableReturn<TSortField> {
@@ -52,6 +54,13 @@ export function useAdminTable<TSortField extends string>(
   const router = useRouter()
   const enableUrlState = opts.enableUrlState ?? true
   const searchDebounceMs = opts.searchDebounceMs ?? UI_CONSTANTS.DEBOUNCE_DELAY
+
+  // Tracks additional param keys explicitly managed via setAdditionalParam.
+  // Auto-captured params (e.g., modal params like userId) are NOT added here,
+  // preventing updateUrl from re-adding params that external code removed.
+  const managedAdditionalKeysRef = useRef<Set<string>>(
+    new Set(Object.keys(opts.additionalParams ?? {})),
+  )
 
   // Initialize state from URL params or defaults with validation
   const getValidatedParams = () => {
@@ -90,16 +99,15 @@ export function useAdminTable<TSortField extends string>(
     validatedParams.sortDirection ?? opts.defaultSortDirection ?? null,
   )
 
-  // Initialize additional parameters from URL
+  // Initialize additional parameters from URL.
+  // All non-standard params are captured for reading (e.g., table.additionalParams.brandId),
+  // but only keys in managedAdditionalKeysRef are written back by updateUrl.
   const [additionalParams, setAdditionalParams] = useState<Record<string, string>>(() => {
     const initialParams: Record<string, string> = { ...(opts.additionalParams ?? {}) }
 
-    // Then override with URL params if present
     if (enableUrlState) {
-      // Get all search params
       searchParams.forEach((value, key) => {
-        // Skip standard params that are handled separately
-        if (!['search', 'page', 'sortField', 'sortDirection'].includes(key)) {
+        if (!STANDARD_TABLE_PARAMS.includes(key)) {
           initialParams[key] = value
         }
       })
@@ -112,21 +120,29 @@ export function useAdminTable<TSortField extends string>(
   const debouncedSearch = useDebouncedValue(search, searchDebounceMs)
   const isSearching = search !== debouncedSearch
 
-  // Update URL when state changes
+  // Update URL when state changes.
+  // Reads from current URL to preserve params managed by external code (e.g., modal userId).
+  // Only modifies standard table params and explicitly-managed additional params.
   const updateUrl = useCallback(() => {
     if (!enableUrlState) return
 
-    const params = new URLSearchParams()
+    const params = new URLSearchParams(window.location.search)
 
-    if (debouncedSearch && debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
-    if (page && page > 1) params.set('page', page.toString())
-    if (sortField) params.set('sortField', sortField)
-    if (sortDirection) params.set('sortDirection', sortDirection)
-
-    // Add additional params to URL
-    Object.entries(additionalParams).forEach(([key, value]) => {
+    // Standard table params — always managed by this hook
+    const setOrDelete = (key: string, value: string | null | undefined) => {
       if (value) params.set(key, value)
-    })
+      else params.delete(key)
+    }
+
+    setOrDelete('search', debouncedSearch?.trim() || null)
+    setOrDelete('page', page && page > 1 ? page.toString() : null)
+    setOrDelete('sortField', sortField)
+    setOrDelete('sortDirection', sortDirection)
+
+    // Only write additional params that were explicitly managed via setAdditionalParam
+    for (const key of managedAdditionalKeysRef.current) {
+      setOrDelete(key, additionalParams[key] || null)
+    }
 
     const url = params.toString()
       ? `${window.location.pathname}?${params.toString()}`
@@ -157,11 +173,11 @@ export function useAdminTable<TSortField extends string>(
   }
 
   const setAdditionalParam = (key: string, value: string) => {
+    managedAdditionalKeysRef.current.add(key)
     setAdditionalParams((prev) => {
       const newParams = { ...prev }
 
       if (value === '') {
-        // Remove param if empty
         delete newParams[key]
       } else {
         newParams[key] = value

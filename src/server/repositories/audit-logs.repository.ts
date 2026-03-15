@@ -6,7 +6,7 @@ import {
 } from '@/server/utils/pagination'
 import { ms } from '@/utils/time'
 import { BaseRepository } from './base.repository'
-import type { Prisma, PrismaClient, AuditAction, AuditEntityType } from '@orm'
+import type { Prisma, AuditAction, AuditEntityType } from '@orm'
 
 export class AuditLogsRepository extends BaseRepository {
   static readonly includes = {
@@ -15,10 +15,6 @@ export class AuditLogsRepository extends BaseRepository {
       targetUser: { select: { id: true, name: true, email: true, role: true } },
     } satisfies Prisma.AuditLogInclude,
   } as const
-
-  constructor(prisma: PrismaClient | Prisma.TransactionClient) {
-    super(prisma as PrismaClient)
-  }
 
   async create(data: {
     actorId?: string | null

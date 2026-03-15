@@ -11,10 +11,10 @@ import {
 } from '@/lib/trust/config'
 import { cn } from '@/lib/utils'
 
-type TrustLevelName = Exclude<TrustLevel['name'], null>
+type TrustLevelName = TrustLevel['name']
 
-const TRUST_LEVEL_ICONS: Record<TrustLevelName | 'default', LucideIcon> = {
-  default: Users,
+const TRUST_LEVEL_ICONS: Record<TrustLevelName, LucideIcon> = {
+  Newcomer: Users,
   Contributor: UserCheck,
   Trusted: Shield,
   Verified: Award,
@@ -23,10 +23,10 @@ const TRUST_LEVEL_ICONS: Record<TrustLevelName | 'default', LucideIcon> = {
 }
 
 const TRUST_LEVEL_COLORS: Record<
-  TrustLevelName | 'default',
+  TrustLevelName,
   'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info'
 > = {
-  default: 'default',
+  Newcomer: 'default',
   Contributor: 'primary',
   Trusted: 'success',
   Verified: 'info',
@@ -60,16 +60,15 @@ export function TrustLevelBadge(props: Props): JSX.Element {
   const progress = getProgressToNextLevel(trustScore)
 
   const levelName = trustLevel.name
-  const iconKey: TrustLevelName | 'default' = levelName ?? 'default'
-  const Icon = TRUST_LEVEL_ICONS[iconKey]
-  const color = TRUST_LEVEL_COLORS[iconKey]
+  const Icon = TRUST_LEVEL_ICONS[levelName]
+  const color = TRUST_LEVEL_COLORS[levelName]
   const size = props.size ?? 'md'
 
   return (
     <div className={cn('flex flex-col gap-2', props.className)}>
       <Badge variant={color} className={cn('flex items-center gap-1.5 w-fit', sizeClasses[size])}>
         <Icon className={iconSizes[size]} />
-        {levelName ? <span className="font-medium">{levelName}</span> : null}
+        <span className="font-medium">{levelName}</span>
       </Badge>
 
       {props.showProgress && nextLevel && (

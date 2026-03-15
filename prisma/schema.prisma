@@ -91,13 +91,14 @@ model User {
   // Trust system fields
   trustScore                  Int                               @default(0)
   lastActiveAt                DateTime                          @default(now())
-  // User preferences
-  defaultToUserDevices        Boolean                           @default(false)
-  defaultToUserSocs           Boolean                           @default(false)
-  notifyOnNewListings         Boolean                           @default(true)
-  showNsfw                    Boolean                           @default(false)
-  lastUsedDeviceId            String? // Track the last used device
+  // User preferences (these have moves to UserSettings and are deprecated)
+  defaultToUserDevices        Boolean                           @default(false) // TODO: remove after confirming data migration to UserSettings
+  defaultToUserSocs           Boolean                           @default(false) // TODO: remove after confirming data migration to UserSettings
+  notifyOnNewListings         Boolean                           @default(true) // TODO: remove after confirming data migration to UserSettings
+  showNsfw                    Boolean                           @default(false) // TODO: remove after confirming data migration to UserSettings
+  lastUsedDeviceId            String? // Track the last used device TODO: remove after confirming data migration to UserSettings
   // Relations
+  settings                    UserSettings?
   comments                    Comment[]
   listings                    Listing[]
   pcListings                  PcListing[]
@@ -150,6 +151,43 @@ model User {
   entitlements                Entitlement[]
   downloads                   Download[]
   externalAccounts            ExternalAccount[]
+  // Social relations
+  following                   UserFollow[]                      @relation("UserFollowing")
+  followers                   UserFollow[]                      @relation("UserFollowers")
+  sentRelationships           UserRelationship[]                @relation("RelationshipSender")
+  receivedRelationships       UserRelationship[]                @relation("RelationshipReceiver")
+  // Bookmark and game follow relations
+  listingBookmarks            ListingBookmark[]
+  pcListingBookmarks          PcListingBookmark[]
+  gameFollows                 GameFollow[]
+}
+
+model UserSettings {
+  id                   String  @id @default(uuid())
+  userId               String  @unique
+  // Content preferences
+  defaultToUserDevices Boolean @default(false)
+  defaultToUserSocs    Boolean @default(false)
+  notifyOnNewListings  Boolean @default(true)
+  showNsfw             Boolean @default(false)
+  lastUsedDeviceId     String?
+  // Privacy
+  profilePublic        Boolean @default(true)
+  showActivityInFeed   Boolean @default(true)
+  showVotingActivity   Boolean @default(true)
+  allowFollows         Boolean @default(true)
+  allowFriendRequests  Boolean @default(true)
+  followersVisible     Boolean @default(true)
+  followingVisible     Boolean @default(true)
+  bookmarksVisible     Boolean @default(false)
+  followedGamesVisible Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
 }
 
 model ApiKey {
@@ -289,6 +327,7 @@ model Game {
   pcListings      PcListing[]
   submitter       User?          @relation("GamesSubmittedByUser", fields: [submittedBy], references: [id])
   approver        User?          @relation("GamesApprovedByAdmin", fields: [approvedBy], references: [id])
+  followers       GameFollow[]
 
   @@unique([title, systemId])
   @@index([status])
@@ -442,6 +481,7 @@ model Listing {
   notificationPrefs      ListingNotificationPreference[]
   developerVerifications ListingDeveloperVerification[]
   reports                ListingReport[]
+  bookmarks              ListingBookmark[]
   pinnedComment          Comment?                        @relation("ListingPinnedComment", fields: [pinnedCommentId], references: [id], onDelete: SetNull)
   pinnedByUser           User?                           @relation("ListingPinnedBy", fields: [pinnedByUserId], references: [id], onDelete: SetNull)
 
@@ -453,14 +493,18 @@ model Listing {
 }
 
 model Vote {
-  id        String  @id @default(uuid())
-  value     Boolean
-  userId    String
-  listingId String
-  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String    @id @default(uuid())
+  value       Boolean
+  userId      String
+  listingId   String
+  createdAt   DateTime  @default(now())
+  nullifiedAt DateTime?
+  listing     Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, listingId])
+  @@index([userId])
+  @@index([listingId])
 }
 
 model Comment {
@@ -486,15 +530,17 @@ model Comment {
 }
 
 model CommentVote {
-  id        String   @id @default(uuid())
-  value     Boolean // true = upvote, false = downvote
-  userId    String
-  commentId String
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  id          String    @id @default(uuid())
+  value       Boolean // true = upvote, false = downvote
+  userId      String
+  commentId   String
+  createdAt   DateTime  @default(now())
+  nullifiedAt DateTime?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment     Comment   @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@unique([userId, commentId])
+  @@index([userId])
 }
 
 model ListingCustomFieldValue {
@@ -630,6 +676,15 @@ enum NotificationType {
   REPORT_STATUS_CHANGED
   VERIFIED_DEVELOPER
 
+  // Social notifications
+  NEW_FOLLOWER
+  FRIEND_REQUEST_RECEIVED
+  FRIEND_REQUEST_ACCEPTED
+  FOLLOWED_USER_NEW_LISTING
+  FOLLOWED_USER_NEW_PC_LISTING
+  FOLLOWED_GAME_NEW_LISTING
+  FOLLOWED_GAME_NEW_PC_LISTING
+
   @@map("notification_type")
 }
 
@@ -638,6 +693,7 @@ enum NotificationCategory {
   CONTENT
   SYSTEM
   MODERATION
+  SOCIAL
 
   @@map("notification_category")
 }
@@ -678,6 +734,7 @@ enum TrustAction {
   HELPFUL_COMMENT
   ADMIN_ADJUSTMENT_POSITIVE
   ADMIN_ADJUSTMENT_NEGATIVE
+  VOTE_NULLIFICATION_REVERSAL
 
   @@map("trust_action")
 }
@@ -842,18 +899,19 @@ model ListingReport {
 }
 
 model UserBan {
-  id           String    @id @default(uuid())
-  userId       String
-  bannedById   String
-  reason       String
-  notes        String?
-  isActive     Boolean   @default(true)
-  bannedAt     DateTime  @default(now())
-  expiresAt    DateTime?
-  unbannedAt   DateTime?
-  unbannedById String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id             String    @id @default(uuid())
+  userId         String
+  bannedById     String
+  reason         String
+  notes          String?
+  isActive       Boolean   @default(true)
+  bannedAt       DateTime  @default(now())
+  expiresAt      DateTime?
+  unbannedAt     DateTime?
+  unbannedById   String?
+  votesNullified Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   user       User  @relation("UserBans", fields: [userId], references: [id], onDelete: Cascade)
   bannedBy   User  @relation("BansCreated", fields: [bannedById], references: [id])
@@ -956,6 +1014,7 @@ model PcListing {
   notificationPrefs      PcListingNotificationPreference[]
   developerVerifications PcListingDeveloperVerification[]
   reports                PcListingReport[]
+  bookmarks              PcListingBookmark[]
   votes                  PcListingVote[]
   comments               PcListingComment[]
   pinnedComment          PcListingComment?                 @relation("PcListingPinnedComment", fields: [pinnedCommentId], references: [id], onDelete: SetNull)
@@ -1051,11 +1110,12 @@ model PcListingReport {
 }
 
 model PcListingVote {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   value       Boolean // true = upvote, false = downvote
   userId      String
   pcListingId String
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
+  nullifiedAt DateTime?
 
   pcListing PcListing @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1093,11 +1153,12 @@ model PcListingComment {
 }
 
 model PcListingCommentVote {
-  id        String   @id @default(uuid())
-  value     Boolean // true = upvote, false = downvote
-  userId    String
-  commentId String
-  createdAt DateTime @default(now())
+  id          String    @id @default(uuid())
+  value       Boolean // true = upvote, false = downvote
+  userId      String
+  commentId   String
+  createdAt   DateTime  @default(now())
+  nullifiedAt DateTime?
 
   user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   comment PcListingComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
@@ -1161,6 +1222,7 @@ enum AuditEntityType {
   COMMENT
   REPORT
   EMULATOR
+  VOTE
   OTHER
 
   @@map("audit_entity_type")
@@ -1179,6 +1241,8 @@ enum AuditAction {
   UNBAN
   PIN
   UNPIN
+  NULLIFY_VOTES
+  RESTORE_VOTES
 
   @@map("audit_action")
 }
@@ -1299,4 +1363,98 @@ model WebhookEvent {
   createdAt   DateTime  @default(now())
 
   @@unique([source, eventId])
+}
+
+model UserFollow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("user_follows")
+}
+
+enum RelationshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  BLOCKED
+
+  @@map("relationship_status")
+}
+
+enum RelationshipType {
+  FRIEND
+
+  @@map("relationship_type")
+}
+
+model UserRelationship {
+  id         String             @id @default(uuid())
+  senderId   String
+  receiverId String
+  type       RelationshipType   @default(FRIEND)
+  status     RelationshipStatus @default(PENDING)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  sender   User @relation("RelationshipSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("RelationshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId, type])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([status])
+  @@map("user_relationships")
+}
+
+model ListingBookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId])
+  @@index([listingId])
+  @@map("listing_bookmarks")
+}
+
+model PcListingBookmark {
+  id          String   @id @default(uuid())
+  userId      String
+  pcListingId String
+  createdAt   DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pcListing PcListing @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, pcListingId])
+  @@index([userId])
+  @@index([pcListingId])
+  @@map("pc_listing_bookmarks")
+}
+
+model GameFollow {
+  id        String   @id @default(uuid())
+  userId    String
+  gameId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@index([userId])
+  @@index([gameId])
+  @@map("game_follows")
 }

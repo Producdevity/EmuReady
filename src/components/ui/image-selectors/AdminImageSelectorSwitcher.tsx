@@ -255,14 +255,14 @@ export function AdminImageSelectorSwitcher(props: Props) {
                       type="button"
                       variant="outline"
                       size="sm"
+                      icon={X}
                       onClick={handleClearUrl}
                       className="px-3"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    />
                   )}
                   <Button
                     type="button"
+                    icon={Check}
                     onClick={handleManualUrlSubmit}
                     disabled={!!(manualUrl.trim() && !isValidUrl)}
                     size="sm"
@@ -270,8 +270,7 @@ export function AdminImageSelectorSwitcher(props: Props) {
                       showApplied ? 'bg-green-600 hover:bg-green-700 text-white' : ''
                     }`}
                   >
-                    <Check className="h-4 w-4 mr-1" />
-                    {showApplied ? 'Applied ✓' : 'Apply'}
+                    {showApplied ? 'Applied' : 'Apply'}
                   </Button>
                 </div>
 

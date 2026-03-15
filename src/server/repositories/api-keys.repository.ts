@@ -16,7 +16,7 @@ import {
   buildOrderBy,
   type PaginationResult,
 } from '@/server/utils/pagination'
-import { Prisma, ApiUsagePeriod, type PrismaClient } from '@orm'
+import { Prisma, ApiUsagePeriod } from '@orm'
 import { BaseRepository } from './base.repository'
 
 const USAGE_WINDOW_FACTORY: Record<ApiUsagePeriod, (now: Date) => Date> = {
@@ -49,15 +49,11 @@ export class ApiKeysRepository extends BaseRepository {
           email: true,
           name: true,
           role: true,
-          showNsfw: true,
+          settings: { select: { showNsfw: true } },
         },
       },
     } satisfies Prisma.ApiKeyInclude,
   } as const
-
-  constructor(prisma: PrismaClient | Prisma.TransactionClient) {
-    super(prisma as PrismaClient)
-  }
 
   async create(
     data: CreateApiKeyInput & {
@@ -289,10 +285,6 @@ export class ApiKeyUsageRepository extends BaseRepository {
       lastRequestAt: true,
     } satisfies Prisma.ApiKeyUsageSelect,
   } as const
-
-  constructor(prisma: PrismaClient | Prisma.TransactionClient) {
-    super(prisma as PrismaClient)
-  }
 
   async incrementWithinLimit(
     apiKeyId: string,

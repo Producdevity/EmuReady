@@ -2157,6 +2157,10 @@
       "description": "Rawg related endpoints"
     },
     {
+      "name": "social",
+      "description": "Social related endpoints"
+    },
+    {
       "name": "socs",
       "description": "Socs related endpoints"
     },
@@ -14168,6 +14172,2209 @@
           }
         },
         "security": []
+      }
+    },
+    "/social.follow": {
+      "post": {
+        "summary": "follow - social",
+        "tags": [
+          "social"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from social.follow"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from social.follow",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "social.follow",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ClerkAuth": []
+          }
+        ]
+      }
+    },
+    "/social.unfollow": {
+      "post": {
+        "summary": "unfollow - social",
+        "tags": [
+          "social"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from social.unfollow"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from social.unfollow",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "social.unfollow",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ClerkAuth": []
+          }
+        ]
+      }
+    },
+    "/social.removeFollower": {
+      "post": {
+        "summary": "removeFollower - social",
+        "tags": [
+          "social"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from social.removeFollower"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from social.removeFollower",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "social.removeFollower",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ClerkAuth": []
+          }
+        ]
+      }
+    },
+    "/social.getFollowers": {
+      "get": {
+        "summary": "getFollowers - social",
+        "tags": [
+          "social"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from social.getFollowers"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from social.getFollowers",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "social.getFollowers",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/social.getFollowing": {
+      "get": {
+        "summary": "getFollowing - social",
+        "tags": [
+          "social"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from social.getFollowing"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from social.getFollowing",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "social.getFollowing",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/social.isFollowing": {
+      "get": {
+        "summary": "isFollowing - social",
+        "tags": [
+          "social"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from social.isFollowing"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from social.isFollowing",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "social.isFollowing",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/social.getFollowCounts": {
+      "get": {
+        "summary": "getFollowCounts - social",
+        "tags": [
+          "social"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from social.getFollowCounts"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from social.getFollowCounts",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "social.getFollowCounts",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/social.getBulkFollowStatuses": {
+      "get": {
+        "summary": "getBulkFollowStatuses - social",
+        "tags": [
+          "social"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from social.getBulkFollowStatuses"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from social.getBulkFollowStatuses",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "social.getBulkFollowStatuses",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/social.sendFriendRequest": {
+      "post": {
+        "summary": "sendFriendRequest - social",
+        "tags": [
+          "social"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from social.sendFriendRequest"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from social.sendFriendRequest",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "social.sendFriendRequest",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ClerkAuth": []
+          }
+        ]
+      }
+    },
+    "/social.respondFriendRequest": {
+      "post": {
+        "summary": "respondFriendRequest - social",
+        "tags": [
+          "social"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from social.respondFriendRequest"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from social.respondFriendRequest",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "social.respondFriendRequest",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ClerkAuth": []
+          }
+        ]
+      }
+    },
+    "/social.getFriendRequests": {
+      "get": {
+        "summary": "getFriendRequests - social",
+        "tags": [
+          "social"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from social.getFriendRequests"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from social.getFriendRequests",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "social.getFriendRequests",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ClerkAuth": []
+          }
+        ]
+      }
+    },
+    "/social.getFriends": {
+      "get": {
+        "summary": "getFriends - social",
+        "tags": [
+          "social"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from social.getFriends"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from social.getFriends",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "social.getFriends",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ClerkAuth": []
+          }
+        ]
+      }
+    },
+    "/social.getRelationshipStatus": {
+      "get": {
+        "summary": "getRelationshipStatus - social",
+        "tags": [
+          "social"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from social.getRelationshipStatus"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from social.getRelationshipStatus",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "social.getRelationshipStatus",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/social.blockUser": {
+      "post": {
+        "summary": "blockUser - social",
+        "tags": [
+          "social"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from social.blockUser"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from social.blockUser",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "social.blockUser",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ClerkAuth": []
+          }
+        ]
+      }
+    },
+    "/social.unblockUser": {
+      "post": {
+        "summary": "unblockUser - social",
+        "tags": [
+          "social"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from social.unblockUser"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from social.unblockUser",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "social.unblockUser",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ClerkAuth": []
+          }
+        ]
+      }
+    },
+    "/social.getBlockedUsers": {
+      "get": {
+        "summary": "getBlockedUsers - social",
+        "tags": [
+          "social"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from social.getBlockedUsers"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from social.getBlockedUsers",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "social.getBlockedUsers",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ClerkAuth": []
+          }
+        ]
+      }
+    },
+    "/social.getActivityFeed": {
+      "get": {
+        "summary": "getActivityFeed - social",
+        "tags": [
+          "social"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from social.getActivityFeed"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from social.getActivityFeed",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "social.getActivityFeed",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ClerkAuth": []
+          }
+        ]
       }
     },
     "/socs.get": {

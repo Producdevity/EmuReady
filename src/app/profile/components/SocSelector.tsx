@@ -22,8 +22,7 @@ interface Props {
 function SocSelector(props: Props) {
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedManufacturers, setExpandedManufacturers] = useState<Set<string>>(new Set())
-  // Fetch all SoCs from the backend
-  const socsQuery = api.socs.get.useQuery({ limit: 1000 })
+  const socsQuery = api.socs.get.useQuery({ limit: 1000 }) // TODO: let's maybe not do this
 
   const filteredSocs = useMemo(() => {
     const allSocs: Soc[] =

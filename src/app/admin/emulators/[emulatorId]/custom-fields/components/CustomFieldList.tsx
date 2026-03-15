@@ -250,29 +250,27 @@ function CustomFieldList(props: CustomFieldListProps) {
       <div className="flex justify-end mb-4 space-x-2">
         {isReorderMode && isDirty && (
           <>
-            <Button variant="outline" onClick={handleCancelReorder} size="sm">
-              <Undo className="mr-2 h-4 w-4" /> Cancel Changes
+            <Button variant="outline" icon={Undo} onClick={handleCancelReorder} size="sm">
+              Cancel Changes
             </Button>
             <Button
               variant="primary"
+              icon={Check}
               onClick={handleConfirmReorder}
               size="sm"
               isLoading={updateOrderMutation.isPending}
             >
-              <Check className="mr-2 h-4 w-4" /> Confirm Order
+              Confirm Order
             </Button>
           </>
         )}
-        <Button variant="outline" onClick={toggleReorderMode} size="sm">
-          {isReorderMode ? (
-            <>
-              <X className="mr-2 h-4 w-4" /> Finish Reordering
-            </>
-          ) : (
-            <>
-              <GripVertical className="mr-2 h-4 w-4" /> Reorder Fields
-            </>
-          )}
+        <Button
+          variant="outline"
+          icon={isReorderMode ? X : GripVertical}
+          onClick={toggleReorderMode}
+          size="sm"
+        >
+          {isReorderMode ? 'Finish Reordering' : 'Reorder Fields'}
         </Button>
       </div>
       <SortableContext

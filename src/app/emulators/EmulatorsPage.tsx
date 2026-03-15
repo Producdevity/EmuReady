@@ -129,8 +129,7 @@ function EmulatorsPage() {
     <div className="container mx-auto px-2 sm:px-4 pt-4">
       {/* Header */}
       <div className="mb-4 md:mb-6">
-        <Button variant="outline" size="sm" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4" />
+        <Button variant="outline" size="sm" icon={ArrowLeft} onClick={() => router.back()}>
           Back
         </Button>
       </div>

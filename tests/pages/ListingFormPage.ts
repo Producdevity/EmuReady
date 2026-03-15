@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test'
 import { BasePage } from './BasePage'
 import type { Page } from '@playwright/test'
 
@@ -212,7 +213,7 @@ export class ListingFormPage extends BasePage {
 
   async verifyRedirectAfterSuccess() {
     // Should redirect to listing detail page or listings list
-    await this.page.waitForURL(/\/listings\/((?!new).)*/, { timeout: 10000 })
+    await expect(this.page).toHaveURL(/\/listings\/((?!new).)*/, { timeout: 10000 })
   }
 
   async hasValidationErrors(): Promise<boolean> {

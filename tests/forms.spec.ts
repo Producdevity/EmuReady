@@ -11,8 +11,7 @@ test.describe('Game Form Tests', () => {
 
     // Navigate to add game page
     await gameForm.goto()
-    await page.waitForLoadState('networkidle')
-    await page.waitForTimeout(2000)
+    await page.waitForLoadState('domcontentloaded')
 
     // Check various indicators that page is protected
     const currentUrl = page.url()
@@ -74,50 +73,28 @@ test.describe('Game Form Tests', () => {
     const hasForm = await page.locator('form').isVisible({ timeout: 2000 })
 
     if (hasForm) {
-      try {
-        // Check for any input fields to verify we have a form
-        const hasInputs = await page
-          .locator('input, select, textarea')
-          .first()
-          .isVisible({ timeout: 3000 })
+      // Check for any input fields to verify we have a form
+      const hasInputs = await page
+        .locator('input, select, textarea')
+        .first()
+        .isVisible({ timeout: 3000 })
+      expect(hasInputs).toBe(true)
 
-        if (hasInputs) {
-          // Try to find specific form fields
-          const titleVisible = await gameForm.titleInput
-            .isVisible({ timeout: 2000 })
-            .catch(() => false)
-          const systemVisible = await gameForm.systemSelect
-            .isVisible({ timeout: 2000 })
-            .catch(() => false)
-          const submitVisible = await gameForm.submitButton
-            .isVisible({ timeout: 2000 })
-            .catch(() => false)
+      // Try to find specific form fields
+      const titleVisible = await gameForm.titleInput.isVisible({ timeout: 2000 }).catch(() => false)
+      const systemVisible = await gameForm.systemSelect
+        .isVisible({ timeout: 2000 })
+        .catch(() => false)
+      const submitVisible = await gameForm.submitButton
+        .isVisible({ timeout: 2000 })
+        .catch(() => false)
 
-          // At least some form fields should be present
-          expect(titleVisible || systemVisible || submitVisible || hasInputs).toBe(true)
-          console.log('Game form fields verified')
-        } else {
-          console.log('No form inputs found - page may still be loading')
-          expect(true).toBe(true)
-        }
-      } catch {
-        console.log('Listing form fields not all visible - may be loading or require auth')
-        // Not a failure - form might be protected client-side
-        expect(true).toBe(true)
-      }
+      // At least some form fields should be present
+      expect(titleVisible || systemVisible || submitVisible).toBe(true)
     } else {
       // Form requires authentication
       const hasAuthRequirement = await authPage.hasAuthRequirement()
-
-      if (hasAuthRequirement) {
-        console.log('Game form requires authentication as expected')
-        expect(hasAuthRequirement).toBe(true)
-      } else {
-        // Page might be loading or have different protection
-        console.log('Game form not accessible - likely requires authentication')
-        // Pass the test - form is protected
-        expect(true).toBe(true)
-      }
+      expect(hasAuthRequirement).toBe(true)
     }
   })
 
@@ -128,24 +105,19 @@ test.describe('Game Form Tests', () => {
 
     // Check if form is accessible
     const hasForm = await page.locator('form').isVisible({ timeout: 2000 })
+    test.skip(!hasForm, 'Game form not accessible - auth required')
 
-    if (hasForm) {
-      // Try to submit empty form
-      await gameForm.submitForm()
+    // Try to submit empty form
+    await gameForm.submitForm()
 
-      // Should show validation errors
-      const hasErrors = await gameForm.hasValidationErrors()
-      if (hasErrors) {
-        await gameForm.verifyValidationError()
-        console.log('Game form validation working correctly')
-      } else {
-        // Form might be submitted but rejected server-side
-        const currentUrl = page.url()
-        expect(currentUrl).toContain('/games/new')
-        console.log('Game form submission prevented')
-      }
+    // Should show validation errors or remain on form page
+    const hasErrors = await gameForm.hasValidationErrors()
+    if (hasErrors) {
+      await gameForm.verifyValidationError()
     } else {
-      console.log('Game form not accessible - auth required')
+      // Form might be submitted but rejected server-side
+      const currentUrl = page.url()
+      expect(currentUrl).toContain('/games/new')
     }
   })
 
@@ -156,39 +128,26 @@ test.describe('Game Form Tests', () => {
 
     await gamesPage.goto()
 
-    // Look for add game button with shorter timeout to avoid test timeout
-    try {
-      const hasAddButton = await gamesPage.addGameButton.isVisible({
-        timeout: 5000,
-      })
+    // Wait for loading to finish
+    await page
+      .getByText(/loading/i)
+      .waitFor({ state: 'hidden', timeout: 15000 })
+      .catch(() => {})
 
-      if (hasAddButton) {
-        await gamesPage.clickAddGame()
+    // Look for add game button
+    const hasAddButton = await gamesPage.addGameButton
+      .isVisible({ timeout: 5000 })
+      .catch(() => false)
 
-        // Should either show form or auth requirement
-        const hasForm = await gameForm.isFormVisible()
-        const hasAuthRequirement = await authPage.hasAuthRequirement()
+    test.skip(!hasAddButton, 'Add game button not visible - requires auth or conditionally shown')
 
-        expect(hasForm || hasAuthRequirement).toBe(true)
-        console.log('Successfully navigated to add game page')
-      } else {
-        // Check if authentication is required on the games page
-        const requiresAuth = await authPage.hasAuthRequirement()
+    await gamesPage.clickAddGame()
 
-        if (requiresAuth) {
-          console.log('Games page requires authentication - test passes')
-          expect(requiresAuth).toBe(true)
-        } else {
-          console.log('Add game button not visible - may be a UI variation')
-          // This is not necessarily a failure - button might be conditionally shown
-          expect(true).toBe(true)
-        }
-      }
-    } catch (error) {
-      console.log('Error checking for add game button:', error)
-      // Not a failure - UI might have variations
-      expect(true).toBe(true)
-    }
+    // Should either show form or auth requirement
+    const hasForm = await gameForm.isFormVisible()
+    const hasAuthRequirement = await authPage.hasAuthRequirement()
+
+    expect(hasForm || hasAuthRequirement).toBe(true)
   })
 })
 
@@ -199,79 +158,57 @@ test.describe('Listing Form Tests', () => {
 
     await listingForm.goto()
 
+    // Wait for page to settle (may show loading spinner during redirect/auth check)
+    await page.waitForLoadState('networkidle').catch(() => {})
+
     // Should either show auth requirement or have form without submission capability
     const hasAuthRequirement = await authPage.hasAuthRequirement()
     const hasForm = await page.locator('form').isVisible({ timeout: 2000 })
 
     if (hasAuthRequirement) {
       await authPage.verifyAuthRequired()
-      console.log('Add listing form correctly requires authentication')
     } else if (hasForm) {
-      console.log('Add listing form is accessible - likely uses client-side auth protection')
+      // Form is accessible - try to submit without auth, should fail
+      await listingForm.fillRequiredFields()
+      await listingForm.submitForm()
 
-      // Try to submit form without auth - should fail
-      try {
-        await listingForm.fillRequiredFields()
-        await listingForm.submitForm()
+      // Should either show error or not submit
+      const hasErrors = await listingForm.hasValidationErrors()
+      const currentUrl = page.url()
 
-        // Should either show error or not submit
-        const hasErrors = await listingForm.hasValidationErrors()
-        const currentUrl = page.url()
-
-        expect(hasErrors || currentUrl.includes('/listings/new')).toBe(true)
-      } catch {
-        console.log('Form submission prevented without authentication')
-      }
+      expect(hasErrors || currentUrl.includes('/listings/new')).toBe(true)
     } else {
-      console.log('Add listing page does not load without authentication')
+      // Page shows loading spinner or redirected - auth is protecting the page
+      const isOnFormPage = page.url().includes('/listings/new')
+      const hasLoadingSpinner = await page
+        .locator('main img')
+        .isVisible({ timeout: 1000 })
+        .catch(() => false)
+
+      // Either redirected away or still showing loading (auth check in progress)
+      expect(!isOnFormPage || hasLoadingSpinner).toBe(true)
     }
   })
 
   test('should show listing form fields when accessible', async ({ page }) => {
     const listingForm = new ListingFormPage(page)
-    const authPage = new AuthPage(page)
 
     await listingForm.goto()
 
+    // Wait for page to settle (may show loading spinner during redirect/auth check)
+    await page.waitForLoadState('networkidle').catch(() => {})
+
     // Check if form is accessible
-    const hasForm = await page.locator('form').isVisible({ timeout: 2000 })
+    const hasForm = await page
+      .locator('form')
+      .isVisible({ timeout: 3000 })
+      .catch(() => false)
+    test.skip(!hasForm, 'Listing form not accessible - auth required or page still loading')
 
-    if (hasForm) {
-      try {
-        // Verify form fields are present with timeout
-        await listingForm.gameSelect.waitFor({
-          state: 'visible',
-          timeout: 5000,
-        })
-        await listingForm.deviceSelect.waitFor({
-          state: 'visible',
-          timeout: 2000,
-        })
-        await listingForm.submitButton.waitFor({
-          state: 'visible',
-          timeout: 2000,
-        })
-
-        console.log('Listing form fields verified')
-      } catch {
-        console.log('Listing form fields not all visible - may be loading or require auth')
-        // Not a failure - form might be protected client-side
-        expect(true).toBe(true)
-      }
-    } else {
-      // Form requires authentication
-      const hasAuthRequirement = await authPage.hasAuthRequirement()
-
-      if (hasAuthRequirement) {
-        console.log('Listing form requires authentication as expected')
-        expect(hasAuthRequirement).toBe(true)
-      } else {
-        // Page might be loading or have different protection
-        console.log('Listing form not accessible - likely requires authentication')
-        // Pass the test - form is protected
-        expect(true).toBe(true)
-      }
-    }
+    // Verify form fields are present with timeout
+    await expect(listingForm.gameSelect).toBeVisible({ timeout: 5000 })
+    await expect(listingForm.deviceSelect).toBeVisible({ timeout: 2000 })
+    await expect(listingForm.submitButton).toBeVisible({ timeout: 2000 })
   })
 
   test('should validate required fields on listing form', async ({ page }) => {
@@ -281,24 +218,19 @@ test.describe('Listing Form Tests', () => {
 
     // Check if form is accessible
     const hasForm = await page.locator('form').isVisible({ timeout: 2000 })
+    test.skip(!hasForm, 'Listing form not accessible - auth required')
 
-    if (hasForm) {
-      // Try to submit empty form
-      await listingForm.submitForm()
+    // Try to submit empty form
+    await listingForm.submitForm()
 
-      // Should show validation errors
-      const hasErrors = await listingForm.hasValidationErrors()
-      if (hasErrors) {
-        await listingForm.verifyValidationError()
-        console.log('Listing form validation working correctly')
-      } else {
-        // Form might be submitted but rejected server-side
-        const currentUrl = page.url()
-        expect(currentUrl).toContain('/listings/new')
-        console.log('Listing form submission prevented')
-      }
+    // Should show validation errors or remain on form page
+    const hasErrors = await listingForm.hasValidationErrors()
+    if (hasErrors) {
+      await listingForm.verifyValidationError()
     } else {
-      console.log('Listing form not accessible - auth required')
+      // Form might be submitted but rejected server-side
+      const currentUrl = page.url()
+      expect(currentUrl).toContain('/listings/new')
     }
   })
 
@@ -309,42 +241,41 @@ test.describe('Listing Form Tests', () => {
 
     await listingsPage.goto()
 
-    // Look for add listing button with shorter timeout
-    try {
-      const hasAddButton = await listingsPage.addListingButton
-        .isVisible({ timeout: 5000 })
-        .catch(() => false)
-      const hasCreateButton = await listingsPage.createListingButton
-        .isVisible({ timeout: 2000 })
-        .catch(() => false)
+    // Wait for loading to finish
+    await page
+      .getByText(/loading/i)
+      .waitFor({ state: 'hidden', timeout: 15000 })
+      .catch(() => {})
 
-      if (hasAddButton || hasCreateButton) {
-        await listingsPage.clickAddListing()
+    // Look for add listing button (may be named "Add Report" on the listings page)
+    const hasAddButton = await listingsPage.addListingButton
+      .isVisible({ timeout: 5000 })
+      .catch(() => false)
+    const hasCreateButton = await listingsPage.createListingButton
+      .isVisible({ timeout: 2000 })
+      .catch(() => false)
+    const hasAddReport = await page
+      .getByRole('link', { name: /add report/i })
+      .isVisible({ timeout: 2000 })
+      .catch(() => false)
 
-        // Should either show form or auth requirement
-        const hasForm = await listingForm.isFormVisible()
-        const hasAuthRequirement = await authPage.hasAuthRequirement()
+    test.skip(
+      !hasAddButton && !hasCreateButton && !hasAddReport,
+      'Add listing button not visible - requires auth or conditionally shown',
+    )
 
-        expect(hasForm || hasAuthRequirement).toBe(true)
-        console.log('Successfully navigated to add listing page')
-      } else {
-        // Check if authentication is required on the listings page
-        const requiresAuth = await authPage.hasAuthRequirement()
-
-        if (requiresAuth) {
-          console.log('Listings page requires authentication - test passes')
-          expect(requiresAuth).toBe(true)
-        } else {
-          console.log('Add listing button not visible - may be a UI variation')
-          // This is not necessarily a failure - button might be conditionally shown
-          expect(true).toBe(true)
-        }
-      }
-    } catch (error) {
-      console.log('Error checking for add listing button:', error)
-      // Not a failure - UI might have variations
-      expect(true).toBe(true)
+    if (hasAddButton || hasCreateButton) {
+      await listingsPage.clickAddListing()
+    } else {
+      await page.getByRole('link', { name: /add report/i }).click()
+      await page.waitForLoadState('domcontentloaded')
     }
+
+    // Should either show form or auth requirement
+    const hasForm = await listingForm.isFormVisible()
+    const hasAuthRequirement = await authPage.hasAuthRequirement()
+
+    expect(hasForm || hasAuthRequirement).toBe(true)
   })
 
   test('should show custom fields when device is selected', async ({ page }) => {
@@ -354,73 +285,42 @@ test.describe('Listing Form Tests', () => {
 
     // Check if form is accessible
     const hasForm = await page.locator('form').isVisible({ timeout: 2000 })
+    test.skip(!hasForm, 'Listing form not accessible - auth required')
 
-    if (hasForm) {
-      try {
-        // Select a device to trigger custom fields
-        await listingForm.selectDeviceByIndex(1)
+    // Select a device to trigger custom fields
+    await listingForm.selectDeviceByIndex(1)
 
-        // Wait for potential custom fields to load
-        await page.waitForTimeout(2000)
+    // Wait for potential custom fields to load
+    await page.waitForLoadState('domcontentloaded')
 
-        // Check if custom fields appear
-        const customFieldCount = await listingForm.getCustomFieldCount()
+    // Check if custom fields appear
+    const customFieldCount = await listingForm.getCustomFieldCount()
+    test.skip(customFieldCount === 0, 'No custom fields configured for this device')
 
-        if (customFieldCount > 0) {
-          console.log(`Found ${customFieldCount} custom fields after device selection`)
-          await listingForm.verifyCustomFieldsVisible()
-        } else {
-          console.log('No custom fields found - may not be configured for this device')
-        }
-      } catch {
-        console.log('Could not test custom fields - form may require more setup')
-      }
-    } else {
-      console.log('Listing form not accessible - auth required')
-    }
+    await listingForm.verifyCustomFieldsVisible()
   })
 })
 
 test.describe('Form Navigation Tests', () => {
   test('should handle form cancellation properly', async ({ page }) => {
     const gameForm = new GameFormPage(page)
-    const gamesPage = new GamesPage(page)
 
     await gameForm.goto()
 
     // Check if form is accessible
     const hasForm = await page.locator('form').isVisible({ timeout: 2000 })
+    test.skip(!hasForm, 'Game form not accessible - auth required')
 
-    if (hasForm) {
-      // Fill some data
-      try {
-        await gameForm.fillGameTitle('Test Game')
+    await gameForm.fillGameTitle('Test Game')
 
-        // Look for cancel button
-        if (await gameForm.cancelButton.isVisible({ timeout: 2000 })) {
-          await gameForm.cancelForm()
+    // Look for cancel button
+    const hasCancelButton = await gameForm.cancelButton.isVisible({ timeout: 2000 })
+    test.skip(!hasCancelButton, 'No cancel button found on form')
 
-          // Should navigate away from form
-          await page.waitForTimeout(2000)
-          const currentUrl = page.url()
-          expect(currentUrl).not.toContain('/games/new')
+    await gameForm.cancelForm()
 
-          // Verify we're back on the games page
-          const isOnGamesPage = await gamesPage.isOnGamesPage()
-          if (isOnGamesPage) {
-            console.log('Form cancellation navigated back to games page')
-          } else {
-            console.log('Form cancellation worked correctly')
-          }
-        } else {
-          console.log('No cancel button found on form')
-        }
-      } catch {
-        console.log('Could not test form cancellation')
-      }
-    } else {
-      console.log('Game form not accessible - auth required')
-    }
+    // Should navigate away from form
+    await expect(page).not.toHaveURL(/\/games\/new/)
   })
 
   test('should preserve form data during navigation', async ({ page }) => {
@@ -430,27 +330,18 @@ test.describe('Form Navigation Tests', () => {
 
     // Check if form is accessible
     const hasForm = await page.locator('form').isVisible({ timeout: 2000 })
+    test.skip(!hasForm, 'Listing form not accessible - auth required')
 
-    if (hasForm) {
-      try {
-        // Select some options
-        await listingForm.selectGameByIndex(1)
-        await listingForm.selectDeviceByIndex(1)
+    // Select some options
+    await listingForm.selectGameByIndex(1)
+    await listingForm.selectDeviceByIndex(1)
 
-        // Get selected values
-        const selectedGame = await listingForm.gameSelect.inputValue()
-        const selectedDevice = await listingForm.deviceSelect.inputValue()
+    // Get selected values
+    const selectedGame = await listingForm.gameSelect.inputValue()
+    const selectedDevice = await listingForm.deviceSelect.inputValue()
 
-        expect(selectedGame).toBeTruthy()
-        expect(selectedDevice).toBeTruthy()
-
-        console.log('Form preserves selected values correctly')
-      } catch {
-        console.log('Could not test form data preservation')
-      }
-    } else {
-      console.log('Listing form not accessible - auth required')
-    }
+    expect(selectedGame).toBeTruthy()
+    expect(selectedDevice).toBeTruthy()
   })
 
   test('should handle browser back navigation from forms', async ({ page }) => {
@@ -470,7 +361,5 @@ test.describe('Form Navigation Tests', () => {
     // Should be back at games page
     await expect(page).toHaveURL(gamesUrl)
     await gamesPage.verifyPageLoaded()
-
-    console.log('Browser back navigation from form works correctly')
   })
 })

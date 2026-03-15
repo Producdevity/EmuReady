@@ -2,7 +2,6 @@
 
 import { motion, useAnimation } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
-import { logger } from '@/lib/logger'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -65,7 +64,6 @@ export function RetroCatalogIconAnimated(props: Props) {
   useEffect(() => {
     if (!animate || hasAnimated.current) return
 
-    // Check for reduced motion preference
     const prefersReducedMotion =
       typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -75,8 +73,8 @@ export function RetroCatalogIconAnimated(props: Props) {
     }
 
     hasAnimated.current = true
+    let cancelled = false
 
-    // Map button IDs to their controllers
     const controlsMap = {
       bottom: bottomControls,
       left: leftControls,
@@ -87,9 +85,11 @@ export function RetroCatalogIconAnimated(props: Props) {
     const runAnimation = async () => {
       // Small delay to ensure component is visible
       await new Promise((resolve) => setTimeout(resolve, 150))
+      if (cancelled) return
 
-      // Phase 1: Sequential button presses (deliberate)
+      // Phase 1: Sequential button presses
       for (const buttonId of PRESS_SEQUENCE) {
+        if (cancelled) return
         setColors((prev) => ({ ...prev, [buttonId]: BUTTON_COLORS[buttonId] }))
 
         // Press down (deliberate hold)
@@ -101,6 +101,7 @@ export function RetroCatalogIconAnimated(props: Props) {
 
         // Brief hold at pressed state
         await new Promise((resolve) => setTimeout(resolve, 60))
+        if (cancelled) return
 
         // Release (snap back)
         await controlsMap[buttonId].start({
@@ -110,8 +111,9 @@ export function RetroCatalogIconAnimated(props: Props) {
         })
       }
 
-      // Phase 2: 360° rotation with centrifugal expansion effect
-      // Expand circles outward as rotation starts (centrifugal force)
+      if (cancelled) return
+
+      // Phase 2: 360° rotation with centrifugal expansion
       const expandAmount = 2 // pixels
       await Promise.all([
         bottomControls.start({ y: expandAmount, transition: { duration: 0.1 } }),
@@ -134,7 +136,9 @@ export function RetroCatalogIconAnimated(props: Props) {
         rightControls.start({ x: 0, transition: { type: 'spring', stiffness: 600, damping: 15 } }),
       ])
 
-      // Phase 3: Reset colors
+      if (cancelled) return
+
+      // Phase 3: Reset
       setColors({
         bottom: 'currentColor',
         left: 'currentColor',
@@ -154,9 +158,13 @@ export function RetroCatalogIconAnimated(props: Props) {
       props.onAnimationComplete?.()
     }
 
-    runAnimation().catch((error) =>
-      logger.error('[RetroCatalogIconAnimated] runAnimation error:', error),
-    )
+    runAnimation().catch(() => {
+      // Expected during navigation — controls may be detached from unmounted components
+    })
+
+    return () => {
+      cancelled = true
+    }
   }, [animate, bottomControls, leftControls, topControls, rightControls, rootControls, props])
 
   return (

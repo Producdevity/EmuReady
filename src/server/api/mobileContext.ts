@@ -65,7 +65,7 @@ async function createSessionForUserId(userId: string): Promise<Nullable<Session>
       email: true,
       name: true,
       role: true,
-      showNsfw: true,
+      settings: { select: { showNsfw: true } },
     },
   })
 
@@ -80,7 +80,7 @@ async function createSessionForUserId(userId: string): Promise<Nullable<Session>
       name: user.name,
       role: user.role,
       permissions,
-      showNsfw: user.showNsfw,
+      showNsfw: user.settings?.showNsfw ?? false,
     },
   }
 }
@@ -95,7 +95,7 @@ async function createSessionFromApiKey(apiKey: ApiKeyWithUser): Promise<Nullable
       name: apiKey.user.name,
       role: apiKey.user.role,
       permissions,
-      showNsfw: apiKey.user.showNsfw,
+      showNsfw: apiKey.user.settings?.showNsfw ?? false,
     },
   }
 }
@@ -283,6 +283,7 @@ const mobilePerformanceMiddleware = mt.middleware(async ({ next, path }) => {
 })
 
 const mobileRateLimitMiddleware = mt.middleware(async ({ ctx, next }) => {
+  // TODO: start forcing api key usage when base rate limit is reached
   if (ctx.apiKey) {
     const apiAccessService = new ApiAccessService(ctx.prisma)
     await apiAccessService.consumeRequest(ctx.apiKey)

@@ -1,5 +1,5 @@
 import { hasRolePermission } from '@/utils/permissions'
-import { type Prisma, ApprovalStatus, Role } from '@orm'
+import { type Prisma, type PrismaClient, ApprovalStatus, Role } from '@orm'
 
 /**
  * Build where clause for shadow ban filtering
@@ -202,4 +202,20 @@ export function buildExistenceFilter(
   exists: boolean,
 ): Record<string, unknown> {
   return { [relationName]: exists ? { some: {} } : { none: {} } }
+}
+
+/**
+ * Checks if a user has an active ban (shadow or explicit).
+ * Used to block banned users from performing actions like voting.
+ */
+export async function isUserBanned(prisma: PrismaClient, userId: string): Promise<boolean> {
+  const activeBan = await prisma.userBan.findFirst({
+    where: {
+      userId,
+      isActive: true,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+    },
+    select: { id: true },
+  })
+  return activeBan !== null
 }

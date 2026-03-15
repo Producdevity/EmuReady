@@ -7,18 +7,36 @@ import type { z } from 'zod'
 
 type UpdatePreferencesInput = z.infer<typeof UpdateUserPreferencesSchema>
 
+const SETTINGS_FIELDS = {
+  defaultToUserDevices: true,
+  defaultToUserSocs: true,
+  notifyOnNewListings: true,
+  showNsfw: true,
+  lastUsedDeviceId: true,
+  profilePublic: true,
+  showActivityInFeed: true,
+  showVotingActivity: true,
+  allowFollows: true,
+  allowFriendRequests: true,
+  followersVisible: true,
+  followingVisible: true,
+  bookmarksVisible: true,
+  followedGamesVisible: true,
+} satisfies Prisma.UserSettingsSelect
+
 /**
- * Repository for User Preferences data access
+ * Repository for User Preferences data access.
+ * Settings are stored in the UserSettings 1:1 model.
+ * Bio and device/soc preferences remain on/associated with User.
  */
 export class UserPreferencesRepository extends BaseRepository {
   static readonly selects = {
     preferences: {
       id: true,
       bio: true,
-      defaultToUserDevices: true,
-      defaultToUserSocs: true,
-      notifyOnNewListings: true,
-      showNsfw: true,
+      settings: {
+        select: SETTINGS_FIELDS,
+      },
       devicePreferences: {
         select: {
           id: true,
@@ -45,10 +63,29 @@ export class UserPreferencesRepository extends BaseRepository {
     preferencesBasic: {
       id: true,
       bio: true,
-      defaultToUserDevices: true,
-      defaultToUserSocs: true,
-      notifyOnNewListings: true,
-      showNsfw: true,
+      settings: {
+        select: SETTINGS_FIELDS,
+      },
+    } satisfies Prisma.UserSelect,
+
+    currentProfile: {
+      id: true,
+      name: true,
+      email: true,
+      trustScore: true,
+      profileImage: true,
+      role: true,
+      bio: true,
+      createdAt: true,
+      _count: {
+        select: {
+          listings: true,
+          votes: true,
+          comments: true,
+          submittedGames: true,
+          pcListings: true,
+        },
+      },
     } satisfies Prisma.UserSelect,
   } as const
 
@@ -63,7 +100,8 @@ export class UserPreferencesRepository extends BaseRepository {
   } as const
 
   /**
-   * Get user preferences by user ID
+   * Get user preferences by user ID.
+   * Returns a flat object merging User fields (bio) with UserSettings fields.
    */
   async get(userId: string) {
     return this.handleDatabaseOperation(async () => {
@@ -74,43 +112,100 @@ export class UserPreferencesRepository extends BaseRepository {
 
       if (!user) throw ResourceError.user.notFound()
 
-      return user
+      return {
+        id: user.id,
+        bio: user.bio,
+        ...this.flattenSettings(user.settings),
+        devicePreferences: user.devicePreferences,
+        socPreferences: user.socPreferences,
+      }
     }, 'UserPreferences')
   }
 
   /**
-   * Update user preference fields
+   * Update user preference fields.
+   * Bio is written to User, all other settings to UserSettings.
    */
   async update(userId: string, input: UpdatePreferencesInput) {
     return this.handleDatabaseOperation(async () => {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
+        select: { id: true },
       })
 
       if (!user) throw ResourceError.user.notFound()
 
-      const updateData: Prisma.UserUpdateInput = {}
-
+      // Build settings update data
+      const settingsData: Record<string, boolean> = {}
       if (input.defaultToUserDevices !== undefined) {
-        updateData.defaultToUserDevices = input.defaultToUserDevices
+        settingsData.defaultToUserDevices = input.defaultToUserDevices
       }
       if (input.defaultToUserSocs !== undefined) {
-        updateData.defaultToUserSocs = input.defaultToUserSocs
+        settingsData.defaultToUserSocs = input.defaultToUserSocs
       }
       if (input.notifyOnNewListings !== undefined) {
-        updateData.notifyOnNewListings = input.notifyOnNewListings
+        settingsData.notifyOnNewListings = input.notifyOnNewListings
       }
       if (input.showNsfw !== undefined) {
-        updateData.showNsfw = input.showNsfw
+        settingsData.showNsfw = input.showNsfw
       }
-      if (input.bio !== undefined) {
-        updateData.bio = sanitizeBio(input.bio)
+      if (input.profilePublic !== undefined) {
+        settingsData.profilePublic = input.profilePublic
+      }
+      if (input.showActivityInFeed !== undefined) {
+        settingsData.showActivityInFeed = input.showActivityInFeed
+      }
+      if (input.showVotingActivity !== undefined) {
+        settingsData.showVotingActivity = input.showVotingActivity
+      }
+      if (input.allowFollows !== undefined) {
+        settingsData.allowFollows = input.allowFollows
+      }
+      if (input.allowFriendRequests !== undefined) {
+        settingsData.allowFriendRequests = input.allowFriendRequests
+      }
+      if (input.followersVisible !== undefined) {
+        settingsData.followersVisible = input.followersVisible
+      }
+      if (input.followingVisible !== undefined) {
+        settingsData.followingVisible = input.followingVisible
+      }
+      if (input.bookmarksVisible !== undefined) {
+        settingsData.bookmarksVisible = input.bookmarksVisible
+      }
+      if (input.followedGamesVisible !== undefined) {
+        settingsData.followedGamesVisible = input.followedGamesVisible
       }
 
-      return this.prisma.user.update({
-        where: { id: userId },
-        data: updateData,
-        select: UserPreferencesRepository.selects.preferencesBasic,
+      // Atomic: bio update + settings upsert + re-read in a single transaction
+      return this.prisma.$transaction(async (tx) => {
+        if (input.bio !== undefined) {
+          await tx.user.update({
+            where: { id: userId },
+            data: { bio: sanitizeBio(input.bio) },
+          })
+        }
+
+        if (Object.keys(settingsData).length > 0) {
+          await tx.userSettings.upsert({
+            where: { userId },
+            create: { userId, ...settingsData },
+            update: settingsData,
+          })
+        }
+
+        const updated = await tx.user.findUnique({
+          where: { id: userId },
+          select: UserPreferencesRepository.selects.preferencesBasic,
+        })
+
+        if (!updated) throw ResourceError.user.notFound()
+
+        return {
+          id: updated.id,
+          bio: updated.bio,
+          ...this.flattenSettings(updated.settings),
+        }
       })
     }, 'UserPreferences')
   }
@@ -244,5 +339,89 @@ export class UserPreferencesRepository extends BaseRepository {
         })
       })
     }, 'UserSocPreference')
+  }
+
+  /**
+   * Get the current user's profile with activity counts and votes received.
+   */
+  async getCurrentProfile(userId: string) {
+    return this.handleDatabaseOperation(async () => {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: UserPreferencesRepository.selects.currentProfile,
+      })
+
+      if (!user) return null
+
+      const [listingVotesReceived, pcListingVotesReceived] = await Promise.all([
+        this.prisma.vote.count({
+          where: { listing: { authorId: userId } },
+        }),
+        this.prisma.pcListingVote.count({
+          where: { pcListing: { authorId: userId } },
+        }),
+      ])
+
+      return {
+        ...user,
+        votesReceived: listingVotesReceived + pcListingVotesReceived,
+      }
+    }, 'UserProfile')
+  }
+
+  /**
+   * Update user profile fields (name, bio).
+   */
+  async updateProfile(userId: string, input: { name?: string; bio?: string }) {
+    return this.handleDatabaseOperation(async () => {
+      const updateData: { name?: string; bio?: string } = {}
+      if (input.name !== undefined) updateData.name = input.name
+      if (input.bio !== undefined) updateData.bio = sanitizeBio(input.bio)
+
+      return this.prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+        select: { id: true, name: true, bio: true, createdAt: true },
+      })
+    }, 'UserProfile')
+  }
+
+  /**
+   * Flatten UserSettings into a plain object with defaults for missing settings
+   */
+  private flattenSettings(
+    settings: {
+      defaultToUserDevices: boolean
+      defaultToUserSocs: boolean
+      notifyOnNewListings: boolean
+      showNsfw: boolean
+      lastUsedDeviceId: string | null
+      profilePublic: boolean
+      showActivityInFeed: boolean
+      showVotingActivity: boolean
+      allowFollows: boolean
+      allowFriendRequests: boolean
+      followersVisible: boolean
+      followingVisible: boolean
+      bookmarksVisible: boolean
+      followedGamesVisible: boolean
+    } | null,
+  ) {
+    return {
+      defaultToUserDevices: settings?.defaultToUserDevices ?? false,
+      defaultToUserSocs: settings?.defaultToUserSocs ?? false,
+      notifyOnNewListings: settings?.notifyOnNewListings ?? true,
+      showNsfw: settings?.showNsfw ?? false,
+      lastUsedDeviceId: settings?.lastUsedDeviceId ?? null,
+      profilePublic: settings?.profilePublic ?? true,
+      showActivityInFeed: settings?.showActivityInFeed ?? true,
+      showVotingActivity: settings?.showVotingActivity ?? true,
+      allowFollows: settings?.allowFollows ?? true,
+      allowFriendRequests: settings?.allowFriendRequests ?? true,
+      followersVisible: settings?.followersVisible ?? true,
+      followingVisible: settings?.followingVisible ?? true,
+      bookmarksVisible: settings?.bookmarksVisible ?? false,
+      followedGamesVisible: settings?.followedGamesVisible ?? true,
+    }
   }
 }

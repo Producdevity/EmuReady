@@ -11,6 +11,7 @@ import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { filterNullAndEmpty } from '@/utils/filter'
 import { systemOptions, deviceOptions, emulatorOptions, socOptionsParens } from '@/utils/options'
+import { ms } from '@/utils/time'
 import { ListingFilters } from './components/ListingFilters'
 import { ListingsContent } from './components/ListingsContent'
 import { ListingsHeader } from './components/ListingsHeader'
@@ -43,8 +44,9 @@ function V2ListingsPage() {
   // User preferences and device filtering
   const userQuery = api.users.me.useQuery()
   const userPreferencesQuery = api.userPreferences.get.useQuery(undefined, {
-    staleTime: 30 * 1000,
-    gcTime: 5 * 60 * 1000,
+    enabled: !!userQuery.data,
+    staleTime: ms.seconds(30),
+    gcTime: ms.minutes(5),
   })
 
   const preferred = usePreferredHardwareFilters({

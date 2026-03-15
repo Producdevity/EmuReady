@@ -18,6 +18,7 @@ export interface TemplateContext {
   deviceId?: string
   socId?: string
   gameId?: string
+  pcListingId?: string
   emulatorId?: string
   message?: string
   actionUrl?: string
@@ -203,28 +204,44 @@ class NotificationTemplateEngine {
     }))
 
     // Moderation notifications
-    this.templates.set(NotificationType.LISTING_APPROVED, (context) => ({
-      title: 'Your listing has been approved',
-      message: `Your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''} has been approved${context.approvedBy ? ` by ${context.approvedBy}` : ''}`,
-      actionUrl: context.listingId ? `/listings/${context.listingId}` : undefined,
-      metadata: {
-        listingId: context.listingId,
-        approvedBy: context.approvedBy,
-        approvedAt: context.approvedAt,
-      },
-    }))
+    this.templates.set(NotificationType.LISTING_APPROVED, (context) => {
+      const actionUrl = context.pcListingId
+        ? `/pc-listings/${context.pcListingId}`
+        : context.listingId
+          ? `/listings/${context.listingId}`
+          : undefined
+      return {
+        title: 'Your listing has been approved',
+        message: `Your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''} has been approved${context.approvedBy ? ` by ${context.approvedBy}` : ''}`,
+        actionUrl,
+        metadata: {
+          listingId: context.listingId,
+          pcListingId: context.pcListingId,
+          approvedBy: context.approvedBy,
+          approvedAt: context.approvedAt,
+        },
+      }
+    })
 
-    this.templates.set(NotificationType.LISTING_REJECTED, (context) => ({
-      title: 'Your listing has been rejected',
-      message: `Your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''} has been rejected${context.rejectedBy ? ` by ${context.rejectedBy}` : ''}${context.rejectionReason ? `. Reason: ${context.rejectionReason}` : ''}`,
-      actionUrl: context.listingId ? `/listings/${context.listingId}` : undefined,
-      metadata: {
-        listingId: context.listingId,
-        rejectedBy: context.rejectedBy,
-        rejectedAt: context.rejectedAt,
-        rejectionReason: context.rejectionReason,
-      },
-    }))
+    this.templates.set(NotificationType.LISTING_REJECTED, (context) => {
+      const actionUrl = context.pcListingId
+        ? `/pc-listings/${context.pcListingId}`
+        : context.listingId
+          ? `/listings/${context.listingId}`
+          : undefined
+      return {
+        title: 'Your listing has been rejected',
+        message: `Your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''} has been rejected${context.rejectedBy ? ` by ${context.rejectedBy}` : ''}${context.rejectionReason ? `. Reason: ${context.rejectionReason}` : ''}`,
+        actionUrl,
+        metadata: {
+          listingId: context.listingId,
+          pcListingId: context.pcListingId,
+          rejectedBy: context.rejectedBy,
+          rejectedAt: context.rejectedAt,
+          rejectionReason: context.rejectionReason,
+        },
+      }
+    })
 
     this.templates.set(NotificationType.CONTENT_FLAGGED, (context) => ({
       title: 'Content flagged for review',
@@ -257,6 +274,35 @@ class NotificationTemplateEngine {
         newRole: context.newRole,
         changedBy: context.changedBy,
         changedAt: context.changedAt,
+      },
+    }))
+
+    // Game follow notifications
+    this.templates.set(NotificationType.FOLLOWED_GAME_NEW_LISTING, (context) => ({
+      title: 'New listing for a game you follow',
+      message: `A new handheld compatibility listing was approved for "${context.gameTitle || 'a game you follow'}"`,
+      actionUrl: context.listingId
+        ? `/listings/${context.listingId}`
+        : context.gameId
+          ? `/games/${context.gameId}`
+          : undefined,
+      metadata: {
+        listingId: context.listingId,
+        gameId: context.gameId,
+      },
+    }))
+
+    this.templates.set(NotificationType.FOLLOWED_GAME_NEW_PC_LISTING, (context) => ({
+      title: 'New PC listing for a game you follow',
+      message: `A new PC compatibility listing was approved for "${context.gameTitle || 'a game you follow'}"`,
+      actionUrl: context.pcListingId
+        ? `/pc-listings/${context.pcListingId}`
+        : context.gameId
+          ? `/games/${context.gameId}`
+          : undefined,
+      metadata: {
+        pcListingId: context.pcListingId,
+        gameId: context.gameId,
       },
     }))
 
@@ -404,6 +450,8 @@ class NotificationTemplateEngine {
       [NotificationType.NEW_SOC_LISTING]: NotificationCategory.CONTENT,
       [NotificationType.GAME_ADDED]: NotificationCategory.CONTENT,
       [NotificationType.EMULATOR_UPDATED]: NotificationCategory.CONTENT,
+      [NotificationType.FOLLOWED_GAME_NEW_LISTING]: NotificationCategory.CONTENT,
+      [NotificationType.FOLLOWED_GAME_NEW_PC_LISTING]: NotificationCategory.CONTENT,
 
       [NotificationType.MAINTENANCE_NOTICE]: NotificationCategory.SYSTEM,
       [NotificationType.FEATURE_ANNOUNCEMENT]: NotificationCategory.SYSTEM,

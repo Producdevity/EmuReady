@@ -18,6 +18,7 @@ import { mobilePcListingsRouter } from './mobile/pcListings'
 import { mobilePcPresetsRouter } from './mobile/pcPresets'
 import { mobilePreferencesRouter } from './mobile/preferences'
 import { mobileRawgRouter } from './mobile/rawg'
+import { mobileSocialRouter } from './mobile/social'
 import { mobileSocsRouter } from './mobile/socs'
 import { mobileTgdbRouter } from './mobile/tgdb'
 import { mobileTrustRouter } from './mobile/trust'
@@ -45,6 +46,7 @@ export const mobileRouter = createMobileTRPCRouter({
   socs: mobileSocsRouter,
   deviceBrands: mobileDeviceBrandsRouter,
   rawg: mobileRawgRouter,
+  social: mobileSocialRouter,
   tgdb: mobileTgdbRouter,
   users: mobileUsersRouter,
 })

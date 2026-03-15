@@ -146,7 +146,10 @@ function CookieConsent() {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[70] flex items-end justify-center pointer-events-none p-4">
+      <div
+        data-testid="cookie-consent"
+        className="fixed inset-0 z-[70] flex items-end justify-center pointer-events-none p-4"
+      >
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -248,12 +251,12 @@ function CookieConsent() {
                         Necessary Only
                       </Button>
                       <Button
+                        icon={Check}
                         onClick={handleAcceptAll}
                         className="bg-blue-600 hover:bg-blue-700 text-white border-0 px-5 py-2 h-auto font-medium shadow-sm"
                         size="sm"
                       >
-                        <Check className="w-4 h-4 mr-1.5" />
-                        Accept All
+                        Yeah man, I wanna do it!
                       </Button>
                     </div>
                   </div>
@@ -371,11 +374,11 @@ function CookieConsent() {
 
                         <div className="transform transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]">
                           <Button
+                            icon={Check}
                             onClick={() => savePreferences(preferences)}
                             className="bg-blue-600 hover:bg-blue-700 text-white border-0 px-5 py-2 h-auto font-medium shadow-sm"
                             size="sm"
                           >
-                            <Check className="w-4 h-4 mr-1.5" />
                             Save Preferences
                           </Button>
                         </div>

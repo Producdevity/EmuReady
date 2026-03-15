@@ -2,9 +2,11 @@ import * as Sentry from '@sentry/nextjs'
 import analytics from '@/lib/analytics'
 import { ResourceError } from '@/lib/errors'
 import {
+  AdminGetSocialListSchema,
   DeleteUserSchema,
   GetAllUsersSchema,
   GetUserByIdSchema,
+  GetUserSocialOverviewSchema,
   SearchUsersSchema,
   UpdateUserRoleSchema,
   UpdateUserSchema,
@@ -19,6 +21,7 @@ import {
 } from '@/server/api/trpc'
 import { invalidateUser } from '@/server/cache/invalidation'
 import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
+import { SocialRepository } from '@/server/repositories/social.repository'
 import {
   aggregateContributions,
   buildTopContributorsSummary,
@@ -28,6 +31,10 @@ import {
   type RawContributor,
   type ContributorTimeframe,
 } from '@/server/services/contributors.service'
+import {
+  checkProfileAccess,
+  PRIVATE_PROFILE_SETTINGS,
+} from '@/server/services/user-profile.service'
 import { buildOrderBy, paginate } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { createCountQuery } from '@/server/utils/query-performance'
@@ -179,8 +186,6 @@ export const usersRouter = createTRPCRouter({
           orderBy: { submittedAt: 'desc' },
           take: 10, // Limit to 10 most recent submissions
         },
-        // Limit votes (no ordering available since no timestamp)
-        // TODO: add createdAt to votes in the future
         votes: {
           select: {
             id: true,
@@ -223,48 +228,99 @@ export const usersRouter = createTRPCRouter({
       listingsSearch,
       listingsDevice,
       listingsEmulator,
+      pcListingsPage = 1,
+      pcListingsLimit = 12,
+      pcListingsSearch,
       votesPage = 1,
       votesLimit = 12,
       votesSearch,
+      trustActionsPage = 1,
+      trustActionsLimit = 10,
     } = input
 
-    // Check if user exists and get ban status
-    const userWithBanStatus = await ctx.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        userBans: {
-          where: { isActive: true, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
-          select: { id: true },
-        },
-      },
+    const access = await checkProfileAccess(ctx.prisma, userId, {
+      currentUserId: ctx.session?.user?.id,
+      currentUserRole: ctx.session?.user?.role,
+      showNsfw: ctx.session?.user?.showNsfw,
     })
 
-    if (!userWithBanStatus) return ResourceError.user.notFound()
+    if (!access.accessible) {
+      if (access.reason === 'not_found') return ResourceError.user.notFound()
+      if (access.reason === 'banned') return ResourceError.user.profileNotAccessible()
 
-    // Check if user is banned and if current user can view banned profiles
-    const isBanned = userWithBanStatus.userBans.length > 0
-    const currentUserRole = ctx.session?.user?.role
-    const canViewBannedUsers = roleIncludesRole(currentUserRole, Role.MODERATOR)
+      // Private profile: return limited data
+      const minimalUser = await ctx.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          profileImage: true,
+          role: true,
+          trustScore: true,
+          createdAt: true,
+          userBadges: {
+            where: { badge: { isActive: true } },
+            select: {
+              id: true,
+              assignedAt: true,
+              color: true,
+              badge: {
+                select: { id: true, name: true, description: true, color: true, icon: true },
+              },
+            },
+            orderBy: { assignedAt: 'desc' },
+          },
+          _count: {
+            select: {
+              listings: true,
+              pcListings: true,
+              submittedGames: true,
+              votes: true,
+              followers: true,
+              following: true,
+            },
+          },
+        },
+      })
 
-    if (isBanned && !canViewBannedUsers) return ResourceError.user.profileNotAccessible()
+      if (!minimalUser) return ResourceError.user.notFound()
+
+      return {
+        ...minimalUser,
+        ...PRIVATE_PROFILE_SETTINGS,
+        bio: null,
+        listings: { items: [], pagination: paginate({ total: 0, page: 1, limit: listingsLimit }) },
+        votes: { items: [], pagination: paginate({ total: 0, page: 1, limit: votesLimit }) },
+        pcListings: {
+          items: [],
+          pagination: paginate({ total: 0, page: 1, limit: pcListingsLimit }),
+        },
+        trustActionLogs: {
+          items: [],
+          pagination: paginate({ total: 0, page: 1, limit: trustActionsLimit }),
+        },
+        filterOptions: { devices: [], emulators: [] },
+        contributionSummary: null,
+        voteSummary: null,
+        limitedProfile: true,
+      }
+    }
+
+    const { canViewBannedUsers, isOwner, isMod, showNsfw, privacySettings } = access
 
     // Build where clauses for listings filtering
     const listingsWhere: Prisma.ListingWhereInput = {}
     const listingsGameFilter: Prisma.GameWhereInput = {}
-    if (!ctx.session?.user?.showNsfw) listingsGameFilter.isErotic = false
+    if (!showNsfw) listingsGameFilter.isErotic = false
 
     if (listingsDevice) listingsWhere.deviceId = listingsDevice
 
     // Filter by approval status based on user permissions
     if (canViewBannedUsers) {
       // Moderators can see all statuses including rejected
-      // No additional filtering needed
-    } else if (ctx.session?.user?.id === userId) {
-      // Users can see their own approved and pending listings, but NOT rejected
+    } else if (isOwner) {
       listingsWhere.status = { in: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING] }
     } else {
-      // Regular users (including signed out) can ONLY see approved listings from others
       listingsWhere.status = ApprovalStatus.APPROVED
     }
 
@@ -281,7 +337,7 @@ export const usersRouter = createTRPCRouter({
 
     // Build where clauses for votes filtering
     const voteVisibilityWhere: Prisma.VoteWhereInput = {}
-    if (!ctx.session?.user?.showNsfw) {
+    if (!showNsfw) {
       voteVisibilityWhere.listing = { game: { isErotic: false } }
     }
     const votesWhere: Prisma.VoteWhereInput = { ...voteVisibilityWhere }
@@ -291,6 +347,30 @@ export const usersRouter = createTRPCRouter({
       'listing.emulator.name',
     ])
     if (votesSearchConditions) votesWhere.OR = votesSearchConditions
+
+    // Build where clauses for PC listings filtering
+    const pcListingsWhere: Prisma.PcListingWhereInput = {}
+    const pcListingsGameFilter: Prisma.GameWhereInput = {}
+    if (!showNsfw) pcListingsGameFilter.isErotic = false
+
+    if (canViewBannedUsers) {
+      // Moderators can see all statuses
+    } else if (isOwner) {
+      pcListingsWhere.status = { in: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING] }
+    } else {
+      pcListingsWhere.status = ApprovalStatus.APPROVED
+    }
+
+    const pcListingsSearchConditions = buildSearchFilter(pcListingsSearch, [
+      'game.title',
+      'emulator.name',
+      'cpu.modelName',
+      'gpu.modelName',
+    ])
+    if (pcListingsSearchConditions) pcListingsWhere.OR = pcListingsSearchConditions
+    if (Object.keys(pcListingsGameFilter).length > 0) {
+      pcListingsWhere.game = pcListingsGameFilter
+    }
 
     // Get user basic info
     const user = await ctx.prisma.user.findUnique({
@@ -303,11 +383,6 @@ export const usersRouter = createTRPCRouter({
         role: true,
         trustScore: true,
         createdAt: true,
-        trustActionLogs: {
-          select: { id: true, action: true, weight: true, createdAt: true },
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        },
         // Include ban status for moderators
         ...(canViewBannedUsers && {
           userBans: {
@@ -331,9 +406,23 @@ export const usersRouter = createTRPCRouter({
           },
           orderBy: { assignedAt: 'desc' },
         },
-        _count: { select: { listings: true, pcListings: true, submittedGames: true, votes: true } },
+        _count: {
+          select: {
+            listings: true,
+            pcListings: true,
+            submittedGames: true,
+            votes: true,
+            followers: true,
+            following: true,
+          },
+        },
       },
     })
+
+    if (!user) return ResourceError.user.notFound()
+
+    // Determine if votes should be shown
+    const showVotes = isOwner || isMod || privacySettings.showVotingActivity
 
     // Get paginated listings with filtering
     const listingsSkip = (listingsPage - 1) * listingsLimit
@@ -344,12 +433,14 @@ export const usersRouter = createTRPCRouter({
           id: true,
           createdAt: true,
           status: true,
+          successRate: true,
+          _count: { select: { votes: true } },
           device: { select: { brand: { select: { id: true, name: true } }, modelName: true } },
           game: {
             select: { title: true, system: { select: { id: true, name: true, key: true } } },
           },
           emulator: { select: { name: true } },
-          performance: { select: { label: true, rank: true } },
+          performance: { select: { label: true, rank: true, description: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip: listingsSkip,
@@ -358,60 +449,109 @@ export const usersRouter = createTRPCRouter({
       ctx.prisma.listing.count({ where: { authorId: userId, ...listingsWhere } }),
     ])
 
-    // Get paginated votes with filtering
+    // Get paginated votes with filtering (respects showVotingActivity privacy)
     const votesSkip = (votesPage - 1) * votesLimit
-    const [votes, votesTotal] = await Promise.all([
-      ctx.prisma.vote.findMany({
-        where: { userId, ...votesWhere },
-        select: {
-          id: true,
-          value: true,
-          listing: {
+    const [votes, votesTotal] = showVotes
+      ? await Promise.all([
+          ctx.prisma.vote.findMany({
+            where: { userId, ...votesWhere },
             select: {
               id: true,
-              device: { select: { brand: { select: { id: true, name: true } }, modelName: true } },
-              game: {
-                select: { title: true, system: { select: { id: true, name: true, key: true } } },
+              value: true,
+              createdAt: true,
+              listing: {
+                select: {
+                  id: true,
+                  device: {
+                    select: { brand: { select: { id: true, name: true } }, modelName: true },
+                  },
+                  game: {
+                    select: {
+                      title: true,
+                      system: { select: { id: true, name: true, key: true } },
+                    },
+                  },
+                  emulator: { select: { name: true } },
+                  performance: { select: { label: true, rank: true, description: true } },
+                },
               },
-              emulator: { select: { name: true } },
-              performance: { select: { label: true, rank: true } },
             },
+            orderBy: { createdAt: 'desc' },
+            skip: votesSkip,
+            take: votesLimit,
+          }),
+          ctx.prisma.vote.count({ where: { userId, ...votesWhere } }),
+        ])
+      : [[], 0]
+
+    // Get paginated PC listings
+    const pcListingsSkip = (pcListingsPage - 1) * pcListingsLimit
+    const [pcListings, pcListingsTotal] = await Promise.all([
+      ctx.prisma.pcListing.findMany({
+        where: { authorId: userId, ...pcListingsWhere },
+        select: {
+          id: true,
+          createdAt: true,
+          status: true,
+          successRate: true,
+          memorySize: true,
+          os: true,
+          osVersion: true,
+          _count: { select: { votes: true } },
+          cpu: { select: { modelName: true, brand: { select: { name: true } } } },
+          gpu: { select: { modelName: true, brand: { select: { name: true } } } },
+          game: {
+            select: { title: true, system: { select: { id: true, name: true, key: true } } },
           },
+          emulator: { select: { name: true } },
+          performance: { select: { label: true, rank: true, description: true } },
         },
-        orderBy: { id: 'desc' }, // Use id for consistent ordering since votes don't have timestamps
-        skip: votesSkip,
-        take: votesLimit,
+        orderBy: { createdAt: 'desc' },
+        skip: pcListingsSkip,
+        take: pcListingsLimit,
       }),
-      ctx.prisma.vote.count({ where: { userId, ...votesWhere } }),
+      ctx.prisma.pcListing.count({ where: { authorId: userId, ...pcListingsWhere } }),
     ])
 
-    // Get filter options (for frontend dropdowns)
-    const [availableDevices, availableEmulators, contributionSummary, voteSummary] =
-      await Promise.all([
-        ctx.prisma.listing.findMany({
-          where: { authorId: userId },
-          select: {
-            device: {
-              select: {
-                id: true,
-                modelName: true,
-                brand: { select: { name: true } },
-              },
-            },
+    // Get filter options, contribution data, and paginated trust actions
+    const trustActionsSkip = (trustActionsPage - 1) * trustActionsLimit
+    const [
+      availableDevices,
+      availableEmulators,
+      contributionSummary,
+      voteSummary,
+      trustActionLogs,
+      trustActionsTotal,
+    ] = await Promise.all([
+      ctx.prisma.listing.findMany({
+        where: { authorId: userId },
+        select: {
+          device: {
+            select: { id: true, modelName: true, brand: { select: { name: true } } },
           },
-          distinct: ['deviceId'],
-        }),
-        ctx.prisma.listing.findMany({
-          where: { authorId: userId },
-          select: { emulator: { select: { name: true } } },
-          distinct: ['emulatorId'],
-        }),
-        getUserContributionBreakdown(ctx.prisma, userId),
-        getUserVoteSummary(ctx.prisma, userId),
-      ])
+        },
+        distinct: ['deviceId'],
+      }),
+      ctx.prisma.listing.findMany({
+        where: { authorId: userId },
+        select: { emulator: { select: { name: true } } },
+        distinct: ['emulatorId'],
+      }),
+      getUserContributionBreakdown(ctx.prisma, userId),
+      getUserVoteSummary(ctx.prisma, userId),
+      ctx.prisma.trustActionLog.findMany({
+        where: { userId },
+        select: { id: true, action: true, weight: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+        skip: trustActionsSkip,
+        take: trustActionsLimit,
+      }),
+      ctx.prisma.trustActionLog.count({ where: { userId } }),
+    ])
 
     return {
       ...user,
+      ...privacySettings,
       listings: {
         items: listings,
         pagination: paginate({ total: listingsTotal, page: listingsPage, limit: listingsLimit }),
@@ -419,6 +559,22 @@ export const usersRouter = createTRPCRouter({
       votes: {
         items: votes,
         pagination: paginate({ total: votesTotal, page: votesPage, limit: votesLimit }),
+      },
+      pcListings: {
+        items: pcListings,
+        pagination: paginate({
+          total: pcListingsTotal,
+          page: pcListingsPage,
+          limit: pcListingsLimit,
+        }),
+      },
+      trustActionLogs: {
+        items: trustActionLogs,
+        pagination: paginate({
+          total: trustActionsTotal,
+          page: trustActionsPage,
+          limit: trustActionsLimit,
+        }),
       },
       filterOptions: {
         devices: availableDevices
@@ -522,6 +678,8 @@ export const usersRouter = createTRPCRouter({
         votesCount: (dir: 'asc' | 'desc') => ({ votes: { _count: dir } }),
         commentsCount: (dir: 'asc' | 'desc') => ({ comments: { _count: dir } }),
         trustScore: (dir: 'asc' | 'desc') => ({ trustScore: dir }),
+        followersCount: (dir: 'asc' | 'desc') => ({ followers: { _count: dir } }),
+        followingCount: (dir: 'asc' | 'desc') => ({ following: { _count: dir } }),
       }
 
       const orderBy = buildOrderBy<Prisma.UserOrderByWithRelationInput>(
@@ -541,7 +699,15 @@ export const usersRouter = createTRPCRouter({
             role: true,
             trustScore: true,
             createdAt: true,
-            _count: { select: { listings: true, votes: true, comments: true } },
+            _count: {
+              select: {
+                listings: true,
+                votes: true,
+                comments: true,
+                followers: true,
+                following: true,
+              },
+            },
           },
           orderBy,
           skip,
@@ -554,6 +720,26 @@ export const usersRouter = createTRPCRouter({
         users,
         pagination: paginate({ total: totalUsers, page, limit }),
       }
+    }),
+
+  getSocialOverview: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
+    .input(GetUserSocialOverviewSchema)
+    .query(async ({ ctx, input }) => {
+      const socialRepo = new SocialRepository(ctx.prisma)
+      return socialRepo.adminGetSocialOverview(input.userId)
+    }),
+
+  adminGetSocialList: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
+    .input(AdminGetSocialListSchema)
+    .query(async ({ ctx, input }) => {
+      const socialRepo = new SocialRepository(ctx.prisma)
+      return socialRepo.adminGetSocialList(
+        input.userId,
+        input.section,
+        input.page,
+        input.limit,
+        input.search,
+      )
     }),
 
   stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {

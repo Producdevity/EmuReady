@@ -1,17 +1,32 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { User, Smartphone, Bell, Settings, Computer, Download } from 'lucide-react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useMemo, useState, Suspense, useEffect, lazy } from 'react'
-import { PageSkeletonLoading } from '@/components/ui'
+import {
+  User,
+  Smartphone,
+  Bell,
+  Settings,
+  Computer,
+  KeyRound,
+  Shield,
+  Users,
+  Bookmark,
+} from 'lucide-react'
+import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useState, Suspense, useEffect } from 'react'
+import { Button, PageSkeletonLoading } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
+import AccountSettings from './components/AccountSettings'
+import BookmarksManager from './components/BookmarksManager'
+import ConnectionsManager from './components/ConnectionsManager'
 import DeviceAndSocPreferences from './components/DeviceAndSocPreferences'
 import NotificationPreferences from './components/NotificationPreferences'
 import PcPresets from './components/PcPresets'
+import PrivacySettings from './components/PrivacySettings'
 import ProfileHeader from './components/ProfileHeader'
 import ProfileInformation from './components/ProfileInformation'
 import ProfilePageError from './components/ProfilePageError'
@@ -26,13 +41,33 @@ const baseTabs = [
     icon: <User className="w-4 h-4" />,
   },
   {
+    id: 'account',
+    label: 'Account',
+    icon: <KeyRound className="w-4 h-4" />,
+  },
+  {
+    id: 'connections',
+    label: 'Connections',
+    icon: <Users className="w-4 h-4" />,
+  },
+  {
+    id: 'bookmarks',
+    label: 'Bookmarks',
+    icon: <Bookmark className="w-4 h-4" />,
+  },
+  {
+    id: 'privacy',
+    label: 'Privacy',
+    icon: <Shield className="w-4 h-4" />,
+  },
+  {
     id: 'devices',
-    label: 'Devices & SOCs',
+    label: 'My Devices & Filters',
     icon: <Smartphone className="w-4 h-4" />,
   },
   {
     id: 'pc-presets',
-    label: 'PC Presets',
+    label: 'My PC Hardware',
     icon: <Computer className="w-4 h-4" />,
   },
   {
@@ -41,8 +76,8 @@ const baseTabs = [
     icon: <Bell className="w-4 h-4" />,
   },
   {
-    id: 'settings',
-    label: 'Settings',
+    id: 'admin',
+    label: 'Admin',
     icon: <Settings className="w-4 h-4" />,
   },
 ]
@@ -50,17 +85,9 @@ const baseTabs = [
 function ProfilePage() {
   const { user, isLoaded } = useUser()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profile')
-  const tabs = useMemo(() => {
-    const enableDownloads = process.env.NEXT_PUBLIC_ENABLE_ANDROID_DOWNLOADS === 'true'
-    if (!enableDownloads) return baseTabs
-    return [
-      baseTabs[0],
-      { id: 'downloads', label: 'Downloads', icon: <Download className="w-4 h-4" /> },
-      ...baseTabs.slice(1),
-    ]
-  }, [])
 
   const userQuery = api.users.getProfile.useQuery(undefined, {
     enabled: !!user,
@@ -76,13 +103,8 @@ function ProfilePage() {
 
   // Profile page view tracking - only on initial load
   useEffect(() => {
-    if (isLoaded && user) {
-      analytics.navigation.pageView({
-        page: 'profile',
-        section: 'main',
-      })
-    }
-  }, [isLoaded, user])
+    analytics.navigation.pageView({ page: 'profile', section: 'main' })
+  }, [pathname])
 
   // Profile completion goal tracking - only fires once
   useEffect(() => {
@@ -137,8 +159,8 @@ function ProfilePage() {
   if (userQuery.error) return <ProfilePageError />
 
   // Filter tabs based on user permissions
-  const visibleTabs = tabs.filter((tab) =>
-    tab.id === 'settings' ? hasRolePermission(userQuery.data?.role, Role.MODERATOR) : true,
+  const visibleTabs = baseTabs.filter((tab) =>
+    tab.id === 'admin' ? hasRolePermission(userQuery.data?.role, Role.MODERATOR) : true,
   )
 
   return (
@@ -153,12 +175,16 @@ function ProfilePage() {
         <div className="mt-8">
           {activeTab === 'profile' && <ProfileInformation userQuery={userQuery} />}
 
-          {activeTab === 'downloads' && (
-            // Lazy-imported component to keep initial bundle lean
-            <Suspense fallback={<PageSkeletonLoading />}>
-              {/* Separate file keeps ProfilePage tidy */}
-              <DownloadsSection />
-            </Suspense>
+          {activeTab === 'account' && <AccountSettings />}
+
+          {activeTab === 'privacy' && <PrivacySettings preferencesQuery={preferencesQuery} />}
+
+          {activeTab === 'connections' && userQuery.data && (
+            <ConnectionsManager userId={userQuery.data.id} />
+          )}
+
+          {activeTab === 'bookmarks' && userQuery.data && (
+            <BookmarksManager userId={userQuery.data.id} />
           )}
 
           {activeTab === 'devices' && (
@@ -168,17 +194,28 @@ function ProfilePage() {
           {activeTab === 'pc-presets' && <PcPresets />}
 
           {activeTab === 'notifications' && (
-            <NotificationPreferences notificationPreferencesQuery={notificationPreferencesQuery} />
+            <NotificationPreferences
+              notificationPreferencesQuery={notificationPreferencesQuery}
+              preferencesQuery={preferencesQuery}
+            />
           )}
 
-          {activeTab === 'settings' && hasRolePermission(userQuery.data?.role, Role.MODERATOR) && (
+          {activeTab === 'admin' && hasRolePermission(userQuery.data?.role, Role.MODERATOR) && (
             <SettingsSection
-              title="Admin Settings"
-              description="Administrative tools and configuration options"
+              title="Admin Tools"
+              description="Quick access to administrative areas"
               icon={<Settings className="w-6 h-6" />}
             >
-              <div className="text-gray-600 dark:text-gray-400">
-                Admin settings panel coming soon...
+              <div className="flex flex-wrap gap-3">
+                <Button variant="primary" size="sm" asChild>
+                  <Link href="/admin">Admin Dashboard</Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/admin/reports">Reports</Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/admin/users">Users</Link>
+                </Button>
               </div>
             </SettingsSection>
           )}
@@ -197,6 +234,3 @@ function ProfilePageWithSuspense() {
 }
 
 export default ProfilePageWithSuspense
-
-// Import placed at end to avoid top-level load if tab is disabled
-const DownloadsSection = lazy(() => import('./components/downloads/DownloadsSection'))

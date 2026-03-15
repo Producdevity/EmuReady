@@ -31,14 +31,14 @@ const badgeSchema = z.object({
 
 type BadgeFormData = z.infer<typeof badgeSchema>
 
-interface BadgeModalProps {
+interface Props {
   isOpen: boolean
   onClose: () => void
   badge?: Badge
   onSuccess: () => void
 }
 
-export default function BadgeModal({ isOpen, onClose, badge, onSuccess }: BadgeModalProps) {
+export default function BadgeModal({ isOpen, onClose, badge, onSuccess }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isEditing = Boolean(badge)
 

@@ -26,8 +26,8 @@ export async function ensureCookieBannerDismissed(page: Page) {
     // Ignore if localStorage is not available
   }
 
-  // Wait a bit for cookie banner to potentially appear
-  await page.waitForTimeout(500)
+  // Wait for page to be ready before checking cookie banner
+  await page.waitForLoadState('domcontentloaded')
 
   // Try to dismiss cookie banner if it appears
   await cookieBanner.dismissIfPresent()
@@ -36,13 +36,9 @@ export async function ensureCookieBannerDismissed(page: Page) {
   const stillVisible = await cookieBanner.isVisible()
   if (stillVisible) {
     console.warn('Cookie banner still visible after dismissal attempt')
-    // Try one more time with force click
     try {
-      await page
-        .locator('[data-testid="cookie-banner"]')
-        .click({ force: true, position: { x: 0, y: 0 } })
+      await page.getByLabel('Close cookie banner').click({ force: true })
     } catch {
-      // Last resort - reload page with consent set
       await page.reload()
     }
   }

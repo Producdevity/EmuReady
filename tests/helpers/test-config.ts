@@ -54,16 +54,7 @@ export const TEST_CONFIG = {
  * Helper to wait for page stability
  */
 export async function waitForPageStability(page: Page, timeout = 5000) {
-  try {
-    // Wait for no network activity for 500ms
-    await page.waitForLoadState('networkidle', { timeout })
-  } catch {
-    // Fallback to DOM ready if network idle times out
-    await page.waitForLoadState('domcontentloaded', { timeout: timeout / 2 })
-  }
-
-  // Additional stability check - wait for no animations
-  await page.waitForTimeout(300)
+  await page.waitForLoadState('domcontentloaded', { timeout })
 }
 
 /**
@@ -93,7 +84,6 @@ export async function retryOperation<T>(
 
 export async function gotoWithRetry(page: Page, url: string) {
   return retryOperation(async () => {
-    await page.goto(url, TEST_CONFIG.waitStrategies.networkIdle)
-    await waitForPageStability(page)
+    await page.goto(url, TEST_CONFIG.waitStrategies.domContentLoaded)
   }, TEST_CONFIG.retries.navigation)
 }

@@ -1,5 +1,6 @@
 import { subDays, subHours } from 'date-fns'
 import { type TimeRange } from '@/schemas/activity'
+import { type ListingType } from '@/schemas/common'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role, ReportStatus, ApprovalStatus, type PrismaClient, type Prisma } from '@orm'
 
@@ -24,7 +25,7 @@ export namespace ActivityTypes {
 
   export type RecentListing = {
     id: string
-    type: 'handheld' | 'pc'
+    type: ListingType
     gameTitle: string
     gameId: string
     deviceName?: string
@@ -40,7 +41,7 @@ export namespace ActivityTypes {
     id: string
     content: string
     listingId: string
-    listingType: 'handheld' | 'pc'
+    listingType: ListingType
     gameTitle: string
     authorName: string | null
     authorId: string
@@ -606,56 +607,27 @@ export class ActivityService {
       pendingListings,
       pendingPcListings,
     ] = await Promise.all([
-      this.prisma.user.count({
-        where: { createdAt: { gte: dateFrom } },
-      }),
-      this.prisma.listing.count({
-        where: { createdAt: { gte: dateFrom } },
-      }),
-      this.prisma.pcListing.count({
-        where: { createdAt: { gte: dateFrom } },
-      }),
+      this.prisma.user.count({ where: { createdAt: { gte: dateFrom } } }),
+      this.prisma.listing.count({ where: { createdAt: { gte: dateFrom } } }),
+      this.prisma.pcListing.count({ where: { createdAt: { gte: dateFrom } } }),
       this.prisma.listingReport.count({
-        where: {
-          status: { in: [ReportStatus.PENDING, ReportStatus.UNDER_REVIEW] },
-        },
+        where: { status: { in: [ReportStatus.PENDING, ReportStatus.UNDER_REVIEW] } },
       }),
-      this.prisma.game.count({
-        where: { status: ApprovalStatus.PENDING },
-      }),
-      this.prisma.listing.count({
-        where: { status: ApprovalStatus.PENDING },
-      }),
-      this.prisma.pcListing.count({
-        where: { status: ApprovalStatus.PENDING },
-      }),
+      this.prisma.game.count({ where: { status: ApprovalStatus.PENDING } }),
+      this.prisma.listing.count({ where: { status: ApprovalStatus.PENDING } }),
+      this.prisma.pcListing.count({ where: { status: ApprovalStatus.PENDING } }),
     ])
 
     // Previous period counts for comparison
     const [previousUsers, previousListings, previousPcListings] = await Promise.all([
       this.prisma.user.count({
-        where: {
-          createdAt: {
-            gte: previousDateFrom,
-            lt: previousDateTo,
-          },
-        },
+        where: { createdAt: { gte: previousDateFrom, lt: previousDateTo } },
       }),
       this.prisma.listing.count({
-        where: {
-          createdAt: {
-            gte: previousDateFrom,
-            lt: previousDateTo,
-          },
-        },
+        where: { createdAt: { gte: previousDateFrom, lt: previousDateTo } },
       }),
       this.prisma.pcListing.count({
-        where: {
-          createdAt: {
-            gte: previousDateFrom,
-            lt: previousDateTo,
-          },
-        },
+        where: { createdAt: { gte: previousDateFrom, lt: previousDateTo } },
       }),
     ])
 

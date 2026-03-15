@@ -155,16 +155,20 @@ export default function EmulatorCustomFieldsPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Custom Fields for {emulatorQuery.data.name}</h1>
         <div className="flex space-x-3">
-          <Button variant="outline" onClick={() => setIsJsonModalOpen(true)}>
-            <FileJson className="mr-2 h-4 w-4" /> View JSON
+          <Button variant="outline" icon={FileJson} onClick={() => setIsJsonModalOpen(true)}>
+            View JSON
           </Button>
           {canApplyTemplates && (
-            <Button variant="outline" onClick={() => setIsApplyTemplatesModalOpen(true)}>
-              <Copy className="mr-2 h-4 w-4" /> Apply Templates
+            <Button
+              variant="outline"
+              icon={Copy}
+              onClick={() => setIsApplyTemplatesModalOpen(true)}
+            >
+              Apply Templates
             </Button>
           )}
-          <Button onClick={handleOpenCreateModal}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add Custom Field
+          <Button icon={PlusCircle} onClick={handleOpenCreateModal}>
+            Add Custom Field
           </Button>
         </div>
       </div>

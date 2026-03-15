@@ -156,20 +156,19 @@ export default function DroppableCategoryZone(props: Props) {
               <Button
                 variant="ghost"
                 size="sm"
+                icon={Pencil}
                 onClick={() => setIsEditModalOpen(true)}
                 aria-label={`Edit ${props.category.name}`}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
+              />
               <Button
                 variant="ghost"
                 size="sm"
+                icon={Trash2}
                 onClick={handleDelete}
                 disabled={deleteMutation.isPending}
                 aria-label={`Delete ${props.category.name}`}
-              >
-                <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
-              </Button>
+                className="text-red-600 dark:text-red-400"
+              />
             </div>
           )}
         </div>

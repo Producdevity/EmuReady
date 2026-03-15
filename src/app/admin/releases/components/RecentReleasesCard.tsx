@@ -2,12 +2,12 @@
 
 import { Copy, MoreVertical, Rocket, Calendar, HardDrive, Check } from 'lucide-react'
 import { useState } from 'react'
-import { bytesToHuman } from '@/app/profile/components/downloads/utils'
 import { AdminTableContainer } from '@/components/admin'
 import { Button, LoadingSpinner, useConfirmDialog, Badge, DeleteButton } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { formatters, getLocale } from '@/utils/date'
+import { bytesToHuman } from '@/utils/text'
 
 export default function RecentReleasesCard() {
   const listQuery = api.adminReleases.list.useQuery({})

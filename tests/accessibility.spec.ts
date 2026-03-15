@@ -21,22 +21,11 @@ test.describe('Accessibility Tests', () => {
     )
 
     // Verify no skipped heading levels
-    let hasSkippedLevels = false
     for (let i = 1; i < headingLevels.length; i++) {
       const diff = headingLevels[i] - headingLevels[i - 1]
-      if (diff > 1) {
-        console.warn(
-          `Heading hierarchy issue: h${headingLevels[i - 1]} → h${headingLevels[i]} (skipped ${diff - 1} level${diff - 1 > 1 ? 's' : ''})`,
-        )
-        hasSkippedLevels = true
-      }
-    }
-    // For now, just warn about skipped levels instead of failing
-    // TODO: Fix heading hierarchy in the app
-    if (hasSkippedLevels) {
-      console.warn(
-        '⚠️ Heading hierarchy has skipped levels - this should be fixed for better accessibility',
-      )
+      // Heading levels should not skip more than 1 level
+      // TODO: Fix heading hierarchy in the app
+      expect(diff).toBeLessThanOrEqual(2)
     }
   })
 
@@ -57,7 +46,7 @@ test.describe('Accessibility Tests', () => {
         (await button.getAttribute('title'))
 
       expect(accessibleName).toBeTruthy()
-      expect(accessibleName?.trim().length).toBeGreaterThan(0)
+      expect(accessibleName!.trim().length).toBeGreaterThan(0)
     }
 
     // Check links have accessible text
@@ -79,7 +68,6 @@ test.describe('Accessibility Tests', () => {
 
     // Wait for content to load
     await listingsPage.verifyPageLoaded()
-    await page.waitForTimeout(1000)
 
     // Check all images
     const images = page.locator('img')
@@ -95,7 +83,7 @@ test.describe('Accessibility Tests', () => {
       // Decorative images should have empty alt=""
       // Content images should have descriptive alt
       if (altText !== '') {
-        expect(altText?.length).toBeGreaterThan(3) // Not just "img" or "pic"
+        expect(altText!.length).toBeGreaterThan(3) // Not just "img" or "pic"
       }
     }
   })
@@ -212,7 +200,6 @@ test.describe('Accessibility Tests', () => {
     for (let i = 0; i < inputCount; i++) {
       const input = inputs.nth(i)
       const inputId = await input.getAttribute('id')
-      const inputName = await input.getAttribute('name')
       const ariaLabel = await input.getAttribute('aria-label')
       const ariaLabelledBy = await input.getAttribute('aria-labelledby')
       const placeholder = await input.getAttribute('placeholder')
@@ -228,20 +215,8 @@ test.describe('Accessibility Tests', () => {
       // Input should have some form of label
       const hasAccessibleName = hasLabel || ariaLabel || ariaLabelledBy
 
-      // Check input type
-      const inputType = await input.getAttribute('type')
-      const isSearchInput = inputType === 'search' || placeholder?.toLowerCase().includes('search')
-
       // Placeholder alone is not sufficient (except for search inputs which are commonly understood)
-      if (!hasAccessibleName && placeholder) {
-        if (!isSearchInput) {
-          console.warn(
-            `Input${inputName ? ` (name="${inputName}")` : ''} relies only on placeholder: ${placeholder}`,
-          )
-          // TODO: Add proper labels to form inputs
-        }
-      }
-
+      // TODO: Add proper labels to form inputs
       expect(hasAccessibleName || !!placeholder).toBe(true)
     }
   })
@@ -250,28 +225,11 @@ test.describe('Accessibility Tests', () => {
     const homePage = new HomePage(page)
     await homePage.goto()
 
-    // Check for ARIA live regions
-    const liveRegions = page.locator('[aria-live], [role="alert"], [role="status"]')
-    const hasLiveRegions = (await liveRegions.count()) > 0
-
-    if (hasLiveRegions) {
-      console.log('Page already has ARIA live regions set up')
-    }
-
     // Navigate to trigger potential announcements
     await homePage.navigateToGames()
 
-    // Check for route announcements
-    const announcements = page.locator(
-      '[aria-live="polite"], [aria-live="assertive"], [role="status"]',
-    )
-
-    if ((await announcements.count()) > 0) {
-      console.log('Page has ARIA live regions for announcements')
-    }
-
     // Page title should update - wait for navigation to complete
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
     const title = await page.title()
     // Title should be "Games | EmuReady" or similar
     expect(title.toLowerCase()).toMatch(/games|emuready/)
@@ -312,40 +270,29 @@ test.describe('Accessibility Tests', () => {
     const htmlLang = await page.locator('html').getAttribute('lang')
     expect(htmlLang).toBeTruthy()
     expect(htmlLang).toMatch(/^[a-z]{2}(-[A-Z]{2})?$/) // e.g., "en" or "en-US"
-
-    // Check for any elements with different languages
-    const langElements = page.locator('[lang]')
-    const langCount = await langElements.count()
-
-    if (langCount > 1) {
-      // More than just html element
-      console.log(`Found ${langCount - 1} elements with specific language attributes`)
-    }
   })
 
   test('should handle focus trap in modals', async ({ page }) => {
     const homePage = new HomePage(page)
     await homePage.goto()
 
-    // Look for modal triggers - this is a generic test that may not apply to all pages
-    const modalTriggers = page.locator('button').filter({ hasText: /sign in|sign up/i }) // More specific triggers
-
+    // Look for modal triggers
+    const modalTriggers = page.locator('button').filter({ hasText: /sign in|sign up/i })
     const triggerCount = await modalTriggers.count()
-    if (triggerCount === 0) {
-      console.log('No modal triggers found on page - skipping modal focus trap test')
-      return // Skip test if no modals
-    }
+    test.skip(triggerCount === 0, 'No modal triggers found on page')
 
     const trigger = modalTriggers.first()
     await trigger.click()
 
-    // Wait for potential modal
-    await page.waitForTimeout(500)
+    // Check for standard ARIA dialog (our own modals)
+    const standardModal = page.locator('[role="dialog"], [aria-modal="true"], .modal')
+    const hasStandardModal = await standardModal
+      .first()
+      .waitFor({ state: 'visible', timeout: 5000 })
+      .then(() => true)
+      .catch(() => false)
 
-    // Check for modal
-    const modals = page.locator('[role="dialog"], [aria-modal="true"], .modal')
-
-    if ((await modals.count()) > 0) {
+    if (hasStandardModal) {
       // Tab should stay within modal
       await page.keyboard.press('Tab')
       await page.keyboard.press('Tab')
@@ -360,12 +307,14 @@ test.describe('Accessibility Tests', () => {
 
       // Escape should close modal
       await page.keyboard.press('Escape')
-      await page.waitForTimeout(500)
 
-      const modalStillVisible = await modals.isVisible()
+      await standardModal.first().waitFor({ state: 'hidden', timeout: 5000 })
+      const modalStillVisible = await standardModal.first().isVisible()
       expect(modalStillVisible).toBe(false)
     } else {
-      console.log('No modals found after clicking trigger - this may be expected')
+      // Clerk's auth modal (third-party, no role="dialog") — skip focus trap test
+      // Clerk manages its own focus trapping and accessibility
+      test.skip(true, 'Only third-party Clerk modal available — focus trap is managed by Clerk')
     }
   })
 
@@ -376,11 +325,7 @@ test.describe('Accessibility Tests', () => {
     // Check for tables
     const tables = page.locator('table')
     const tableCount = await tables.count()
-
-    if (tableCount === 0) {
-      console.log('No tables found on listings page - skipping table accessibility test')
-      return
-    }
+    test.skip(tableCount === 0, 'No tables found on listings page')
 
     const table = tables.first()
 
@@ -394,15 +339,6 @@ test.describe('Accessibility Tests', () => {
     const scope = await firstHeader.getAttribute('scope')
     if (scope) {
       expect(scope).toMatch(/^(col|row)$/)
-    }
-
-    // Table should have caption or aria-label (warn if missing but don't fail)
-    const caption = table.locator('caption')
-    const hasCaption = (await caption.count()) > 0
-    const ariaLabel = await table.getAttribute('aria-label')
-
-    if (!hasCaption && !ariaLabel) {
-      console.warn('Table lacks caption or aria-label - consider adding for better accessibility')
     }
   })
 })
@@ -418,19 +354,6 @@ test.describe('Screen Reader Tests', () => {
       nav: page.locator('nav, [role="navigation"]'),
       main: page.locator('main, [role="main"]'),
       footer: page.locator('footer, [role="contentinfo"]'),
-    }
-
-    // Check which landmarks exist and warn about missing ones
-    const missingLandmarks: string[] = []
-
-    for (const [name, locator] of Object.entries(landmarks)) {
-      const count = await locator.count()
-      if (count > 0) {
-        console.log(`✓ Found ${count} ${name} landmark(s)`)
-      } else {
-        missingLandmarks.push(name)
-        console.warn(`✗ Missing ${name} landmark - this should be added for better accessibility`)
-      }
     }
 
     // At minimum, we should have nav and main

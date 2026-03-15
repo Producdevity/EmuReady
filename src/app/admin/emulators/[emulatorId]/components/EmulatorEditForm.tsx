@@ -373,11 +373,10 @@ function EmulatorEditForm(props: Props) {
       <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
         <Button
           type="submit"
+          icon={Save}
           isLoading={isSubmitting}
           disabled={isSubmitting || !formState.isDirty}
-          className="flex items-center gap-2"
         >
-          <Save className="h-4 w-4" />
           Save Changes
         </Button>
       </div>

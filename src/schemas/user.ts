@@ -11,6 +11,8 @@ export const UserSortField = z.enum([
   'votesCount',
   'commentsCount',
   'trustScore',
+  'followersCount',
+  'followingCount',
 ])
 export const SortDirection = z.enum(['asc', 'desc'])
 
@@ -32,10 +34,17 @@ export const GetUserByIdSchema = z.object({
   listingsSearch: z.string().optional(),
   listingsDevice: z.string().optional(),
   listingsEmulator: z.string().optional(),
+  // Pagination for PC listings
+  pcListingsPage: z.number().int().min(1).default(1),
+  pcListingsLimit: z.number().int().min(1).max(50).default(12),
+  pcListingsSearch: z.string().optional(),
   // Pagination for votes
   votesPage: z.number().int().min(1).default(1),
   votesLimit: z.number().int().min(1).max(50).default(12),
   votesSearch: z.string().optional(),
+  // Pagination for trust actions
+  trustActionsPage: z.number().int().min(1).default(1),
+  trustActionsLimit: z.number().int().min(1).max(50).default(10),
 })
 
 export const UpdateUserSchema = z.object({
@@ -58,6 +67,18 @@ export const SearchUsersSchema = z.object({
   query: z.string().optional(),
   limit: z.number().min(1).max(50).default(20),
   minRole: z.nativeEnum(Role).optional(),
+})
+
+export const GetUserSocialOverviewSchema = z.object({
+  userId: z.string().uuid(),
+})
+
+export const AdminGetSocialListSchema = z.object({
+  userId: z.string().uuid(),
+  section: z.enum(['followers', 'following', 'friends', 'blocked']),
+  search: z.string().optional(),
+  page: z.number().int().min(1).default(1),
+  limit: z.number().int().min(1).max(50).default(10),
 })
 
 export const IsVerifiedDeveloperSchema = z.object({

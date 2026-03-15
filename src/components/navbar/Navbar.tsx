@@ -9,6 +9,7 @@ import { LogoIcon, LoadingIcon } from '@/components/icons'
 import NotificationCenter from '@/components/notifications/NotificationCenter'
 import { ThemeToggle } from '@/components/ui'
 import analytics from '@/lib/analytics'
+import { env } from '@/lib/env'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import { navbarItems } from './data'
@@ -140,7 +141,7 @@ function Navbar() {
                         Admin
                       </Link>
                     )}
-                    {hasRolePermission(userRole, Role.MODERATOR) && (
+                    {hasRolePermission(userRole, Role.MODERATOR) && env.ENABLE_V2_LISTINGS && (
                       <Link
                         href="/v2/listings"
                         className="px-4 py-2.5 bg-gradient-to-r
@@ -153,14 +154,11 @@ function Navbar() {
                       </Link>
                     )}
 
-                    <Link
-                      href="/profile"
-                      className="px-4 py-2.5 bg-gradient-to-r
-                        from-cyan-500 to-blue-600
-                        hover:from-cyan-600 hover:to-blue-700
-                        text-white font-semibold text-sm rounded-xl transition-all duration-300
-                        shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-105"
-                    >
+                    <Link href="/feed" className={getNavItemClass('/feed')}>
+                      Feed
+                    </Link>
+
+                    <Link href="/profile" className={getNavItemClass('/profile')}>
                       Profile
                     </Link>
 
@@ -257,6 +255,13 @@ function Navbar() {
             <>
               {user ? (
                 <div className="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <Link
+                    href="/feed"
+                    className={getMobileNavItemClass('/feed')}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Feed
+                  </Link>
                   <Link
                     href="/profile"
                     className={getMobileNavItemClass('/profile')}

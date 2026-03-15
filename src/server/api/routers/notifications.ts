@@ -1,5 +1,6 @@
 import { AppError } from '@/lib/errors'
 import {
+  BulkUpdateNotificationPreferencesSchema,
   CreateSystemNotificationSchema,
   DeleteNotificationSchema,
   GetListingPreferencesSchema,
@@ -10,6 +11,7 @@ import {
 } from '@/schemas/notification'
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { notificationService } from '@/server/notifications/service'
+import { NotificationPreferencesRepository } from '@/server/repositories/notification-preferences.repository'
 import { hasRolePermission } from '@/utils/permissions'
 import { DeliveryChannel, NotificationCategory, Role } from '@orm'
 
@@ -37,13 +39,10 @@ export const notificationsRouter = createTRPCRouter({
     return { success: true }
   }),
 
-  getPreferences: protectedProcedure.query(
-    async ({ ctx }) =>
-      await ctx.prisma.notificationPreference.findMany({
-        where: { userId: ctx.session.user.id },
-        orderBy: { type: 'asc' },
-      }),
-  ),
+  getPreferences: protectedProcedure.query(async ({ ctx }) => {
+    const repo = new NotificationPreferencesRepository(ctx.prisma)
+    return repo.list(ctx.session.user.id)
+  }),
 
   updatePreference: protectedProcedure
     .input(UpdateNotificationPreferenceSchema)
@@ -56,19 +55,26 @@ export const notificationsRouter = createTRPCRouter({
       return { success: true }
     }),
 
+  bulkUpdatePreferences: protectedProcedure
+    .input(BulkUpdateNotificationPreferencesSchema)
+    .mutation(async ({ ctx, input }) => {
+      await Promise.all(
+        input.types.map((type) =>
+          notificationService.updateNotificationPreference(ctx.session.user.id, type, {
+            inAppEnabled: input.inAppEnabled,
+            emailEnabled: input.emailEnabled,
+          }),
+        ),
+      )
+      return { success: true }
+    }),
+
   getListingPreferences: protectedProcedure
     .input(GetListingPreferencesSchema)
     .query(async ({ ctx, input }) => {
-      const preference = await ctx.prisma.listingNotificationPreference.findUnique({
-        where: {
-          userId_listingId: {
-            userId: ctx.session.user.id,
-            listingId: input.listingId,
-          },
-        },
-      })
-
-      return preference || { isEnabled: true } // Default to enabled if no preference exists
+      const repo = new NotificationPreferencesRepository(ctx.prisma)
+      const preference = await repo.getListingPreference(ctx.session.user.id, input.listingId)
+      return preference ?? { isEnabled: true }
     }),
 
   updateListingPreference: protectedProcedure

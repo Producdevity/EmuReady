@@ -1,10 +1,12 @@
 'use client'
 
-import { Clock, Flag, AlertTriangle } from 'lucide-react'
+import { Clock } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
+import { confirmBulkApproval } from '@/app/admin/utils'
 import {
   AdminPageLayout,
   AdminTableContainer,
@@ -16,7 +18,7 @@ import {
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   ApproveButton,
-  Badge,
+  AuthorRiskIndicator,
   BulkActions,
   Button,
   ColumnVisibilityControl,
@@ -31,6 +33,7 @@ import {
   TooltipTrigger,
   TooltipContent,
   useConfirmDialog,
+  ViewUserButton,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import {
@@ -41,6 +44,7 @@ import {
 } from '@/hooks'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
+import { logger } from '@/lib/logger'
 import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -60,7 +64,7 @@ type ApprovalSortField =
 const APPROVALS_COLUMNS: ColumnDefinition[] = [
   { key: 'game', label: 'Game', defaultVisible: true },
   { key: 'system', label: 'System', defaultVisible: true },
-  { key: 'author', label: 'Author', defaultVisible: false },
+  { key: 'author', label: 'Author', defaultVisible: true },
   { key: 'device', label: 'Device', defaultVisible: true },
   { key: 'emulator', label: 'Emulator', defaultVisible: true },
   { key: 'submittedAt', label: 'Submitted', defaultVisible: false },
@@ -68,10 +72,12 @@ const APPROVALS_COLUMNS: ColumnDefinition[] = [
 ]
 
 function AdminApprovalsPage() {
+  const router = useRouter()
+
   const table = useAdminTable<ApprovalSortField>({
     defaultLimit: 20,
     defaultSortField: 'createdAt',
-    defaultSortDirection: 'desc',
+    defaultSortDirection: 'asc',
   })
 
   const columnVisibility = useColumnVisibility(APPROVALS_COLUMNS, {
@@ -80,7 +86,7 @@ function AdminApprovalsPage() {
 
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
     storageKeys.showSystemIcons,
-    false,
+    true,
   )
 
   const emulatorLogos = useEmulatorLogos()
@@ -177,7 +183,7 @@ function AdminApprovalsPage() {
       setSelectedListingIds([])
     },
     onError: (err) => {
-      console.error('Failed to bulk approve listings:', err)
+      logger.error('Failed to bulk approve listings:', err)
       toast.error(`Failed to bulk approve listings: ${getErrorMessage(err)}`)
     },
   })
@@ -197,45 +203,15 @@ function AdminApprovalsPage() {
       setSelectedListingIds([])
     },
     onError: (err) => {
-      console.error('Failed to bulk reject listings:', err)
+      logger.error('Failed to bulk reject listings:', err)
       toast.error(`Failed to bulk reject listings: ${getErrorMessage(err)}`)
     },
   })
 
-  // Handle bulk approval with confirmation for reported users
   const handleBulkApprovalWithConfirmation = async (listingIds: string[]) => {
-    const selectedListings = listings.filter((listing) => listingIds.includes(listing.id))
-    const reportedUserListings = selectedListings.filter(
-      (listing) => listing.authorReportStats?.hasReports,
-    )
+    const confirmed = await confirmBulkApproval(listings, listingIds, confirm, 'listings')
+    if (!confirmed) return
 
-    if (reportedUserListings.length > 0) {
-      const reportedUsers = [
-        ...new Set(reportedUserListings.map((l) => l.author?.name || 'Unknown')),
-      ]
-      const totalReports = reportedUserListings.reduce(
-        (sum, l) => sum + (l.authorReportStats?.totalReports || 0),
-        0,
-      )
-
-      const confirmed = await confirm({
-        title: 'Bulk Approval Warning',
-        description: `You are about to approve ${listingIds.length} listings, including ${reportedUserListings.length} from reported users.\n\nReported users in this selection:\n• ${reportedUsers.join('\n• ')}\n\nThese users have a total of ${totalReports} active reports against their listings.\n\nAre you sure you want to proceed with the bulk approval?`,
-        confirmText: 'Approve Selected',
-      })
-
-      if (!confirmed) return
-    } else {
-      const confirmed = await confirm({
-        title: 'Bulk Approval Confirmation',
-        description: `You are about to approve ${listingIds.length} listings. Are you sure you want to proceed?`,
-        confirmText: 'Approve Selected',
-      })
-
-      if (!confirmed) return
-    }
-
-    // Proceed with bulk approval
     await bulkApproveMutation.mutateAsync({ listingIds })
     await invalidateQueries()
     closeApprovalModal()
@@ -280,6 +256,7 @@ function AdminApprovalsPage() {
     }
   }
 
+  // TODO: extract this to a generic Admin error component
   if (pendingListingsQuery.error) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -515,55 +492,27 @@ function AdminApprovalsPage() {
                     )}
                     {columnVisibility.isColumnVisible('author') && (
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            <span>
-                              {listing.author ? (
-                                <Link
-                                  href={`/admin/users?userId=${listing.author.id}`}
-                                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
-                                  title="View user details"
-                                >
-                                  {listing.author.name}
-                                </Link>
-                              ) : (
-                                'N/A'
-                              )}
-                            </span>
-                            {listing.authorReportStats?.hasReports && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="flex items-center gap-1">
-                                    <Flag className="w-4 h-4 text-red-500" />
-                                    <AlertTriangle className="w-4 h-4 text-orange-500" />
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <div className="text-sm">
-                                    <p className="font-medium text-red-600 mb-1">
-                                      ⚠️ Reported User
-                                    </p>
-                                    <p>
-                                      This user has {listing.authorReportStats.totalReports} active
-                                      reports
-                                    </p>
-                                    <p>
-                                      against {listing.authorReportStats.reportedListingsCount} of
-                                      their listings.
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      Consider reviewing carefully before approval.
-                                    </p>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
+                        <div className="flex items-center gap-2">
+                          <span>
+                            {listing.author ? (
+                              <Link
+                                href={`/admin/users?userId=${listing.author.id}`}
+                                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
+                                title="View user details"
+                              >
+                                {listing.author.name}
+                              </Link>
+                            ) : (
+                              'N/A'
                             )}
-                          </div>
-                          {listing.author?.userBans && listing.author.userBans.length > 0 && (
-                            <Badge variant="danger" size="sm">
-                              BANNED USER
-                            </Badge>
-                          )}
+                          </span>
+                          <AuthorRiskIndicator
+                            riskProfile={listing.authorRiskProfile}
+                            size="sm"
+                            onInvestigate={(authorId) =>
+                              router.push(`/admin/users?userId=${authorId}&tab=reports`)
+                            }
+                          />
                         </div>
                       </td>
                     )}
@@ -606,19 +555,29 @@ function AdminApprovalsPage() {
                             <ApproveButton
                               title="Approve Listing"
                               onClick={() => openApprovalModal(listing, ApprovalStatus.APPROVED)}
+                              disabled={approveMutation.isPending}
                             />
                           )}
-
                           {hasPermission(
                             currentUserQuery.data?.permissions,
                             PERMISSIONS.APPROVE_LISTINGS,
                           ) && (
                             <RejectButton
-                              onClick={() => openApprovalModal(listing, ApprovalStatus.REJECTED)}
                               title="Reject Listing"
+                              onClick={() => openApprovalModal(listing, ApprovalStatus.REJECTED)}
+                              disabled={rejectMutation.isPending}
                             />
                           )}
-                          <ViewButton href={`/listings/${listing.id}`} title="View Details" />
+                          {hasPermission(
+                            currentUserQuery.data?.permissions,
+                            PERMISSIONS.MANAGE_USERS,
+                          ) && (
+                            <ViewUserButton
+                              title="View User Details"
+                              href={`/admin/users?userId=${listing.author.id}`}
+                            />
+                          )}
+                          <ViewButton title="View Details" href={`/listings/${listing.id}`} />
                         </div>
                       </td>
                     )}

@@ -247,6 +247,7 @@ export function GameBoxartImage(props: Props) {
               <Button
                 variant="primary"
                 size="sm"
+                icon={Copy}
                 onClick={() => {
                   const url = selectedUrl || getFieldValue(activeImageType)
                   if (url) {
@@ -256,9 +257,7 @@ export function GameBoxartImage(props: Props) {
                   }
                 }}
                 disabled={!selectedUrl && !getFieldValue(activeImageType)}
-                className="flex items-center gap-2"
               >
-                <Copy className="h-4 w-4" />
                 Apply Current to All Images
               </Button>
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">

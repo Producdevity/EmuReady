@@ -607,8 +607,7 @@ function CustomFieldTemplateFormModal(props: Props) {
               <h3 className="text-lg font-medium">
                 Template Fields <span className="text-red-500">*</span>
               </h3>
-              <Button variant="ghost" onClick={addField} disabled={fields.length >= 50}>
-                <Plus className="h-4 w-4 mr-2" />
+              <Button variant="ghost" icon={Plus} onClick={addField} disabled={fields.length >= 50}>
                 Add Field
               </Button>
             </div>
@@ -627,9 +626,12 @@ function CustomFieldTemplateFormModal(props: Props) {
                       <GripVertical className="h-5 w-5 text-gray-400 mr-2" />
                       <span className="font-medium">Field {fieldIndex + 1}</span>
                     </div>
-                    <Button variant="destructive" size="sm" onClick={() => removeField(fieldIndex)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      icon={Trash2}
+                      onClick={() => removeField(fieldIndex)}
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-4">

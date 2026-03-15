@@ -56,9 +56,13 @@ export interface NotificationDeliveryResult {
 
 export interface NotificationEventPayload {
   listingId?: string
+  pcListingId?: string
   commentId?: string
+  parentId?: string
   voteId?: string
+  voteValue?: boolean
   gameId?: string
+  gameTitle?: string
   emulatorId?: string
   deviceId?: string
   socId?: string

@@ -45,13 +45,7 @@ export function ColumnVisibilityControl(props: Props) {
 
   return (
     <div className={`relative ${props.className ?? ''}`} ref={dropdownRef}>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2"
-      >
-        <Eye className="h-4 w-4" />
+      <Button variant="outline" size="sm" icon={Eye} onClick={() => setIsOpen(!isOpen)}>
         Columns ({displayCount})
         <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </Button>

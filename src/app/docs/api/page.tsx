@@ -3,8 +3,8 @@ import Link from 'next/link'
 import { generatePageMetadata } from '@/lib/seo/metadata'
 
 export const metadata: Metadata = generatePageMetadata(
-  'Mobile API Documentation',
-  'Complete API documentation for EmuReady mobile applications. 90+ endpoints for listings, games, devices, and user management.',
+  'EmuReady API Documentation',
+  'Complete API documentation for applications powered by EmuReady.',
   '/docs/api',
 )
 
@@ -13,11 +13,10 @@ function MobileApiDocsPage() {
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-300 mb-4">
-          EmuReady Mobile API Documentation
+          EmuReady API Documentation
         </h1>
         <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
-          Complete API documentation for EmuReady mobile applications with 90 endpoints covering
-          listings, games, devices, user management, and more.
+          Complete API documentation for applications powered by EmuReady.
         </p>
       </div>
 
@@ -27,7 +26,7 @@ function MobileApiDocsPage() {
             📚 Documentation
           </h2>
           <p className="text-gray-600 dark:text-gray-300 mb-4">
-            Auto-generated API reference with 90 endpoints, authentication, and usage patterns.
+            Auto-generated API reference covering all endpoints, authentication, and usage patterns.
           </p>
           <Link
             href="/docs/api/reference"
@@ -74,7 +73,7 @@ function MobileApiDocsPage() {
           <div>
             <h3 className="font-semibold mb-2 text-gray-900 dark:text-white">Example Request</h3>
             <pre className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 p-3 rounded text-sm overflow-x-auto">
-              {`curl -X POST /api/mobile/trpc/getListings \\
+              {`curl -X POST /api/mobile/trpc/listings.get \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer <token>" \\
   -d '{
@@ -96,7 +95,7 @@ function MobileApiDocsPage() {
           <div>
             <h3 className="font-semibold text-green-600 mb-2">📄 OpenAPI Spec</h3>
             <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-              Machine-readable API specification - automatically generated
+              API specification - automatically generated
             </p>
             <Link
               href="/api-docs/mobile-openapi.json"
@@ -110,10 +109,10 @@ function MobileApiDocsPage() {
           <div>
             <h3 className="font-semibold text-blue-600 mb-2">🔍 Endpoints</h3>
             <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-              90 endpoints across 20 routers for complete mobile functionality
+              all endpoints across all routers that EmuReady uses for the mobile app are available.
             </p>
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              51 Public & 39 Protected
+              Generous rate limits for public and protected endpoints
             </span>
           </div>
 
@@ -167,7 +166,7 @@ function MobileApiDocsPage() {
             <li className="flex items-center gap-2">
               <span className="text-green-500">✓</span>
               <span className="text-sm text-gray-700 dark:text-gray-300">
-                Pagination & performance optimization
+                Pagination & filtering
               </span>
             </li>
             <li className="flex items-center gap-2">

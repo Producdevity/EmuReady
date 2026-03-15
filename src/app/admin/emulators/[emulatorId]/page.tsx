@@ -39,8 +39,13 @@ function EditEmulatorPage() {
   if (!user || !hasAccess) {
     return (
       <div className="container mx-auto p-8">
-        <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6">
-          <ArrowLeft className="h-4 w-4" />
+        <Button
+          variant="outline"
+          size="sm"
+          icon={ArrowLeft}
+          onClick={() => router.back()}
+          className="mb-6"
+        >
           Back
         </Button>
         <p className="text-lg text-gray-700 dark:text-gray-200">
@@ -69,8 +74,13 @@ function EditEmulatorPage() {
 
   return (
     <div className="container mx-auto p-4 md:p-8">
-      <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6">
-        <ArrowLeft className="h-4 w-4" />
+      <Button
+        variant="outline"
+        size="sm"
+        icon={ArrowLeft}
+        onClick={() => router.back()}
+        className="mb-6"
+      >
         Back
       </Button>
 

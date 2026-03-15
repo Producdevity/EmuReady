@@ -354,12 +354,12 @@ export function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
                 {!includeAllTypes && (
                   <div className="mt-2">
                     <Button
+                      icon={Camera}
                       onClick={enableAllTypes}
                       variant="outline"
                       size="sm"
-                      className="text-sm flex items-center gap-1"
+                      className="text-sm"
                     >
-                      <Camera className="h-4 w-4" />
                       Include all image types
                     </Button>
                   </div>

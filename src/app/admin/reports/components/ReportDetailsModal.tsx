@@ -146,6 +146,12 @@ function ReportDetailsModal(props: Props) {
           <Button variant="outline" onClick={props.onClose}>
             Close
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => window.open(`/users/${report.listing.author.id}`, '_blank')}
+          >
+            View User (Public)
+          </Button>
           <Button onClick={() => window.open(`/listings/${report.listing.id}`, '_blank')}>
             View Listing
           </Button>

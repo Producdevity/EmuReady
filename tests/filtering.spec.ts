@@ -24,21 +24,17 @@ test.describe('Filtering Tests', () => {
         const deviceName = await secondOption.textContent()
         await secondOption.click()
 
-        // Wait for filter to apply
-        await page.waitForTimeout(1500)
+        await expect(
+          listingsPage.listingItems.first().or(listingsPage.noListingsMessage),
+        ).toBeVisible()
 
-        // Count should change (unless all listings are for this device)
         const filteredCount = await listingsPage.getListingCount()
-        console.log(
-          `Filtered from ${initialCount} to ${filteredCount} listings for device: ${deviceName}`,
-        )
+        expect(filteredCount).toBeLessThanOrEqual(initialCount)
 
         // Verify filter is applied
         const selectedDevice = await listingsPage.deviceFilter.textContent()
         expect(selectedDevice).toContain(deviceName || '')
       }
-    } else {
-      console.log('Device filter not available on page')
     }
   })
 
@@ -55,14 +51,15 @@ test.describe('Filtering Tests', () => {
         const emulatorName = await firstEmulator.textContent()
         await firstEmulator.click()
 
-        await page.waitForTimeout(1500)
+        await expect(
+          listingsPage.listingItems.first().or(listingsPage.noListingsMessage),
+        ).toBeVisible()
 
         // All visible listings should be for this emulator
         const listings = await listingsPage.listingItems.all()
         if (listings.length > 0) {
           // Check first listing contains emulator name
           const firstListingText = await listings[0].textContent()
-          console.log(`Filtered by emulator: ${emulatorName}`)
 
           // Verify the listing actually contains the emulator name
           if (emulatorName && firstListingText) {
@@ -82,7 +79,6 @@ test.describe('Filtering Tests', () => {
 
     if (await listingsPage.performanceFilter.isVisible({ timeout: 3000 })) {
       const initialCount = await listingsPage.getListingCount()
-      console.log(`Initial listing count: ${initialCount}`)
 
       await listingsPage.performanceFilter.click()
 
@@ -96,12 +92,11 @@ test.describe('Filtering Tests', () => {
         const performanceLevel = await firstOption.textContent()
         await firstOption.click()
 
-        await page.waitForTimeout(1500)
+        await expect(
+          listingsPage.listingItems.first().or(listingsPage.noListingsMessage),
+        ).toBeVisible()
 
         const filteredCount = await listingsPage.getListingCount()
-        console.log(
-          `Filtered to ${filteredCount} listings with ${performanceLevel} performance (from ${initialCount})`,
-        )
 
         // Verify the filter actually changed the results (unless all listings already matched)
         if (initialCount > 0) {
@@ -127,7 +122,9 @@ test.describe('Filtering Tests', () => {
       if (await deviceOption.isVisible({ timeout: 1000 })) {
         await deviceOption.click()
         filtersApplied++
-        await page.waitForTimeout(1000)
+        await expect(
+          listingsPage.listingItems.first().or(listingsPage.noListingsMessage),
+        ).toBeVisible()
       }
     }
 
@@ -138,14 +135,16 @@ test.describe('Filtering Tests', () => {
       if (await emulatorOption.isVisible({ timeout: 1000 })) {
         await emulatorOption.click()
         filtersApplied++
-        await page.waitForTimeout(1000)
+        await expect(
+          listingsPage.listingItems.first().or(listingsPage.noListingsMessage),
+        ).toBeVisible()
       }
     }
 
     if (filtersApplied > 1) {
       // Results should be filtered by both criteria
       const filteredCount = await listingsPage.getListingCount()
-      console.log(`Applied ${filtersApplied} filters, showing ${filteredCount} results`)
+      expect(typeof filteredCount).toBe('number')
 
       // Clear filters button should be visible
       if (await listingsPage.clearFiltersButton.isVisible({ timeout: 2000 })) {
@@ -168,7 +167,9 @@ test.describe('Filtering Tests', () => {
       const option = page.getByRole('option').nth(1)
       const filterValue = await option.textContent()
       await option.click()
-      await page.waitForTimeout(1000)
+      await expect(
+        listingsPage.listingItems.first().or(listingsPage.noListingsMessage),
+      ).toBeVisible()
 
       // Navigate to a listing detail if available
       if ((await listingsPage.getListingCount()) > 0) {
@@ -204,7 +205,9 @@ test.describe('Filtering Tests', () => {
         const option = page.getByRole('option').nth(1)
         if (await option.isVisible({ timeout: 1000 })) {
           await option.click()
-          await page.waitForTimeout(1000)
+          await expect(
+            listingsPage.listingItems.first().or(listingsPage.noListingsMessage),
+          ).toBeVisible()
 
           // URL should have changed
           const newUrl = page.url()
@@ -242,7 +245,9 @@ test.describe('Filtering Tests', () => {
           // Select last option (often most restrictive)
           await options.nth(count - 1).click()
           filtersApplied++
-          await page.waitForTimeout(1000)
+          await expect(
+            listingsPage.listingItems.first().or(listingsPage.noListingsMessage),
+          ).toBeVisible()
         }
       }
     }
@@ -279,20 +284,22 @@ test.describe('Filtering Tests', () => {
       // Select a device
       await listingsPage.deviceFilter.click()
       await page.getByRole('option').nth(1).click()
-      await page.waitForTimeout(1000)
+      await expect(
+        listingsPage.listingItems.first().or(listingsPage.noListingsMessage),
+      ).toBeVisible()
 
       // Select an emulator that might not support this device
       await listingsPage.emulatorFilter.click()
       const emulatorOptions = page.getByRole('option')
       const lastOption = emulatorOptions.nth((await emulatorOptions.count()) - 1)
       await lastOption.click()
-      await page.waitForTimeout(1000)
+      await expect(
+        listingsPage.listingItems.first().or(listingsPage.noListingsMessage),
+      ).toBeVisible()
 
       const count = await listingsPage.getListingCount()
 
       if (count === 0) {
-        console.log('Filter combination produced no results as expected')
-
         // Should show helpful message
         const noResults = await page
           .getByText(/no listings found|try adjusting your filters/i)
@@ -315,12 +322,11 @@ test.describe('Quick Filter Tests', () => {
 
     if ((await quickFilters.count()) > 0) {
       const firstQuickFilter = quickFilters.first()
-      const filterText = await firstQuickFilter.textContent()
 
       await firstQuickFilter.click()
-      await page.waitForTimeout(1500)
-
-      console.log(`Applied quick filter: ${filterText}`)
+      await expect(
+        listingsPage.listingItems.first().or(listingsPage.noListingsMessage),
+      ).toBeVisible()
 
       // Verify filter is active (button might change style)
       const isActive =
@@ -329,8 +335,6 @@ test.describe('Quick Filter Tests', () => {
         ((await firstQuickFilter.getAttribute('class')) || '').includes('active')
 
       expect(isActive).toBe(true)
-    } else {
-      console.log('No quick filters available')
     }
   })
 
@@ -356,13 +360,10 @@ test.describe('Quick Filter Tests', () => {
       if (!filtersVisible) {
         // Click to show filters
         await filterToggle.click()
-        await page.waitForTimeout(500)
 
         // Filters should now be visible
         await expect(listingsPage.deviceFilter.or(listingsPage.emulatorFilter)).toBeVisible()
       }
-
-      console.log('Mobile filter toggle works correctly')
     }
   })
 })

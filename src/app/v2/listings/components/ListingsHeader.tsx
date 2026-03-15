@@ -77,6 +77,7 @@ export function ListingsHeader(props: Props) {
             <Button
               variant="ghost"
               size="sm"
+              icon={Grid}
               onClick={() => props.setViewMode('grid')}
               className={cn(
                 'rounded-none px-3 py-2 transition-all duration-200',
@@ -84,12 +85,11 @@ export function ListingsHeader(props: Props) {
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400',
               )}
-            >
-              <Grid className="w-4 h-4" />
-            </Button>
+            />
             <Button
               variant="ghost"
               size="sm"
+              icon={List}
               onClick={() => props.setViewMode('list')}
               className={cn(
                 'rounded-none px-3 py-2 transition-all duration-200',
@@ -97,9 +97,7 @@ export function ListingsHeader(props: Props) {
                   ? 'bg-blue-600 text-white shadow-md'
                   : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400',
               )}
-            >
-              <List className="w-4 h-4" />
-            </Button>
+            />
           </motion.div>
 
           {/* Add Listing Desktop */}
@@ -112,9 +110,9 @@ export function ListingsHeader(props: Props) {
             <Link href="/listings/new">
               <Button
                 size="sm"
-                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
+                icon={Plus}
+                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
               >
-                <Plus className="w-4 h-4" />
                 Add Report
               </Button>
             </Link>
@@ -132,11 +130,10 @@ export function ListingsHeader(props: Props) {
         <Link href="/listings/new">
           <Button
             size="sm"
+            icon={Plus}
             className="h-12 w-12 rounded-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 border-2 border-green-500"
             title="Add new listing"
-          >
-            <Plus className="w-5 h-5" />
-          </Button>
+          />
         </Link>
       </motion.div>
     </>

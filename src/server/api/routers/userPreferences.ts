@@ -5,13 +5,11 @@ import {
   BulkUpdateDevicePreferencesSchema,
   BulkUpdateSocPreferencesSchema,
 } from '@/schemas/userPreferences'
-import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/api/trpc'
+import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { UserPreferencesRepository } from '@/server/repositories/user-preferences.repository'
 
 export const userPreferencesRouter = createTRPCRouter({
-  get: publicProcedure.query(async ({ ctx }) => {
-    if (!ctx.session?.user) return null
-
+  get: protectedProcedure.query(async ({ ctx }) => {
     const repository = new UserPreferencesRepository(ctx.prisma)
     return repository.get(ctx.session.user.id)
   }),
@@ -21,6 +19,7 @@ export const userPreferencesRouter = createTRPCRouter({
     return repository.update(ctx.session.user.id, input)
   }),
 
+  // TODO: Find out if this is even used or needed, since we use bulkUpdateDevices on web
   addDevice: protectedProcedure
     .input(AddDevicePreferenceSchema)
     .mutation(async ({ ctx, input }) => {
@@ -28,6 +27,7 @@ export const userPreferencesRouter = createTRPCRouter({
       return repository.addDevice(ctx.session.user.id, input.deviceId)
     }),
 
+  // TODO: Find out if this is even used or needed, since we use bulkUpdateDevices on web
   removeDevice: protectedProcedure
     .input(RemoveDevicePreferenceSchema)
     .mutation(async ({ ctx, input }) => {

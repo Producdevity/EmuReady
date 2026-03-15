@@ -32,10 +32,10 @@ function PcReportListingButton(props: Props) {
       <Button
         variant="outline"
         size="sm"
+        icon={Flag}
         onClick={() => setIsModalOpen(true)}
-        className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border-gray-300 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-600"
+        className="text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border-gray-300 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-600"
       >
-        <Flag size={16} />
         Report
       </Button>
 

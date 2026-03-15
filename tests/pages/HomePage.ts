@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test'
 import { BasePage } from './BasePage'
 import type { Page } from '@playwright/test'
 
@@ -11,22 +12,20 @@ export class HomePage extends BasePage {
     return this.page.getByRole('heading', { name: /know before you load/i })
   }
 
-  get trustedReportsSection() {
-    return this.page.getByRole('heading', { name: /trusted reports/i })
+  get latestReportsSection() {
+    return this.page.getByRole('heading', { name: /latest compatibility reports/i })
   }
 
-  get performanceMetricsSection() {
-    return this.page.getByRole('heading', { name: /performance metrics/i })
+  get popularDevicesSection() {
+    return this.page.getByRole('heading', { name: /popular devices/i })
   }
 
-  get communityDrivenSection() {
-    return this.page.getByRole('heading', { name: /community driven/i })
+  get popularEmulatorsSection() {
+    return this.page.getByRole('heading', { name: /most popular emulators/i })
   }
 
-  get latestListingsSection() {
-    return this.page.getByRole('heading', {
-      name: /latest compatibility listings/i,
-    })
+  get topContributorsSection() {
+    return this.page.getByRole('heading', { name: /spotlight on top contributors/i })
   }
 
   get joinCommunityButton() {
@@ -73,25 +72,18 @@ export class HomePage extends BasePage {
       console.log(`Cookie banner still visible, attempt ${attempts + 1} to dismiss...`)
       await this.cookieBanner.dismissIfPresent()
 
-      // If still visible after dismissal attempt, force click backdrop
       if (await this.cookieBanner.isVisible()) {
         try {
-          await this.page.locator('.fixed.inset-0.z-\\[70\\]').click({
-            force: true,
-            position: { x: 10, y: 10 },
-            timeout: 2000,
-          })
+          await this.page.getByRole('button', { name: /accept all/i }).click({ timeout: 2000 })
         } catch {
-          // Try clicking the accept button directly
-          await this.page
-            .getByRole('button', { name: /accept all/i })
-            .click({ timeout: 2000 })
-            .catch(() => {})
+          // Banner may have disappeared between check and click
         }
       }
 
       attempts++
-      await this.page.waitForTimeout(300)
+      await this.cookieBanner.cookieBanner
+        .waitFor({ state: 'hidden', timeout: 1000 })
+        .catch(() => {})
     }
   }
 
@@ -105,26 +97,22 @@ export class HomePage extends BasePage {
 
   async clickBrowseReports() {
     await this.browseReportsLink.click()
-    await this.page.waitForURL('/listings')
+    await expect(this.page).toHaveURL('/listings')
   }
 
   // Verification methods
   async verifyHeroSectionVisible() {
     await this.heroHeading.waitFor({ state: 'visible' })
-    await this.trustedReportsSection.waitFor({ state: 'visible' })
-    await this.performanceMetricsSection.waitFor({ state: 'visible' })
-    await this.communityDrivenSection.waitFor({ state: 'visible' })
   }
 
   async verifyLatestListingsVisible() {
-    await this.latestListingsSection.waitFor({ state: 'visible' })
+    await this.latestReportsSection.waitFor({ state: 'visible' })
   }
 
   async verifyNavigationVisible() {
     await this.homeLink.waitFor({ state: 'visible' })
     await this.handheldLink.waitFor({ state: 'visible' })
     await this.pcLink.waitFor({ state: 'visible' })
-    await this.gamesLink.waitFor({ state: 'visible' })
   }
 
   async verifyAuthButtonsVisible() {

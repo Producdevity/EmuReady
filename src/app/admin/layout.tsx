@@ -105,9 +105,19 @@ function AdminLayout(props: PropsWithChildren) {
     if (userQuery.data && !hasAdminPanelAccess) router.replace('/')
   }, [isLoaded, user, userQuery.data, hasAdminPanelAccess, router, userQuery.isPending])
 
-  if (!isLoaded || userQuery.isPending) return <LoadingSpinner size="lg" />
+  if (!isLoaded) return <LoadingSpinner size="lg" />
 
-  if (!user || !userQuery.data) return null
+  if (!user) {
+    return (
+      <SignedOut>
+        <RedirectToSignIn />
+      </SignedOut>
+    )
+  }
+
+  if (userQuery.isPending) return <LoadingSpinner size="lg" />
+
+  if (!userQuery.data) return null
 
   // Don't render admin content if user doesn't have admin panel access
   if (!hasAdminPanelAccess) return null

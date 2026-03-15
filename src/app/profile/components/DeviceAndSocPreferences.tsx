@@ -187,13 +187,11 @@ function DeviceAndSocPreferences(props: Props) {
 
   return (
     <div className="space-y-8">
-      {/* General Preferences */}
+      {/* Listing Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <div className="flex items-center gap-3 mb-6">
           <Settings className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            General Preferences
-          </h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Filters</h2>
         </div>
 
         <div className="space-y-4">
@@ -201,7 +199,7 @@ function DeviceAndSocPreferences(props: Props) {
             <div>
               <h3 className="font-medium text-gray-900 dark:text-white">Default to My Devices</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Automatically filter listings to show only your preferred devices
+                Automatically filter reports to show only your preferred devices
               </p>
             </div>
             <AnimatedToggle
@@ -214,7 +212,7 @@ function DeviceAndSocPreferences(props: Props) {
             <div>
               <h3 className="font-medium text-gray-900 dark:text-white">Default to My SOCs</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Automatically filter listings to show only your preferred SOCs
+                Automatically filter reports to show only your preferred SOCs
               </p>
             </div>
             <AnimatedToggle
@@ -225,9 +223,9 @@ function DeviceAndSocPreferences(props: Props) {
 
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-medium text-gray-900 dark:text-white">Notify on New Listings</h3>
+              <h3 className="font-medium text-gray-900 dark:text-white">Notify on New Reports</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Get notified when new listings are posted for your preferred devices/SOCs
+                Get notified when new compatibility reports match your preferred devices/SOCs
               </p>
             </div>
             <AnimatedToggle
@@ -240,7 +238,7 @@ function DeviceAndSocPreferences(props: Props) {
             <div>
               <h3 className="font-medium text-gray-900 dark:text-white">Show Mature Content</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Include erotic 18+ games in listings
+                Include erotic 18+ games in results
               </p>
             </div>
             <AnimatedToggle
@@ -277,7 +275,7 @@ function DeviceAndSocPreferences(props: Props) {
 
         <p className="text-gray-600 dark:text-gray-400 mb-6">
           Select the System-on-Chip (SOC) architectures you&apos;re interested in. This helps filter
-          listings to show performance data most relevant to you.
+          reports to show performance data most relevant to you.
         </p>
 
         <SocSelector selectedSocs={selectedSocs} onSocsChange={handleSocsChange} />

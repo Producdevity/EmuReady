@@ -9,6 +9,7 @@ import {
   CreatePcListingReportSchema,
   CreatePcListingSchema,
   CreatePcPresetSchema,
+  ResetPcListingToPendingSchema,
   DeletePcListingCommentSchema,
   DeletePcListingSchema,
   DeletePcPresetSchema,
@@ -38,6 +39,7 @@ import {
 } from '@/schemas/pcListing'
 import {
   createTRPCRouter,
+  moderatorProcedure,
   permissionProcedure,
   protectedProcedure,
   publicProcedure,
@@ -60,8 +62,10 @@ import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifica
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
 import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
 import { logAudit } from '@/server/services/audit.service'
+import { computeAuthorRiskProfiles } from '@/server/services/author-risk.service'
 import { listingStatsCache } from '@/server/utils/cache'
 import { paginate } from '@/server/utils/pagination'
+import { isUserBanned } from '@/server/utils/query-builders'
 import { validatePagination } from '@/server/utils/security-validation'
 import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
 import { PERMISSIONS, roleIncludesRole } from '@/utils/permission-system'
@@ -427,7 +431,7 @@ export const pcListingsRouter = createTRPCRouter({
         // Developer has no assigned emulators, return empty results
         return {
           pcListings: [],
-          pagination: paginate({ total: 0, page: page, limit: limit }),
+          pagination: paginate({ total: 0, page, limit }),
         }
       }
     }
@@ -442,8 +446,36 @@ export const pcListingsRouter = createTRPCRouter({
       canSeeBannedUsers: true, // Moderators can see listings from banned users
     })
 
+    // Compute author risk profiles
+    const uniqueAuthorIds = [...new Set(result.pcListings.map((l) => l.authorId))]
+    const existingBansMap = new Map<string, { reason: string }[]>()
+    for (const listing of result.pcListings) {
+      if (
+        listing.author?.userBans &&
+        listing.author.userBans.length > 0 &&
+        !existingBansMap.has(listing.authorId)
+      ) {
+        existingBansMap.set(
+          listing.authorId,
+          listing.author.userBans.map((b) => ({ reason: b.reason })),
+        )
+      }
+    }
+    const riskProfiles = await computeAuthorRiskProfiles(
+      ctx.prisma,
+      uniqueAuthorIds,
+      existingBansMap,
+    )
+
     return {
-      pcListings: result.pcListings,
+      pcListings: result.pcListings.map((listing) => ({
+        ...listing,
+        authorRiskProfile: riskProfiles.get(listing.authorId) ?? {
+          authorId: listing.authorId,
+          signals: [],
+          highestSeverity: null,
+        },
+      })),
       pagination: result.pagination,
     }
   }),
@@ -483,6 +515,17 @@ export const pcListingsRouter = createTRPCRouter({
 
     // Invalidate stats cache when PC listing is approved
     listingStatsCache.delete('pc-listing-stats')
+
+    notificationEventEmitter.emitNotificationEvent({
+      eventType: NOTIFICATION_EVENTS.PC_LISTING_APPROVED,
+      entityType: 'pcListing',
+      entityId: input.pcListingId,
+      triggeredBy: ctx.session.user.id,
+      payload: {
+        pcListingId: input.pcListingId,
+        gameId: pcListing.gameId,
+      },
+    })
 
     return approvedListing
   }),
@@ -527,8 +570,48 @@ export const pcListingsRouter = createTRPCRouter({
     // Invalidate stats cache when PC listing is rejected
     listingStatsCache.delete('pc-listing-stats')
 
+    notificationEventEmitter.emitNotificationEvent({
+      eventType: NOTIFICATION_EVENTS.PC_LISTING_REJECTED,
+      entityType: 'pcListing',
+      entityId: input.pcListingId,
+      triggeredBy: ctx.session.user.id,
+      payload: {
+        pcListingId: input.pcListingId,
+        rejectedBy: ctx.session.user.id,
+        rejectedAt: rejectedListing.processedAt,
+        rejectionReason: input.notes,
+      },
+    })
+
     return rejectedListing
   }),
+
+  resetToPending: moderatorProcedure
+    .input(ResetPcListingToPendingSchema)
+    .mutation(async ({ ctx, input }) => {
+      const repository = new PcListingsRepository(ctx.prisma)
+      const pcListing = await repository.getById(input.pcListingId)
+
+      if (!pcListing) return ResourceError.pcListing.notFound()
+
+      if (pcListing.status === ApprovalStatus.PENDING) {
+        return ResourceError.pcListing.alreadyPending()
+      }
+
+      const updatedListing = await ctx.prisma.pcListing.update({
+        where: { id: input.pcListingId },
+        data: {
+          status: ApprovalStatus.PENDING,
+          processedByUserId: null,
+          processedAt: null,
+          processedNotes: null,
+        },
+      })
+
+      listingStatsCache.delete('pc-listing-stats')
+
+      return updatedListing
+    }),
 
   bulkApprove: protectedProcedure
     .input(BulkApprovePcListingsSchema)
@@ -541,11 +624,14 @@ export const pcListingsRouter = createTRPCRouter({
       if (!isModerator && !isDeveloper) {
         return ResourceError.pcListing.requiresDeveloperToApprove()
       }
+
+      const pendingListings = await ctx.prisma.pcListing.findMany({
+        where: { id: { in: input.pcListingIds }, status: ApprovalStatus.PENDING },
+        select: { id: true, gameId: true },
+      })
+
       const result = await ctx.prisma.pcListing.updateMany({
-        where: {
-          id: { in: input.pcListingIds },
-          status: ApprovalStatus.PENDING,
-        },
+        where: { id: { in: pendingListings.map((l) => l.id) } },
         data: {
           status: ApprovalStatus.APPROVED,
           processedAt: new Date(),
@@ -553,8 +639,20 @@ export const pcListingsRouter = createTRPCRouter({
         },
       })
 
-      // Invalidate stats cache when PC listings are bulk approved
       listingStatsCache.delete('pc-listing-stats')
+
+      for (const listing of pendingListings) {
+        notificationEventEmitter.emitNotificationEvent({
+          eventType: NOTIFICATION_EVENTS.PC_LISTING_APPROVED,
+          entityType: 'pcListing',
+          entityId: listing.id,
+          triggeredBy: ctx.session.user.id,
+          payload: {
+            pcListingId: listing.id,
+            gameId: listing.gameId,
+          },
+        })
+      }
 
       return { count: result.count }
     }),
@@ -570,10 +668,15 @@ export const pcListingsRouter = createTRPCRouter({
       if (!isModerator && !isDeveloper) {
         return ResourceError.pcListing.requiresDeveloperToReject()
       }
+
+      const pendingListings = await ctx.prisma.pcListing.findMany({
+        where: { id: { in: input.pcListingIds }, status: ApprovalStatus.PENDING },
+        select: { id: true },
+      })
+
       const result = await ctx.prisma.pcListing.updateMany({
         where: {
-          id: { in: input.pcListingIds },
-          status: ApprovalStatus.PENDING,
+          id: { in: pendingListings.map((l) => l.id) },
         },
         data: {
           status: ApprovalStatus.REJECTED,
@@ -585,6 +688,21 @@ export const pcListingsRouter = createTRPCRouter({
 
       // Invalidate stats cache when PC listings are bulk rejected
       listingStatsCache.delete('pc-listing-stats')
+
+      for (const listing of pendingListings) {
+        notificationEventEmitter.emitNotificationEvent({
+          eventType: NOTIFICATION_EVENTS.PC_LISTING_REJECTED,
+          entityType: 'pcListing',
+          entityId: listing.id,
+          triggeredBy: ctx.session.user.id,
+          payload: {
+            pcListingId: listing.id,
+            rejectedBy: ctx.session.user.id,
+            rejectedAt: new Date(),
+            rejectionReason: input.notes,
+          },
+        })
+      }
 
       return { count: result.count }
     }),
@@ -763,6 +881,10 @@ export const pcListingsRouter = createTRPCRouter({
   vote: protectedProcedure.input(VotePcListingSchema).mutation(async ({ ctx, input }) => {
     const { pcListingId, value } = input
     const userId = ctx.session.user.id
+
+    if (await isUserBanned(ctx.prisma, userId)) {
+      return AppError.shadowBanned()
+    }
 
     const pcListing = await ctx.prisma.pcListing.findUnique({
       where: { id: pcListingId },
@@ -1102,6 +1224,11 @@ export const pcListingsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { commentId, value } = input
       const userId = ctx.session.user.id
+
+      // Block banned users from voting (vague error preserves shadow ban)
+      if (await isUserBanned(ctx.prisma, userId)) {
+        return AppError.shadowBanned()
+      }
 
       const comment = await ctx.prisma.pcListingComment.findUnique({
         where: { id: commentId },

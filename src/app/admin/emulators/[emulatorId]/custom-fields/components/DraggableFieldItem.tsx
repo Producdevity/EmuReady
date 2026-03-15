@@ -117,22 +117,20 @@ export default function DraggableFieldItem(props: Props) {
         <Button
           variant="ghost"
           size="sm"
+          icon={Pencil}
           onClick={() => props.onEdit(props.field.id)}
           aria-label={`Edit ${props.field.label}`}
           className="h-7 w-7 p-0"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </Button>
+        />
         <Button
           variant="ghost"
           size="sm"
+          icon={Trash2}
           onClick={handleDelete}
           disabled={deleteMutation.isPending}
           aria-label={`Delete ${props.field.label}`}
-          className="h-7 w-7 p-0"
-        >
-          <Trash2 className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
-        </Button>
+          className="h-7 w-7 p-0 text-red-600 dark:text-red-400"
+        />
       </div>
     </div>
   )

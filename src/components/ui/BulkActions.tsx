@@ -141,23 +141,23 @@ export function BulkActions(props: BulkActionsProps) {
               <Button
                 variant="ghost"
                 size="sm"
+                icon={ExternalLink}
                 onClick={handleOpenAllTabs}
                 disabled={isLoading || props.actions.openInTabs.disabled || allTabsOpened}
                 className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
               >
-                <ExternalLink className="w-4 h-4 mr-1" />
                 Open All Tabs (it may work)
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
+                icon={ExternalLink}
                 onClick={handleOpenNextTab}
                 disabled={isLoading || props.actions.openInTabs.disabled || allTabsOpened}
                 className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
               >
-                <ExternalLink className="w-4 h-4 mr-1" />
                 {allTabsOpened
-                  ? 'All Opened ✓'
+                  ? 'All Opened'
                   : openedTabsCount === 0
                     ? 'Open Next Tab'
                     : `Next Tab (${remainingTabs})`}
@@ -169,11 +169,11 @@ export function BulkActions(props: BulkActionsProps) {
             <Button
               variant="primary"
               size="sm"
+              icon={CheckCircle}
               onClick={() => handleAction(props.actions!.approve!.onAction)}
               disabled={isLoading || props.actions.approve.disabled}
               className="bg-green-600 hover:bg-green-700"
             >
-              <CheckCircle className="w-4 h-4 mr-1" />
               {props.actions.approve.label}
             </Button>
           )}
@@ -192,11 +192,11 @@ export function BulkActions(props: BulkActionsProps) {
               <Button
                 variant="primary"
                 size="sm"
+                icon={XCircle}
                 onClick={handleReject}
                 disabled={isLoading || props.actions.reject.disabled}
                 className="bg-red-600 hover:bg-red-700"
               >
-                <XCircle className="w-4 h-4 mr-1" />
                 {showRejectInput ? 'Confirm Reject' : props.actions.reject.label}
               </Button>
               {showRejectInput && (

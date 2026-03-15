@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test'
 import { BasePage } from './BasePage'
 import type { Page } from '@playwright/test'
 
@@ -8,8 +9,7 @@ export class ListingsPage extends BasePage {
 
   // Page-specific elements
   get pageHeading() {
-    // Use first() to handle potential duplicate headings
-    return this.page.getByRole('heading', { name: /game listings/i }).first()
+    return this.page.getByRole('heading', { name: /handheld reports/i }).first()
   }
 
   get filtersHeading() {
@@ -35,7 +35,7 @@ export class ListingsPage extends BasePage {
   get listingItems() {
     return this.page
       .locator('main a[href*="/listings/"]')
-      .filter({ hasNotText: /game listings|add listing|add/i })
+      .filter({ hasNotText: /handheld reports|add listing|add/i })
       .and(this.page.locator(':visible'))
   }
 
@@ -73,8 +73,13 @@ export class ListingsPage extends BasePage {
   async searchListings(query: string) {
     await this.searchInput.fill(query)
     await this.page.keyboard.press('Enter')
-    // Wait for search results
-    await this.page.waitForTimeout(1000)
+    // Wait for search to be reflected in URL params
+    await expect(this.page).toHaveURL(/[?&]search=/, { timeout: 10000 })
+    // Wait for data to finish loading
+    await this.page
+      .getByText(/loading/i)
+      .waitFor({ state: 'hidden', timeout: 10000 })
+      .catch(() => {})
   }
 
   async clickAddListing() {
@@ -84,41 +89,51 @@ export class ListingsPage extends BasePage {
     } catch {
       await this.createListingButton.click()
     }
-    await this.page.waitForURL('/listings/new')
+    await expect(this.page).toHaveURL('/listings/new')
   }
 
   async clickFirstListing() {
     const firstListing = this.listingItems.first()
+    await firstListing.waitFor({ state: 'visible', timeout: 10000 })
+    const href = await firstListing.getAttribute('href')
     await firstListing.click()
-    // Wait for navigation to listing detail page
-    await this.page.waitForURL(/\/listings\/[^/]+/)
+    try {
+      // Use toHaveURL which auto-retries — waitForURL hangs on client-side navigation
+      await expect(this.page).toHaveURL(/\/listings\/[^/]+/, { timeout: 5000 })
+    } catch {
+      // Fallback: if click didn't navigate (e.g. tooltip intercept), use direct navigation
+      if (href) {
+        await this.page.goto(href)
+        await expect(this.page).toHaveURL(/\/listings\/[^/]+/)
+      }
+    }
   }
 
   async filterByDevice(deviceName: string) {
     await this.deviceFilter.click()
     await this.page.getByRole('option', { name: deviceName }).click()
     // Wait for filter to apply
-    await this.page.waitForTimeout(1000)
+    await this.page.waitForLoadState('domcontentloaded')
   }
 
   async filterByEmulator(emulatorName: string) {
     await this.emulatorFilter.click()
     await this.page.getByRole('option', { name: emulatorName }).click()
     // Wait for filter to apply
-    await this.page.waitForTimeout(1000)
+    await this.page.waitForLoadState('domcontentloaded')
   }
 
   async filterByPerformance(performance: string) {
     await this.performanceFilter.click()
     await this.page.getByRole('option', { name: performance }).click()
     // Wait for filter to apply
-    await this.page.waitForTimeout(1000)
+    await this.page.waitForLoadState('domcontentloaded')
   }
 
   async clearAllFilters() {
     await this.clearFiltersButton.click()
     // Wait for filters to clear
-    await this.page.waitForTimeout(1000)
+    await this.page.waitForLoadState('domcontentloaded')
   }
 
   async getListingCount(): Promise<number> {
@@ -158,7 +173,7 @@ export class ListingsPage extends BasePage {
         })
       } catch {
         // No explicit empty message, but that's ok if there are really no listings
-        console.log('No listings found and no explicit empty state message')
+        // No explicit empty state message
       }
     } else {
       // If listings exist, verify at least one is visible

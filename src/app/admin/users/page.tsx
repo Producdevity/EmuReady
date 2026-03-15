@@ -10,6 +10,7 @@ import {
   AdminStatsDisplay,
   AdminSearchFilters,
   AdminTableContainer,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   Badge,
@@ -34,7 +35,7 @@ import { PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
 import { type Role, Role as RoleEnum } from '@orm'
 import UserBadgeModal from './components/UserBadgeModal'
-import UserDetailsModal from './components/UserDetailsModal'
+import UserDetailsModal, { type ActivityTab } from './components/UserDetailsModal'
 import UserRoleModal from './components/UserRoleModal'
 
 type AdminUser = RouterOutput['users']['get']['users'][number]
@@ -47,6 +48,8 @@ type UserSortField =
   | 'votesCount'
   | 'commentsCount'
   | 'trustScore'
+  | 'followersCount'
+  | 'followingCount'
 
 interface UserForModal {
   id: string
@@ -64,6 +67,8 @@ const USERS_COLUMNS: ColumnDefinition[] = [
   { key: 'listingsCount', label: 'Listings', defaultVisible: false },
   { key: 'votesCount', label: 'Votes', defaultVisible: false },
   { key: 'commentsCount', label: 'Comments', defaultVisible: false },
+  { key: 'followersCount', label: 'Followers', defaultVisible: false },
+  { key: 'followingCount', label: 'Following', defaultVisible: false },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
@@ -132,20 +137,11 @@ function AdminUsersPage() {
   }
 
   const openRoleModal = (user: AdminUser) => {
-    setSelectedUserForRole({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    })
+    setSelectedUserForRole({ id: user.id, name: user.name, email: user.email, role: user.role })
   }
 
   const openBadgeModal = (user: AdminUser) => {
-    setSelectedUserForBadge({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    })
+    setSelectedUserForBadge({ id: user.id, name: user.name, email: user.email })
   }
 
   const openUserDetailsModal = (userId: string) => {
@@ -157,6 +153,7 @@ function AdminUsersPage() {
   const closeUserDetailsModal = () => {
     const params = new URLSearchParams(searchParams.toString())
     params.delete('userId')
+    params.delete('tab')
     const newUrl = params.toString() ? `?${params.toString()}` : '/admin/users'
     router.replace(newUrl, { scroll: false })
   }
@@ -226,7 +223,9 @@ function AdminUsersPage() {
 
       <AdminTableContainer>
         {usersQuery.isPending ? (
-          <LoadingSpinner />
+          <LoadingSpinner text="Loading users..." />
+        ) : users.length === 0 ? (
+          <AdminTableNoResults icon={User} hasQuery={!!table.search} />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -304,6 +303,24 @@ function AdminUsersPage() {
                       onSort={table.handleSort}
                     />
                   )}
+                  {columnVisibility.isColumnVisible('followersCount') && (
+                    <SortableHeader
+                      label="Followers"
+                      field="followersCount"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                    />
+                  )}
+                  {columnVisibility.isColumnVisible('followingCount') && (
+                    <SortableHeader
+                      label="Following"
+                      field="followingCount"
+                      currentSortField={table.sortField}
+                      currentSortDirection={table.sortDirection}
+                      onSort={table.handleSort}
+                    />
+                  )}
                   {columnVisibility.isColumnVisible('actions') && (
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Actions
@@ -363,6 +380,16 @@ function AdminUsersPage() {
                         {user._count.comments}
                       </td>
                     )}
+                    {columnVisibility.isColumnVisible('followersCount') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {user._count.followers}
+                      </td>
+                    )}
+                    {columnVisibility.isColumnVisible('followingCount') && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {user._count.following}
+                      </td>
+                    )}
                     {columnVisibility.isColumnVisible('actions') && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                         {!isModerator && canChangeRoles && (
@@ -405,24 +432,6 @@ function AdminUsersPage() {
                     )}
                   </tr>
                 ))}
-
-                {users.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={8}
-                      className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                    >
-                      <div className="flex flex-col items-center">
-                        <User className="h-12 w-12 text-gray-400 mb-4" />
-                        <p className="text-lg">
-                          {table.search
-                            ? 'No users found matching your search.'
-                            : 'No users found.'}
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
@@ -461,9 +470,11 @@ function AdminUsersPage() {
 
       {/* User Details Modal */}
       <UserDetailsModal
+        key={userIdFromUrl}
         userId={userIdFromUrl}
         isOpen={!!userIdFromUrl}
         onClose={closeUserDetailsModal}
+        initialTab={(searchParams.get('tab') as ActivityTab) ?? undefined}
       />
     </AdminPageLayout>
   )

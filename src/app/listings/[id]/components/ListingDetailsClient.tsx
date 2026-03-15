@@ -8,6 +8,7 @@ import { ListingApprovalActions } from '@/app/listings/components/shared/approva
 import { CustomFieldsSection } from '@/app/listings/components/shared/CustomFieldsSection'
 import { ActionButtonsStack } from '@/app/listings/components/shared/details/ActionButtonsStack'
 import { AuthorPanel } from '@/app/listings/components/shared/details/AuthorPanel'
+import BookmarkButton from '@/app/listings/components/shared/details/BookmarkButton'
 import { DetailsHeader } from '@/app/listings/components/shared/details/DetailsHeader'
 import { DetailsHeaderBadges } from '@/app/listings/components/shared/details/DetailsHeaderBadges'
 import { VotingSection } from '@/app/listings/components/shared/details/VotingSection'
@@ -86,8 +87,13 @@ function ListingDetailsClient(props: Props) {
       >
         {/* Back Navigation */}
         <div className="mb-6">
-          <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-4">
-            <ArrowLeft className="h-4 w-4" />
+          <Button
+            variant="outline"
+            size="sm"
+            icon={ArrowLeft}
+            onClick={() => router.back()}
+            className="mb-4"
+          >
             Back
           </Button>
         </div>
@@ -129,23 +135,26 @@ function ListingDetailsClient(props: Props) {
               />
             </div>
             <div className="flex w-full flex-col items-center gap-4 md:w-auto md:min-w-[180px] md:items-start">
-              <AuthorPanel
-                profileImage={props.listing?.author?.profileImage}
-                authorName={props.listing?.author?.name}
-                authorId={props.listing?.author?.id}
-                postedAt={props.listing.createdAt}
-                bannedBadge={
-                  canViewBannedUsers &&
-                  props.listing?.author &&
-                  'userBans' in props.listing.author &&
-                  Array.isArray(props.listing.author.userBans) &&
-                  props.listing.author.userBans.length > 0 ? (
-                    <Badge variant="danger" size="sm" className="mt-1">
-                      BANNED USER
-                    </Badge>
-                  ) : undefined
-                }
-              />
+              <div className="flex items-start justify-between w-full gap-2">
+                <AuthorPanel
+                  profileImage={props.listing?.author?.profileImage}
+                  authorName={props.listing?.author?.name}
+                  authorId={props.listing?.author?.id}
+                  postedAt={props.listing.createdAt}
+                  bannedBadge={
+                    canViewBannedUsers &&
+                    props.listing?.author &&
+                    'userBans' in props.listing.author &&
+                    Array.isArray(props.listing.author.userBans) &&
+                    props.listing.author.userBans.length > 0 ? (
+                      <Badge variant="danger" size="sm" className="mt-1">
+                        BANNED USER
+                      </Badge>
+                    ) : undefined
+                  }
+                />
+                <BookmarkButton type="listing" listingId={props.listing.id} />
+              </div>
               <ActionButtonsStack>
                 <EditListingButton listingId={props.listing.id} onSuccess={refreshData} />
                 <ReportListingButton

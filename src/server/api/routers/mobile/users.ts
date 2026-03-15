@@ -1,10 +1,13 @@
 import { ResourceError } from '@/lib/errors'
 import { GetUserByIdSchema } from '@/schemas/user'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
-import { roleIncludesRole } from '@/utils/permission-system'
-import { ApprovalStatus, Role, Prisma } from '@orm'
+import {
+  checkProfileAccess,
+  PRIVATE_PROFILE_SETTINGS,
+} from '@/server/services/user-profile.service'
+import { paginate } from '@/server/utils/pagination'
+import { ApprovalStatus, Prisma } from '@orm'
 
-// TODO: this needs to be extracted in a user.repository.ts and/or a user.service.ts
 export const mobileUsersRouter = createMobileTRPCRouter({
   /**
    * Get user profile by ID (public user profiles)
@@ -24,47 +27,63 @@ export const mobileUsersRouter = createMobileTRPCRouter({
 
     const mode = Prisma.QueryMode.insensitive
 
-    // Check if user exists and get ban status
-    const userWithBanStatus = await ctx.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        userBans: {
-          where: {
-            isActive: true,
-            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-          },
-          select: { id: true },
-        },
-      },
+    const access = await checkProfileAccess(ctx.prisma, userId, {
+      currentUserId: ctx.session?.user?.id,
+      currentUserRole: ctx.session?.user?.role,
+      showNsfw: ctx.session?.user?.showNsfw,
     })
 
-    if (!userWithBanStatus) return ResourceError.user.notFound()
+    if (!access.accessible) {
+      if (access.reason === 'not_found') return ResourceError.user.notFound()
+      if (access.reason === 'banned') return ResourceError.user.profileNotAccessible()
 
-    // Check if user is banned and if current user can view banned profiles
-    const isBanned = userWithBanStatus.userBans.length > 0
-    const currentUserRole = ctx.session?.user?.role
-    const canViewBannedUsers = roleIncludesRole(currentUserRole, Role.MODERATOR)
+      // Private profile: return minimal data
+      const minimalUser = await ctx.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          profileImage: true,
+          role: true,
+          trustScore: true,
+          createdAt: true,
+        },
+      })
 
-    if (isBanned && !canViewBannedUsers) {
-      return ResourceError.user.profileNotAccessible()
+      if (!minimalUser) return ResourceError.user.notFound()
+
+      return {
+        ...minimalUser,
+        bio: null,
+        listings: [],
+        votes: [],
+        _count: { listings: 0, votes: 0, submittedGames: 0 },
+        pagination: {
+          listings: paginate({ total: 0, page: listingsPage, limit: listingsLimit }),
+          votes: paginate({ total: 0, page: votesPage, limit: votesLimit }),
+        },
+        ...PRIVATE_PROFILE_SETTINGS,
+        limitedProfile: true,
+      }
     }
+
+    const { canViewBannedUsers, isOwner, isMod, showNsfw, privacySettings } = access
 
     // Build where clauses for listings filtering
     const listingsWhere: Prisma.ListingWhereInput = {}
 
-    // Filter by approval status based on user permissions
     if (canViewBannedUsers) {
       // Moderators can see all statuses including rejected
-      // No additional filtering needed
-    } else if (ctx.session?.user?.id === userId) {
-      // Users can see their own approved and pending listings, but NOT rejected
+    } else if (isOwner) {
       listingsWhere.status = {
         in: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING],
       }
     } else {
-      // Regular users (including signed out) can ONLY see approved listings from others
       listingsWhere.status = ApprovalStatus.APPROVED
+    }
+
+    if (!showNsfw) {
+      listingsWhere.game = { isErotic: false }
     }
 
     if (listingsSearch) {
@@ -81,14 +100,21 @@ export const mobileUsersRouter = createMobileTRPCRouter({
       listingsWhere.emulator = { name: listingsEmulator }
     }
 
+    // Determine if votes should be shown
+    const showVotes = isOwner || isMod || privacySettings.showVotingActivity
+
     // Build where clause for votes filtering
     const votesWhere: Prisma.VoteWhereInput = {
-      listing: { status: ApprovalStatus.APPROVED }, // Only show votes on approved listings
+      listing: {
+        status: ApprovalStatus.APPROVED,
+        ...(!showNsfw ? { game: { isErotic: false } } : {}),
+      },
     }
 
     if (votesSearch) {
       votesWhere.listing = {
         status: ApprovalStatus.APPROVED,
+        ...(!showNsfw ? { game: { isErotic: false } } : {}),
         OR: [
           { game: { title: { contains: votesSearch, mode } } },
           { device: { modelName: { contains: votesSearch, mode } } },
@@ -101,7 +127,6 @@ export const mobileUsersRouter = createMobileTRPCRouter({
     const listingsOffset = (listingsPage - 1) * listingsLimit
     const votesOffset = (votesPage - 1) * votesLimit
 
-    // TODO: if this code was public, I would be ashamed of it.
     // Fetch user data with paginated listings and votes
     const [user, listingsTotal, votesTotal] = await Promise.all([
       ctx.prisma.user.findUnique({
@@ -174,32 +199,24 @@ export const mobileUsersRouter = createMobileTRPCRouter({
       ctx.prisma.listing.count({
         where: { ...listingsWhere, authorId: userId },
       }),
-      ctx.prisma.vote.count({
-        where: { ...votesWhere, userId },
-      }),
+      showVotes ? ctx.prisma.vote.count({ where: { ...votesWhere, userId } }) : Promise.resolve(0),
     ])
 
     if (!user) return ResourceError.user.notFound()
 
-    const listingsPages = Math.ceil(listingsTotal / listingsLimit)
-    const votesPages = Math.ceil(votesTotal / votesLimit)
-
     return {
       ...user,
-      pagination: {
-        listings: {
-          page: listingsPage,
-          limit: listingsLimit,
-          total: listingsTotal,
-          pages: listingsPages,
-        },
-        votes: {
-          page: votesPage,
-          limit: votesLimit,
-          total: votesTotal,
-          pages: votesPages,
-        },
+      votes: showVotes ? user.votes : [],
+      _count: {
+        ...user._count,
+        votes: showVotes ? user._count.votes : 0,
       },
+      pagination: {
+        listings: paginate({ total: listingsTotal, page: listingsPage, limit: listingsLimit }),
+        votes: paginate({ total: votesTotal, page: votesPage, limit: votesLimit }),
+      },
+      ...privacySettings,
+      limitedProfile: false,
     }
   }),
 })

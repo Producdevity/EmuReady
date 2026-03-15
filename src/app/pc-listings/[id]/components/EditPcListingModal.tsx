@@ -144,8 +144,7 @@ function EditPcListingModal(props: Props) {
                   passed, you&apos;ll need to create a new listing if you want to make changes.
                 </p>
                 <Link href="/pc-listings/new">
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <ExternalLink className="w-4 h-4" />
+                  <Button variant="outline" size="sm" icon={ExternalLink}>
                     Create New PC Listing
                   </Button>
                 </Link>

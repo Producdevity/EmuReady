@@ -8,6 +8,7 @@ export const CreateUserBanSchema = z.object({
   reason: z.string().min(1).max(500),
   notes: z.string().optional(),
   expiresAt: z.date().optional(),
+  nullifyVotes: z.boolean().default(false),
 })
 
 export const UpdateUserBanSchema = z.object({

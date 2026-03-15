@@ -40,7 +40,13 @@ async function createSessionFromClerkUserId(userId: string): Promise<Nullable<Se
   // Find user in database - they should exist due to webhook sync
   let user = await prisma.user.findUnique({
     where: { clerkId: userId },
-    select: { id: true, email: true, name: true, role: true, showNsfw: true },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      settings: { select: { showNsfw: true } },
+    },
   })
 
   // If the user doesn't exist, create them automatically
@@ -68,9 +74,16 @@ async function createSessionFromClerkUserId(userId: string): Promise<Nullable<Se
               email: primaryEmail.email_address,
               name: clerkData.username || clerkData.first_name || null,
               profileImage: clerkData.image_url || null,
-              role: Role.USER, // Default role
+              role: Role.USER,
+              settings: { create: {} },
             },
-            select: { id: true, email: true, name: true, role: true, showNsfw: true },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              role: true,
+              settings: { select: { showNsfw: true } },
+            },
           })
         }
       }
@@ -112,7 +125,7 @@ async function createSessionFromClerkUserId(userId: string): Promise<Nullable<Se
       name: user.name,
       role: user.role,
       permissions,
-      showNsfw: user.showNsfw,
+      showNsfw: user.settings?.showNsfw ?? false,
     },
   }
 }
@@ -203,7 +216,7 @@ export const publicProcedure = t.procedure.use(performanceMiddleware)
  * Middleware to check if a user is signed in
  */
 export const protectedProcedure = t.procedure.use(performanceMiddleware).use(({ ctx, next }) => {
-  if (!ctx.session?.user) AppError.unauthorized()
+  if (!ctx.session?.user) return AppError.unauthorized()
 
   return next({
     ctx: { session: { ...ctx.session, user: ctx.session.user } },
@@ -218,7 +231,7 @@ export const authorProcedure = t.procedure.use(performanceMiddleware).use(({ ctx
 
   // For now, we consider User as Author
   if (!hasRolePermission(ctx.session.user.role, Role.USER)) {
-    AppError.forbidden()
+    return AppError.forbidden()
   }
 
   return next({
@@ -233,53 +246,39 @@ export const authorProcedure = t.procedure.use(performanceMiddleware).use(({ ctx
  * TODO: use implementation of this procedure
  */
 export const moderatorProcedure = t.procedure.use(performanceMiddleware).use(({ ctx, next }) => {
-  if (!ctx.session?.user) {
-    AppError.unauthorized()
-  }
+  if (!ctx.session?.user) AppError.unauthorized()
 
   if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
     AppError.insufficientRole(Role.MODERATOR)
   }
 
-  return next({
-    ctx: {
-      session: { ...ctx.session, user: ctx.session.user },
-    },
-  })
+  return next({ ctx: { session: { ...ctx.session, user: ctx.session.user } } })
 })
 
 /**
  * Middleware to check if a user has Developer role
  */
 export const developerProcedure = t.procedure.use(performanceMiddleware).use(({ ctx, next }) => {
-  if (!ctx.session?.user) {
-    AppError.unauthorized()
-  }
+  if (!ctx.session?.user) AppError.unauthorized()
 
   if (!hasRolePermission(ctx.session.user.role, Role.DEVELOPER)) {
     AppError.insufficientRole(Role.DEVELOPER)
   }
 
-  return next({
-    ctx: {
-      session: { ...ctx.session, user: ctx.session.user },
-    },
-  })
+  return next({ ctx: { session: { ...ctx.session, user: ctx.session.user } } })
 })
 
 /**
  * Middleware to check if a user has Admin role
  */
 export const adminProcedure = t.procedure.use(performanceMiddleware).use(({ ctx, next }) => {
-  if (!ctx.session?.user) return AppError.unauthorized()
+  if (!ctx.session?.user) AppError.unauthorized()
 
   if (!hasRolePermission(ctx.session.user.role, Role.ADMIN)) {
     AppError.insufficientRole(Role.ADMIN)
   }
 
-  return next({
-    ctx: { session: { ...ctx.session, user: ctx.session.user } },
-  })
+  return next({ ctx: { session: { ...ctx.session, user: ctx.session.user } } })
 })
 
 /**
@@ -292,9 +291,7 @@ export const superAdminProcedure = t.procedure.use(performanceMiddleware).use(({
     AppError.insufficientRole(Role.SUPER_ADMIN)
   }
 
-  return next({
-    ctx: { session: { ...ctx.session, user: ctx.session.user } },
-  })
+  return next({ ctx: { session: { ...ctx.session, user: ctx.session.user } } })
 })
 
 /**
@@ -309,9 +306,11 @@ export const superAdminProcedure = t.procedure.use(performanceMiddleware).use(({
  */
 export function developerEmulatorProcedure(emulatorId: string) {
   return protectedProcedure.use(async ({ ctx, next }) => {
-    const userId = ctx.session.user.id
-
-    const hasAccess = await hasDeveloperAccessToEmulator(userId, emulatorId, ctx.prisma)
+    const hasAccess = await hasDeveloperAccessToEmulator(
+      ctx.session.user.id,
+      emulatorId,
+      ctx.prisma,
+    )
 
     if (!hasAccess) return AppError.insufficientRole(Role.DEVELOPER)
 
@@ -344,7 +343,7 @@ export function multiPermissionProcedure(requiredPermissions: string[]) {
       (permission) => !hasPermissionInContext(ctx, permission),
     )
 
-    if (missingPermissions.length > 0) return AppError.insufficientPermissions(missingPermissions)
+    if (missingPermissions.length > 0) AppError.insufficientPermissions(missingPermissions)
 
     return next({ ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } } })
   })
@@ -361,7 +360,7 @@ export function anyPermissionProcedure(requiredPermissions: string[]) {
       hasPermissionInContext(ctx, permission),
     )
 
-    if (!hasAnyPermission) return AppError.insufficientRoles(requiredPermissions)
+    if (!hasAnyPermission) AppError.insufficientRoles(requiredPermissions)
 
     return next({ ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } } })
   })

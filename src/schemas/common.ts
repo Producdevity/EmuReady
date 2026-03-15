@@ -5,7 +5,7 @@ export const AdminTableParamsSchema = z.object({
   search: z.string().default(''),
   page: z.number().int().positive().default(1),
   sortField: z.string().nullable().default(null),
-  sortDirection: z.enum(['asc', 'desc']).nullable().default(null),
+  sortDirection: z.enum(['asc', 'desc']).nullable().default(null), // TODO: extract
 })
 
 export const JsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
@@ -29,3 +29,11 @@ export const FilterValueSchema = z.object({
 })
 
 export type FilterValue = z.infer<typeof FilterValueSchema>
+
+// Listing type: handheld vs PC
+export const ListingType = z.enum(['handheld', 'pc'])
+export type ListingType = z.infer<typeof ListingType>
+
+// Severity level
+export const Severity = z.enum(['low', 'medium', 'high'])
+export type Severity = z.infer<typeof Severity>

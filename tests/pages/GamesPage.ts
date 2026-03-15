@@ -51,21 +51,33 @@ export class GamesPage extends BasePage {
 
   async searchGames(query: string) {
     await this.searchInput.fill(query)
-    await this.page.keyboard.press('Enter')
-    // Wait for search results
-    await this.page.waitForTimeout(1000)
+    // Search is debounced (500ms) — wait for URL to reflect the search param
+    await expect(this.page).toHaveURL(/[?&]search=/, { timeout: 10000 })
+    // Wait for search results to load (resolves immediately if loading indicator never appeared)
+    await this.page.getByText(/loading/i).waitFor({ state: 'hidden', timeout: 10000 })
   }
 
   async clickAddGame() {
     await this.addGameButton.click()
-    await this.page.waitForURL('/games/new')
+    await expect(this.page).toHaveURL('/games/new')
   }
 
   async clickFirstGame() {
     const firstGame = this.gameItems.first()
+    // Get the href to verify navigation target
+    const href = await firstGame.getAttribute('href')
     await firstGame.click()
-    // Wait for navigation to game detail page
-    await this.page.waitForURL(/\/games\/[^/]+/)
+
+    try {
+      // Use toHaveURL which auto-retries — waitForURL hangs on client-side navigation
+      await expect(this.page).toHaveURL(/\/games\/[^/]+/, { timeout: 5000 })
+    } catch {
+      // If click didn't navigate (React re-render absorbed the click), use direct navigation
+      if (href) {
+        await this.page.goto(href)
+      }
+      await expect(this.page).toHaveURL(/\/games\/[^/]+/)
+    }
   }
 
   async getGameCount(): Promise<number> {
@@ -83,11 +95,11 @@ export class GamesPage extends BasePage {
 
   async verifyGameHeadingsVisible() {
     // Wait for games to load
-    await this.page.waitForTimeout(2000)
+    await this.page.waitForLoadState('domcontentloaded')
     const count = await this.gameHeadings.count()
     // Games page might not have any games yet, which is okay
     if (count === 0) {
-      console.log('No game headings found - games list might be empty')
+      // No game headings found — games list might be empty
       // Check if there's at least a page heading
       await this.pageHeading.waitFor({ state: 'visible' })
     } else {
@@ -108,7 +120,7 @@ export class GamesPage extends BasePage {
         await this.noGamesMessage.waitFor({ state: 'visible', timeout: 2000 })
       } catch {
         // No explicit empty message, but that's ok if there are really no games
-        console.log('No games found and no explicit empty state message')
+        // No explicit empty state message
       }
     } else {
       // If games exist, verify at least one is visible

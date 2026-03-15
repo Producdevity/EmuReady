@@ -22,7 +22,7 @@ test.describe('Test Suite Validation', () => {
     expect(typeof listingsPage.searchListings).toBe('function')
     expect(typeof authPage.isAuthenticated).toBe('function')
 
-    console.log('✅ All page objects validated successfully')
+    expect(typeof authPage.isAuthenticated).toBe('function')
   })
 
   test('should validate test file structure', async () => {
@@ -43,6 +43,6 @@ test.describe('Test Suite Validation', () => {
 
     // This test just validates the structure
     expect(testFiles.length).toBe(11)
-    console.log(`✅ Found ${testFiles.length} test files`)
+    expect(testFiles.every((f) => f.endsWith('.spec.ts'))).toBe(true)
   })
 })

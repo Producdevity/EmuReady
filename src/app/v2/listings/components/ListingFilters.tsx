@@ -218,11 +218,10 @@ export function ListingFilters(props: Props) {
                   <Button
                     variant="ghost"
                     size="sm"
+                    icon={X}
                     onClick={() => props.setShowFilters(false)}
                     className="lg:hidden p-2"
-                  >
-                    <X className="w-5 h-5" />
-                  </Button>
+                  />
                 </div>
               </div>
 
@@ -393,16 +392,16 @@ export function ListingFilters(props: Props) {
               <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
                 <Button
                   variant="outline"
+                  icon={RotateCcw}
                   onClick={handleClearAll}
                   disabled={!props.hasActiveFilters}
                   className={cn(
-                    'flex items-center gap-2 transition-all duration-200',
+                    'transition-all duration-200',
                     props.hasActiveFilters
                       ? 'text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20'
                       : 'opacity-50 cursor-not-allowed',
                   )}
                 >
-                  <RotateCcw className="w-4 h-4" />
                   Clear All
                 </Button>
 

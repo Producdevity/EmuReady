@@ -40,14 +40,13 @@ export function MarkdownRenderer(props: Props) {
   return (
     <div
       className={cn(
-        'prose dark:prose-invert max-w-none',
-        // Custom styling for better integration
+        'prose dark:prose-invert max-w-none overflow-hidden',
         'prose-headings:text-gray-800 dark:prose-headings:text-gray-200',
         'prose-p:text-gray-700 dark:prose-p:text-gray-300',
         'prose-strong:text-gray-800 dark:prose-strong:text-gray-200',
         'prose-code:text-blue-600 dark:prose-code:text-blue-400',
         'prose-code:bg-gray-100 dark:prose-code:bg-gray-800',
-        'prose-code:px-1 prose-code:py-0.5 prose-code:rounded',
+        'prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:break-all',
         'prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800',
         'prose-blockquote:border-blue-200 dark:prose-blockquote:border-blue-700',
         'prose-blockquote:bg-blue-50 dark:prose-blockquote:bg-blue-900/20',

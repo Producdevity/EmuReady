@@ -1,3 +1,4 @@
+import { expect } from '@playwright/test'
 import { BasePage } from './BasePage'
 import type { Page } from '@playwright/test'
 
@@ -192,7 +193,7 @@ export class GameFormPage extends BasePage {
 
   async verifyRedirectAfterSuccess() {
     // Should redirect to game detail page or games list
-    await this.page.waitForURL(/\/games\/((?!new).)*/, { timeout: 10000 })
+    await expect(this.page).toHaveURL(/\/games\/((?!new).)*/, { timeout: 10000 })
   }
 
   async hasValidationErrors(): Promise<boolean> {

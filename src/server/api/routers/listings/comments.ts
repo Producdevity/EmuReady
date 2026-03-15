@@ -19,6 +19,7 @@ import { canManageCommentPins } from '@/server/api/utils/pinPermissions'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { CommentsRepository } from '@/server/repositories/comments.repository'
 import { logAudit } from '@/server/services/audit.service'
+import { isUserBanned } from '@/server/utils/query-builders'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { canDeleteComment, canEditComment } from '@/utils/permissions'
 import { AuditAction, AuditEntityType, Role, TrustAction } from '@orm'
@@ -79,7 +80,7 @@ export const commentsRouter = createTRPCRouter({
       payload: {
         listingId,
         commentId: comment.id,
-        parentId,
+        parentId: parentId ?? undefined,
         commentText: content,
       },
     })
@@ -98,10 +99,7 @@ export const commentsRouter = createTRPCRouter({
     })
 
     if (userCommentCount === 1) {
-      analytics.userJourney.firstTimeAction({
-        userId: userId,
-        action: 'first_comment',
-      })
+      analytics.userJourney.firstTimeAction({ userId: userId, action: 'first_comment' })
     }
 
     return comment
@@ -244,7 +242,6 @@ export const commentsRouter = createTRPCRouter({
       updatedAt: new Date(),
     })
 
-    // Emit notification event
     notificationEventEmitter.emitNotificationEvent({
       eventType: NOTIFICATION_EVENTS.LISTING_COMMENTED,
       entityType: 'listing',
@@ -316,6 +313,10 @@ export const commentsRouter = createTRPCRouter({
   vote: protectedProcedure.input(CreateVoteComment).mutation(async ({ ctx, input }) => {
     const { commentId, value } = input
     const userId = ctx.session.user.id
+
+    if (await isUserBanned(ctx.prisma, userId)) {
+      return AppError.shadowBanned()
+    }
 
     const comment = await ctx.prisma.comment.findUnique({ where: { id: commentId } })
 
@@ -624,9 +625,7 @@ export const commentsRouter = createTRPCRouter({
       action: AuditAction.UNPIN,
       entityType: AuditEntityType.COMMENT,
       entityId: previousPinnedId,
-      metadata: {
-        listingId: listing.id,
-      },
+      metadata: { listingId: listing.id },
     })
 
     return { success: true }

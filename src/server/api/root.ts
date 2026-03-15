@@ -1,4 +1,5 @@
 import { createTRPCRouter } from '@/server/api/trpc'
+import { accountRouter } from './routers/account'
 import { activityRouter } from './routers/admin/activity'
 import { adminEntitlementsRouter } from './routers/admin/entitlements'
 import { adminReleasesRouter } from './routers/admin/releases'
@@ -6,6 +7,7 @@ import { titleIdToolsRouter } from './routers/admin/titleIdTools'
 import { apiKeysRouter } from './routers/apiKeys'
 import { auditLogsRouter } from './routers/auditLogs'
 import { badgesRouter } from './routers/badges'
+import { bookmarksRouter } from './routers/bookmarks'
 import { cacheRouter } from './routers/cache'
 import { cpusRouter } from './routers/cpus'
 import { customFieldCategoryRouter } from './routers/customFieldCategories'
@@ -15,6 +17,7 @@ import { deviceBrandsRouter } from './routers/deviceBrands'
 import { devicesRouter } from './routers/devices'
 import { emulatorsRouter } from './routers/emulators'
 import { entitlementsRouter } from './routers/entitlements'
+import { gameFollowsRouter } from './routers/gameFollows'
 import { gamesRouter } from './routers/games'
 import { gpusRouter } from './routers/gpus'
 import { igdbRouter } from './routers/igdb'
@@ -29,6 +32,7 @@ import { permissionLogsRouter } from './routers/permissionLogs'
 import { permissionsRouter } from './routers/permissions'
 import { rawgRouter } from './routers/rawg'
 import { releasesRouter } from './routers/releases'
+import { socialRouter } from './routers/social'
 import { socsRouter } from './routers/socs'
 import { systemRouter } from './routers/system'
 import { systemsRouter } from './routers/systems'
@@ -38,8 +42,10 @@ import { userBansRouter } from './routers/userBans'
 import { userPreferencesRouter } from './routers/userPreferences'
 import { usersRouter } from './routers/users'
 import { verifiedDevelopersRouter } from './routers/verifiedDevelopers'
+import { voteInvestigationRouter } from './routers/voteInvestigation'
 
 export const appRouter = createTRPCRouter({
+  account: accountRouter,
   activity: activityRouter,
   listings: listingsRouter,
   pcListings: pcListingsRouter,
@@ -79,6 +85,10 @@ export const appRouter = createTRPCRouter({
   entitlements: entitlementsRouter,
   adminReleases: adminReleasesRouter,
   adminEntitlements: adminEntitlementsRouter,
+  voteInvestigation: voteInvestigationRouter,
+  social: socialRouter,
+  bookmarks: bookmarksRouter,
+  gameFollows: gameFollowsRouter,
 })
 
 export type AppRouter = typeof appRouter

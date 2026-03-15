@@ -6,6 +6,16 @@ export const UpdateUserPreferencesSchema = z.object({
   notifyOnNewListings: z.boolean().optional(),
   showNsfw: z.boolean().optional(),
   bio: z.string().max(500).optional(), // Bio field with XSS protection handled in server
+  // Privacy preferences
+  profilePublic: z.boolean().optional(),
+  showActivityInFeed: z.boolean().optional(),
+  showVotingActivity: z.boolean().optional(),
+  allowFollows: z.boolean().optional(),
+  allowFriendRequests: z.boolean().optional(),
+  followersVisible: z.boolean().optional(),
+  followingVisible: z.boolean().optional(),
+  bookmarksVisible: z.boolean().optional(),
+  followedGamesVisible: z.boolean().optional(),
 })
 
 export const AddDevicePreferenceSchema = z.object({

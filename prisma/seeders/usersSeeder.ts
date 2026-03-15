@@ -138,6 +138,7 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
           name: userData.name,
           role: userData.role,
           profileImage: clerkUser.imageUrl || null,
+          settings: { create: {} },
         },
       })
 

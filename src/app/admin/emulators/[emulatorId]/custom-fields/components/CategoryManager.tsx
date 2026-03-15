@@ -99,8 +99,8 @@ export default function CategoryManager(props: CategoryManagerProps) {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Categories</h2>
-        <Button onClick={handleOpenCreateModal} size="sm">
-          <PlusCircle className="mr-2 h-4 w-4" /> Create Category
+        <Button icon={PlusCircle} onClick={handleOpenCreateModal} size="sm">
+          Create Category
         </Button>
       </div>
 
@@ -114,8 +114,8 @@ export default function CategoryManager(props: CategoryManagerProps) {
             <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
               Create categories to organize custom fields into logical groups.
             </p>
-            <Button onClick={handleOpenCreateModal} variant="primary">
-              <PlusCircle className="mr-2 h-4 w-4" /> Create Your First Category
+            <Button icon={PlusCircle} onClick={handleOpenCreateModal} variant="primary">
+              Create Your First Category
             </Button>
           </div>
         </Card>

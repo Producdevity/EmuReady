@@ -7,22 +7,22 @@ import { getApprovalRoute } from '@/app/admin/config/routes'
 import { cn } from '@/lib/utils'
 import { type ActivityTypes } from '@/server/services/activity.service'
 
-interface CriticalActionsProps {
+interface Props {
   actions: ActivityTypes.PendingApproval[]
   className?: string
 }
 
-export function CriticalActions({ actions, className }: CriticalActionsProps) {
-  if (actions.length === 0) return null
+export function CriticalActions(props: Props) {
+  if (props.actions.length === 0) return null
 
   // Group actions by type
-  const groupedActions = actions.reduce(
+  const groupedActions = props.actions.reduce(
     (acc, action) => {
       if (!acc[action.type]) acc[action.type] = []
       acc[action.type].push(action)
       return acc
     },
-    {} as Record<string, typeof actions>,
+    {} as Record<string, typeof props.actions>,
   )
 
   const getActionUrl = (action: ActivityTypes.PendingApproval) => {
@@ -55,8 +55,8 @@ export function CriticalActions({ actions, className }: CriticalActionsProps) {
     }
   }
 
-  const totalCount = actions.length
-  const urgentCount = actions.filter(
+  const totalCount = props.actions.length
+  const urgentCount = props.actions.filter(
     (a) => new Date().getTime() - a.createdAt.getTime() > 24 * 60 * 60 * 1000,
   ).length
 
@@ -69,7 +69,7 @@ export function CriticalActions({ actions, className }: CriticalActionsProps) {
         'border border-amber-200/50 dark:border-amber-800/50',
         'rounded-xl shadow-lg',
         'backdrop-blur-sm',
-        className,
+        props.className,
       )}
     >
       {/* Decorative gradient overlay */}

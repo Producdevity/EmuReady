@@ -246,8 +246,7 @@ export default function IGDBGamePreviewModal(props: Props) {
               </Button>
               {existingGameId ? (
                 <Link href={`/listings/new?gameId=${existingGameId}`} className="w-full sm:flex-1">
-                  <Button variant="outline" className="w-full">
-                    <CheckCircle className="h-4 w-4 mr-2" />
+                  <Button variant="outline" icon={CheckCircle} className="w-full">
                     Go to Existing Game
                   </Button>
                 </Link>

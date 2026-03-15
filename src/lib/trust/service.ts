@@ -85,6 +85,79 @@ export async function applyTrustAction(params: ApplyTrustActionParams): Promise<
   })
 }
 
+/**
+ * Reverses the trust impact of a previously applied trust action.
+ * Applies the negative of the original action's weight.
+ */
+export async function reverseTrustAction(params: {
+  userId: string
+  originalAction: TrustAction
+  context?: TrustActionContext
+}): Promise<void> {
+  const { userId, originalAction, context = {} } = params
+
+  if (!TRUST_ACTIONS[originalAction]) {
+    throw new Error(`Invalid trust action: ${originalAction}`)
+  }
+
+  const originalWeight = TRUST_ACTIONS[originalAction].weight
+  if (originalWeight === 0) return
+
+  const reversalWeight = -originalWeight
+
+  await prisma.$transaction(async (tx) => {
+    const currentUser = await tx.user.findUnique({
+      where: { id: userId },
+      select: { trustScore: true },
+    })
+
+    const currentTrustLevel = currentUser ? getTrustLevel(currentUser.trustScore) : null
+    const newTrustScore = Math.max(0, (currentUser?.trustScore || 0) + reversalWeight)
+    const newTrustLevel = getTrustLevel(newTrustScore)
+
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        trustScore: newTrustScore,
+        lastActiveAt: new Date(),
+      },
+    })
+
+    await tx.trustActionLog.create({
+      data: {
+        userId,
+        action: TrustAction.VOTE_NULLIFICATION_REVERSAL,
+        weight: reversalWeight,
+        metadata: validateData(z.record(z.unknown()), {
+          ...context,
+          originalAction,
+          reversed: true,
+        }) as Prisma.InputJsonValue,
+      },
+    })
+
+    analytics.trust.trustScoreChanged({
+      userId,
+      oldScore: currentUser?.trustScore || 0,
+      newScore: newTrustScore,
+      action: TrustAction.VOTE_NULLIFICATION_REVERSAL,
+      weight: reversalWeight,
+    })
+
+    const previousLevel = currentTrustLevel?.name ?? null
+    const nextLevel = newTrustLevel.name ?? null
+
+    if (previousLevel !== nextLevel) {
+      analytics.trust.trustLevelChanged({
+        userId,
+        oldLevel: resolveTrustLevelName(currentTrustLevel),
+        newLevel: resolveTrustLevelName(newTrustLevel),
+        score: newTrustScore,
+      })
+    }
+  })
+}
+
 export async function canUserAutoApprove(userId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
