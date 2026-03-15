@@ -4,73 +4,80 @@ import { hasRolePermission } from '@/utils/permissions'
 import { TIME_CONSTANTS } from '@/utils/time'
 import { ApprovalStatus, RelationshipStatus, RelationshipType, Role } from '@orm'
 import { BaseRepository } from './base.repository'
+import { hiddenList, visibleList } from './types'
+import type { VisibilityContext, VisibilityGatedList } from './types'
 import type { Prisma } from '@orm'
 
-interface VisibilityContext {
-  requestingUserId?: string
-  requestingUserRole?: Role
-}
+const socialUserSelect = {
+  id: true,
+  name: true,
+  profileImage: true,
+  role: true,
+  trustScore: true,
+} satisfies Prisma.UserSelect
+
+const socialIncludes = {
+  followerWithUser: {
+    id: true,
+    createdAt: true,
+    follower: { select: socialUserSelect },
+  } satisfies Prisma.UserFollowSelect,
+
+  followingWithUser: {
+    id: true,
+    createdAt: true,
+    following: { select: socialUserSelect },
+  } satisfies Prisma.UserFollowSelect,
+
+  relationshipWithUsers: {
+    id: true,
+    createdAt: true,
+    sender: { select: socialUserSelect },
+    receiver: { select: socialUserSelect },
+  } satisfies Prisma.UserRelationshipSelect,
+
+  listingFeedItem: {
+    id: true,
+    createdAt: true,
+    author: { select: socialUserSelect },
+    game: {
+      select: { title: true, system: { select: { id: true, name: true, key: true } } },
+    },
+    device: {
+      select: { modelName: true, brand: { select: { name: true } } },
+    },
+    emulator: { select: { name: true } },
+    performance: { select: { label: true, rank: true, description: true } },
+  } satisfies Prisma.ListingSelect,
+
+  pcListingFeedItem: {
+    id: true,
+    createdAt: true,
+    author: { select: socialUserSelect },
+    game: {
+      select: { title: true, system: { select: { id: true, name: true, key: true } } },
+    },
+    cpu: { select: { modelName: true, brand: { select: { name: true } } } },
+    gpu: { select: { modelName: true, brand: { select: { name: true } } } },
+    emulator: { select: { name: true } },
+    performance: { select: { label: true, rank: true, description: true } },
+  } satisfies Prisma.PcListingSelect,
+} as const
+
+type FollowerListItem = Prisma.UserFollowGetPayload<{
+  select: (typeof socialIncludes)['followerWithUser']
+}>
+
+type FollowingListItem = Prisma.UserFollowGetPayload<{
+  select: (typeof socialIncludes)['followingWithUser']
+}>
 
 export class SocialRepository extends BaseRepository {
   static readonly selects = {
-    user: {
-      id: true,
-      name: true,
-      profileImage: true,
-      role: true,
-      trustScore: true,
-    } satisfies Prisma.UserSelect,
+    user: socialUserSelect,
   } as const
 
-  static readonly includes = {
-    followerWithUser: {
-      id: true,
-      createdAt: true,
-      follower: { select: SocialRepository.selects.user },
-    } satisfies Prisma.UserFollowSelect,
-
-    followingWithUser: {
-      id: true,
-      createdAt: true,
-      following: { select: SocialRepository.selects.user },
-    } satisfies Prisma.UserFollowSelect,
-
-    relationshipWithUsers: {
-      id: true,
-      createdAt: true,
-      sender: { select: SocialRepository.selects.user },
-      receiver: { select: SocialRepository.selects.user },
-    } satisfies Prisma.UserRelationshipSelect,
-
-    listingFeedItem: {
-      id: true,
-      createdAt: true,
-      author: { select: SocialRepository.selects.user },
-      game: {
-        select: { title: true, system: { select: { id: true, name: true, key: true } } },
-      },
-      device: {
-        select: { modelName: true, brand: { select: { name: true } } },
-      },
-      emulator: { select: { name: true } },
-      performance: { select: { label: true, rank: true, description: true } },
-    } satisfies Prisma.ListingSelect,
-
-    pcListingFeedItem: {
-      id: true,
-      createdAt: true,
-      author: { select: SocialRepository.selects.user },
-      game: {
-        select: { title: true, system: { select: { id: true, name: true, key: true } } },
-      },
-      cpu: { select: { modelName: true, brand: { select: { name: true } } } },
-      gpu: { select: { modelName: true, brand: { select: { name: true } } } },
-      emulator: { select: { name: true } },
-      performance: { select: { label: true, rank: true, description: true } },
-    } satisfies Prisma.PcListingSelect,
-  } as const
-
-  // ─── Follow / Unfollow ──────────────────────────────────
+  static readonly includes = socialIncludes
 
   async follow(currentUserId: string, targetUserId: string) {
     if (currentUserId === targetUserId) {
@@ -128,15 +135,13 @@ export class SocialRepository extends BaseRepository {
     )
   }
 
-  // ─── Follow Queries ─────────────────────────────────────
-
   async getFollowers(
     userId: string,
     page: number,
     limit: number,
     ctx?: VisibilityContext,
     search?: string,
-  ) {
+  ): Promise<VisibilityGatedList<FollowerListItem>> {
     if (ctx?.requestingUserId && ctx.requestingUserId !== userId) {
       await this.assertNotBlocked(ctx.requestingUserId, userId)
     }
@@ -150,7 +155,7 @@ export class SocialRepository extends BaseRepository {
         select: { settings: { select: { followersVisible: true } } },
       })
       if (user && !(user.settings?.followersVisible ?? true)) {
-        return { items: [], pagination: paginate({ total: 0, page, limit }), hidden: true }
+        return hiddenList()
       }
     }
 
@@ -171,7 +176,7 @@ export class SocialRepository extends BaseRepository {
       this.prisma.userFollow.count({ where }),
     ])
 
-    return { items, pagination: paginate({ total, page, limit }), hidden: false }
+    return visibleList(items, paginate({ total, page, limit }))
   }
 
   async getFollowing(
@@ -180,7 +185,7 @@ export class SocialRepository extends BaseRepository {
     limit: number,
     ctx?: VisibilityContext,
     search?: string,
-  ) {
+  ): Promise<VisibilityGatedList<FollowingListItem>> {
     if (ctx?.requestingUserId && ctx.requestingUserId !== userId) {
       await this.assertNotBlocked(ctx.requestingUserId, userId)
     }
@@ -194,7 +199,7 @@ export class SocialRepository extends BaseRepository {
         select: { settings: { select: { followingVisible: true } } },
       })
       if (user && !(user.settings?.followingVisible ?? true)) {
-        return { items: [], pagination: paginate({ total: 0, page, limit }), hidden: true }
+        return hiddenList()
       }
     }
 
@@ -215,7 +220,7 @@ export class SocialRepository extends BaseRepository {
       this.prisma.userFollow.count({ where }),
     ])
 
-    return { items, pagination: paginate({ total, page, limit }), hidden: false }
+    return visibleList(items, paginate({ total, page, limit }))
   }
 
   async isFollowing(currentUserId: string, targetUserId: string): Promise<boolean> {
@@ -260,8 +265,6 @@ export class SocialRepository extends BaseRepository {
 
     return { followersCount, followingCount }
   }
-
-  // ─── Friend Requests ────────────────────────────────────
 
   async sendFriendRequest(currentUserId: string, targetUserId: string) {
     if (currentUserId === targetUserId) {
@@ -442,8 +445,6 @@ export class SocialRepository extends BaseRepository {
     }
   }
 
-  // ─── Block / Unblock ────────────────────────────────────
-
   async blockUser(currentUserId: string, targetUserId: string) {
     if (currentUserId === targetUserId) {
       throw ResourceError.social.cannotBlockSelf()
@@ -506,8 +507,6 @@ export class SocialRepository extends BaseRepository {
     )
   }
 
-  // ─── Blocked Users ─────────────────────────────────────
-
   async getBlockedUsers(currentUserId: string, page: number, limit: number, search?: string) {
     const offset = calculateOffset({ page }, limit)
 
@@ -534,8 +533,6 @@ export class SocialRepository extends BaseRepository {
 
     return { items, pagination: paginate({ total, page, limit }) }
   }
-
-  // ─── Activity Feed ──────────────────────────────────────
 
   async getActivityFeed(
     currentUserId: string,
@@ -635,8 +632,6 @@ export class SocialRepository extends BaseRepository {
 
     return { items: paged, pagination: paginate({ total, page, limit }) }
   }
-
-  // ─── Admin ─────────────────────────────────────────────
 
   async adminGetSocialOverview(userId: string) {
     const now = Date.now()
@@ -846,8 +841,6 @@ export class SocialRepository extends BaseRepository {
       }
     }
   }
-
-  // ─── Helpers ────────────────────────────────────────────
 
   private async assertNotBlocked(currentUserId: string, targetUserId: string) {
     const blocked = await this.prisma.userRelationship.findFirst({

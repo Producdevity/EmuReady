@@ -2,7 +2,7 @@
 
 import { Users, UserPlus, UserCheck, Ban, ShieldBan, Clock, Search } from 'lucide-react'
 import { useState } from 'react'
-import { Input, LoadingSpinner, Pagination } from '@/components/ui'
+import { Input, LoadingSpinner, Pagination, UnderlineTabBar } from '@/components/ui'
 import { UI_CONSTANTS } from '@/data/constants'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { api } from '@/lib/api'
@@ -157,37 +157,11 @@ function UserActivitySocialTab(props: Props) {
       </div>
 
       {/* Section Tabs */}
-      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
-        {sections.map((section) => {
-          const Icon = section.icon
-          return (
-            <button
-              key={section.id}
-              type="button"
-              onClick={() => handleSectionChange(section.id)}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition-colors -mb-px',
-                activeSection === section.id
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300',
-              )}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {section.label}
-              <span
-                className={cn(
-                  'inline-flex items-center justify-center min-w-[18px] h-4 px-1 text-[10px] font-semibold rounded-full',
-                  activeSection === section.id
-                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',
-                )}
-              >
-                {section.count}
-              </span>
-            </button>
-          )
-        })}
-      </div>
+      <UnderlineTabBar
+        tabs={sections}
+        activeTab={activeSection}
+        onTabChange={(id) => handleSectionChange(id as ListSection)}
+      />
 
       {/* Search */}
       <div className="relative">
@@ -195,7 +169,7 @@ function UserActivitySocialTab(props: Props) {
         <Input
           placeholder="Search by name..."
           value={search}
-          onChange={(e) => handleSearchChange(e.target.value)}
+          onChange={(ev) => handleSearchChange(ev.target.value)}
           className="pl-9 h-8 text-xs"
         />
       </div>

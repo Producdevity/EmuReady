@@ -12,6 +12,7 @@ import {
   Pin,
   PinOff,
 } from 'lucide-react'
+import Link from 'next/link'
 import { useState, type ReactNode } from 'react'
 import {
   RoleBadge,
@@ -251,15 +252,20 @@ export function GenericCommentThread(props: GenericCommentThreadProps) {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 {props.config.avatarStyle === 'initials' && (
-                  <div className="w-8 h-8 rounded-full bg-indigo-300 dark:bg-indigo-700 flex items-center justify-center text-lg font-bold text-white">
-                    {comment.user?.name?.[0] ?? '?'}
-                  </div>
+                  <Link href={`/users/${comment.user?.id ?? ''}`} className="shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-indigo-300 dark:bg-indigo-700 flex items-center justify-center text-lg font-bold text-white">
+                      {comment.user?.name?.[0] ?? '?'}
+                    </div>
+                  </Link>
                 )}
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-gray-700 dark:text-gray-200">
+                    <Link
+                      href={`/users/${comment.user?.id ?? ''}`}
+                      className="font-semibold text-gray-700 dark:text-gray-200 hover:underline"
+                    >
                       {comment.user?.name ?? 'Anonymous'}
-                    </span>
+                    </Link>
 
                     {/* Show OP badge if comment author is the listing/PC listing owner */}
                     {props.entityOwnerId && comment.user?.id === props.entityOwnerId && (
@@ -507,7 +513,13 @@ export function GenericCommentThread(props: GenericCommentThreadProps) {
               <div className="text-xs text-amber-700 dark:text-amber-200">
                 {props.pinnedComment.pinnedBy && (
                   <span>
-                    Pinned by {props.pinnedComment.pinnedBy.name ?? 'Unknown'}
+                    Pinned by{' '}
+                    <Link
+                      href={`/users/${props.pinnedComment.pinnedBy.id}`}
+                      className="hover:underline"
+                    >
+                      {props.pinnedComment.pinnedBy.name ?? 'Unknown'}
+                    </Link>
                     {props.pinnedComment.pinnedAt ? ' • ' : ''}
                   </span>
                 )}

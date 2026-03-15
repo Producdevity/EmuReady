@@ -2,6 +2,7 @@ import { logger } from '@/lib/logger'
 import { prisma } from '@/server/db'
 import { notificationAnalyticsService } from '@/server/notifications/analyticsService'
 import { notificationBatchingService } from '@/server/notifications/batchingService'
+import { GameFollowRepository } from '@/server/repositories/game-follow.repository'
 import { NotificationPreferencesRepository } from '@/server/repositories/notification-preferences.repository'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { hasRolePermission } from '@/utils/permissions'
@@ -119,13 +120,13 @@ export class NotificationService {
       let notificationType = this.mapEventToNotificationType(eventData.eventType)
       // Refine types that depend on payload values
       if (eventData.eventType === 'listing.voted') {
-        const vote = (eventData.payload?.voteValue as boolean | undefined) ?? true
+        const vote = eventData.payload?.voteValue ?? true
         notificationType = vote
           ? NotificationType.LISTING_UPVOTED
           : NotificationType.LISTING_DOWNVOTED
       }
       if (eventData.eventType === 'comment.voted') {
-        const vote = (eventData.payload?.voteValue as boolean | undefined) ?? true
+        const vote = eventData.payload?.voteValue ?? true
         notificationType = vote
           ? NotificationType.COMMENT_UPVOTED
           : NotificationType.COMMENT_DOWNVOTED
@@ -314,7 +315,9 @@ export class NotificationService {
       'comment.downvoted': NotificationType.COMMENT_DOWNVOTED,
       'user.mentioned': NotificationType.USER_MENTION,
       'listing.approved': NotificationType.LISTING_APPROVED,
+      'pcListing.approved': NotificationType.LISTING_APPROVED,
       'listing.rejected': NotificationType.LISTING_REJECTED,
+      'pcListing.rejected': NotificationType.LISTING_REJECTED,
       'listing.status_overridden': NotificationType.LISTING_APPROVED,
       'content.flagged': NotificationType.CONTENT_FLAGGED,
       'game.added': NotificationType.GAME_ADDED,
@@ -327,6 +330,8 @@ export class NotificationService {
       'report.created': NotificationType.REPORT_CREATED,
       'report.status_changed': NotificationType.REPORT_STATUS_CHANGED,
       'developer.verified': NotificationType.VERIFIED_DEVELOPER,
+      'game_follow.new_listing': NotificationType.FOLLOWED_GAME_NEW_LISTING,
+      'game_follow.new_pc_listing': NotificationType.FOLLOWED_GAME_NEW_PC_LISTING,
     }
 
     return eventTypeMap[eventType] || null
@@ -490,9 +495,15 @@ export class NotificationService {
 
       await Promise.allSettled(notificationPromises)
 
-      // On approval, also notify users whose hardware preferences match the listing
+      // On listing approval, notify hardware-preference matches and game followers
       if (eventData.eventType === 'listing.approved' && eventData.payload?.listingId) {
         await this.notifyMatchingHardwareUsers(eventData, userIds)
+        await this.notifyGameFollowers(eventData, userIds, 'listing')
+      }
+
+      // On PC listing approval, notify game followers
+      if (eventData.eventType === 'pcListing.approved' && eventData.payload?.pcListingId) {
+        await this.notifyGameFollowers(eventData, userIds, 'pcListing')
       }
     } catch (error) {
       console.error('Error handling notification event:', error)
@@ -507,8 +518,11 @@ export class NotificationService {
     eventData: NotificationEventData,
     alreadyNotifiedIds: string[],
   ): Promise<void> {
+    const listingId = eventData.payload?.listingId
+    if (!listingId) return
+
     const listing = await prisma.listing.findUnique({
-      where: { id: eventData.payload?.listingId as string },
+      where: { id: listingId },
       select: { deviceId: true, device: { select: { socId: true } } },
     })
     if (!listing) return
@@ -548,6 +562,73 @@ export class NotificationService {
     await Promise.allSettled(promises)
   }
 
+  /**
+   * Notifies followers of a game when a new listing or PC listing is approved.
+   * Emits a synthetic game_follow event so it goes through the normal pipeline.
+   */
+  private async notifyGameFollowers(
+    eventData: NotificationEventData,
+    alreadyNotifiedIds: string[],
+    type: 'listing' | 'pcListing',
+  ): Promise<void> {
+    const listingId = eventData.payload?.listingId
+    const pcListingId = eventData.payload?.pcListingId
+
+    let gameId: string | undefined
+    let gameTitle: string | undefined
+
+    if (type === 'listing' && listingId) {
+      const listing = await prisma.listing.findUnique({
+        where: { id: listingId },
+        select: { game: { select: { id: true, title: true } } },
+      })
+      gameId = listing?.game.id
+      gameTitle = listing?.game.title
+    } else if (type === 'pcListing' && pcListingId) {
+      const pcListing = await prisma.pcListing.findUnique({
+        where: { id: pcListingId },
+        select: { game: { select: { id: true, title: true } } },
+      })
+      gameId = pcListing?.game.id
+      gameTitle = pcListing?.game.title
+    }
+
+    if (!gameId) return
+
+    const repo = new GameFollowRepository(prisma)
+
+    const eventType = type === 'listing' ? 'game_follow.new_listing' : 'game_follow.new_pc_listing'
+
+    const gameFollowEvent: NotificationEventData = {
+      ...eventData,
+      eventType,
+      payload: {
+        ...eventData.payload,
+        gameId,
+        gameTitle,
+      },
+    }
+
+    const excludeSet = new Set(alreadyNotifiedIds)
+    if (eventData.triggeredBy) excludeSet.add(eventData.triggeredBy)
+
+    for await (const userIdBatch of repo.iterateFollowerUserIds(gameId)) {
+      const candidateIds = userIdBatch.filter((id) => !excludeSet.has(id))
+      if (candidateIds.length === 0) continue
+
+      const filteredIds = await this.filterBannedUsers(candidateIds)
+      const finalIds = await this.filterBlockedUsers(filteredIds, eventData.triggeredBy)
+      if (finalIds.length === 0) continue
+
+      for (const id of finalIds) excludeSet.add(id)
+
+      const batchPromises = finalIds.map((userId) =>
+        this.createNotificationFromEvent(gameFollowEvent, userId),
+      )
+      await Promise.allSettled(batchPromises)
+    }
+  }
+
   private async getUsersForEvent(eventData: NotificationEventData): Promise<string[]> {
     const userIds: string[] = []
 
@@ -584,24 +665,25 @@ export class NotificationService {
         // Notify comment author (but not the actor)
         if (eventData.payload?.commentId && eventData.triggeredBy) {
           const comment = await prisma.comment.findUnique({
-            where: { id: eventData.payload.commentId as string },
+            where: { id: eventData.payload.commentId },
             select: { userId: true },
           })
           if (comment && comment.userId !== eventData.triggeredBy) {
             userIds.push(comment.userId)
           }
         }
-        break
-
-      case 'comment.replied':
-        // Get parent comment author
-        if (eventData.payload?.parentId && eventData.triggeredBy) {
-          const comment = await prisma.comment.findUnique({
-            where: { id: eventData.payload.parentId as string },
+        // For replies, also notify the parent comment author
+        if (
+          eventData.eventType === 'comment.replied' &&
+          eventData.payload?.parentId &&
+          eventData.triggeredBy
+        ) {
+          const parentComment = await prisma.comment.findUnique({
+            where: { id: eventData.payload.parentId },
             select: { userId: true },
           })
-          if (comment && comment.userId !== eventData.triggeredBy) {
-            userIds.push(comment.userId)
+          if (parentComment && parentComment.userId !== eventData.triggeredBy) {
+            userIds.push(parentComment.userId)
           }
         }
         break
@@ -661,6 +743,19 @@ export class NotificationService {
         }
         break
 
+      case 'pcListing.approved':
+        // Get PC listing author — game followers handled separately in handleNotificationEvent
+        if (eventData.payload?.pcListingId) {
+          const pcListing = await prisma.pcListing.findUnique({
+            where: { id: eventData.payload.pcListingId },
+            select: { authorId: true },
+          })
+          if (pcListing) {
+            userIds.push(pcListing.authorId)
+          }
+        }
+        break
+
       case 'listing.rejected':
         // Get listing author
         if (eventData.payload?.listingId) {
@@ -674,11 +769,21 @@ export class NotificationService {
         }
         break
 
-      case 'user.role_changed':
-        // Get the user whose role was changed
-        if (eventData.payload?.userId) {
-          userIds.push(eventData.payload.userId)
+      case 'pcListing.rejected':
+        if (eventData.payload?.pcListingId) {
+          const pcListing = await prisma.pcListing.findUnique({
+            where: { id: eventData.payload.pcListingId },
+            select: { authorId: true },
+          })
+          if (pcListing) {
+            userIds.push(pcListing.authorId)
+          }
         }
+        break
+
+      case 'game_follow.new_listing':
+      case 'game_follow.new_pc_listing':
+        // Synthetic events created internally by notifyGameFollowers — no direct recipients
         break
 
       case 'comment.deleted':
@@ -819,6 +924,8 @@ export class NotificationService {
         [NotificationType.NEW_SOC_LISTING]: ms.minutes(30),
         [NotificationType.POLICY_UPDATE]: ms.days(1),
         [NotificationType.ACCOUNT_WARNING]: ms.hours(1),
+        [NotificationType.FOLLOWED_GAME_NEW_LISTING]: ms.minutes(30),
+        [NotificationType.FOLLOWED_GAME_NEW_PC_LISTING]: ms.minutes(30),
       }
 
       const windowMs = deduplicationWindows[notificationType] || ms.minutes(30)
@@ -895,6 +1002,23 @@ export class NotificationService {
           context.deviceId = listing.device.id
           context.emulatorName = listing.emulator.name
           context.emulatorId = listing.emulator.id
+        }
+      }
+
+      // Enrich PC listing data
+      if (payload.pcListingId && !context.listingId) {
+        const pcListing = await prisma.pcListing.findUnique({
+          where: { id: payload.pcListingId },
+          include: {
+            game: { select: { title: true, id: true } },
+          },
+        })
+
+        if (pcListing) {
+          context.pcListingId = payload.pcListingId
+          context.listingTitle = pcListing.game.title
+          context.gameTitle = pcListing.game.title
+          context.gameId = pcListing.game.id
         }
       }
 

@@ -29,6 +29,8 @@ const mockSettings = {
   allowFriendRequests: true,
   followersVisible: true,
   followingVisible: true,
+  bookmarksVisible: false,
+  followedGamesVisible: true,
 }
 
 const mockUserWithSettings = {

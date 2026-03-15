@@ -283,6 +283,7 @@ const mobilePerformanceMiddleware = mt.middleware(async ({ next, path }) => {
 })
 
 const mobileRateLimitMiddleware = mt.middleware(async ({ ctx, next }) => {
+  // TODO: start forcing api key usage when base rate limit is reached
   if (ctx.apiKey) {
     const apiAccessService = new ApiAccessService(ctx.prisma)
     await apiAccessService.consumeRequest(ctx.apiKey)

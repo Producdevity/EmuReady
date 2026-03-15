@@ -91,12 +91,12 @@ model User {
   // Trust system fields
   trustScore                  Int                               @default(0)
   lastActiveAt                DateTime                          @default(now())
-  // User preferences
-  defaultToUserDevices        Boolean                           @default(false)
-  defaultToUserSocs           Boolean                           @default(false)
-  notifyOnNewListings         Boolean                           @default(true)
-  showNsfw                    Boolean                           @default(false)
-  lastUsedDeviceId            String? // Track the last used device
+  // User preferences (these have moves to UserSettings and are deprecated)
+  defaultToUserDevices        Boolean                           @default(false) // TODO: remove after confirming data migration to UserSettings
+  defaultToUserSocs           Boolean                           @default(false) // TODO: remove after confirming data migration to UserSettings
+  notifyOnNewListings         Boolean                           @default(true) // TODO: remove after confirming data migration to UserSettings
+  showNsfw                    Boolean                           @default(false) // TODO: remove after confirming data migration to UserSettings
+  lastUsedDeviceId            String? // Track the last used device TODO: remove after confirming data migration to UserSettings
   // Relations
   settings                    UserSettings?
   comments                    Comment[]
@@ -156,25 +156,31 @@ model User {
   followers                   UserFollow[]                      @relation("UserFollowers")
   sentRelationships           UserRelationship[]                @relation("RelationshipSender")
   receivedRelationships       UserRelationship[]                @relation("RelationshipReceiver")
+  // Bookmark and game follow relations
+  listingBookmarks            ListingBookmark[]
+  pcListingBookmarks          PcListingBookmark[]
+  gameFollows                 GameFollow[]
 }
 
 model UserSettings {
-  id                   String   @id @default(uuid())
-  userId               String   @unique
+  id                   String  @id @default(uuid())
+  userId               String  @unique
   // Content preferences
-  defaultToUserDevices Boolean  @default(false)
-  defaultToUserSocs    Boolean  @default(false)
-  notifyOnNewListings  Boolean  @default(true)
-  showNsfw             Boolean  @default(false)
+  defaultToUserDevices Boolean @default(false)
+  defaultToUserSocs    Boolean @default(false)
+  notifyOnNewListings  Boolean @default(true)
+  showNsfw             Boolean @default(false)
   lastUsedDeviceId     String?
   // Privacy
-  profilePublic        Boolean  @default(true)
-  showActivityInFeed   Boolean  @default(true)
-  showVotingActivity   Boolean  @default(true)
-  allowFollows         Boolean  @default(true)
-  allowFriendRequests  Boolean  @default(true)
-  followersVisible     Boolean  @default(true)
-  followingVisible     Boolean  @default(true)
+  profilePublic        Boolean @default(true)
+  showActivityInFeed   Boolean @default(true)
+  showVotingActivity   Boolean @default(true)
+  allowFollows         Boolean @default(true)
+  allowFriendRequests  Boolean @default(true)
+  followersVisible     Boolean @default(true)
+  followingVisible     Boolean @default(true)
+  bookmarksVisible     Boolean @default(false)
+  followedGamesVisible Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -321,6 +327,7 @@ model Game {
   pcListings      PcListing[]
   submitter       User?          @relation("GamesSubmittedByUser", fields: [submittedBy], references: [id])
   approver        User?          @relation("GamesApprovedByAdmin", fields: [approvedBy], references: [id])
+  followers       GameFollow[]
 
   @@unique([title, systemId])
   @@index([status])
@@ -474,6 +481,7 @@ model Listing {
   notificationPrefs      ListingNotificationPreference[]
   developerVerifications ListingDeveloperVerification[]
   reports                ListingReport[]
+  bookmarks              ListingBookmark[]
   pinnedComment          Comment?                        @relation("ListingPinnedComment", fields: [pinnedCommentId], references: [id], onDelete: SetNull)
   pinnedByUser           User?                           @relation("ListingPinnedBy", fields: [pinnedByUserId], references: [id], onDelete: SetNull)
 
@@ -674,6 +682,8 @@ enum NotificationType {
   FRIEND_REQUEST_ACCEPTED
   FOLLOWED_USER_NEW_LISTING
   FOLLOWED_USER_NEW_PC_LISTING
+  FOLLOWED_GAME_NEW_LISTING
+  FOLLOWED_GAME_NEW_PC_LISTING
 
   @@map("notification_type")
 }
@@ -889,15 +899,15 @@ model ListingReport {
 }
 
 model UserBan {
-  id           String    @id @default(uuid())
-  userId       String
-  bannedById   String
-  reason       String
-  notes        String?
-  isActive     Boolean   @default(true)
-  bannedAt     DateTime  @default(now())
-  expiresAt    DateTime?
-  unbannedAt   DateTime?
+  id             String    @id @default(uuid())
+  userId         String
+  bannedById     String
+  reason         String
+  notes          String?
+  isActive       Boolean   @default(true)
+  bannedAt       DateTime  @default(now())
+  expiresAt      DateTime?
+  unbannedAt     DateTime?
   unbannedById   String?
   votesNullified Boolean   @default(false)
   createdAt      DateTime  @default(now())
@@ -1004,6 +1014,7 @@ model PcListing {
   notificationPrefs      PcListingNotificationPreference[]
   developerVerifications PcListingDeveloperVerification[]
   reports                PcListingReport[]
+  bookmarks              PcListingBookmark[]
   votes                  PcListingVote[]
   comments               PcListingComment[]
   pinnedComment          PcListingComment?                 @relation("PcListingPinnedComment", fields: [pinnedCommentId], references: [id], onDelete: SetNull)
@@ -1354,8 +1365,6 @@ model WebhookEvent {
   @@unique([source, eventId])
 }
 
-// ─── Social ──────────────────────────────────────────────────
-
 model UserFollow {
   id          String   @id @default(uuid())
   followerId  String
@@ -1403,4 +1412,49 @@ model UserRelationship {
   @@index([receiverId])
   @@index([status])
   @@map("user_relationships")
+}
+
+model ListingBookmark {
+  id        String   @id @default(uuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId])
+  @@index([listingId])
+  @@map("listing_bookmarks")
+}
+
+model PcListingBookmark {
+  id          String   @id @default(uuid())
+  userId      String
+  pcListingId String
+  createdAt   DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pcListing PcListing @relation(fields: [pcListingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, pcListingId])
+  @@index([userId])
+  @@index([pcListingId])
+  @@map("pc_listing_bookmarks")
+}
+
+model GameFollow {
+  id        String   @id @default(uuid())
+  userId    String
+  gameId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@index([userId])
+  @@index([gameId])
+  @@map("game_follows")
 }

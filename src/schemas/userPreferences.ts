@@ -14,6 +14,8 @@ export const UpdateUserPreferencesSchema = z.object({
   allowFriendRequests: z.boolean().optional(),
   followersVisible: z.boolean().optional(),
   followingVisible: z.boolean().optional(),
+  bookmarksVisible: z.boolean().optional(),
+  followedGamesVisible: z.boolean().optional(),
 })
 
 export const AddDevicePreferenceSchema = z.object({

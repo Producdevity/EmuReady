@@ -27,6 +27,8 @@ type PrivacyField =
   | 'allowFriendRequests'
   | 'followersVisible'
   | 'followingVisible'
+  | 'bookmarksVisible'
+  | 'followedGamesVisible'
 
 function PrivacySettings(props: Props) {
   const utils = api.useUtils()
@@ -115,6 +117,13 @@ function PrivacySettings(props: Props) {
           onChange={(value) => handleToggle('showVotingActivity', value)}
           disabled={updatePreferences.isPending}
         />
+        <ToggleRow
+          label="Show my bookmarks on my profile"
+          description="When off, your bookmarked listings are only visible to you"
+          checked={preferences.bookmarksVisible}
+          onChange={(value) => handleToggle('bookmarksVisible', value)}
+          disabled={updatePreferences.isPending}
+        />
       </SettingsSection>
 
       <SettingsSection
@@ -151,6 +160,13 @@ function PrivacySettings(props: Props) {
           onChange={(value) => handleToggle('followingVisible', value)}
           disabled={updatePreferences.isPending}
         />
+        <ToggleRow
+          label="Show games I follow on my profile"
+          description="When off, only you and moderators can see which games you follow"
+          checked={preferences.followedGamesVisible}
+          onChange={(value) => handleToggle('followedGamesVisible', value)}
+          disabled={updatePreferences.isPending}
+        />
       </SettingsSection>
     </div>
   )
@@ -169,7 +185,12 @@ function ToggleRow(props: {
         <h3 className="font-medium text-gray-900 dark:text-white">{props.label}</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">{props.description}</p>
       </div>
-      <AnimatedToggle checked={props.checked} onChange={props.onChange} disabled={props.disabled} />
+      <AnimatedToggle
+        checked={props.checked}
+        onChange={props.onChange}
+        disabled={props.disabled}
+        label={props.label}
+      />
     </div>
   )
 }

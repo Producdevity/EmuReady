@@ -58,8 +58,6 @@ describe('SocialRepository', () => {
     repository = new SocialRepository(prisma)
   })
 
-  // ─── follow() ───────────────────────────────────────────────
-
   describe('follow', () => {
     it('should upsert a follow with correct composite key', async () => {
       vi.mocked(prisma.userRelationship.findFirst).mockResolvedValueOnce(null)
@@ -125,8 +123,6 @@ describe('SocialRepository', () => {
     })
   })
 
-  // ─── unfollow() ─────────────────────────────────────────────
-
   describe('unfollow', () => {
     it('should call deleteMany with correct follower/following pair', async () => {
       vi.mocked(prisma.userFollow.deleteMany).mockResolvedValueOnce({ count: 1 } as never)
@@ -138,8 +134,6 @@ describe('SocialRepository', () => {
       })
     })
   })
-
-  // ─── removeFollower() ───────────────────────────────────────
 
   describe('removeFollower', () => {
     it('should call deleteMany with reversed direction', async () => {
@@ -153,8 +147,6 @@ describe('SocialRepository', () => {
     })
   })
 
-  // ─── getFollowers() ─────────────────────────────────────────
-
   describe('getFollowers', () => {
     it('should return paginated items for public profile', async () => {
       const items = [{ id: 'f1', createdAt: new Date(), follower: { id: 'u1' } }]
@@ -163,9 +155,11 @@ describe('SocialRepository', () => {
 
       const result = await repository.getFollowers('user-1', 1, 10)
 
-      expect(result.hidden).toBe(false)
-      expect(result.items).toEqual(items)
-      expect(result.pagination.total).toBe(1)
+      expect(result.visibility).toBe('visible')
+      if (result.visibility === 'visible') {
+        expect(result.items).toEqual(items)
+        expect(result.pagination.total).toBe(1)
+      }
     })
 
     it('should return hidden when followersVisible: false for non-owner non-mod', async () => {
@@ -179,8 +173,7 @@ describe('SocialRepository', () => {
         requestingUserRole: Role.USER,
       })
 
-      expect(result.hidden).toBe(true)
-      expect(result.items).toEqual([])
+      expect(result.visibility).toBe('hidden')
     })
 
     it('should return items when followersVisible: false but requester is owner', async () => {
@@ -193,8 +186,10 @@ describe('SocialRepository', () => {
         requestingUserRole: Role.USER,
       })
 
-      expect(result.hidden).toBe(false)
-      expect(result.items).toEqual(items)
+      expect(result.visibility).toBe('visible')
+      if (result.visibility === 'visible') {
+        expect(result.items).toEqual(items)
+      }
     })
 
     it('should return items when followersVisible: false but requester is MODERATOR', async () => {
@@ -208,8 +203,10 @@ describe('SocialRepository', () => {
         requestingUserRole: Role.MODERATOR,
       })
 
-      expect(result.hidden).toBe(false)
-      expect(result.items).toEqual(items)
+      expect(result.visibility).toBe('visible')
+      if (result.visibility === 'visible') {
+        expect(result.items).toEqual(items)
+      }
     })
 
     it('should apply search filter to follower name', async () => {
@@ -240,8 +237,6 @@ describe('SocialRepository', () => {
     })
   })
 
-  // ─── getFollowing() ─────────────────────────────────────────
-
   describe('getFollowing', () => {
     it('should return paginated items for public profile', async () => {
       const items = [{ id: 'f1', createdAt: new Date(), following: { id: 'u1' } }]
@@ -250,8 +245,10 @@ describe('SocialRepository', () => {
 
       const result = await repository.getFollowing('user-1', 1, 10)
 
-      expect(result.hidden).toBe(false)
-      expect(result.items).toEqual(items)
+      expect(result.visibility).toBe('visible')
+      if (result.visibility === 'visible') {
+        expect(result.items).toEqual(items)
+      }
     })
 
     it('should return hidden when followingVisible: false for non-owner', async () => {
@@ -265,8 +262,7 @@ describe('SocialRepository', () => {
         requestingUserRole: Role.USER,
       })
 
-      expect(result.hidden).toBe(true)
-      expect(result.items).toEqual([])
+      expect(result.visibility).toBe('hidden')
     })
 
     it('should return items when requester is owner despite followingVisible: false', async () => {
@@ -279,12 +275,12 @@ describe('SocialRepository', () => {
         requestingUserRole: Role.USER,
       })
 
-      expect(result.hidden).toBe(false)
-      expect(result.items).toEqual(items)
+      expect(result.visibility).toBe('visible')
+      if (result.visibility === 'visible') {
+        expect(result.items).toEqual(items)
+      }
     })
   })
-
-  // ─── isFollowing() ──────────────────────────────────────────
 
   describe('isFollowing', () => {
     it('should return true when follow record exists', async () => {
@@ -304,8 +300,6 @@ describe('SocialRepository', () => {
     })
   })
 
-  // ─── getBulkFollowStatuses() ────────────────────────────────
-
   describe('getBulkFollowStatuses', () => {
     it('should return a Record mapping each ID correctly', async () => {
       vi.mocked(prisma.userFollow.findMany).mockResolvedValueOnce([
@@ -319,8 +313,6 @@ describe('SocialRepository', () => {
     })
   })
 
-  // ─── getFollowCounts() ─────────────────────────────────────
-
   describe('getFollowCounts', () => {
     it('should return followersCount and followingCount from two count queries', async () => {
       vi.mocked(prisma.userFollow.count).mockResolvedValueOnce(10).mockResolvedValueOnce(5)
@@ -330,8 +322,6 @@ describe('SocialRepository', () => {
       expect(result).toEqual({ followersCount: 10, followingCount: 5 })
     })
   })
-
-  // ─── sendFriendRequest() ────────────────────────────────────
 
   describe('sendFriendRequest', () => {
     it('should create with PENDING status and FRIEND type', async () => {
@@ -417,8 +407,6 @@ describe('SocialRepository', () => {
       )
     })
   })
-
-  // ─── respondFriendRequest() ─────────────────────────────────
 
   describe('respondFriendRequest', () => {
     it('should update status to ACCEPTED when accepting', async () => {
@@ -506,8 +494,6 @@ describe('SocialRepository', () => {
     })
   })
 
-  // ─── getRelationshipStatus() ────────────────────────────────
-
   describe('getRelationshipStatus', () => {
     it('should return isFriend: true for ACCEPTED relationship', async () => {
       vi.mocked(prisma.userRelationship.findFirst).mockResolvedValueOnce({
@@ -560,8 +546,6 @@ describe('SocialRepository', () => {
     })
   })
 
-  // ─── blockUser() ────────────────────────────────────────────
-
   describe('blockUser', () => {
     it('should use $transaction to delete non-blocked relationships, follows, and upsert block', async () => {
       vi.mocked(prisma.userRelationship.deleteMany).mockResolvedValueOnce({ count: 1 } as never)
@@ -608,8 +592,6 @@ describe('SocialRepository', () => {
     })
   })
 
-  // ─── unblockUser() ──────────────────────────────────────────
-
   describe('unblockUser', () => {
     it('should call deleteMany with BLOCKED status filter', async () => {
       vi.mocked(prisma.userRelationship.deleteMany).mockResolvedValueOnce({ count: 1 } as never)
@@ -625,8 +607,6 @@ describe('SocialRepository', () => {
       })
     })
   })
-
-  // ─── getActivityFeed() ──────────────────────────────────────
 
   describe('getActivityFeed', () => {
     const now = new Date('2026-02-19T12:00:00Z')

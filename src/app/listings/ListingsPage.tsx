@@ -84,6 +84,7 @@ function ListingsPage() {
 
   const userQuery = api.users.me.useQuery()
   const userPreferencesQuery = api.userPreferences.get.useQuery(undefined, {
+    enabled: !!userQuery.data,
     staleTime: ms.seconds(30),
     gcTime: ms.minutes(5),
   })

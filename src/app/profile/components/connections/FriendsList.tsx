@@ -5,7 +5,8 @@ import { Button } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { SocialConnectionList, UserRow } from './SocialConnectionList'
+import { ConnectionUserRow } from './ConnectionUserRow'
+import { SocialConnectionList } from './SocialConnectionList'
 
 interface Props {
   userId: string
@@ -50,7 +51,7 @@ function FriendsList(props: Props) {
       </h4>
       <div className="space-y-1">
         {pendingQuery.data.items.map((item) => (
-          <UserRow
+          <ConnectionUserRow
             key={item.id}
             user={item.sender}
             action={

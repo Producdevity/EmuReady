@@ -20,6 +20,8 @@ const SETTINGS_FIELDS = {
   allowFriendRequests: true,
   followersVisible: true,
   followingVisible: true,
+  bookmarksVisible: true,
+  followedGamesVisible: true,
 } satisfies Prisma.UserSettingsSelect
 
 /**
@@ -63,6 +65,26 @@ export class UserPreferencesRepository extends BaseRepository {
       bio: true,
       settings: {
         select: SETTINGS_FIELDS,
+      },
+    } satisfies Prisma.UserSelect,
+
+    currentProfile: {
+      id: true,
+      name: true,
+      email: true,
+      trustScore: true,
+      profileImage: true,
+      role: true,
+      bio: true,
+      createdAt: true,
+      _count: {
+        select: {
+          listings: true,
+          votes: true,
+          comments: true,
+          submittedGames: true,
+          pcListings: true,
+        },
       },
     } satisfies Prisma.UserSelect,
   } as const
@@ -147,6 +169,12 @@ export class UserPreferencesRepository extends BaseRepository {
       }
       if (input.followingVisible !== undefined) {
         settingsData.followingVisible = input.followingVisible
+      }
+      if (input.bookmarksVisible !== undefined) {
+        settingsData.bookmarksVisible = input.bookmarksVisible
+      }
+      if (input.followedGamesVisible !== undefined) {
+        settingsData.followedGamesVisible = input.followedGamesVisible
       }
 
       // Atomic: bio update + settings upsert + re-read in a single transaction
@@ -314,6 +342,51 @@ export class UserPreferencesRepository extends BaseRepository {
   }
 
   /**
+   * Get the current user's profile with activity counts and votes received.
+   */
+  async getCurrentProfile(userId: string) {
+    return this.handleDatabaseOperation(async () => {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: UserPreferencesRepository.selects.currentProfile,
+      })
+
+      if (!user) return null
+
+      const [listingVotesReceived, pcListingVotesReceived] = await Promise.all([
+        this.prisma.vote.count({
+          where: { listing: { authorId: userId } },
+        }),
+        this.prisma.pcListingVote.count({
+          where: { pcListing: { authorId: userId } },
+        }),
+      ])
+
+      return {
+        ...user,
+        votesReceived: listingVotesReceived + pcListingVotesReceived,
+      }
+    }, 'UserProfile')
+  }
+
+  /**
+   * Update user profile fields (name, bio).
+   */
+  async updateProfile(userId: string, input: { name?: string; bio?: string }) {
+    return this.handleDatabaseOperation(async () => {
+      const updateData: { name?: string; bio?: string } = {}
+      if (input.name !== undefined) updateData.name = input.name
+      if (input.bio !== undefined) updateData.bio = sanitizeBio(input.bio)
+
+      return this.prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+        select: { id: true, name: true, bio: true, createdAt: true },
+      })
+    }, 'UserProfile')
+  }
+
+  /**
    * Flatten UserSettings into a plain object with defaults for missing settings
    */
   private flattenSettings(
@@ -330,6 +403,8 @@ export class UserPreferencesRepository extends BaseRepository {
       allowFriendRequests: boolean
       followersVisible: boolean
       followingVisible: boolean
+      bookmarksVisible: boolean
+      followedGamesVisible: boolean
     } | null,
   ) {
     return {
@@ -345,6 +420,8 @@ export class UserPreferencesRepository extends BaseRepository {
       allowFriendRequests: settings?.allowFriendRequests ?? true,
       followersVisible: settings?.followersVisible ?? true,
       followingVisible: settings?.followingVisible ?? true,
+      bookmarksVisible: settings?.bookmarksVisible ?? false,
+      followedGamesVisible: settings?.followedGamesVisible ?? true,
     }
   }
 }

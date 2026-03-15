@@ -61,6 +61,10 @@ export const NOTIFICATION_EVENTS = {
   FEATURE_ANNOUNCED: 'feature.announced',
   USER_ROLE_CHANGED: 'user.role_changed',
   GAME_STATUS_OVERRIDDEN: 'game.status_overridden',
+  PC_LISTING_APPROVED: 'pcListing.approved',
+  PC_LISTING_REJECTED: 'pcListing.rejected',
+  FOLLOWED_GAME_NEW_LISTING: 'game_follow.new_listing',
+  FOLLOWED_GAME_NEW_PC_LISTING: 'game_follow.new_pc_listing',
 } as const
 
 export type NotificationEventType = (typeof NOTIFICATION_EVENTS)[keyof typeof NOTIFICATION_EVENTS]

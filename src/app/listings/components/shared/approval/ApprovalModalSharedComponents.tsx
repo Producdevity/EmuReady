@@ -193,14 +193,12 @@ export function CustomFieldsApprovalSection(props: CustomFieldsApprovalSectionPr
 
   const nonEmpty = props.fieldValues.filter((fv) => {
     if (fv.value === null || fv.value === undefined || fv.value === '') return false
-    if (typeof fv.value === 'string' && fv.value.trim() === '') return false
-    return true
+    return !(typeof fv.value === 'string' && fv.value.trim() === '')
   })
 
   if (nonEmpty.length === 0) return null
 
-  const firstField = nonEmpty[0]
-  const remainingFields = nonEmpty.slice(1)
+  const [firstField, ...remainingFields] = nonEmpty
 
   return (
     <div>
@@ -226,13 +224,13 @@ export function CustomFieldsApprovalSection(props: CustomFieldsApprovalSectionPr
           </button>
         )}
         {expanded &&
-          remainingFields.map((fv) => (
-            <div key={fv.customFieldDefinition.label} className="flex items-baseline gap-2">
+          remainingFields.map((fieldValue) => (
+            <div key={fieldValue.customFieldDefinition.label} className="flex items-baseline gap-2">
               <dt className="text-gray-500 dark:text-gray-400 shrink-0">
-                {fv.customFieldDefinition.label}
+                {fieldValue.customFieldDefinition.label}
               </dt>
               <dd className="text-gray-900 dark:text-white">
-                <CustomFieldValue fieldValue={fv} />
+                <CustomFieldValue fieldValue={fieldValue} />
               </dd>
             </div>
           ))}

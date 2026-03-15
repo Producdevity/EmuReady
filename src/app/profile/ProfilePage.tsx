@@ -1,7 +1,17 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { User, Smartphone, Bell, Settings, Computer, KeyRound, Shield, Users } from 'lucide-react'
+import {
+  User,
+  Smartphone,
+  Bell,
+  Settings,
+  Computer,
+  KeyRound,
+  Shield,
+  Users,
+  Bookmark,
+} from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useState, Suspense, useEffect } from 'react'
@@ -11,6 +21,7 @@ import { api } from '@/lib/api'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import AccountSettings from './components/AccountSettings'
+import BookmarksManager from './components/BookmarksManager'
 import ConnectionsManager from './components/ConnectionsManager'
 import DeviceAndSocPreferences from './components/DeviceAndSocPreferences'
 import NotificationPreferences from './components/NotificationPreferences'
@@ -38,6 +49,11 @@ const baseTabs = [
     id: 'connections',
     label: 'Connections',
     icon: <Users className="w-4 h-4" />,
+  },
+  {
+    id: 'bookmarks',
+    label: 'Bookmarks',
+    icon: <Bookmark className="w-4 h-4" />,
   },
   {
     id: 'privacy',
@@ -165,6 +181,10 @@ function ProfilePage() {
 
           {activeTab === 'connections' && userQuery.data && (
             <ConnectionsManager userId={userQuery.data.id} />
+          )}
+
+          {activeTab === 'bookmarks' && userQuery.data && (
+            <BookmarksManager userId={userQuery.data.id} />
           )}
 
           {activeTab === 'devices' && (

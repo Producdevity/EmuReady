@@ -15,6 +15,7 @@ import {
   Flag,
   Ban,
   Gavel,
+  Bookmark,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -28,6 +29,7 @@ import {
   LoadingSpinner,
   Input,
   LocalizedDate,
+  UnderlineTabBar,
   UserBadgeItem,
 } from '@/components/ui'
 import { UI_CONSTANTS } from '@/data/constants'
@@ -42,6 +44,7 @@ import getErrorMessage from '@/utils/getErrorMessage'
 import { canBanUser } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
 import { type ReportStatus, Role } from '@orm'
+import UserActivityBookmarksFollowsTab from './UserActivityBookmarksFollowsTab'
 import UserActivityListingsTab from './UserActivityListingsTab'
 import UserActivityReportsTab from './UserActivityReportsTab'
 import UserActivitySocialTab from './UserActivitySocialTab'
@@ -49,7 +52,13 @@ import UserActivityTrustActionsTab from './UserActivityTrustActionsTab'
 import UserActivityVotesTab from './UserActivityVotesTab'
 import UserEntitlementsPanel from './UserEntitlementsPanel'
 
-export type ActivityTab = 'listings' | 'votes' | 'trustActions' | 'reports' | 'social'
+export type ActivityTab =
+  | 'listings'
+  | 'votes'
+  | 'trustActions'
+  | 'reports'
+  | 'social'
+  | 'bookmarksFollows'
 
 const ITEMS_PER_PAGE = 10
 
@@ -136,6 +145,15 @@ function UserDetailsModal(props: Props) {
   const socialOverviewQuery = api.users.getSocialOverview.useQuery(
     { userId: props.userId ?? '' },
     { enabled: !!props.userId && activeTab === 'social' },
+  )
+
+  const bookmarkCountsQuery = api.bookmarks.getCounts.useQuery(
+    { userId: props.userId ?? '' },
+    { enabled: !!props.userId },
+  )
+  const gameFollowCountQuery = api.gameFollows.getGameFollowCount.useQuery(
+    { userId: props.userId ?? '' },
+    { enabled: !!props.userId },
   )
 
   // Trust score adjustment state
@@ -233,6 +251,19 @@ function UserDetailsModal(props: Props) {
       label: 'Social',
       icon: Users,
       count: (userQuery.data?._count?.followers ?? 0) + (userQuery.data?._count?.following ?? 0),
+    },
+    {
+      id: 'bookmarksFollows',
+      label: 'Bookmarks',
+      icon: Bookmark,
+      count:
+        (bookmarkCountsQuery.data?.visibility === 'visible'
+          ? bookmarkCountsQuery.data.counts.listingBookmarks +
+            bookmarkCountsQuery.data.counts.pcListingBookmarks
+          : 0) +
+        (gameFollowCountQuery.data?.visibility === 'visible'
+          ? gameFollowCountQuery.data.counts.followedGames
+          : 0),
     },
   ]
 
@@ -506,37 +537,12 @@ function UserDetailsModal(props: Props) {
             {/* Activity Tabs */}
             <div className="space-y-4">
               {/* Tab Bar */}
-              <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
-                {TABS.map((tab) => {
-                  const Icon = tab.icon
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setActiveTab(tab.id)}
-                      className={cn(
-                        'flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px',
-                        activeTab === tab.id
-                          ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
-                          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600',
-                      )}
-                    >
-                      <Icon className="w-4 h-4" />
-                      {tab.label}
-                      <span
-                        className={cn(
-                          'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-semibold rounded-full',
-                          activeTab === tab.id
-                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',
-                        )}
-                      >
-                        {tab.count}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
+              <UnderlineTabBar
+                tabs={TABS}
+                activeTab={activeTab}
+                onTabChange={(id) => setActiveTab(id as ActivityTab)}
+                size="md"
+              />
 
               {/* Tab Content */}
               <div className="min-h-[200px]">
@@ -603,6 +609,9 @@ function UserDetailsModal(props: Props) {
                   <div className="flex items-center justify-center py-8">
                     <LoadingSpinner />
                   </div>
+                )}
+                {activeTab === 'bookmarksFollows' && props.userId && (
+                  <UserActivityBookmarksFollowsTab userId={props.userId} />
                 )}
               </div>
             </div>

@@ -29,7 +29,7 @@ interface AccessibleProfile {
 
 interface InaccessibleProfile {
   accessible: false
-  reason: 'not_found' | 'banned' | 'private'
+  reason: 'not_found' | 'banned' | 'private' // TODO: use constants or enums
 }
 
 export type ProfileAccessResult = AccessibleProfile | InaccessibleProfile

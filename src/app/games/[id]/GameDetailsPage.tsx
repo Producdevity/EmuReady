@@ -9,6 +9,7 @@ import { Badge, Button } from '@/components/ui'
 import { api } from '@/lib/api'
 import { hasRolePermission } from '@/utils/permissions'
 import { ApprovalStatus, Role } from '@orm'
+import FollowGameButton from './components/FollowGameButton'
 import { GameBoxartImage } from './components/GameBoxartImage'
 import { GameEditForm } from './components/GameEditForm'
 import { GameListingsSection } from './components/GameListingsSection'
@@ -39,8 +40,7 @@ function GameDetailsPage() {
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="mb-4 md:mb-6">
-          <Button variant="outline" size="sm" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4" />
+          <Button variant="outline" size="sm" icon={ArrowLeft} onClick={() => router.back()}>
             Back
           </Button>
         </div>
@@ -68,7 +68,10 @@ function GameDetailsPage() {
                     </Badge>
                   </div>
                 </div>
-                <div className="flex">{canEdit && <GameEditForm gameData={gameQuery.data} />}</div>
+                <div className="flex gap-2">
+                  <FollowGameButton gameId={gameQuery.data.id} gameStatus={gameQuery.data.status} />
+                  {canEdit && <GameEditForm gameData={gameQuery.data} />}
+                </div>
               </div>
             </div>
           </div>

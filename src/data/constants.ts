@@ -6,6 +6,16 @@ export const POLLING_INTERVALS = {
   DEFAULT: ms.seconds(30),
 } as const
 
+// Batch sizes for cursor-based iteration
+export const BATCH_SIZES = {
+  CURSOR_DEFAULT: 500,
+} as const
+
+// React Query stale time presets
+export const STALE_TIMES = {
+  USER_ACTION: ms.seconds(30),
+} as const
+
 // Pagination limits
 export const PAGINATION = {
   DEFAULT_LIMIT: 20,

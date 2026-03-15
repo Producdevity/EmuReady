@@ -22,8 +22,6 @@ import {
 import { SocialRepository } from '@/server/repositories/social.repository'
 
 export const mobileSocialRouter = createMobileTRPCRouter({
-  // ─── Follow / Unfollow ──────────────────────────────────
-
   follow: mobileProtectedProcedure.input(FollowUserSchema).mutation(async ({ ctx, input }) => {
     const repo = new SocialRepository(ctx.prisma)
     await repo.follow(ctx.session.user.id, input.userId)
@@ -43,8 +41,6 @@ export const mobileSocialRouter = createMobileTRPCRouter({
       await repo.removeFollower(ctx.session.user.id, input.userId)
       return { success: true }
     }),
-
-  // ─── Follow Queries ─────────────────────────────────────
 
   getFollowers: mobilePublicProcedure.input(GetFollowersSchema).query(async ({ ctx, input }) => {
     const repo = new SocialRepository(ctx.prisma)
@@ -94,8 +90,6 @@ export const mobileSocialRouter = createMobileTRPCRouter({
       return { statuses }
     }),
 
-  // ─── Friend Requests ────────────────────────────────────
-
   sendFriendRequest: mobileProtectedProcedure
     .input(SendFriendRequestSchema)
     .mutation(async ({ ctx, input }) => {
@@ -143,8 +137,6 @@ export const mobileSocialRouter = createMobileTRPCRouter({
       return repo.getRelationshipStatus(ctx.session.user.id, input.userId)
     }),
 
-  // ─── Block / Unblock ────────────────────────────────────
-
   blockUser: mobileProtectedProcedure.input(BlockUserSchema).mutation(async ({ ctx, input }) => {
     const repo = new SocialRepository(ctx.prisma)
     await repo.blockUser(ctx.session.user.id, input.userId)
@@ -165,8 +157,6 @@ export const mobileSocialRouter = createMobileTRPCRouter({
       const repo = new SocialRepository(ctx.prisma)
       return repo.getBlockedUsers(ctx.session.user.id, input.page, input.limit, input.search)
     }),
-
-  // ─── Activity Feed ──────────────────────────────────────
 
   getActivityFeed: mobileProtectedProcedure
     .input(GetActivityFeedSchema)

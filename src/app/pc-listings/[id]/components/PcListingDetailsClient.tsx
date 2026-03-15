@@ -9,6 +9,7 @@ import { ListingApprovalActions } from '@/app/listings/components/shared/approva
 import { CustomFieldsSection } from '@/app/listings/components/shared/CustomFieldsSection'
 import { ActionButtonsStack } from '@/app/listings/components/shared/details/ActionButtonsStack'
 import { AuthorPanel } from '@/app/listings/components/shared/details/AuthorPanel'
+import BookmarkButton from '@/app/listings/components/shared/details/BookmarkButton'
 import { DetailFieldRow } from '@/app/listings/components/shared/details/DetailFieldRow'
 import { DetailsHeader } from '@/app/listings/components/shared/details/DetailsHeader'
 import { DetailsHeaderBadges } from '@/app/listings/components/shared/details/DetailsHeaderBadges'
@@ -128,8 +129,13 @@ function PcListingDetailsClient(props: Props) {
       >
         {/* Back Navigation */}
         <div className="mb-6">
-          <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-4">
-            <ArrowLeft className="h-4 w-4" />
+          <Button
+            variant="outline"
+            size="sm"
+            icon={ArrowLeft}
+            onClick={() => router.back()}
+            className="mb-4"
+          >
             Back
           </Button>
         </div>
@@ -192,23 +198,26 @@ function PcListingDetailsClient(props: Props) {
             </div>
 
             <div className="flex w-full flex-col items-center gap-4 md:w-auto md:min-w-[180px] md:items-start">
-              <AuthorPanel
-                profileImage={props.pcListing.author?.profileImage}
-                authorName={props.pcListing.author?.name}
-                authorId={props.pcListing.author?.id}
-                postedAt={props.pcListing.createdAt}
-                bannedBadge={
-                  canViewBannedUsers &&
-                  props.pcListing?.author &&
-                  'userBans' in props.pcListing.author &&
-                  Array.isArray(props.pcListing.author.userBans) &&
-                  props.pcListing.author.userBans.length > 0 ? (
-                    <Badge variant="danger" size="sm" className="mt-1">
-                      BANNED USER
-                    </Badge>
-                  ) : undefined
-                }
-              />
+              <div className="flex items-start justify-between w-full gap-2">
+                <AuthorPanel
+                  profileImage={props.pcListing.author?.profileImage}
+                  authorName={props.pcListing.author?.name}
+                  authorId={props.pcListing.author?.id}
+                  postedAt={props.pcListing.createdAt}
+                  bannedBadge={
+                    canViewBannedUsers &&
+                    props.pcListing?.author &&
+                    'userBans' in props.pcListing.author &&
+                    Array.isArray(props.pcListing.author.userBans) &&
+                    props.pcListing.author.userBans.length > 0 ? (
+                      <Badge variant="danger" size="sm" className="mt-1">
+                        BANNED USER
+                      </Badge>
+                    ) : undefined
+                  }
+                />
+                <BookmarkButton type="pcListing" pcListingId={props.pcListing.id} />
+              </div>
 
               <ActionButtonsStack>
                 <EditPcListingButton pcListingId={props.pcListing.id} onSuccess={refreshData} />

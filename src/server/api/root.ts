@@ -7,6 +7,7 @@ import { titleIdToolsRouter } from './routers/admin/titleIdTools'
 import { apiKeysRouter } from './routers/apiKeys'
 import { auditLogsRouter } from './routers/auditLogs'
 import { badgesRouter } from './routers/badges'
+import { bookmarksRouter } from './routers/bookmarks'
 import { cacheRouter } from './routers/cache'
 import { cpusRouter } from './routers/cpus'
 import { customFieldCategoryRouter } from './routers/customFieldCategories'
@@ -16,6 +17,7 @@ import { deviceBrandsRouter } from './routers/deviceBrands'
 import { devicesRouter } from './routers/devices'
 import { emulatorsRouter } from './routers/emulators'
 import { entitlementsRouter } from './routers/entitlements'
+import { gameFollowsRouter } from './routers/gameFollows'
 import { gamesRouter } from './routers/games'
 import { gpusRouter } from './routers/gpus'
 import { igdbRouter } from './routers/igdb'
@@ -85,6 +87,8 @@ export const appRouter = createTRPCRouter({
   adminEntitlements: adminEntitlementsRouter,
   voteInvestigation: voteInvestigationRouter,
   social: socialRouter,
+  bookmarks: bookmarksRouter,
+  gameFollows: gameFollowsRouter,
 })
 
 export type AppRouter = typeof appRouter

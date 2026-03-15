@@ -6,8 +6,7 @@ import { Button, Input } from '@/components/ui'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { cn } from '@/lib/utils'
 import BlockedList from './connections/BlockedList'
-import FollowersList from './connections/FollowersList'
-import FollowingList from './connections/FollowingList'
+import FollowConnectionList from './connections/FollowersList'
 import FriendsList from './connections/FriendsList'
 import SettingsSection from './SettingsSection'
 
@@ -61,17 +60,9 @@ function ConnectionsManager(props: Props) {
           className="max-w-sm"
         />
 
-        {subTab === 'followers' && (
-          <FollowersList
-            userId={props.userId}
-            page={page}
-            limit={limit}
-            search={debouncedSearch}
-            onPageChange={setPage}
-          />
-        )}
-        {subTab === 'following' && (
-          <FollowingList
+        {(subTab === 'followers' || subTab === 'following') && (
+          <FollowConnectionList
+            variant={subTab}
             userId={props.userId}
             page={page}
             limit={limit}

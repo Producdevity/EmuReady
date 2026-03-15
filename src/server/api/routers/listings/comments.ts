@@ -80,7 +80,7 @@ export const commentsRouter = createTRPCRouter({
       payload: {
         listingId,
         commentId: comment.id,
-        parentId,
+        parentId: parentId ?? undefined,
         commentText: content,
       },
     })

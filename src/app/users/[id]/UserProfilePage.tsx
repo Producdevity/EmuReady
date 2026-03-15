@@ -4,6 +4,7 @@ import { formatDistanceToNow } from 'date-fns'
 import {
   Award,
   Calendar,
+  Gamepad2,
   GamepadIcon,
   Grid3X3,
   List,
@@ -42,8 +43,10 @@ import getErrorMessage from '@/utils/getErrorMessage'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role } from '@orm'
 import FollowListModal from './components/FollowListModal'
+import GameFollowListModal from './components/GameFollowListModal'
 import ProfileListingCard from './components/ProfileListingCard'
 import ProfileVoteCard from './components/ProfileVoteCard'
+import UserBookmarksSection from './components/UserBookmarksSection'
 import UserDetailsPageError from './components/UserDetailsPageError'
 import UserProfilePageSkeleton from './components/UserProfilePageSkeleton'
 import type { ReactNode } from 'react'
@@ -61,7 +64,7 @@ function UserDetailsPage() {
 
   const userId = isString(params.id) ? params.id : isArray(params.id) ? params.id[0] : ''
 
-  type ProfileTab = 'listings' | 'pcListings' | 'votes'
+  type ProfileTab = 'listings' | 'pcListings' | 'votes' | 'bookmarks'
   const [activeTab, setActiveTab] = useState<ProfileTab>(
     (searchParams.get('tab') as ProfileTab) || 'listings',
   )
@@ -94,6 +97,7 @@ function UserDetailsPage() {
     open: boolean
     type: 'followers' | 'following'
   }>({ open: false, type: 'followers' })
+  const [gameFollowModalOpen, setGameFollowModalOpen] = useState(false)
 
   const debouncedSearch = useDebouncedValue(searchFilter, 300)
 
@@ -145,6 +149,14 @@ function UserDetailsPage() {
     { enabled: isAuthenticated && !isOwnProfile },
   )
   const followCountsQuery = api.social.getFollowCounts.useQuery({ userId })
+  const gameFollowCountQuery = api.gameFollows.getGameFollowCount.useQuery(
+    { userId },
+    { enabled: !!userQuery.data },
+  )
+  const bookmarkCountsQuery = api.bookmarks.getCounts.useQuery(
+    { userId },
+    { enabled: !!userQuery.data },
+  )
 
   const followMutation = api.social.follow.useMutation({
     onSuccess: () => {
@@ -213,6 +225,13 @@ function UserDetailsPage() {
     !('showVotingActivity' in userQuery.data) ||
     userQuery.data.showVotingActivity !== false
 
+  const bookmarkCounts =
+    bookmarkCountsQuery.data?.visibility === 'visible' ? bookmarkCountsQuery.data.counts : null
+  const totalBookmarks = bookmarkCounts
+    ? bookmarkCounts.listingBookmarks + bookmarkCounts.pcListingBookmarks
+    : 0
+  const showBookmarksTab = bookmarkCounts !== null && totalBookmarks > 0
+
   const activityTabs = useMemo(() => {
     const tabs = [
       { id: 'listings', label: 'Handheld', count: userQuery.data?._count?.listings ?? 0 },
@@ -221,12 +240,17 @@ function UserDetailsPage() {
     if (showVotesTab) {
       tabs.push({ id: 'votes', label: 'Votes', count: userQuery.data?.voteSummary?.total ?? 0 })
     }
+    if (showBookmarksTab) {
+      tabs.push({ id: 'bookmarks', label: 'Bookmarks', count: totalBookmarks })
+    }
     return tabs
   }, [
     userQuery.data?._count?.listings,
     userQuery.data?._count?.pcListings,
     showVotesTab,
     userQuery.data?.voteSummary?.total,
+    showBookmarksTab,
+    totalBookmarks,
   ])
 
   if (userQuery.isPending) return <UserProfilePageSkeleton />
@@ -341,6 +365,24 @@ function UserDetailsPage() {
                       </button>
                     </div>
                   )}
+                  {gameFollowCountQuery.data?.visibility === 'visible' &&
+                    gameFollowCountQuery.data.counts.followedGames > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 justify-center lg:justify-start mb-3">
+                        <button
+                          type="button"
+                          onClick={() => setGameFollowModalOpen(true)}
+                          className="flex items-center gap-1.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                        >
+                          <Gamepad2 className="w-4 h-4" />
+                          <span className="font-semibold text-gray-900 dark:text-white">
+                            {gameFollowCountQuery.data.counts.followedGames}
+                          </span>{' '}
+                          {gameFollowCountQuery.data.counts.followedGames === 1
+                            ? 'game followed'
+                            : 'games followed'}
+                        </button>
+                      </div>
+                    )}
                   {!isOwnProfile &&
                     isAuthenticated &&
                     (userQuery.data.allowFollows !== false || followQuery.data?.isFollowing) && (
@@ -698,6 +740,14 @@ function UserDetailsPage() {
                   )}
                 </>
               )}
+
+              {activeTab === 'bookmarks' && bookmarkCounts && (
+                <UserBookmarksSection
+                  userId={userId}
+                  handheldCount={bookmarkCounts.listingBookmarks}
+                  pcCount={bookmarkCounts.pcListingBookmarks}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -708,6 +758,12 @@ function UserDetailsPage() {
         type={followListModal.type}
         open={followListModal.open}
         onOpenChange={(open) => setFollowListModal((prev) => ({ ...prev, open }))}
+      />
+
+      <GameFollowListModal
+        userId={userId}
+        open={gameFollowModalOpen}
+        onOpenChange={setGameFollowModalOpen}
       />
     </div>
   )

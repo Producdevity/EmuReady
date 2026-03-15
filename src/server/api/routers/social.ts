@@ -1,3 +1,4 @@
+import { AppError } from '@/lib/errors'
 import {
   BlockUserSchema,
   FollowUserSchema,
@@ -16,11 +17,13 @@ import {
 } from '@/schemas/social'
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/api/trpc'
 import { SocialRepository } from '@/server/repositories/social.repository'
+import { isUserBanned } from '@/server/utils/query-builders'
 
 export const socialRouter = createTRPCRouter({
-  // ─── Follow / Unfollow ──────────────────────────────────
-
   follow: protectedProcedure.input(FollowUserSchema).mutation(async ({ ctx, input }) => {
+    if (await isUserBanned(ctx.prisma, ctx.session.user.id)) {
+      return AppError.shadowBanned()
+    }
     const repo = new SocialRepository(ctx.prisma)
     await repo.follow(ctx.session.user.id, input.userId)
     return { success: true }
@@ -39,8 +42,6 @@ export const socialRouter = createTRPCRouter({
       await repo.removeFollower(ctx.session.user.id, input.userId)
       return { success: true }
     }),
-
-  // ─── Follow Queries ─────────────────────────────────────
 
   getFollowers: publicProcedure.input(GetFollowersSchema).query(async ({ ctx, input }) => {
     const repo = new SocialRepository(ctx.prisma)
@@ -90,11 +91,12 @@ export const socialRouter = createTRPCRouter({
       return { statuses }
     }),
 
-  // ─── Friend Requests ────────────────────────────────────
-
   sendFriendRequest: protectedProcedure
     .input(SendFriendRequestSchema)
     .mutation(async ({ ctx, input }) => {
+      if (await isUserBanned(ctx.prisma, ctx.session.user.id)) {
+        return AppError.shadowBanned()
+      }
       const repo = new SocialRepository(ctx.prisma)
       await repo.sendFriendRequest(ctx.session.user.id, input.userId)
       return { success: true }
@@ -137,8 +139,6 @@ export const socialRouter = createTRPCRouter({
     return repo.getRelationshipStatus(ctx.session.user.id, input.userId)
   }),
 
-  // ─── Block / Unblock ────────────────────────────────────
-
   blockUser: protectedProcedure.input(BlockUserSchema).mutation(async ({ ctx, input }) => {
     const repo = new SocialRepository(ctx.prisma)
     await repo.blockUser(ctx.session.user.id, input.userId)
@@ -155,8 +155,6 @@ export const socialRouter = createTRPCRouter({
     const repo = new SocialRepository(ctx.prisma)
     return repo.getBlockedUsers(ctx.session.user.id, input.page, input.limit, input.search)
   }),
-
-  // ─── Activity Feed ──────────────────────────────────────
 
   getActivityFeed: protectedProcedure.input(GetActivityFeedSchema).query(async ({ ctx, input }) => {
     const repo = new SocialRepository(ctx.prisma)

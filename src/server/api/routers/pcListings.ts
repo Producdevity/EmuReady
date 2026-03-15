@@ -516,6 +516,17 @@ export const pcListingsRouter = createTRPCRouter({
     // Invalidate stats cache when PC listing is approved
     listingStatsCache.delete('pc-listing-stats')
 
+    notificationEventEmitter.emitNotificationEvent({
+      eventType: NOTIFICATION_EVENTS.PC_LISTING_APPROVED,
+      entityType: 'pcListing',
+      entityId: input.pcListingId,
+      triggeredBy: ctx.session.user.id,
+      payload: {
+        pcListingId: input.pcListingId,
+        gameId: pcListing.gameId,
+      },
+    })
+
     return approvedListing
   }),
 
@@ -559,6 +570,19 @@ export const pcListingsRouter = createTRPCRouter({
     // Invalidate stats cache when PC listing is rejected
     listingStatsCache.delete('pc-listing-stats')
 
+    notificationEventEmitter.emitNotificationEvent({
+      eventType: NOTIFICATION_EVENTS.PC_LISTING_REJECTED,
+      entityType: 'pcListing',
+      entityId: input.pcListingId,
+      triggeredBy: ctx.session.user.id,
+      payload: {
+        pcListingId: input.pcListingId,
+        rejectedBy: ctx.session.user.id,
+        rejectedAt: rejectedListing.processedAt,
+        rejectionReason: input.notes,
+      },
+    })
+
     return rejectedListing
   }),
 
@@ -600,11 +624,14 @@ export const pcListingsRouter = createTRPCRouter({
       if (!isModerator && !isDeveloper) {
         return ResourceError.pcListing.requiresDeveloperToApprove()
       }
+
+      const pendingListings = await ctx.prisma.pcListing.findMany({
+        where: { id: { in: input.pcListingIds }, status: ApprovalStatus.PENDING },
+        select: { id: true, gameId: true },
+      })
+
       const result = await ctx.prisma.pcListing.updateMany({
-        where: {
-          id: { in: input.pcListingIds },
-          status: ApprovalStatus.PENDING,
-        },
+        where: { id: { in: pendingListings.map((l) => l.id) } },
         data: {
           status: ApprovalStatus.APPROVED,
           processedAt: new Date(),
@@ -612,8 +639,20 @@ export const pcListingsRouter = createTRPCRouter({
         },
       })
 
-      // Invalidate stats cache when PC listings are bulk approved
       listingStatsCache.delete('pc-listing-stats')
+
+      for (const listing of pendingListings) {
+        notificationEventEmitter.emitNotificationEvent({
+          eventType: NOTIFICATION_EVENTS.PC_LISTING_APPROVED,
+          entityType: 'pcListing',
+          entityId: listing.id,
+          triggeredBy: ctx.session.user.id,
+          payload: {
+            pcListingId: listing.id,
+            gameId: listing.gameId,
+          },
+        })
+      }
 
       return { count: result.count }
     }),
@@ -629,10 +668,15 @@ export const pcListingsRouter = createTRPCRouter({
       if (!isModerator && !isDeveloper) {
         return ResourceError.pcListing.requiresDeveloperToReject()
       }
+
+      const pendingListings = await ctx.prisma.pcListing.findMany({
+        where: { id: { in: input.pcListingIds }, status: ApprovalStatus.PENDING },
+        select: { id: true },
+      })
+
       const result = await ctx.prisma.pcListing.updateMany({
         where: {
-          id: { in: input.pcListingIds },
-          status: ApprovalStatus.PENDING,
+          id: { in: pendingListings.map((l) => l.id) },
         },
         data: {
           status: ApprovalStatus.REJECTED,
@@ -644,6 +688,21 @@ export const pcListingsRouter = createTRPCRouter({
 
       // Invalidate stats cache when PC listings are bulk rejected
       listingStatsCache.delete('pc-listing-stats')
+
+      for (const listing of pendingListings) {
+        notificationEventEmitter.emitNotificationEvent({
+          eventType: NOTIFICATION_EVENTS.PC_LISTING_REJECTED,
+          entityType: 'pcListing',
+          entityId: listing.id,
+          triggeredBy: ctx.session.user.id,
+          payload: {
+            pcListingId: listing.id,
+            rejectedBy: ctx.session.user.id,
+            rejectedAt: new Date(),
+            rejectionReason: input.notes,
+          },
+        })
+      }
 
       return { count: result.count }
     }),

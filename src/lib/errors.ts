@@ -501,6 +501,17 @@ export class ResourceError {
     canOnlyDeleteOwn: () => AppError.forbidden('You can only delete your own PC presets'),
   }
 
+  static bookmark = {
+    notFound: () => AppError.notFound('Bookmark'),
+    cannotBookmarkNonApproved: () =>
+      AppError.badRequest('Cannot bookmark a listing that is not approved'),
+  }
+
+  static gameFollow = {
+    notFound: () => AppError.notFound('Game follow'),
+    cannotFollowNonApproved: () => AppError.badRequest('Cannot follow a game that is not approved'),
+  }
+
   static social = {
     cannotFollowSelf: () => AppError.badRequest('Cannot follow yourself'),
     cannotFriendSelf: () => AppError.badRequest('Cannot send friend request to yourself'),
