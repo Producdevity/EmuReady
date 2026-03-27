@@ -6,6 +6,7 @@ import customFieldTemplatesSeeder from './seeders/customFieldTemplatesSeeder'
 import devicesSeeder from './seeders/devicesSeeder'
 import edenCustomFieldsSeeder from './seeders/edenCustomFieldsSeeder'
 import emulatorsSeeder from './seeders/emulatorsSeeder'
+import gamenativeCustomFieldsSeeder from './seeders/gamenativeCustomFieldsSeeder'
 import gamesSeeder from './seeders/gamesSeeder'
 import gpuSeeder from './seeders/gpuSeeder'
 import listingsSeeder from './seeders/listingsSeeder'
@@ -129,6 +130,7 @@ async function main() {
       await customFieldTemplatesSeeder(prisma)
       await azaharCustomFieldsSeeder(prisma)
       await edenCustomFieldsSeeder(prisma)
+      await gamenativeCustomFieldsSeeder(prisma)
       console.info('✅ Custom fields seeded successfully!')
     } catch (error) {
       console.error('❌ Error seeding custom fields:', error)
@@ -188,6 +190,7 @@ async function main() {
     await emulatorsSeeder(prisma)
     await azaharCustomFieldsSeeder(prisma)
     await edenCustomFieldsSeeder(prisma)
+    await gamenativeCustomFieldsSeeder(prisma)
     await customFieldTemplatesSeeder(prisma)
     await socSeeder(prisma)
     await cpuSeeder(prisma)

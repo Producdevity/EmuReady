@@ -18,10 +18,10 @@ describe('GameNative Converter', () => {
 
       expect(config).toMatchObject({
         name: '',
-        screenSize: '854x480',
+        screenSize: '1280x720',
         graphicsDriver: 'vortek',
         dxwrapper: 'dxvk',
-        audioDriver: 'alsa',
+        audioDriver: 'pulseaudio',
         startupSelection: 1,
         box64Version: '0.3.6',
         box86Version: '0.3.2',
@@ -30,6 +30,12 @@ describe('GameNative Converter', () => {
         wow64Mode: true,
         showFPS: false,
         csmt: true,
+        containerVariant: 'glibc',
+        emulator: 'FEXCore',
+        fexcoreVersion: '2603',
+        fexcorePreset: 'INTERMEDIATE',
+        useSteamInput: false,
+        dinputMapperType: 1,
       })
     })
 
@@ -38,8 +44,8 @@ describe('GameNative Converter', () => {
         { input: '1920x1080 (16:9)', expected: '1920x1080' },
         { input: '2560x1440', expected: '2560x1440' },
         { input: '854x480 (16:9)', expected: '854x480' },
-        { input: 'invalid', expected: '854x480' }, // Default fallback
-        { input: '', expected: '854x480' }, // Empty fallback
+        { input: 'invalid', expected: '1280x720' },
+        { input: '', expected: '1280x720' },
       ]
 
       testCases.forEach(({ input, expected }) => {
@@ -63,7 +69,6 @@ describe('GameNative Converter', () => {
     })
 
     it('should handle environment variables properly', () => {
-      // Test with empty value - should use default
       const configEmpty = convertToGameNativeConfig({
         listingId: 'test',
         gameId: 'game',
@@ -80,9 +85,8 @@ describe('GameNative Converter', () => {
       })
 
       expect(configEmpty.envVars).toContain('ZINK_DESCRIPTORS=lazy')
-      expect(configEmpty.envVars).toContain('MESA_VK_WSI_PRESENT_MODE=mailbox')
+      expect(configEmpty.envVars).toContain('PULSE_LATENCY_MSEC=144')
 
-      // Test with custom value
       const configCustom = convertToGameNativeConfig({
         listingId: 'test',
         gameId: 'game',
@@ -104,11 +108,11 @@ describe('GameNative Converter', () => {
     it('should map graphics driver names correctly', () => {
       const testCases = [
         { input: 'Vortek (Universal)', expected: 'vortek' },
-        { input: 'Mesa Turnip', expected: 'turnip' },
-        { input: 'VirGL', expected: 'virgl' },
-        { input: 'Freedreno', expected: 'vortek' }, // Not a valid driver, defaults to vortek
-        { input: 'Custom Driver', expected: 'vortek' }, // Unknown defaults to vortek
-        { input: '', expected: 'vortek' }, // Default when empty
+        { input: 'Turnip (Adreno)', expected: 'turnip' },
+        { input: 'VirGL (Universal)', expected: 'virgl' },
+        { input: 'Adreno (Adreno)', expected: 'adreno' },
+        { input: 'Custom Driver', expected: 'vortek' },
+        { input: '', expected: 'vortek' },
       ]
 
       testCases.forEach(({ input, expected }) => {
@@ -120,7 +124,7 @@ describe('GameNative Converter', () => {
               customFieldDefinition: {
                 name: 'graphics_driver',
                 label: 'Graphics Driver',
-                type: 'TEXT',
+                type: 'SELECT',
               },
               value: input,
             },
@@ -138,7 +142,7 @@ describe('GameNative Converter', () => {
         { input: 'VKD3D', expected: 'vkd3d' },
         { input: 'CNC DDraw', expected: 'cnc-ddraw' },
         { input: 'Other', expected: 'dxvk' },
-        { input: 'Unknown', expected: 'dxvk' }, // Default fallback
+        { input: 'Unknown', expected: 'dxvk' },
       ]
 
       testCases.forEach(({ input, expected }) => {
@@ -163,10 +167,12 @@ describe('GameNative Converter', () => {
 
     it('should map audio driver options correctly', () => {
       const testCases = [
+        { input: 'alsa', expected: 'alsa' },
+        { input: 'pulse', expected: 'pulseaudio' },
+        { input: 'other', expected: 'pulseaudio' },
         { input: 'ALSA', expected: 'alsa' },
-        { input: 'PulseAudio', expected: 'pulse' }, // Correct value is 'pulse'
-        { input: 'Other', expected: 'alsa' },
-        { input: 'Unknown', expected: 'alsa' }, // Default fallback
+        { input: 'PulseAudio', expected: 'pulseaudio' },
+        { input: 'Unknown', expected: 'pulseaudio' },
       ]
 
       testCases.forEach(({ input, expected }) => {
@@ -195,7 +201,7 @@ describe('GameNative Converter', () => {
         { input: 'Essential (Load only essential services)', expected: 1 },
         { input: 'Aggressive (Stop services on startup)', expected: 2 },
         { input: 'Other', expected: 1 },
-        { input: 'Unknown', expected: 1 }, // Default fallback
+        { input: 'Unknown', expected: 1 },
       ]
 
       testCases.forEach(({ input, expected }) => {
@@ -218,8 +224,7 @@ describe('GameNative Converter', () => {
       })
     })
 
-    it('should handle Box64 and Box86 versions with defaults', () => {
-      // Test with provided values
+    it('should handle Box64 versions with defaults', () => {
       const configWithValues = convertToGameNativeConfig({
         listingId: 'test',
         gameId: 'game',
@@ -228,25 +233,15 @@ describe('GameNative Converter', () => {
             customFieldDefinition: {
               name: 'box64_version',
               label: 'Box64 Version',
-              type: 'TEXT',
+              type: 'SELECT',
             },
-            value: '0.3.6',
-          },
-          {
-            customFieldDefinition: {
-              name: 'box86_version',
-              label: 'Box86 Version',
-              type: 'TEXT',
-            },
-            value: '0.3.4',
+            value: '0.3.8',
           },
         ],
       })
 
-      expect(configWithValues.box64Version).toBe('0.3.6') // Invalid version defaults to 0.3.6
-      expect(configWithValues.box86Version).toBe('0.3.2') // Invalid version defaults to 0.3.2
+      expect(configWithValues.box64Version).toBe('0.3.8')
 
-      // Test with empty values - should use defaults
       const configWithEmpty = convertToGameNativeConfig({
         listingId: 'test',
         gameId: 'game',
@@ -255,33 +250,47 @@ describe('GameNative Converter', () => {
             customFieldDefinition: {
               name: 'box64_version',
               label: 'Box64 Version',
-              type: 'TEXT',
+              type: 'SELECT',
             },
             value: '',
-          },
-          {
-            customFieldDefinition: {
-              name: 'box86_version',
-              label: 'Box86 Version',
-              type: 'TEXT',
-            },
-            value: null,
           },
         ],
       })
 
       expect(configWithEmpty.box64Version).toBe('0.3.6')
-      expect(configWithEmpty.box86Version).toBe('0.3.2')
     })
 
-    it('should map Box64 and Box86 presets correctly', () => {
+    it('should accept bionic-specific Box64 versions', () => {
+      const bionicVersions = ['0.3.2', '0.3.7', '0.4.0']
+
+      bionicVersions.forEach((version) => {
+        const config = convertToGameNativeConfig({
+          listingId: 'test',
+          gameId: 'game',
+          customFieldValues: [
+            {
+              customFieldDefinition: {
+                name: 'box64_version',
+                label: 'Box64 Version',
+                type: 'SELECT',
+              },
+              value: version,
+            },
+          ],
+        })
+
+        expect(config.box64Version).toBe(version)
+      })
+    })
+
+    it('should map Box64 presets correctly (lowercase input)', () => {
       const presetOptions = [
-        { input: 'Stability', expected: 'STABILITY' },
-        { input: 'Compatibility', expected: 'COMPATIBILITY' },
-        { input: 'Intermediate', expected: 'INTERMEDIATE' },
-        { input: 'Performance', expected: 'PERFORMANCE' },
-        { input: 'Other/Custom', expected: 'COMPATIBILITY' },
-        { input: 'Unknown', expected: 'COMPATIBILITY' }, // Default fallback
+        { input: 'stability', expected: 'STABILITY' },
+        { input: 'compatibility', expected: 'COMPATIBILITY' },
+        { input: 'intermediate', expected: 'INTERMEDIATE' },
+        { input: 'performance', expected: 'PERFORMANCE' },
+        { input: 'denuvo', expected: 'DENUVO' },
+        { input: 'other/custom', expected: 'COMPATIBILITY' },
       ]
 
       presetOptions.forEach(({ input, expected }) => {
@@ -297,19 +306,10 @@ describe('GameNative Converter', () => {
               },
               value: input,
             },
-            {
-              customFieldDefinition: {
-                name: 'box86_preset',
-                label: 'Box86 Preset',
-                type: 'SELECT',
-              },
-              value: input,
-            },
           ],
         })
 
         expect(config.box64Preset).toBe(expected)
-        expect(config.box86Preset).toBe(expected)
       })
     })
 
@@ -330,65 +330,225 @@ describe('GameNative Converter', () => {
       })
 
       expect(config.execArgs).toBe('-skipmovies -nologo')
-
-      // Test with empty value
-      const configEmpty = convertToGameNativeConfig({
-        listingId: 'test',
-        gameId: 'game',
-        customFieldValues: [
-          {
-            customFieldDefinition: {
-              name: 'exec_arguments',
-              label: 'Exec Arguments',
-              type: 'TEXT',
-            },
-            value: '',
-          },
-        ],
-      })
-
-      expect(configEmpty.execArgs).toBe('')
     })
 
-    it('should handle DX wrapper config properly', () => {
+    it('should merge dxvk_version into dxwrapperConfig', () => {
       const config = convertToGameNativeConfig({
         listingId: 'test',
         gameId: 'game',
         customFieldValues: [
           {
             customFieldDefinition: {
-              name: 'dx_wrapper_config',
-              label: 'DX Wrapper Config',
-              type: 'TEXTAREA',
+              name: 'dxvk_version',
+              label: 'DXVK Version',
+              type: 'SELECT',
             },
-            value: '2.6.1-gplasync',
+            value: 'async-1.10.3',
           },
         ],
       })
 
-      expect(config.dxwrapperConfig).toBe('2.6.1-gplasync')
+      expect(config.dxwrapperConfig).toContain('version=async-1.10.3')
     })
 
-    it('should convert all fields from the complete example listing', () => {
-      // Using exact data from notes/GameNativeListingByIdExample.ts
+    it('should merge max_device_memory into graphicsDriverConfig', () => {
+      const config = convertToGameNativeConfig({
+        listingId: 'test',
+        gameId: 'game',
+        customFieldValues: [
+          {
+            customFieldDefinition: {
+              name: 'max_device_memory',
+              label: 'Max Device Memory',
+              type: 'TEXT',
+            },
+            value: '4096',
+          },
+        ],
+      })
+
+      expect(config.graphicsDriverConfig).toContain('maxDeviceMemory=4096')
+    })
+
+    it('should merge use_adrenotools_turnip into graphicsDriverConfig', () => {
+      const config = convertToGameNativeConfig({
+        listingId: 'test',
+        gameId: 'game',
+        customFieldValues: [
+          {
+            customFieldDefinition: {
+              name: 'use_adrenotools_turnip',
+              label: 'Use Adrenotools Turnip',
+              type: 'BOOLEAN',
+            },
+            value: true,
+          },
+        ],
+      })
+
+      expect(config.graphicsDriverConfig).toContain('adrenotoolsTurnip=1')
+    })
+
+    it('should write adrenotoolsTurnip=0 when disabled', () => {
+      const config = convertToGameNativeConfig({
+        listingId: 'test',
+        gameId: 'game',
+        customFieldValues: [
+          {
+            customFieldDefinition: {
+              name: 'use_adrenotools_turnip',
+              label: 'Use Adrenotools Turnip',
+              type: 'BOOLEAN',
+            },
+            value: false,
+          },
+        ],
+      })
+
+      expect(config.graphicsDriverConfig).toContain('adrenotoolsTurnip=0')
+    })
+
+    it('should combine max_device_memory and use_adrenotools_turnip in graphicsDriverConfig', () => {
+      const config = convertToGameNativeConfig({
+        listingId: 'test',
+        gameId: 'game',
+        customFieldValues: [
+          {
+            customFieldDefinition: {
+              name: 'max_device_memory',
+              label: 'Max Device Memory',
+              type: 'TEXT',
+            },
+            value: '4096',
+          },
+          {
+            customFieldDefinition: {
+              name: 'use_adrenotools_turnip',
+              label: 'Use Adrenotools Turnip',
+              type: 'BOOLEAN',
+            },
+            value: true,
+          },
+        ],
+      })
+
+      expect(config.graphicsDriverConfig).toContain('maxDeviceMemory=4096')
+      expect(config.graphicsDriverConfig).toContain('adrenotoolsTurnip=1')
+    })
+
+    it('should map container_variant correctly', () => {
+      const config = convertToGameNativeConfig({
+        listingId: 'test',
+        gameId: 'game',
+        customFieldValues: [
+          {
+            customFieldDefinition: {
+              name: 'container_variant',
+              label: 'Container Variant',
+              type: 'SELECT',
+            },
+            value: 'bionic',
+          },
+        ],
+      })
+
+      expect(config.containerVariant).toBe('bionic')
+    })
+
+    it('should map steam_type with ultra_light conversion', () => {
+      const config = convertToGameNativeConfig({
+        listingId: 'test',
+        gameId: 'game',
+        customFieldValues: [
+          {
+            customFieldDefinition: {
+              name: 'steam_type',
+              label: 'Steam Type',
+              type: 'SELECT',
+            },
+            value: 'ultra_light',
+          },
+        ],
+      })
+
+      expect(config.steamType).toBe('ultralight')
+    })
+
+    it('should map emulator from 64_bit_emulator field', () => {
+      const config = convertToGameNativeConfig({
+        listingId: 'test',
+        gameId: 'game',
+        customFieldValues: [
+          {
+            customFieldDefinition: {
+              name: '64_bit_emulator',
+              label: '64-bit Emulator',
+              type: 'SELECT',
+            },
+            value: 'box',
+          },
+        ],
+      })
+
+      expect(config.emulator).toBe('Box64')
+    })
+
+    it('should map fex_core_preset correctly (lowercase input)', () => {
+      const config = convertToGameNativeConfig({
+        listingId: 'test',
+        gameId: 'game',
+        customFieldValues: [
+          {
+            customFieldDefinition: {
+              name: 'fex_core_preset',
+              label: 'FEXCore Preset',
+              type: 'SELECT',
+            },
+            value: 'performance',
+          },
+        ],
+      })
+
+      expect(config.fexcorePreset).toBe('PERFORMANCE')
+    })
+
+    it('should map direct_input_mapper_type string values to numbers', () => {
+      const testCases = [
+        { input: 'standard', expected: 1 },
+        { input: 'xinput_mapper', expected: 2 },
+      ]
+
+      testCases.forEach(({ input, expected }) => {
+        const config = convertToGameNativeConfig({
+          listingId: 'test',
+          gameId: 'game',
+          customFieldValues: [
+            {
+              customFieldDefinition: {
+                name: 'direct_input_mapper_type',
+                label: 'DirectInput Mapper Type',
+                type: 'SELECT',
+              },
+              value: input,
+            },
+          ],
+        })
+
+        expect(config.dinputMapperType).toBe(expected)
+      })
+    })
+
+    it('should convert all fields from a complete listing', () => {
       const input: GameNativeConfigInput = {
         listingId: 'ea4107c5-371b-4030-b42c-4469f251fe8b',
         gameId: 'f097b273-ad3d-4b2b-b6a4-d76856aafabf',
         customFieldValues: [
           {
-            customFieldDefinition: {
-              name: 'audio_driver',
-              label: 'Audio Driver',
-              type: 'SELECT',
-            },
-            value: 'ALSA',
+            customFieldDefinition: { name: 'audio_driver', label: 'Audio Driver', type: 'SELECT' },
+            value: 'alsa',
           },
           {
-            customFieldDefinition: {
-              name: 'average_fps',
-              label: 'Average FPS',
-              type: 'TEXT',
-            },
+            customFieldDefinition: { name: 'average_fps', label: 'Average FPS', type: 'TEXT' },
             value: '120',
           },
           {
@@ -397,22 +557,18 @@ describe('GameNative Converter', () => {
               label: 'Box64 Preset',
               type: 'SELECT',
             },
-            value: 'Performance',
+            value: 'performance',
           },
           {
             customFieldDefinition: {
               name: 'box64_version',
               label: 'Box64 Version',
-              type: 'TEXT',
+              type: 'SELECT',
             },
             value: '0.3.6',
           },
           {
-            customFieldDefinition: {
-              name: 'dx_wrapper',
-              label: 'DX Wrapper',
-              type: 'SELECT',
-            },
+            customFieldDefinition: { name: 'dx_wrapper', label: 'DX Wrapper', type: 'SELECT' },
             value: 'DXVK',
           },
           {
@@ -421,7 +577,7 @@ describe('GameNative Converter', () => {
               label: 'DX Wrapper Config',
               type: 'TEXTAREA',
             },
-            value: '2.6.1-gplasync',
+            value: 'async=1',
           },
           {
             customFieldDefinition: {
@@ -449,33 +605,17 @@ describe('GameNative Converter', () => {
           },
           {
             customFieldDefinition: {
-              name: 'game_version',
-              label: 'Game Version',
-              type: 'TEXT',
-            },
-            value: '',
-          },
-          {
-            customFieldDefinition: {
               name: 'graphics_driver',
               label: 'Graphics Driver',
-              type: 'TEXT',
+              type: 'SELECT',
             },
             value: 'Vortek (Universal)',
           },
           {
             customFieldDefinition: {
-              name: 'media_url',
-              label: 'Screenshots, Blog Post, etc',
-              type: 'URL',
-            },
-            value: '',
-          },
-          {
-            customFieldDefinition: {
               name: 'resolution',
               label: 'Resolution (Screen Size)',
-              type: 'TEXT',
+              type: 'SELECT',
             },
             value: '1920x1080 (16:9)',
           },
@@ -489,38 +629,51 @@ describe('GameNative Converter', () => {
           },
           {
             customFieldDefinition: {
-              name: 'youtube',
-              label: 'YouTube',
-              type: 'URL',
+              name: 'container_variant',
+              label: 'Container Variant',
+              type: 'SELECT',
             },
-            value: '',
+            value: 'bionic',
+          },
+          {
+            customFieldDefinition: {
+              name: '64_bit_emulator',
+              label: '64-bit Emulator',
+              type: 'SELECT',
+            },
+            value: 'fex',
+          },
+          {
+            customFieldDefinition: {
+              name: 'fex_core_preset',
+              label: 'FEXCore Preset',
+              type: 'SELECT',
+            },
+            value: 'intermediate',
           },
         ],
       }
 
       const config = convertToGameNativeConfig(input)
 
-      // Verify all mapped fields
       expect(config.audioDriver).toBe('alsa')
       expect(config.box64Preset).toBe('PERFORMANCE')
       expect(config.box64Version).toBe('0.3.6')
       expect(config.dxwrapper).toBe('dxvk')
-      expect(config.dxwrapperConfig).toBe('2.6.1-gplasync')
-      expect(config.envVars).toContain('ZINK_DESCRIPTORS=lazy') // Default since empty
+      expect(config.dxwrapperConfig).toBe('async=1')
+      expect(config.envVars).toContain('ZINK_DESCRIPTORS=lazy')
       expect(config.execArgs).toBe('-skipmovies')
       expect(config.graphicsDriver).toBe('vortek')
       expect(config.screenSize).toBe('1920x1080')
       expect(config.startupSelection).toBe(2)
+      expect(config.containerVariant).toBe('bionic')
+      expect(config.emulator).toBe('FEXCore')
+      expect(config.fexcorePreset).toBe('INTERMEDIATE')
 
-      // Verify default values for missing fields
-      expect(config.box86Version).toBe('0.3.2')
       expect(config.box86Preset).toBe('COMPATIBILITY')
       expect(config.wow64Mode).toBe(true)
       expect(config.showFPS).toBe(false)
       expect(config.launchRealSteam).toBe(false)
-      expect(config.cpuList).toBe('0,1,2,3,4,5,6,7')
-      expect(config.csmt).toBe(true)
-      expect(config.sdlControllerAPI).toBe(true)
       expect(config.enableXInput).toBe(true)
       expect(config.enableDInput).toBe(true)
     })
@@ -539,35 +692,19 @@ describe('GameNative Converter', () => {
             value: 'v0.3.0',
           },
           {
-            customFieldDefinition: {
-              name: 'game_version',
-              label: 'Game Version',
-              type: 'TEXT',
-            },
+            customFieldDefinition: { name: 'game_version', label: 'Game Version', type: 'TEXT' },
             value: '1.0.0',
           },
           {
-            customFieldDefinition: {
-              name: 'average_fps',
-              label: 'Average FPS',
-              type: 'TEXT',
-            },
+            customFieldDefinition: { name: 'average_fps', label: 'Average FPS', type: 'TEXT' },
             value: '60',
           },
           {
-            customFieldDefinition: {
-              name: 'media_url',
-              label: 'Media URL',
-              type: 'URL',
-            },
+            customFieldDefinition: { name: 'media_url', label: 'Media URL', type: 'URL' },
             value: 'https://example.com',
           },
           {
-            customFieldDefinition: {
-              name: 'youtube',
-              label: 'YouTube',
-              type: 'URL',
-            },
+            customFieldDefinition: { name: 'youtube', label: 'YouTube', type: 'URL' },
             value: 'https://youtube.com/watch?v=123',
           },
         ],
@@ -575,10 +712,8 @@ describe('GameNative Converter', () => {
 
       const config = convertToGameNativeConfig(input)
 
-      // These fields should not affect the config
-      // Config should still have default values
       expect(config.name).toBe('')
-      expect(config.screenSize).toBe('854x480')
+      expect(config.screenSize).toBe('1280x720')
       expect(config.graphicsDriver).toBe('vortek')
       expect(config.dxwrapper).toBe('dxvk')
     })
@@ -600,7 +735,7 @@ describe('GameNative Converter', () => {
             customFieldDefinition: {
               name: 'graphics_driver',
               label: 'Graphics Driver',
-              type: 'TEXT',
+              type: 'SELECT',
             },
             value: null,
           },
@@ -617,9 +752,9 @@ describe('GameNative Converter', () => {
 
       const config = convertToGameNativeConfig(input)
 
-      expect(config.screenSize).toBe('854x480') // Default
-      expect(config.graphicsDriver).toBe('vortek') // Default
-      expect(config.execArgs).toBe('') // Empty string default
+      expect(config.screenSize).toBe('1280x720')
+      expect(config.graphicsDriver).toBe('vortek')
+      expect(config.execArgs).toBe('')
     })
   })
 
@@ -633,7 +768,7 @@ describe('GameNative Converter', () => {
             customFieldDefinition: {
               name: 'resolution',
               label: 'Resolution',
-              type: 'TEXT',
+              type: 'SELECT',
             },
             value: '1920x1080',
           },
@@ -641,7 +776,7 @@ describe('GameNative Converter', () => {
             customFieldDefinition: {
               name: 'graphics_driver',
               label: 'Graphics Driver',
-              type: 'TEXT',
+              type: 'SELECT',
             },
             value: 'vortek',
           },
@@ -655,10 +790,9 @@ describe('GameNative Converter', () => {
         screenSize: '1920x1080',
         graphicsDriver: 'vortek',
         dxwrapper: 'dxvk',
-        audioDriver: 'alsa',
+        audioDriver: 'pulseaudio',
       })
 
-      // Check formatting (should be pretty-printed)
       expect(serialized).toContain('\n')
       expect(serialized).toContain('  ')
     })
@@ -674,18 +808,16 @@ describe('GameNative Converter', () => {
       const parsed = JSON.parse(serialized)
 
       expect(parsed).toBeDefined()
-      expect(parsed.screenSize).toBe('854x480')
+      expect(parsed.screenSize).toBe('1280x720')
     })
   })
 
-  describe('Edge cases and special scenarios', () => {
+  describe('Edge cases', () => {
     it('should handle mixed case graphics driver names', () => {
       const testCases = [
         { input: 'VORTEK', expected: 'vortek' },
         { input: 'Turnip', expected: 'turnip' },
         { input: 'VIRGL', expected: 'virgl' },
-        { input: 'FREEDRENO', expected: 'vortek' }, // Not valid, defaults to vortek
-        { input: 'MeSa', expected: 'vortek' }, // Not valid, defaults to vortek
       ]
 
       testCases.forEach(({ input, expected }) => {
@@ -697,7 +829,7 @@ describe('GameNative Converter', () => {
               customFieldDefinition: {
                 name: 'graphics_driver',
                 label: 'Graphics Driver',
-                type: 'TEXT',
+                type: 'SELECT',
               },
               value: input,
             },
@@ -713,7 +845,7 @@ describe('GameNative Converter', () => {
         { input: 'Resolution: 1920x1080', expected: '1920x1080' },
         { input: '1920x1080 pixels', expected: '1920x1080' },
         { input: 'Use 2560x1440 for best quality', expected: '2560x1440' },
-        { input: 'No resolution here', expected: '854x480' }, // Default
+        { input: 'No resolution here', expected: '1280x720' },
       ]
 
       testCases.forEach(({ input, expected }) => {
@@ -752,7 +884,7 @@ describe('GameNative Converter', () => {
         ],
       })
 
-      expect(config.envVars).toBe('VAR1=value1   VAR2=value2') // Trimmed but internal spacing preserved
+      expect(config.envVars).toBe('VAR1=value1   VAR2=value2')
     })
 
     it('should handle multiple fields updating simultaneously', () => {
@@ -764,7 +896,7 @@ describe('GameNative Converter', () => {
             customFieldDefinition: {
               name: 'resolution',
               label: 'Resolution',
-              type: 'TEXT',
+              type: 'SELECT',
             },
             value: '2560x1440',
           },
@@ -772,7 +904,7 @@ describe('GameNative Converter', () => {
             customFieldDefinition: {
               name: 'graphics_driver',
               label: 'Graphics Driver',
-              type: 'TEXT',
+              type: 'SELECT',
             },
             value: 'turnip',
           },
@@ -790,7 +922,7 @@ describe('GameNative Converter', () => {
               label: 'Audio Driver',
               type: 'SELECT',
             },
-            value: 'PulseAudio',
+            value: 'pulse',
           },
           {
             customFieldDefinition: {
@@ -804,7 +936,7 @@ describe('GameNative Converter', () => {
             customFieldDefinition: {
               name: 'box64_version',
               label: 'Box64 Version',
-              type: 'TEXT',
+              type: 'SELECT',
             },
             value: '0.3.6',
           },
@@ -814,7 +946,7 @@ describe('GameNative Converter', () => {
               label: 'Box64 Preset',
               type: 'SELECT',
             },
-            value: 'Stability',
+            value: 'stability',
           },
         ],
       })
@@ -822,7 +954,7 @@ describe('GameNative Converter', () => {
       expect(config.screenSize).toBe('2560x1440')
       expect(config.graphicsDriver).toBe('turnip')
       expect(config.dxwrapper).toBe('vkd3d')
-      expect(config.audioDriver).toBe('pulse')
+      expect(config.audioDriver).toBe('pulseaudio')
       expect(config.startupSelection).toBe(0)
       expect(config.box64Version).toBe('0.3.6')
       expect(config.box64Preset).toBe('STABILITY')
