@@ -54,6 +54,7 @@ export function ListingCard({
 
   const navigateToGame = (ev: MouseEvent) => {
     ev.stopPropagation()
+    if (ev.ctrlKey || ev.metaKey || ev.shiftKey) return
     router.push(`/games/${listing.game.id}`)
   }
 
@@ -76,7 +77,10 @@ export function ListingCard({
     <SwipeableCard
       onSwipeLeft={handleComment}
       onSwipeRight={handleLike}
-      onClick={() => router.push(`/listings/${listing.id}`)}
+      onClick={(e) => {
+        if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return
+        router.push(`/listings/${listing.id}`)
+      }}
       className={cn(
         'bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-300 group cursor-pointer',
         'hover:shadow-2xl hover:shadow-gray-200/50 dark:hover:shadow-gray-900/50',
