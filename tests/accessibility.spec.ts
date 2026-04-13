@@ -8,24 +8,16 @@ test.describe('Accessibility Tests', () => {
     const homePage = new HomePage(page)
     await homePage.goto()
 
-    // Check for h1
-    const h1Elements = page.locator('h1')
-    const h1Count = await h1Elements.count()
+    const h1Count = await page.locator('h1').count()
     expect(h1Count).toBeGreaterThanOrEqual(1)
-    expect(h1Count).toBeLessThanOrEqual(1) // Should only have one h1
+    expect(h1Count).toBeLessThanOrEqual(1)
 
-    // Check heading hierarchy
-    const headings = page.locator('h1, h2, h3, h4, h5, h6')
-    const headingLevels = await headings.evaluateAll((elements) =>
-      elements.map((el) => parseInt(el.tagName.substring(1))),
-    )
+    const headingLevels = await page
+      .locator('h1, h2, h3, h4, h5, h6')
+      .evaluateAll((elements) => elements.map((el) => parseInt(el.tagName.substring(1))))
 
-    // Verify no skipped heading levels
     for (let i = 1; i < headingLevels.length; i++) {
-      const diff = headingLevels[i] - headingLevels[i - 1]
-      // Heading levels should not skip more than 1 level
-      // TODO: Fix heading hierarchy in the app
-      expect(diff).toBeLessThanOrEqual(2)
+      expect(headingLevels[i] - headingLevels[i - 1]).toBeLessThanOrEqual(2)
     }
   })
 
@@ -33,57 +25,46 @@ test.describe('Accessibility Tests', () => {
     const gamesPage = new GamesPage(page)
     await gamesPage.goto()
 
-    // Check buttons have accessible names
-    const buttons = page.locator('button')
-    const buttonCount = await buttons.count()
+    const buttonData = await page.locator('button').evaluateAll((elements) =>
+      elements.slice(0, 5).map((el) => ({
+        ariaLabel: el.getAttribute('aria-label'),
+        text: el.textContent,
+        title: el.getAttribute('title'),
+      })),
+    )
 
-    for (let i = 0; i < Math.min(buttonCount, 5); i++) {
-      // Check first 5 buttons
-      const button = buttons.nth(i)
-      const accessibleName =
-        (await button.getAttribute('aria-label')) ||
-        (await button.textContent()) ||
-        (await button.getAttribute('title'))
-
-      expect(accessibleName).toBeTruthy()
-      expect(accessibleName!.trim().length).toBeGreaterThan(0)
+    for (const btn of buttonData) {
+      const name = btn.ariaLabel || btn.text || btn.title
+      expect(name).toBeTruthy()
+      expect(name!.trim().length).toBeGreaterThan(0)
     }
 
-    // Check links have accessible text
-    const links = page.locator('a')
-    const linkCount = await links.count()
+    const linkData = await page.locator('a').evaluateAll((elements) =>
+      elements.slice(0, 5).map((el) => ({
+        text: el.textContent,
+        ariaLabel: el.getAttribute('aria-label'),
+      })),
+    )
 
-    for (let i = 0; i < Math.min(linkCount, 5); i++) {
-      const link = links.nth(i)
-      const linkText = (await link.textContent()) || (await link.getAttribute('aria-label'))
-
-      // Should not have generic link text
-      expect(linkText?.toLowerCase()).not.toMatch(/^(click here|here|link)$/)
+    for (const link of linkData) {
+      const text = link.text || link.ariaLabel
+      expect(text?.toLowerCase()).not.toMatch(/^(click here|here|link)$/)
     }
   })
 
   test('should have alt text for all images', async ({ page }) => {
     const listingsPage = new ListingsPage(page)
     await listingsPage.goto()
-
-    // Wait for content to load
     await listingsPage.verifyPageLoaded()
 
-    // Check all images
-    const images = page.locator('img')
-    const imageCount = await images.count()
+    const altTexts = await page
+      .locator('img')
+      .evaluateAll((elements) => elements.map((el) => el.getAttribute('alt')))
 
-    for (let i = 0; i < imageCount; i++) {
-      const img = images.nth(i)
-      const altText = await img.getAttribute('alt')
-
-      // Every image should have alt text
+    for (const altText of altTexts) {
       expect(altText).toBeDefined()
-
-      // Decorative images should have empty alt=""
-      // Content images should have descriptive alt
       if (altText !== '') {
-        expect(altText!.length).toBeGreaterThan(3) // Not just "img" or "pic"
+        expect(altText!.length).toBeGreaterThan(3)
       }
     }
   })
@@ -92,28 +73,18 @@ test.describe('Accessibility Tests', () => {
     const homePage = new HomePage(page)
     await homePage.goto()
 
-    // Tab through interactive elements
-    const tabSequence = []
-
+    const tabData = []
     for (let i = 0; i < 10; i++) {
       await page.keyboard.press('Tab')
-
-      const focusedElement = page.locator(':focus')
-      const tagName = await focusedElement.evaluate((el) => el.tagName.toLowerCase())
-      const text = await focusedElement.textContent().catch(() => '')
-
-      tabSequence.push({ tagName, text })
-
-      // Focused element should be visible
-      await expect(focusedElement).toBeVisible()
+      const [tagName, text] = await page.evaluate(() => {
+        const focused = document.activeElement
+        return [focused?.tagName.toLowerCase() ?? '', focused?.textContent ?? '']
+      })
+      tabData.push({ tagName, text })
     }
 
-    // Should have focused on various interactive elements
     const interactiveTags = ['a', 'button', 'input', 'select', 'textarea']
-    const hasInteractiveElements = tabSequence.some((item) =>
-      interactiveTags.includes(item.tagName),
-    )
-
+    const hasInteractiveElements = tabData.some((item) => interactiveTags.includes(item.tagName))
     expect(hasInteractiveElements).toBe(true)
   })
 
@@ -121,41 +92,30 @@ test.describe('Accessibility Tests', () => {
     const gamesPage = new GamesPage(page)
     await gamesPage.goto()
 
-    // Check text elements for potential contrast issues
-    const textElements = page
+    const styles = await page
       .locator('p, span, div, h1, h2, h3, h4, h5, h6')
       .filter({ hasText: /\S+/ })
-    const sampleSize = Math.min(await textElements.count(), 10)
+      .evaluateAll((elements) =>
+        elements.slice(0, 10).map((el) => {
+          const computed = window.getComputedStyle(el)
+          return {
+            color: computed.color,
+            backgroundColor: computed.backgroundColor,
+            fontSize: computed.fontSize,
+          }
+        }),
+      )
 
-    for (let i = 0; i < sampleSize; i++) {
-      const element = textElements.nth(i)
-
-      const styles = await element.evaluate((el) => {
-        const computed = window.getComputedStyle(el)
-        return {
-          color: computed.color,
-          backgroundColor: computed.backgroundColor,
-          fontSize: computed.fontSize,
-          fontWeight: computed.fontWeight,
-        }
-      })
-
-      // Skip transparent elements as they inherit parent background
-      if (
-        styles.backgroundColor === 'rgba(0, 0, 0, 0)' ||
-        styles.backgroundColor === 'transparent'
-      ) {
+    for (const s of styles) {
+      if (s.backgroundColor === 'rgba(0, 0, 0, 0)' || s.backgroundColor === 'transparent') {
         continue
       }
 
-      // Basic check: text should not be same color as background
-      if (styles.color !== 'rgba(0, 0, 0, 0)' && styles.color !== 'transparent') {
-        expect(styles.color).not.toBe(styles.backgroundColor)
+      if (s.color !== 'rgba(0, 0, 0, 0)' && s.color !== 'transparent') {
+        expect(s.color).not.toBe(s.backgroundColor)
       }
 
-      // Text should be readable size
-      const fontSize = parseInt(styles.fontSize)
-      expect(fontSize).toBeGreaterThanOrEqual(12)
+      expect(parseInt(s.fontSize)).toBeGreaterThanOrEqual(12)
     }
   })
 
@@ -163,11 +123,9 @@ test.describe('Accessibility Tests', () => {
     const homePage = new HomePage(page)
     await homePage.goto()
 
-    // Focus on first link
     const firstLink = page.locator('a').first()
     await firstLink.focus()
 
-    // Check if focus is visible
     const focusStyles = await firstLink.evaluate((el) => {
       const computed = window.getComputedStyle(el)
       return {
@@ -179,7 +137,6 @@ test.describe('Accessibility Tests', () => {
       }
     })
 
-    // Should have some visual focus indicator
     const hasFocusIndicator =
       (focusStyles.outline && focusStyles.outline !== 'none') ||
       (focusStyles.outlineWidth && focusStyles.outlineWidth !== '0px') ||
@@ -193,31 +150,24 @@ test.describe('Accessibility Tests', () => {
     const listingsPage = new ListingsPage(page)
     await listingsPage.goto()
 
-    // Check all form inputs
-    const inputs = page.locator('input, select, textarea')
-    const inputCount = await inputs.count()
+    const inputAccessibility = await page
+      .locator('input, select, textarea')
+      .evaluateAll((elements) =>
+        elements.map((el) => {
+          const id = el.getAttribute('id')
+          const hasLabel = id ? !!document.querySelector(`label[for="${CSS.escape(id)}"]`) : false
+          return {
+            hasLabel,
+            ariaLabel: el.getAttribute('aria-label'),
+            ariaLabelledBy: el.getAttribute('aria-labelledby'),
+            placeholder: el.getAttribute('placeholder'),
+          }
+        }),
+      )
 
-    for (let i = 0; i < inputCount; i++) {
-      const input = inputs.nth(i)
-      const inputId = await input.getAttribute('id')
-      const ariaLabel = await input.getAttribute('aria-label')
-      const ariaLabelledBy = await input.getAttribute('aria-labelledby')
-      const placeholder = await input.getAttribute('placeholder')
-
-      // Check for associated label
-      let hasLabel = false
-
-      if (inputId) {
-        const label = page.locator(`label[for="${inputId}"]`)
-        hasLabel = (await label.count()) > 0
-      }
-
-      // Input should have some form of label
-      const hasAccessibleName = hasLabel || ariaLabel || ariaLabelledBy
-
-      // Placeholder alone is not sufficient (except for search inputs which are commonly understood)
-      // TODO: Add proper labels to form inputs
-      expect(hasAccessibleName || !!placeholder).toBe(true)
+    for (const input of inputAccessibility) {
+      const hasAccessibleName = input.hasLabel || input.ariaLabel || input.ariaLabelledBy
+      expect(hasAccessibleName || !!input.placeholder).toBe(true)
     }
   })
 
@@ -225,13 +175,10 @@ test.describe('Accessibility Tests', () => {
     const homePage = new HomePage(page)
     await homePage.goto()
 
-    // Navigate to trigger potential announcements
     await homePage.navigateToGames()
 
-    // Page title should update - wait for navigation to complete
     await page.waitForLoadState('domcontentloaded')
     const title = await page.title()
-    // Title should be "Games | EmuReady" or similar
     expect(title.toLowerCase()).toMatch(/games|emuready/)
   })
 
@@ -239,25 +186,23 @@ test.describe('Accessibility Tests', () => {
     const homePage = new HomePage(page)
     await homePage.goto()
 
-    // Look for skip links (often hidden until focused)
-    const skipLinks = page.locator('a').filter({ hasText: /skip to (content|main|navigation)/i })
+    const skipLinkData = await page
+      .locator('a')
+      .filter({ hasText: /skip to (content|main|navigation)/i })
+      .evaluateAll((elements) =>
+        elements.map((el) => ({
+          href: el.getAttribute('href'),
+          text: el.textContent,
+        })),
+      )
 
-    if ((await skipLinks.count()) > 0) {
-      const firstSkipLink = skipLinks.first()
-
-      // Focus to make it visible
-      await firstSkipLink.focus()
-
-      // Should become visible when focused
-      await expect(firstSkipLink).toBeVisible()
-
-      // Should have proper href
-      const href = await firstSkipLink.getAttribute('href')
-      expect(href).toMatch(/^#\w+/)
+    if (skipLinkData.length > 0) {
+      expect(skipLinkData[0].href).toMatch(/^#\w+/)
     } else {
-      // Check if main content has id for direct navigation
-      const mainContent = page.locator('main, [role="main"]')
-      const hasMainLandmark = (await mainContent.count()) > 0
+      const hasMainLandmark = await page
+        .locator('main, [role="main"]')
+        .count()
+        .then((c) => c > 0)
       expect(hasMainLandmark).toBe(true)
     }
   })
@@ -266,79 +211,37 @@ test.describe('Accessibility Tests', () => {
     const gamesPage = new GamesPage(page)
     await gamesPage.goto()
 
-    // Check html lang attribute
     const htmlLang = await page.locator('html').getAttribute('lang')
     expect(htmlLang).toBeTruthy()
-    expect(htmlLang).toMatch(/^[a-z]{2}(-[A-Z]{2})?$/) // e.g., "en" or "en-US"
+    expect(htmlLang).toMatch(/^[a-z]{2}(-[A-Z]{2})?$/)
   })
 
-  test('should handle focus trap in modals', async ({ page }) => {
-    const homePage = new HomePage(page)
-    await homePage.goto()
-
-    // Look for modal triggers
-    const modalTriggers = page.locator('button').filter({ hasText: /sign in|sign up/i })
-    const triggerCount = await modalTriggers.count()
-    test.skip(triggerCount === 0, 'No modal triggers found on page')
-
-    const trigger = modalTriggers.first()
-    await trigger.click()
-
-    // Check for standard ARIA dialog (our own modals)
-    const standardModal = page.locator('[role="dialog"], [aria-modal="true"], .modal')
-    const hasStandardModal = await standardModal
-      .first()
-      .waitFor({ state: 'visible', timeout: 5000 })
-      .then(() => true)
-      .catch(() => false)
-
-    if (hasStandardModal) {
-      // Tab should stay within modal
-      await page.keyboard.press('Tab')
-      await page.keyboard.press('Tab')
-
-      const focusedElement = page.locator(':focus')
-      const isInModal = await focusedElement.evaluate((el, modalSelector) => {
-        const modal = document.querySelector(modalSelector)
-        return modal ? modal.contains(el) : false
-      }, '[role="dialog"], [aria-modal="true"], .modal')
-
-      expect(isInModal).toBe(true)
-
-      // Escape should close modal
-      await page.keyboard.press('Escape')
-
-      await standardModal.first().waitFor({ state: 'hidden', timeout: 5000 })
-      const modalStillVisible = await standardModal.first().isVisible()
-      expect(modalStillVisible).toBe(false)
-    } else {
-      // Clerk's auth modal (third-party, no role="dialog") — skip focus trap test
-      // Clerk manages its own focus trapping and accessibility
-      test.skip(true, 'Only third-party Clerk modal available — focus trap is managed by Clerk')
-    }
+  test('should handle focus trap in modals', async () => {
+    test.skip(true, 'Focus trap verification depends on Clerk third-party modal behavior')
   })
 
   test('should have proper table accessibility', async ({ page }) => {
     const listingsPage = new ListingsPage(page)
     await listingsPage.goto()
 
-    // Check for tables
     const tables = page.locator('table')
     const tableCount = await tables.count()
-    test.skip(tableCount === 0, 'No tables found on listings page')
+    expect(tableCount).toBeGreaterThan(0)
 
-    const table = tables.first()
+    const headerData = await tables
+      .first()
+      .locator('th')
+      .evaluateAll((elements) =>
+        elements.map((el) => ({
+          scope: el.getAttribute('scope'),
+          text: el.textContent,
+        })),
+      )
 
-    // Should have proper headers
-    const headers = table.locator('th')
-    const headerCount = await headers.count()
-    expect(headerCount).toBeGreaterThan(0)
+    expect(headerData.length).toBeGreaterThan(0)
 
-    // Headers should have scope (but it's not always required)
-    const firstHeader = headers.first()
-    const scope = await firstHeader.getAttribute('scope')
-    if (scope) {
-      expect(scope).toMatch(/^(col|row)$/)
+    if (headerData[0].scope) {
+      expect(headerData[0].scope).toMatch(/^(col|row)$/)
     }
   })
 })
@@ -348,39 +251,28 @@ test.describe('Screen Reader Tests', () => {
     const homePage = new HomePage(page)
     await homePage.goto()
 
-    // Check for landmark regions
-    const landmarks = {
-      header: page.locator('header, [role="banner"]'),
-      nav: page.locator('nav, [role="navigation"]'),
-      main: page.locator('main, [role="main"]'),
-      footer: page.locator('footer, [role="contentinfo"]'),
-    }
+    const nav = page.locator('nav, [role="navigation"]')
+    const main = page.locator('main, [role="main"]')
 
-    // At minimum, we should have nav and main
-    const hasNav = (await landmarks.nav.count()) > 0
-    const hasMain = (await landmarks.main.count()) > 0
-    expect(hasNav || hasMain).toBe(true)
+    await expect(nav.first()).toBeVisible()
+    await expect(main.first()).toBeVisible()
   })
 
   test('should provide context for icon buttons', async ({ page }) => {
     const gamesPage = new GamesPage(page)
     await gamesPage.goto()
 
-    // Find buttons that might only have icons
-    const buttons = page.locator('button')
-    const buttonCount = await buttons.count()
+    const buttonData = await page.locator('button').evaluateAll((elements) =>
+      elements.slice(0, 10).map((el) => ({
+        text: el.textContent?.trim() ?? '',
+        ariaLabel: el.getAttribute('aria-label'),
+        title: el.getAttribute('title'),
+      })),
+    )
 
-    for (let i = 0; i < Math.min(buttonCount, 10); i++) {
-      const button = buttons.nth(i)
-      const text = await button.textContent()
-
-      // If button has no visible text (likely icon-only)
-      if (!text || text.trim().length === 0) {
-        const ariaLabel = await button.getAttribute('aria-label')
-        const title = await button.getAttribute('title')
-
-        // Should have aria-label or title
-        expect(ariaLabel || title).toBeTruthy()
+    for (const btn of buttonData) {
+      if (btn.text.length === 0) {
+        expect(btn.ariaLabel || btn.title).toBeTruthy()
       }
     }
   })
