@@ -10,9 +10,13 @@ vi.mock('@/server/services/audit.service', () => ({
   logAudit: vi.fn(),
 }))
 
-const mockApplyManualTrustAdjustment = vi.fn()
+const mockApplyManualAdjustment = vi.fn()
+const mockApplyBulkManualAdjustments = vi.fn()
 vi.mock('@/lib/trust/service', () => ({
-  applyManualTrustAdjustment: (...args: unknown[]) => mockApplyManualTrustAdjustment(...args),
+  TrustService: vi.fn().mockImplementation(() => ({
+    applyManualAdjustment: (...args: unknown[]) => mockApplyManualAdjustment(...args),
+    applyBulkManualAdjustments: (...args: unknown[]) => mockApplyBulkManualAdjustments(...args),
+  })),
 }))
 
 vi.mock('@/utils/wilson-score', () => ({
@@ -28,22 +32,22 @@ function createMockPrisma() {
     vote: {
       findMany: vi.fn().mockResolvedValue([]),
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
-      count: vi.fn().mockResolvedValue(0),
+      groupBy: vi.fn().mockResolvedValue([]),
     },
     pcListingVote: {
       findMany: vi.fn().mockResolvedValue([]),
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
-      count: vi.fn().mockResolvedValue(0),
+      groupBy: vi.fn().mockResolvedValue([]),
     },
     commentVote: {
       findMany: vi.fn().mockResolvedValue([]),
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
-      count: vi.fn().mockResolvedValue(0),
+      groupBy: vi.fn().mockResolvedValue([]),
     },
     pcListingCommentVote: {
       findMany: vi.fn().mockResolvedValue([]),
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
-      count: vi.fn().mockResolvedValue(0),
+      groupBy: vi.fn().mockResolvedValue([]),
     },
     listing: {
       update: vi.fn().mockResolvedValue({}),
@@ -146,7 +150,8 @@ describe('vote-nullification.service', () => {
 
   beforeEach(() => {
     prisma = createMockPrisma()
-    mockApplyManualTrustAdjustment.mockResolvedValue(undefined)
+    mockApplyManualAdjustment.mockResolvedValue(undefined)
+    mockApplyBulkManualAdjustments.mockResolvedValue(0)
   })
 
   describe('nullifyUserVotes', () => {
@@ -170,7 +175,7 @@ describe('vote-nullification.service', () => {
 
       expect(prisma.vote.updateMany).not.toHaveBeenCalled()
       expect(prisma.pcListingVote.updateMany).not.toHaveBeenCalled()
-      expect(mockApplyManualTrustAdjustment).not.toHaveBeenCalled()
+      expect(mockApplyBulkManualAdjustments).not.toHaveBeenCalled()
     })
 
     it('nullifies handheld votes and sets nullifiedAt', async () => {
@@ -179,7 +184,6 @@ describe('vote-nullification.service', () => {
         makeHandheldVote({ id: 'hv-2', value: false, authorId: AUTHOR_B }),
       ]
       prisma.vote.findMany.mockResolvedValue(votes)
-      prisma.vote.count.mockResolvedValue(0)
 
       const result = await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -198,7 +202,6 @@ describe('vote-nullification.service', () => {
     it('nullifies PC votes', async () => {
       const votes = [makePcVote({ id: 'pv-1' }), makePcVote({ id: 'pv-2' })]
       prisma.pcListingVote.findMany.mockResolvedValue(votes)
-      prisma.pcListingVote.count.mockResolvedValue(0)
 
       const result = await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -235,7 +238,6 @@ describe('vote-nullification.service', () => {
 
     it('skips comment votes when includeCommentVotes is false', async () => {
       prisma.vote.findMany.mockResolvedValue([makeHandheldVote()])
-      prisma.vote.count.mockResolvedValue(0)
 
       const result = await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -255,10 +257,6 @@ describe('vote-nullification.service', () => {
         makeHandheldVote({ id: 'hv-1', listingId: 'listing-1', value: true }),
         makeHandheldVote({ id: 'hv-2', listingId: 'listing-1', value: false }),
       ])
-      // After nullification: 0 active votes remain
-      prisma.vote.count
-        .mockResolvedValueOnce(0) // upvotes for listing-1
-        .mockResolvedValueOnce(0) // downvotes for listing-1
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -282,10 +280,6 @@ describe('vote-nullification.service', () => {
       prisma.pcListingVote.findMany.mockResolvedValue([
         makePcVote({ id: 'pv-1', pcListingId: 'pc-listing-1', value: true }),
       ])
-      prisma.pcListingVote.count
-        .mockResolvedValueOnce(0) // upvotes
-        .mockResolvedValueOnce(0) // downvotes
-
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
         adminUserId: ADMIN_ID,
@@ -308,9 +302,10 @@ describe('vote-nullification.service', () => {
       prisma.commentVote.findMany.mockResolvedValue([
         makeCommentVote({ id: 'cv-1', commentId: 'comment-1' }),
       ])
-      prisma.commentVote.count
-        .mockResolvedValueOnce(3) // remaining upvotes
-        .mockResolvedValueOnce(1) // remaining downvotes
+      prisma.commentVote.groupBy.mockResolvedValue([
+        { commentId: 'comment-1', value: true, _count: { _all: 3 } },
+        { commentId: 'comment-1', value: false, _count: { _all: 1 } },
+      ])
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -329,9 +324,10 @@ describe('vote-nullification.service', () => {
       prisma.pcListingCommentVote.findMany.mockResolvedValue([
         makePcCommentVote({ id: 'pcv-1', commentId: 'pc-comment-1' }),
       ])
-      prisma.pcListingCommentVote.count
-        .mockResolvedValueOnce(5) // remaining upvotes
-        .mockResolvedValueOnce(2) // remaining downvotes
+      prisma.pcListingCommentVote.groupBy.mockResolvedValue([
+        { commentId: 'pc-comment-1', value: true, _count: { _all: 5 } },
+        { commentId: 'pc-comment-1', value: false, _count: { _all: 2 } },
+      ])
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -351,7 +347,6 @@ describe('vote-nullification.service', () => {
         makeHandheldVote({ id: 'hv-1', value: true }),
         makeHandheldVote({ id: 'hv-2', value: false, authorId: AUTHOR_B }),
       ])
-      prisma.vote.count.mockResolvedValue(0)
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -361,11 +356,11 @@ describe('vote-nullification.service', () => {
       })
 
       // Voter should get -1 per handheld vote (total -2)
-      const voterCall = mockApplyManualTrustAdjustment.mock.calls.find(
-        (call: unknown[]) => (call[0] as { userId: string }).userId === USER_ID,
-      )
-      expect(voterCall).toBeDefined()
-      expect((voterCall![0] as { adjustment: number }).adjustment).toBe(-2)
+      expect(mockApplyBulkManualAdjustments).toHaveBeenCalledTimes(1)
+      const { adjustments } = mockApplyBulkManualAdjustments.mock.calls[0][0] as {
+        adjustments: Map<string, number>
+      }
+      expect(adjustments.get(USER_ID)).toBe(-2)
     })
 
     it('reverses author trust: -2 for upvote, +1 for downvote', async () => {
@@ -373,7 +368,6 @@ describe('vote-nullification.service', () => {
         makeHandheldVote({ id: 'hv-1', value: true, authorId: AUTHOR_A }),
         makeHandheldVote({ id: 'hv-2', value: false, authorId: AUTHOR_A }),
       ])
-      prisma.vote.count.mockResolvedValue(0)
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -383,18 +377,17 @@ describe('vote-nullification.service', () => {
       })
 
       // Author A: upvote reversed (-2) + downvote reversed (+1) = -1
-      const authorCall = mockApplyManualTrustAdjustment.mock.calls.find(
-        (call: unknown[]) => (call[0] as { userId: string }).userId === AUTHOR_A,
-      )
-      expect(authorCall).toBeDefined()
-      expect((authorCall![0] as { adjustment: number }).adjustment).toBe(-1)
+      expect(mockApplyBulkManualAdjustments).toHaveBeenCalledTimes(1)
+      const { adjustments } = mockApplyBulkManualAdjustments.mock.calls[0][0] as {
+        adjustments: Map<string, number>
+      }
+      expect(adjustments.get(AUTHOR_A)).toBe(-1)
     })
 
     it('skips author trust reversal for self-votes', async () => {
       prisma.vote.findMany.mockResolvedValue([
         makeHandheldVote({ id: 'hv-1', value: true, authorId: USER_ID }),
       ])
-      prisma.vote.count.mockResolvedValue(0)
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -404,18 +397,19 @@ describe('vote-nullification.service', () => {
       })
 
       // Only the voter trust should be adjusted (not author, since it's a self-vote)
-      expect(mockApplyManualTrustAdjustment).toHaveBeenCalledTimes(1)
-      expect(mockApplyManualTrustAdjustment).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: USER_ID, adjustment: -1 }),
-      )
+      expect(mockApplyBulkManualAdjustments).toHaveBeenCalledTimes(1)
+      const { adjustments } = mockApplyBulkManualAdjustments.mock.calls[0][0] as {
+        adjustments: Map<string, number>
+      }
+      expect(adjustments.get(USER_ID)).toBe(-1)
+      expect(adjustments.size).toBe(1)
     })
 
-    it('does NOT reverse trust for PC votes', async () => {
+    it('reverses trust for PC votes (same as handheld)', async () => {
       prisma.pcListingVote.findMany.mockResolvedValue([
-        makePcVote({ id: 'pv-1', value: true }),
-        makePcVote({ id: 'pv-2', value: false }),
+        makePcVote({ id: 'pv-1', value: true, authorId: AUTHOR_B }),
+        makePcVote({ id: 'pv-2', value: false, authorId: AUTHOR_B }),
       ])
-      prisma.pcListingVote.count.mockResolvedValue(0)
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -424,7 +418,14 @@ describe('vote-nullification.service', () => {
         includeCommentVotes: false,
       })
 
-      expect(mockApplyManualTrustAdjustment).not.toHaveBeenCalled()
+      expect(mockApplyBulkManualAdjustments).toHaveBeenCalledTimes(1)
+      const { adjustments } = mockApplyBulkManualAdjustments.mock.calls[0][0] as {
+        adjustments: Map<string, number>
+      }
+      // Voter: -1 per vote = -2 total
+      expect(adjustments.get(USER_ID)).toBe(-2)
+      // Author B: upvote reversed (-2) + downvote reversed (+1) = -1
+      expect(adjustments.get(AUTHOR_B)).toBe(-1)
     })
 
     it('reverses comment author trust for handheld comment upvotes/downvotes', async () => {
@@ -432,7 +433,6 @@ describe('vote-nullification.service', () => {
         makeCommentVote({ id: 'cv-1', value: true, commentUserId: AUTHOR_A }),
         makeCommentVote({ id: 'cv-2', value: false, commentUserId: AUTHOR_A }),
       ])
-      prisma.commentVote.count.mockResolvedValue(0)
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -442,18 +442,17 @@ describe('vote-nullification.service', () => {
       })
 
       // Author A comment trust: upvote reversed (-2) + downvote reversed (+1) = -1
-      const authorCall = mockApplyManualTrustAdjustment.mock.calls.find(
-        (call: unknown[]) => (call[0] as { userId: string }).userId === AUTHOR_A,
-      )
-      expect(authorCall).toBeDefined()
-      expect((authorCall![0] as { adjustment: number }).adjustment).toBe(-1)
+      expect(mockApplyBulkManualAdjustments).toHaveBeenCalledTimes(1)
+      const { adjustments } = mockApplyBulkManualAdjustments.mock.calls[0][0] as {
+        adjustments: Map<string, number>
+      }
+      expect(adjustments.get(AUTHOR_A)).toBe(-1)
     })
 
     it('skips comment author trust for self-votes on own comments', async () => {
       prisma.commentVote.findMany.mockResolvedValue([
         makeCommentVote({ id: 'cv-1', value: true, commentUserId: USER_ID }),
       ])
-      prisma.commentVote.count.mockResolvedValue(0)
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -462,25 +461,26 @@ describe('vote-nullification.service', () => {
         includeCommentVotes: true,
       })
 
-      // No trust adjustment for comment self-votes
-      expect(mockApplyManualTrustAdjustment).not.toHaveBeenCalled()
+      // No trust adjustment for comment self-votes — map is empty
+      expect(mockApplyBulkManualAdjustments).toHaveBeenCalledTimes(1)
+      const { adjustments } = mockApplyBulkManualAdjustments.mock.calls[0][0] as {
+        adjustments: Map<string, number>
+      }
+      expect(adjustments.size).toBe(0)
     })
 
-    it('continues when trust adjustment fails and logs error', async () => {
+    it('propagates trust adjustment errors for transactional rollback', async () => {
       prisma.vote.findMany.mockResolvedValue([makeHandheldVote({ id: 'hv-1', value: true })])
-      prisma.vote.count.mockResolvedValue(0)
-      mockApplyManualTrustAdjustment.mockRejectedValue(new Error('Trust service down'))
+      mockApplyBulkManualAdjustments.mockRejectedValue(new Error('Trust service down'))
 
-      const result = await nullifyUserVotes(prisma as unknown as PrismaClient, {
-        userId: USER_ID,
-        adminUserId: ADMIN_ID,
-        reason: 'Spam',
-        includeCommentVotes: false,
-      })
-
-      // Should still return counts despite trust failure
-      expect(result.handheldVotesNullified).toBe(1)
-      expect(result.trustAdjustments).toBe(0)
+      await expect(
+        nullifyUserVotes(prisma as unknown as PrismaClient, {
+          userId: USER_ID,
+          adminUserId: ADMIN_ID,
+          reason: 'Spam',
+          includeCommentVotes: false,
+        }),
+      ).rejects.toThrow('Trust service down')
     })
 
     it('batches nullification for more than 100 votes', async () => {
@@ -488,7 +488,6 @@ describe('vote-nullification.service', () => {
         makeHandheldVote({ id: `hv-${i}`, listingId: `listing-${i % 5}` }),
       )
       prisma.vote.findMany.mockResolvedValue(votes)
-      prisma.vote.count.mockResolvedValue(0)
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -511,7 +510,6 @@ describe('vote-nullification.service', () => {
         makeHandheldVote({ id: 'hv-2', listingId: 'listing-1' }),
         makeHandheldVote({ id: 'hv-3', listingId: 'listing-2' }),
       ])
-      prisma.vote.count.mockResolvedValue(0)
 
       const result = await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -528,8 +526,6 @@ describe('vote-nullification.service', () => {
       const { logAudit } = await import('@/server/services/audit.service')
       prisma.vote.findMany.mockResolvedValue([makeHandheldVote()])
       prisma.pcListingVote.findMany.mockResolvedValue([makePcVote()])
-      prisma.vote.count.mockResolvedValue(0)
-      prisma.pcListingVote.count.mockResolvedValue(0)
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -559,10 +555,6 @@ describe('vote-nullification.service', () => {
       prisma.pcListingCommentVote.findMany.mockResolvedValue([
         makePcCommentVote({ id: 'pcv-1', value: false }),
       ])
-      prisma.vote.count.mockResolvedValue(0)
-      prisma.pcListingVote.count.mockResolvedValue(0)
-      prisma.commentVote.count.mockResolvedValue(0)
-      prisma.pcListingCommentVote.count.mockResolvedValue(0)
 
       const result = await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -606,7 +598,6 @@ describe('vote-nullification.service', () => {
         { ...makeHandheldVote({ id: 'hv-2' }), nullifiedAt: new Date() },
       ]
       prisma.vote.findMany.mockResolvedValue(nullifiedVotes)
-      prisma.vote.count.mockResolvedValue(0)
 
       const result = await restoreUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -624,7 +615,6 @@ describe('vote-nullification.service', () => {
     it('clears nullifiedAt on PC votes', async () => {
       const nullifiedVotes = [{ ...makePcVote({ id: 'pv-1' }), nullifiedAt: new Date() }]
       prisma.pcListingVote.findMany.mockResolvedValue(nullifiedVotes)
-      prisma.pcListingVote.count.mockResolvedValue(0)
 
       const result = await restoreUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -646,8 +636,6 @@ describe('vote-nullification.service', () => {
       prisma.pcListingCommentVote.findMany.mockResolvedValue([
         { ...makePcCommentVote({ id: 'pcv-1' }), nullifiedAt: new Date() },
       ])
-      prisma.commentVote.count.mockResolvedValue(0)
-      prisma.pcListingCommentVote.count.mockResolvedValue(0)
 
       const result = await restoreUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -666,9 +654,10 @@ describe('vote-nullification.service', () => {
           nullifiedAt: new Date(),
         },
       ])
-      prisma.vote.count
-        .mockResolvedValueOnce(5) // upvotes after restore
-        .mockResolvedValueOnce(2) // downvotes after restore
+      prisma.vote.groupBy.mockResolvedValue([
+        { listingId: 'listing-1', value: true, _count: { _all: 5 } },
+        { listingId: 'listing-1', value: false, _count: { _all: 2 } },
+      ])
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -691,9 +680,10 @@ describe('vote-nullification.service', () => {
       prisma.commentVote.findMany.mockResolvedValue([
         { ...makeCommentVote({ id: 'cv-1', commentId: 'comment-1' }), nullifiedAt: new Date() },
       ])
-      prisma.commentVote.count
-        .mockResolvedValueOnce(4) // upvotes
-        .mockResolvedValueOnce(1) // downvotes
+      prisma.commentVote.groupBy.mockResolvedValue([
+        { commentId: 'comment-1', value: true, _count: { _all: 4 } },
+        { commentId: 'comment-1', value: false, _count: { _all: 1 } },
+      ])
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -715,7 +705,6 @@ describe('vote-nullification.service', () => {
           nullifiedAt: new Date(),
         },
       ])
-      prisma.vote.count.mockResolvedValue(0)
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -724,11 +713,11 @@ describe('vote-nullification.service', () => {
       })
 
       // Voter should get +1 per handheld vote (total +2)
-      const voterCall = mockApplyManualTrustAdjustment.mock.calls.find(
-        (call: unknown[]) => (call[0] as { userId: string }).userId === USER_ID,
-      )
-      expect(voterCall).toBeDefined()
-      expect((voterCall![0] as { adjustment: number }).adjustment).toBe(2)
+      expect(mockApplyBulkManualAdjustments).toHaveBeenCalledTimes(1)
+      const { adjustments } = mockApplyBulkManualAdjustments.mock.calls[0][0] as {
+        adjustments: Map<string, number>
+      }
+      expect(adjustments.get(USER_ID)).toBe(2)
     })
 
     it('re-applies author trust: +2 for upvotes, -1 for downvotes', async () => {
@@ -742,7 +731,6 @@ describe('vote-nullification.service', () => {
           nullifiedAt: new Date(),
         },
       ])
-      prisma.vote.count.mockResolvedValue(0)
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -751,11 +739,11 @@ describe('vote-nullification.service', () => {
       })
 
       // Author A: upvote re-applied (+2) + downvote re-applied (-1) = +1
-      const authorCall = mockApplyManualTrustAdjustment.mock.calls.find(
-        (call: unknown[]) => (call[0] as { userId: string }).userId === AUTHOR_A,
-      )
-      expect(authorCall).toBeDefined()
-      expect((authorCall![0] as { adjustment: number }).adjustment).toBe(1)
+      expect(mockApplyBulkManualAdjustments).toHaveBeenCalledTimes(1)
+      const { adjustments } = mockApplyBulkManualAdjustments.mock.calls[0][0] as {
+        adjustments: Map<string, number>
+      }
+      expect(adjustments.get(AUTHOR_A)).toBe(1)
     })
 
     it('skips author trust re-application for self-votes', async () => {
@@ -765,7 +753,6 @@ describe('vote-nullification.service', () => {
           nullifiedAt: new Date(),
         },
       ])
-      prisma.vote.count.mockResolvedValue(0)
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -773,17 +760,22 @@ describe('vote-nullification.service', () => {
         reason: 'Wrongful ban',
       })
 
-      expect(mockApplyManualTrustAdjustment).toHaveBeenCalledTimes(1)
-      expect(mockApplyManualTrustAdjustment).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: USER_ID, adjustment: 1 }),
-      )
+      expect(mockApplyBulkManualAdjustments).toHaveBeenCalledTimes(1)
+      const { adjustments } = mockApplyBulkManualAdjustments.mock.calls[0][0] as {
+        adjustments: Map<string, number>
+      }
+      expect(adjustments.get(USER_ID)).toBe(1)
+      expect(adjustments.size).toBe(1)
     })
 
-    it('does NOT re-apply trust for PC votes', async () => {
+    it('re-applies trust for PC votes (same as handheld)', async () => {
       prisma.pcListingVote.findMany.mockResolvedValue([
-        { ...makePcVote({ id: 'pv-1' }), nullifiedAt: new Date() },
+        { ...makePcVote({ id: 'pv-1', value: true, authorId: AUTHOR_B }), nullifiedAt: new Date() },
+        {
+          ...makePcVote({ id: 'pv-2', value: false, authorId: AUTHOR_B }),
+          nullifiedAt: new Date(),
+        },
       ])
-      prisma.pcListingVote.count.mockResolvedValue(0)
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -791,7 +783,14 @@ describe('vote-nullification.service', () => {
         reason: 'Wrongful ban',
       })
 
-      expect(mockApplyManualTrustAdjustment).not.toHaveBeenCalled()
+      expect(mockApplyBulkManualAdjustments).toHaveBeenCalledTimes(1)
+      const { adjustments } = mockApplyBulkManualAdjustments.mock.calls[0][0] as {
+        adjustments: Map<string, number>
+      }
+      // Voter: +1 per vote = +2 total
+      expect(adjustments.get(USER_ID)).toBe(2)
+      // Author B: upvote re-applied (+2) + downvote re-applied (-1) = +1
+      expect(adjustments.get(AUTHOR_B)).toBe(1)
     })
 
     it('batches restoration for more than 100 votes', async () => {
@@ -800,7 +799,6 @@ describe('vote-nullification.service', () => {
         nullifiedAt: new Date(),
       }))
       prisma.vote.findMany.mockResolvedValue(votes)
-      prisma.vote.count.mockResolvedValue(0)
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -821,8 +819,6 @@ describe('vote-nullification.service', () => {
       prisma.pcListingVote.findMany.mockResolvedValue([
         { ...makePcVote(), nullifiedAt: new Date() },
       ])
-      prisma.vote.count.mockResolvedValue(0)
-      prisma.pcListingVote.count.mockResolvedValue(0)
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -855,7 +851,6 @@ describe('vote-nullification.service', () => {
           nullifiedAt: new Date(),
         },
       ])
-      prisma.commentVote.count.mockResolvedValue(0)
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -863,19 +858,14 @@ describe('vote-nullification.service', () => {
         reason: 'Wrongful ban',
       })
 
+      expect(mockApplyBulkManualAdjustments).toHaveBeenCalledTimes(1)
+      const { adjustments } = mockApplyBulkManualAdjustments.mock.calls[0][0] as {
+        adjustments: Map<string, number>
+      }
       // Author A: upvote re-applied (+2)
-      const authorACall = mockApplyManualTrustAdjustment.mock.calls.find(
-        (call: unknown[]) => (call[0] as { userId: string }).userId === AUTHOR_A,
-      )
-      expect(authorACall).toBeDefined()
-      expect((authorACall![0] as { adjustment: number }).adjustment).toBe(2)
-
+      expect(adjustments.get(AUTHOR_A)).toBe(2)
       // Author B: downvote re-applied (-1)
-      const authorBCall = mockApplyManualTrustAdjustment.mock.calls.find(
-        (call: unknown[]) => (call[0] as { userId: string }).userId === AUTHOR_B,
-      )
-      expect(authorBCall).toBeDefined()
-      expect((authorBCall![0] as { adjustment: number }).adjustment).toBe(-1)
+      expect(adjustments.get(AUTHOR_B)).toBe(-1)
     })
   })
 
@@ -890,8 +880,6 @@ describe('vote-nullification.service', () => {
       // Phase 1: Nullify
       prisma.vote.findMany.mockResolvedValue(votes)
       prisma.commentVote.findMany.mockResolvedValue(commentVotes)
-      prisma.vote.count.mockResolvedValue(0)
-      prisma.commentVote.count.mockResolvedValue(0)
 
       const nullifyResult = await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -904,14 +892,15 @@ describe('vote-nullification.service', () => {
       expect(nullifyResult.commentVotesNullified).toBe(1)
 
       // Capture nullification trust adjustments
-      const nullifyAdjustments = new Map<string, number>()
-      for (const call of mockApplyManualTrustAdjustment.mock.calls) {
-        const { userId, adjustment } = call[0] as { userId: string; adjustment: number }
-        nullifyAdjustments.set(userId, (nullifyAdjustments.get(userId) ?? 0) + adjustment)
-      }
+      expect(mockApplyBulkManualAdjustments).toHaveBeenCalledTimes(1)
+      const nullifyAdjustments = mockApplyBulkManualAdjustments.mock.calls[0][0].adjustments as Map<
+        string,
+        number
+      >
 
       // Phase 2: Restore
-      mockApplyManualTrustAdjustment.mockClear()
+      mockApplyBulkManualAdjustments.mockClear()
+      mockApplyBulkManualAdjustments.mockResolvedValue(0)
       prisma = createMockPrisma()
 
       const nullifiedVotes = votes.map((v) => ({ ...v, nullifiedAt: new Date() }))
@@ -919,8 +908,6 @@ describe('vote-nullification.service', () => {
 
       prisma.vote.findMany.mockResolvedValue(nullifiedVotes)
       prisma.commentVote.findMany.mockResolvedValue(nullifiedCommentVotes)
-      prisma.vote.count.mockResolvedValue(0)
-      prisma.commentVote.count.mockResolvedValue(0)
 
       const restoreResult = await restoreUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -932,11 +919,11 @@ describe('vote-nullification.service', () => {
       expect(restoreResult.commentVotesRestored).toBe(1)
 
       // Capture restoration trust adjustments
-      const restoreAdjustments = new Map<string, number>()
-      for (const call of mockApplyManualTrustAdjustment.mock.calls) {
-        const { userId, adjustment } = call[0] as { userId: string; adjustment: number }
-        restoreAdjustments.set(userId, (restoreAdjustments.get(userId) ?? 0) + adjustment)
-      }
+      expect(mockApplyBulkManualAdjustments).toHaveBeenCalledTimes(1)
+      const restoreAdjustments = mockApplyBulkManualAdjustments.mock.calls[0][0].adjustments as Map<
+        string,
+        number
+      >
 
       // Net trust adjustment for each user should be zero
       for (const [uid, nullifyAdj] of nullifyAdjustments) {
@@ -950,7 +937,6 @@ describe('vote-nullification.service', () => {
 
       // Phase 1: Nullify
       prisma.vote.findMany.mockResolvedValue([vote])
-      prisma.vote.count.mockResolvedValue(0)
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,
@@ -968,9 +954,9 @@ describe('vote-nullification.service', () => {
       // Phase 2: Restore
       prisma = createMockPrisma()
       prisma.vote.findMany.mockResolvedValue([{ ...vote, nullifiedAt: new Date() }])
-      prisma.vote.count
-        .mockResolvedValueOnce(1) // upvotes after restore
-        .mockResolvedValueOnce(0) // downvotes after restore
+      prisma.vote.groupBy.mockResolvedValue([
+        { listingId: 'listing-1', value: true, _count: { _all: 1 } },
+      ])
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
         userId: USER_ID,

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Badge } from '@/components/ui'
+import { BannedUserBadge } from '@/components/ui'
 
 interface Author {
   id?: string | null
@@ -25,15 +25,7 @@ export function AuthorDisplay(props: Props) {
       ) : (
         <span>{props.author?.name ?? 'Anonymous'}</span>
       )}
-      {props.canSeeBannedUsers &&
-        props.author &&
-        'userBans' in props.author &&
-        Array.isArray(props.author.userBans) &&
-        props.author.userBans.length > 0 && (
-          <Badge variant="danger" size="sm">
-            BANNED
-          </Badge>
-        )}
+      <BannedUserBadge author={props.author} canView={props.canSeeBannedUsers} label="BANNED" />
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { PAGINATION } from '@/data/constants'
 import { AppError, ResourceError } from '@/lib/errors'
 import { canUserAutoApprove } from '@/lib/trust/service'
 import { validateCustomFields } from '@/server/api/routers/listings/validation'
+import { computeVoteCounts } from '@/server/utils/moderator-info'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
 import {
   buildNsfwFilter,
@@ -736,5 +737,59 @@ export class ListingsRepository extends BaseRepository {
       include: ListingsRepository.includes.forCompatibilityScoring,
       orderBy: { createdAt: 'desc' },
     })
+  }
+
+  private static readonly moderatorInfoUserSelect = {
+    id: true,
+    name: true,
+  } as const
+
+  private static readonly moderatorInfoVoteSelect = {
+    id: true,
+    value: true,
+    createdAt: true,
+    nullifiedAt: true,
+    user: { select: { id: true, name: true, trustScore: true } },
+  } as const
+
+  async getModeratorInfo(listingId: string) {
+    const listing = await this.handleDatabaseOperation(
+      () =>
+        this.prisma.listing.findUnique({
+          where: { id: listingId },
+          select: {
+            status: true,
+            processedAt: true,
+            processedNotes: true,
+            processedByUser: { select: ListingsRepository.moderatorInfoUserSelect },
+          },
+        }),
+      'Listing',
+    )
+
+    if (!listing) throw ResourceError.listing.notFound()
+
+    const votes = await this.handleDatabaseOperation(
+      () =>
+        this.prisma.vote.findMany({
+          where: { listingId },
+          orderBy: { createdAt: 'desc' },
+          select: ListingsRepository.moderatorInfoVoteSelect,
+        }),
+      'Vote',
+    )
+
+    const voteCounts = computeVoteCounts(votes)
+
+    return {
+      approval: {
+        status: listing.status,
+        processedAt: listing.processedAt,
+        processedNotes: listing.processedNotes,
+        processedBy: listing.processedByUser,
+      },
+      votes,
+      voteCounts,
+    }
   }
 }

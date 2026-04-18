@@ -64,7 +64,12 @@ function UserRoleModal(props: Props) {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Edit User Role"
+        className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full"
+      >
         <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-purple-500" />
           Edit User Role

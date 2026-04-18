@@ -19,6 +19,7 @@ import {
 import { UserBansRepository } from '@/server/repositories/user-bans.repository'
 import { logAudit, buildDiff } from '@/server/services/audit.service'
 import { nullifyUserVotes, restoreUserVotes } from '@/server/services/vote-nullification.service'
+import { withRetryTransaction } from '@/server/utils/transactions'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
 import { AuditAction, AuditEntityType, Role } from '@orm'
@@ -85,32 +86,38 @@ export const userBansRouter = createTRPCRouter({
       return AppError.badRequest('Expiration date must be in the future')
     }
 
-    const created = await repository.create({
-      userId,
-      bannedById,
-      reason,
-      notes,
-      expiresAt,
-    })
+    const { created, nullificationResult } = await withRetryTransaction(
+      ctx.prisma,
+      async (tx) => {
+        const ban = await new UserBansRepository(tx).create({
+          userId,
+          bannedById,
+          reason,
+          notes,
+          expiresAt,
+        })
 
-    // Nullify votes if requested
-    let nullificationResult: Awaited<ReturnType<typeof nullifyUserVotes>> | null = null
-    if (shouldNullifyVotes) {
-      nullificationResult = await nullifyUserVotes(ctx.prisma, {
-        userId,
-        adminUserId: ctx.session.user.id,
-        reason: `Ban: ${reason}`,
-        includeCommentVotes: true,
-        headers: ctx.headers,
-      })
+        let nullResult: Awaited<ReturnType<typeof nullifyUserVotes>> | null = null
+        if (shouldNullifyVotes) {
+          nullResult = await nullifyUserVotes(tx, {
+            userId,
+            adminUserId: ctx.session.user.id,
+            reason: `Ban: ${reason}`,
+            includeCommentVotes: true,
+            headers: ctx.headers,
+          })
 
-      await ctx.prisma.userBan.update({
-        where: { id: created.id },
-        data: { votesNullified: true },
-      })
-    }
+          await tx.userBan.update({
+            where: { id: ban.id },
+            data: { votesNullified: true },
+          })
+        }
 
-    // Fire-and-forget audit log
+        return { created: ban, nullificationResult: nullResult }
+      },
+      { timeout: 120_000 },
+    )
+
     void logAudit(ctx.prisma, {
       actorId: ctx.session.user.id,
       action: AuditAction.BAN,
@@ -217,23 +224,31 @@ export const userBansRouter = createTRPCRouter({
       isActive: ban.isActive,
     }
 
-    const lifted = await repository.lift(id, unbannedById, notes)
+    const { lifted, restorationResult } = await withRetryTransaction(
+      ctx.prisma,
+      async (tx) => {
+        const liftedBan = await new UserBansRepository(tx).lift(id, unbannedById, notes)
+
+        let restoreResult: Awaited<ReturnType<typeof restoreUserVotes>> | null = null
+        if (ban.votesNullified) {
+          restoreResult = await restoreUserVotes(tx, {
+            userId: ban.userId,
+            adminUserId: ctx.session.user.id,
+            reason: `Ban lifted: ${ban.reason}`,
+            headers: ctx.headers,
+          })
+        }
+
+        return { lifted: liftedBan, restorationResult: restoreResult }
+      },
+      { timeout: 120_000 },
+    )
+
     const next = {
       reason: lifted.reason,
       notes: lifted.notes ?? null,
       expiresAt: lifted.expiresAt,
       isActive: lifted.isActive,
-    }
-
-    // Auto-restore votes if they were nullified during this ban
-    let restorationResult: Awaited<ReturnType<typeof restoreUserVotes>> | null = null
-    if (ban.votesNullified) {
-      restorationResult = await restoreUserVotes(ctx.prisma, {
-        userId: ban.userId,
-        adminUserId: ctx.session.user.id,
-        reason: `Ban lifted: ${ban.reason}`,
-        headers: ctx.headers,
-      })
     }
 
     void logAudit(ctx.prisma, {
@@ -324,8 +339,8 @@ export const userBansRouter = createTRPCRouter({
         ctx.prisma.listingReport.findMany({
           where: { listing: { authorId: userId } },
           include: {
-            reportedBy: { select: { id: true, name: true, email: true } },
-            reviewedBy: { select: { id: true, name: true, email: true } },
+            reportedBy: { select: { id: true, name: true } },
+            reviewedBy: { select: { id: true, name: true } },
             listing: {
               select: {
                 id: true,
@@ -339,8 +354,8 @@ export const userBansRouter = createTRPCRouter({
         ctx.prisma.pcListingReport.findMany({
           where: { pcListing: { authorId: userId } },
           include: {
-            reportedBy: { select: { id: true, name: true, email: true } },
-            reviewedBy: { select: { id: true, name: true, email: true } },
+            reportedBy: { select: { id: true, name: true } },
+            reviewedBy: { select: { id: true, name: true } },
             pcListing: {
               select: {
                 id: true,

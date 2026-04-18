@@ -1,182 +1,111 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Admin Reports Management Tests - Requires Admin Role', () => {
-  test.use({ storageState: 'tests/.auth/admin.json' })
+  test.use({ storageState: 'tests/.auth/super_admin.json' })
   test.beforeEach(async ({ page }) => {
     await page.goto('/admin/reports', { waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL(/\/admin\/reports/)
+
+    await expect(page.locator('table').first()).toBeVisible()
   })
 
   test('should display reports dashboard with required elements', async ({ page }) => {
-    const mainContent = page.locator('main').first()
-    await expect(mainContent).toBeVisible()
-
-    // Wait for page content to finish loading
-    await page
-      .getByText(/loading/i)
-      .waitFor({ state: 'hidden', timeout: 15000 })
-      .catch(() => {})
-
     const reportsTable = page.locator('table').first()
-    const hasTable = await reportsTable.isVisible({ timeout: 10000 }).catch(() => false)
+    await expect(reportsTable).toBeVisible()
 
-    if (hasTable) {
-      const headers = reportsTable.locator('thead th')
-      const headerTexts = await headers.allTextContents()
-      const headerString = headerTexts.join(' ').toLowerCase()
+    const headers = reportsTable.locator('thead th')
+    const headerTexts = await headers.allTextContents()
+    const headerString = headerTexts.join(' ').toLowerCase()
 
-      expect(headerString).toMatch(/reason/i)
-      expect(headerString).toMatch(/status/i)
+    expect(headerString).toMatch(/reason/i)
+    expect(headerString).toMatch(/status/i)
 
-      const reportRows = reportsTable.locator('tbody tr')
-      const rowCount = await reportRows.count()
-      expect(typeof rowCount).toBe('number')
-    } else {
-      // Wait for meaningful content to load before checking text
-      await page
-        .waitForFunction(
-          (el) => el !== null && (el.textContent ?? '').trim().length > 10,
-          await mainContent.elementHandle(),
-          { timeout: 10000 },
-        )
-        .catch(() => {})
-      const pageText = await mainContent.textContent()
-      expect(pageText).toMatch(/report/i)
-    }
+    const reportRows = reportsTable.locator('tbody tr')
+    const rowCount = await reportRows.count()
+    expect(rowCount).toBeGreaterThanOrEqual(0)
   })
 
   test('should filter reports by status', async ({ page }) => {
-    // Reports page uses a <select> dropdown for status filtering
-    const statusDropdown = page.locator('select').first()
-    const hasDropdown = await statusDropdown.isVisible({ timeout: 5000 }).catch(() => false)
-    test.skip(!hasDropdown, 'No status filter dropdown available')
+    const statusDropdownButton = page.getByRole('button', { name: /all statuses/i })
+    await expect(statusDropdownButton).toBeVisible()
 
-    // Select "Pending" from the dropdown
-    const options = await statusDropdown.locator('option').allTextContents()
-    const hasPendingOption = options.some((opt) => /pending/i.test(opt))
-    test.skip(!hasPendingOption, 'No Pending option in status dropdown')
+    await statusDropdownButton.click()
 
-    await statusDropdown.selectOption({ label: 'Pending' })
+    const pendingOption = page.getByText('Pending').last()
+    await expect(pendingOption).toBeVisible()
+    await pendingOption.click()
+
     await page.waitForLoadState('domcontentloaded')
 
-    // Verify the table updated — should still have table or show no results
     const table = page.locator('table').first()
-    const hasTable = await table.isVisible({ timeout: 5000 }).catch(() => false)
-    expect(hasTable).toBe(true)
+    await expect(table).toBeVisible()
   })
 
   test('should display report details', async ({ page }) => {
-    // ViewButton uses title="View Report Details"
     const viewButtons = page.locator('button[title="View Report Details"]')
-    const hasViewButtons = (await viewButtons.count()) > 0
-    test.skip(!hasViewButtons, 'No View Report Details buttons available')
+    await expect(viewButtons.first()).toBeVisible()
+    expect(await viewButtons.count()).toBeGreaterThan(0)
 
     await viewButtons.first().click()
 
-    // ReportDetailsModal opens as a dialog
     const reportModal = page.locator('[role="dialog"]')
-    const hasModal = await reportModal.isVisible({ timeout: 3000 }).catch(() => false)
-    test.skip(!hasModal, 'Report details modal did not appear')
+    await expect(reportModal).toBeVisible()
 
-    // Modal should have content (report details)
     const modalContent = await reportModal.textContent()
     expect(modalContent).toBeTruthy()
-    expect(modalContent!.length).toBeGreaterThan(0)
+    expect(modalContent?.length).toBeGreaterThan(0)
 
-    // Close button in footer
     const closeButton = reportModal.locator('button').filter({ hasText: /close/i })
-    if (await closeButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await closeButton.click()
-    } else {
-      await page.keyboard.press('Escape')
-    }
+    await expect(closeButton).toBeVisible()
+    await closeButton.click()
   })
 
   test('should handle report status updates', async ({ page }) => {
-    // "Update Status" button opens ReportStatusModal
     const statusButton = page.locator('button[title="Update Status"]').first()
-    const hasStatusButton = await statusButton.isVisible({ timeout: 5000 }).catch(() => false)
-    test.skip(!hasStatusButton, 'No Update Status button available')
+    await expect(statusButton).toBeVisible()
 
     await statusButton.click()
 
-    // ReportStatusModal opens as a dialog with status select and notes
     const dialog = page.locator('[role="dialog"]')
-    const hasDialog = await dialog.isVisible({ timeout: 3000 }).catch(() => false)
-    test.skip(!hasDialog, 'Report status modal did not appear')
+    await expect(dialog).toBeVisible()
 
-    // Should have a status select and review notes textarea
     const statusSelect = dialog.locator('select')
-    const hasStatusSelect = await statusSelect.isVisible({ timeout: 2000 }).catch(() => false)
+    await expect(statusSelect).toBeVisible()
 
-    if (hasStatusSelect) {
-      const options = await statusSelect.locator('option').allTextContents()
-      expect(options.length).toBeGreaterThan(0)
-    }
+    const options = await statusSelect.locator('option').allTextContents()
+    expect(options.length).toBeGreaterThan(0)
 
-    // Close without saving
     const cancelButton = dialog.locator('button').filter({ hasText: /cancel/i })
-    const closeButton = dialog.locator('button').filter({ hasText: /close/i })
-
-    if (await cancelButton.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await cancelButton.click()
-    } else if (await closeButton.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await closeButton.click()
-    } else {
-      await page.keyboard.press('Escape')
-    }
+    await expect(cancelButton).toBeVisible()
+    await cancelButton.click()
   })
 
   test('should display report statistics', async ({ page }) => {
-    // AdminStatsDisplay renders stat cards at top of page
     const statsLabels = [/total reports/i, /pending/i, /under review/i, /resolved/i, /dismissed/i]
 
-    let visibleStats = 0
+    // These labels may appear multiple times on the page (stats, table status
+    // column, action buttons). Use .first() to match the stats label.
     for (const label of statsLabels) {
-      const stat = page.getByText(label)
-      if (await stat.isVisible({ timeout: 2000 }).catch(() => false)) {
-        visibleStats++
-      }
+      await expect(page.getByText(label).first()).toBeVisible()
     }
-    test.skip(visibleStats === 0, 'No report statistics section visible')
-
-    // Verify numeric values exist alongside stats
-    const mainContent = page.locator('main').first()
-    const numbersOnPage = await mainContent.locator('text=/\\d+/').count()
-    expect(numbersOnPage).toBeGreaterThan(0)
   })
 
   test('should link to reported content', async ({ page }) => {
-    // Open ReportDetailsModal first to find the listing link
     const viewButton = page.locator('button[title="View Report Details"]').first()
-    const hasViewButton = await viewButton.isVisible({ timeout: 5000 }).catch(() => false)
-    test.skip(!hasViewButton, 'No view button available')
+    await expect(viewButton).toBeVisible()
 
     await viewButton.click()
 
     const dialog = page.locator('[role="dialog"]')
-    const hasDialog = await dialog.isVisible({ timeout: 3000 }).catch(() => false)
-    test.skip(!hasDialog, 'Report details modal did not appear')
+    await expect(dialog).toBeVisible()
 
-    // ReportDetailsModal has a "View Listing" button/link in the footer
-    const contentLink = dialog.locator('a, button').filter({ hasText: /view listing/i })
-    const hasContentLink = await contentLink.isVisible({ timeout: 3000 }).catch(() => false)
-    test.skip(!hasContentLink, 'No content link found in report details')
+    // "View Listing" is a button that opens the listing in a new tab via
+    // window.open — not an anchor tag.
+    const viewListingButton = dialog.getByRole('button', { name: /view listing/i })
+    await expect(viewListingButton).toBeVisible()
 
-    const tagName = await contentLink.evaluate((el) => el.tagName.toLowerCase())
-    if (tagName === 'a') {
-      const href = await contentLink.getAttribute('href')
-      expect(href).toBeTruthy()
-    } else {
-      await expect(contentLink).toBeVisible()
-    }
-
-    // Close the dialog
-    const closeButton = dialog.locator('button').filter({ hasText: /close/i })
-    if (await closeButton.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await closeButton.click()
-    } else {
-      await page.keyboard.press('Escape')
-    }
+    const closeButton = dialog.getByRole('button', { name: /^close$/i })
+    await expect(closeButton).toBeVisible()
+    await closeButton.click()
   })
 })

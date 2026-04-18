@@ -554,4 +554,8 @@ export class ResourceError {
         `${userName} must have the DEVELOPER role or higher to be removed as a verified developer. Current role: ${currentRole}`,
       ),
   }
+
+  static trust = {
+    adjustmentCannotBeZero: () => AppError.badRequest('Trust adjustment cannot be zero'),
+  }
 }

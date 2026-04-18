@@ -10,19 +10,24 @@ import {
   AUDIO_DRIVER_MAPPING,
   STARTUP_SELECTION_MAPPING,
   BOX64_PRESET_MAPPING,
-  BOX86_PRESET_MAPPING,
+  EMULATOR_MAPPING,
+  CONTAINER_VARIANT_MAPPING,
+  STEAM_TYPE_MAPPING,
+  FEXCORE_PRESET_MAPPING,
 } from './gamenative.defaults'
-import {
-  type DxvkVersion,
-  type ContainerConfig,
-  type ScreenSize,
-  type GraphicsDriver,
-  type DxWrapper,
-  type AudioDriver,
-  type StartupSelection,
-  type Box86Version,
-  type Box64Version,
-  type Box86_64Preset,
+import type {
+  ContainerConfig,
+  ScreenSize,
+  GraphicsDriver,
+  DxWrapper,
+  AudioDriver,
+  StartupSelection,
+  Box64Version,
+  Box86_64Preset,
+  ContainerVariant,
+  SteamType,
+  FEXCorePreset,
+  DinputMapperType,
 } from './gamenative.types'
 import type { Prisma } from '@orm'
 
@@ -42,8 +47,15 @@ export interface GameNativeConfigInput {
   customFieldValues: CustomFieldValue[]
 }
 
-// Export the properly typed config
 export type GameNativeConfig = Required<ContainerConfig>
+
+/**
+ * Appends a key=value pair to a comma-separated config string
+ */
+function appendToConfigString(existing: string, key: string, value: string): string {
+  if (!existing) return `${key}=${value}`
+  return `${existing},${key}=${value}`
+}
 
 /**
  * Maps custom field names to GameNative config keys and transforms values
@@ -56,280 +68,145 @@ const FIELD_MAPPINGS: Record<
     defaultIfEmpty?: unknown
   }
 > = {
-  // Resolution mapping
   resolution: {
     key: 'screenSize',
     transform: (value): ScreenSize => {
       const resStr = String(value)
-      // Extract resolution from formats like "1920x1080 (16:9)" or just "1920x1080"
       const match = resStr.match(/(\d+x\d+)/)
       return match ? match[1] : GameNativeDefaults.getDefaultScreenSize()
     },
   },
 
-  // Environment variables - complex string needs special handling
   env_variables: {
     key: 'envVars',
     transform: (value) => {
-      // If empty or not provided, use default environment variables
       return !value || String(value).trim() === ''
         ? GameNativeDefaults.getDefaultEnvVars()
         : String(value).trim()
     },
   },
 
-  // Graphics driver - handles both new SELECT values and legacy TEXT values
   graphics_driver: {
     key: 'graphicsDriver',
     transform: (value): GraphicsDriver => GameNativeDefaults.detectGraphicsDriver(String(value)),
     defaultIfEmpty: GameNativeDefaults.getDefaultGraphicsDriver(),
   },
 
-  // DX Wrapper
   dx_wrapper: {
     key: 'dxwrapper',
     transform: (value): DxWrapper =>
       DX_WRAPPER_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultDxWrapper(),
   },
 
-  // DX Wrapper Config
   dx_wrapper_config: {
     key: 'dxwrapperConfig',
     transform: (value) => String(value || ''),
     defaultIfEmpty: '',
   },
 
-  // DXVK version
-  dxvk_version: {
-    key: 'dxvkVersion',
-    transform: (value): DxvkVersion => {
-      const version = String(value || GameNativeDefaults.getDefaultDxvkVersion()).trim()
-      return GameNativeDefaults.isValidDxvkVersion(version)
-        ? (version as DxvkVersion)
-        : GameNativeDefaults.getDefaultDxvkVersion()
-    },
-  },
-
-  // Audio driver
   audio_driver: {
     key: 'audioDriver',
     transform: (value): AudioDriver =>
       AUDIO_DRIVER_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultAudioDriver(),
   },
 
-  // Execution arguments
   exec_arguments: {
     key: 'execArgs',
     transform: (value) => String(value || ''),
     defaultIfEmpty: '',
   },
 
-  // Startup selection
   startup_selection: {
     key: 'startupSelection',
     transform: (value): StartupSelection =>
       STARTUP_SELECTION_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultStartupSelection(),
   },
 
-  // Box64 version
   box64_version: {
     key: 'box64Version',
     transform: (value): Box64Version => {
       const version = String(value || GameNativeDefaults.getDefaultBox64Version()).trim()
-      // Validate against known versions using centralized validation
-      return GameNativeDefaults.isValidBox64Version(version)
-        ? (version as Box64Version)
-        : GameNativeDefaults.getDefaultBox64Version()
+      if (GameNativeDefaults.isValidBox64Version(version)) return version
+      return GameNativeDefaults.getDefaultBox64Version()
     },
     defaultIfEmpty: GameNativeDefaults.getDefaultBox64Version(),
   },
 
-  // Box86 version (not in example but in target config)
-  box86_version: {
-    key: 'box86Version',
-    transform: (value): Box86Version => {
-      const version = String(value || GameNativeDefaults.getDefaultBox86Version()).trim()
-      // Validate against known versions using centralized validation
-      return GameNativeDefaults.isValidBox86Version(version)
-        ? (version as Box86Version)
-        : GameNativeDefaults.getDefaultBox86Version()
-    },
-    defaultIfEmpty: GameNativeDefaults.getDefaultBox86Version(),
-  },
-
-  // Box64 preset
   box64_preset: {
     key: 'box64Preset',
     transform: (value): Box86_64Preset =>
       BOX64_PRESET_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultBoxPreset(),
   },
 
-  // Box86 preset (not in example but needed)
-  box86_preset: {
-    key: 'box86Preset',
-    transform: (value): Box86_64Preset =>
-      BOX86_PRESET_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultBoxPreset(),
+  container_variant: {
+    key: 'containerVariant',
+    transform: (value): ContainerVariant =>
+      CONTAINER_VARIANT_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultContainerVariant(),
   },
 
-  // Windows Components - Critical missing field
-  // Convert individual boolean fields to wincomponents string
-  use_native_direct3d: { key: 'wincomponents', transform: () => undefined }, // Handled specially
-  use_native_directsound: { key: 'wincomponents', transform: () => undefined }, // Handled specially
-  use_native_directmusic: { key: 'wincomponents', transform: () => undefined }, // Handled specially
-  use_native_directshow: { key: 'wincomponents', transform: () => undefined }, // Handled specially
-  use_native_directplay: { key: 'wincomponents', transform: () => undefined }, // Handled specially
-  use_native_vcrun2010: { key: 'wincomponents', transform: () => undefined }, // Handled specially
-  use_native_wmdecoder: { key: 'wincomponents', transform: () => undefined }, // Handled specially
-
-  // Video Memory Size
-  video_memory_size: {
-    key: 'videoMemorySize',
-    transform: (value) => {
-      const sizeStr = String(value || GameNativeDefaults.getDefaultVideoMemorySize()).trim()
-      // Validate against known sizes using centralized validation
-      return GameNativeDefaults.isValidVideoMemorySize(sizeStr)
-        ? sizeStr
-        : GameNativeDefaults.getDefaultVideoMemorySize()
-    },
-    defaultIfEmpty: GameNativeDefaults.getDefaultVideoMemorySize(),
+  wine_version: {
+    key: 'wineVersion',
+    transform: (value) => String(value || ''),
+    defaultIfEmpty: '',
   },
 
-  // CPU Core Affinity
-  cpu_list: {
-    key: 'cpuList',
-    transform: (value) => String(value || GameNativeDefaults.getDefaultCpuList()),
-    defaultIfEmpty: GameNativeDefaults.getDefaultCpuList(),
+  steam_type: {
+    key: 'steamType',
+    transform: (value): SteamType =>
+      STEAM_TYPE_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultSteamType(),
   },
 
-  cpu_list_wow64: {
-    key: 'cpuListWoW64',
-    transform: (value) => String(value || GameNativeDefaults.getDefaultCpuList()),
-    defaultIfEmpty: GameNativeDefaults.getDefaultCpuList(),
+  dynamic_driver_version: {
+    key: 'graphicsDriverVersion',
+    transform: (value) => String(value || ''),
+    defaultIfEmpty: '',
   },
 
-  // WoW64 Mode
-  wow64_mode: {
-    key: 'wow64Mode',
-    transform: (value) => Boolean(value ?? true),
-    defaultIfEmpty: true,
+  fex_core_version: {
+    key: 'fexcoreVersion',
+    transform: (value) => String(value || ''),
+    defaultIfEmpty: '',
   },
 
-  // Show FPS Overlay
-  show_fps: {
-    key: 'showFPS',
+  fex_core_preset: {
+    key: 'fexcorePreset',
+    transform: (value): FEXCorePreset =>
+      FEXCORE_PRESET_MAPPING[String(value)] ?? GameNativeDefaults.getDefaultFexcorePreset(),
+  },
+
+  use_steam_input: {
+    key: 'useSteamInput',
     transform: (value) => Boolean(value ?? false),
     defaultIfEmpty: false,
   },
 
-  // Input/Controller Settings
-  sdl_controller_api: {
-    key: 'sdlControllerAPI',
-    transform: (value) => Boolean(value ?? true),
-    defaultIfEmpty: true,
-  },
-
-  enable_xinput: {
+  enable_x_input_api: {
     key: 'enableXInput',
     transform: (value) => Boolean(value ?? true),
     defaultIfEmpty: true,
   },
 
-  enable_dinput: {
+  enable_direct_input_api: {
     key: 'enableDInput',
     transform: (value) => Boolean(value ?? true),
     defaultIfEmpty: true,
   },
 
-  dinput_mapper_type: {
+  direct_input_mapper_type: {
     key: 'dinputMapperType',
-    transform: (value) => {
+    transform: (value): DinputMapperType => {
+      const str = String(value)
+      if (str === 'xinput_mapper') return 2
+      if (str === 'standard') return 1
       const num = Number(value)
-      // 0: Standard, 1: XInput
-      return num === 0 || num === 1 ? num : 1
+      if (num === 2) return 2
+      return 1
     },
     defaultIfEmpty: 1,
   },
-
-  disable_mouse_input: {
-    key: 'disableMouseInput',
-    transform: (value) => Boolean(value ?? false),
-    defaultIfEmpty: false,
-  },
-
-  // Graphics/Rendering Settings
-  csmt: {
-    key: 'csmt',
-    transform: (value) => Boolean(value ?? true),
-    defaultIfEmpty: true,
-  },
-
-  video_pci_device_id: {
-    key: 'videoPciDeviceID',
-    transform: (value) => {
-      const num = Number(value)
-      return isNaN(num) ? GameNativeDefaults.getDefaultVideoPciDeviceId() : num
-    },
-    defaultIfEmpty: GameNativeDefaults.getDefaultVideoPciDeviceId(),
-  },
-
-  offscreen_rendering_mode: {
-    key: 'offScreenRenderingMode',
-    transform: (value) => {
-      const mode = String(
-        value || GameNativeDefaults.getDefaultOffscreenRenderingMode(),
-      ).toLowerCase()
-      return GameNativeDefaults.isValidOffscreenRenderingMode(mode)
-        ? mode
-        : GameNativeDefaults.getDefaultOffscreenRenderingMode()
-    },
-    defaultIfEmpty: GameNativeDefaults.getDefaultOffscreenRenderingMode(),
-  },
-
-  strict_shader_math: {
-    key: 'strictShaderMath',
-    transform: (value) => Boolean(value ?? true),
-    defaultIfEmpty: true,
-  },
-
-  mouse_warp_override: {
-    key: 'mouseWarpOverride',
-    transform: (value) => {
-      const mode = String(value || GameNativeDefaults.getDefaultMouseWarpOverride()).toLowerCase()
-      return GameNativeDefaults.isValidMouseWarpOverride(mode)
-        ? mode
-        : GameNativeDefaults.getDefaultMouseWarpOverride()
-    },
-    defaultIfEmpty: GameNativeDefaults.getDefaultMouseWarpOverride(),
-  },
-
-  shader_backend: {
-    key: 'shaderBackend',
-    transform: (value) => String(value || GameNativeDefaults.getDefaultShaderBackend()),
-    defaultIfEmpty: GameNativeDefaults.getDefaultShaderBackend(),
-  },
-
-  use_glsl: {
-    key: 'useGLSL',
-    transform: (value) => {
-      const val = String(value || GameNativeDefaults.getDefaultUseGlsl())
-      return GameNativeDefaults.isValidUseGlsl(val) ? val : GameNativeDefaults.getDefaultUseGlsl()
-    },
-    defaultIfEmpty: GameNativeDefaults.getDefaultUseGlsl(),
-  },
-
-  // Graphics Driver Version - dynamic field
-  graphics_driver_version: {
-    key: 'graphicsDriverVersion',
-    transform: (value) => String(value || ''),
-    defaultIfEmpty: '',
-  },
 }
 
-/**
- * Get default GameNative configuration
- */
 function getDefaultConfig(): GameNativeConfig {
-  // Use the typed default config from the types file
   return { ...DEFAULT_CONFIG }
 }
 
@@ -339,73 +216,73 @@ function getDefaultConfig(): GameNativeConfig {
 export function convertToGameNativeConfig(input: GameNativeConfigInput): GameNativeConfig {
   const config = getDefaultConfig()
 
-  // Process each custom field value
+  const fieldValuesByName = new Map<string, unknown>()
+  for (const fieldValue of input.customFieldValues) {
+    fieldValuesByName.set(fieldValue.customFieldDefinition.name, fieldValue.value)
+  }
+
   for (const fieldValue of input.customFieldValues) {
     const fieldName = fieldValue.customFieldDefinition.name
     const mapping = FIELD_MAPPINGS[fieldName]
 
-    if (mapping) {
-      const value = fieldValue.value
+    if (!mapping) continue
 
-      // Skip if empty and no defaultIfEmpty is specified
-      if ((value === '' || value === null || value === undefined) && !mapping.defaultIfEmpty) {
-        continue
-      }
+    const value = fieldValue.value
 
-      // Use defaultIfEmpty if value is empty
-      const actualValue =
-        value === '' || value === null || value === undefined ? mapping.defaultIfEmpty : value
-
-      // Transform and assign value
-      const transformedValue = mapping.transform ? mapping.transform(actualValue) : actualValue
-
-      // Skip Windows Components fields - they're handled specially below
-      if (mapping.key === 'wincomponents') {
-        continue
-      }
-
-      // Assign value to the correct key
-      // We need to use Object.assign or explicit property access
-      Object.assign(config, { [mapping.key]: transformedValue })
+    if ((value === '' || value === null || value === undefined) && !mapping.defaultIfEmpty) {
+      continue
     }
+
+    const actualValue =
+      value === '' || value === null || value === undefined ? mapping.defaultIfEmpty : value
+
+    const transformedValue = mapping.transform ? mapping.transform(actualValue) : actualValue
+
+    Object.assign(config, { [mapping.key]: transformedValue })
   }
 
-  // Special handling for Windows Components - combine multiple boolean fields
-  const winComponentFields = {
-    use_native_direct3d: 'direct3d',
-    use_native_directsound: 'directsound',
-    use_native_directmusic: 'directmusic',
-    use_native_directshow: 'directshow',
-    use_native_directplay: 'directplay',
-    use_native_vcrun2010: 'vcrun2010',
-    use_native_wmdecoder: 'wmdecoder',
+  // Merge dxvk_version into dxwrapperConfig as version=X
+  const dxvkVersion = fieldValuesByName.get('dxvk_version')
+  if (dxvkVersion && String(dxvkVersion).trim()) {
+    config.dxwrapperConfig = appendToConfigString(
+      config.dxwrapperConfig,
+      'version',
+      String(dxvkVersion).trim(),
+    )
   }
 
-  const winComponentsMap = new Map<string, boolean>()
-
-  // Set defaults using centralized configuration
-  for (const [component, value] of Object.entries(
-    GameNativeDefaults.getDefaultWindowsComponents(),
-  )) {
-    winComponentsMap.set(component, value)
+  // Merge max_device_memory into graphicsDriverConfig as maxDeviceMemory=N
+  const maxDeviceMemory = fieldValuesByName.get('max_device_memory')
+  if (maxDeviceMemory && String(maxDeviceMemory).trim()) {
+    config.graphicsDriverConfig = appendToConfigString(
+      config.graphicsDriverConfig,
+      'maxDeviceMemory',
+      String(maxDeviceMemory).trim(),
+    )
   }
 
-  // Override with user values if present
-  for (const fieldValue of input.customFieldValues) {
-    const fieldName = fieldValue.customFieldDefinition.name
-    const componentName = winComponentFields[fieldName as keyof typeof winComponentFields]
-
-    if (componentName) {
-      winComponentsMap.set(componentName, Boolean(fieldValue.value))
-    }
+  // Handle 32_bit_emulator / 64_bit_emulator → emulator field
+  const emulator32 = fieldValuesByName.get('32_bit_emulator')
+  const emulator64 = fieldValuesByName.get('64_bit_emulator')
+  const emulatorValue = emulator64 ?? emulator32
+  if (emulatorValue && String(emulatorValue).trim()) {
+    config.emulator =
+      EMULATOR_MAPPING[String(emulatorValue)] ?? GameNativeDefaults.getDefaultEmulator()
   }
 
-  // Build wincomponents string
-  const winComponentsParts: string[] = []
-  for (const [component, useNative] of winComponentsMap) {
-    winComponentsParts.push(`${component}=${useNative ? '1' : '0'}`)
+  // Handle use_adrenotools_turnip → graphicsDriverConfig.adrenotoolsTurnip
+  const useAdrenotoolsTurnip = fieldValuesByName.get('use_adrenotools_turnip')
+  if (useAdrenotoolsTurnip !== undefined && useAdrenotoolsTurnip !== null) {
+    const isEnabled =
+      useAdrenotoolsTurnip === true ||
+      useAdrenotoolsTurnip === 'true' ||
+      useAdrenotoolsTurnip === '1'
+    config.graphicsDriverConfig = appendToConfigString(
+      config.graphicsDriverConfig,
+      'adrenotoolsTurnip',
+      isEnabled ? '1' : '0',
+    )
   }
-  config.wincomponents = winComponentsParts.join(',')
 
   return config
 }

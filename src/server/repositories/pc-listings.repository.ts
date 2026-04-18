@@ -6,6 +6,7 @@
 import { PAGINATION } from '@/data/constants'
 import { AppError, ResourceError } from '@/lib/errors'
 import { canUserAutoApprove } from '@/lib/trust/service'
+import { computeVoteCounts } from '@/server/utils/moderator-info'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { sanitizeInput } from '@/server/utils/security-validation'
 import { roleIncludesRole } from '@/utils/permission-system'
@@ -944,5 +945,59 @@ export class PcListingsRepository extends BaseRepository {
       where: { userId_emulatorId: { userId, emulatorId } },
     })
     return !!verified
+  }
+
+  private static readonly moderatorInfoUserSelect = {
+    id: true,
+    name: true,
+  } as const
+
+  private static readonly moderatorInfoVoteSelect = {
+    id: true,
+    value: true,
+    createdAt: true,
+    nullifiedAt: true,
+    user: { select: { id: true, name: true, trustScore: true } },
+  } as const
+
+  async getModeratorInfo(pcListingId: string) {
+    const pcListing = await this.handleDatabaseOperation(
+      () =>
+        this.prisma.pcListing.findUnique({
+          where: { id: pcListingId },
+          select: {
+            status: true,
+            processedAt: true,
+            processedNotes: true,
+            processedByUser: { select: PcListingsRepository.moderatorInfoUserSelect },
+          },
+        }),
+      'PcListing',
+    )
+
+    if (!pcListing) throw ResourceError.pcListing.notFound()
+
+    const votes = await this.handleDatabaseOperation(
+      () =>
+        this.prisma.pcListingVote.findMany({
+          where: { pcListingId },
+          orderBy: { createdAt: 'desc' },
+          select: PcListingsRepository.moderatorInfoVoteSelect,
+        }),
+      'PcListingVote',
+    )
+
+    const voteCounts = computeVoteCounts(votes)
+
+    return {
+      approval: {
+        status: pcListing.status,
+        processedAt: pcListing.processedAt,
+        processedNotes: pcListing.processedNotes,
+        processedBy: pcListing.processedByUser,
+      },
+      votes,
+      voteCounts,
+    }
   }
 }

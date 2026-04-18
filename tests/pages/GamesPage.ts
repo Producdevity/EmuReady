@@ -7,14 +7,8 @@ export class GamesPage extends BasePage {
     super(page)
   }
 
-  // Page-specific elements
   get pageHeading() {
     return this.page.getByRole('heading', { name: /games library/i })
-  }
-
-  // Games page doesn't have filters heading, it has individual game headings
-  get gameHeadings() {
-    return this.page.locator('h2').filter({ hasNotText: /emuready|about|community/i })
   }
 
   get searchInput() {
@@ -22,11 +16,8 @@ export class GamesPage extends BasePage {
   }
 
   get addGameButton() {
+    // On the /games library page, "Add Game" is an anchor link to /games/new.
     return this.page.getByRole('link', { name: /add game/i })
-  }
-
-  get gameCards() {
-    return this.page.locator('[data-testid="game-card"]')
   }
 
   get gameItems() {
@@ -39,11 +30,6 @@ export class GamesPage extends BasePage {
     return this.page.getByText(/no games found/i)
   }
 
-  get loadingIndicator() {
-    return this.page.getByText(/loading/i)
-  }
-
-  // Actions specific to games page
   async goto() {
     await this.page.goto('/games')
     await this.waitForPageLoad()
@@ -51,10 +37,7 @@ export class GamesPage extends BasePage {
 
   async searchGames(query: string) {
     await this.searchInput.fill(query)
-    // Search is debounced (500ms) — wait for URL to reflect the search param
-    await expect(this.page).toHaveURL(/[?&]search=/, { timeout: 10000 })
-    // Wait for search results to load (resolves immediately if loading indicator never appeared)
-    await this.page.getByText(/loading/i).waitFor({ state: 'hidden', timeout: 10000 })
+    await expect(this.page).toHaveURL(/[?&]search=/)
   }
 
   async clickAddGame() {
@@ -64,80 +47,12 @@ export class GamesPage extends BasePage {
 
   async clickFirstGame() {
     const firstGame = this.gameItems.first()
-    // Get the href to verify navigation target
-    const href = await firstGame.getAttribute('href')
+    await expect(firstGame).toBeVisible()
     await firstGame.click()
-
-    try {
-      // Use toHaveURL which auto-retries — waitForURL hangs on client-side navigation
-      await expect(this.page).toHaveURL(/\/games\/[^/]+/, { timeout: 5000 })
-    } catch {
-      // If click didn't navigate (React re-render absorbed the click), use direct navigation
-      if (href) {
-        await this.page.goto(href)
-      }
-      await expect(this.page).toHaveURL(/\/games\/[^/]+/)
-    }
+    await expect(this.page).toHaveURL(/\/games\/[^/]+/)
   }
 
-  async getGameCount(): Promise<number> {
-    try {
-      return await this.gameItems.count()
-    } catch {
-      return 0
-    }
-  }
-
-  // Verification methods
   async verifyPageLoaded() {
-    await this.pageHeading.waitFor({ state: 'visible' })
-  }
-
-  async verifyGameHeadingsVisible() {
-    // Wait for games to load
-    await this.page.waitForLoadState('domcontentloaded')
-    const count = await this.gameHeadings.count()
-    // Games page might not have any games yet, which is okay
-    if (count === 0) {
-      // No game headings found — games list might be empty
-      // Check if there's at least a page heading
-      await this.pageHeading.waitFor({ state: 'visible' })
-    } else {
-      expect(count).toBeGreaterThan(0)
-      await this.gameHeadings.first().waitFor({ state: 'visible' })
-    }
-  }
-
-  async verifySearchVisible() {
-    await this.searchInput.waitFor({ state: 'visible' })
-  }
-
-  async verifyGamesVisible() {
-    const gameCount = await this.getGameCount()
-    if (gameCount === 0) {
-      // If no games, check if there's an empty state or loading message
-      try {
-        await this.noGamesMessage.waitFor({ state: 'visible', timeout: 2000 })
-      } catch {
-        // No explicit empty message, but that's ok if there are really no games
-        // No explicit empty state message
-      }
-    } else {
-      // If games exist, verify at least one is visible
-      await this.gameItems.first().waitFor({ state: 'visible' })
-    }
-  }
-
-  async verifyAddGameButtonVisible() {
-    await this.addGameButton.waitFor({ state: 'visible' })
-  }
-
-  async isOnGamesPage(): Promise<boolean> {
-    try {
-      const url = this.page.url()
-      return url.includes('/games') && !url.includes('/games/new') && !url.includes('/games/')
-    } catch {
-      return false
-    }
+    await expect(this.pageHeading).toBeVisible()
   }
 }

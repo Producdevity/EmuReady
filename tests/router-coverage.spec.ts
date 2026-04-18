@@ -1,9 +1,5 @@
 import { test, expect } from '@playwright/test'
 
-/**
- * API security and validation tests that verify endpoint protection.
- */
-
 test.describe('Router Security Verification', () => {
   test('protected endpoints should reject unauthenticated requests', async ({ request }) => {
     const protectedEndpoints = [
@@ -16,12 +12,8 @@ test.describe('Router Security Verification', () => {
     for (const endpoint of protectedEndpoints) {
       const response = await request.post(endpoint, {
         data: {},
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       })
-
-      // tRPC returns 401 for UNAUTHORIZED errors
       expect([401, 403]).toContain(response.status())
     }
   })
@@ -36,12 +28,8 @@ test.describe('Router Security Verification', () => {
     for (const endpoint of adminOnlyEndpoints) {
       const response = await request.post(endpoint, {
         data: {},
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       })
-
-      // Should reject unauthenticated requests to admin endpoints
       expect([401, 403]).toContain(response.status())
     }
   })
@@ -55,24 +43,19 @@ test.describe('Data Validation Verification', () => {
         gameId: 'invalid-id',
         deviceId: -1,
       },
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
     })
 
-    // Should return 400 (bad input) or 401/403 (unauthenticated)
+    // 400 = bad input; 401/403 = unauthenticated (both are acceptable outcomes)
     expect([400, 401, 403]).toContain(response.status())
   })
 
   test('should handle malformed tRPC requests', async ({ request }) => {
     const response = await request.post('/api/trpc/nonExistentRouter.nonExistentProcedure', {
       data: {},
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
     })
 
-    // Should return an error status, not 200
     expect(response.status()).toBeGreaterThanOrEqual(400)
   })
 })

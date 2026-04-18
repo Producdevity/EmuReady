@@ -12,7 +12,7 @@ import {
 } from '@/app/listings/shared/components'
 import CommunitySupportBanner from '@/components/banners/CommunitySupportBanner'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
-import { Badge } from '@/components/ui/Badge'
+import { BannedUserBadge } from '@/components/ui/BannedUserBadge'
 import { Button } from '@/components/ui/Button'
 import { ColumnVisibilityControl } from '@/components/ui/ColumnVisibilityControl'
 import { DisplayToggleButton } from '@/components/ui/DisplayToggleButton'
@@ -516,20 +516,12 @@ function ListingsPage() {
                               </Tooltip>
                             )}
 
-                            {isModerator &&
-                              listing.author &&
-                              'userBans' in listing.author &&
-                              Array.isArray(listing.author.userBans) &&
-                              listing.author.userBans.length > 0 && (
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Badge className="bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800">
-                                      BANNED
-                                    </Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent>This user has been banned</TooltipContent>
-                                </Tooltip>
-                              )}
+                            <BannedUserBadge
+                              author={listing.author}
+                              canView={isModerator}
+                              label="BANNED"
+                              tooltip="This user has been banned"
+                            />
 
                             {listing.developerVerifications &&
                               listing.developerVerifications.length > 0 && (

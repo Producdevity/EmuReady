@@ -1,10 +1,11 @@
-import { logger } from '@/lib/logger'
 import { TRUST_ACTIONS } from '@/lib/trust/config'
-import { applyManualTrustAdjustment } from '@/lib/trust/service'
+import { TrustService } from '@/lib/trust/service'
 import { type ListingType } from '@/schemas/common'
 import { logAudit } from '@/server/services/audit.service'
 import { calculateWilsonScore } from '@/utils/wilson-score'
-import { AuditAction, AuditEntityType, TrustAction, type PrismaClient } from '@orm'
+import { AuditAction, AuditEntityType, TrustAction, type Prisma, type PrismaClient } from '@orm'
+
+type PrismaClientOrTransaction = PrismaClient | Prisma.TransactionClient
 
 interface NullifyParams {
   userId: string
@@ -43,86 +44,162 @@ interface RestoreResult {
 
 const BATCH_SIZE = 100
 
+interface VoteIdentifier {
+  id: string
+}
+
+interface NullifiableDelegate {
+  updateMany: (args: {
+    where: { id: { in: string[] } }
+    data: { nullifiedAt: Date | null }
+  }) => Promise<{ count: number }>
+}
+
+/**
+ * Updates `nullifiedAt` on a set of votes in serial batches of `BATCH_SIZE`.
+ * Batching is serial within one delegate (avoids exhausting the connection pool);
+ * the caller can run multiple `batchUpdateNullifiedAt` invocations in parallel
+ * across different delegates (different tables) via `Promise.all`.
+ */
+async function batchUpdateNullifiedAt<T extends VoteIdentifier>(
+  delegate: NullifiableDelegate,
+  votes: readonly T[],
+  nullifiedAt: Date | null,
+): Promise<void> {
+  for (let i = 0; i < votes.length; i += BATCH_SIZE) {
+    const batch = votes.slice(i, i + BATCH_SIZE)
+    await delegate.updateMany({
+      where: { id: { in: batch.map((v) => v.id) } },
+      data: { nullifiedAt },
+    })
+  }
+}
+
+interface VoteScoreEntry {
+  up: number
+  down: number
+}
+
 async function recalculateListingScores(
-  prisma: PrismaClient,
+  prisma: PrismaClientOrTransaction,
   listingIds: Set<string>,
   type: ListingType,
 ): Promise<number> {
-  let count = 0
-  for (const listingId of listingIds) {
-    if (type === 'handheld') {
-      const [upvotes, downvotes] = await Promise.all([
-        prisma.vote.count({ where: { listingId, value: true, nullifiedAt: null } }),
-        prisma.vote.count({ where: { listingId, value: false, nullifiedAt: null } }),
-      ])
+  if (listingIds.size === 0) return 0
+
+  const ids = [...listingIds]
+  const scoreMap = new Map<string, VoteScoreEntry>()
+  for (const id of ids) scoreMap.set(id, { up: 0, down: 0 })
+
+  if (type === 'handheld') {
+    const counts = await prisma.vote.groupBy({
+      by: ['listingId', 'value'],
+      where: { listingId: { in: ids }, nullifiedAt: null },
+      _count: { _all: true },
+    })
+    for (const row of counts) {
+      const entry = scoreMap.get(row.listingId)
+      if (entry) {
+        if (row.value) entry.up = row._count._all
+        else entry.down = row._count._all
+      }
+    }
+    for (const [id, { up, down }] of scoreMap) {
       await prisma.listing.update({
-        where: { id: listingId },
+        where: { id },
         data: {
-          upvoteCount: upvotes,
-          downvoteCount: downvotes,
-          voteCount: upvotes + downvotes,
-          successRate: calculateWilsonScore(upvotes, downvotes),
-        },
-      })
-    } else {
-      const [upvotes, downvotes] = await Promise.all([
-        prisma.pcListingVote.count({
-          where: { pcListingId: listingId, value: true, nullifiedAt: null },
-        }),
-        prisma.pcListingVote.count({
-          where: { pcListingId: listingId, value: false, nullifiedAt: null },
-        }),
-      ])
-      await prisma.pcListing.update({
-        where: { id: listingId },
-        data: {
-          upvoteCount: upvotes,
-          downvoteCount: downvotes,
-          voteCount: upvotes + downvotes,
-          successRate: calculateWilsonScore(upvotes, downvotes),
+          upvoteCount: up,
+          downvoteCount: down,
+          voteCount: up + down,
+          successRate: calculateWilsonScore(up, down),
         },
       })
     }
-    count++
+  } else {
+    const counts = await prisma.pcListingVote.groupBy({
+      by: ['pcListingId', 'value'],
+      where: { pcListingId: { in: ids }, nullifiedAt: null },
+      _count: { _all: true },
+    })
+    for (const row of counts) {
+      const entry = scoreMap.get(row.pcListingId)
+      if (entry) {
+        if (row.value) entry.up = row._count._all
+        else entry.down = row._count._all
+      }
+    }
+    for (const [id, { up, down }] of scoreMap) {
+      await prisma.pcListing.update({
+        where: { id },
+        data: {
+          upvoteCount: up,
+          downvoteCount: down,
+          voteCount: up + down,
+          successRate: calculateWilsonScore(up, down),
+        },
+      })
+    }
   }
-  return count
+
+  return listingIds.size
 }
 
 async function recalculateCommentScores(
-  prisma: PrismaClient,
+  prisma: PrismaClientOrTransaction,
   commentIds: Set<string>,
   type: ListingType,
 ): Promise<number> {
-  let count = 0
-  for (const commentId of commentIds) {
-    if (type === 'handheld') {
-      const [upvotes, downvotes] = await Promise.all([
-        prisma.commentVote.count({ where: { commentId, value: true, nullifiedAt: null } }),
-        prisma.commentVote.count({ where: { commentId, value: false, nullifiedAt: null } }),
-      ])
+  if (commentIds.size === 0) return 0
+
+  const ids = [...commentIds]
+  const scoreMap = new Map<string, VoteScoreEntry>()
+  for (const id of ids) scoreMap.set(id, { up: 0, down: 0 })
+
+  if (type === 'handheld') {
+    const counts = await prisma.commentVote.groupBy({
+      by: ['commentId', 'value'],
+      where: { commentId: { in: ids }, nullifiedAt: null },
+      _count: { _all: true },
+    })
+    for (const row of counts) {
+      const entry = scoreMap.get(row.commentId)
+      if (entry) {
+        if (row.value) entry.up = row._count._all
+        else entry.down = row._count._all
+      }
+    }
+    for (const [id, { up, down }] of scoreMap) {
       await prisma.comment.update({
-        where: { id: commentId },
-        data: { score: upvotes - downvotes },
-      })
-    } else {
-      const [upvotes, downvotes] = await Promise.all([
-        prisma.pcListingCommentVote.count({ where: { commentId, value: true, nullifiedAt: null } }),
-        prisma.pcListingCommentVote.count({
-          where: { commentId, value: false, nullifiedAt: null },
-        }),
-      ])
-      await prisma.pcListingComment.update({
-        where: { id: commentId },
-        data: { score: upvotes - downvotes },
+        where: { id },
+        data: { score: up - down },
       })
     }
-    count++
+  } else {
+    const counts = await prisma.pcListingCommentVote.groupBy({
+      by: ['commentId', 'value'],
+      where: { commentId: { in: ids }, nullifiedAt: null },
+      _count: { _all: true },
+    })
+    for (const row of counts) {
+      const entry = scoreMap.get(row.commentId)
+      if (entry) {
+        if (row.value) entry.up = row._count._all
+        else entry.down = row._count._all
+      }
+    }
+    for (const [id, { up, down }] of scoreMap) {
+      await prisma.pcListingComment.update({
+        where: { id },
+        data: { score: up - down },
+      })
+    }
   }
-  return count
+
+  return commentIds.size
 }
 
 export async function nullifyUserVotes(
-  prisma: PrismaClient,
+  prisma: PrismaClientOrTransaction,
   params: NullifyParams,
 ): Promise<NullifyResult> {
   const { userId, adminUserId, reason, includeCommentVotes, headers } = params
@@ -175,40 +252,16 @@ export async function nullifyUserVotes(
 
   const now = new Date()
 
-  // 2. Batch nullify votes
-  for (let i = 0; i < handheldVotes.length; i += BATCH_SIZE) {
-    const batch = handheldVotes.slice(i, i + BATCH_SIZE)
-    await prisma.vote.updateMany({
-      where: { id: { in: batch.map((v) => v.id) } },
-      data: { nullifiedAt: now },
-    })
-  }
+  // 2. Batch nullify votes — across different vote types in parallel,
+  //    serially batched within each type to keep connection-pool pressure bounded.
+  await Promise.all([
+    batchUpdateNullifiedAt(prisma.vote, handheldVotes, now),
+    batchUpdateNullifiedAt(prisma.pcListingVote, pcVotes, now),
+    batchUpdateNullifiedAt(prisma.commentVote, commentVotes, now),
+    batchUpdateNullifiedAt(prisma.pcListingCommentVote, pcCommentVotes, now),
+  ])
 
-  for (let i = 0; i < pcVotes.length; i += BATCH_SIZE) {
-    const batch = pcVotes.slice(i, i + BATCH_SIZE)
-    await prisma.pcListingVote.updateMany({
-      where: { id: { in: batch.map((v) => v.id) } },
-      data: { nullifiedAt: now },
-    })
-  }
-
-  for (let i = 0; i < commentVotes.length; i += BATCH_SIZE) {
-    const batch = commentVotes.slice(i, i + BATCH_SIZE)
-    await prisma.commentVote.updateMany({
-      where: { id: { in: batch.map((v) => v.id) } },
-      data: { nullifiedAt: now },
-    })
-  }
-
-  for (let i = 0; i < pcCommentVotes.length; i += BATCH_SIZE) {
-    const batch = pcCommentVotes.slice(i, i + BATCH_SIZE)
-    await prisma.pcListingCommentVote.updateMany({
-      where: { id: { in: batch.map((v) => v.id) } },
-      data: { nullifiedAt: now },
-    })
-  }
-
-  // 3. Recalculate listing scores
+  // 3. Recalculate listing scores — parallel across distinct tables.
   const handheldListingIds = new Set(handheldVotes.map((v) => v.listingId))
   const pcListingIds = new Set(pcVotes.map((v) => v.pcListingId))
   const handheldCommentIds = new Set(commentVotes.map((v) => v.commentId))
@@ -229,68 +282,55 @@ export async function nullifyUserVotes(
     trustAdjustments.set(targetUserId, (trustAdjustments.get(targetUserId) ?? 0) + amount)
   }
 
-  // Handheld listing votes: reverse trust for voter and authors
+  // Reverse listing vote trust for both handheld and PC
   for (const vote of handheldVotes) {
-    // Reverse voter trust: voter got +1 for either UPVOTE or DOWNVOTE
-    addAdjustment(userId, -TRUST_ACTIONS[TrustAction.UPVOTE].weight)
-
-    // Reverse author trust (skip self-votes)
+    const voterAction = vote.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE
+    addAdjustment(userId, -TRUST_ACTIONS[voterAction].weight)
     if (vote.listing.authorId && vote.listing.authorId !== userId) {
-      if (vote.value) {
-        // Was upvote: author got +2 (LISTING_RECEIVED_UPVOTE), reverse it
-        addAdjustment(
-          vote.listing.authorId,
-          -TRUST_ACTIONS[TrustAction.LISTING_RECEIVED_UPVOTE].weight,
-        )
-      } else {
-        // Was downvote: author got -1 (LISTING_RECEIVED_DOWNVOTE), reverse it
-        addAdjustment(
-          vote.listing.authorId,
-          -TRUST_ACTIONS[TrustAction.LISTING_RECEIVED_DOWNVOTE].weight,
-        )
-      }
+      const action = vote.value
+        ? TrustAction.LISTING_RECEIVED_UPVOTE
+        : TrustAction.LISTING_RECEIVED_DOWNVOTE
+      addAdjustment(vote.listing.authorId, -TRUST_ACTIONS[action].weight)
     }
   }
 
-  // Handheld comment votes: reverse author trust (skip self-votes)
+  for (const vote of pcVotes) {
+    const voterAction = vote.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE
+    addAdjustment(userId, -TRUST_ACTIONS[voterAction].weight)
+    if (vote.pcListing.authorId && vote.pcListing.authorId !== userId) {
+      const action = vote.value
+        ? TrustAction.LISTING_RECEIVED_UPVOTE
+        : TrustAction.LISTING_RECEIVED_DOWNVOTE
+      addAdjustment(vote.pcListing.authorId, -TRUST_ACTIONS[action].weight)
+    }
+  }
+
+  // Reverse comment vote trust for both handheld and PC
   for (const vote of commentVotes) {
     if (vote.comment.userId !== userId) {
-      if (vote.value) {
-        addAdjustment(
-          vote.comment.userId,
-          -TRUST_ACTIONS[TrustAction.COMMENT_RECEIVED_UPVOTE].weight,
-        )
-      } else {
-        addAdjustment(
-          vote.comment.userId,
-          -TRUST_ACTIONS[TrustAction.COMMENT_RECEIVED_DOWNVOTE].weight,
-        )
-      }
+      const action = vote.value
+        ? TrustAction.COMMENT_RECEIVED_UPVOTE
+        : TrustAction.COMMENT_RECEIVED_DOWNVOTE
+      addAdjustment(vote.comment.userId, -TRUST_ACTIONS[action].weight)
     }
   }
 
-  // PC votes: no trust reversal (trust was never applied for PC votes)
-  // PC comment votes: no trust reversal (trust was never applied)
-
-  // Apply trust adjustments
-  let trustAdjustmentCount = 0
-  for (const [targetUserId, adjustment] of trustAdjustments) {
-    if (adjustment === 0) continue
-    try {
-      await applyManualTrustAdjustment({
-        userId: targetUserId,
-        adjustment,
-        reason: `Vote nullification: ${reason}`,
-        adminUserId,
-      })
-      trustAdjustmentCount++
-    } catch (err) {
-      logger.error(
-        `[vote-nullification] Failed to apply trust adjustment for user ${targetUserId}:`,
-        err,
-      )
+  for (const vote of pcCommentVotes) {
+    if (vote.comment.userId !== userId) {
+      const action = vote.value
+        ? TrustAction.COMMENT_RECEIVED_UPVOTE
+        : TrustAction.COMMENT_RECEIVED_DOWNVOTE
+      addAdjustment(vote.comment.userId, -TRUST_ACTIONS[action].weight)
     }
   }
+
+  // Apply trust adjustments using TrustService for transaction participation
+  const trustService = new TrustService(prisma)
+  const trustAdjustmentCount = await trustService.applyBulkManualAdjustments({
+    adjustments: trustAdjustments,
+    reason: `Vote nullification: ${reason}`,
+    adminUserId,
+  })
 
   // 5. Audit log
   void logAudit(prisma, {
@@ -323,7 +363,7 @@ export async function nullifyUserVotes(
 }
 
 export async function restoreUserVotes(
-  prisma: PrismaClient,
+  prisma: PrismaClientOrTransaction,
   params: RestoreParams,
 ): Promise<RestoreResult> {
   const { userId, adminUserId, reason, headers } = params
@@ -370,40 +410,15 @@ export async function restoreUserVotes(
     }
   }
 
-  // 2. Clear nullifiedAt
-  for (let i = 0; i < handheldVotes.length; i += BATCH_SIZE) {
-    const batch = handheldVotes.slice(i, i + BATCH_SIZE)
-    await prisma.vote.updateMany({
-      where: { id: { in: batch.map((v) => v.id) } },
-      data: { nullifiedAt: null },
-    })
-  }
+  // 2. Clear nullifiedAt — parallel across vote types, serial batches within each type.
+  await Promise.all([
+    batchUpdateNullifiedAt(prisma.vote, handheldVotes, null),
+    batchUpdateNullifiedAt(prisma.pcListingVote, pcVotes, null),
+    batchUpdateNullifiedAt(prisma.commentVote, commentVotes, null),
+    batchUpdateNullifiedAt(prisma.pcListingCommentVote, pcCommentVotes, null),
+  ])
 
-  for (let i = 0; i < pcVotes.length; i += BATCH_SIZE) {
-    const batch = pcVotes.slice(i, i + BATCH_SIZE)
-    await prisma.pcListingVote.updateMany({
-      where: { id: { in: batch.map((v) => v.id) } },
-      data: { nullifiedAt: null },
-    })
-  }
-
-  for (let i = 0; i < commentVotes.length; i += BATCH_SIZE) {
-    const batch = commentVotes.slice(i, i + BATCH_SIZE)
-    await prisma.commentVote.updateMany({
-      where: { id: { in: batch.map((v) => v.id) } },
-      data: { nullifiedAt: null },
-    })
-  }
-
-  for (let i = 0; i < pcCommentVotes.length; i += BATCH_SIZE) {
-    const batch = pcCommentVotes.slice(i, i + BATCH_SIZE)
-    await prisma.pcListingCommentVote.updateMany({
-      where: { id: { in: batch.map((v) => v.id) } },
-      data: { nullifiedAt: null },
-    })
-  }
-
-  // 3. Recalculate scores
+  // 3. Recalculate scores — parallel across distinct tables.
   const handheldListingIds = new Set(handheldVotes.map((v) => v.listingId))
   const pcListingIds = new Set(pcVotes.map((v) => v.pcListingId))
   const handheldCommentIds = new Set(commentVotes.map((v) => v.commentId))
@@ -423,60 +438,54 @@ export async function restoreUserVotes(
     trustAdjustments.set(targetUserId, (trustAdjustments.get(targetUserId) ?? 0) + amount)
   }
 
+  // Re-apply listing vote trust for both handheld and PC
   for (const vote of handheldVotes) {
-    // Re-apply voter trust
-    addAdjustment(userId, TRUST_ACTIONS[TrustAction.UPVOTE].weight)
-
-    // Re-apply author trust (skip self-votes)
+    const voterAction = vote.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE
+    addAdjustment(userId, TRUST_ACTIONS[voterAction].weight)
     if (vote.listing.authorId && vote.listing.authorId !== userId) {
-      if (vote.value) {
-        addAdjustment(
-          vote.listing.authorId,
-          TRUST_ACTIONS[TrustAction.LISTING_RECEIVED_UPVOTE].weight,
-        )
-      } else {
-        addAdjustment(
-          vote.listing.authorId,
-          TRUST_ACTIONS[TrustAction.LISTING_RECEIVED_DOWNVOTE].weight,
-        )
-      }
+      const action = vote.value
+        ? TrustAction.LISTING_RECEIVED_UPVOTE
+        : TrustAction.LISTING_RECEIVED_DOWNVOTE
+      addAdjustment(vote.listing.authorId, TRUST_ACTIONS[action].weight)
     }
   }
 
+  for (const vote of pcVotes) {
+    const voterAction = vote.value ? TrustAction.UPVOTE : TrustAction.DOWNVOTE
+    addAdjustment(userId, TRUST_ACTIONS[voterAction].weight)
+    if (vote.pcListing.authorId && vote.pcListing.authorId !== userId) {
+      const action = vote.value
+        ? TrustAction.LISTING_RECEIVED_UPVOTE
+        : TrustAction.LISTING_RECEIVED_DOWNVOTE
+      addAdjustment(vote.pcListing.authorId, TRUST_ACTIONS[action].weight)
+    }
+  }
+
+  // Re-apply comment vote trust for both handheld and PC
   for (const vote of commentVotes) {
     if (vote.comment.userId !== userId) {
-      if (vote.value) {
-        addAdjustment(
-          vote.comment.userId,
-          TRUST_ACTIONS[TrustAction.COMMENT_RECEIVED_UPVOTE].weight,
-        )
-      } else {
-        addAdjustment(
-          vote.comment.userId,
-          TRUST_ACTIONS[TrustAction.COMMENT_RECEIVED_DOWNVOTE].weight,
-        )
-      }
+      const action = vote.value
+        ? TrustAction.COMMENT_RECEIVED_UPVOTE
+        : TrustAction.COMMENT_RECEIVED_DOWNVOTE
+      addAdjustment(vote.comment.userId, TRUST_ACTIONS[action].weight)
     }
   }
 
-  let trustAdjustmentCount = 0
-  for (const [targetUserId, adjustment] of trustAdjustments) {
-    if (adjustment === 0) continue
-    try {
-      await applyManualTrustAdjustment({
-        userId: targetUserId,
-        adjustment,
-        reason: `Vote restoration: ${reason}`,
-        adminUserId,
-      })
-      trustAdjustmentCount++
-    } catch (err) {
-      logger.error(
-        `[vote-restoration] Failed to apply trust adjustment for user ${targetUserId}:`,
-        err,
-      )
+  for (const vote of pcCommentVotes) {
+    if (vote.comment.userId !== userId) {
+      const action = vote.value
+        ? TrustAction.COMMENT_RECEIVED_UPVOTE
+        : TrustAction.COMMENT_RECEIVED_DOWNVOTE
+      addAdjustment(vote.comment.userId, TRUST_ACTIONS[action].weight)
     }
   }
+
+  const trustService = new TrustService(prisma)
+  const trustAdjustmentCount = await trustService.applyBulkManualAdjustments({
+    adjustments: trustAdjustments,
+    reason: `Vote restoration: ${reason}`,
+    adminUserId,
+  })
 
   // 5. Audit log
   void logAudit(prisma, {

@@ -32,7 +32,7 @@ import { isUserBanned } from '@/server/utils/query-builders'
 import { sanitizeInput, validatePagination } from '@/server/utils/security-validation'
 import { withSavepoint } from '@/server/utils/transactions'
 import { updateListingVoteCounts } from '@/server/utils/vote-counts'
-import { handleVoteTrustEffects } from '@/server/utils/vote-trust-effects'
+import { handleListingVoteTrustEffects } from '@/server/utils/vote-trust-effects'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { ms } from '@/utils/time'
 import { ApprovalStatus, Prisma, Role, TrustAction } from '@orm'
@@ -145,6 +145,10 @@ export const coreRouter = createTRPCRouter({
     const { recaptchaToken, ...payload } = input
     const authorId = ctx.session.user.id
 
+    // TODO: Add spam detection via `checkSpamContent` from
+    // `@/server/utils/spam-check` (currently only applied in mobile routes).
+    // Block: UX/product sign-off needed since existing web users would start
+    // seeing spam-block errors. Mirror mobile: `{ userId, content: notes, entityType: 'listing' }`.
     // Verify CAPTCHA if token is provided
     if (recaptchaToken) {
       const clientIP = ctx.headers ? getClientIP(ctx.headers) : undefined
@@ -269,6 +273,12 @@ export const coreRouter = createTRPCRouter({
         where: { userId_listingId: { userId, listingId: input.listingId } },
       })
 
+      let result: {
+        vote: { id: string; value: boolean; userId: string; listingId: string } | null
+        action: 'created' | 'updated' | 'deleted'
+        previousValue: boolean | null
+      }
+
       if (!existingVote) {
         // Create new vote
         const newVote = await tx.vote.create({
@@ -277,39 +287,44 @@ export const coreRouter = createTRPCRouter({
 
         await updateListingVoteCounts(tx, input.listingId, 'create', input.value)
 
-        return { vote: newVote, action: 'created' as const, previousValue: null }
-      }
-
-      // If value is the same, remove the vote (toggle)
-      if (existingVote.value === input.value) {
+        result = { vote: newVote, action: 'created', previousValue: null }
+      } else if (existingVote.value === input.value) {
         await tx.vote.delete({
           where: { userId_listingId: { userId, listingId: input.listingId } },
         })
 
         await updateListingVoteCounts(tx, input.listingId, 'delete', undefined, existingVote.value)
 
-        return { vote: null, action: 'deleted' as const, previousValue: existingVote.value }
+        result = { vote: null, action: 'deleted', previousValue: existingVote.value }
+      } else {
+        const updatedVote = await tx.vote.update({
+          where: { userId_listingId: { userId, listingId: input.listingId } },
+          data: { value: input.value },
+        })
+
+        await updateListingVoteCounts(
+          tx,
+          input.listingId,
+          'update',
+          input.value,
+          existingVote.value,
+        )
+
+        result = { vote: updatedVote, action: 'updated', previousValue: existingVote.value }
       }
 
-      // Update vote to new value
-      const updatedVote = await tx.vote.update({
-        where: { userId_listingId: { userId, listingId: input.listingId } },
-        data: { value: input.value },
+      await handleListingVoteTrustEffects({
+        tx,
+        action: result.action,
+        currentValue: input.value,
+        previousValue: result.previousValue,
+        userId,
+        listingId: input.listingId,
+        listingType: 'handheld',
+        authorId: listing.authorId,
       })
 
-      await updateListingVoteCounts(tx, input.listingId, 'update', input.value, existingVote.value)
-
-      return { vote: updatedVote, action: 'updated' as const, previousValue: existingVote.value }
-    })
-
-    // Handle trust effects for all vote actions
-    await handleVoteTrustEffects({
-      action: voteResult.action,
-      currentValue: input.value,
-      previousValue: voteResult.previousValue,
-      userId,
-      listingId: input.listingId,
-      authorId: listing.authorId,
+      return result
     })
 
     // Handle post-transaction side effects for created/updated votes (TODO: consider abstracting)
@@ -342,7 +357,7 @@ export const coreRouter = createTRPCRouter({
       }
     }
 
-    return voteResult.vote || { id: '', value: false, listingId: input.listingId, userId }
+    return voteResult.vote
   }),
 
   performanceScales: publicProcedure.query(async ({ ctx }) =>

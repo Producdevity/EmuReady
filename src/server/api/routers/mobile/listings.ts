@@ -1,6 +1,5 @@
 import analytics from '@/lib/analytics'
 import { AppError, ResourceError } from '@/lib/errors'
-import { TrustService } from '@/lib/trust/service'
 import { CreateListingSchema } from '@/schemas/listing'
 import {
   CreateCommentSchema,
@@ -26,6 +25,7 @@ import {
   mobileProtectedProcedure,
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
+import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
 import { CommentsRepository } from '@/server/repositories/comments.repository'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
 import { getDriverVersions } from '@/server/utils/driver-versions'
@@ -34,10 +34,14 @@ import {
   detectEmulatorConfigType,
   generateEmulatorConfig,
 } from '@/server/utils/emulator-config/emulator-detector'
-import { SpamDetectionService } from '@/server/utils/spamDetection'
+import { checkSpamContent } from '@/server/utils/spam-check'
 import { updateListingVoteCounts } from '@/server/utils/vote-counts'
+import {
+  handleCommentVoteTrustEffects,
+  handleListingVoteTrustEffects,
+} from '@/server/utils/vote-trust-effects'
 import { isModerator } from '@/utils/permissions'
-import { ApprovalStatus, Prisma, TrustAction, type PrismaClient, type Role } from '@orm'
+import { ApprovalStatus, Prisma, type PrismaClient, type Role } from '@orm'
 
 // Helper for getting listings using the repository
 async function getListingsHelper(
@@ -144,27 +148,12 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     const { ...payload } = input
     const repository = new ListingsRepository(ctx.prisma)
 
-    // Spam detection
-    const spamDetector = new SpamDetectionService(ctx.prisma)
-    const spamResult = await spamDetector.detectSpam({
+    await checkSpamContent({
+      prisma: ctx.prisma,
       userId: ctx.session.user.id,
       content: payload.notes || '',
       entityType: 'listing',
     })
-
-    if (spamResult.isSpam) {
-      // Track spam detection in analytics
-      analytics.contentQuality.spamDetected({
-        entityType: 'listing',
-        entityId: ctx.session.user.id, // Use userId as entityId since listing not created yet
-        confidence: spamResult.confidence,
-        method: spamResult.method,
-      })
-
-      throw AppError.badRequest(
-        `Spam detected: ${spamResult.reason || 'Your content appears to be spam. Please review our community guidelines.'}`,
-      )
-    }
 
     return await repository.create({
       authorId: ctx.session.user.id,
@@ -239,68 +228,89 @@ export const mobileListingsRouter = createMobileTRPCRouter({
    * Vote on a listing
    */
   vote: mobileProtectedProcedure.input(VoteListingSchema).mutation(async ({ ctx, input }) => {
-    return await ctx.prisma.$transaction(async (tx) => {
-      // Check if user already voted
+    const userId = ctx.session.user.id
+
+    const listing = await ctx.prisma.listing.findUnique({
+      where: { id: input.listingId },
+      select: { authorId: true },
+    })
+
+    if (!listing) return ResourceError.listing.notFound()
+
+    const voteResult = await ctx.prisma.$transaction(async (tx) => {
       const existingVote = await tx.vote.findUnique({
-        where: {
-          userId_listingId: {
-            userId: ctx.session.user.id,
-            listingId: input.listingId,
-          },
-        },
+        where: { userId_listingId: { userId, listingId: input.listingId } },
       })
 
-      let vote
-
-      if (existingVote) {
-        if (existingVote.value === input.value) {
-          // Same vote = toggle off (remove vote)
-          await tx.vote.delete({
-            where: { id: existingVote.id },
-          })
-
-          // Update counts for deletion
-          await updateListingVoteCounts(
-            tx,
-            input.listingId,
-            'delete',
-            undefined,
-            existingVote.value,
-          )
-
-          return { id: existingVote.id, value: null, removed: true }
-        } else {
-          // Different vote = update
-          vote = await tx.vote.update({
-            where: { id: existingVote.id },
-            data: { value: input.value },
-          })
-
-          // Update counts for change
-          await updateListingVoteCounts(
-            tx,
-            input.listingId,
-            'update',
-            input.value,
-            existingVote.value,
-          )
-        }
-      } else {
-        // New vote
-        vote = await tx.vote.create({
-          data: {
-            value: input.value,
-            listingId: input.listingId,
-            userId: ctx.session.user.id,
-          },
-        })
-
-        // Update counts for new vote
-        await updateListingVoteCounts(tx, input.listingId, 'create', input.value)
+      let result: {
+        vote:
+          | { id: string; value: boolean; userId: string; listingId: string }
+          | { id: string; value: null; removed: true }
+        action: 'created' | 'updated' | 'deleted'
+        previousValue: boolean | null
       }
 
-      return vote
+      if (!existingVote) {
+        const vote = await tx.vote.create({
+          data: { value: input.value, listingId: input.listingId, userId },
+        })
+        await updateListingVoteCounts(tx, input.listingId, 'create', input.value)
+        result = { vote, action: 'created', previousValue: null }
+      } else if (existingVote.value === input.value) {
+        await tx.vote.delete({ where: { id: existingVote.id } })
+        await updateListingVoteCounts(tx, input.listingId, 'delete', undefined, existingVote.value)
+        result = {
+          vote: { id: existingVote.id, value: null, removed: true },
+          action: 'deleted',
+          previousValue: existingVote.value,
+        }
+      } else {
+        const vote = await tx.vote.update({
+          where: { id: existingVote.id },
+          data: { value: input.value },
+        })
+        await updateListingVoteCounts(
+          tx,
+          input.listingId,
+          'update',
+          input.value,
+          existingVote.value,
+        )
+        result = { vote, action: 'updated', previousValue: existingVote.value }
+      }
+
+      await handleListingVoteTrustEffects({
+        tx,
+        action: result.action,
+        currentValue: input.value,
+        previousValue: result.previousValue,
+        userId,
+        listingId: input.listingId,
+        listingType: 'handheld',
+        authorId: listing.authorId,
+      })
+
+      return result
     })
+
+    // Notify listing author on new votes / direction changes; skip on toggle-off.
+    if (voteResult.action === 'created' || voteResult.action === 'updated') {
+      if (voteResult.vote && 'id' in voteResult.vote) {
+        notificationEventEmitter.emitNotificationEvent({
+          eventType: NOTIFICATION_EVENTS.LISTING_VOTED,
+          entityType: 'listing',
+          entityId: input.listingId,
+          triggeredBy: userId,
+          payload: {
+            listingId: input.listingId,
+            voteId: voteResult.vote.id,
+            voteValue: input.value,
+          },
+        })
+      }
+    }
+
+    return voteResult.vote
   }),
 
   /**
@@ -371,27 +381,12 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { listingId, content, parentId } = input
 
-      // Spam detection
-      const spamDetector = new SpamDetectionService(ctx.prisma)
-      const spamResult = await spamDetector.detectSpam({
+      await checkSpamContent({
+        prisma: ctx.prisma,
         userId: ctx.session.user.id,
         content,
         entityType: 'comment',
       })
-
-      if (spamResult.isSpam) {
-        // Track spam detection in analytics
-        analytics.contentQuality.spamDetected({
-          entityType: 'comment',
-          entityId: ctx.session.user.id, // Use userId as entityId since comment not created yet
-          confidence: spamResult.confidence,
-          method: spamResult.method,
-        })
-
-        throw AppError.badRequest(
-          `Spam detected: ${spamResult.reason || 'Your content appears to be spam. Please review our community guidelines.'}`,
-        )
-      }
 
       // If replying to a comment, validate parent existence and ownership
       if (parentId) {
@@ -526,11 +521,15 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       const comment = await ctx.prisma.comment.findUnique({ where: { id: input.commentId } })
       if (!comment) return ResourceError.comment.notFound()
 
-      const existingVote = await ctx.prisma.commentVote.findUnique({
-        where: { userId_commentId: { userId, commentId: input.commentId } },
-      })
+      // Fetch `existingVote` inside the transaction: two concurrent votes
+      // from the same user could both read null and both attempt to insert,
+      // producing a Prisma P2002 on the second. Keeping the read and write
+      // under the same isolation avoids the race.
+      return await ctx.prisma.$transaction(async (tx) => {
+        const existingVote = await tx.commentVote.findUnique({
+          where: { userId_commentId: { userId, commentId: input.commentId } },
+        })
 
-      return ctx.prisma.$transaction(async (tx) => {
         let voteResult: unknown
         let scoreChange: number
         let trustActionNeeded: 'upvote' | 'downvote' | 'change' | 'remove' | null
@@ -568,110 +567,37 @@ export const mobileListingsRouter = createMobileTRPCRouter({
           data: { score: { increment: scoreChange } },
         })
 
-        // Award trust points to the comment author (not the voter)
-        if (comment && comment.userId !== userId) {
-          const trustService = new TrustService(tx)
+        if (trustActionNeeded) {
+          await handleCommentVoteTrustEffects({
+            tx,
+            trustAction: trustActionNeeded,
+            newValue: !!input.value,
+            previousValue: existingVote?.value ?? null,
+            commentAuthorId: comment.userId,
+            voterId: userId,
+            commentId: input.commentId,
+            parentEntityId: comment.listingId,
+            listingType: 'handheld',
+            updatedScore: updatedComment.score,
+            scoreChange,
+          })
+        }
 
-          if (trustActionNeeded === 'upvote') {
-            await trustService.logAction({
-              userId: comment.userId,
-              action: TrustAction.COMMENT_RECEIVED_UPVOTE,
-              targetUserId: userId,
-              metadata: {
-                commentId: input.commentId,
-                voterId: userId,
-                listingId: comment.listingId,
-              },
-            })
-          } else if (trustActionNeeded === 'downvote') {
-            await trustService.logAction({
-              userId: comment.userId,
-              action: TrustAction.COMMENT_RECEIVED_DOWNVOTE,
-              targetUserId: userId,
-              metadata: {
-                commentId: input.commentId,
-                voterId: userId,
-                listingId: comment.listingId,
-              },
-            })
-          } else if (trustActionNeeded === 'change') {
-            if (input.value) {
-              await trustService.logAction({
-                userId: comment.userId,
-                action: TrustAction.COMMENT_RECEIVED_DOWNVOTE,
-                targetUserId: userId,
-                metadata: {
-                  commentId: input.commentId,
-                  voterId: userId,
-                  listingId: comment.listingId,
-                  reversed: true,
-                },
-              })
-              await trustService.logAction({
-                userId: comment.userId,
-                action: TrustAction.COMMENT_RECEIVED_UPVOTE,
-                targetUserId: userId,
-                metadata: {
-                  commentId: input.commentId,
-                  voterId: userId,
-                  listingId: comment.listingId,
-                },
-              })
-            } else {
-              await trustService.logAction({
-                userId: comment.userId,
-                action: TrustAction.COMMENT_RECEIVED_UPVOTE,
-                targetUserId: userId,
-                metadata: {
-                  commentId: input.commentId,
-                  voterId: userId,
-                  listingId: comment.listingId,
-                  reversed: true,
-                },
-              })
-              await trustService.logAction({
-                userId: comment.userId,
-                action: TrustAction.COMMENT_RECEIVED_DOWNVOTE,
-                targetUserId: userId,
-                metadata: {
-                  commentId: input.commentId,
-                  voterId: userId,
-                  listingId: comment.listingId,
-                },
-              })
-            }
-          } else if (trustActionNeeded === 'remove' && existingVote) {
-            const action = existingVote.value
-              ? TrustAction.COMMENT_RECEIVED_UPVOTE
-              : TrustAction.COMMENT_RECEIVED_DOWNVOTE
-            await trustService.logAction({
-              userId: comment.userId,
-              action,
-              targetUserId: userId,
-              metadata: {
-                commentId: input.commentId,
-                voterId: userId,
-                listingId: comment.listingId,
-                reversed: true,
-              },
-            })
-          }
-
-          // Helpful threshold bonus
-          const HELPFUL_THRESHOLD = 5
-          const previousScore = updatedComment.score - scoreChange
-          if (previousScore < HELPFUL_THRESHOLD && updatedComment.score >= HELPFUL_THRESHOLD) {
-            await trustService.logAction({
-              userId: comment.userId,
-              action: TrustAction.HELPFUL_COMMENT,
-              metadata: {
-                commentId: input.commentId,
-                listingId: comment.listingId,
-                score: updatedComment.score,
-                threshold: HELPFUL_THRESHOLD,
-              },
-            })
-          }
+        // Notify comment author on new votes / direction changes; skip on toggle-off.
+        // When trustActionNeeded is upvote/downvote/change, input.value is guaranteed non-null
+        // (null input.value always maps to 'remove' in the branching above).
+        if (trustActionNeeded !== null && trustActionNeeded !== 'remove' && input.value !== null) {
+          notificationEventEmitter.emitNotificationEvent({
+            eventType: NOTIFICATION_EVENTS.COMMENT_VOTED,
+            entityType: 'comment',
+            entityId: comment.id,
+            triggeredBy: userId,
+            payload: {
+              listingId: comment.listingId,
+              commentId: comment.id,
+              voteValue: input.value,
+            },
+          })
         }
 
         // Analytics

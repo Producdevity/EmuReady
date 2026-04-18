@@ -505,6 +505,7 @@ model Vote {
   @@unique([userId, listingId])
   @@index([userId])
   @@index([listingId])
+  @@index([userId, nullifiedAt])
 }
 
 model Comment {
@@ -541,6 +542,7 @@ model CommentVote {
 
   @@unique([userId, commentId])
   @@index([userId])
+  @@index([userId, nullifiedAt])
 }
 
 model ListingCustomFieldValue {
@@ -735,6 +737,7 @@ enum TrustAction {
   ADMIN_ADJUSTMENT_POSITIVE
   ADMIN_ADJUSTMENT_NEGATIVE
   VOTE_NULLIFICATION_REVERSAL
+  VOTE_CHANGE_REVERSAL
 
   @@map("trust_action")
 }
@@ -1123,6 +1126,7 @@ model PcListingVote {
   @@unique([userId, pcListingId])
   @@index([pcListingId])
   @@index([userId])
+  @@index([userId, nullifiedAt])
   @@map("pc_listing_votes")
 }
 
@@ -1166,6 +1170,7 @@ model PcListingCommentVote {
   @@unique([userId, commentId])
   @@index([commentId])
   @@index([userId])
+  @@index([userId, nullifiedAt])
   @@map("pc_listing_comment_votes")
 }
 

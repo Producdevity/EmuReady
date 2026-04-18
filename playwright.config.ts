@@ -18,28 +18,23 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* 1 retry catches timing-sensitive tests without hiding consistent issues */
   retries: 1,
-  /* Conservative approach for CI stability - 1 worker ensures each test gets full resources */
-  workers: isCI ? 1 : undefined,
+  workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'list',
-  /* Test timeout */
-  timeout: isCI ? 60 * 1000 : 30 * 1000, // 60 seconds in CI, 30 locally
+  timeout: 60 * 1000,
 
-  /* Global setup - runs once before all tests */
+  expect: {
+    timeout: 10 * 1000,
+  },
+
   globalSetup: require.resolve('./tests/global.setup.ts'),
 
-  /* Shared settings for all the projects below. */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: 'http://localhost:3000',
-
-    /* Collect trace when retrying the failed test. */
+    actionTimeout: 10 * 1000,
+    navigationTimeout: 30 * 1000,
     trace: 'on-first-retry',
-
-    /* Screenshot on failure */
     screenshot: 'only-on-failure',
-
-    /* Video on failure */
     video: 'retain-on-failure',
   },
 
@@ -50,11 +45,17 @@ export default defineConfig({
       name: 'setup',
       testMatch: /auth\.setup\.ts/,
     },
+    // Data setup - creates listings, reports, etc. that other tests depend on
+    {
+      name: 'data-setup',
+      testMatch: /data-setup\.spec\.ts/,
+      dependencies: ['setup'],
+    },
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: ['**/auth.setup.ts', '**/global.setup.ts'],
-      dependencies: ['setup'], // Ensure auth is set up before running tests
+      testIgnore: ['**/auth.setup.ts', '**/global.setup.ts', '**/data-setup.spec.ts'],
+      dependencies: ['data-setup'],
     },
   ],
 

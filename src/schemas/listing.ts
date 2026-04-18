@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { PAGINATION } from '@/data/constants'
-import { JsonValueSchema } from '@/schemas/common'
+import { JsonValueSchema, ListingType } from '@/schemas/common'
 import { ApprovalStatus } from '@orm'
 
 export const CreateListingSchema = z.object({
@@ -50,6 +50,11 @@ export const GetListingsSchema = z.object({
 
 export const GetListingByIdSchema = z.object({ id: z.string().uuid() })
 
+export const GetListingModeratorInfoSchema = z.object({
+  id: z.string().uuid(),
+  type: ListingType,
+})
+
 export const GetPendingListingsSchema = z
   .object({
     search: z.string().nullable().optional(),
@@ -77,6 +82,20 @@ export const GetProcessedSchema = z.object({
   limit: z.number().default(10),
   filterStatus: z.nativeEnum(ApprovalStatus).nullable().optional(),
   search: z.string().nullable().optional(),
+  sortField: z
+    .enum([
+      'processedAt',
+      'createdAt',
+      'status',
+      'game.title',
+      'game.system.name',
+      'device',
+      'emulator.name',
+      'author.name',
+    ])
+    .nullable()
+    .optional(),
+  sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
 })
 
 export const OverrideApprovalStatusSchema = z.object({
