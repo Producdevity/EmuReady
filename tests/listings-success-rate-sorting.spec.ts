@@ -11,8 +11,11 @@ test.describe('Success Rate Sorting', () => {
     // The community support banner overlays the table header and intercepts
     // sort clicks if it's still present.
     const dismissBanner = page.getByRole('button', { name: /dismiss community support/i })
-    if (await dismissBanner.isVisible({ timeout: 1000 })) {
+    try {
+      await dismissBanner.waitFor({ state: 'visible', timeout: 1000 })
       await dismissBanner.click()
+    } catch {
+      // Banner not present — nothing to dismiss
     }
   })
 

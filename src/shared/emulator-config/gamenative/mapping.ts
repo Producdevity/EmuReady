@@ -76,7 +76,7 @@ export const GAMENATIVE_IMPORT_MAPPINGS: Record<string, GameNativeFieldMapping> 
       if (fullConfig && typeof fullConfig['dxvkVersion'] === 'string') {
         return fullConfig['dxvkVersion']
       }
-      return configStr || undefined
+      return configStr.includes('=') ? undefined : configStr || undefined
     },
   },
 

@@ -405,15 +405,39 @@ export default async function gamenativeCustomFieldsSeeder(prisma: PrismaClient)
     })
   }
 
-  const removed = await prisma.customFieldDefinition.deleteMany({
+  const staleDefinitions = await prisma.customFieldDefinition.findMany({
     where: {
       emulatorId: gamenative.id,
       name: { notIn: fieldNames },
     },
+    select: { id: true, name: true },
   })
 
+  if (staleDefinitions.length > 0) {
+    const valueCount = await prisma.listingCustomFieldValue.count({
+      where: { customFieldDefinitionId: { in: staleDefinitions.map((d) => d.id) } },
+    })
+    const pcValueCount = await prisma.pcListingCustomFieldValue.count({
+      where: { customFieldDefinitionId: { in: staleDefinitions.map((d) => d.id) } },
+    })
+
+    if (valueCount > 0 || pcValueCount > 0) {
+      console.warn(
+        `⚠️ Skipping removal of ${staleDefinitions.length} stale field(s) ` +
+          `(${staleDefinitions.map((d) => d.name).join(', ')}) — ` +
+          `${valueCount + pcValueCount} user-submitted values would be cascade-deleted. ` +
+          `Remove manually after migrating data.`,
+      )
+    } else {
+      await prisma.customFieldDefinition.deleteMany({
+        where: { id: { in: staleDefinitions.map((d) => d.id) } },
+      })
+      console.info(`✅ Removed ${staleDefinitions.length} unused field definition(s).`)
+    }
+  }
+
   console.info(
-    `✅ GameNative custom fields synced. Updated ${GAMENATIVE_CUSTOM_FIELDS.length} definitions, removed ${removed.count}.`,
+    `✅ GameNative custom fields synced. Updated ${GAMENATIVE_CUSTOM_FIELDS.length} definitions.`,
   )
 }
 
