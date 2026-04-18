@@ -96,7 +96,7 @@ export const GAMENATIVE_IMPORT_MAPPINGS: Record<string, GameNativeFieldMapping> 
 
   startup_selection: {
     jsonPath: 'startupSelection',
-    fromConfig: (value) => STARTUP_SELECTION_REVERSE[String(value)],
+    fromConfig: (value) => STARTUP_SELECTION_REVERSE[String(value)] ?? String(value),
   },
 
   box64_version: {
