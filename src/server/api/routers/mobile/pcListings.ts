@@ -1,4 +1,5 @@
 import { ResourceError } from '@/lib/errors'
+import { applyTrustAction } from '@/lib/trust/service'
 import {
   GetCpusSchema,
   GetGpusSchema,
@@ -21,7 +22,7 @@ import { PcListingsRepository } from '@/server/repositories/pc-listings.reposito
 import { listingStatsCache } from '@/server/utils/cache'
 import { paginate } from '@/server/utils/pagination'
 import { isModerator } from '@/utils/permissions'
-import { Prisma, ApprovalStatus } from '@orm'
+import { Prisma, ApprovalStatus, TrustAction } from '@orm'
 
 export const mobilePcListingsRouter = createMobileTRPCRouter({
   /**
@@ -164,6 +165,12 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       customFieldValues: (input.customFieldValues
         ? (input.customFieldValues as { customFieldDefinitionId: string; value: unknown }[])
         : null) as { customFieldDefinitionId: string; value: unknown }[] | null,
+    })
+
+    await applyTrustAction({
+      userId: ctx.session.user.id,
+      action: TrustAction.LISTING_CREATED,
+      context: { pcListingId: created.id },
     })
 
     // Invalidate stats cache

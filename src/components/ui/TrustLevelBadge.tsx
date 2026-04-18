@@ -75,7 +75,7 @@ export function TrustLevelBadge(props: Props): JSX.Element {
         <div className="flex flex-col gap-1">
           <div className="flex justify-between items-center text-xs text-gray-600 dark:text-gray-400">
             <span>Progress to {nextLevel.name}</span>
-            <span>{Math.round(progress * 100)}%</span>
+            <span>{Math.round(Math.min(Math.max(progress, 0), 1) * 100)}%</span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div

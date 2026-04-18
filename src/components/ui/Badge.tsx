@@ -3,7 +3,7 @@
 import { type PropsWithChildren } from 'react'
 import { cn } from '@/lib/utils'
 
-type BadgeSize = 'sm' | 'md' | 'lg'
+export type BadgeSize = 'sm' | 'md' | 'lg'
 export type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'primary'
 
 const variantClasses: Record<BadgeVariant, string> = {

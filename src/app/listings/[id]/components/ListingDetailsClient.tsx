@@ -11,16 +11,16 @@ import { AuthorPanel } from '@/app/listings/components/shared/details/AuthorPane
 import BookmarkButton from '@/app/listings/components/shared/details/BookmarkButton'
 import { DetailsHeader } from '@/app/listings/components/shared/details/DetailsHeader'
 import { DetailsHeaderBadges } from '@/app/listings/components/shared/details/DetailsHeaderBadges'
+import { ModeratorInfoPanel } from '@/app/listings/components/shared/details/ModeratorInfoPanel'
+import { logHandheldVoteError } from '@/app/listings/components/shared/details/utils/logVoteError'
+import { refreshHandheldListingDetail } from '@/app/listings/components/shared/details/utils/refreshListingDetail'
 import { VotingSection } from '@/app/listings/components/shared/details/VotingSection'
 import { NotesSection } from '@/app/listings/components/shared/NotesSection'
 import { GameImage } from '@/app/listings/shared/components'
 import CommunitySupportBanner from '@/components/banners/CommunitySupportBanner'
-import { Card, Button, Badge } from '@/components/ui'
+import { BannedUserBadge, Button, Card } from '@/components/ui'
 import { api } from '@/lib/api'
-import { logger } from '@/lib/logger'
-import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
-import getErrorMessage from '@/utils/getErrorMessage'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role } from '@orm'
 import CommentThread from './CommentThread'
@@ -46,10 +46,7 @@ function ListingDetailsClient(props: Props) {
   const currentUserQuery = api.users.me.useQuery()
   const canViewBannedUsers = roleIncludesRole(currentUserQuery.data?.role, Role.MODERATOR)
 
-  const refreshData = async () => {
-    await utils.listings.byId.invalidate({ id: props.listing.id })
-    await utils.listings.byId.refetch({ id: props.listing.id })
-  }
+  const refreshData = () => refreshHandheldListingDetail({ utils, listingId: props.listing.id })
 
   const scrollToVoteSection = () => {
     voteSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -57,10 +54,7 @@ function ListingDetailsClient(props: Props) {
 
   const voteMutation = api.listings.vote.useMutation({
     onSuccess: refreshData,
-    onError: (error) => {
-      logger.error('[ListingDetailsClient] handleVoting:', error)
-      toast.error(`Failed to vote: ${getErrorMessage(error)}`)
-    },
+    onError: (error) => logHandheldVoteError({ error, listingId: props.listing.id }),
   })
 
   const handleVote = async (value: boolean | null) => {
@@ -142,15 +136,11 @@ function ListingDetailsClient(props: Props) {
                   authorId={props.listing?.author?.id}
                   postedAt={props.listing.createdAt}
                   bannedBadge={
-                    canViewBannedUsers &&
-                    props.listing?.author &&
-                    'userBans' in props.listing.author &&
-                    Array.isArray(props.listing.author.userBans) &&
-                    props.listing.author.userBans.length > 0 ? (
-                      <Badge variant="danger" size="sm" className="mt-1">
-                        BANNED USER
-                      </Badge>
-                    ) : undefined
+                    <BannedUserBadge
+                      author={props.listing?.author}
+                      canView={canViewBannedUsers}
+                      className="mt-1"
+                    />
                   }
                 />
                 <BookmarkButton type="listing" listingId={props.listing.id} />
@@ -204,6 +194,10 @@ function ListingDetailsClient(props: Props) {
               deviceId={props.listing.device?.id}
             />
           </VotingSection>
+
+          {canViewBannedUsers && (
+            <ModeratorInfoPanel listingId={props.listing.id} listingType="handheld" />
+          )}
 
           <div className="mt-10 border-t border-gray-200 dark:border-gray-700 pt-8">
             <CommentThread

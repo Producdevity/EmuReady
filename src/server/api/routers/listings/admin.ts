@@ -1,10 +1,12 @@
 import { ResourceError, AppError } from '@/lib/errors'
 import { applyTrustAction } from '@/lib/trust/service'
+import { ListingType } from '@/schemas/common'
 import {
   ApproveListingSchema,
   RejectListingSchema,
   GetProcessedSchema,
   GetPendingListingsSchema,
+  GetListingModeratorInfoSchema,
   OverrideApprovalStatusSchema,
   DeleteListingSchema,
   BulkApproveListingsSchema,
@@ -24,6 +26,7 @@ import {
   viewStatisticsProcedure,
   protectedProcedure,
 } from '@/server/api/trpc'
+import { buildProcessedOrderBy } from '@/server/api/utils/listingHelpers'
 import {
   invalidateListing,
   invalidateListPages,
@@ -31,6 +34,8 @@ import {
   revalidateByTag,
 } from '@/server/cache/invalidation'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
+import { ListingsRepository } from '@/server/repositories/listings.repository'
+import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
 import { computeAuthorRiskProfiles } from '@/server/services/author-risk.service'
 import { listingStatsCache } from '@/server/utils/cache/instances'
 import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
@@ -43,6 +48,15 @@ const LISTING_STATS_CACHE_KEY = 'listing-stats'
 const mode = Prisma.QueryMode.insensitive
 
 export const adminRouter = createTRPCRouter({
+  moderatorInfo: moderatorProcedure
+    .input(GetListingModeratorInfoSchema)
+    .query(async ({ ctx, input }) => {
+      return input.type === ListingType.enum.handheld
+        ? new ListingsRepository(ctx.prisma).getModeratorInfo(input.id)
+        : new PcListingsRepository(ctx.prisma).getModeratorInfo(input.id)
+    }),
+
+  // TODO: abstract to service or repository
   getPending: developerProcedure.input(GetPendingListingsSchema).query(async ({ ctx, input }) => {
     const { search, page = 1, limit = 20, sortField, sortDirection } = input ?? {}
     const skip = (page - 1) * limit
@@ -123,7 +137,6 @@ export const adminRouter = createTRPCRouter({
           select: {
             id: true,
             name: true,
-            email: true,
             userBans: {
               where: {
                 isActive: true,
@@ -267,7 +280,7 @@ export const adminRouter = createTRPCRouter({
         },
       })
 
-      ResourceError.listing.cannotApproveBannedUser(banReason)
+      return ResourceError.listing.cannotApproveBannedUser(banReason)
     }
 
     // Update listing status
@@ -450,7 +463,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   getProcessed: superAdminProcedure.input(GetProcessedSchema).query(async ({ ctx, input }) => {
-    const { page, limit, filterStatus, search } = input
+    const { page, limit, filterStatus, search, sortField, sortDirection } = input
     const skip = (page - 1) * limit
 
     const baseWhere: Prisma.ListingWhereInput = {
@@ -474,19 +487,19 @@ export const adminRouter = createTRPCRouter({
       ...searchWhere,
     }
 
+    const orderBy = buildProcessedOrderBy(sortField, sortDirection)
+
     const listings = await ctx.prisma.listing.findMany({
       where: whereClause,
       include: {
         game: { include: { system: true } },
         device: { include: { brand: true } },
         emulator: true,
-        author: { select: { id: true, name: true, email: true } },
+        author: { select: { id: true, name: true } },
         performance: true,
-        processedByUser: { select: { id: true, name: true, email: true } }, // Admin who processed
+        processedByUser: { select: { id: true, name: true } },
       },
-      orderBy: {
-        processedAt: 'desc', // Show most recently processed first
-      },
+      orderBy,
       skip,
       take: limit,
     })
@@ -497,7 +510,7 @@ export const adminRouter = createTRPCRouter({
 
     return {
       listings,
-      pagination: paginate({ total: totalListings, page, limit: limit }),
+      pagination: paginate({ total: totalListings, page, limit }),
     }
   }),
 
@@ -666,28 +679,33 @@ export const adminRouter = createTRPCRouter({
           })
         }
 
-        // Apply trust actions for approved listings only
-        for (const listing of validListings) {
-          if (listing.authorId) {
-            await applyTrustAction({
-              userId: listing.authorId,
-              action: TrustAction.LISTING_APPROVED,
-              context: {
-                listingId: listing.id,
-                adminUserId,
-                reason: 'bulk_listing_approved',
-              },
-            })
-          }
-        }
-
-        // Return data needed for post-transaction operations
+        // Return data needed for post-transaction operations.
+        // Trust actions intentionally run AFTER the transaction commits — applyTrustAction
+        // opens its own internal transaction, so nesting would deadlock or surprise.
         return {
           validListings,
           bannedUserListings,
           notFoundOrNotPendingIds,
         }
       })
+
+      // Apply trust actions in parallel for approved listings (post-commit, distinct authors).
+      const approvedListingsWithAuthor = transactionResult.validListings.filter(
+        (l): l is typeof l & { authorId: string } => l.authorId !== null,
+      )
+      await Promise.all(
+        approvedListingsWithAuthor.map((listing) =>
+          applyTrustAction({
+            userId: listing.authorId,
+            action: TrustAction.LISTING_APPROVED,
+            context: {
+              listingId: listing.id,
+              adminUserId,
+              reason: 'bulk_listing_approved',
+            },
+          }),
+        ),
+      )
 
       // Emit notification events AFTER transaction completes successfully
       try {
@@ -827,27 +845,32 @@ export const adminRouter = createTRPCRouter({
           },
         })
 
-        // Apply trust actions for all rejected listings
-        for (const listing of listingsToReject) {
-          if (listing.authorId) {
-            await applyTrustAction({
-              userId: listing.authorId,
-              action: TrustAction.LISTING_REJECTED,
-              context: {
-                listingId: listing.id,
-                adminUserId,
-                reason: notes || 'bulk_listing_rejected',
-              },
-            })
-          }
-        }
-
-        // Return data needed for post-transaction operations
+        // Return data needed for post-transaction operations.
+        // Trust actions intentionally run AFTER the transaction commits — applyTrustAction
+        // opens its own internal transaction, so nesting would deadlock or surprise.
         return {
           listingsToReject,
           notFoundOrNotPendingIds,
         }
       })
+
+      // Apply trust actions in parallel for rejected listings (post-commit, distinct authors).
+      const rejectedListingsWithAuthor = transactionResult.listingsToReject.filter(
+        (l): l is typeof l & { authorId: string } => l.authorId !== null,
+      )
+      await Promise.all(
+        rejectedListingsWithAuthor.map((listing) =>
+          applyTrustAction({
+            userId: listing.authorId,
+            action: TrustAction.LISTING_REJECTED,
+            context: {
+              listingId: listing.id,
+              adminUserId,
+              reason: notes || 'bulk_listing_rejected',
+            },
+          }),
+        ),
+      )
 
       // NOTE: Emit notification events AFTER transaction completes successfully
       try {
@@ -990,7 +1013,7 @@ export const adminRouter = createTRPCRouter({
         game: { include: { system: true } },
         device: { include: { brand: true, soc: true } },
         emulator: true,
-        author: { select: { id: true, name: true, email: true } },
+        author: { select: { id: true, name: true } },
         performance: true,
       },
       orderBy,
@@ -1027,7 +1050,7 @@ export const adminRouter = createTRPCRouter({
             },
           },
         },
-        author: { select: { id: true, name: true, email: true } },
+        author: { select: { id: true, name: true } },
         performance: true,
         customFieldValues: {
           include: { customFieldDefinition: { include: { category: true } } },
@@ -1055,7 +1078,7 @@ export const adminRouter = createTRPCRouter({
 
       if (!existingListing) return ResourceError.listing.notFound()
 
-      return ctx.prisma.$transaction(async (tx) => {
+      return await ctx.prisma.$transaction(async (tx) => {
         // Update the main listing fields
         const updatedListing = await tx.listing.update({
           where: { id },

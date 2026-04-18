@@ -1,6 +1,6 @@
 import { AppError } from '@/lib/errors'
 import { TRUST_LEVELS } from '@/lib/trust/config'
-import { applyManualTrustAdjustment, applyMonthlyActiveBonus } from '@/lib/trust/service'
+import { TrustService, applyMonthlyActiveBonus } from '@/lib/trust/service'
 import {
   GetTrustLogsSchema,
   GetTrustStatsSchema,
@@ -17,7 +17,7 @@ export const trustRouter = createTRPCRouter({
   // Get trust logs for admin dashboard (SUPER_ADMIN only)
   getTrustLogs: protectedProcedure.input(GetTrustLogsSchema).query(async ({ ctx, input }) => {
     if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-      AppError.insufficientRole(Role.SUPER_ADMIN)
+      return AppError.insufficientRole(Role.SUPER_ADMIN)
     }
 
     const { page, limit, sortField, sortDirection, search, action } = input
@@ -79,7 +79,7 @@ export const trustRouter = createTRPCRouter({
   // Get trust system statistics (SUPER_ADMIN only)
   getTrustStats: protectedProcedure.input(GetTrustStatsSchema).query(async ({ ctx }) => {
     if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-      AppError.insufficientRole(Role.SUPER_ADMIN)
+      return AppError.insufficientRole(Role.SUPER_ADMIN)
     }
 
     const [totalActions, totalUsers, levelDistribution] = await Promise.all([
@@ -127,7 +127,7 @@ export const trustRouter = createTRPCRouter({
     .input(RunMonthlyActiveBonusSchema)
     .mutation(async ({ ctx }) => {
       if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        AppError.insufficientRole(Role.SUPER_ADMIN)
+        return AppError.insufficientRole(Role.SUPER_ADMIN)
       }
 
       return await applyMonthlyActiveBonus()
@@ -138,10 +138,10 @@ export const trustRouter = createTRPCRouter({
     .input(ManualTrustAdjustmentSchema)
     .mutation(async ({ ctx, input }) => {
       if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        AppError.insufficientRole(Role.SUPER_ADMIN)
+        return AppError.insufficientRole(Role.SUPER_ADMIN)
       }
 
-      await applyManualTrustAdjustment({
+      await new TrustService(ctx.prisma).applyManualAdjustment({
         userId: input.userId,
         adjustment: input.adjustment,
         reason: input.reason,

@@ -78,6 +78,16 @@ export const GetPendingPcListingsSchema = z
 
 export const DeletePcListingSchema = z.object({ id: z.string().uuid() })
 
+// TODO: Wire up a PC admin processed-listings page + router procedure for
+// parity with handheld (`admin.getProcessed` + `src/app/admin/processed-listings/`).
+// When doing so, extend this schema with `sortField` / `sortDirection` using the
+// same shape as `GetProcessedSchema` in `./listing.ts`, and ideally share as much
+// of the admin router logic as possible (the two codebases are drifting — fixes
+// applied to handheld listings often miss their PC counterpart). Candidates for
+// shared code: `buildProcessedOrderBy`, the search `where` builder, the
+// approval-flow branches. See also: `src/server/api/utils/listingHelpers.ts`
+// (handheld) vs `pcListingHelpers.ts` (PC) — these helpers already exist and
+// should be the basis for a shared abstraction.
 export const GetProcessedPcSchema = z.object({
   page: z.number().default(1),
   limit: z.number().default(10),
@@ -225,6 +235,7 @@ export const GetPcPresetsSchema = z.object({
 export const VotePcListingSchema = z.object({
   pcListingId: z.string().uuid(),
   value: z.boolean(), // true = upvote, false = downvote
+  recaptchaToken: z.string().nullable().optional(),
 })
 
 export const GetPcListingUserVoteSchema = z.object({

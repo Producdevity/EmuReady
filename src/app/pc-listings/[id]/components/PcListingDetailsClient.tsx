@@ -13,17 +13,17 @@ import BookmarkButton from '@/app/listings/components/shared/details/BookmarkBut
 import { DetailFieldRow } from '@/app/listings/components/shared/details/DetailFieldRow'
 import { DetailsHeader } from '@/app/listings/components/shared/details/DetailsHeader'
 import { DetailsHeaderBadges } from '@/app/listings/components/shared/details/DetailsHeaderBadges'
+import { ModeratorInfoPanel } from '@/app/listings/components/shared/details/ModeratorInfoPanel'
+import { logPcVoteError } from '@/app/listings/components/shared/details/utils/logVoteError'
+import { refreshPcListingDetail } from '@/app/listings/components/shared/details/utils/refreshListingDetail'
 import { VotingSection } from '@/app/listings/components/shared/details/VotingSection'
 import { NotesSection } from '@/app/listings/components/shared/NotesSection'
 import { GameImage } from '@/app/listings/shared/components'
 import CommunitySupportBanner from '@/components/banners/CommunitySupportBanner'
-import { Card, Button, Badge } from '@/components/ui'
+import { BannedUserBadge, Button, Card } from '@/components/ui'
 import { PC_OS_LABELS } from '@/data/pc-os'
 import { api } from '@/lib/api'
-import { logger } from '@/lib/logger'
-import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
-import getErrorMessage from '@/utils/getErrorMessage'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { type PcOs, Role } from '@orm'
 import EditPcListingButton from './EditPcListingButton'
@@ -89,9 +89,7 @@ function PcListingDetailsClient(props: Props) {
     },
   ] as const
 
-  const refreshData = async () => {
-    await utils.pcListings.byId.invalidate({ id: props.pcListing.id })
-  }
+  const refreshData = () => refreshPcListingDetail({ utils, pcListingId: props.pcListing.id })
 
   const scrollToVoteSection = () => {
     voteSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -99,10 +97,7 @@ function PcListingDetailsClient(props: Props) {
 
   const voteMutation = api.pcListings.vote.useMutation({
     onSuccess: refreshData,
-    onError: (error) => {
-      logger.error('[PcListingDetailsClient] handleVoting:', error)
-      toast.error(`Failed to vote: ${getErrorMessage(error)}`)
-    },
+    onError: (error) => logPcVoteError({ error, pcListingId: props.pcListing.id }),
   })
 
   const handleVote = async (value: boolean | null) => {
@@ -205,15 +200,11 @@ function PcListingDetailsClient(props: Props) {
                   authorId={props.pcListing.author?.id}
                   postedAt={props.pcListing.createdAt}
                   bannedBadge={
-                    canViewBannedUsers &&
-                    props.pcListing?.author &&
-                    'userBans' in props.pcListing.author &&
-                    Array.isArray(props.pcListing.author.userBans) &&
-                    props.pcListing.author.userBans.length > 0 ? (
-                      <Badge variant="danger" size="sm" className="mt-1">
-                        BANNED USER
-                      </Badge>
-                    ) : undefined
+                    <BannedUserBadge
+                      author={props.pcListing?.author}
+                      canView={canViewBannedUsers}
+                      className="mt-1"
+                    />
                   }
                 />
                 <BookmarkButton type="pcListing" pcListingId={props.pcListing.id} />
@@ -268,6 +259,10 @@ function PcListingDetailsClient(props: Props) {
               gpuId={props.pcListing.gpu?.id}
             />
           </VotingSection>
+
+          {canViewBannedUsers && (
+            <ModeratorInfoPanel listingId={props.pcListing.id} listingType="pc" />
+          )}
 
           {/* Comments Section */}
           <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">

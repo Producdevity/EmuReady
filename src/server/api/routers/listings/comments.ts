@@ -2,7 +2,6 @@ import analytics from '@/lib/analytics'
 import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
 import { getClientIP, verifyRecaptcha } from '@/lib/captcha/verify'
 import { AppError, ResourceError } from '@/lib/errors'
-import { TrustService } from '@/lib/trust/service'
 import {
   CreateCommentSchema,
   EditCommentSchema,
@@ -20,15 +19,20 @@ import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifica
 import { CommentsRepository } from '@/server/repositories/comments.repository'
 import { logAudit } from '@/server/services/audit.service'
 import { isUserBanned } from '@/server/utils/query-builders'
+import { handleCommentVoteTrustEffects } from '@/server/utils/vote-trust-effects'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { canDeleteComment, canEditComment } from '@/utils/permissions'
-import { AuditAction, AuditEntityType, Role, TrustAction } from '@orm'
+import { AuditAction, AuditEntityType, Role } from '@orm'
 
 export const commentsRouter = createTRPCRouter({
   create: protectedProcedure.input(CreateCommentSchema).mutation(async ({ ctx, input }) => {
     const { listingId, content, parentId, recaptchaToken } = input
     const userId = ctx.session.user.id
 
+    // TODO: Add spam detection via `checkSpamContent` from
+    // `@/server/utils/spam-check` (currently only applied in mobile routes).
+    // Block: UX/product sign-off needed since existing web users would start
+    // seeing spam-block errors. Mirror mobile: `{ userId, content, entityType: 'comment' }`.
     // Verify CAPTCHA if token is provided
     if (recaptchaToken) {
       const clientIP = ctx.headers ? getClientIP(ctx.headers) : undefined
@@ -322,13 +326,15 @@ export const commentsRouter = createTRPCRouter({
 
     if (!comment) return ResourceError.comment.notFound()
 
-    // Check if user already voted on this comment
-    const existingVote = await ctx.prisma.commentVote.findUnique({
-      where: { userId_commentId: { userId, commentId } },
-    })
+    // Fetch `existingVote` inside the transaction: two concurrent votes from
+    // the same user could both read null and both attempt to insert,
+    // producing a Prisma P2002 on the second. Keeping the read and write
+    // under the same isolation avoids the race.
+    return await ctx.prisma.$transaction(async (tx) => {
+      const existingVote = await tx.commentVote.findUnique({
+        where: { userId_commentId: { userId, commentId } },
+      })
 
-    // Start a transaction to handle both the vote and score update
-    return ctx.prisma.$transaction(async (tx) => {
       let voteResult
       let scoreChange: number
       let trustActionNeeded: 'upvote' | 'downvote' | 'change' | 'remove' | null = null
@@ -370,126 +376,26 @@ export const commentsRouter = createTRPCRouter({
         data: { score: { increment: scoreChange } },
       })
 
-      // Award trust points to the comment author (not the voter)
-      if (comment && comment.userId !== userId) {
-        // Don't award points for self-votes
-        const trustService = new TrustService(tx)
-
-        if (trustActionNeeded === 'upvote') {
-          // New upvote: +2 points to comment author
-          await trustService.logAction({
-            userId: comment.userId,
-            action: TrustAction.COMMENT_RECEIVED_UPVOTE,
-            targetUserId: userId,
-            metadata: {
-              commentId,
-              voterId: userId,
-              listingId: comment.listingId,
-            },
-          })
-        } else if (trustActionNeeded === 'downvote') {
-          // New downvote: -1 point to comment author
-          await trustService.logAction({
-            userId: comment.userId,
-            action: TrustAction.COMMENT_RECEIVED_DOWNVOTE,
-            targetUserId: userId,
-            metadata: {
-              commentId,
-              voterId: userId,
-              listingId: comment.listingId,
-            },
-          })
-        } else if (trustActionNeeded === 'change') {
-          // Vote changed: reverse previous and apply new
-          if (value) {
-            // Changed from downvote to upvote: +1 (reverse) +2 (new) = +3 net
-            await trustService.logAction({
-              userId: comment.userId,
-              action: TrustAction.COMMENT_RECEIVED_DOWNVOTE,
-              targetUserId: userId,
-              metadata: {
-                commentId,
-                voterId: userId,
-                listingId: comment.listingId,
-                reversed: true,
-              },
-            })
-            await trustService.logAction({
-              userId: comment.userId,
-              action: TrustAction.COMMENT_RECEIVED_UPVOTE,
-              targetUserId: userId,
-              metadata: {
-                commentId,
-                voterId: userId,
-                listingId: comment.listingId,
-              },
-            })
-          } else {
-            // Changed from upvote to downvote: -2 (reverse) -1 (new) = -3 net
-            await trustService.logAction({
-              userId: comment.userId,
-              action: TrustAction.COMMENT_RECEIVED_UPVOTE,
-              targetUserId: userId,
-              metadata: {
-                commentId,
-                voterId: userId,
-                listingId: comment.listingId,
-                reversed: true,
-              },
-            })
-            await trustService.logAction({
-              userId: comment.userId,
-              action: TrustAction.COMMENT_RECEIVED_DOWNVOTE,
-              targetUserId: userId,
-              metadata: {
-                commentId,
-                voterId: userId,
-                listingId: comment.listingId,
-              },
-            })
-          }
-        } else if (trustActionNeeded === 'remove' && existingVote) {
-          // Vote removed: reverse the previous vote's effect
-          const action = existingVote.value
-            ? TrustAction.COMMENT_RECEIVED_UPVOTE
-            : TrustAction.COMMENT_RECEIVED_DOWNVOTE
-          await trustService.logAction({
-            userId: comment.userId,
-            action,
-            targetUserId: userId,
-            metadata: {
-              commentId,
-              voterId: userId,
-              listingId: comment.listingId,
-              reversed: true,
-            },
-          })
-        }
-
-        // Check if comment has reached the helpful threshold (5+ score)
-        // Award bonus only when crossing the threshold for the first time
-        const HELPFUL_THRESHOLD = 5
-        const previousScore = updatedComment.score - scoreChange
-
-        if (previousScore < HELPFUL_THRESHOLD && updatedComment.score >= HELPFUL_THRESHOLD) {
-          // Comment just crossed the threshold - award bonus
-          await trustService.logAction({
-            userId: comment.userId,
-            action: TrustAction.HELPFUL_COMMENT,
-            metadata: {
-              commentId,
-              listingId: comment.listingId,
-              score: updatedComment.score,
-              threshold: HELPFUL_THRESHOLD,
-            },
-          })
-        }
+      if (trustActionNeeded) {
+        await handleCommentVoteTrustEffects({
+          tx,
+          trustAction: trustActionNeeded,
+          newValue: value,
+          previousValue: existingVote?.value ?? null,
+          commentAuthorId: comment.userId,
+          voterId: userId,
+          commentId,
+          parentEntityId: comment.listingId,
+          listingType: 'handheld',
+          updatedScore: updatedComment.score,
+          scoreChange,
+        })
       }
 
-      // Emit notification event
-      if (comment) {
+      // Notify comment author on new votes / direction changes; skip on toggle-off.
+      if (comment && trustActionNeeded !== null && trustActionNeeded !== 'remove') {
         notificationEventEmitter.emitNotificationEvent({
-          eventType: value ? NOTIFICATION_EVENTS.COMMENT_VOTED : NOTIFICATION_EVENTS.COMMENT_VOTED,
+          eventType: NOTIFICATION_EVENTS.COMMENT_VOTED,
           entityType: 'comment',
           entityId: comment.id,
           triggeredBy: ctx.session.user.id,

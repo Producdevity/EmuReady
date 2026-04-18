@@ -17,13 +17,23 @@ vi.mock('@orm/sql', () => ({
 
 // Mock the entire Prisma client module to prevent database initialization
 vi.mock('@orm', () => ({
-  // Prisma namespace for raw SQL tagged templates
+  // Prisma namespace — includes raw SQL tagged templates and the
+  // runtime-enum-like objects that router modules reference at module top
+  // (e.g. `const mode = Prisma.QueryMode.insensitive`).
   Prisma: {
     sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
       strings: Array.from(strings),
       values,
       text: strings.join('?'),
     }),
+    QueryMode: {
+      default: 'default',
+      insensitive: 'insensitive',
+    },
+    SortOrder: {
+      asc: 'asc',
+      desc: 'desc',
+    },
   },
   PrismaClient: vi.fn().mockImplementation(() => ({
     $transaction: vi.fn(),

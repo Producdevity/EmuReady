@@ -18,6 +18,7 @@ export const listingsRouter = createTRPCRouter({
   unpinComment: commentsRouter.unpinComment,
 
   // Admin operations
+  moderatorInfo: adminRouter.moderatorInfo,
   getPending: adminRouter.getPending,
   approveListing: adminRouter.approve,
   rejectListing: adminRouter.reject,

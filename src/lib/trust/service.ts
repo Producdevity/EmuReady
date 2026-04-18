@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import analytics from '@/lib/analytics'
+import { ResourceError } from '@/lib/errors'
 import { prisma } from '@/server/db'
 import { validateData } from '@/server/utils/validation'
 import { TrustAction, type Prisma, type PrismaClient } from '@orm'
@@ -13,6 +14,7 @@ function resolveTrustLevelName(level: ReturnType<typeof getTrustLevel> | null): 
 
 interface TrustActionContext {
   listingId?: string
+  pcListingId?: string
   targetUserId?: string
   voteType?: 'up' | 'down'
   adminUserId?: string
@@ -112,7 +114,7 @@ export async function reverseTrustAction(params: {
     })
 
     const currentTrustLevel = currentUser ? getTrustLevel(currentUser.trustScore) : null
-    const newTrustScore = Math.max(0, (currentUser?.trustScore || 0) + reversalWeight)
+    const newTrustScore = (currentUser?.trustScore ?? 0) + reversalWeight
     const newTrustLevel = getTrustLevel(newTrustScore)
 
     await tx.user.update({
@@ -228,103 +230,15 @@ export async function applyMonthlyActiveBonus(): Promise<{
   return { processedUsers, errors }
 }
 
-export async function applyManualTrustAdjustment(params: {
-  userId: string
-  adjustment: number
-  reason: string
-  adminUserId: string
-}): Promise<void> {
-  const { userId, adjustment, reason, adminUserId } = params
-
-  if (adjustment === 0) {
-    // TODO: Custom Error, or not to Custom Error, that is the question
-    throw new Error('Adjustment cannot be zero')
-  }
-
-  try {
-    // Get user's current trust score before applying adjustment
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { trustScore: true, name: true, email: true },
-    })
-
-    if (!currentUser) {
-      // TODO: use proper error later, now i just want to sleep
-      throw new Error('User not found')
-    }
-
-    const currentTrustLevel = getTrustLevel(currentUser.trustScore)
-    const newTrustScore = Math.max(0, currentUser.trustScore + adjustment) // Prevent negative trust scores
-    const newTrustLevel = getTrustLevel(newTrustScore)
-    const actualAdjustment = newTrustScore - currentUser.trustScore
-
-    // Determine action type based on adjustment direction
-    const action =
-      adjustment > 0 ? TrustAction.ADMIN_ADJUSTMENT_POSITIVE : TrustAction.ADMIN_ADJUSTMENT_NEGATIVE
-
-    // Use a transaction to ensure atomicity
-    await prisma.$transaction(async (tx) => {
-      // Update user's trust score
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          trustScore: newTrustScore,
-          lastActiveAt: new Date(),
-        },
-      })
-
-      // Create audit log entry with admin context
-      await tx.trustActionLog.create({
-        data: {
-          userId,
-          action,
-          weight: actualAdjustment,
-          metadata: {
-            reason,
-            adminUserId,
-            adminName: await tx.user
-              .findUnique({
-                where: { id: adminUserId },
-                select: { name: true, email: true },
-              })
-              .then((admin) => admin?.name || admin?.email || 'Unknown Admin'),
-            originalAdjustment: adjustment,
-            actualAdjustment,
-          },
-        },
-      })
-    })
-
-    analytics.trust.trustScoreChanged({
-      userId,
-      oldScore: currentUser.trustScore,
-      newScore: newTrustScore,
-      action,
-      weight: actualAdjustment,
-    })
-
-    // Track trust level achievement if level changed
-    if ((currentTrustLevel.name ?? null) !== (newTrustLevel.name ?? null)) {
-      analytics.trust.trustLevelChanged({
-        userId,
-        oldLevel: resolveTrustLevelName(currentTrustLevel),
-        newLevel: resolveTrustLevelName(newTrustLevel),
-        score: newTrustScore,
-      })
-    }
-  } catch (error) {
-    console.error('Failed to apply manual trust adjustment:', error)
-    throw new Error('Failed to update trust score')
-  }
-}
-
 type PrismaTransaction = Omit<
   PrismaClient,
   '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
 >
 
 /**
- * TrustService class for managing trust actions
+ * TrustService class for managing trust actions.
+ * Accepts either a PrismaClient (creates its own transactions) or a
+ * TransactionClient (participates in an outer transaction).
  */
 export class TrustService {
   constructor(private readonly prisma: PrismaClient | PrismaTransaction) {}
@@ -343,7 +257,6 @@ export class TrustService {
 
     const weight = TRUST_ACTIONS[action].weight
 
-    // Handle both regular prisma client and transaction context
     const executeInTransaction = async (prismaCtx: PrismaTransaction) => {
       const currentUser = await prismaCtx.user.findUnique({
         where: { id: userId },
@@ -371,7 +284,6 @@ export class TrustService {
         },
       })
 
-      // Track analytics
       analytics.trust.trustScoreChanged({
         userId,
         oldScore: currentUser?.trustScore || 0,
@@ -393,11 +305,269 @@ export class TrustService {
       }
     }
 
-    // If already in a transaction, use it; otherwise create a new one
     if ('$transaction' in this.prisma) {
       await this.prisma.$transaction(executeInTransaction)
     } else {
       await executeInTransaction(this.prisma)
     }
+  }
+
+  async reverseLogAction(params: {
+    userId: string
+    originalAction: TrustAction
+    targetUserId?: string
+    metadata?: Record<string, unknown>
+  }): Promise<void> {
+    const { userId, originalAction, metadata = {} } = params
+
+    if (!TRUST_ACTIONS[originalAction]) {
+      throw new Error(`Invalid trust action: ${originalAction}`)
+    }
+
+    const reversalWeight = -TRUST_ACTIONS[originalAction].weight
+    if (reversalWeight === 0) return
+
+    const executeInTransaction = async (prismaCtx: PrismaTransaction) => {
+      const currentUser = await prismaCtx.user.findUnique({
+        where: { id: userId },
+        select: { trustScore: true },
+      })
+
+      const currentTrustLevel = currentUser ? getTrustLevel(currentUser.trustScore) : null
+      const newTrustScore = (currentUser?.trustScore ?? 0) + reversalWeight
+      const newTrustLevel = getTrustLevel(newTrustScore)
+
+      await prismaCtx.user.update({
+        where: { id: userId },
+        data: {
+          trustScore: newTrustScore,
+          lastActiveAt: new Date(),
+        },
+      })
+
+      await prismaCtx.trustActionLog.create({
+        data: {
+          userId,
+          action: TrustAction.VOTE_CHANGE_REVERSAL,
+          weight: reversalWeight,
+          metadata: { ...metadata, originalAction, reversed: true } as Prisma.InputJsonValue,
+        },
+      })
+
+      analytics.trust.trustScoreChanged({
+        userId,
+        oldScore: currentUser?.trustScore ?? 0,
+        newScore: newTrustScore,
+        action: TrustAction.VOTE_CHANGE_REVERSAL,
+        weight: reversalWeight,
+      })
+
+      const previousLevel = currentTrustLevel?.name ?? null
+      const nextLevel = newTrustLevel.name ?? null
+
+      if (previousLevel !== nextLevel) {
+        analytics.trust.trustLevelChanged({
+          userId,
+          oldLevel: resolveTrustLevelName(currentTrustLevel),
+          newLevel: resolveTrustLevelName(newTrustLevel),
+          score: newTrustScore,
+        })
+      }
+    }
+
+    if ('$transaction' in this.prisma) {
+      await this.prisma.$transaction(executeInTransaction)
+    } else {
+      await executeInTransaction(this.prisma)
+    }
+  }
+
+  async applyManualAdjustment(params: {
+    userId: string
+    adjustment: number
+    reason: string
+    adminUserId: string
+  }): Promise<void> {
+    const { userId, adjustment, reason, adminUserId } = params
+
+    if (adjustment === 0) {
+      throw ResourceError.trust.adjustmentCannotBeZero()
+    }
+
+    const executeAdjustment = async (prismaCtx: PrismaTransaction) => {
+      const currentUser = await prismaCtx.user.findUnique({
+        where: { id: userId },
+        select: { trustScore: true, name: true, email: true },
+      })
+
+      if (!currentUser) {
+        throw ResourceError.user.notFound()
+      }
+
+      const currentTrustLevel = getTrustLevel(currentUser.trustScore)
+      const newTrustScore = currentUser.trustScore + adjustment
+      const newTrustLevel = getTrustLevel(newTrustScore)
+
+      const action =
+        adjustment > 0
+          ? TrustAction.ADMIN_ADJUSTMENT_POSITIVE
+          : TrustAction.ADMIN_ADJUSTMENT_NEGATIVE
+
+      await prismaCtx.user.update({
+        where: { id: userId },
+        data: {
+          trustScore: newTrustScore,
+          lastActiveAt: new Date(),
+        },
+      })
+
+      const admin = await prismaCtx.user.findUnique({
+        where: { id: adminUserId },
+        select: { name: true, email: true },
+      })
+
+      await prismaCtx.trustActionLog.create({
+        data: {
+          userId,
+          action,
+          weight: adjustment,
+          metadata: {
+            reason,
+            adminUserId,
+            adminName: admin?.name || admin?.email || 'Unknown Admin',
+            adjustment,
+          },
+        },
+      })
+
+      analytics.trust.trustScoreChanged({
+        userId,
+        oldScore: currentUser.trustScore,
+        newScore: newTrustScore,
+        action,
+        weight: adjustment,
+      })
+
+      if ((currentTrustLevel.name ?? null) !== (newTrustLevel.name ?? null)) {
+        analytics.trust.trustLevelChanged({
+          userId,
+          oldLevel: resolveTrustLevelName(currentTrustLevel),
+          newLevel: resolveTrustLevelName(newTrustLevel),
+          score: newTrustScore,
+        })
+      }
+    }
+
+    if ('$transaction' in this.prisma) {
+      await this.prisma.$transaction(executeAdjustment)
+    } else {
+      await executeAdjustment(this.prisma)
+    }
+  }
+
+  async applyBulkManualAdjustments(params: {
+    adjustments: Map<string, number>
+    reason: string
+    adminUserId: string
+  }): Promise<number> {
+    const { adjustments, reason, adminUserId } = params
+
+    const nonZeroEntries = [...adjustments.entries()].filter(([, adj]) => adj !== 0)
+    if (nonZeroEntries.length === 0) return 0
+
+    const userIds = nonZeroEntries.map(([id]) => id)
+
+    const executeBulk = async (prismaCtx: PrismaTransaction) => {
+      const users = await prismaCtx.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, trustScore: true },
+      })
+
+      const userMap = new Map(users.map((u) => [u.id, u.trustScore]))
+      const foundEntries = nonZeroEntries.filter(([id]) => userMap.has(id))
+      if (foundEntries.length === 0) return 0
+
+      const admin = await prismaCtx.user.findUnique({
+        where: { id: adminUserId },
+        select: { name: true, email: true },
+      })
+      const adminName = admin?.name || admin?.email || 'Unknown Admin'
+
+      const logEntries: {
+        userId: string
+        action: TrustAction
+        weight: number
+        metadata: Prisma.InputJsonValue
+      }[] = []
+
+      const levelChanges: {
+        userId: string
+        oldLevel: string
+        newLevel: string
+        score: number
+      }[] = []
+
+      for (const [userId, adjustment] of foundEntries) {
+        const currentScore = userMap.get(userId) ?? 0
+        const newTrustScore = currentScore + adjustment
+
+        const action =
+          adjustment > 0
+            ? TrustAction.ADMIN_ADJUSTMENT_POSITIVE
+            : TrustAction.ADMIN_ADJUSTMENT_NEGATIVE
+
+        await prismaCtx.user.update({
+          where: { id: userId },
+          data: {
+            trustScore: newTrustScore,
+            lastActiveAt: new Date(),
+          },
+        })
+
+        logEntries.push({
+          userId,
+          action,
+          weight: adjustment,
+          metadata: {
+            reason,
+            adminUserId,
+            adminName,
+            adjustment,
+          },
+        })
+
+        analytics.trust.trustScoreChanged({
+          userId,
+          oldScore: currentScore,
+          newScore: newTrustScore,
+          action,
+          weight: adjustment,
+        })
+
+        const currentTrustLevel = getTrustLevel(currentScore)
+        const newTrustLevel = getTrustLevel(newTrustScore)
+        if ((currentTrustLevel.name ?? null) !== (newTrustLevel.name ?? null)) {
+          levelChanges.push({
+            userId,
+            oldLevel: resolveTrustLevelName(currentTrustLevel),
+            newLevel: resolveTrustLevelName(newTrustLevel),
+            score: newTrustScore,
+          })
+        }
+      }
+
+      await prismaCtx.trustActionLog.createMany({ data: logEntries })
+
+      for (const change of levelChanges) {
+        analytics.trust.trustLevelChanged(change)
+      }
+
+      return foundEntries.length
+    }
+
+    if ('$transaction' in this.prisma) {
+      return this.prisma.$transaction(executeBulk)
+    }
+    return executeBulk(this.prisma)
   }
 }

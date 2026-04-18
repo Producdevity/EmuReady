@@ -1,6 +1,8 @@
 import analytics from '@/lib/analytics'
+import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
+import { getClientIP, verifyRecaptcha } from '@/lib/captcha/verify'
 import { AppError, ResourceError } from '@/lib/errors'
-import { TrustService } from '@/lib/trust/service'
+import { applyTrustAction, TrustService } from '@/lib/trust/service'
 import {
   ApprovePcListingSchema,
   BulkApprovePcListingsSchema,
@@ -68,6 +70,10 @@ import { paginate } from '@/server/utils/pagination'
 import { isUserBanned } from '@/server/utils/query-builders'
 import { validatePagination } from '@/server/utils/security-validation'
 import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
+import {
+  handleCommentVoteTrustEffects,
+  handleListingVoteTrustEffects,
+} from '@/server/utils/vote-trust-effects'
 import { PERMISSIONS, roleIncludesRole } from '@/utils/permission-system'
 import {
   canDeleteComment,
@@ -251,6 +257,10 @@ export const pcListingsRouter = createTRPCRouter({
     }),
 
   create: protectedProcedure.input(CreatePcListingSchema).mutation(async ({ ctx, input }) => {
+    // TODO: Add spam detection via `checkSpamContent` from
+    // `@/server/utils/spam-check` (currently only applied in mobile routes).
+    // Block: UX/product sign-off needed since existing web users would start
+    // seeing spam-block errors. Mirror mobile: `{ userId, content: notes, entityType: 'listing' }`.
     const authorId = ctx.session.user.id
     const repository = new PcListingsRepository(ctx.prisma)
     const newListing = await repository.create({
@@ -268,6 +278,12 @@ export const pcListingsRouter = createTRPCRouter({
       customFieldValues: (input.customFieldValues
         ? (input.customFieldValues as { customFieldDefinitionId: string; value: unknown }[])
         : null) as { customFieldDefinitionId: string; value: unknown }[] | null,
+    })
+
+    await applyTrustAction({
+      userId: authorId,
+      action: TrustAction.LISTING_CREATED,
+      context: { pcListingId: newListing.id },
     })
 
     // Invalidate stats cache when PC listing is created
@@ -513,6 +529,18 @@ export const pcListingsRouter = createTRPCRouter({
 
     const approvedListing = await repository.approve(input.pcListingId, ctx.session.user.id)
 
+    if (pcListing.authorId) {
+      await applyTrustAction({
+        userId: pcListing.authorId,
+        action: TrustAction.LISTING_APPROVED,
+        context: {
+          pcListingId: input.pcListingId,
+          adminUserId: ctx.session.user.id,
+          reason: 'listing_approved',
+        },
+      })
+    }
+
     // Invalidate stats cache when PC listing is approved
     listingStatsCache.delete('pc-listing-stats')
 
@@ -566,6 +594,18 @@ export const pcListingsRouter = createTRPCRouter({
       ctx.session.user.id,
       input.notes,
     )
+
+    if (pcListing.authorId) {
+      await applyTrustAction({
+        userId: pcListing.authorId,
+        action: TrustAction.LISTING_REJECTED,
+        context: {
+          pcListingId: input.pcListingId,
+          adminUserId: ctx.session.user.id,
+          reason: input.notes || 'listing_rejected',
+        },
+      })
+    }
 
     // Invalidate stats cache when PC listing is rejected
     listingStatsCache.delete('pc-listing-stats')
@@ -627,7 +667,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       const pendingListings = await ctx.prisma.pcListing.findMany({
         where: { id: { in: input.pcListingIds }, status: ApprovalStatus.PENDING },
-        select: { id: true, gameId: true },
+        select: { id: true, gameId: true, authorId: true },
       })
 
       const result = await ctx.prisma.pcListing.updateMany({
@@ -638,6 +678,24 @@ export const pcListingsRouter = createTRPCRouter({
           processedByUserId: ctx.session.user.id,
         },
       })
+
+      // Apply trust actions in parallel — distinct user adjustments, independent.
+      const listingsWithAuthor = pendingListings.filter(
+        (l): l is typeof l & { authorId: string } => l.authorId !== null,
+      )
+      await Promise.all(
+        listingsWithAuthor.map((listing) =>
+          applyTrustAction({
+            userId: listing.authorId,
+            action: TrustAction.LISTING_APPROVED,
+            context: {
+              pcListingId: listing.id,
+              adminUserId: ctx.session.user.id,
+              reason: 'bulk_listing_approved',
+            },
+          }),
+        ),
+      )
 
       listingStatsCache.delete('pc-listing-stats')
 
@@ -671,7 +729,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       const pendingListings = await ctx.prisma.pcListing.findMany({
         where: { id: { in: input.pcListingIds }, status: ApprovalStatus.PENDING },
-        select: { id: true },
+        select: { id: true, authorId: true },
       })
 
       const result = await ctx.prisma.pcListing.updateMany({
@@ -685,6 +743,24 @@ export const pcListingsRouter = createTRPCRouter({
           processedNotes: input.notes,
         },
       })
+
+      // Apply trust actions in parallel — distinct user adjustments, independent.
+      const listingsWithAuthor = pendingListings.filter(
+        (l): l is typeof l & { authorId: string } => l.authorId !== null,
+      )
+      await Promise.all(
+        listingsWithAuthor.map((listing) =>
+          applyTrustAction({
+            userId: listing.authorId,
+            action: TrustAction.LISTING_REJECTED,
+            context: {
+              pcListingId: listing.id,
+              adminUserId: ctx.session.user.id,
+              reason: input.notes || 'bulk_listing_rejected',
+            },
+          }),
+        ),
+      )
 
       // Invalidate stats cache when PC listings are bulk rejected
       listingStatsCache.delete('pc-listing-stats')
@@ -886,74 +962,95 @@ export const pcListingsRouter = createTRPCRouter({
       return AppError.shadowBanned()
     }
 
+    if (input.recaptchaToken) {
+      const clientIP = ctx.headers ? getClientIP(ctx.headers) : undefined
+      const captchaResult = await verifyRecaptcha({
+        token: input.recaptchaToken,
+        expectedAction: RECAPTCHA_CONFIG.actions.VOTE,
+        userIP: clientIP,
+      })
+
+      if (!captchaResult.success) return AppError.captcha(captchaResult.error)
+    }
+
     const pcListing = await ctx.prisma.pcListing.findUnique({
       where: { id: pcListingId },
     })
 
     if (!pcListing) return ResourceError.pcListing.notFound()
 
-    // Check if user already voted on this PC listing
-    const repository = new PcListingsRepository(ctx.prisma)
-    const existingVote = await repository.getExistingVote(userId, pcListingId)
+    // Fetch existingVote INSIDE the transaction to avoid race conditions between
+    // concurrent votes on the same (user, pcListing) pair.
+    const voteResult = await ctx.prisma.$transaction(async (tx) => {
+      const existingVote = await tx.pcListingVote.findUnique({
+        where: { userId_pcListingId: { userId, pcListingId } },
+      })
 
-    let voteResult
-
-    if (existingVote) {
-      // If vote is the same, remove the vote (toggle)
-      if (existingVote.value === value) {
-        // Delete vote and update counts in transaction
-        voteResult = await ctx.prisma.$transaction(async (tx) => {
-          await tx.pcListingVote.delete({
-            where: { userId_pcListingId: { userId, pcListingId } },
-          })
-
-          await updatePcListingVoteCounts(tx, pcListingId, 'delete', undefined, existingVote.value)
-
-          return { message: 'Vote removed' }
-        })
-      } else {
-        // Update vote and counts in transaction
-        voteResult = await ctx.prisma.$transaction(async (tx) => {
-          const vote = await tx.pcListingVote.update({
-            where: { userId_pcListingId: { userId, pcListingId } },
-            data: { value },
-          })
-
-          await updatePcListingVoteCounts(tx, pcListingId, 'update', value, existingVote.value)
-
-          return vote
-        })
+      let result: {
+        vote: { userId: string; pcListingId: string; value: boolean } | null
+        action: 'created' | 'updated' | 'deleted'
+        previousValue: boolean | null
       }
-    } else {
-      // Create new vote and update counts in transaction
-      voteResult = await ctx.prisma.$transaction(async (tx) => {
+
+      if (!existingVote) {
         const vote = await tx.pcListingVote.create({
           data: { userId, pcListingId, value },
         })
-
         await updatePcListingVoteCounts(tx, pcListingId, 'create', value)
+        result = { vote, action: 'created', previousValue: null }
+      } else if (existingVote.value === value) {
+        await tx.pcListingVote.delete({
+          where: { userId_pcListingId: { userId, pcListingId } },
+        })
+        await updatePcListingVoteCounts(tx, pcListingId, 'delete', undefined, existingVote.value)
+        result = { vote: null, action: 'deleted', previousValue: existingVote.value }
+      } else {
+        const vote = await tx.pcListingVote.update({
+          where: { userId_pcListingId: { userId, pcListingId } },
+          data: { value },
+        })
+        await updatePcListingVoteCounts(tx, pcListingId, 'update', value, existingVote.value)
+        result = { vote, action: 'updated', previousValue: existingVote.value }
+      }
 
-        return vote
+      await handleListingVoteTrustEffects({
+        tx,
+        action: result.action,
+        currentValue: value,
+        previousValue: result.previousValue,
+        userId,
+        listingId: pcListingId,
+        listingType: 'pc',
+        authorId: pcListing.authorId,
       })
-    }
 
-    // Emit notification event
-    notificationEventEmitter.emitNotificationEvent({
-      eventType: value ? NOTIFICATION_EVENTS.LISTING_VOTED : NOTIFICATION_EVENTS.LISTING_VOTED,
-      entityType: 'pcListing',
-      entityId: pcListingId,
-      triggeredBy: userId,
-      payload: { pcListingId, voteValue: value },
+      return result
     })
 
-    const finalVoteValue = existingVote?.value === value ? null : value
+    // Only notify the author when a vote was created or updated — toggle-off should not fire.
+    if (voteResult.action === 'created' || voteResult.action === 'updated') {
+      if (voteResult.vote) {
+        notificationEventEmitter.emitNotificationEvent({
+          eventType: NOTIFICATION_EVENTS.LISTING_VOTED,
+          entityType: 'pcListing',
+          entityId: pcListingId,
+          triggeredBy: userId,
+          payload: {
+            pcListingId,
+            voteValue: value,
+          },
+        })
+      }
+    }
+
+    const finalVoteValue = voteResult.action === 'deleted' ? null : value
     analytics.engagement.vote({
       listingId: pcListingId,
       voteValue: finalVoteValue,
-      previousVote: existingVote?.value,
+      previousVote: voteResult.previousValue,
     })
 
-    return voteResult
+    return voteResult.vote
   }),
 
   getUserVote: protectedProcedure
@@ -1072,6 +1169,10 @@ export const pcListingsRouter = createTRPCRouter({
   createComment: protectedProcedure
     .input(CreatePcListingCommentSchema)
     .mutation(async ({ ctx, input }) => {
+      // TODO: Add spam detection via `checkSpamContent` from
+      // `@/server/utils/spam-check` (currently only applied in mobile routes).
+      // Block: UX/product sign-off needed since existing web users would start
+      // seeing spam-block errors. Mirror mobile: `{ userId, content, entityType: 'comment' }`.
       const { pcListingId, content, parentId } = input
       const userId = ctx.session.user.id
 
@@ -1143,7 +1244,7 @@ export const pcListingsRouter = createTRPCRouter({
         return ResourceError.comment.noPermission('edit')
       }
 
-      return ctx.prisma.pcListingComment.update({
+      return await ctx.prisma.pcListingComment.update({
         where: { id: input.commentId },
         data: {
           content: input.content,
@@ -1238,43 +1339,78 @@ export const pcListingsRouter = createTRPCRouter({
         return ResourceError.comment.notFound()
       }
 
-      // Check if user already voted on this comment
-      const existingVote = await ctx.prisma.pcListingCommentVote.findUnique({
-        where: { userId_commentId: { userId, commentId } },
-      })
+      // Fetch `existingVote` inside the transaction: two concurrent votes
+      // from the same user could both read null and both attempt to insert,
+      // producing a Prisma P2002 on the second. Keeping the read and write
+      // under the same isolation avoids the race.
+      return await ctx.prisma.$transaction(async (tx) => {
+        const existingVote = await tx.pcListingCommentVote.findUnique({
+          where: { userId_commentId: { userId, commentId } },
+        })
 
-      // Start a transaction to handle both the vote and score update
-      return ctx.prisma.$transaction(async (tx) => {
         let voteResult
         let scoreChange: number
+        let trustAction: 'upvote' | 'downvote' | 'change' | 'remove' | null = null
 
         if (existingVote) {
-          // If vote is the same, remove the vote (toggle)
           if (existingVote.value === value) {
             await tx.pcListingCommentVote.delete({
               where: { userId_commentId: { userId, commentId } },
             })
             scoreChange = existingVote.value ? -1 : 1
             voteResult = { message: 'Vote removed' }
+            trustAction = 'remove'
           } else {
             voteResult = await tx.pcListingCommentVote.update({
               where: { userId_commentId: { userId, commentId } },
               data: { value },
             })
             scoreChange = value ? 2 : -2
+            trustAction = 'change'
           }
         } else {
           voteResult = await tx.pcListingCommentVote.create({
             data: { userId, commentId, value },
           })
           scoreChange = value ? 1 : -1
+          trustAction = value ? 'upvote' : 'downvote'
         }
 
-        // Update the comment score
-        await tx.pcListingComment.update({
+        const updatedComment = await tx.pcListingComment.update({
           where: { id: commentId },
           data: { score: { increment: scoreChange } },
         })
+
+        if (trustAction) {
+          await handleCommentVoteTrustEffects({
+            tx,
+            trustAction,
+            newValue: value,
+            previousValue: existingVote?.value ?? null,
+            commentAuthorId: comment.userId,
+            voterId: userId,
+            commentId,
+            parentEntityId: comment.pcListingId,
+            listingType: 'pc',
+            updatedScore: updatedComment.score,
+            scoreChange,
+          })
+        }
+
+        // Notify comment author on new votes / direction changes; skip on toggle-off.
+        if (trustAction !== null && trustAction !== 'remove') {
+          notificationEventEmitter.emitNotificationEvent({
+            eventType: NOTIFICATION_EVENTS.COMMENT_VOTED,
+            entityType: 'comment',
+            entityId: comment.id,
+            triggeredBy: userId,
+            payload: {
+              pcListingId: comment.pcListingId,
+              commentId: comment.id,
+              voteValue: value,
+            },
+          })
+        }
 
         return voteResult
       })
@@ -1428,7 +1564,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       // Prevent users from reporting their own listings
       if (pcListing.authorId === userId) {
-        AppError.badRequest('You cannot report your own listing')
+        return AppError.badRequest('You cannot report your own listing')
       }
 
       // Check if user already reported this listing
@@ -1442,10 +1578,10 @@ export const pcListingsRouter = createTRPCRouter({
       })
 
       if (existingReport) {
-        AppError.badRequest('You have already reported this listing')
+        return AppError.badRequest('You have already reported this listing')
       }
 
-      return ctx.prisma.pcListingReport.create({
+      return await ctx.prisma.pcListingReport.create({
         data: {
           pcListingId,
           reportedById: userId,
@@ -1565,7 +1701,7 @@ export const pcListingsRouter = createTRPCRouter({
         })
       }
 
-      return ctx.prisma.pcListingReport.update({
+      return await ctx.prisma.pcListingReport.update({
         where: { id: reportId },
         data: {
           status,
@@ -1599,7 +1735,7 @@ export const pcListingsRouter = createTRPCRouter({
       })
 
       if (!pcListing) {
-        ResourceError.pcListing.notFound()
+        return ResourceError.pcListing.notFound()
       }
 
       // Check if user already verified this listing
@@ -1613,10 +1749,10 @@ export const pcListingsRouter = createTRPCRouter({
       })
 
       if (existingVerification) {
-        AppError.badRequest('You have already verified this listing')
+        return AppError.badRequest('You have already verified this listing')
       }
 
-      return ctx.prisma.pcListingDeveloperVerification.create({
+      return await ctx.prisma.pcListingDeveloperVerification.create({
         data: {
           pcListingId,
           verifiedBy: verifierId,
@@ -1644,7 +1780,7 @@ export const pcListingsRouter = createTRPCRouter({
         return ResourceError.verification.canOnlyRemoveOwn()
       }
 
-      return ctx.prisma.pcListingDeveloperVerification.delete({
+      return await ctx.prisma.pcListingDeveloperVerification.delete({
         where: { id: input.verificationId },
       })
     }),
@@ -1652,7 +1788,7 @@ export const pcListingsRouter = createTRPCRouter({
   getVerifications: publicProcedure
     .input(GetPcListingVerificationsSchema)
     .query(async ({ ctx, input }) => {
-      return ctx.prisma.pcListingDeveloperVerification.findMany({
+      return await ctx.prisma.pcListingDeveloperVerification.findMany({
         where: { pcListingId: input.pcListingId },
         include: {
           developer: { select: { id: true, name: true } },

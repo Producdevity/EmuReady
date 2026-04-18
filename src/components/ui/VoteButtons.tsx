@@ -149,6 +149,7 @@ export function VoteButtons(props: VoteButtonsProps) {
             type="button"
             onClick={() => handleVote(true)}
             disabled={!isAuthenticated || props.isLoading}
+            aria-pressed={optimisticVote === true}
             className={`flex flex-col items-center p-3 rounded-lg transition-colors border-2 ${
               optimisticVote === true
                 ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-700 dark:text-green-400'
@@ -173,6 +174,7 @@ export function VoteButtons(props: VoteButtonsProps) {
             type="button"
             onClick={() => handleVote(false)}
             disabled={!isAuthenticated || props.isLoading}
+            aria-pressed={optimisticVote === false}
             className={`flex flex-col items-center p-3 rounded-lg transition-colors border-2 ${
               optimisticVote === false
                 ? 'bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-700 dark:text-red-400'

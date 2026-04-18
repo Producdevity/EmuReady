@@ -43,7 +43,7 @@ const DEFAULT_CONFIG: Required<SpamDetectionConfig> = {
 }
 
 /**
- * Comprehensive spam detection service
+ * Spam detection service
  * Checks content for spam using multiple detection methods
  */
 export class SpamDetectionService {
