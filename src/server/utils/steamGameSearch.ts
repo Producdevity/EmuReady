@@ -13,9 +13,11 @@ interface SteamAppEntry {
   name: string
 }
 
-interface SteamApiResponse {
-  applist: {
-    apps: SteamAppEntry[]
+interface SteamStoreApiResponse {
+  response: {
+    apps: (SteamAppEntry & { last_modified?: number; price_change_number?: number })[]
+    have_more_results?: boolean
+    last_appid?: number
   }
 }
 
@@ -50,34 +52,71 @@ const FUSE_OPTIONS = {
   findAllMatches: true,
 }
 
-const STEAM_API_URL = 'https://api.steampowered.com/ISteamApps/GetAppList/v2/'
+// ISteamApps/GetAppList/v2 was removed by Valve. The replacement requires a key.
+const STEAM_STORE_API_URL = 'https://api.steampowered.com/IStoreService/GetAppList/v1/'
+const FETCH_TIMEOUT_MS = 30_000 // 30s — avoids hanging on serverless cold starts
+const PAGE_SIZE = 50_000 // max allowed by the API
+
+// In-flight deduplication: prevents concurrent cold starts from each firing a fetch
+let inflightFetch: Promise<SteamAppEntry[]> | null = null
 
 /**
- * Fetches Steam games data from Steam Web API
+ * Fetches Steam games data from IStoreService/GetAppList/v1 with pagination.
+ * Requires STEAM_API_KEY env var.
  */
 async function fetchSteamGamesData(): Promise<SteamAppEntry[]> {
-  const response = await fetch(STEAM_API_URL, {
-    headers: { 'User-Agent': 'EmuReady-GameSearch/1.0' },
-  })
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch Steam games data: ${response.status} ${response.statusText}`)
+  const apiKey = process.env.STEAM_API_KEY
+  if (!apiKey) {
+    throw new Error('STEAM_API_KEY environment variable is not set')
   }
 
-  const data = (await response.json()) as SteamApiResponse
+  const allApps: SteamAppEntry[] = []
+  let lastAppId: number | undefined
 
-  if (!data.applist || !Array.isArray(data.applist.apps)) {
-    throw new Error('Invalid Steam games data format: expected applist.apps array')
-  }
-
-  // Validate data structure
-  for (const entry of data.applist.apps.slice(0, 5)) {
-    if (typeof entry.appid !== 'number' || typeof entry.name !== 'string') {
-      throw new Error('Invalid Steam app entry structure')
+  do {
+    const url = new URL(STEAM_STORE_API_URL)
+    url.searchParams.set('key', apiKey)
+    url.searchParams.set('include_games', '1')
+    url.searchParams.set('include_dlc', '0')
+    url.searchParams.set('include_software', '0')
+    url.searchParams.set('include_videos', '0')
+    url.searchParams.set('include_hardware', '0')
+    url.searchParams.set('max_results', String(PAGE_SIZE))
+    if (lastAppId !== undefined) {
+      url.searchParams.set('last_appid', String(lastAppId))
     }
-  }
 
-  return data.applist.apps
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+
+    let response: Response
+    try {
+      response = await fetch(url, {
+        headers: { 'User-Agent': 'EmuReady-GameSearch/1.0' },
+        signal: controller.signal,
+      })
+    } finally {
+      clearTimeout(timeoutId)
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch Steam games data: ${response.status} ${response.statusText}`)
+    }
+
+    const data = (await response.json()) as SteamStoreApiResponse
+
+    if (!data.response || !Array.isArray(data.response.apps)) {
+      throw new Error('Invalid Steam games data format: expected response.apps array')
+    }
+
+    for (const entry of data.response.apps) {
+      if (entry.name) allApps.push({ appid: entry.appid, name: entry.name })
+    }
+
+    lastAppId = data.response.have_more_results ? data.response.last_appid : undefined
+  } while (lastAppId !== undefined)
+
+  return allApps
 }
 
 /**
@@ -86,18 +125,25 @@ async function fetchSteamGamesData(): Promise<SteamAppEntry[]> {
 export async function getSteamGamesData(): Promise<SteamAppEntry[]> {
   const cacheKey = 'steam-games-data'
 
-  // Try to get from cache first
   const cachedData = steamGamesDataCache.get(cacheKey)
   if (cachedData) return cachedData
 
-  // Fetch fresh data and cache it
+  // Deduplicate concurrent fetches so only one in-flight request runs at a time
+  if (!inflightFetch) {
+    inflightFetch = fetchSteamGamesData().finally(() => {
+      inflightFetch = null
+    })
+  }
+
   try {
-    const freshData = await fetchSteamGamesData()
+    const freshData = await inflightFetch
     steamGamesDataCache.set(cacheKey, freshData)
     return freshData
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('[steamGameSearch] fetchSteamGamesData failed:', message)
     if (error instanceof Error) {
-      error.message = `Steam games data fetch failed: ${error.message}`
+      error.message = `Steam games data fetch failed: ${message}`
     }
     throw error
   }
@@ -288,7 +334,8 @@ export async function getSteamGamesStats(): Promise<{
       cacheStatus: 'miss',
       lastUpdated: lastUpdated || undefined,
     }
-  } catch {
+  } catch (error) {
+    console.error('[steamGameSearch] getSteamGamesStats failed to load data:', error)
     return {
       totalGames: 0,
       cacheStatus: 'empty',
