@@ -30,6 +30,7 @@ import { pcListingsRouter } from './routers/pcListings'
 import { performanceScalesRouter } from './routers/performanceScales'
 import { permissionLogsRouter } from './routers/permissionLogs'
 import { permissionsRouter } from './routers/permissions'
+import { platformsRouter } from './routers/platforms'
 import { rawgRouter } from './routers/rawg'
 import { releasesRouter } from './routers/releases'
 import { socialRouter } from './routers/social'
@@ -71,6 +72,7 @@ export const appRouter = createTRPCRouter({
   performanceScales: performanceScalesRouter,
   permissions: permissionsRouter,
   permissionLogs: permissionLogsRouter,
+  platforms: platformsRouter,
   auditLogs: auditLogsRouter,
   trust: trustRouter,
   rawg: rawgRouter,

@@ -4,12 +4,18 @@
  */
 
 import { PAGINATION } from '@/data/constants'
-import { AppError, ResourceError } from '@/lib/errors'
+import { ResourceError } from '@/lib/errors'
 import { canUserAutoApprove } from '@/lib/trust/service'
-import { computeVoteCounts } from '@/server/utils/moderator-info'
+import {
+  assembleModeratorInfo,
+  moderatorInfoUserSelect,
+  moderatorInfoVoteSelect,
+} from '@/server/utils/moderator-info'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
+import { resolvePcPlatformId } from '@/server/utils/platform-resolution'
 import { sanitizeInput } from '@/server/utils/security-validation'
 import { roleIncludesRole } from '@/utils/permission-system'
+import { inferPlatformSlugFromOs } from '@/utils/platform-os-mapping'
 import { calculateWilsonScore } from '@/utils/wilson-score'
 import { Prisma, ApprovalStatus, type PcOs, Role } from '@orm'
 import { BaseRepository } from './base.repository'
@@ -22,6 +28,7 @@ export interface PcListingFilters {
   gpuIds?: string[]
   emulatorIds?: string[]
   performanceIds?: number[]
+  platformIds?: string[]
   searchTerm?: string
   page?: number
   limit?: number
@@ -32,7 +39,7 @@ export interface PcListingFilters {
   userId?: string
   userRole?: Role
   showNsfw?: boolean
-  osFilter?: string[]
+  osFilter?: PcOs[]
   memoryMin?: number
   memoryMax?: number
   canSeeBannedUsers?: boolean
@@ -65,6 +72,7 @@ export class PcListingsRepository extends BaseRepository {
       gpu: { include: { brand: true } },
       emulator: true,
       performance: true,
+      platform: { select: { id: true, name: true, slug: true, scope: true } },
       author: {
         include: {
           userBans: {
@@ -195,6 +203,7 @@ export class PcListingsRepository extends BaseRepository {
       gpuIds,
       emulatorIds,
       performanceIds,
+      platformIds,
       searchTerm,
       page = 1,
       limit = PAGINATION.DEFAULT_LIMIT,
@@ -225,7 +234,8 @@ export class PcListingsRepository extends BaseRepository {
       ...(gpuIds?.length ? { gpuId: { in: gpuIds } } : {}),
       ...(emulatorIds?.length ? { emulatorId: { in: emulatorIds } } : {}),
       ...(performanceIds?.length ? { performanceId: { in: performanceIds } } : {}),
-      ...(osFilter?.length ? { os: { in: osFilter as PcOs[] } } : {}),
+      ...(platformIds?.length ? { platformId: { in: platformIds } } : {}),
+      ...(osFilter?.length ? { os: { in: osFilter } } : {}),
       ...(memoryMin ? { memorySize: { gte: memoryMin } } : {}),
       ...(memoryMax ? { memorySize: { lte: memoryMax } } : {}),
       ...(searchTerm
@@ -573,6 +583,7 @@ export class PcListingsRepository extends BaseRepository {
     memorySize: number
     os: PcOs
     osVersion: string
+    platformId?: string | null
     notes?: string | null
     customFieldValues?: { customFieldDefinitionId: string; value: unknown }[] | null
   }): Promise<
@@ -589,6 +600,7 @@ export class PcListingsRepository extends BaseRepository {
       memorySize,
       os,
       osVersion,
+      platformId,
       notes,
       customFieldValues,
     } = input
@@ -624,58 +636,194 @@ export class PcListingsRepository extends BaseRepository {
     if (!performance) throw ResourceError.performanceScale.notFound()
 
     const isSystemCompatible = emulator.systems.some((s) => s.id === game.systemId)
-    if (!isSystemCompatible)
-      return AppError.badRequest("The selected emulator does not support this game's system")
+    if (!isSystemCompatible) throw ResourceError.emulator.systemMismatch()
 
     const canAutoApprove = await canUserAutoApprove(authorId)
     const isAuthorOrHigher = roleIncludesRole(userRole, Role.AUTHOR)
     const status: ApprovalStatus =
       canAutoApprove || isAuthorOrHigher ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING
 
-    // Create
-    const created = await this.prisma.pcListing.create({
-      data: {
-        gameId,
-        cpuId,
-        ...(gpuId ? { gpuId } : {}),
+    const created = await this.prisma.$transaction(async (tx) => {
+      const resolvedPlatformId = await this.resolvePlatformIdForCreate({
+        platformId,
         emulatorId,
-        performanceId,
-        memorySize,
         os,
-        osVersion,
-        notes: notes ? sanitizeInput(notes) : (notes ?? null),
-        authorId,
-        status,
-        successRate: calculateWilsonScore(0, 0),
-        ...((canAutoApprove || isAuthorOrHigher) && {
-          processedByUserId: authorId,
-          processedAt: new Date(),
-          processedNotes:
-            isAuthorOrHigher && !canAutoApprove
-              ? 'Auto-approved (Author or higher role)'
-              : 'Auto-approved (Trusted user)',
-        }),
-      },
+        tx,
+      })
+
+      const createdListing = await tx.pcListing.create({
+        data: {
+          gameId,
+          cpuId,
+          ...(gpuId ? { gpuId } : {}),
+          emulatorId,
+          performanceId,
+          memorySize,
+          os,
+          osVersion,
+          platformId: resolvedPlatformId,
+          notes: notes ? sanitizeInput(notes) : (notes ?? null),
+          authorId,
+          status,
+          successRate: calculateWilsonScore(0, 0),
+          ...((canAutoApprove || isAuthorOrHigher) && {
+            processedByUserId: authorId,
+            processedAt: new Date(),
+            processedNotes:
+              isAuthorOrHigher && !canAutoApprove
+                ? 'Auto-approved (Author or higher role)'
+                : 'Auto-approved (Trusted user)',
+          }),
+        },
+      })
+
+      if (customFieldValues && customFieldValues.length > 0) {
+        await tx.pcListingCustomFieldValue.createMany({
+          data: customFieldValues.map((cfv) => ({
+            pcListingId: createdListing.id,
+            customFieldDefinitionId: cfv.customFieldDefinitionId,
+            value: cfv.value as Prisma.InputJsonValue,
+          })),
+        })
+      }
+
+      return createdListing
     })
 
-    if (customFieldValues && customFieldValues.length > 0) {
-      await this.prisma.pcListingCustomFieldValue.createMany({
-        data: customFieldValues.map((cfv) => ({
-          pcListingId: created.id,
-          customFieldDefinitionId: cfv.customFieldDefinitionId,
-          value: cfv.value as Prisma.InputJsonValue,
-        })),
-      })
-    }
-
-    // Return with standard include
+    // Return with standard include (read-only, safe outside the transaction)
     const result = await this.prisma.pcListing.findUnique({
       where: { id: created.id },
       include: PcListingsRepository.includes.forList,
     })
 
-    if (!result) throw new Error('Failed to load created PC listing')
+    if (!result) throw ResourceError.pcListing.notFound()
     return result
+  }
+
+  private async resolvePlatformIdForCreate(args: {
+    platformId?: string | null
+    emulatorId: string
+    os: PcOs
+    tx?: Prisma.TransactionClient
+  }): Promise<string | null> {
+    const { platformId, emulatorId, os, tx } = args
+    const context = await this.fetchPcPlatformContext({ emulatorId, platformId, os, tx })
+
+    return resolvePcPlatformId({
+      requested: platformId,
+      requestedSlug: context.requestedSlug,
+      emulatorSupported: context.emulatorSupported,
+      os,
+      osDerivedFallback: context.osDerivedFallback,
+    })
+  }
+
+  // platformId semantics:
+  //   null      → caller is clearing; no-op.
+  //   undefined → keep existing row's platformId; still re-validates
+  //               when emulatorId or os is changing, since either can
+  //               invalidate the stored platform.
+  //   string    → always validates the incoming id.
+  async validatePlatformForUpdate(args: {
+    platformId: string | null | undefined
+    pcListingId: string
+    emulatorId?: string
+    os?: PcOs | null
+  }): Promise<void> {
+    const existing = await this.prisma.pcListing.findUnique({
+      where: { id: args.pcListingId },
+      select: { emulatorId: true, os: true, platformId: true },
+    })
+    if (!existing) throw ResourceError.pcListing.notFound()
+
+    const effectivePlatformId =
+      args.platformId === undefined ? existing.platformId : args.platformId
+
+    if (effectivePlatformId === null) return
+
+    const emulatorChanging =
+      args.emulatorId !== undefined && args.emulatorId !== existing.emulatorId
+    const osChanging = args.os !== undefined && args.os !== existing.os
+    const platformChanging =
+      args.platformId !== undefined && args.platformId !== existing.platformId
+
+    if (!platformChanging && !emulatorChanging && !osChanging) return
+
+    const emulatorId = args.emulatorId ?? existing.emulatorId
+    const os = args.os === undefined ? existing.os : args.os
+
+    const context = await this.fetchPcPlatformContext({
+      emulatorId,
+      platformId: effectivePlatformId,
+      os,
+    })
+
+    // Only fire notFound when the user actively wrote the id. For
+    // re-validation triggered by an emulator/os change on an orphaned
+    // stored FK, skip below and re-enforce emulator + OS consistency.
+    if (platformChanging && !context.requestedSlug) {
+      throw ResourceError.platform.notFound()
+    }
+    if (!context.requestedSlug) return
+
+    if (os === null) {
+      // Legacy rows with null `os`: OS consistency can't apply, so
+      // emulator support is the only invariant left to enforce.
+      if (
+        context.emulatorSupported.size > 0 &&
+        !context.emulatorSupported.has(effectivePlatformId)
+      ) {
+        throw ResourceError.platform.notSupportedByEmulator()
+      }
+      return
+    }
+
+    resolvePcPlatformId({
+      requested: effectivePlatformId,
+      requestedSlug: context.requestedSlug,
+      emulatorSupported: context.emulatorSupported,
+      os,
+      osDerivedFallback: context.osDerivedFallback,
+    })
+  }
+
+  private async fetchPcPlatformContext(args: {
+    emulatorId: string
+    platformId: string | null | undefined
+    os: PcOs | null
+    tx?: Prisma.TransactionClient
+  }): Promise<{
+    emulatorSupported: ReadonlySet<string>
+    requestedSlug: string | null
+    osDerivedFallback: { id: string } | null
+  }> {
+    const db = args.tx ?? this.prisma
+    const fallbackSlug = inferPlatformSlugFromOs(args.os)
+
+    const [emulatorPlatforms, passedPlatform, osDerivedFallback] = await Promise.all([
+      db.emulatorPlatform.findMany({
+        where: { emulatorId: args.emulatorId },
+        select: { platformId: true },
+      }),
+      args.platformId
+        ? db.platform.findUnique({
+            where: { id: args.platformId },
+            select: { slug: true },
+          })
+        : Promise.resolve(null),
+      fallbackSlug
+        ? db.platform.findUnique({
+            where: { slug: fallbackSlug },
+            select: { id: true },
+          })
+        : Promise.resolve(null),
+    ])
+
+    return {
+      emulatorSupported: new Set(emulatorPlatforms.map((e) => e.platformId)),
+      requestedSlug: passedPlatform?.slug ?? null,
+      osDerivedFallback,
+    }
   }
 
   /**
@@ -947,19 +1095,6 @@ export class PcListingsRepository extends BaseRepository {
     return !!verified
   }
 
-  private static readonly moderatorInfoUserSelect = {
-    id: true,
-    name: true,
-  } as const
-
-  private static readonly moderatorInfoVoteSelect = {
-    id: true,
-    value: true,
-    createdAt: true,
-    nullifiedAt: true,
-    user: { select: { id: true, name: true, trustScore: true } },
-  } as const
-
   async getModeratorInfo(pcListingId: string) {
     const pcListing = await this.handleDatabaseOperation(
       () =>
@@ -969,7 +1104,7 @@ export class PcListingsRepository extends BaseRepository {
             status: true,
             processedAt: true,
             processedNotes: true,
-            processedByUser: { select: PcListingsRepository.moderatorInfoUserSelect },
+            processedByUser: { select: moderatorInfoUserSelect },
           },
         }),
       'PcListing',
@@ -982,22 +1117,11 @@ export class PcListingsRepository extends BaseRepository {
         this.prisma.pcListingVote.findMany({
           where: { pcListingId },
           orderBy: { createdAt: 'desc' },
-          select: PcListingsRepository.moderatorInfoVoteSelect,
+          select: moderatorInfoVoteSelect,
         }),
       'PcListingVote',
     )
 
-    const voteCounts = computeVoteCounts(votes)
-
-    return {
-      approval: {
-        status: pcListing.status,
-        processedAt: pcListing.processedAt,
-        processedNotes: pcListing.processedNotes,
-        processedBy: pcListing.processedByUser,
-      },
-      votes,
-      voteCounts,
-    }
+    return assembleModeratorInfo(pcListing, votes)
   }
 }

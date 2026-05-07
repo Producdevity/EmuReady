@@ -84,6 +84,7 @@ const mockEmulator = {
   systems: [],
   verifiedDevelopers: [],
   customFieldDefinitions: [],
+  platforms: [],
   _count: { listings: 0, systems: 0, customFieldDefinitions: 0 },
 }
 

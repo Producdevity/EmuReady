@@ -9,6 +9,7 @@ export const GetDevicesSchema = z
     search: z.string().nullable().optional(),
     brandId: z.string().uuid().nullable().optional(),
     socId: z.string().uuid().nullable().optional(),
+    platformId: z.string().uuid().nullable().optional(),
     limit: z.number().default(20),
     offset: z.number().default(0),
     page: z.number().optional(),
@@ -35,6 +36,16 @@ export const UpdateDeviceSchema = z.object({
 
 export const DeleteDeviceSchema = z.object({ id: z.string().uuid() })
 
+export const UpdateDeviceSupportedPlatformsSchema = z.object({
+  deviceId: z.string().uuid(),
+  platformIds: z.array(z.string().uuid()),
+})
+
+export const UpdateDeviceDefaultPlatformSchema = z.object({
+  deviceId: z.string().uuid(),
+  platformId: z.string().uuid().nullable(),
+})
+
 export const GetTrendingDevicesSummarySchema = z.object({
   limit: z.number().int().min(1).max(20).default(HOME_PAGE_LIMITS.TRENDING_DEVICES),
 })
@@ -44,3 +55,7 @@ export type GetDevicesInput = z.input<typeof GetDevicesSchema>
 export type CreateDeviceInput = z.infer<typeof CreateDeviceSchema>
 export type UpdateDeviceInput = z.infer<typeof UpdateDeviceSchema>
 export type GetDevicesByIdsInput = z.infer<typeof GetDevicesByIdsSchema>
+export type UpdateDeviceSupportedPlatformsInput = z.infer<
+  typeof UpdateDeviceSupportedPlatformsSchema
+>
+export type UpdateDeviceDefaultPlatformInput = z.infer<typeof UpdateDeviceDefaultPlatformSchema>

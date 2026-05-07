@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
+import { ApprovalsTabs } from '@/app/admin/approvals/components/ApprovalsTabs'
 import { useAdminTable } from '@/app/admin/hooks'
 import { confirmBulkApproval } from '@/app/admin/utils'
 import {
@@ -24,6 +25,7 @@ import {
   Button,
   ColumnVisibilityControl,
   DisplayToggleButton,
+  EditButton,
   LoadingSpinner,
   LocalizedDate,
   Pagination,
@@ -304,6 +306,8 @@ function PcListingApprovalsPage() {
         </>
       }
     >
+      <ApprovalsTabs />
+
       <AdminStatsDisplay
         stats={[
           {
@@ -617,6 +621,15 @@ function PcListingApprovalsPage() {
                             />
                           )}
                           <ViewButton title="View PC Listing" href={`/pc-listings/${listing.id}`} />
+                          {hasPermission(
+                            currentUserQuery.data?.permissions,
+                            PERMISSIONS.APPROVE_LISTINGS,
+                          ) && (
+                            <EditButton
+                              title="Edit PC Listing"
+                              href={`/admin/pc-listings/${listing.id}/edit`}
+                            />
+                          )}
                         </div>
                       </td>
                     )}

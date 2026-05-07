@@ -2,7 +2,7 @@
 
 import { useState, useEffect, type FormEvent } from 'react'
 import { Button, Input, Modal, Autocomplete, SelectInput } from '@/components/ui'
-import { PC_OS_OPTIONS } from '@/data/pc-os'
+import { PC_OS_OPTIONS, isPcOs } from '@/data/pc-os'
 import { api } from '@/lib/api'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -44,7 +44,7 @@ function PcPresetModal(props: Props) {
       setCpuId(props.preset.cpuId)
       setGpuId(props.preset.gpuId || '')
       setMemorySize(props.preset.memorySize.toString())
-      setOs(props.preset.os)
+      setOs(props.preset.os ?? PcOs.WINDOWS)
       setOsVersion(props.preset.osVersion)
     } else {
       setName('')
@@ -200,7 +200,9 @@ function PcPresetModal(props: Props) {
               name: opt.label,
             }))}
             value={os}
-            onChange={(ev) => setOs(ev.target.value as PcOs)}
+            onChange={(ev) => {
+              if (isPcOs(ev.target.value)) setOs(ev.target.value)
+            }}
           />
         </div>
 

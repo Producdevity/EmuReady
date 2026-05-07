@@ -25,7 +25,10 @@ export const pcListingInclude = {
 export const pcListingDetailInclude = {
   ...pcListingInclude,
   emulator: {
-    include: { customFieldDefinitions: { orderBy: { displayOrder: 'asc' } } },
+    include: {
+      systems: { select: { id: true, name: true } },
+      customFieldDefinitions: { orderBy: { displayOrder: 'asc' } },
+    },
   },
   developerVerifications: {
     include: { developer: { select: { id: true, name: true } } },

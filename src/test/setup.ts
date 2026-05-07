@@ -64,9 +64,15 @@ vi.mock('@orm', () => ({
   },
   PcOs: {
     WINDOWS: 'WINDOWS',
-    MAC_OS: 'MAC_OS',
     LINUX: 'LINUX',
-    CHROME_OS: 'CHROME_OS',
+    MACOS: 'MACOS',
+    FREEBSD: 'FREEBSD',
+    OTHER: 'OTHER',
+  },
+  PlatformScope: {
+    DESKTOP: 'DESKTOP',
+    MOBILE: 'MOBILE',
+    UNIVERSAL: 'UNIVERSAL',
   },
   ApprovalStatus: {
     PENDING: 'PENDING',

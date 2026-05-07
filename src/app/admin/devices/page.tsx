@@ -1,5 +1,8 @@
 'use client'
 
+import { Cog } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
@@ -18,6 +21,8 @@ import {
   LoadingSpinner,
   DeleteButton,
   EditButton,
+  PlatformBadge,
+  PlatformChipList,
   ViewButton,
   Pagination,
 } from '@/components/ui'
@@ -38,11 +43,17 @@ const DEVICES_COLUMNS: ColumnDefinition[] = [
   { key: 'brand', label: 'Brand', defaultVisible: true },
   { key: 'model', label: 'Model', defaultVisible: true },
   { key: 'soc', label: 'SoC', defaultVisible: true },
+  { key: 'platforms', label: 'Platforms', defaultVisible: true },
+  { key: 'defaultPlatform', label: 'Default', defaultVisible: true },
   { key: 'listings', label: 'Listings', defaultVisible: false },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
 function AdminDevicesPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const editIdFromUrl = searchParams.get('editId')
+
   const table = useAdminTable<DeviceSortField>({
     defaultSortField: 'brand',
     defaultSortDirection: 'asc',
@@ -59,49 +70,66 @@ function AdminDevicesPage() {
     limit: table.limit,
     page: table.page,
     brandId: table.additionalParams.brandId || null,
+    platformId: table.additionalParams.platformId || null,
   })
 
   const devicesStatsQuery = api.devices.stats.useQuery()
   const brandsQuery = api.deviceBrands.get.useQuery({ limit: 100 })
+  const platformsQuery = api.platforms.get.useQuery()
   const deleteDevice = api.devices.delete.useMutation()
   const confirm = useConfirmDialog()
 
-  const [modalOpen, setModalOpen] = useState(false)
-  const [viewModalOpen, setViewModalOpen] = useState(false)
-  const [editId, setEditId] = useState<string | null>(null)
-  const [deviceData, setDeviceData] = useState<DeviceData | null>(null)
+  const [addModalOpen, setAddModalOpen] = useState(false)
+  const [viewDevice, setViewDevice] = useState<DeviceData | null>(null)
+  const [primedEditDevice, setPrimedEditDevice] = useState<DeviceData | null>(null)
 
+  const editFetch = api.devices.byId.useQuery(
+    { id: editIdFromUrl ?? '' },
+    { enabled: !!editIdFromUrl && primedEditDevice?.id !== editIdFromUrl },
+  )
+
+  const editDevice: DeviceData | null = editIdFromUrl
+    ? primedEditDevice && primedEditDevice.id === editIdFromUrl
+      ? primedEditDevice
+      : (editFetch.data ?? null)
+    : null
+
+  const isEditModalOpen = !!editIdFromUrl
   const utils = api.useUtils()
 
   const userQuery = api.users.me.useQuery()
   const canManageDevices = hasPermission(userQuery.data?.permissions, PERMISSIONS.MANAGE_DEVICES)
 
-  const openModal = (device?: DeviceData) => {
-    setEditId(device?.id ?? null)
-    setDeviceData(device ?? null)
-    setModalOpen(true)
+  const setEditIdParam = (id: string | null) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (id) params.set('editId', id)
+    else params.delete('editId')
+    const qs = params.toString()
+    router.replace(qs ? `?${qs}` : window.location.pathname, { scroll: false })
+  }
+
+  const openAddModal = () => setAddModalOpen(true)
+
+  const openEditModal = (device: DeviceData) => {
+    setPrimedEditDevice(device)
+    setEditIdParam(device.id)
   }
 
   const closeModal = () => {
-    setModalOpen(false)
-    setEditId(null)
-    setDeviceData(null)
+    if (addModalOpen) setAddModalOpen(false)
+    if (isEditModalOpen) {
+      setPrimedEditDevice(null)
+      setEditIdParam(null)
+    }
   }
 
-  const openViewModal = (device: DeviceData) => {
-    setDeviceData(device)
-    setViewModalOpen(true)
-  }
-
-  const closeViewModal = () => {
-    setViewModalOpen(false)
-    setDeviceData(null)
-  }
+  const openViewModal = (device: DeviceData) => setViewDevice(device)
+  const closeViewModal = () => setViewDevice(null)
 
   const handleModalSuccess = () => {
-    // Invalidate queries to refetch fresh data
     utils.devices.get.invalidate().catch(console.error)
     utils.devices.stats.invalidate().catch(console.error)
+    if (editIdFromUrl) utils.devices.byId.invalidate({ id: editIdFromUrl }).catch(console.error)
     closeModal()
   }
 
@@ -132,7 +160,7 @@ function AdminDevicesPage() {
       headerActions={
         <>
           <ColumnVisibilityControl columns={DEVICES_COLUMNS} columnVisibility={columnVisibility} />
-          {canManageDevices && <Button onClick={() => openModal()}>Add Device</Button>}
+          {canManageDevices && <Button onClick={openAddModal}>Add Device</Button>}
         </>
       }
     >
@@ -162,8 +190,21 @@ function AdminDevicesPage() {
       <AdminSearchFilters<DeviceSortField>
         searchPlaceholder="Search devices..."
         table={table}
-        onClear={() => table.setAdditionalParam('brandId', '')}
+        onClear={() => {
+          table.setAdditionalParam('brandId', '')
+          table.setAdditionalParam('platformId', '')
+        }}
       >
+        <Autocomplete
+          value={table.additionalParams.platformId || ''}
+          onChange={(value) => table.setAdditionalParam('platformId', value || '')}
+          items={[{ id: '', name: 'All Platforms' }, ...(platformsQuery.data || [])]}
+          optionToValue={(platform) => platform.id}
+          optionToLabel={(platform) => platform.name}
+          className="w-full md:w-64"
+          placeholder="Filter by platform"
+          filterKeys={['name']}
+        />
         <Autocomplete
           value={table.additionalParams.brandId || ''}
           onChange={(value) => table.setAdditionalParam('brandId', value || '')}
@@ -210,6 +251,16 @@ function AdminDevicesPage() {
                     onSort={table.handleSort}
                   />
                 )}
+                {columnVisibility.isColumnVisible('platforms') && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Platforms
+                  </th>
+                )}
+                {columnVisibility.isColumnVisible('defaultPlatform') && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Default
+                  </th>
+                )}
                 {columnVisibility.isColumnVisible('listings') && (
                   <SortableHeader
                     label="Listings"
@@ -247,6 +298,23 @@ function AdminDevicesPage() {
                       {device.soc?.name ?? 'No SoC assigned'}
                     </td>
                   )}
+                  {columnVisibility.isColumnVisible('platforms') && (
+                    <td className="px-6 py-4 text-sm">
+                      <PlatformChipList platforms={device.platforms.map((p) => p.platform)} />
+                    </td>
+                  )}
+                  {columnVisibility.isColumnVisible('defaultPlatform') && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {device.defaultPlatform ? (
+                        <PlatformBadge
+                          name={device.defaultPlatform.name}
+                          scope={device.defaultPlatform.scope}
+                        />
+                      ) : (
+                        <span className="text-xs text-gray-400 dark:text-gray-500">Not set</span>
+                      )}
+                    </td>
+                  )}
                   {columnVisibility.isColumnVisible('listings') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-center">
                       {device._count.listings}
@@ -260,7 +328,18 @@ function AdminDevicesPage() {
                           title="View Device Details"
                         />
                         {canManageDevices && (
-                          <EditButton onClick={() => openModal(device)} title="Edit Device" />
+                          <EditButton onClick={() => openEditModal(device)} title="Edit Device" />
+                        )}
+                        {canManageDevices && (
+                          <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            icon={Cog}
+                            title="Manage supported platforms + default"
+                          >
+                            <Link href={`/admin/devices/${device.id}`}>Platforms</Link>
+                          </Button>
                         )}
                         {canManageDevices && (
                           <DeleteButton
@@ -303,14 +382,15 @@ function AdminDevicesPage() {
       )}
 
       <DeviceModal
-        isOpen={modalOpen}
+        key={editIdFromUrl ?? 'add'}
+        isOpen={addModalOpen || (isEditModalOpen && editDevice !== null)}
         onClose={closeModal}
-        editId={editId}
-        deviceData={deviceData}
+        editId={editIdFromUrl}
+        deviceData={editDevice}
         onSuccess={handleModalSuccess}
       />
 
-      <DeviceViewModal isOpen={viewModalOpen} onClose={closeViewModal} deviceData={deviceData} />
+      <DeviceViewModal isOpen={!!viewDevice} onClose={closeViewModal} deviceData={viewDevice} />
     </AdminPageLayout>
   )
 }

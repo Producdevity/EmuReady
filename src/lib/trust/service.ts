@@ -235,11 +235,8 @@ type PrismaTransaction = Omit<
   '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
 >
 
-/**
- * TrustService class for managing trust actions.
- * Accepts either a PrismaClient (creates its own transactions) or a
- * TransactionClient (participates in an outer transaction).
- */
+// Pass a PrismaClient to have TrustService open its own transactions,
+// or a PrismaTransaction to participate in an outer transaction.
 export class TrustService {
   constructor(private readonly prisma: PrismaClient | PrismaTransaction) {}
 

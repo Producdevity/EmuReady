@@ -5,7 +5,8 @@ import {
   ValidationPatterns,
 } from '@/server/utils/security-validation'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { type Prisma, Role } from '@orm'
+import { isPlatformSlugCompatibleWithOs } from '@/utils/platform-os-mapping'
+import { type PcOs, type Prisma, Role } from '@orm'
 import { BaseRepository } from './base.repository'
 
 /**
@@ -128,6 +129,24 @@ export class UserPcPresetsRepository extends BaseRepository {
     return preset
   }
 
+  private async validatePlatformConsistency(args: {
+    platformId: string | null | undefined
+    os: PcOs | null | undefined
+  }): Promise<void> {
+    if (args.platformId === undefined || args.platformId === null) return
+    if (!args.os) return
+
+    const platform = await this.prisma.platform.findUnique({
+      where: { id: args.platformId },
+      select: { slug: true },
+    })
+    if (!platform) throw ResourceError.platform.notFound()
+
+    if (!isPlatformSlugCompatibleWithOs(platform.slug, args.os)) {
+      throw ResourceError.platform.inconsistentWithOs()
+    }
+  }
+
   /**
    * Create a new preset
    */
@@ -157,6 +176,11 @@ export class UserPcPresetsRepository extends BaseRepository {
 
     if (!cpu) throw ResourceError.cpu.notFound()
     if (data.gpuId && !gpu) throw ResourceError.gpu.notFound()
+
+    await this.validatePlatformConsistency({
+      platformId: data.platformId,
+      os: data.os ?? undefined,
+    })
 
     return this.handleDatabaseOperation(
       () =>
@@ -213,6 +237,14 @@ export class UserPcPresetsRepository extends BaseRepository {
     if (data.gpuId) {
       const gpu = await this.prisma.gpu.findUnique({ where: { id: data.gpuId } })
       if (!gpu) throw ResourceError.gpu.notFound()
+    }
+
+    if (data.platformId !== undefined) {
+      const effectiveOs = data.os ?? preset.os
+      await this.validatePlatformConsistency({
+        platformId: data.platformId,
+        os: effectiveOs,
+      })
     }
 
     return this.handleDatabaseOperation(

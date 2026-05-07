@@ -1,9 +1,14 @@
 import { PAGINATION } from '@/data/constants'
-import { AppError, ResourceError } from '@/lib/errors'
+import { ResourceError } from '@/lib/errors'
 import { canUserAutoApprove } from '@/lib/trust/service'
 import { validateCustomFields } from '@/server/api/routers/listings/validation'
-import { computeVoteCounts } from '@/server/utils/moderator-info'
+import {
+  assembleModeratorInfo,
+  moderatorInfoUserSelect,
+  moderatorInfoVoteSelect,
+} from '@/server/utils/moderator-info'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
+import { resolveHandheldPlatformId } from '@/server/utils/platform-resolution'
 import {
   buildNsfwFilter,
   buildArrayFilter,
@@ -12,7 +17,7 @@ import {
 } from '@/server/utils/query-builders'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { calculateWilsonScore } from '@/utils/wilson-score'
-import { Prisma, ApprovalStatus, Role } from '@orm'
+import { Prisma, ApprovalStatus, type PrismaClient, Role } from '@orm'
 import { BaseRepository } from './base.repository'
 
 export interface ListingFilters {
@@ -23,6 +28,7 @@ export interface ListingFilters {
   socIds?: string[]
   emulatorIds?: string[]
   performanceIds?: (number | string)[]
+  platformIds?: string[]
   search?: string
 
   // Pagination
@@ -179,6 +185,9 @@ export class ListingsRepository extends BaseRepository {
     )
     const performanceFilter = buildArrayFilter(numericPerformanceIds, 'performanceId')
     if (performanceFilter) Object.assign(where, performanceFilter)
+
+    const platformFilter = buildArrayFilter(filters.platformIds, 'platformId')
+    if (platformFilter) Object.assign(where, platformFilter)
 
     // Handle device and SoC filters with OR logic (matching original implementation)
     const deviceSocConditions: Prisma.ListingWhereInput[] = []
@@ -570,6 +579,7 @@ export class ListingsRepository extends BaseRepository {
     deviceId: string
     emulatorId: string
     performanceId: number
+    platformId?: string | null
     notes?: string | null
     customFieldValues?: { customFieldDefinitionId: string; value: unknown }[] | null
   }) {
@@ -580,6 +590,7 @@ export class ListingsRepository extends BaseRepository {
       deviceId,
       emulatorId,
       performanceId,
+      platformId,
       notes,
       customFieldValues,
     } = input
@@ -602,14 +613,20 @@ export class ListingsRepository extends BaseRepository {
       if (!emulator) throw ResourceError.emulator.notFound()
 
       const isSystemCompatible = emulator.systems.some((s) => s.id === gameForValidation.systemId)
-      if (!isSystemCompatible)
-        throw AppError.badRequest("The selected emulator does not support this game's system")
+      if (!isSystemCompatible) throw ResourceError.emulator.systemMismatch()
 
       // Determine approval
       const canAutoApprove = await canUserAutoApprove(authorId)
       const isAuthorOrHigher = roleIncludesRole(userRole, Role.AUTHOR)
       const status: ApprovalStatus =
         canAutoApprove || isAuthorOrHigher ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING
+
+      const resolvedPlatformId = await this.resolvePlatformIdForCreate({
+        tx,
+        platformId,
+        deviceId,
+        emulatorId,
+      })
 
       // Create listing
       const newListing = await tx.listing.create({
@@ -618,6 +635,7 @@ export class ListingsRepository extends BaseRepository {
           deviceId,
           emulatorId,
           performanceId,
+          platformId: resolvedPlatformId,
           notes,
           authorId,
           status,
@@ -646,6 +664,98 @@ export class ListingsRepository extends BaseRepository {
 
       return newListing
     })
+  }
+
+  private async resolvePlatformIdForCreate(args: {
+    tx: Prisma.TransactionClient
+    platformId?: string | null
+    deviceId: string
+    emulatorId: string
+  }): Promise<string | null> {
+    const { tx, platformId, deviceId, emulatorId } = args
+    const { deviceSupported, emulatorSupported, deviceDefault } =
+      await this.fetchHandheldPlatformContext(tx, deviceId, emulatorId)
+
+    return resolveHandheldPlatformId({
+      requested: platformId,
+      deviceSupported,
+      emulatorSupported,
+      deviceDefault,
+    })
+  }
+
+  // platformId semantics:
+  //   null      → caller is clearing; no-op.
+  //   undefined → keep existing row's platformId; still re-validates
+  //               when emulatorId is changing, because a new emulator
+  //               can invalidate the stored platform.
+  //   string    → always validates the incoming id.
+  async validatePlatformForUpdate(args: {
+    platformId: string | null | undefined
+    listingId: string
+    emulatorId?: string
+    tx?: Prisma.TransactionClient
+  }): Promise<void> {
+    const db = args.tx ?? this.prisma
+    const existing = await db.listing.findUnique({
+      where: { id: args.listingId },
+      select: { deviceId: true, emulatorId: true, platformId: true },
+    })
+    if (!existing) throw ResourceError.listing.notFound()
+
+    const effectivePlatformId =
+      args.platformId === undefined ? existing.platformId : args.platformId
+
+    if (effectivePlatformId === null) return
+
+    const emulatorChanging =
+      args.emulatorId !== undefined && args.emulatorId !== existing.emulatorId
+    const platformChanging =
+      args.platformId !== undefined && args.platformId !== existing.platformId
+
+    if (!platformChanging && !emulatorChanging) return
+
+    const emulatorId = args.emulatorId ?? existing.emulatorId
+    const { deviceSupported, emulatorSupported, deviceDefault } =
+      await this.fetchHandheldPlatformContext(db, existing.deviceId, emulatorId)
+
+    resolveHandheldPlatformId({
+      requested: effectivePlatformId,
+      deviceSupported,
+      emulatorSupported,
+      deviceDefault,
+    })
+  }
+
+  private async fetchHandheldPlatformContext(
+    db: Prisma.TransactionClient | PrismaClient,
+    deviceId: string,
+    emulatorId: string,
+  ): Promise<{
+    deviceSupported: ReadonlySet<string>
+    emulatorSupported: ReadonlySet<string>
+    deviceDefault: string | null
+  }> {
+    const [devicePlatforms, emulatorPlatforms, device] = await Promise.all([
+      db.devicePlatform.findMany({
+        where: { deviceId },
+        select: { platformId: true },
+      }),
+      db.emulatorPlatform.findMany({
+        where: { emulatorId },
+        select: { platformId: true },
+      }),
+      db.device.findUnique({
+        where: { id: deviceId },
+        select: { defaultPlatformId: true },
+      }),
+    ])
+
+    return {
+      deviceSupported: new Set(devicePlatforms.map((d) => d.platformId)),
+      emulatorSupported: new Set(emulatorPlatforms.map((e) => e.platformId)),
+      deviceDefault: device?.defaultPlatformId ?? null,
+    }
   }
 
   /**
@@ -739,19 +849,6 @@ export class ListingsRepository extends BaseRepository {
     })
   }
 
-  private static readonly moderatorInfoUserSelect = {
-    id: true,
-    name: true,
-  } as const
-
-  private static readonly moderatorInfoVoteSelect = {
-    id: true,
-    value: true,
-    createdAt: true,
-    nullifiedAt: true,
-    user: { select: { id: true, name: true, trustScore: true } },
-  } as const
-
   async getModeratorInfo(listingId: string) {
     const listing = await this.handleDatabaseOperation(
       () =>
@@ -761,7 +858,7 @@ export class ListingsRepository extends BaseRepository {
             status: true,
             processedAt: true,
             processedNotes: true,
-            processedByUser: { select: ListingsRepository.moderatorInfoUserSelect },
+            processedByUser: { select: moderatorInfoUserSelect },
           },
         }),
       'Listing',
@@ -774,22 +871,11 @@ export class ListingsRepository extends BaseRepository {
         this.prisma.vote.findMany({
           where: { listingId },
           orderBy: { createdAt: 'desc' },
-          select: ListingsRepository.moderatorInfoVoteSelect,
+          select: moderatorInfoVoteSelect,
         }),
       'Vote',
     )
 
-    const voteCounts = computeVoteCounts(votes)
-
-    return {
-      approval: {
-        status: listing.status,
-        processedAt: listing.processedAt,
-        processedNotes: listing.processedNotes,
-        processedBy: listing.processedByUser,
-      },
-      votes,
-      voteCounts,
-    }
+    return assembleModeratorInfo(listing, votes)
   }
 }

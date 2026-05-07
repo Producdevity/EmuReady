@@ -36,7 +36,8 @@ import {
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
-import { computeAuthorRiskProfiles } from '@/server/services/author-risk.service'
+import { decorateListingsWithRiskProfiles } from '@/server/services/author-risk.service'
+import { applyBulkTrustActions } from '@/server/utils/bulk-trust-actions'
 import { listingStatsCache } from '@/server/utils/cache/instances'
 import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
 import { paginate } from '@/server/utils/pagination'
@@ -133,6 +134,7 @@ export const adminRouter = createTRPCRouter({
         game: { include: { system: true } },
         device: { include: { brand: true } },
         emulator: true,
+        platform: { select: { id: true, name: true, slug: true, scope: true } },
         author: {
           select: {
             id: true,
@@ -172,35 +174,7 @@ export const adminRouter = createTRPCRouter({
       take: limit,
     })
 
-    // Compute author risk profiles
-    const uniqueAuthorIds = [...new Set(listings.map((l) => l.authorId))]
-    const existingBansMap = new Map<string, { reason: string }[]>()
-    for (const listing of listings) {
-      if (
-        listing.author?.userBans &&
-        listing.author.userBans.length > 0 &&
-        !existingBansMap.has(listing.authorId)
-      ) {
-        existingBansMap.set(
-          listing.authorId,
-          listing.author.userBans.map((b) => ({ reason: b.reason })),
-        )
-      }
-    }
-    const riskProfiles = await computeAuthorRiskProfiles(
-      ctx.prisma,
-      uniqueAuthorIds,
-      existingBansMap,
-    )
-
-    const listingsWithRiskProfiles = listings.map((listing) => ({
-      ...listing,
-      authorRiskProfile: riskProfiles.get(listing.authorId) ?? {
-        authorId: listing.authorId,
-        signals: [],
-        highestSeverity: null,
-      },
-    }))
+    const listingsWithRiskProfiles = await decorateListingsWithRiskProfiles(ctx.prisma, listings)
 
     const totalListings = await ctx.prisma.listing.count({ where })
 
@@ -641,9 +615,7 @@ export const adminRouter = createTRPCRouter({
         )
 
         if (listingsToApprove.length === 0) {
-          return AppError.badRequest(
-            'No valid pending listings found to approve. The listings may have already been processed.',
-          )
+          return ResourceError.listing.noValidPendingForBulkApprove()
         }
 
         // Separate listings by banned/non-banned authors
@@ -679,9 +651,9 @@ export const adminRouter = createTRPCRouter({
           })
         }
 
-        // Return data needed for post-transaction operations.
-        // Trust actions intentionally run AFTER the transaction commits — applyTrustAction
-        // opens its own internal transaction, so nesting would deadlock or surprise.
+        // Trust actions run after this transaction commits —
+        // applyTrustAction opens its own transaction, and nesting
+        // would deadlock. Return what the post-commit step needs.
         return {
           validListings,
           bannedUserListings,
@@ -689,23 +661,15 @@ export const adminRouter = createTRPCRouter({
         }
       })
 
-      // Apply trust actions in parallel for approved listings (post-commit, distinct authors).
-      const approvedListingsWithAuthor = transactionResult.validListings.filter(
-        (l): l is typeof l & { authorId: string } => l.authorId !== null,
-      )
-      await Promise.all(
-        approvedListingsWithAuthor.map((listing) =>
-          applyTrustAction({
-            userId: listing.authorId,
-            action: TrustAction.LISTING_APPROVED,
-            context: {
-              listingId: listing.id,
-              adminUserId,
-              reason: 'bulk_listing_approved',
-            },
-          }),
-        ),
-      )
+      await applyBulkTrustActions({
+        listings: transactionResult.validListings,
+        action: TrustAction.LISTING_APPROVED,
+        buildContext: (listing) => ({
+          listingId: listing.id,
+          adminUserId,
+          reason: 'bulk_listing_approved',
+        }),
+      })
 
       // Emit notification events AFTER transaction completes successfully
       try {
@@ -829,9 +793,7 @@ export const adminRouter = createTRPCRouter({
         )
 
         if (listingsToReject.length === 0) {
-          return AppError.badRequest(
-            'No valid pending listings found to reject. The listings may have already been processed.',
-          )
+          return ResourceError.listing.noValidPendingForBulkReject()
         }
 
         // Update all listings to rejected
@@ -845,32 +807,24 @@ export const adminRouter = createTRPCRouter({
           },
         })
 
-        // Return data needed for post-transaction operations.
-        // Trust actions intentionally run AFTER the transaction commits — applyTrustAction
-        // opens its own internal transaction, so nesting would deadlock or surprise.
+        // Trust actions run after this transaction commits —
+        // applyTrustAction opens its own transaction, and nesting
+        // would deadlock. Return what the post-commit step needs.
         return {
           listingsToReject,
           notFoundOrNotPendingIds,
         }
       })
 
-      // Apply trust actions in parallel for rejected listings (post-commit, distinct authors).
-      const rejectedListingsWithAuthor = transactionResult.listingsToReject.filter(
-        (l): l is typeof l & { authorId: string } => l.authorId !== null,
-      )
-      await Promise.all(
-        rejectedListingsWithAuthor.map((listing) =>
-          applyTrustAction({
-            userId: listing.authorId,
-            action: TrustAction.LISTING_REJECTED,
-            context: {
-              listingId: listing.id,
-              adminUserId,
-              reason: notes || 'bulk_listing_rejected',
-            },
-          }),
-        ),
-      )
+      await applyBulkTrustActions({
+        listings: transactionResult.listingsToReject,
+        action: TrustAction.LISTING_REJECTED,
+        buildContext: (listing) => ({
+          listingId: listing.id,
+          adminUserId,
+          reason: notes || 'bulk_listing_rejected',
+        }),
+      })
 
       // NOTE: Emit notification events AFTER transaction completes successfully
       try {
@@ -1045,6 +999,7 @@ export const adminRouter = createTRPCRouter({
         device: { include: { brand: true, soc: true } },
         emulator: {
           include: {
+            systems: { select: { id: true, name: true } },
             customFieldDefinitions: {
               orderBy: [{ categoryId: 'asc' }, { categoryOrder: 'asc' }, { displayOrder: 'asc' }],
             },
@@ -1079,7 +1034,14 @@ export const adminRouter = createTRPCRouter({
       if (!existingListing) return ResourceError.listing.notFound()
 
       return await ctx.prisma.$transaction(async (tx) => {
-        // Update the main listing fields
+        const listingsRepository = new ListingsRepository(tx)
+        await listingsRepository.validatePlatformForUpdate({
+          platformId: updateData.platformId,
+          listingId: id,
+          emulatorId: updateData.emulatorId,
+          tx,
+        })
+
         const updatedListing = await tx.listing.update({
           where: { id },
           data: {

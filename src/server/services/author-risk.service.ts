@@ -149,6 +149,39 @@ async function batchGetRejectionCounts(
   return rejectionMap
 }
 
+interface ListingWithAuthor {
+  authorId: string
+  author?: { userBans?: { reason: string }[] | null } | null
+}
+
+export async function decorateListingsWithRiskProfiles<T extends ListingWithAuthor>(
+  prisma: PrismaClient,
+  listings: T[],
+): Promise<(T & { authorRiskProfile: AuthorRiskProfile })[]> {
+  const uniqueAuthorIds = [...new Set(listings.map((l) => l.authorId))]
+  const existingBansMap = new Map<string, ExistingBan[]>()
+  for (const listing of listings) {
+    const bans = listing.author?.userBans
+    if (bans && bans.length > 0 && !existingBansMap.has(listing.authorId)) {
+      existingBansMap.set(
+        listing.authorId,
+        bans.map((ban) => ({ reason: ban.reason })),
+      )
+    }
+  }
+
+  const profiles = await computeAuthorRiskProfiles(prisma, uniqueAuthorIds, existingBansMap)
+
+  return listings.map((listing) => ({
+    ...listing,
+    authorRiskProfile: profiles.get(listing.authorId) ?? {
+      authorId: listing.authorId,
+      signals: [],
+      highestSeverity: null,
+    },
+  }))
+}
+
 export async function computeAuthorRiskProfiles(
   prisma: PrismaClient,
   authorIds: string[],

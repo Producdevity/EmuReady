@@ -1,6 +1,6 @@
 # EmuReady Mobile API (tRPC)
 
-*Auto-generated on: 2026-02-17T20:21:36.450Z*
+*Auto-generated on: 2026-04-29T13:27:23.062Z*
 
 ## Summary
 - **Total Endpoints**: 112
@@ -710,7 +710,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 #### 27. **get**
 - **Method**: GET
 - **Path**: `/preferences.get`
-- **Description**: Get user preferences
+- **Description**: get - preferences
 - **Tags**: preferences
 
 - **Authentication**: Bearer token required
@@ -718,7 +718,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 #### 28. **update**
 - **Method**: POST
 - **Path**: `/preferences.update`
-- **Description**: Update user preferences
+- **Description**: update - preferences
 - **Tags**: preferences
 - **Request Body**: JSON object required
 - **Content-Type**: application/json
@@ -727,7 +727,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 #### 29. **addDevice**
 - **Method**: POST
 - **Path**: `/preferences.addDevice`
-- **Description**: Add device preference
+- **Description**: addDevice - preferences
 - **Tags**: preferences
 - **Request Body**: JSON object required
 - **Content-Type**: application/json
@@ -736,7 +736,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 #### 30. **removeDevice**
 - **Method**: POST
 - **Path**: `/preferences.removeDevice`
-- **Description**: Remove device preference
+- **Description**: removeDevice - preferences
 - **Tags**: preferences
 - **Request Body**: JSON object required
 - **Content-Type**: application/json
@@ -745,7 +745,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 #### 31. **bulkUpdateDevices**
 - **Method**: POST
 - **Path**: `/preferences.bulkUpdateDevices`
-- **Description**: Bulk update device preferences
+- **Description**: bulkUpdateDevices - preferences
 - **Tags**: preferences
 - **Request Body**: JSON object required
 - **Content-Type**: application/json
@@ -754,7 +754,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 #### 32. **bulkUpdateSocs**
 - **Method**: POST
 - **Path**: `/preferences.bulkUpdateSocs`
-- **Description**: Bulk update SOC preferences
+- **Description**: bulkUpdateSocs - preferences
 - **Tags**: preferences
 - **Request Body**: JSON object required
 - **Content-Type**: application/json
@@ -763,7 +763,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 #### 33. **currentProfile**
 - **Method**: GET
 - **Path**: `/preferences.currentProfile`
-- **Description**: Get current user's profile
+- **Description**: currentProfile - preferences
 - **Tags**: preferences
 
 - **Authentication**: Bearer token required
@@ -771,7 +771,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 #### 34. **profile**
 - **Method**: GET
 - **Path**: `/preferences.profile`
-- **Description**: Get user profile by ID
+- **Description**: profile - preferences
 - **Tags**: preferences
 
 - **Authentication**: Bearer token required
@@ -779,7 +779,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 #### 35. **updateProfile**
 - **Method**: POST
 - **Path**: `/preferences.updateProfile`
-- **Description**: Update profile
+- **Description**: updateProfile - preferences
 - **Tags**: preferences
 - **Request Body**: JSON object required
 - **Content-Type**: application/json

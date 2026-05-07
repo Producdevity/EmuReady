@@ -1,13 +1,13 @@
 'use client'
 
 import { VoteButtons as SharedVoteButtons } from '@/components/ui'
-import { api } from '@/lib/api'
+import { useListingApi, type ListingType } from '@/lib/api/useListingApi'
 import { useRecaptchaForVote } from '@/lib/captcha/hooks'
-import { type RouterInput } from '@/types/trpc'
 import VotingHelpModal from './VotingHelpModal'
 
 interface Props {
   listingId: string
+  listingType: ListingType
   currentVote: boolean | null
   upVoteCount: number
   totalVotes: number
@@ -16,27 +16,24 @@ interface Props {
   systemId?: string
   emulatorId?: string
   deviceId?: string
+  signInMessage?: string
 }
 
 export function VoteButtons(props: Props) {
   const { executeForVote, isCaptchaEnabled } = useRecaptchaForVote()
-
-  const voteMutation = api.listings.vote.useMutation({
-    onSuccess: () => {
-      props.onVoteSuccess?.()
-    },
-  })
+  const listingApi = useListingApi(props.listingType)
 
   const handleVote = async (value: boolean) => {
-    // Get CAPTCHA token if enabled
-    let recaptchaToken: string | null = null
-    if (isCaptchaEnabled) recaptchaToken = await executeForVote()
+    const recaptchaToken = isCaptchaEnabled ? await executeForVote() : null
 
-    voteMutation.mutate({
-      listingId: props.listingId,
-      value,
-      ...(recaptchaToken && { recaptchaToken }),
-    } satisfies RouterInput['listings']['vote'])
+    listingApi.vote(
+      {
+        listingId: props.listingId,
+        value,
+        recaptchaToken,
+      },
+      { onSuccess: () => props.onVoteSuccess?.() },
+    )
   }
 
   return (
@@ -47,7 +44,7 @@ export function VoteButtons(props: Props) {
       totalVotes={props.totalVotes}
       onVote={handleVote}
       onVoteSuccess={props.onVoteSuccess}
-      isLoading={voteMutation.isPending}
+      isLoading={listingApi.isVotePending}
       analyticsContext={{
         gameId: props.gameId,
         systemId: props.systemId,
@@ -55,6 +52,7 @@ export function VoteButtons(props: Props) {
         deviceId: props.deviceId,
       }}
       VotingHelpModal={VotingHelpModal}
+      labels={props.signInMessage ? { signInMessage: props.signInMessage } : undefined}
     />
   )
 }

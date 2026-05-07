@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import {
   CustomFieldsFormSection,
@@ -21,7 +21,7 @@ import {
   useFormKeyDown,
 } from '@/app/listings/hooks'
 import { Autocomplete, Button, Input, LoadingSpinner, SelectInput } from '@/components/ui'
-import { PC_OS_OPTIONS } from '@/data/pc-os'
+import { PC_OS_OPTIONS, isPcOs } from '@/data/pc-os'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
@@ -30,7 +30,11 @@ import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import { parseCustomFieldOptions, getCustomFieldDefaultValue } from '@/utils/custom-fields'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { PcOs } from '@orm'
+import {
+  getCompatiblePlatformSlugsForOs,
+  inferPlatformSlugFromOs,
+} from '@/utils/platform-os-mapping'
+import { PcOs, PlatformScope } from '@orm'
 import createDynamicPcListingSchema, {
   type CustomFieldDefinitionWithOptions,
 } from './form-schemas/createDynamicPcListingSchema'
@@ -54,6 +58,7 @@ function AddPcListingPage() {
   const [selectedEmulator, setSelectedEmulator] = useState<EmulatorOption | null>(null)
   const [selectedPreset, setSelectedPreset] = useState<PcPresetOption | null>(null)
   const [emulatorInputFocus, setEmulatorInputFocus] = useState(false)
+  const [selectedPlatformId, setSelectedPlatformId] = useState<string | null>(null)
   const [parsedCustomFields, setParsedCustomFields] = useState<CustomFieldDefinitionWithOptions[]>(
     [],
   )
@@ -70,7 +75,11 @@ function AddPcListingPage() {
 
   const { gameSearchTerm, setGameSearchTerm, loadGameItems } = useGameLoader()
   const { emulatorSearchTerm, availableEmulators, setAvailableEmulators, loadEmulatorItems } =
-    useEmulatorLoader(selectedGame)
+    useEmulatorLoader(selectedGame, { platformId: selectedPlatformId })
+
+  const pcPlatformsQuery = api.platforms.get.useQuery({
+    scopes: [PlatformScope.DESKTOP, PlatformScope.UNIVERSAL],
+  })
 
   const loadCpuItems = useCallback(
     async (query: string): Promise<CpuOption[]> => {
@@ -117,6 +126,39 @@ function AddPcListingPage() {
   })
 
   const selectedEmulatorId = form.watch('emulatorId')
+  const osFieldValue = form.watch('os')
+
+  const compatiblePlatforms = useMemo(() => {
+    const all = pcPlatformsQuery.data ?? []
+    const compatibleSlugs = getCompatiblePlatformSlugsForOs(osFieldValue)
+    if (!compatibleSlugs) return all
+    return all.filter((platform) => compatibleSlugs.includes(platform.slug))
+  }, [pcPlatformsQuery.data, osFieldValue])
+
+  const resolvePlatformIdBySlug = useCallback(
+    (slug: string | null) => {
+      if (!slug) return null
+      return pcPlatformsQuery.data?.find((p) => p.slug === slug)?.id ?? null
+    },
+    [pcPlatformsQuery.data],
+  )
+
+  // Falls back to the first compatible platform so the selector is
+  // never empty once data has loaded.
+  const osDerivedPlatformId = useMemo(() => {
+    const preferredId = resolvePlatformIdBySlug(inferPlatformSlugFromOs(osFieldValue))
+    return preferredId ?? compatiblePlatforms[0]?.id ?? null
+  }, [compatiblePlatforms, osFieldValue, resolvePlatformIdBySlug])
+
+  // Reconciles on initial load, on OS change (current selection may no
+  // longer be compatible), and on late-arriving platform data.
+  useEffect(() => {
+    if (!osDerivedPlatformId) return
+    const isCompatible =
+      selectedPlatformId !== null && compatiblePlatforms.some((p) => p.id === selectedPlatformId)
+    if (!isCompatible) setSelectedPlatformId(osDerivedPlatformId)
+  }, [compatiblePlatforms, osDerivedPlatformId, selectedPlatformId])
+
   const customFieldDefinitionsQuery = api.customFieldDefinitions.getByEmulator.useQuery(
     { emulatorId: selectedEmulatorId },
     {
@@ -199,6 +241,7 @@ function AddPcListingPage() {
 
         const result = await createPcListing.mutateAsync({
           ...data,
+          platformId: selectedPlatformId ?? undefined,
           recaptchaToken,
         })
 
@@ -231,10 +274,32 @@ function AddPcListingPage() {
       recaptchaHook,
       createPcListing,
       selectedGame?.system?.id,
+      selectedPlatformId,
       parsedCustomFields.length,
       router,
       utils,
     ],
+  )
+
+  // Keeps its own `targetOs` argument instead of reading `watch('os')`:
+  // the RHF watch hasn't necessarily propagated when preset-loading
+  // calls this, which would otherwise let the reconcile effect clobber
+  // the preset-derived platform. Do NOT collapse into `watch('os')`.
+  const pickPlatformIdForOs = useCallback(
+    (targetOs: PcOs, preferredId: string | null): string | null => {
+      const all = pcPlatformsQuery.data ?? []
+      const compatibleSlugs = getCompatiblePlatformSlugsForOs(targetOs)
+      const compatible = compatibleSlugs
+        ? all.filter((platform) => compatibleSlugs.includes(platform.slug))
+        : all
+
+      if (preferredId && compatible.some((p) => p.id === preferredId)) return preferredId
+
+      const osSlug = inferPlatformSlugFromOs(targetOs)
+      const osMatch = osSlug ? compatible.find((p) => p.slug === osSlug) : null
+      return osMatch?.id ?? compatible[0]?.id ?? null
+    },
+    [pcPlatformsQuery.data],
   )
 
   const handlePresetSelect = (preset: PcPresetOption) => {
@@ -242,8 +307,10 @@ function AddPcListingPage() {
     form.setValue('cpuId', preset.cpuId)
     form.setValue('gpuId', preset.gpuId || undefined) // Handle optional GPU
     form.setValue('memorySize', preset.memorySize)
-    form.setValue('os', preset.os)
+    const newOs = preset.os ?? PcOs.WINDOWS
+    form.setValue('os', newOs)
     form.setValue('osVersion', preset.osVersion)
+    setSelectedPlatformId(pickPlatformIdForOs(newOs, preset.platformId ?? null))
   }
 
   const handleClearPreset = () => {
@@ -253,6 +320,7 @@ function AddPcListingPage() {
     form.setValue('memorySize', 16)
     form.setValue('os', PcOs.WINDOWS)
     form.setValue('osVersion', '')
+    setSelectedPlatformId(pickPlatformIdForOs(PcOs.WINDOWS, null))
   }
 
   const formatCpuLabel = (cpu: CpuOption) => `${cpu.brand.name} ${cpu.modelName}`
@@ -499,6 +567,27 @@ function AddPcListingPage() {
                   )}
                 </div>
 
+                {/* Platform */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Platform *
+                  </label>
+                  <SelectInput
+                    label="Platform"
+                    hideLabel
+                    options={compatiblePlatforms.map((platform) => ({
+                      id: platform.id,
+                      name: platform.name,
+                    }))}
+                    value={selectedPlatformId ?? ''}
+                    onChange={(ev) => setSelectedPlatformId(ev.target.value || null)}
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Defaults from your OS choice. Change this if you&apos;re on Apple Silicon (macOS
+                    ARM), a Snapdragon laptop (Windows ARM), or an ARM Linux board.
+                  </p>
+                </div>
+
                 {/* Operating System */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -516,7 +605,12 @@ function AddPcListingPage() {
                           name: opt.label,
                         }))}
                         value={field.value}
-                        onChange={(ev) => field.onChange(ev.target.value as PcOs)}
+                        onChange={(ev) => {
+                          if (!isPcOs(ev.target.value)) return
+                          const nextOs = ev.target.value
+                          field.onChange(nextOs)
+                          setSelectedPlatformId(pickPlatformIdForOs(nextOs, selectedPlatformId))
+                        }}
                       />
                     )}
                   />

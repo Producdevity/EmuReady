@@ -27,10 +27,22 @@ export interface TrendingDevicesSummary {
  * Repository for Device data access
  */
 export class DevicesRepository extends BaseRepository {
+  private static readonly PLATFORMS_SELECTION = {
+    include: {
+      platform: { select: { id: true, name: true, slug: true, scope: true } },
+    },
+  } as const
+
+  private static readonly DEFAULT_PLATFORM_SELECTION = {
+    select: { id: true, name: true, slug: true, scope: true },
+  } as const
+
   static readonly includes = {
     default: {
       brand: true,
       soc: true,
+      platforms: DevicesRepository.PLATFORMS_SELECTION,
+      defaultPlatform: DevicesRepository.DEFAULT_PLATFORM_SELECTION,
     } satisfies Prisma.DeviceInclude,
 
     limited: {
@@ -40,12 +52,16 @@ export class DevicesRepository extends BaseRepository {
     withCounts: {
       brand: true,
       soc: true,
+      platforms: DevicesRepository.PLATFORMS_SELECTION,
+      defaultPlatform: DevicesRepository.DEFAULT_PLATFORM_SELECTION,
       _count: { select: { listings: true } },
     } satisfies Prisma.DeviceInclude,
 
     forMobile: {
       brand: { select: { id: true, name: true } },
       soc: { select: { id: true, name: true, manufacturer: true } },
+      platforms: DevicesRepository.PLATFORMS_SELECTION,
+      defaultPlatform: DevicesRepository.DEFAULT_PLATFORM_SELECTION,
       _count: { select: { listings: true } },
     } satisfies Prisma.DeviceInclude,
   } as const
@@ -166,6 +182,63 @@ export class DevicesRepository extends BaseRepository {
     await this.handleDatabaseOperation(() => this.prisma.device.delete({ where: { id } }), 'Device')
   }
 
+  // DevicePlatform has its own id/createdAt, so the usual `set: []`
+  // shortcut doesn't apply — use deleteMany + create. If the current
+  // defaultPlatformId is being removed, clear it in the same update
+  // to preserve the invariant that the default is one of the supported.
+  async updateSupportedPlatforms(
+    deviceId: string,
+    platformIds: string[],
+  ): Promise<Prisma.DeviceGetPayload<{ include: typeof DevicesRepository.includes.default }>> {
+    const existing = await this.prisma.device.findUnique({
+      where: { id: deviceId },
+      select: { defaultPlatformId: true },
+    })
+    if (!existing) throw ResourceError.device.notFound()
+
+    const keepDefault =
+      existing.defaultPlatformId !== null && platformIds.includes(existing.defaultPlatformId)
+
+    return this.handleDatabaseOperation(
+      () =>
+        this.prisma.device.update({
+          where: { id: deviceId },
+          data: {
+            platforms: {
+              deleteMany: {},
+              create: platformIds.map((platformId) => ({ platformId })),
+            },
+            ...(keepDefault ? {} : { defaultPlatformId: null }),
+          },
+          include: DevicesRepository.includes.default,
+        }),
+      'Device',
+    )
+  }
+
+  async updateDefaultPlatform(
+    deviceId: string,
+    platformId: string | null,
+  ): Promise<Prisma.DeviceGetPayload<{ include: typeof DevicesRepository.includes.default }>> {
+    if (platformId !== null) {
+      const link = await this.prisma.devicePlatform.findUnique({
+        where: { deviceId_platformId: { deviceId, platformId } },
+        select: { deviceId: true },
+      })
+      if (!link) throw ResourceError.platform.notAvailableForDevice()
+    }
+
+    return this.handleDatabaseOperation(
+      () =>
+        this.prisma.device.update({
+          where: { id: deviceId },
+          data: { defaultPlatformId: platformId },
+          include: DevicesRepository.includes.default,
+        }),
+      'Device',
+    )
+  }
+
   async list(input: GetDevicesInput = {}): Promise<{
     devices: Prisma.DeviceGetPayload<{ include: typeof DevicesRepository.includes.withCounts }>[]
     pagination: PaginationResult
@@ -176,6 +249,10 @@ export class DevicesRepository extends BaseRepository {
     const where: Prisma.DeviceWhereInput = {}
 
     if (input.brandId) where.brandId = input.brandId
+    if (input.socId) where.socId = input.socId
+    if (input.platformId) {
+      where.platforms = { some: { platformId: input.platformId } }
+    }
     if (input.search) {
       const searchWords = input.search.trim().split(/\s+/)
 

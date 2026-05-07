@@ -54,10 +54,12 @@ export function DeviceSelector<TFieldValues extends FieldValues = FieldValues>(
           }
           title={`${props.selectedDevice.brand.name} ${props.selectedDevice.modelName}`}
           subtitle={
-            <span className="flex items-center gap-1.5">
-              <Cpu className="w-3.5 h-3.5" />
-              {props.selectedDevice.soc.manufacturer} {props.selectedDevice.soc.name}
-            </span>
+            props.selectedDevice.soc ? (
+              <span className="flex items-center gap-1.5">
+                <Cpu className="w-3.5 h-3.5" />
+                {props.selectedDevice.soc.manufacturer} {props.selectedDevice.soc.name}
+              </span>
+            ) : null
           }
           onClear={() => {
             props.onDeviceSelect(null)
@@ -107,15 +109,17 @@ export function DeviceSelector<TFieldValues extends FieldValues = FieldValues>(
                       <span className="font-medium">
                         {item.brand.name} {item.modelName}
                       </span>
-                      <span
-                        className={`text-sm italic ml-2 ${
-                          isHighlighted
-                            ? 'text-blue-600 dark:text-blue-300'
-                            : 'text-gray-500 dark:text-gray-400'
-                        }`}
-                      >
-                        {item.soc.manufacturer} {item.soc.name}
-                      </span>
+                      {item.soc ? (
+                        <span
+                          className={`text-sm italic ml-2 ${
+                            isHighlighted
+                              ? 'text-blue-600 dark:text-blue-300'
+                              : 'text-gray-500 dark:text-gray-400'
+                          }`}
+                        >
+                          {item.soc.manufacturer} {item.soc.name}
+                        </span>
+                      ) : null}
                     </div>
                   )}
                   placeholder="Search for a device..."

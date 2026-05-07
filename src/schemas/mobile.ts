@@ -163,6 +163,7 @@ export const UpdateListingSchema = z.object({
   deviceId: z.string().uuid().optional(),
   emulatorId: z.string().uuid().optional(),
   performanceId: z.number().optional(),
+  platformId: z.string().uuid().nullable().optional(),
   notes: z.string().optional(),
   customFieldValues: z
     .array(z.union([CustomFieldValueSchema, SimplifiedCustomFieldValueSchema]))
@@ -221,6 +222,7 @@ export const GetListingsSchema = z
       .array(z.union([z.number(), z.string().transform(Number)]))
       .optional()
       .describe('Filter by performance IDs'),
+    platformIds: z.array(z.string().uuid()).optional().describe('Filter by platform IDs'),
     search: z.string().optional().describe('Search listings by game name'),
   })
   .optional()
@@ -398,6 +400,7 @@ export const CreatePcListingSchema = z.object({
   memorySize: z.number().min(1).max(256),
   os: z.nativeEnum(PcOs),
   osVersion: z.string().min(1),
+  platformId: z.string().uuid().nullable().optional(),
   notes: z.string().optional(),
   customFieldValues: z
     .array(z.union([CustomFieldValueSchema, SimplifiedCustomFieldValueSchema]))
@@ -414,6 +417,7 @@ export const UpdatePcListingSchema = z.object({
   memorySize: z.number().min(1).max(256).optional(),
   os: z.nativeEnum(PcOs).optional(),
   osVersion: z.string().min(1).optional(),
+  platformId: z.string().uuid().nullable().optional(),
   notes: z.string().optional(),
   customFieldValues: z
     .array(z.union([CustomFieldValueSchema, SimplifiedCustomFieldValueSchema]))
@@ -434,6 +438,7 @@ export const GetPcListingsSchema = z.object({
   gpuId: z.string().uuid().optional(),
   emulatorId: z.string().uuid().optional(),
   os: z.nativeEnum(PcOs).optional(),
+  platformIds: z.array(z.string().uuid()).optional(),
   search: z.string().optional(),
   minMemory: z.number().min(1).max(256).optional(),
   maxMemory: z.number().min(1).max(256).optional(),

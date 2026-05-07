@@ -11,6 +11,8 @@ export const GetEmulatorsSchema = z
     page: z.number().optional(),
     sortField: EmulatorSortField.optional(),
     sortDirection: SortDirection.optional(),
+    platformId: z.string().uuid().optional(),
+    systemId: z.string().uuid().optional(),
   })
   .optional()
 
@@ -46,8 +48,14 @@ export const UpdateSupportedSystemsSchema = z.object({
   systemIds: z.array(z.string().uuid()),
 })
 
+export const UpdateSupportedPlatformsSchema = z.object({
+  emulatorId: z.string().uuid(),
+  platformIds: z.array(z.string().uuid()),
+})
+
 // Type exports for repository use
 export type GetEmulatorsInput = z.input<typeof GetEmulatorsSchema>
 export type CreateEmulatorInput = z.infer<typeof CreateEmulatorSchema>
 export type UpdateEmulatorInput = z.infer<typeof UpdateEmulatorSchema>
 export type UpdateSupportedSystemsInput = z.infer<typeof UpdateSupportedSystemsSchema>
+export type UpdateSupportedPlatformsInput = z.infer<typeof UpdateSupportedPlatformsSchema>

@@ -58,6 +58,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       gpuId,
       emulatorId,
       os,
+      platformIds,
       search,
       minMemory,
       maxMemory,
@@ -68,7 +69,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
     const canSeeBannedUsers = ctx.session?.user ? isModerator(ctx.session.user.role) : false
 
     // Build where clause with proper search filtering
-    const baseWhere: Record<string, unknown> = {
+    const baseWhere: Prisma.PcListingWhereInput = {
       status: ApprovalStatus.APPROVED,
       game: {
         status: ApprovalStatus.APPROVED,
@@ -82,11 +83,16 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
     if (gpuId) baseWhere.gpuId = gpuId
     if (emulatorId) baseWhere.emulatorId = emulatorId
     if (os) baseWhere.os = os
+    if (platformIds?.length) baseWhere.platformId = { in: platformIds }
     if (systemId) {
-      baseWhere.game = {
-        ...(baseWhere.game || {}),
-        systemId,
-      }
+      const existingGameFilter = baseWhere.game
+      const baseGameFilter: Prisma.GameWhereInput =
+        existingGameFilter &&
+        typeof existingGameFilter === 'object' &&
+        !('is' in existingGameFilter)
+          ? existingGameFilter
+          : {}
+      baseWhere.game = { ...baseGameFilter, systemId }
     }
 
     // Add memory filtering
@@ -161,6 +167,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       memorySize: input.memorySize,
       os: input.os,
       osVersion: input.osVersion,
+      platformId: input.platformId ?? null,
       notes: input.notes ?? null,
       customFieldValues: (input.customFieldValues
         ? (input.customFieldValues as { customFieldDefinitionId: string; value: unknown }[])
@@ -203,6 +210,14 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
     if (existing.authorId !== ctx.session.user.id) {
       return ResourceError.pcListing.canOnlyEditOwn()
     }
+
+    const pcRepository = new PcListingsRepository(ctx.prisma)
+    await pcRepository.validatePlatformForUpdate({
+      platformId: updateData.platformId,
+      pcListingId: id,
+      emulatorId: updateData.emulatorId,
+      os: updateData.os,
+    })
 
     return await ctx.prisma.pcListing.update({
       where: { id },

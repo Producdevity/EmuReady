@@ -15,10 +15,14 @@ import {
   performanceOptions,
   systemOptions,
 } from '@/utils/options'
-import { type System, type PerformanceScale, type Emulator } from '@orm'
-
-type CpuWithBrand = { id: string; modelName: string; brand: { name: string } }
-type GpuWithBrand = { id: string; modelName: string; brand: { name: string } }
+import { type System, type PerformanceScale } from '@orm'
+import {
+  filterPcEmulators,
+  filterPcSystems,
+  type CpuListItem,
+  type EmulatorListItem,
+  type GpuListItem,
+} from './pcFilters'
 
 interface Props {
   cpuIds: string[]
@@ -29,10 +33,10 @@ interface Props {
   minMemory: number | null
   maxMemory: number | null
   searchTerm: string
-  cpus: CpuWithBrand[]
-  gpus: GpuWithBrand[]
+  cpus: CpuListItem[]
+  gpus: GpuListItem[]
   systems: System[]
-  emulators: Emulator[]
+  emulators: EmulatorListItem[]
   performanceScales: PerformanceScale[]
   onCpuChange: (values: string[]) => void
   onGpuChange: (values: string[]) => void
@@ -45,25 +49,6 @@ interface Props {
   onClearAll?: () => void
   showActiveFilters?: boolean
 }
-
-const filterPcSystems = (systems: System[]): System[] =>
-  systems.filter((system) => system.key !== 'microsoft_windows')
-
-// TODO: Remove this once we have a better way to filter out Systems and Emulators that don't belong on PC
-const ANDROID_EMULATORS = [
-  'AetherSX2',
-  'ExaGear',
-  'GameHub',
-  'GameNative',
-  'Horizon',
-  'MiceWine',
-  'Mobox',
-  'NethersX2',
-  'Pluvia',
-  'Winlator',
-]
-const filterPcEmulators = (emulators: Emulator[]): Emulator[] =>
-  emulators.filter((emulator) => !ANDROID_EMULATORS.includes(emulator.name))
 
 export default function PcFiltersContent(props: Props) {
   const handleMinMemoryChange = (ev: ChangeEvent<HTMLInputElement>) => {
@@ -110,7 +95,7 @@ export default function PcFiltersContent(props: Props) {
         leftIcon={<MonitorSpeaker className="w-5 h-5" />}
         value={props.systemIds}
         onChange={props.onSystemChange}
-        options={systemOptions(filterPcSystems(props.systems))}
+        options={systemOptions(filterPcSystems(props.systems, props.emulators))}
         placeholder="All systems"
         maxDisplayed={2}
       />

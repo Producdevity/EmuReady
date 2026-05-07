@@ -170,7 +170,7 @@ export async function createPcListing(page: Page): Promise<void> {
   await expect(memoryInput).toBeVisible()
   await memoryInput.fill('16')
 
-  const osSelect = page.locator('select').filter({ hasText: /windows|linux|macos/i })
+  const osSelect = page.locator('select[name="Operating System"]')
   await expect(osSelect).toBeVisible()
   await osSelect.selectOption({ index: 1 })
 

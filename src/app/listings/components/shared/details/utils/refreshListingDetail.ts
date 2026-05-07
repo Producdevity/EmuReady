@@ -1,40 +1,36 @@
 import { type api } from '@/lib/api'
+import { type ListingType } from '@/lib/api/useListingApi'
 
 type Utils = ReturnType<typeof api.useUtils>
 
-interface RefreshHandheldParams {
+interface Params {
   utils: {
     listings: {
-      byId: Pick<Utils['listings']['byId'], 'invalidate' | 'refetch'>
+      byId?: Pick<Utils['listings']['byId'], 'invalidate' | 'refetch'>
       moderatorInfo: Pick<Utils['listings']['moderatorInfo'], 'invalidate'>
+    }
+    pcListings?: {
+      byId: Pick<Utils['pcListings']['byId'], 'invalidate'>
     }
   }
   listingId: string
+  listingType: ListingType
 }
 
-export async function refreshHandheldListingDetail(params: RefreshHandheldParams): Promise<void> {
+export async function refreshListingDetail(params: Params): Promise<void> {
+  if (params.listingType === 'pc') {
+    if (!params.utils.pcListings) return
+    await Promise.all([
+      params.utils.pcListings.byId.invalidate({ id: params.listingId }),
+      params.utils.listings.moderatorInfo.invalidate({ id: params.listingId, type: 'pc' }),
+    ])
+    return
+  }
+
+  if (!params.utils.listings.byId) return
   await Promise.all([
     params.utils.listings.byId.invalidate({ id: params.listingId }),
     params.utils.listings.moderatorInfo.invalidate({ id: params.listingId, type: 'handheld' }),
   ])
   await params.utils.listings.byId.refetch({ id: params.listingId })
-}
-
-interface RefreshPcParams {
-  utils: {
-    pcListings: {
-      byId: Pick<Utils['pcListings']['byId'], 'invalidate'>
-    }
-    listings: {
-      moderatorInfo: Pick<Utils['listings']['moderatorInfo'], 'invalidate'>
-    }
-  }
-  pcListingId: string
-}
-
-export async function refreshPcListingDetail(params: RefreshPcParams): Promise<void> {
-  await Promise.all([
-    params.utils.pcListings.byId.invalidate({ id: params.pcListingId }),
-    params.utils.listings.moderatorInfo.invalidate({ id: params.pcListingId, type: 'pc' }),
-  ])
 }

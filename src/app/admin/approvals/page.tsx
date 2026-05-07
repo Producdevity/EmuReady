@@ -51,6 +51,7 @@ import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus } from '@orm'
 import ApprovalModal from './components/ApprovalModal'
+import { ApprovalsTabs } from './components/ApprovalsTabs'
 
 type PendingListing = RouterOutput['listings']['getPending']['listings'][number]
 type ApprovalSortField =
@@ -302,6 +303,8 @@ function AdminApprovalsPage() {
         </>
       }
     >
+      <ApprovalsTabs />
+
       <AdminStatsDisplay
         stats={[
           {

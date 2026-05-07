@@ -17,7 +17,7 @@ import { useForm, Controller } from 'react-hook-form'
 import '@/shared/emulator-config/eden'
 import '@/shared/emulator-config/azahar'
 import '@/shared/emulator-config/gamenative'
-import { Button, LoadingSpinner } from '@/components/ui'
+import { Button, LoadingSpinner, SelectInput } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
@@ -66,6 +66,7 @@ function AddListingPage() {
   const [selectedDevice, setSelectedDevice] = useState<DeviceOption | null>(null)
   const [deviceSearchTerm, setDeviceSearchTerm] = useState('')
   const [emulatorInputFocus, setEmulatorInputFocus] = useState(false)
+  const [selectedPlatformId, setSelectedPlatformId] = useState<string | null>(null)
   const [parsedCustomFields, setParsedCustomFields] = useState<CustomFieldDefinitionWithOptions[]>(
     [],
   )
@@ -81,7 +82,52 @@ function AddListingPage() {
 
   const { gameSearchTerm, setGameSearchTerm, loadGameItems } = useGameLoader()
   const { emulatorSearchTerm, availableEmulators, setAvailableEmulators, loadEmulatorItems } =
-    useEmulatorLoader(selectedGame)
+    useEmulatorLoader(selectedGame, { platformId: selectedPlatformId })
+
+  const selectedDeviceDetailQuery = api.devices.byId.useQuery(
+    { id: selectedDevice?.id ?? '' },
+    { enabled: !!selectedDevice?.id },
+  )
+
+  // Only trust the query result when it matches the current device — a
+  // stale fetch from the previous selection could otherwise land.
+  const deviceDetail =
+    selectedDevice && selectedDeviceDetailQuery.data?.id === selectedDevice.id
+      ? selectedDeviceDetailQuery.data
+      : null
+
+  const lastAutoDefaultedDeviceIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!selectedDevice) {
+      setSelectedPlatformId(null)
+      lastAutoDefaultedDeviceIdRef.current = null
+      return
+    }
+    if (!deviceDetail) return
+
+    if (lastAutoDefaultedDeviceIdRef.current === selectedDevice.id) return
+
+    lastAutoDefaultedDeviceIdRef.current = selectedDevice.id
+
+    const platforms = deviceDetail.platforms ?? []
+    if (platforms.length === 1) {
+      setSelectedPlatformId(platforms[0].platform.id)
+      return
+    }
+    if (deviceDetail.defaultPlatform) {
+      setSelectedPlatformId(deviceDetail.defaultPlatform.id)
+      return
+    }
+    // Multi-platform device without an explicit default: pick any
+    // supported platform so the FK is never silently null.
+    if (platforms.length > 1) {
+      setSelectedPlatformId(platforms[0].platform.id)
+      return
+    }
+    // Device has zero platform links (unmapped seed row).
+    setSelectedPlatformId(null)
+  }, [selectedDevice, deviceDetail])
 
   const form = useForm<ListingFormValues>({
     resolver: zodResolver(schemaState),
@@ -434,6 +480,7 @@ function AddListingPage() {
     // Schema validation handles all validation including custom fields
     createListingMutation.mutate({
       ...data,
+      platformId: selectedPlatformId ?? undefined,
       ...(recaptchaToken && { recaptchaToken }),
     })
   }
@@ -495,6 +542,27 @@ function AddListingPage() {
                 deviceSearchTerm={deviceSearchTerm}
               />
             </div>
+
+            {selectedDevice && (deviceDetail?.platforms.length ?? 0) > 1 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Platform *
+                </label>
+                <SelectInput
+                  label="Platform"
+                  hideLabel
+                  options={(deviceDetail?.platforms ?? []).map((entry) => ({
+                    id: entry.platform.id,
+                    name: entry.platform.name,
+                  }))}
+                  value={selectedPlatformId ?? ''}
+                  onChange={(ev) => setSelectedPlatformId(ev.target.value || null)}
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  This device supports multiple platforms. Pick the one you used.
+                </p>
+              </div>
+            )}
 
             {/* Emulator Selection */}
             <div>

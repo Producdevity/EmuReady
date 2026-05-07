@@ -9,7 +9,8 @@ import {
   RejectionNotesInput,
   CustomFieldsApprovalSection,
 } from '@/app/listings/components/shared/approval/ApprovalModalSharedComponents'
-import { AuthorRiskWarningBanner, Button, Modal } from '@/components/ui'
+import { AuthorRiskWarningBanner, Button, Modal, PlatformBadge } from '@/components/ui'
+import { PC_OS_LABELS } from '@/data/pc-os'
 import { useEmulatorLogos } from '@/hooks'
 import { type RouterOutput } from '@/types/trpc'
 import { ApprovalStatus } from '@orm'
@@ -79,6 +80,33 @@ function ApprovalModal(props: Props) {
                   {props.selectedPcListingForApproval.gpu.modelName}
                 </p>
               )}
+              <p className="text-sm text-gray-900 dark:text-white">
+                <span className="font-medium">Memory:</span>{' '}
+                {props.selectedPcListingForApproval.memorySize} GB
+              </p>
+              <p className="text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                <span className="font-medium">OS:</span>{' '}
+                {props.selectedPcListingForApproval.os
+                  ? (PC_OS_LABELS[props.selectedPcListingForApproval.os] ??
+                    props.selectedPcListingForApproval.os)
+                  : 'Unknown'}
+                {props.selectedPcListingForApproval.osVersion ? (
+                  <span className="text-gray-500 dark:text-gray-400">
+                    ({props.selectedPcListingForApproval.osVersion})
+                  </span>
+                ) : null}
+              </p>
+              <div className="text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                <span className="font-medium">Platform:</span>{' '}
+                {props.selectedPcListingForApproval.platform ? (
+                  <PlatformBadge
+                    name={props.selectedPcListingForApproval.platform.name}
+                    scope={props.selectedPcListingForApproval.platform.scope}
+                  />
+                ) : (
+                  <span className="text-xs text-gray-400 dark:text-gray-500">Not set</span>
+                )}
+              </div>
             </div>
           </div>
 

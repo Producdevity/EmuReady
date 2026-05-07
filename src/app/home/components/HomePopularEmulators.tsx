@@ -7,6 +7,7 @@ import { EmulatorIcon } from '@/components/icons'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { PlatformScope } from '@orm'
 
 export function HomePopularEmulators() {
   const trendingEmulatorsQuery = api.emulators.trending.useQuery()
@@ -68,6 +69,18 @@ export function HomePopularEmulators() {
                         ? emulator.systems.join(' & ')
                         : `${emulator.systems[0]} +${emulator.systems.length - 1}`
 
+                const hasPlatformData = emulator.platforms.length > 0
+                const supportsHandheld =
+                  !hasPlatformData ||
+                  emulator.platforms.some((platform) => platform.scope === PlatformScope.MOBILE)
+                const supportsPc =
+                  !hasPlatformData ||
+                  emulator.platforms.some(
+                    (platform) =>
+                      platform.scope === PlatformScope.DESKTOP ||
+                      platform.scope === PlatformScope.UNIVERSAL,
+                  )
+
                 return (
                   <motion.div
                     key={emulator.id}
@@ -94,38 +107,42 @@ export function HomePopularEmulators() {
                       </div>
 
                       <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 sm:gap-3 rounded-xl sm:rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl opacity-0 transition-all duration-300 group-hover:opacity-100">
-                        <Link
-                          href={`/listings?emulatorIds=${emulator.id}`}
-                          onClick={() => {
-                            analytics.contentDiscovery.homeEmulatorClicked({
-                              emulatorId: emulator.id,
-                              emulatorName: emulator.name,
-                              systemCount: emulator.systems.length,
-                              listingCount: emulator.listingCount,
-                              actionType: 'handheld',
-                            })
-                          }}
-                          className="flex items-center gap-1.5 sm:gap-2 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-blue-600 hover:to-cyan-600 hover:shadow-xl"
-                        >
-                          <Smartphone className="h-4 w-4 flex-shrink-0" />
-                          <span>Handheld</span>
-                        </Link>
-                        <Link
-                          href={`/pc-listings?emulatorIds=${emulator.id}`}
-                          onClick={() => {
-                            analytics.contentDiscovery.homeEmulatorClicked({
-                              emulatorId: emulator.id,
-                              emulatorName: emulator.name,
-                              systemCount: emulator.systems.length,
-                              listingCount: emulator.listingCount,
-                              actionType: 'pc',
-                            })
-                          }}
-                          className="flex items-center gap-1.5 sm:gap-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-purple-600 hover:to-pink-600 hover:shadow-xl"
-                        >
-                          <Monitor className="h-4 w-4 flex-shrink-0" />
-                          <span>PC</span>
-                        </Link>
+                        {supportsHandheld && (
+                          <Link
+                            href={`/listings?emulatorIds=${emulator.id}`}
+                            onClick={() => {
+                              analytics.contentDiscovery.homeEmulatorClicked({
+                                emulatorId: emulator.id,
+                                emulatorName: emulator.name,
+                                systemCount: emulator.systems.length,
+                                listingCount: emulator.listingCount,
+                                actionType: 'handheld',
+                              })
+                            }}
+                            className="flex items-center gap-1.5 sm:gap-2 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-blue-600 hover:to-cyan-600 hover:shadow-xl"
+                          >
+                            <Smartphone className="h-4 w-4 flex-shrink-0" />
+                            <span>Handheld</span>
+                          </Link>
+                        )}
+                        {supportsPc && (
+                          <Link
+                            href={`/pc-listings?emulatorIds=${emulator.id}`}
+                            onClick={() => {
+                              analytics.contentDiscovery.homeEmulatorClicked({
+                                emulatorId: emulator.id,
+                                emulatorName: emulator.name,
+                                systemCount: emulator.systems.length,
+                                listingCount: emulator.listingCount,
+                                actionType: 'pc',
+                              })
+                            }}
+                            className="flex items-center gap-1.5 sm:gap-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-purple-600 hover:to-pink-600 hover:shadow-xl"
+                          >
+                            <Monitor className="h-4 w-4 flex-shrink-0" />
+                            <span>PC</span>
+                          </Link>
+                        )}
                       </div>
 
                       <div className="relative z-10 flex w-full flex-col items-center justify-between h-full py-1 sm:py-2 md:py-3 min-h-0">

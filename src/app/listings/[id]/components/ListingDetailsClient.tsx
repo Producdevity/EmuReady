@@ -12,8 +12,8 @@ import BookmarkButton from '@/app/listings/components/shared/details/BookmarkBut
 import { DetailsHeader } from '@/app/listings/components/shared/details/DetailsHeader'
 import { DetailsHeaderBadges } from '@/app/listings/components/shared/details/DetailsHeaderBadges'
 import { ModeratorInfoPanel } from '@/app/listings/components/shared/details/ModeratorInfoPanel'
-import { logHandheldVoteError } from '@/app/listings/components/shared/details/utils/logVoteError'
-import { refreshHandheldListingDetail } from '@/app/listings/components/shared/details/utils/refreshListingDetail'
+import { logListingVoteError } from '@/app/listings/components/shared/details/utils/logVoteError'
+import { refreshListingDetail } from '@/app/listings/components/shared/details/utils/refreshListingDetail'
 import { VotingSection } from '@/app/listings/components/shared/details/VotingSection'
 import { NotesSection } from '@/app/listings/components/shared/NotesSection'
 import { GameImage } from '@/app/listings/shared/components'
@@ -46,7 +46,8 @@ function ListingDetailsClient(props: Props) {
   const currentUserQuery = api.users.me.useQuery()
   const canViewBannedUsers = roleIncludesRole(currentUserQuery.data?.role, Role.MODERATOR)
 
-  const refreshData = () => refreshHandheldListingDetail({ utils, listingId: props.listing.id })
+  const refreshData = () =>
+    refreshListingDetail({ utils, listingId: props.listing.id, listingType: 'handheld' })
 
   const scrollToVoteSection = () => {
     voteSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -54,7 +55,8 @@ function ListingDetailsClient(props: Props) {
 
   const voteMutation = api.listings.vote.useMutation({
     onSuccess: refreshData,
-    onError: (error) => logHandheldVoteError({ error, listingId: props.listing.id }),
+    onError: (error) =>
+      logListingVoteError({ error, listingId: props.listing.id, listingType: 'handheld' }),
   })
 
   const handleVote = async (value: boolean | null) => {
@@ -149,11 +151,13 @@ function ListingDetailsClient(props: Props) {
                 <EditListingButton listingId={props.listing.id} onSuccess={refreshData} />
                 <ReportListingButton
                   listingId={props.listing.id}
+                  listingType="handheld"
                   authorId={props.listing.authorId}
                   onSuccess={refreshData}
                 />
                 <VerifyListingButton
                   listingId={props.listing.id}
+                  listingType="handheld"
                   emulatorId={props.listing.emulatorId}
                   authorId={props.listing.authorId}
                   isAlreadyVerified={
@@ -184,6 +188,7 @@ function ListingDetailsClient(props: Props) {
           <VotingSection id="vote-section" ref={voteSectionRef}>
             <VoteButtons
               listingId={props.listing.id}
+              listingType="handheld"
               currentVote={props.listing.userVote ?? null}
               upVoteCount={props.listing.upVotes}
               totalVotes={props.listing.totalVotes}
@@ -202,6 +207,7 @@ function ListingDetailsClient(props: Props) {
           <div className="mt-10 border-t border-gray-200 dark:border-gray-700 pt-8">
             <CommentThread
               listingId={props.listing?.id}
+              listingType="handheld"
               gameId={props.listing?.game.id}
               systemId={props.listing?.game.system?.id}
               listingOwnerId={props.listing?.authorId}

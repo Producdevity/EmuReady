@@ -1,27 +1,21 @@
+import { type ListingType } from '@/lib/api/useListingApi'
 import { logger } from '@/lib/logger'
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
 
-interface HandheldParams {
+interface Params {
   error: unknown
   listingId: string
+  listingType: ListingType
 }
 
-export function logHandheldVoteError(params: HandheldParams): void {
-  logger.error('[ListingDetailsClient] handleVoting:', params.error, {
-    listingId: params.listingId,
-  })
-  toast.error(`Failed to vote: ${getErrorMessage(params.error)}`)
-}
+export function logListingVoteError(params: Params): void {
+  const isPc = params.listingType === 'pc'
+  const prefix = isPc ? '[PcListingDetailsClient]' : '[ListingDetailsClient]'
+  const contextField = isPc ? 'pcListingId' : 'listingId'
 
-interface PcParams {
-  error: unknown
-  pcListingId: string
-}
-
-export function logPcVoteError(params: PcParams): void {
-  logger.error('[PcListingDetailsClient] handleVoting:', params.error, {
-    pcListingId: params.pcListingId,
+  logger.error(`${prefix} handleVoting:`, params.error, {
+    [contextField]: params.listingId,
   })
   toast.error(`Failed to vote: ${getErrorMessage(params.error)}`)
 }

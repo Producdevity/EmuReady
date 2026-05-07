@@ -646,6 +646,14 @@
                 },
                 "description": "Filter by performance IDs"
               },
+              "platformIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "Filter by platform IDs"
+              },
               "search": {
                 "type": "string",
                 "description": "Search listings by game name"
@@ -912,6 +920,17 @@
           },
           "performanceId": {
             "type": "number"
+          },
+          "platformId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "notes": {
             "type": "string"
@@ -1402,6 +1421,13 @@
               "OTHER"
             ]
           },
+          "platformIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
           "search": {
             "type": "string"
           },
@@ -1458,6 +1484,17 @@
           "osVersion": {
             "type": "string",
             "minLength": 1
+          },
+          "platformId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "notes": {
             "type": "string"
@@ -1685,6 +1722,17 @@
           "osVersion": {
             "type": "string",
             "minLength": 1
+          },
+          "platformId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "notes": {
             "type": "string"
@@ -12496,8 +12544,7 @@
     },
     "/preferences.get": {
       "get": {
-        "summary": "Get user preferences",
-        "description": "Get user preferences",
+        "summary": "get - preferences",
         "tags": [
           "preferences"
         ],
@@ -12628,8 +12675,7 @@
     },
     "/preferences.update": {
       "post": {
-        "summary": "Update user preferences",
-        "description": "Update user preferences",
+        "summary": "update - preferences",
         "tags": [
           "preferences"
         ],
@@ -12772,8 +12818,7 @@
     },
     "/preferences.addDevice": {
       "post": {
-        "summary": "Add device preference",
-        "description": "Add device preference",
+        "summary": "addDevice - preferences",
         "tags": [
           "preferences"
         ],
@@ -12918,8 +12963,7 @@
     },
     "/preferences.removeDevice": {
       "post": {
-        "summary": "Remove device preference",
-        "description": "Remove device preference",
+        "summary": "removeDevice - preferences",
         "tags": [
           "preferences"
         ],
@@ -13064,8 +13108,7 @@
     },
     "/preferences.bulkUpdateDevices": {
       "post": {
-        "summary": "Bulk update device preferences",
-        "description": "Bulk update device preferences",
+        "summary": "bulkUpdateDevices - preferences",
         "tags": [
           "preferences"
         ],
@@ -13213,8 +13256,7 @@
     },
     "/preferences.bulkUpdateSocs": {
       "post": {
-        "summary": "Bulk update SOC preferences",
-        "description": "Bulk update SOC preferences",
+        "summary": "bulkUpdateSocs - preferences",
         "tags": [
           "preferences"
         ],
@@ -13362,8 +13404,7 @@
     },
     "/preferences.currentProfile": {
       "get": {
-        "summary": "Get current user's profile",
-        "description": "Get current user's profile",
+        "summary": "currentProfile - preferences",
         "tags": [
           "preferences"
         ],
@@ -13494,8 +13535,7 @@
     },
     "/preferences.profile": {
       "get": {
-        "summary": "Get user profile by ID",
-        "description": "Get user profile by ID",
+        "summary": "profile - preferences",
         "tags": [
           "preferences"
         ],
@@ -13637,8 +13677,7 @@
     },
     "/preferences.updateProfile": {
       "post": {
-        "summary": "Update profile",
-        "description": "Update profile",
+        "summary": "updateProfile - preferences",
         "tags": [
           "preferences"
         ],

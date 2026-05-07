@@ -2,10 +2,15 @@ import { useCallback, useState } from 'react'
 import { api } from '@/lib/api'
 import { type EmulatorOption, type GameOption } from '../components/shared'
 
-export function useEmulatorLoader(selectedGame: GameOption | null) {
+interface Options {
+  platformId?: string | null
+}
+
+export function useEmulatorLoader(selectedGame: GameOption | null, options?: Options) {
   const [emulatorSearchTerm, setEmulatorSearchTerm] = useState('')
   const [availableEmulators, setAvailableEmulators] = useState<EmulatorOption[]>([])
   const utils = api.useUtils()
+  const platformId = options?.platformId ?? undefined
 
   const loadEmulatorItems = useCallback(
     async (query: string): Promise<EmulatorOption[]> => {
@@ -17,7 +22,10 @@ export function useEmulatorLoader(selectedGame: GameOption | null) {
       }
 
       try {
-        const result = await utils.emulators.get.fetch({ search: query })
+        const result = await utils.emulators.get.fetch({
+          search: query,
+          platformId: platformId ?? undefined,
+        })
 
         const filteredEmulators = result.emulators
           .filter((emulator) =>
@@ -38,7 +46,7 @@ export function useEmulatorLoader(selectedGame: GameOption | null) {
         return []
       }
     },
-    [utils.emulators.get, selectedGame],
+    [utils.emulators.get, selectedGame, platformId],
   )
 
   return {

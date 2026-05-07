@@ -8,7 +8,11 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     globals: true,
-    include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+    include: [
+      'src/**/*.{test,spec}.{js,ts,jsx,tsx}',
+      'prisma/**/*.{test,spec}.{js,ts}',
+      'scripts/**/*.{test,spec}.{js,ts}',
+    ],
     exclude: ['playwright.config.ts'],
     pool: 'threads',
     poolOptions: {

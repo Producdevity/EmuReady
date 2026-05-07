@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { refreshHandheldListingDetail, refreshPcListingDetail } from './refreshListingDetail'
+import { refreshListingDetail } from './refreshListingDetail'
 
 function createMockUtils() {
   return {
@@ -20,13 +20,13 @@ function createMockUtils() {
   }
 }
 
-describe('refreshHandheldListingDetail', () => {
+describe('refreshListingDetail — handheld', () => {
   const LISTING_ID = '00000000-0000-4000-a000-000000000010'
 
   it('invalidates listings.byId and listings.moderatorInfo with type=handheld', async () => {
     const utils = createMockUtils()
 
-    await refreshHandheldListingDetail({ utils, listingId: LISTING_ID })
+    await refreshListingDetail({ utils, listingId: LISTING_ID, listingType: 'handheld' })
 
     expect(utils.listings.byId.invalidate).toHaveBeenCalledWith({ id: LISTING_ID })
     expect(utils.listings.moderatorInfo.invalidate).toHaveBeenCalledWith({
@@ -48,7 +48,7 @@ describe('refreshHandheldListingDetail', () => {
       refetchOrder.push('refetch-byId')
     })
 
-    await refreshHandheldListingDetail({ utils, listingId: LISTING_ID })
+    await refreshListingDetail({ utils, listingId: LISTING_ID, listingType: 'handheld' })
 
     expect(refetchOrder.indexOf('refetch-byId')).toBeGreaterThan(
       refetchOrder.indexOf('invalidate-byId'),
@@ -61,19 +61,19 @@ describe('refreshHandheldListingDetail', () => {
   it('does NOT touch the pcListings utils', async () => {
     const utils = createMockUtils()
 
-    await refreshHandheldListingDetail({ utils, listingId: LISTING_ID })
+    await refreshListingDetail({ utils, listingId: LISTING_ID, listingType: 'handheld' })
 
     expect(utils.pcListings.byId.invalidate).not.toHaveBeenCalled()
   })
 })
 
-describe('refreshPcListingDetail', () => {
+describe('refreshListingDetail — pc', () => {
   const PC_LISTING_ID = '00000000-0000-4000-a000-000000000011'
 
   it('invalidates pcListings.byId and listings.moderatorInfo with type=pc', async () => {
     const utils = createMockUtils()
 
-    await refreshPcListingDetail({ utils, pcListingId: PC_LISTING_ID })
+    await refreshListingDetail({ utils, listingId: PC_LISTING_ID, listingType: 'pc' })
 
     expect(utils.pcListings.byId.invalidate).toHaveBeenCalledWith({ id: PC_LISTING_ID })
     expect(utils.listings.moderatorInfo.invalidate).toHaveBeenCalledWith({
@@ -85,7 +85,7 @@ describe('refreshPcListingDetail', () => {
   it('does NOT touch the handheld listings.byId utils', async () => {
     const utils = createMockUtils()
 
-    await refreshPcListingDetail({ utils, pcListingId: PC_LISTING_ID })
+    await refreshListingDetail({ utils, listingId: PC_LISTING_ID, listingType: 'pc' })
 
     expect(utils.listings.byId.invalidate).not.toHaveBeenCalled()
     expect(utils.listings.byId.refetch).not.toHaveBeenCalled()
@@ -94,7 +94,7 @@ describe('refreshPcListingDetail', () => {
   it('does NOT call refetch', async () => {
     const utils = createMockUtils()
 
-    await refreshPcListingDetail({ utils, pcListingId: PC_LISTING_ID })
+    await refreshListingDetail({ utils, listingId: PC_LISTING_ID, listingType: 'pc' })
 
     expect(utils.listings.byId.refetch).not.toHaveBeenCalled()
   })

@@ -2,11 +2,13 @@
 
 import { ArrowLeft } from 'lucide-react'
 import { notFound, useParams, useRouter } from 'next/navigation'
+import { AdminPageLayout, AdminSection } from '@/components/admin'
 import { Button, PageSkeletonLoading } from '@/components/ui'
 import { api } from '@/lib/api'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import { Role } from '@orm'
 import EmulatorEditForm from './components/EmulatorEditForm'
+import ManageSupportedPlatforms from './components/ManageSupportedPlatforms'
 import ManageSupportedSystems from './components/ManageSupportedSystems'
 
 function EditEmulatorPage() {
@@ -30,6 +32,7 @@ function EditEmulatorPage() {
   const hasAccess = Boolean(user && hasManagePermission && (!isDeveloper || isVerifiedDeveloper))
 
   const systemsQuery = api.systems.get.useQuery({}, { enabled: !!user && hasAccess })
+  const platformsQuery = api.platforms.get.useQuery(undefined, { enabled: !!user && hasAccess })
 
   const isLoading =
     currentUser.isPending || emulatorsQuery.isLoading || verifiedDeveloperQuery.isLoading
@@ -38,88 +41,78 @@ function EditEmulatorPage() {
 
   if (!user || !hasAccess) {
     return (
-      <div className="container mx-auto p-8">
-        <Button
-          variant="outline"
-          size="sm"
-          icon={ArrowLeft}
-          onClick={() => router.back()}
-          className="mb-6"
-        >
-          Back
-        </Button>
+      <AdminPageLayout
+        title="Emulator"
+        description="Permission required"
+        headerActions={
+          <Button variant="outline" size="sm" icon={ArrowLeft} onClick={() => router.back()}>
+            Back
+          </Button>
+        }
+      >
         <p className="text-lg text-gray-700 dark:text-gray-200">
           You do not have permission to manage this emulator.
         </p>
-      </div>
+      </AdminPageLayout>
     )
   }
 
-  if (systemsQuery.isPending) return <PageSkeletonLoading />
+  if (systemsQuery.isPending || platformsQuery.isPending) return <PageSkeletonLoading />
 
-  if (emulatorsQuery.error || systemsQuery.error) {
+  if (emulatorsQuery.error || systemsQuery.error || platformsQuery.error) {
     return (
-      <div className="container mx-auto p-4">
+      <AdminPageLayout title="Emulator" description="Loading failed">
         <p className="text-red-500">
           Error loading data:{' '}
           {emulatorsQuery.error?.message ??
             systemsQuery.error?.message ??
+            platformsQuery.error?.message ??
             'An unknown error occurred'}
         </p>
-      </div>
+      </AdminPageLayout>
     )
   }
 
-  if (!emulatorsQuery.data || !systemsQuery.data) return notFound()
+  if (!emulatorsQuery.data || !systemsQuery.data || !platformsQuery.data) return notFound()
 
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      <Button
-        variant="outline"
-        size="sm"
-        icon={ArrowLeft}
-        onClick={() => router.back()}
-        className="mb-6"
-      >
-        Back
-      </Button>
-
-      <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-white">
-        Edit Emulator:{' '}
-        <span className="text-blue-600 dark:text-blue-400">{emulatorsQuery.data.name}</span>
-      </h1>
-
+    <AdminPageLayout
+      title={`Edit Emulator: ${emulatorsQuery.data.name}`}
+      description="Manage emulator details, supported systems, and platforms"
+      headerActions={
+        <Button variant="outline" size="sm" icon={ArrowLeft} onClick={() => router.back()}>
+          Back
+        </Button>
+      }
+    >
       <div className="space-y-10">
-        {/* Section for Emulator Details */}
-        <section className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-6 text-gray-700 dark:text-gray-200 border-b pb-3 dark:border-gray-700">
-            Emulator Details
-          </h2>
+        <AdminSection title="Emulator Details">
           <EmulatorEditForm emulator={emulatorsQuery.data} />
-        </section>
+        </AdminSection>
 
-        {/* Section for Supported Systems */}
-        <section className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-6 text-gray-700 dark:text-gray-200 border-b pb-3 dark:border-gray-700">
-            Supported Systems
-          </h2>
+        <AdminSection title="Supported Systems">
           <ManageSupportedSystems
             emulatorId={emulatorsQuery.data.id}
             allSystems={systemsQuery.data}
-            currentlySupportedSystems={emulatorsQuery.data.systems} // emulator.systems should be populated by the byId query
+            currentlySupportedSystems={emulatorsQuery.data.systems}
           />
-        </section>
+        </AdminSection>
 
-        <section className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-6 text-gray-700 dark:text-gray-200 border-b pb-3 dark:border-gray-700">
-            Custom Fields
-          </h2>
+        <AdminSection title="Supported Platforms">
+          <ManageSupportedPlatforms
+            emulatorId={emulatorsQuery.data.id}
+            allPlatforms={platformsQuery.data}
+            currentlySupportedPlatformIds={emulatorsQuery.data.platforms.map((p) => p.platform.id)}
+          />
+        </AdminSection>
+
+        <AdminSection title="Custom Fields">
           <Button onClick={() => router.push(`/admin/emulators/${emulatorId}/custom-fields`)}>
             Manage Custom Fields
           </Button>
-        </section>
+        </AdminSection>
       </div>
-    </div>
+    </AdminPageLayout>
   )
 }
 

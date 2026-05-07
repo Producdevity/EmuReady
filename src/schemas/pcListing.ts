@@ -1,40 +1,29 @@
 import { z } from 'zod'
 import { PAGINATION, CHAR_LIMITS } from '@/data/constants'
+import {
+  BaseCreateListingFields,
+  BaseGetListingsFields,
+  BaseUpdateListingAdminFields,
+  BaseUpdateListingUserFields,
+} from '@/schemas/listingBase'
 import { ApprovalStatus, PcOs, ReportReason, ReportStatus } from '@orm'
 
 export const CreatePcListingSchema = z.object({
-  gameId: z.string().uuid(),
+  ...BaseCreateListingFields,
   cpuId: z.string().uuid(),
-  gpuId: z.string().uuid().optional(), // Optional for integrated graphics
-  emulatorId: z.string().uuid(),
-  performanceId: z.number(),
-  memorySize: z.number().int().positive().min(1).max(256), // 1GB to 256GB
+  gpuId: z.string().uuid().optional(),
+  memorySize: z.number().int().positive().min(1).max(256),
   os: z.nativeEnum(PcOs),
   osVersion: z.string().min(1),
-  notes: z.string().max(5000).optional(),
-  customFieldValues: z
-    .array(
-      z.object({
-        customFieldDefinitionId: z.string().uuid(),
-        value: z.any(), // Zod .any() for Prisma.JsonValue; validation happens implicitly by structure
-      }),
-    )
-    .optional(),
-  recaptchaToken: z.string().optional(), // reCAPTCHA token for bot protection
 })
 
 export const GetPcListingsSchema = z.object({
-  systemIds: z.array(z.string().uuid()).optional(),
+  ...BaseGetListingsFields,
   cpuIds: z.array(z.string().uuid()).optional(),
   gpuIds: z.array(z.string().uuid()).optional(),
-  emulatorIds: z.array(z.string().uuid()).optional(),
-  performanceIds: z.array(z.number()).optional(),
   osFilter: z.array(z.nativeEnum(PcOs)).optional(),
   memoryMin: z.number().int().positive().optional(),
   memoryMax: z.number().int().positive().optional(),
-  searchTerm: z.string().optional(),
-  page: z.number().default(1),
-  limit: z.number().default(10),
   sortField: z
     .enum([
       'game.title',
@@ -49,9 +38,6 @@ export const GetPcListingsSchema = z.object({
       'memorySize',
     ])
     .optional(),
-  sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
-  approvalStatus: z.nativeEnum(ApprovalStatus).optional(),
-  myListings: z.boolean().optional(),
 })
 
 export const GetPcListingByIdSchema = z.object({ id: z.string().uuid() })
@@ -78,16 +64,7 @@ export const GetPendingPcListingsSchema = z
 
 export const DeletePcListingSchema = z.object({ id: z.string().uuid() })
 
-// TODO: Wire up a PC admin processed-listings page + router procedure for
-// parity with handheld (`admin.getProcessed` + `src/app/admin/processed-listings/`).
-// When doing so, extend this schema with `sortField` / `sortDirection` using the
-// same shape as `GetProcessedSchema` in `./listing.ts`, and ideally share as much
-// of the admin router logic as possible (the two codebases are drifting — fixes
-// applied to handheld listings often miss their PC counterpart). Candidates for
-// shared code: `buildProcessedOrderBy`, the search `where` builder, the
-// approval-flow branches. See also: `src/server/api/utils/listingHelpers.ts`
-// (handheld) vs `pcListingHelpers.ts` (PC) — these helpers already exist and
-// should be the basis for a shared abstraction.
+// TODO: extend with sortField/sortDirection when the PC admin processed-listings page lands (mirror GetProcessedSchema in ./listing.ts).
 export const GetProcessedPcSchema = z.object({
   page: z.number().default(1),
   limit: z.number().default(10),
@@ -163,42 +140,20 @@ export const GetPcListingForAdminEditSchema = z.object({
 })
 
 export const UpdatePcListingAdminSchema = z.object({
-  id: z.string().uuid(),
-  gameId: z.string().uuid(),
+  ...BaseUpdateListingAdminFields,
   cpuId: z.string().uuid(),
-  gpuId: z.string().uuid().optional(), // Optional for integrated graphics
-  emulatorId: z.string().uuid(),
-  performanceId: z.number(),
+  gpuId: z.string().uuid().optional(),
   memorySize: z.number().int().positive().min(1).max(256),
-  os: z.nativeEnum(PcOs),
+  os: z.nativeEnum(PcOs).nullable(),
   osVersion: z.string().min(1),
-  notes: z.string().optional(),
-  status: z.nativeEnum(ApprovalStatus),
-  customFieldValues: z
-    .array(
-      z.object({
-        customFieldDefinitionId: z.string().uuid(),
-        value: z.any(),
-      }),
-    )
-    .optional(),
 })
 
 export const UpdatePcListingUserSchema = z.object({
-  id: z.string().uuid(),
+  ...BaseUpdateListingUserFields,
   performanceId: z.coerce.number(),
   memorySize: z.coerce.number().int().positive().min(1).max(256),
-  os: z.nativeEnum(PcOs),
+  os: z.nativeEnum(PcOs).nullable(),
   osVersion: z.string().min(1),
-  notes: z.string().max(5000).nullable().optional(),
-  customFieldValues: z
-    .array(
-      z.object({
-        customFieldDefinitionId: z.string().uuid(),
-        value: z.any(),
-      }),
-    )
-    .optional(),
 })
 
 export const GetPcListingForOwnerEditSchema = z.object({
@@ -213,6 +168,7 @@ export const CreatePcPresetSchema = z.object({
   memorySize: z.number().int().positive().min(1).max(256),
   os: z.nativeEnum(PcOs),
   osVersion: z.string().min(1),
+  platformId: z.string().uuid().nullable().optional(),
 })
 
 export const UpdatePcPresetSchema = z.object({
@@ -223,6 +179,7 @@ export const UpdatePcPresetSchema = z.object({
   memorySize: z.number().int().positive().min(1).max(256),
   os: z.nativeEnum(PcOs),
   osVersion: z.string().min(1),
+  platformId: z.string().uuid().nullable().optional(),
 })
 
 export const DeletePcPresetSchema = z.object({ id: z.string().uuid() })
@@ -254,6 +211,7 @@ export const CreatePcListingCommentSchema = z.object({
   pcListingId: z.string().uuid(),
   content: z.string().min(1).max(CHAR_LIMITS.COMMENT),
   parentId: z.string().uuid().optional(),
+  recaptchaToken: z.string().nullable().optional(),
 })
 
 export const UpdatePcListingCommentSchema = z.object({

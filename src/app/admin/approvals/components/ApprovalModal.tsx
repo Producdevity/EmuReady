@@ -6,7 +6,7 @@ import {
   RejectionNotesInput,
   CustomFieldsApprovalSection,
 } from '@/app/listings/components/shared/approval/ApprovalModalSharedComponents'
-import { AuthorRiskWarningBanner, Modal, Button } from '@/components/ui'
+import { AuthorRiskWarningBanner, Modal, Button, PlatformBadge } from '@/components/ui'
 import { type RouterOutput } from '@/types/trpc'
 import { ApprovalStatus } from '@orm'
 
@@ -72,6 +72,19 @@ function ApprovalModal(props: Props) {
             <p className="text-gray-900 dark:text-white">
               {props.selectedListingForApproval.emulator.name}
             </p>
+          </div>
+
+          {/* Platform Info */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Platform</h3>
+            {props.selectedListingForApproval.platform ? (
+              <PlatformBadge
+                name={props.selectedListingForApproval.platform.name}
+                scope={props.selectedListingForApproval.platform.scope}
+              />
+            ) : (
+              <span className="text-xs text-gray-400 dark:text-gray-500">Not set</span>
+            )}
           </div>
 
           <UserInfoSection

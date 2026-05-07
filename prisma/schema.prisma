@@ -44,6 +44,12 @@ enum PcOs {
   OTHER
 }
 
+enum PlatformScope {
+  DESKTOP
+  MOBILE
+  UNIVERSAL
+}
+
 enum TailwindColor {
   yellow
   lime
@@ -283,16 +289,67 @@ model SoC {
 }
 
 model Device {
-  id              String                 @id @default(uuid())
-  brandId         String
-  modelName       String
-  socId           String?
-  brand           DeviceBrand            @relation(fields: [brandId], references: [id])
-  soc             SoC?                   @relation(fields: [socId], references: [id])
-  listings        Listing[]
-  userPreferences UserDevicePreference[]
+  id                String                 @id @default(uuid())
+  brandId           String
+  modelName         String
+  socId             String?
+  defaultPlatformId String?
+  brand             DeviceBrand            @relation(fields: [brandId], references: [id])
+  soc               SoC?                   @relation(fields: [socId], references: [id])
+  defaultPlatform   Platform?              @relation("DeviceDefaultPlatform", fields: [defaultPlatformId], references: [id])
+  listings          Listing[]
+  userPreferences   UserDevicePreference[]
+  platforms         DevicePlatform[]
 
   @@unique([brandId, modelName])
+  @@index([defaultPlatformId])
+}
+
+model Platform {
+  id        String        @id @default(uuid())
+  name      String        @unique
+  slug      String        @unique
+  scope     PlatformScope
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+
+  emulatorPlatforms EmulatorPlatform[]
+  devicePlatforms   DevicePlatform[]
+  defaultForDevices Device[]           @relation("DeviceDefaultPlatform")
+  listings          Listing[]
+  pcListings        PcListing[]
+  userPcPresets     UserPcPreset[]
+
+  @@index([scope])
+  @@map("platforms")
+}
+
+model EmulatorPlatform {
+  id         String   @id @default(uuid())
+  emulatorId String
+  platformId String
+  createdAt  DateTime @default(now())
+
+  emulator Emulator @relation(fields: [emulatorId], references: [id], onDelete: Cascade)
+  platform Platform @relation(fields: [platformId], references: [id], onDelete: Cascade)
+
+  @@unique([emulatorId, platformId])
+  @@index([platformId])
+  @@map("emulator_platforms")
+}
+
+model DevicePlatform {
+  id         String   @id @default(uuid())
+  deviceId   String
+  platformId String
+  createdAt  DateTime @default(now())
+
+  device   Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  platform Platform @relation(fields: [platformId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceId, platformId])
+  @@index([platformId])
+  @@map("device_platforms")
 }
 
 model System {
@@ -435,6 +492,7 @@ model Emulator {
   customFieldCategories  CustomFieldCategory[]
   systems                System[]
   verifiedDevelopers     VerifiedDeveloper[]
+  platforms              EmulatorPlatform[]
 }
 
 model PerformanceScale {
@@ -452,6 +510,7 @@ model Listing {
   gameId            String
   emulatorId        String
   performanceId     Int
+  platformId        String?
   notes             String?
   authorId          String
   createdAt         DateTime       @default(now())
@@ -475,6 +534,7 @@ model Listing {
   emulator               Emulator                        @relation(fields: [emulatorId], references: [id])
   game                   Game                            @relation(fields: [gameId], references: [id])
   device                 Device                          @relation(fields: [deviceId], references: [id])
+  platform               Platform?                       @relation(fields: [platformId], references: [id])
   comments               Comment[]
   votes                  Vote[]
   customFieldValues      ListingCustomFieldValue[]
@@ -490,6 +550,7 @@ model Listing {
   @@index([voteCount])
   @@index([pinnedCommentId])
   @@index([pinnedByUserId])
+  @@index([platformId])
 }
 
 model Vote {
@@ -935,17 +996,20 @@ model UserPcPreset {
   cpuId      String
   gpuId      String? // Optional for integrated graphics
   memorySize Int // in GB
-  os         PcOs
+  os         PcOs? // Nullable: legacy/imported rows may not have a recorded OS
   osVersion  String
+  platformId String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  cpu  Cpu  @relation(fields: [cpuId], references: [id])
-  gpu  Gpu? @relation(fields: [gpuId], references: [id])
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cpu      Cpu       @relation(fields: [cpuId], references: [id])
+  gpu      Gpu?      @relation(fields: [gpuId], references: [id])
+  platform Platform? @relation(fields: [platformId], references: [id])
 
   @@unique([userId, name])
   @@index([userId])
+  @@index([platformId])
   @@map("user_pc_presets")
 }
 
@@ -982,6 +1046,7 @@ model PcListing {
   gameId            String
   emulatorId        String
   performanceId     Int
+  platformId        String?
   notes             String?
   authorId          String
   updatedAt         DateTime       @updatedAt
@@ -996,7 +1061,7 @@ model PcListing {
   memorySize        Int // in GB
   cpuId             String
   gpuId             String? // Optional for integrated graphics
-  os                PcOs
+  os                PcOs? // Nullable: legacy/imported rows may not have a recorded OS
   osVersion         String
 
   // Vote statistics (materialized for performance)
@@ -1012,6 +1077,7 @@ model PcListing {
   game            Game             @relation(fields: [gameId], references: [id])
   gpu             Gpu?             @relation(fields: [gpuId], references: [id])
   cpu             Cpu              @relation(fields: [cpuId], references: [id])
+  platform        Platform?        @relation(fields: [platformId], references: [id])
 
   customFieldValues      PcListingCustomFieldValue[]
   notificationPrefs      PcListingNotificationPreference[]
@@ -1034,6 +1100,7 @@ model PcListing {
   @@index([voteCount])
   @@index([pinnedCommentId])
   @@index([pinnedByUserId])
+  @@index([platformId])
   @@map("pc_listings")
 }
 

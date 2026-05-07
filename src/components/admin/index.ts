@@ -1,6 +1,7 @@
 export * from './AdminNotificationBanner'
 export * from './AdminPageLayout'
 export * from './AdminSearchFilters'
+export * from './AdminSection'
 export * from './AdminStatsDisplay'
 export * from './AdminTableContainer'
 export * from './AdminTableNoResults'

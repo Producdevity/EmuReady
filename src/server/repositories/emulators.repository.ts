@@ -12,6 +12,7 @@ export interface EmulatorFilters {
   sortField?: string | null
   sortDirection?: Prisma.SortOrder | null
   systemId?: string | null
+  platformId?: string | null
 }
 
 type DetailedEmulatorListItem = Prisma.EmulatorGetPayload<{
@@ -43,13 +44,21 @@ export class EmulatorsRepository extends BaseRepository {
     select: { id: true, name: true, key: true },
   } as const
 
+  private static readonly PLATFORMS_SELECTION = {
+    include: {
+      platform: { select: { id: true, name: true, slug: true, scope: true } },
+    },
+  } as const
+
   static readonly includes = {
     default: {
       systems: EmulatorsRepository.SYSTEM_SELECTION,
+      platforms: EmulatorsRepository.PLATFORMS_SELECTION,
     } satisfies Prisma.EmulatorInclude,
 
     withCustomFields: {
       systems: EmulatorsRepository.SYSTEM_SELECTION,
+      platforms: EmulatorsRepository.PLATFORMS_SELECTION,
       customFieldDefinitions: {
         orderBy: { displayOrder: 'asc' as const },
       },
@@ -57,6 +66,7 @@ export class EmulatorsRepository extends BaseRepository {
 
     withDevelopers: {
       systems: EmulatorsRepository.SYSTEM_SELECTION,
+      platforms: EmulatorsRepository.PLATFORMS_SELECTION,
       verifiedDevelopers: {
         include: {
           user: { select: { id: true, name: true, profileImage: true } },
@@ -66,6 +76,7 @@ export class EmulatorsRepository extends BaseRepository {
 
     withDevelopersAndCounts: {
       systems: EmulatorsRepository.SYSTEM_SELECTION,
+      platforms: EmulatorsRepository.PLATFORMS_SELECTION,
       verifiedDevelopers: {
         include: {
           user: { select: { id: true, name: true, profileImage: true } },
@@ -76,6 +87,7 @@ export class EmulatorsRepository extends BaseRepository {
 
     minimal: {
       systems: EmulatorsRepository.SYSTEM_SELECTION,
+      platforms: EmulatorsRepository.PLATFORMS_SELECTION,
       _count: {
         select: {
           listings: { where: { status: ApprovalStatus.APPROVED } },
@@ -89,6 +101,7 @@ export class EmulatorsRepository extends BaseRepository {
 
     detail: {
       systems: EmulatorsRepository.SYSTEM_SELECTION,
+      platforms: EmulatorsRepository.PLATFORMS_SELECTION,
       verifiedDevelopers: {
         include: {
           user: { select: { id: true, name: true, profileImage: true } },
@@ -118,6 +131,11 @@ export class EmulatorsRepository extends BaseRepository {
           name: true,
         },
       },
+      platforms: {
+        select: {
+          platform: { select: { id: true, slug: true, scope: true } },
+        },
+      },
       _count: {
         select: {
           listings: { where: { status: ApprovalStatus.APPROVED } },
@@ -141,6 +159,7 @@ export class EmulatorsRepository extends BaseRepository {
     const {
       search,
       systemId,
+      platformId,
       limit = PAGINATION.DEFAULT_LIMIT,
       offset = 0,
       page,
@@ -148,7 +167,7 @@ export class EmulatorsRepository extends BaseRepository {
       sortDirection,
     } = filters
 
-    const where = this.buildWhereClause(search, systemId)
+    const where = this.buildWhereClause(search, systemId, platformId)
     const orderBy = this.buildOrderBy(sortField, sortDirection)
     const resolvedLimit = limit ?? PAGINATION.DEFAULT_LIMIT
     const actualOffset = calculateOffset({ page, offset }, resolvedLimit)
@@ -290,6 +309,7 @@ export class EmulatorsRepository extends BaseRepository {
   private buildWhereClause(
     search?: string | null,
     systemId?: string | null,
+    platformId?: string | null,
   ): Prisma.EmulatorWhereInput {
     const clauses: Prisma.EmulatorWhereInput[] = []
 
@@ -303,6 +323,8 @@ export class EmulatorsRepository extends BaseRepository {
     }
 
     if (systemId) clauses.push({ systems: { some: { id: systemId } } })
+
+    if (platformId) clauses.push({ platforms: { some: { platformId } } })
 
     if (clauses.length === 0) return {}
     if (clauses.length === 1) return clauses[0]
@@ -358,6 +380,35 @@ export class EmulatorsRepository extends BaseRepository {
     })
   }
 
+  // EmulatorPlatform has its own id/createdAt, so the usual `set: []`
+  // → connect shortcut doesn't apply — use deleteMany + create.
+  // Removing a platform from the emulator's set intentionally leaves
+  // historical listing.platformId values intact; admins override per
+  // listing when needed, rather than silently rewriting past records.
+  async updateSupportedPlatforms(
+    emulatorId: string,
+    platformIds: string[],
+  ): Promise<
+    Prisma.EmulatorGetPayload<{
+      include: typeof EmulatorsRepository.includes.default
+    }>
+  > {
+    return this.handleDatabaseOperation(
+      () =>
+        this.prisma.emulator.update({
+          where: { id: emulatorId },
+          data: {
+            platforms: {
+              deleteMany: {},
+              create: platformIds.map((platformId) => ({ platformId })),
+            },
+          },
+          include: EmulatorsRepository.includes.default,
+        }),
+      'Emulator',
+    )
+  }
+
   /**
    * Get trending emulators based on approved listing count
    */
@@ -375,6 +426,11 @@ export class EmulatorsRepository extends BaseRepository {
       logo: emulator.logo,
       description: emulator.description,
       systems: emulator.systems.map((s) => s.name),
+      platforms: emulator.platforms.map((p) => ({
+        id: p.platform.id,
+        slug: p.platform.slug,
+        scope: p.platform.scope,
+      })),
       listingCount: emulator._count.listings,
     }))
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
-import { ApprovalStatus, Role, TrustAction } from '@orm'
+import { ApprovalStatus, PcOs, Role, TrustAction } from '@orm'
 
 vi.unmock('@/server/api/trpc')
 vi.unmock('@/server/api/root')
@@ -404,7 +404,7 @@ describe('pcListings trust integration', () => {
         emulatorId: '00000000-0000-4000-a000-000000000032',
         performanceId: 1,
         memorySize: 16,
-        os: 'WINDOWS' as never,
+        os: PcOs.WINDOWS,
         osVersion: '11',
       })
 

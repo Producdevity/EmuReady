@@ -61,6 +61,7 @@ export const coreRouter = createTRPCRouter({
       socIds: input.socIds || undefined,
       emulatorIds: input.emulatorIds || undefined,
       performanceIds: input.performanceIds || undefined,
+      platformIds: input.platformIds || undefined,
       search: sanitizedSearchTerm,
       page,
       limit,
@@ -145,10 +146,7 @@ export const coreRouter = createTRPCRouter({
     const { recaptchaToken, ...payload } = input
     const authorId = ctx.session.user.id
 
-    // TODO: Add spam detection via `checkSpamContent` from
-    // `@/server/utils/spam-check` (currently only applied in mobile routes).
-    // Block: UX/product sign-off needed since existing web users would start
-    // seeing spam-block errors. Mirror mobile: `{ userId, content: notes, entityType: 'listing' }`.
+    // TODO: gate notes through checkSpamContent here (mobile routes already do).
     // Verify CAPTCHA if token is provided
     if (recaptchaToken) {
       const clientIP = ctx.headers ? getClientIP(ctx.headers) : undefined
@@ -552,6 +550,13 @@ export const coreRouter = createTRPCRouter({
 
     // Update the listing using a transaction to handle custom fields
     return await ctx.prisma.$transaction(async (tx) => {
+      const repository = new ListingsRepository(tx)
+      await repository.validatePlatformForUpdate({
+        platformId: input.platformId,
+        listingId: input.id,
+        tx,
+      })
+
       // Validate custom fields if provided
       if (input.customFieldValues && input.customFieldValues.length > 0) {
         await withSavepoint(tx, 'validate-custom-fields', async () => {
@@ -578,7 +583,11 @@ export const coreRouter = createTRPCRouter({
       // Update the listing
       return await tx.listing.update({
         where: { id: input.id },
-        data: { notes: input.notes, performanceId: input.performanceId },
+        data: {
+          notes: input.notes,
+          performanceId: input.performanceId,
+          ...(input.platformId !== undefined && { platformId: input.platformId }),
+        },
       })
     })
   }),

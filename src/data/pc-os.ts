@@ -15,3 +15,9 @@ export const PC_OS_OPTIONS = [
   { value: PcOs.FREEBSD, label: PC_OS_LABELS.FREEBSD },
   { value: PcOs.OTHER, label: PC_OS_LABELS.OTHER },
 ] as const
+
+const PC_OS_VALUES: ReadonlySet<string> = new Set(Object.values(PcOs))
+
+export function isPcOs(value: unknown): value is PcOs {
+  return typeof value === 'string' && PC_OS_VALUES.has(value)
+}

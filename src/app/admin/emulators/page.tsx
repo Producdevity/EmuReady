@@ -14,6 +14,7 @@ import {
 } from '@/components/admin'
 import { EmulatorIcon } from '@/components/icons'
 import {
+  Autocomplete,
   Button,
   ColumnVisibilityControl,
   DeleteButton,
@@ -21,6 +22,7 @@ import {
   EditButton,
   LoadingSpinner,
   Pagination,
+  PlatformChipList,
   QuickEditButton,
   SettingsButton,
   SortableHeader,
@@ -45,10 +47,11 @@ type EmulatorSortField = 'name' | 'systemCount' | 'listingCount'
 const EMULATORS_COLUMNS: ColumnDefinition[] = [
   { key: 'name', label: 'Name', defaultVisible: true },
   { key: 'systemCount', label: 'Systems', defaultVisible: true },
+  { key: 'platforms', label: 'Platforms', defaultVisible: true },
   { key: 'listingCount', label: 'Listings', defaultVisible: true },
-  { key: 'repoUrl', label: 'Repo', defaultVisible: true },
-  { key: 'officialUrl', label: 'Official', defaultVisible: true },
-  { key: 'androidGithubRepoUrl', label: 'Android', defaultVisible: true },
+  { key: 'repoUrl', label: 'Repo', defaultVisible: false },
+  { key: 'officialUrl', label: 'Official', defaultVisible: false },
+  { key: 'androidGithubRepoUrl', label: 'Android', defaultVisible: false },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
@@ -78,12 +81,14 @@ function AdminEmulatorsPage() {
   const canDeleteEmulators = isAdminOrHigher && hasManageEmulatorsPermission
 
   const emulatorsStatsQuery = api.emulators.stats.useQuery()
+  const platformsQuery = api.platforms.get.useQuery()
   const emulatorsQuery = api.emulators.getForAdmin.useQuery({
     search: table.search ?? undefined,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
     page: table.page,
     limit: table.limit,
+    platformId: table.additionalParams.platformId || undefined,
   })
 
   const pagination = emulatorsQuery.data?.pagination
@@ -186,7 +191,19 @@ function AdminEmulatorsPage() {
       <AdminSearchFilters<EmulatorSortField>
         table={table}
         searchPlaceholder="Search emulators by name..."
-      />
+        onClear={() => table.setAdditionalParam('platformId', '')}
+      >
+        <Autocomplete
+          value={table.additionalParams.platformId || ''}
+          onChange={(value) => table.setAdditionalParam('platformId', value || '')}
+          items={[{ id: '', name: 'All Platforms' }, ...(platformsQuery.data || [])]}
+          optionToValue={(platform) => platform.id}
+          optionToLabel={(platform) => platform.name}
+          className="w-full md:w-64"
+          placeholder="Filter by platform"
+          filterKeys={['name']}
+        />
+      </AdminSearchFilters>
 
       <AdminTableContainer>
         {emulatorsQuery.isPending ? (
@@ -218,6 +235,11 @@ function AdminEmulatorsPage() {
                         onSort={table.handleSort}
                         className="px-6 py-3 text-left"
                       />
+                    )}
+                    {columnVisibility.isColumnVisible('platforms') && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Platforms
+                      </th>
                     )}
                     {columnVisibility.isColumnVisible('listingCount') && (
                       <SortableHeader
@@ -285,6 +307,13 @@ function AdminEmulatorsPage() {
                       {columnVisibility.isColumnVisible('systemCount') && (
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
                           {emulator._count.systems}
+                        </td>
+                      )}
+                      {columnVisibility.isColumnVisible('platforms') && (
+                        <td className="px-6 py-4 text-sm">
+                          <PlatformChipList
+                            platforms={emulator.platforms.map((ep) => ep.platform)}
+                          />
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('listingCount') && (

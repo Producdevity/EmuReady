@@ -4,7 +4,11 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, Monitor, Cpu, HardDrive, Globe2, Hash } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef } from 'react'
+import CommentThread from '@/app/listings/[id]/components/CommentThread'
+import ReportListingButton from '@/app/listings/[id]/components/ReportListingButton'
+import VerifyListingButton from '@/app/listings/[id]/components/VerifyListingButton'
 import { VoteReminderBanner } from '@/app/listings/[id]/components/vote-reminder/VoteReminderBanner'
+import { VoteButtons } from '@/app/listings/[id]/components/VoteButtons'
 import { ListingApprovalActions } from '@/app/listings/components/shared/approval/ListingApprovalActions'
 import { CustomFieldsSection } from '@/app/listings/components/shared/CustomFieldsSection'
 import { ActionButtonsStack } from '@/app/listings/components/shared/details/ActionButtonsStack'
@@ -14,8 +18,8 @@ import { DetailFieldRow } from '@/app/listings/components/shared/details/DetailF
 import { DetailsHeader } from '@/app/listings/components/shared/details/DetailsHeader'
 import { DetailsHeaderBadges } from '@/app/listings/components/shared/details/DetailsHeaderBadges'
 import { ModeratorInfoPanel } from '@/app/listings/components/shared/details/ModeratorInfoPanel'
-import { logPcVoteError } from '@/app/listings/components/shared/details/utils/logVoteError'
-import { refreshPcListingDetail } from '@/app/listings/components/shared/details/utils/refreshListingDetail'
+import { logListingVoteError } from '@/app/listings/components/shared/details/utils/logVoteError'
+import { refreshListingDetail } from '@/app/listings/components/shared/details/utils/refreshListingDetail'
 import { VotingSection } from '@/app/listings/components/shared/details/VotingSection'
 import { NotesSection } from '@/app/listings/components/shared/NotesSection'
 import { GameImage } from '@/app/listings/shared/components'
@@ -27,10 +31,6 @@ import { type RouterOutput } from '@/types/trpc'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { type PcOs, Role } from '@orm'
 import EditPcListingButton from './EditPcListingButton'
-import PcCommentThread from './PcCommentThread'
-import PcReportListingButton from './PcReportListingButton'
-import PcVoteButtons from './PcVoteButtons'
-import VerifyPcListingButton from './VerifyPcListingButton'
 
 export type PcListing = NonNullable<RouterOutput['pcListings']['byId']>
 
@@ -51,7 +51,7 @@ function PcListingDetailsClient(props: Props) {
   // Get current user to check if they can see banned user indicators
   const currentUserQuery = api.users.me.useQuery()
   const canViewBannedUsers = roleIncludesRole(currentUserQuery.data?.role, Role.MODERATOR)
-  const osLabel = osLabels[props.pcListing.os as PcOs] ?? osLabels.UNKNOWN
+  const osLabel = props.pcListing.os ? osLabels[props.pcListing.os] : osLabels.UNKNOWN
   const osVersion = props.pcListing.osVersion?.trim() ? props.pcListing.osVersion : '—'
 
   const hardwareFields = [
@@ -89,7 +89,8 @@ function PcListingDetailsClient(props: Props) {
     },
   ] as const
 
-  const refreshData = () => refreshPcListingDetail({ utils, pcListingId: props.pcListing.id })
+  const refreshData = () =>
+    refreshListingDetail({ utils, listingId: props.pcListing.id, listingType: 'pc' })
 
   const scrollToVoteSection = () => {
     voteSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -97,7 +98,8 @@ function PcListingDetailsClient(props: Props) {
 
   const voteMutation = api.pcListings.vote.useMutation({
     onSuccess: refreshData,
-    onError: (error) => logPcVoteError({ error, pcListingId: props.pcListing.id }),
+    onError: (error) =>
+      logListingVoteError({ error, listingId: props.pcListing.id, listingType: 'pc' }),
   })
 
   const handleVote = async (value: boolean | null) => {
@@ -212,13 +214,15 @@ function PcListingDetailsClient(props: Props) {
 
               <ActionButtonsStack>
                 <EditPcListingButton pcListingId={props.pcListing.id} onSuccess={refreshData} />
-                <PcReportListingButton
-                  pcListingId={props.pcListing.id}
+                <ReportListingButton
+                  listingId={props.pcListing.id}
+                  listingType="pc"
                   authorId={props.pcListing.authorId}
                   onSuccess={refreshData}
                 />
-                <VerifyPcListingButton
-                  pcListingId={props.pcListing.id}
+                <VerifyListingButton
+                  listingId={props.pcListing.id}
+                  listingType="pc"
                   emulatorId={props.pcListing.emulatorId}
                   authorId={props.pcListing.authorId}
                   isAlreadyVerified={
@@ -246,8 +250,9 @@ function PcListingDetailsClient(props: Props) {
 
           {/* Voting Section */}
           <VotingSection id="vote-section" ref={voteSectionRef}>
-            <PcVoteButtons
-              pcListingId={props.pcListing.id}
+            <VoteButtons
+              listingId={props.pcListing.id}
+              listingType="pc"
               currentVote={props.pcListing.userVote ?? null}
               upVoteCount={props.pcListing.upvotes ?? 0}
               totalVotes={(props.pcListing.upvotes ?? 0) + (props.pcListing.downvotes ?? 0)}
@@ -255,8 +260,8 @@ function PcListingDetailsClient(props: Props) {
               gameId={props.pcListing.game.id}
               systemId={props.pcListing.game.system?.id}
               emulatorId={props.pcListing.emulator.id}
-              cpuId={props.pcListing.cpu.id}
-              gpuId={props.pcListing.gpu?.id}
+              deviceId={props.pcListing.cpu.id}
+              signInMessage="Please sign in to verify this PC listing"
             />
           </VotingSection>
 
@@ -266,11 +271,12 @@ function PcListingDetailsClient(props: Props) {
 
           {/* Comments Section */}
           <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-            <PcCommentThread
-              pcListingId={props.pcListing.id}
+            <CommentThread
+              listingId={props.pcListing.id}
+              listingType="pc"
               gameId={props.pcListing.game.id}
               systemId={props.pcListing.game.system?.id}
-              pcListingOwnerId={props.pcListing.authorId}
+              listingOwnerId={props.pcListing.authorId}
               emulatorId={props.pcListing.emulator.id}
             />
           </div>

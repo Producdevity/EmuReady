@@ -1,3 +1,5 @@
+import { type ApprovalStatus } from '@orm'
+
 export interface VoteCounts {
   up: number
   down: number
@@ -24,4 +26,40 @@ export function computeVoteCounts(votes: readonly VoteForCounting[]): VoteCounts
     }
   }
   return { up, down, nullified }
+}
+
+export const moderatorInfoUserSelect = {
+  id: true,
+  name: true,
+} as const
+
+export const moderatorInfoVoteSelect = {
+  id: true,
+  value: true,
+  createdAt: true,
+  nullifiedAt: true,
+  user: { select: { id: true, name: true, trustScore: true } },
+} as const
+
+export interface ModeratorInfoListing {
+  status: ApprovalStatus
+  processedAt: Date | null
+  processedNotes: string | null
+  processedByUser: { id: string; name: string | null } | null
+}
+
+export function assembleModeratorInfo<TVote extends VoteForCounting>(
+  listing: ModeratorInfoListing,
+  votes: TVote[],
+) {
+  return {
+    approval: {
+      status: listing.status,
+      processedAt: listing.processedAt,
+      processedNotes: listing.processedNotes,
+      processedBy: listing.processedByUser,
+    },
+    votes,
+    voteCounts: computeVoteCounts(votes),
+  }
 }

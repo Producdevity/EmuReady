@@ -14,6 +14,7 @@ interface Props {
   onChange: ChangeEventHandler<HTMLInputElement>
   className?: string
   options: Option[]
+  emptyLabel?: string
 }
 
 export function SelectInput(props: Props) {
@@ -29,7 +30,7 @@ export function SelectInput(props: Props) {
         className={props.className}
       >
         <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-          Select {props.label}
+          {props.emptyLabel ?? `Select ${props.label}`}
         </option>
         {props.options?.map((option) => (
           <option

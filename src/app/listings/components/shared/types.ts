@@ -35,7 +35,7 @@ export interface DeviceOption extends AutocompleteOptionBase {
     id: string
     name: string
     manufacturer: string
-  }
+  } | null
 }
 
 export interface PerformanceScale {

@@ -5,9 +5,9 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { Button, Modal } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
+import { type ListingType } from '@/lib/api/useListingApi'
 import toast from '@/lib/toast'
 import { type ReportReasonType } from '@/schemas/listingReport'
-import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { ReportReason } from '@orm'
 
@@ -15,33 +15,35 @@ interface Props {
   isOpen: boolean
   onClose: () => void
   listingId: string
+  listingType: ListingType
   onSuccess: () => void
 }
 
 const REPORT_REASONS = [
   { value: ReportReason.SPAM, label: 'Spam or repetitive content' },
-  {
-    value: ReportReason.INAPPROPRIATE_CONTENT,
-    label: 'Inappropriate or offensive content',
-  },
-  {
-    value: ReportReason.MISLEADING_INFORMATION,
-    label: 'Misleading or false information',
-  },
+  { value: ReportReason.INAPPROPRIATE_CONTENT, label: 'Inappropriate or offensive content' },
+  { value: ReportReason.MISLEADING_INFORMATION, label: 'Misleading or false information' },
   { value: ReportReason.FAKE_LISTING, label: 'Fake or fabricated listing' },
   { value: ReportReason.COPYRIGHT_VIOLATION, label: 'Copyright violation' },
   { value: ReportReason.OTHER, label: 'Other (please specify)' },
 ] as const
 
 function ReportListingModal(props: Props) {
+  const isPc = props.listingType === 'pc'
   const [reason, setReason] = useState<ReportReasonType>(ReportReason.SPAM)
   const [description, setDescription] = useState('')
   const [error, setError] = useState('')
 
-  const createReport = api.listingReports.create.useMutation()
+  const handheldReport = api.listingReports.create.useMutation()
+  const pcReport = api.pcListings.createReport.useMutation()
+  const isPending = isPc ? pcReport.isPending : handheldReport.isPending
+
   const { user } = useUser()
 
-  // Reset form when modal opens/closes
+  const descriptionMaxLength = isPc ? 1000 : 500
+  const modalTitle = isPc ? 'Report PC Listing' : 'Report Listing'
+  const placeholderSubject = isPc ? 'this PC listing' : 'this listing'
+
   useEffect(() => {
     if (!props.isOpen) return
     setReason(ReportReason.SPAM)
@@ -59,16 +61,23 @@ function ReportListingModal(props: Props) {
     }
 
     try {
-      await createReport.mutateAsync({
-        listingId: props.listingId,
-        reason,
-        description: description.trim() || undefined,
-      } satisfies RouterInput['listingReports']['create'])
+      if (isPc) {
+        await pcReport.mutateAsync({
+          pcListingId: props.listingId,
+          reason,
+          description: description.trim() || undefined,
+        })
+      } else {
+        await handheldReport.mutateAsync({
+          listingId: props.listingId,
+          reason,
+          description: description.trim() || undefined,
+        })
+      }
 
-      // Track content flagging in analytics
       if (user?.id) {
         analytics.contentQuality.contentFlagged({
-          entityType: 'listing',
+          entityType: isPc ? 'pcListing' : 'listing',
           entityId: props.listingId,
           flaggedBy: user.id,
           reason,
@@ -84,12 +93,12 @@ function ReportListingModal(props: Props) {
   }
 
   const handleClose = () => {
-    if (createReport.isPending) return
+    if (isPending) return
     props.onClose()
   }
 
   return (
-    <Modal isOpen={props.isOpen} onClose={handleClose} title="Report Listing">
+    <Modal isOpen={props.isOpen} onClose={handleClose} title={modalTitle}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -132,14 +141,14 @@ function ReportListingModal(props: Props) {
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Please provide additional context about why you're reporting this listing..."
+            placeholder={`Please provide additional context about why you're reporting ${placeholderSubject}...`}
             className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             rows={4}
-            maxLength={500}
+            maxLength={descriptionMaxLength}
             required={reason === ReportReason.OTHER}
           />
           <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {description.length}/500 characters
+            {description.length}/{descriptionMaxLength} characters
           </div>
         </div>
 
@@ -154,16 +163,16 @@ function ReportListingModal(props: Props) {
             type="button"
             variant="outline"
             onClick={handleClose}
-            disabled={createReport.isPending}
-            isLoading={createReport.isPending}
+            disabled={isPending}
+            isLoading={isPending}
           >
             Cancel
           </Button>
           <Button
             type="submit"
             variant="default"
-            isLoading={createReport.isPending}
-            disabled={createReport.isPending}
+            isLoading={isPending}
+            disabled={isPending}
             className="bg-red-600 hover:bg-red-700 text-white"
           >
             Submit Report

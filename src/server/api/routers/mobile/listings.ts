@@ -62,6 +62,7 @@ async function getListingsHelper(
     socIds,
     emulatorIds,
     performanceIds,
+    platformIds,
     search,
   } = input ?? {}
 
@@ -72,12 +73,13 @@ async function getListingsHelper(
     socIds,
     emulatorIds,
     performanceIds,
+    platformIds,
     search,
     page,
     limit,
     userId: ctx.session?.user?.id,
     userRole: ctx.session?.user?.role,
-    showNsfw: ctx.session?.user?.showNsfw,
+    showNsfw: !!ctx.session?.user?.showNsfw, // TODO: make this configurable via filters
     approvalStatus: ApprovalStatus.APPROVED, // Mobile only sees approved
   })
 
@@ -181,6 +183,13 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     if (!existing) return ResourceError.listing.notFound()
 
     if (existing.authorId !== ctx.session.user.id) return ResourceError.listing.canOnlyEditOwn()
+
+    const listingsRepository = new ListingsRepository(ctx.prisma)
+    await listingsRepository.validatePlatformForUpdate({
+      platformId: updateData.platformId,
+      listingId: id,
+      emulatorId: updateData.emulatorId,
+    })
 
     return await ctx.prisma.listing.update({
       where: { id },

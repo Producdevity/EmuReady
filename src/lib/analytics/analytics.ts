@@ -1062,7 +1062,7 @@ const analytics = {
   contentQuality: {
     // TODO
     contentFlagged: (params: {
-      entityType: 'listing' | 'comment' | 'game'
+      entityType: 'listing' | 'pcListing' | 'comment' | 'game'
       entityId: string
       flaggedBy: string
       reason: string

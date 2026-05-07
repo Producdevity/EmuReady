@@ -16,11 +16,9 @@ import {
 } from '@/app/listings/shared/utils/selectedLabels'
 import { buildPcActiveFilterItems } from '@/app/pc-listings/utils/buildPcActiveFilterItems'
 import { filterAnalytics } from '@/lib/analytics/filterAnalytics'
+import { type CpuListItem, type EmulatorListItem, type GpuListItem } from './pcFilters'
 import PcFiltersContent from './PcFiltersContent'
-import type { System, PerformanceScale, Emulator } from '@orm'
-
-type CpuWithBrand = { id: string; modelName: string; brand: { name: string } }
-type GpuWithBrand = { id: string; modelName: string; brand: { name: string } }
+import type { System, PerformanceScale } from '@orm'
 
 interface Props {
   isCollapsed?: boolean
@@ -34,10 +32,10 @@ interface Props {
   minMemory: number | null
   maxMemory: number | null
   searchTerm: string
-  cpus: CpuWithBrand[]
-  gpus: GpuWithBrand[]
+  cpus: CpuListItem[]
+  gpus: GpuListItem[]
   systems: System[]
-  emulators: Emulator[]
+  emulators: EmulatorListItem[]
   performanceScales: PerformanceScale[]
   onCpuChange: (values: string[]) => void
   onGpuChange: (values: string[]) => void

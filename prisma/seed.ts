@@ -3,8 +3,10 @@ import azaharCustomFieldsSeeder from './seeders/azaharCustomFieldsSeeder'
 import clearTestDataSeeder from './seeders/clearTestDataSeeder'
 import cpuSeeder from './seeders/cpuSeeder'
 import customFieldTemplatesSeeder from './seeders/customFieldTemplatesSeeder'
+import devicePlatformsSeeder from './seeders/devicePlatformsSeeder'
 import devicesSeeder from './seeders/devicesSeeder'
 import edenCustomFieldsSeeder from './seeders/edenCustomFieldsSeeder'
+import emulatorPlatformsSeeder from './seeders/emulatorPlatformsSeeder'
 import emulatorsSeeder from './seeders/emulatorsSeeder'
 import gamenativeCustomFieldsSeeder from './seeders/gamenativeCustomFieldsSeeder'
 import gamesSeeder from './seeders/gamesSeeder'
@@ -12,6 +14,7 @@ import gpuSeeder from './seeders/gpuSeeder'
 import listingsSeeder from './seeders/listingsSeeder'
 import performanceScalesSeeder from './seeders/performanceScalesSeeder'
 import permissionsSeeder from './seeders/permissionsSeeder'
+import platformsSeeder from './seeders/platformsSeeder'
 import socSeeder from './seeders/socSeeder'
 import systemsSeeder from './seeders/systemsSeeder'
 import usersSeeder from './seeders/usersSeeder'
@@ -67,6 +70,7 @@ async function main() {
   const seedCustomFieldsOnly = args.includes('--custom-fields-only')
   const seedCpusOnly = args.includes('--cpus-only')
   const seedGpusOnly = args.includes('--gpus-only')
+  const seedPlatformsOnly = args.includes('--platforms-only')
 
   if (clearDbTestDataArg) {
     console.info('🧹 Clearing test data only...')
@@ -169,6 +173,22 @@ async function main() {
     return
   }
 
+  if (seedPlatformsOnly) {
+    console.info('🌱 Seeding platform layer only...')
+    try {
+      await platformsSeeder(prisma)
+      await emulatorPlatformsSeeder(prisma)
+      await devicePlatformsSeeder(prisma)
+      console.info('✅ Platform layer seeded successfully!')
+    } catch (error) {
+      console.error('❌ Error seeding platforms:', error)
+      throw error
+    } finally {
+      await prisma.$disconnect()
+    }
+    return
+  }
+
   if (clearDbArg) {
     console.warn('🗑️ Clearing database...')
     console.warn('I hope you know what you are doing 😅')
@@ -196,6 +216,9 @@ async function main() {
     await cpuSeeder(prisma)
     await gpuSeeder(prisma)
     await devicesSeeder(prisma)
+    await platformsSeeder(prisma)
+    await emulatorPlatformsSeeder(prisma)
+    await devicePlatformsSeeder(prisma)
     await gamesSeeder(prisma)
     await listingsSeeder(prisma)
 

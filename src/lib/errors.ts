@@ -305,6 +305,18 @@ export class ResourceError {
       AppError.forbidden('You can only manage emulators you are verified for'),
     requiresPermissionToDelete: () =>
       AppError.forbidden('You do not have permission to delete emulators'),
+    systemMismatch: () =>
+      AppError.badRequest("The selected emulator does not support this game's system"),
+  }
+
+  static platform = {
+    notFound: () => AppError.notFound('Platform'),
+    notSupportedByEmulator: () =>
+      AppError.badRequest('The selected emulator does not support the selected platform'),
+    notAvailableForDevice: () =>
+      AppError.badRequest('The selected platform is not available for this device'),
+    inconsistentWithOs: () =>
+      AppError.badRequest('The selected platform does not match the selected operating system'),
   }
 
   static listing = {
@@ -337,6 +349,14 @@ export class ResourceError {
       AppError.forbidden('You can only view configs for emulators you are verified for'),
     cannotApproveBannedUser: (banReason: string) =>
       AppError.badRequest(`Cannot approve listing: Author is currently banned (${banReason})`),
+    noValidPendingForBulkApprove: () =>
+      AppError.badRequest(
+        'No valid pending listings found to approve. The listings may have already been processed.',
+      ),
+    noValidPendingForBulkReject: () =>
+      AppError.badRequest(
+        'No valid pending listings found to reject. The listings may have already been processed.',
+      ),
   }
 
   static pcListing = {

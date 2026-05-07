@@ -1,35 +1,23 @@
 import { z } from 'zod'
 import { PAGINATION } from '@/data/constants'
-import { JsonValueSchema, ListingType } from '@/schemas/common'
+import { ListingType } from '@/schemas/common'
+import {
+  BaseCreateListingFields,
+  BaseGetListingsFields,
+  BaseUpdateListingAdminFields,
+  BaseUpdateListingUserFields,
+} from '@/schemas/listingBase'
 import { ApprovalStatus } from '@orm'
 
 export const CreateListingSchema = z.object({
-  gameId: z.string().uuid(),
+  ...BaseCreateListingFields,
   deviceId: z.string().uuid(),
-  emulatorId: z.string().uuid(),
-  performanceId: z.number(),
-  notes: z.string().max(5000).nullable().optional(),
-  customFieldValues: z
-    .array(
-      z.object({
-        customFieldDefinitionId: z.string().uuid(),
-        value: JsonValueSchema,
-      }),
-    )
-    .nullable()
-    .optional(),
-  recaptchaToken: z.string().nullable().optional(), // reCAPTCHA token for bot protection
 })
 
 export const GetListingsSchema = z.object({
-  systemIds: z.array(z.string().uuid()).nullable().optional(),
+  ...BaseGetListingsFields,
   deviceIds: z.array(z.string().uuid()).nullable().optional(),
   socIds: z.array(z.string().uuid()).nullable().optional(),
-  emulatorIds: z.array(z.string().uuid()).nullable().optional(),
-  performanceIds: z.array(z.number()).nullable().optional(),
-  searchTerm: z.string().nullable().optional(),
-  page: z.number().default(1),
-  limit: z.number().default(10),
   sortField: z
     .enum([
       'game.title',
@@ -43,9 +31,6 @@ export const GetListingsSchema = z.object({
     ])
     .nullable()
     .optional(),
-  sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
-  approvalStatus: z.nativeEnum(ApprovalStatus).nullable().optional(),
-  myListings: z.boolean().nullable().optional(),
 })
 
 export const GetListingByIdSchema = z.object({ id: z.string().uuid() })
@@ -201,37 +186,12 @@ export const GetListingForEditSchema = z.object({
 })
 
 export const UpdateListingAdminSchema = z.object({
-  id: z.string().uuid(),
-  gameId: z.string().uuid(),
+  ...BaseUpdateListingAdminFields,
   deviceId: z.string().uuid(),
-  emulatorId: z.string().uuid(),
-  performanceId: z.number(),
-  notes: z.string().nullable().optional(),
-  status: z.nativeEnum(ApprovalStatus),
-  customFieldValues: z
-    .array(
-      z.object({
-        customFieldDefinitionId: z.string().uuid(),
-        value: JsonValueSchema,
-      }),
-    )
-    .nullable()
-    .optional(),
 })
 
 export const UpdateListingUserSchema = z.object({
-  id: z.string().uuid(),
-  performanceId: z.number(),
-  notes: z.string().max(5000).nullable().optional(),
-  customFieldValues: z
-    .array(
-      z.object({
-        customFieldDefinitionId: z.string().uuid(),
-        value: JsonValueSchema,
-      }),
-    )
-    .nullable()
-    .optional(),
+  ...BaseUpdateListingUserFields,
 })
 
 export const GetListingForUserEditSchema = z.object({

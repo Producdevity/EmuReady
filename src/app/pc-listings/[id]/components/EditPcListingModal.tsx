@@ -13,6 +13,7 @@ import {
 } from '@/app/listings/components/shared'
 import { initializeCustomFieldValues } from '@/app/listings/components/shared/utils/form-helpers'
 import { Button, Modal, LoadingSpinner, SelectInput } from '@/components/ui'
+import { isPcOs } from '@/data/pc-os'
 import { api } from '@/lib/api'
 import { MarkdownEditor } from '@/lib/dynamic-imports'
 import { UpdatePcListingUserSchema } from '@/schemas/pcListing'
@@ -88,7 +89,7 @@ function EditPcListingModal(props: Props) {
         id: pcListingQuery.data.id,
         performanceId: pcListingQuery.data.performanceId,
         memorySize: pcListingQuery.data.memorySize,
-        os: pcListingQuery.data.os,
+        os: pcListingQuery.data.os ?? null,
         osVersion: pcListingQuery.data.osVersion,
         notes: pcListingQuery.data.notes || '',
         customFieldValues: defaultCustomFieldValues,
@@ -255,7 +256,7 @@ function EditPcListingModal(props: Props) {
                 {/* Operating System */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Operating System *
+                    Operating System
                   </label>
                   <Controller
                     name="os"
@@ -264,12 +265,17 @@ function EditPcListingModal(props: Props) {
                       <SelectInput
                         label="Operating System"
                         hideLabel
+                        emptyLabel="No OS recorded"
                         options={osOptions.map((os) => ({
                           id: os.id,
                           name: os.name,
                         }))}
-                        value={field.value}
-                        onChange={(e) => field.onChange(e.target.value as PcOs)}
+                        value={field.value ?? ''}
+                        onChange={(e) => {
+                          const next = e.target.value
+                          if (next === '') field.onChange(null)
+                          else if (isPcOs(next)) field.onChange(next)
+                        }}
                       />
                     )}
                   />

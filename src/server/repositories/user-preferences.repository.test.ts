@@ -71,6 +71,7 @@ const mockDevice = {
   socId: 'soc-1',
   brandId: 'brand-1',
   modelName: 'Steam Deck',
+  defaultPlatformId: null,
 }
 
 const mockSoc = {

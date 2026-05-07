@@ -6,7 +6,9 @@ import {
   GetDevicesByIdsSchema,
   GetDevicesSchema,
   GetTrendingDevicesSummarySchema,
+  UpdateDeviceDefaultPlatformSchema,
   UpdateDeviceSchema,
+  UpdateDeviceSupportedPlatformsSchema,
 } from '@/schemas/device'
 import {
   createTRPCRouter,
@@ -77,5 +79,30 @@ export const devicesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const repository = new DevicesRepository(ctx.prisma)
       return repository.getTrendingDevicesSummary(input.limit)
+    }),
+
+  updateSupportedPlatforms: manageDevicesProcedure
+    .input(UpdateDeviceSupportedPlatformsSchema)
+    .mutation(async ({ ctx, input }) => {
+      const repository = new DevicesRepository(ctx.prisma)
+
+      if (input.platformIds.length > 0) {
+        const platforms = await ctx.prisma.platform.findMany({
+          where: { id: { in: input.platformIds } },
+          select: { id: true },
+        })
+        if (platforms.length !== input.platformIds.length) {
+          throw ResourceError.platform.notFound()
+        }
+      }
+
+      return repository.updateSupportedPlatforms(input.deviceId, input.platformIds)
+    }),
+
+  updateDefaultPlatform: manageDevicesProcedure
+    .input(UpdateDeviceDefaultPlatformSchema)
+    .mutation(async ({ ctx, input }) => {
+      const repository = new DevicesRepository(ctx.prisma)
+      return repository.updateDefaultPlatform(input.deviceId, input.platformId)
     }),
 })

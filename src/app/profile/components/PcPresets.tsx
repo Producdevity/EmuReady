@@ -54,7 +54,7 @@ function PcPresets() {
     }
   }
 
-  const formatOs = (os: PcOs) => PC_OS_LABELS[os] ?? os
+  const formatOs = (os: PcOs | null) => (os ? (PC_OS_LABELS[os] ?? os) : 'Unknown')
 
   if (presetsQuery.isPending) {
     return (

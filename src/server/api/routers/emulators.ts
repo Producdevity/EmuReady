@@ -6,6 +6,7 @@ import {
   GetEmulatorsSchema,
   GetVerifiedDevelopersForEmulatorSchema,
   UpdateEmulatorSchema,
+  UpdateSupportedPlatformsSchema,
   UpdateSupportedSystemsSchema,
 } from '@/schemas/emulator'
 import {
@@ -42,6 +43,8 @@ export const emulatorsRouter = createTRPCRouter({
       page: input?.page,
       sortField: input?.sortField,
       sortDirection: input?.sortDirection,
+      platformId: input?.platformId,
+      systemId: input?.systemId,
     })
   }),
 
@@ -61,25 +64,31 @@ export const emulatorsRouter = createTRPCRouter({
 
     // Build where clause for filtering
     const searchConditions = buildSearchFilter(input?.search, ['name'])
-    let where: Prisma.EmulatorWhereInput | undefined = searchConditions
-      ? { OR: searchConditions }
-      : undefined
+    const whereParts: Prisma.EmulatorWhereInput[] = []
+    if (searchConditions) whereParts.push({ OR: searchConditions })
+    if (input?.platformId) {
+      whereParts.push({ platforms: { some: { platformId: input.platformId } } })
+    }
+    if (input?.systemId) {
+      whereParts.push({ systems: { some: { id: input.systemId } } })
+    }
 
     // If user is a developer (not moderator+), only show their assigned emulators
     if (
       ctx.session.user.role === Role.DEVELOPER &&
       !hasRolePermission(ctx.session.user.role, Role.MODERATOR)
     ) {
-      const developerFilter: Prisma.EmulatorWhereInput = {
-        verifiedDevelopers: {
-          some: {
-            userId: ctx.session.user.id,
-          },
-        },
-      }
-
-      where = where ? { AND: [where, developerFilter] } : developerFilter
+      whereParts.push({
+        verifiedDevelopers: { some: { userId: ctx.session.user.id } },
+      })
     }
+
+    const where: Prisma.EmulatorWhereInput | undefined =
+      whereParts.length === 0
+        ? undefined
+        : whereParts.length === 1
+          ? whereParts[0]
+          : { AND: whereParts }
 
     let orderBy: Prisma.EmulatorOrderByWithRelationInput = { name: 'asc' }
 
@@ -100,11 +109,15 @@ export const emulatorsRouter = createTRPCRouter({
     // Always run count query for consistent pagination
     const total = await ctx.prisma.emulator.count({ where })
 
-    // Get emulators with pagination and include systems data
     const emulators = await ctx.prisma.emulator.findMany({
       where,
       include: {
         systems: { select: { id: true, name: true, key: true } },
+        platforms: {
+          include: {
+            platform: { select: { id: true, name: true, slug: true, scope: true } },
+          },
+        },
         verifiedDevelopers: {
           include: {
             user: { select: { id: true, name: true, profileImage: true } },
@@ -230,6 +243,36 @@ export const emulatorsRouter = createTRPCRouter({
       return {
         success: true,
         message: 'Supported systems updated successfully.',
+      }
+    }),
+
+  updateSupportedPlatforms: superAdminProcedure
+    .input(UpdateSupportedPlatformsSchema)
+    .mutation(async ({ ctx, input }) => {
+      const repository = new EmulatorsRepository(ctx.prisma)
+
+      const emulator = await repository.byId(input.emulatorId)
+      if (!emulator) return ResourceError.emulator.notFound()
+
+      if (input.platformIds.length > 0) {
+        const platforms = await ctx.prisma.platform.findMany({
+          where: { id: { in: input.platformIds } },
+          select: { id: true },
+        })
+        if (platforms.length !== input.platformIds.length) {
+          const foundIds = new Set(platforms.map((p) => p.id))
+          const invalidIds = input.platformIds.filter((id) => !foundIds.has(id))
+          return AppError.badRequest(
+            `One or more platform IDs are invalid: ${invalidIds.join(', ')}.`,
+          )
+        }
+      }
+
+      await repository.updateSupportedPlatforms(input.emulatorId, input.platformIds)
+
+      return {
+        success: true,
+        message: 'Supported platforms updated successfully.',
       }
     }),
 })

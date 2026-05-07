@@ -1,6 +1,6 @@
 'use client'
 
-import { Modal, InputPlaceholder } from '@/components/ui'
+import { Button, InputPlaceholder, Modal, PlatformsSummary } from '@/components/ui'
 import { type RouterOutput } from '@/types/trpc'
 import { formatCountLabel } from '@/utils/text'
 
@@ -17,8 +17,10 @@ function DeviceViewModal(props: Props) {
 
   const deviceSoc =
     props.deviceData.soc?.manufacturer && props.deviceData.soc?.name
-      ? `${props.deviceData.soc?.manufacturer} ${props.deviceData.soc?.name}`
+      ? `${props.deviceData.soc.manufacturer} ${props.deviceData.soc.name}`
       : 'Not specified'
+
+  const supportedPlatforms = props.deviceData.platforms.map((dp) => dp.platform)
 
   return (
     <Modal isOpen={props.isOpen} onClose={props.onClose} title="Device Details" size="md">
@@ -28,7 +30,6 @@ function DeviceViewModal(props: Props) {
           <InputPlaceholder label="Brand" value={props.deviceData.brand.name} />
           <InputPlaceholder label="Model Name" value={props.deviceData.modelName} />
           <InputPlaceholder label="System on Chip (SoC)" value={deviceSoc} />
-
           {props.deviceData._count && (
             <InputPlaceholder
               label="Total Listings"
@@ -37,14 +38,15 @@ function DeviceViewModal(props: Props) {
           )}
         </div>
 
+        <PlatformsSummary
+          platforms={supportedPlatforms}
+          defaultPlatform={props.deviceData.defaultPlatform ?? null}
+        />
+
         <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
-          <button
-            type="button"
-            onClick={props.onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
+          <Button variant="outline" onClick={props.onClose}>
             Close
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
