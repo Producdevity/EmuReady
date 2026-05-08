@@ -101,10 +101,10 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
 
   console.info('🌱 Seeding users...')
   console.info('📝 Reconciling Clerk + database state for seed users.')
-  console.info(`🔑 Default password for all seed users: ${DEFAULT_SEED_PASSWORD}`)
+  console.info('🔑 Seed users were synchronized with the configured default password.')
 
   const clerk = await clerkClient()
-
+  const failedUsers: string[] = []
   for (const userData of users) {
     try {
       const existingClerkUsers = await clerk.users.getUserList({
@@ -157,8 +157,13 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
 
       console.info(`✅ ${action} user: ${userData.email} (clerkId: ${clerkUser.id})`)
     } catch (error) {
+      failedUsers.push(userData.email)
       console.error(`❌ Failed to seed user ${userData.email}:`, error)
     }
+  }
+
+  if (failedUsers.length > 0) {
+    throw new Error(`Failed to seed users: ${failedUsers.join(', ')}`)
   }
 
   console.info('✅ Users seeding completed')
