@@ -160,7 +160,7 @@ export async function createHandheldListing(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/listings(?!\/new)/)
 }
 
-export async function createPcListing(page: Page): Promise<void> {
+export async function createPcListing(page: Page): Promise<string> {
   await page.goto('/pc-listings/new')
   await page.waitForLoadState('domcontentloaded')
 
@@ -191,7 +191,22 @@ export async function createPcListing(page: Page): Promise<void> {
 
   await page.getByRole('button', { name: /create compatibility report/i }).click()
 
-  await expect(page).toHaveURL(/\/pc-listings/)
+  await page.waitForURL(/\/pc-listings\/(?!new)[^/?#]+/)
+  return page.url()
+}
+
+export async function createApprovedPcListing(browser: Browser): Promise<string> {
+  let detailUrl = ''
+
+  await withContext(browser, 'tests/.auth/user.json', async (page) => {
+    detailUrl = await createPcListing(page)
+  })
+
+  await withContext(browser, 'tests/.auth/super_admin.json', async (page) => {
+    await approveFirstPendingListing(page, '/admin/pc-listing-approvals')
+  })
+
+  return detailUrl
 }
 
 export async function approveFirstPendingListing(
