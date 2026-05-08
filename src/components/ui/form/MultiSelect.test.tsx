@@ -203,6 +203,70 @@ describe('MultiSelect', () => {
     })
   })
 
+  it('closes dropdown when Escape is pressed inside the dropdown', async () => {
+    const onChange = vi.fn()
+    render(<MultiSelect label="Test Select" value={[]} onChange={onChange} options={mockOptions} />)
+
+    fireEvent.click(screen.getByRole('button', { expanded: false }))
+    const searchInput = await screen.findByPlaceholderText('Search test select...')
+
+    fireEvent.keyDown(searchInput, { key: 'Escape' })
+
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText('Search test select...')).not.toBeInTheDocument()
+    })
+  })
+
+  it('closes dropdown when Escape is pressed on a checkbox option', async () => {
+    const onChange = vi.fn()
+    render(<MultiSelect label="Test Select" value={[]} onChange={onChange} options={mockOptions} />)
+
+    fireEvent.click(screen.getByRole('button', { expanded: false }))
+    const checkbox = await screen.findByLabelText('Option 1')
+
+    fireEvent.keyDown(checkbox, { key: 'Escape' })
+
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText('Search test select...')).not.toBeInTheDocument()
+    })
+  })
+
+  it('clears the search query when Escape closes the dropdown', async () => {
+    const onChange = vi.fn()
+    render(<MultiSelect label="Test Select" value={[]} onChange={onChange} options={mockOptions} />)
+
+    fireEvent.click(screen.getByRole('button', { expanded: false }))
+    const searchInput = await screen.findByPlaceholderText('Search test select...')
+    fireEvent.change(searchInput, { target: { value: 'Option 1' } })
+    expect(searchInput).toHaveValue('Option 1')
+
+    fireEvent.keyDown(searchInput, { key: 'Escape' })
+
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText('Search test select...')).not.toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByRole('button', { expanded: false }))
+    const reopenedInput = await screen.findByPlaceholderText('Search test select...')
+    expect(reopenedInput).toHaveValue('')
+  })
+
+  it('returns focus to the trigger button after closing via Escape', async () => {
+    const onChange = vi.fn()
+    render(<MultiSelect label="Test Select" value={[]} onChange={onChange} options={mockOptions} />)
+
+    const triggerButton = screen.getByRole('button', { expanded: false })
+    fireEvent.click(triggerButton)
+    const searchInput = await screen.findByPlaceholderText('Search test select...')
+
+    fireEvent.keyDown(searchInput, { key: 'Escape' })
+
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText('Search test select...')).not.toBeInTheDocument()
+    })
+    expect(document.activeElement).toBe(triggerButton)
+  })
+
   it('renders with left icon when provided', () => {
     const onChange = vi.fn()
     const testIcon = <span data-testid="test-icon">📱</span>
