@@ -2,28 +2,11 @@ import { expect } from '@playwright/test'
 import { waitForPageStability } from '../helpers/test-config'
 import type { Page } from '@playwright/test'
 
-const COOKIE_CONSENT_SCRIPT = () => {
-  const PREFIX = '@StagingEmuReady_'
-  localStorage.setItem(`${PREFIX}cookie_consent`, 'true')
-  localStorage.setItem(
-    `${PREFIX}cookie_preferences`,
-    JSON.stringify({
-      necessary: true,
-      analytics: false,
-      performance: false,
-    }),
-  )
-  localStorage.setItem(`${PREFIX}cookie_consent_date`, new Date().toISOString())
-  localStorage.setItem(`${PREFIX}analytics_enabled`, 'false')
-  localStorage.setItem(`${PREFIX}performance_enabled`, 'false')
-}
-
 export abstract class BasePage {
   readonly page: Page
 
   protected constructor(page: Page) {
     this.page = page
-    page.context().addInitScript(COOKIE_CONSENT_SCRIPT)
   }
 
   get logo() {

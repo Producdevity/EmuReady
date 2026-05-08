@@ -1,4 +1,4 @@
-import { type Page, test, expect } from '@playwright/test'
+import { type Page, test, expect } from './fixtures'
 
 // Mirrors voting.spec.ts for handheld listings — PcVoteButtons wraps the
 // shared VoteButtons component, so both should behave identically.

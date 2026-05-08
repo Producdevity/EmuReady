@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 
 test.describe('Router Security Verification', () => {
   test('protected endpoints should reject unauthenticated requests', async ({ request }) => {

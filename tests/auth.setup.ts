@@ -1,6 +1,7 @@
 import path from 'path'
 import { clerk } from '@clerk/testing/playwright'
 import { test as setup, type Page } from '@playwright/test'
+import { registerCookieConsent } from './helpers/cookie-consent'
 
 // Define auth files for different roles
 const authFiles = {
@@ -17,6 +18,8 @@ async function authenticateUser(page: Page, email: string, password: string, rol
   console.log(`🔐 Setting up authentication for ${role}: ${email}`)
 
   const userButtonSelector = '.cl-userButtonTrigger, .cl-userButton, [data-clerk-user-button]'
+
+  await registerCookieConsent(page.context())
 
   try {
     await page.goto('/', { waitUntil: 'load' })

@@ -1,16 +1,19 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { ListingsPage } from './pages/ListingsPage'
-import type { Locator, Page } from '@playwright/test'
+import type { Locator } from './fixtures'
 
-async function selectFirstFilterOption(page: Page, filterButton: Locator) {
+async function selectFirstFilterOption(filterButton: Locator) {
+  await expect(filterButton).toHaveAttribute('aria-expanded', 'false')
   await filterButton.click()
-  const firstOption = page.locator('label:has(input[type="checkbox"])').first()
+  await expect(filterButton).toHaveAttribute('aria-expanded', 'true')
+
+  const dropdown = filterButton.locator('xpath=ancestor::*[@data-testid="multi-select-root"][1]')
+  const firstOption = dropdown.locator('label:has(input[type="checkbox"])').first()
   await expect(firstOption).toBeVisible()
   await firstOption.click()
-  // MultiSelect doesn't close on Escape and a lingering open dropdown blocks
-  // subsequent clicks, so toggle the filter button to dismiss it.
+
   await filterButton.click()
-  await expect(firstOption).toBeHidden()
+  await expect(filterButton).toHaveAttribute('aria-expanded', 'false')
 }
 
 test.describe('Filtering Tests', () => {
@@ -39,7 +42,7 @@ test.describe('Filtering Tests', () => {
     await listingsPage.verifyPageLoaded()
     await expect(listingsPage.listingItems.first()).toBeVisible()
 
-    await selectFirstFilterOption(page, listingsPage.deviceFilter)
+    await selectFirstFilterOption(listingsPage.deviceFilter)
 
     await expect(page).toHaveURL(/[?&]deviceIds=/)
     await expect(listingsPage.listingItems.first().or(listingsPage.noListingsMessage)).toBeVisible()
@@ -51,7 +54,7 @@ test.describe('Filtering Tests', () => {
     await listingsPage.verifyPageLoaded()
     await expect(listingsPage.listingItems.first()).toBeVisible()
 
-    await selectFirstFilterOption(page, listingsPage.emulatorFilter)
+    await selectFirstFilterOption(listingsPage.emulatorFilter)
 
     await expect(page).toHaveURL(/[?&]emulatorIds=/)
     await expect(listingsPage.listingItems.first().or(listingsPage.noListingsMessage)).toBeVisible()
@@ -63,7 +66,7 @@ test.describe('Filtering Tests', () => {
     await listingsPage.verifyPageLoaded()
     await expect(listingsPage.listingItems.first()).toBeVisible()
 
-    await selectFirstFilterOption(page, listingsPage.performanceFilter)
+    await selectFirstFilterOption(listingsPage.performanceFilter)
 
     await expect(page).toHaveURL(/[?&]performanceIds=/)
     await expect(listingsPage.listingItems.first().or(listingsPage.noListingsMessage)).toBeVisible()
@@ -75,10 +78,10 @@ test.describe('Filtering Tests', () => {
     await listingsPage.verifyPageLoaded()
     await expect(listingsPage.listingItems.first()).toBeVisible()
 
-    await selectFirstFilterOption(page, listingsPage.deviceFilter)
+    await selectFirstFilterOption(listingsPage.deviceFilter)
     await expect(page).toHaveURL(/[?&]deviceIds=/)
 
-    await selectFirstFilterOption(page, listingsPage.emulatorFilter)
+    await selectFirstFilterOption(listingsPage.emulatorFilter)
     await expect(page).toHaveURL(/[?&]emulatorIds=/)
 
     await expect(listingsPage.clearFiltersButton).toBeVisible()
@@ -95,7 +98,7 @@ test.describe('Filtering Tests', () => {
     await listingsPage.verifyPageLoaded()
     await expect(listingsPage.listingItems.first()).toBeVisible()
 
-    await selectFirstFilterOption(page, listingsPage.deviceFilter)
+    await selectFirstFilterOption(listingsPage.deviceFilter)
 
     await expect(page).toHaveURL(/[?&]deviceIds=/)
   })
@@ -106,7 +109,7 @@ test.describe('Filtering Tests', () => {
     await listingsPage.verifyPageLoaded()
     await expect(listingsPage.listingItems.first()).toBeVisible()
 
-    await selectFirstFilterOption(page, listingsPage.deviceFilter)
+    await selectFirstFilterOption(listingsPage.deviceFilter)
     await expect(page).toHaveURL(/[?&]deviceIds=/)
 
     await listingsPage.clickFirstListing()

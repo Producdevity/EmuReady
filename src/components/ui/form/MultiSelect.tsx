@@ -147,7 +147,7 @@ export function MultiSelect(props: Props) {
         {props.label}
       </label>
 
-      <div ref={dropdownRef} className="relative">
+      <div ref={dropdownRef} className="relative" data-testid="multi-select-root">
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}

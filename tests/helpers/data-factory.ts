@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test'
+import { registerCookieConsent } from './cookie-consent'
 import type { Browser, Page } from '@playwright/test'
 
 export async function selectAutocompleteOption(
@@ -170,7 +171,7 @@ export async function createPcListing(page: Page): Promise<void> {
   await expect(memoryInput).toBeVisible()
   await memoryInput.fill('16')
 
-  const osSelect = page.locator('select').filter({ hasText: /windows|linux|macos/i })
+  const osSelect = page.locator('select[name="Operating System"]')
   await expect(osSelect).toBeVisible()
   await osSelect.selectOption({ index: 1 })
 
@@ -306,21 +307,7 @@ export async function withContext(
   fn: (page: Page) => Promise<void>,
 ) {
   const ctx = await browser.newContext({ storageState })
-  await ctx.addInitScript(() => {
-    const PREFIX = '@StagingEmuReady_'
-    localStorage.setItem(`${PREFIX}cookie_consent`, 'true')
-    localStorage.setItem(
-      `${PREFIX}cookie_preferences`,
-      JSON.stringify({
-        necessary: true,
-        analytics: false,
-        performance: false,
-      }),
-    )
-    localStorage.setItem(`${PREFIX}cookie_consent_date`, new Date().toISOString())
-    localStorage.setItem(`${PREFIX}analytics_enabled`, 'false')
-    localStorage.setItem(`${PREFIX}performance_enabled`, 'false')
-  })
+  await registerCookieConsent(ctx)
   const page = await ctx.newPage()
   try {
     await fn(page)

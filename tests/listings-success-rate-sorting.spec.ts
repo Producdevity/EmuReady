@@ -1,5 +1,5 @@
 import path from 'path'
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 
 test.describe('Success Rate Sorting', () => {
   test.use({ storageState: path.join(__dirname, '.auth/user.json') })

@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { GamesPage } from './pages/GamesPage'
 import { ListingsPage } from './pages/ListingsPage'
-import type { Page } from '@playwright/test'
+import type { Page } from './fixtures'
 
 // The Pagination component renders its navigation buttons twice in the same
 // <nav> — once inside a `hidden md:flex` desktop wrapper and once inside a

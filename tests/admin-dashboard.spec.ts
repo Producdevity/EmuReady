@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 
 test.describe('Admin Dashboard', () => {
   test.use({ storageState: 'tests/.auth/super_admin.json' })

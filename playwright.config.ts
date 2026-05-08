@@ -2,7 +2,7 @@ import path from 'path'
 import { defineConfig, devices } from '@playwright/test'
 import dotenv from 'dotenv'
 
-/** Read environment variables from file. */
+dotenv.config({ path: path.resolve(__dirname, '.env.local') })
 dotenv.config({ path: path.resolve(__dirname, '.env.test.local') })
 
 const isCI = !!process.env.CI

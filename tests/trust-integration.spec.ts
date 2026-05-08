@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import {
   approveFirstPendingListing,
   createPcListing,
@@ -6,7 +6,7 @@ import {
   resetUserTrustScore,
   withContext,
 } from './helpers/data-factory'
-import type { Page } from '@playwright/test'
+import type { Page } from './fixtures'
 
 async function verifyTrustLogContains(page: Page, actionText: string) {
   await page.goto('/admin/trust-logs', { waitUntil: 'domcontentloaded' })

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 
 test.describe('User Ban & Moderation System', () => {
   test.describe('Admin Ban Management Page', () => {

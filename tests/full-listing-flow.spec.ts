@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 
 test.describe('Handheld Listing Creation Form', () => {
   test.use({ storageState: 'tests/.auth/user.json' })
