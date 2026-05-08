@@ -189,8 +189,14 @@ export function VoteButtons(props: VoteButtonsProps) {
           </button>
         </div>
 
-        {/* Progress bar showing success rate / verified */}
-        <div className="w-full mt-4 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div
+          role="progressbar"
+          aria-label={`${labels.title} success rate`}
+          aria-valuenow={successRate}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          className="w-full mt-4 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+        >
           <motion.div
             className={`h-full ${barColor}`}
             initial={{ width: 0 }}

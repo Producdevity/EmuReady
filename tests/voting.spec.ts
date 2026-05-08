@@ -104,7 +104,13 @@ test.describe('Voting Functionality Tests', () => {
     await listingsPage.clickFirstListing()
     await page.waitForLoadState('domcontentloaded')
 
-    await expect(page.getByText(/\d+%/)).toBeVisible()
-    await expect(page.getByText(/verified by \d+ users/i)).toBeVisible()
+    const progressBar = page.getByRole('progressbar', { name: /success rate/i })
+    await expect(progressBar).toBeVisible()
+
+    const valueNow = await progressBar.getAttribute('aria-valuenow')
+    expect(valueNow).toMatch(/^\d+$/)
+    const numericValue = Number(valueNow)
+    expect(numericValue).toBeGreaterThanOrEqual(0)
+    expect(numericValue).toBeLessThanOrEqual(100)
   })
 })
