@@ -835,13 +835,14 @@ async function gamesSeeder(prisma: PrismaClient) {
   const systems = await prisma.system.findMany()
   const systemMap = new Map(systems.map((system) => [system.name, system.id]))
 
-  // Get the 4 seeded users for submission tracking
+  // Get the seeded users for submission tracking
   const seededUsers = await prisma.user.findMany({
     where: {
       email: {
         in: [
           'superadmin@emuready.com',
           'admin@emuready.com',
+          'moderator@emuready.com',
           'author@emuready.com',
           'user@emuready.com',
         ],
@@ -890,6 +891,7 @@ async function gamesSeeder(prisma: PrismaClient) {
       where: { title_systemId: { title: game.title, systemId } },
       update: {
         imageUrl: game.imageUrl,
+        normalizedTitle: normalizeString(game.title),
         status: ApprovalStatus.APPROVED,
         submittedBy: submitter?.id ?? null,
         submittedAt: submittedAt,
@@ -898,6 +900,7 @@ async function gamesSeeder(prisma: PrismaClient) {
       },
       create: {
         title: game.title,
+        normalizedTitle: normalizeString(game.title),
         imageUrl: game.imageUrl,
         systemId,
         status: ApprovalStatus.APPROVED,
