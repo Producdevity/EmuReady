@@ -3,7 +3,6 @@ import { clerk } from '@clerk/testing/playwright'
 import { test as setup, type Page } from '@playwright/test'
 import { registerCookieConsent } from './helpers/cookie-consent'
 
-// Define auth files for different roles
 const authFiles = {
   user: path.join(__dirname, '.auth/user.json'),
   author: path.join(__dirname, '.auth/author.json'),
@@ -13,7 +12,6 @@ const authFiles = {
   super_admin: path.join(__dirname, '.auth/super_admin.json'),
 }
 
-// Helper function to login with specific credentials
 async function authenticateUser(page: Page, email: string, password: string, role: string) {
   console.log(`🔐 Setting up authentication for ${role}: ${email}`)
 
@@ -48,12 +46,10 @@ async function authenticateUser(page: Page, email: string, password: string, rol
   }
 }
 
-// Clean up any previous auth states on startup
 setup.beforeAll(async () => {
   const fs = await import('fs')
   const authDir = path.join(__dirname, '.auth')
 
-  // Create .auth directory if it doesn't exist
   if (!fs.existsSync(authDir)) {
     fs.mkdirSync(authDir, { recursive: true })
   }
@@ -61,7 +57,6 @@ setup.beforeAll(async () => {
   console.log('🧹 Auth setup initialized')
 })
 
-// Auth setup tests
 const authConfigs = [
   {
     role: 'user',
@@ -101,16 +96,19 @@ const authConfigs = [
   },
 ]
 
-// Generate setup tests for each role that has credentials
 for (const config of authConfigs) {
-  if (config.email && config.password) {
-    setup(`authenticate as ${config.role}`, async ({ page }) => {
-      await authenticateUser(page, config.email!, config.password!, config.role)
-      await page.context().storageState({ path: config.file })
-    })
-  } else {
+  if (!config.email || !config.password) {
     setup.skip(`authenticate as ${config.role}`, async () => {
       console.log(`⚠️  Skipping ${config.role} auth - credentials not provided`)
     })
+    continue
   }
+
+  const email = config.email
+  const password = config.password
+
+  setup(`authenticate as ${config.role}`, async ({ page }) => {
+    await authenticateUser(page, email, password, config.role)
+    await page.context().storageState({ path: config.file })
+  })
 }
