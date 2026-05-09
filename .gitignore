@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 /node_modules
 /.pnp
@@ -76,9 +74,12 @@ node_modules/
 .idea
 .claude
 .gemini
+.agents
 .github/copilot-instructions.md
 
 # Notes
+CONTEXT.md
+MEMORY.md
 CHECKS.md
 CLAUDE.md
 AGENTS.md
