@@ -2,7 +2,7 @@
 
 This guide shows you how to get EmuReady running on your local machine using Docker. This is the recommended way for contributors as it provides a consistent development environment with minimal setup.
 
-## 🚀 Quick Start (5 minutes!)
+## Quick Start
 
 ### Prerequisites
 
@@ -23,8 +23,6 @@ cd emuready
 ./scripts/docker-dev.sh
 ```
 
-That's it! 🎉 
-
 The script will:
 - Create your environment configuration file
 - Start PostgreSQL database
@@ -32,21 +30,18 @@ The script will:
 - Run database migrations and seed data
 - Open the app at http://localhost:3000
 
-## 📋 What You Get
+## What You Get
 
 When you run the Docker setup, you'll have:
 
-- ✅ **Next.js app** running at http://localhost:3000
-- ✅ **Prisma Studio** running at http://localhost:5555 (database admin interface)
-- ✅ **PostgreSQL database** with sample data
-- ✅ **Hot reload** for development
-- ✅ **Persistent data** (your changes survive restarts)
-- ✅ **One-time seeding** (only runs on first setup, not every restart)
-- ✅ **Test users** ready to use (see [Test Users](#test-users))
-- ✅ **File uploads** working correctly
-- ✅ **All environment dependencies** managed automatically
+- Next.js app at http://localhost:3000
+- Prisma Studio at http://localhost:5555
+- PostgreSQL database with seeded data
+- Hot reload for development
+- Persistent database and uploaded files
+- One-time initial seeding
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -75,7 +70,7 @@ TUNNEL_TOKEN="your_cloudflare_tunnel_token"    # Cloudflare tunnel
    - Sign up at [Clerk Dashboard](https://dashboard.clerk.com)
    - Create a new application
    - Copy the publishable and secret keys
-   - See [Clerk Setup Guide](../CLERK_SETUP.md) for details
+   - See [Authentication Setup](AUTHENTICATION_SETUP.md) for local webhook details.
 
 2. **RAWG (Game Data)** - Optional but recommended
    - Get free API key at [RAWG.io](https://rawg.io/apidocs)
@@ -86,18 +81,11 @@ TUNNEL_TOKEN="your_cloudflare_tunnel_token"    # Cloudflare tunnel
 4. **Cloudflare Tunnel** - Required for webhook testing
    - Follow the webhook setup section below to get your tunnel token
 
-## 🧪 Test Users
+## Test Users
 
-The Docker setup includes pre-seeded test users:
+Docker runs the same seed script as local development. The canonical seeded account list and password live in `prisma/seeders/usersSeeder.ts`.
 
-| Email | Password | Role | Description |
-|-------|----------|------|-------------|
-| `superadmin@emuready.com` | `DevPassword123!` | SUPER_ADMIN | Full system access |
-| `admin@emuready.com` | `DevPassword123!` | ADMIN | Admin panel access |
-| `author@emuready.com` | `DevPassword123!` | AUTHOR | Content creation |
-| `user@emuready.com` | `DevPassword123!` | USER | Standard user |
-
-## 🔌 Webhook Support (Optional)
+## Webhook Support
 
 For testing Clerk webhooks (user creation/deletion), you can enable the webhook tunnel:
 
@@ -139,7 +127,7 @@ For testing Clerk webhooks (user creation/deletion), you can enable the webhook 
 3. Subscribe to: `user.created`, `user.updated`, `user.deleted`
 4. Copy webhook secret to `.env.docker` as `CLERK_WEBHOOK_SECRET`
 
-## 🌐 **Accessing Your Application**
+## Accessing Your Application
 
 Once Docker is running, access your application at:
 
@@ -147,7 +135,7 @@ Once Docker is running, access your application at:
 - **🔍 Prisma Studio**: http://localhost:5555 (runs automatically)
 - **📊 Database Admin (pgAdmin)**: http://localhost:5050 (when enabled)
 
-## 📋 **Viewing Logs (Your New `npm run dev`)**
+## Viewing Logs
 
 To see real-time application logs (equivalent to `npm run dev` terminal output):
 
@@ -157,7 +145,7 @@ To see real-time application logs (equivalent to `npm run dev` terminal output):
 ./scripts/docker-dev.sh logs postgres # Database logs
 ```
 
-## 💻 **Running Commands Inside Containers**
+## Running Commands Inside Containers
 
 ### Interactive Shell Access
 ```bash
@@ -190,7 +178,7 @@ docker exec emuready-app npm run lint
 docker exec emuready-app npx playwright test
 ```
 
-## 🛠 Development Commands
+## Development Commands
 
 The `./scripts/docker-dev.sh` script provides several useful commands:
 
@@ -247,7 +235,7 @@ The `./scripts/docker-dev.sh` script provides several useful commands:
 ./scripts/docker-dev.sh help
 ```
 
-## 📊 Database Management
+## Database Management
 
 ### Database Admin Interfaces
 
@@ -285,7 +273,7 @@ To connect to the database in pgAdmin:
 - `./scripts/docker-dev.sh clean` only removes local Docker data
 - No connection to remote Supabase or production databases
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Port Conflicts
 If port 3000 is busy:
@@ -334,7 +322,7 @@ rm .env.docker
 ./scripts/docker-dev.sh start  # Will recreate from template
 ```
 
-## 🆚 Docker vs Manual Setup
+## Docker vs Manual Setup
 
 | Aspect | Docker Setup | Manual Setup |
 |--------|--------------|--------------|
@@ -343,10 +331,10 @@ rm .env.docker
 | **Consistency** | Same on all machines | Varies by system |
 | **Isolation** | Containerized | Uses local system |
 | **Database** | Automatic PostgreSQL | Manual setup required |
-| **Hot Reload** | ✅ Yes | ✅ Yes |
+| **Hot Reload** | Yes | Yes |
 | **Performance** | Slightly slower | Native speed |
 
-## 📁 File Structure
+## File Structure
 
 Docker creates the following persistent volumes:
 
@@ -360,7 +348,7 @@ emuready/
     └── docker-dev.sh   # Development helper
 ```
 
-## 🔄 Switching Between Setups
+## Switching Between Setups
 
 You can use both Docker and manual setup on the same project:
 
@@ -382,7 +370,7 @@ npm run dev
 
 The setups use different databases and won't conflict.
 
-## 🤝 Contributing
+## Contributing
 
 When contributing:
 
@@ -390,14 +378,14 @@ When contributing:
 2. **Include environment variables** in `.env.docker.example` for new features
 3. **Update this documentation** if you change the Docker setup
 
-## 🔗 Related Documentation
+## Related Documentation
 
 - [Manual Setup Guide](../CONTRIBUTING.md)
-- [Clerk Authentication Setup](../CLERK_SETUP.md) 
+- [Clerk Authentication Setup](AUTHENTICATION_SETUP.md)
 - [Development Setup](DEVELOPMENT_SETUP.md)
-- [Webhook Configuration](../CLERK_WEBHOOKS_SETUP.md)
+- [Webhook Troubleshooting](WEBHOOK_TROUBLESHOOTING.md)
 
-## 💡 Tips
+## Tips
 
 - **Use the helper script**: `./scripts/docker-dev.sh` handles most tasks
 - **Check service status**: Use `./scripts/docker-dev.sh status` to see all running services and URLs
@@ -409,7 +397,7 @@ When contributing:
 - **Smart seeding**: Only runs once on first setup, use `reseed` command to reseed manually
 - **New packages**: Use `./scripts/docker-dev.sh rebuild` after adding npm packages to install them without reseeding
 
-## 🆘 Need Help?
+## Need Help?
 
 1. Try out the manual [Local Development](../CONTRIBUTING.md) approach.
 2. Look at existing [GitHub Issues](https://github.com/Producdevity/emuready/issues)
@@ -418,7 +406,7 @@ When contributing:
    - Error messages or logs
    - Steps you tried
 
-## 🔄 Restarting Your Development Environment
+## Restarting Your Development Environment
 
 Different situations require different restart approaches:
 
@@ -459,7 +447,3 @@ Different situations require different restart approaches:
 **What it does:** Removes all containers, volumes, and data  
 **Speed:** ~2-3 minutes  
 **Database:** Completely reset, will reseed on startup  
-
----
-
-Happy coding! 🚀 
