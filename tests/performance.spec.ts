@@ -117,21 +117,13 @@ test.describe('Performance Tests', () => {
     expect(frameCount).toBeGreaterThan(30)
   })
 
-  test('should cache API responses appropriately', async ({ page }) => {
-    interface ApiCall {
-      url: string
-      status: number
-      fromCache: boolean
-    }
-    const apiCalls: ApiCall[] = []
+  test('should complete repeated navigation without failed API responses', async ({ page }) => {
+    const failedApiResponses: string[] = []
 
     page.on('response', (response) => {
       if (response.url().includes('/api/')) {
-        apiCalls.push({
-          url: response.url(),
-          status: response.status(),
-          fromCache: response.fromServiceWorker(),
-        })
+        const status = response.status()
+        if (status >= 400) failedApiResponses.push(`${status} ${response.url()}`)
       }
     })
 
@@ -141,7 +133,7 @@ test.describe('Performance Tests', () => {
     await gamesPage.navigateToHome()
     await gamesPage.goto()
 
-    expect(apiCalls.length).toBeGreaterThan(0)
+    expect(failedApiResponses).toEqual([])
   })
 })
 
