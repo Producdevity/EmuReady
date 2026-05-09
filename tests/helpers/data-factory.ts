@@ -6,7 +6,13 @@ const VALID_CUSTOM_FIELD_TEXT_VALUE = 'https://example.com'
 const HANDHELD_LISTING_GAME_SEARCH_TERM = 'Mario Kart 8 Deluxe'
 const HANDHELD_LISTING_EMULATOR_SEARCH_TERM = 'Ryujinx'
 const PC_LISTING_EMULATOR_SEARCH_TERM = 'Ryujinx'
-const PC_LISTING_GAME_SEARCH_TERMS = ['Zelda', 'Mario', 'Metroid', 'Animal', 'Sonic'] as const
+const PC_LISTING_GAME_SEARCH_TERMS = [
+  'Mario Kart 8 Deluxe',
+  'Metroid Dread',
+  'Bayonetta 3',
+  'Hades',
+  'Octopath Traveler',
+] as const
 const PC_LISTING_CPU_SEARCH_TERMS = [
   'Core Ultra 9 285K',
   'Ryzen 9 9950X',
