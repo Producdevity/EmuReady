@@ -1,13 +1,13 @@
 import { test, expect } from './fixtures'
 import {
-  approveFirstPendingListing,
+  approvePendingPcListingByUrl,
   ensureApprovedPcListing,
   createPcListing,
-  rejectFirstPendingListing,
+  rejectPendingPcListingByUrl,
   resetUserTrustScore,
   withContext,
 } from './helpers/data-factory'
-import type { Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
 
 async function verifyTrustLogContains(page: Page, actionText: string) {
   await page.goto('/admin/trust-logs', { waitUntil: 'domcontentloaded' })
@@ -18,6 +18,24 @@ async function verifyTrustLogContains(page: Page, actionText: string) {
 
   const rows = page.locator('table tbody tr').filter({ hasText: new RegExp(actionText, 'i') })
   expect(await rows.count()).toBeGreaterThan(0)
+}
+
+async function openFirstHandheldListing(page: Page) {
+  await page.goto('/listings')
+  const rows = page.locator('table tbody tr')
+  await expect(rows.first()).toBeVisible()
+
+  const link = rows.first().locator('a[href*="/listings/"]').first()
+  await link.click()
+  await page.waitForLoadState('domcontentloaded')
+}
+
+async function ensureVoteButtonPressed(button: Locator) {
+  const wasPressed = await button.getAttribute('aria-pressed')
+  if (wasPressed === 'true') return
+
+  await button.click()
+  await expect(button).toHaveAttribute('aria-pressed', 'true')
 }
 
 test.describe('Trust Effects E2E — Self-Contained', () => {
@@ -34,8 +52,14 @@ test.describe('Trust Effects E2E — Self-Contained', () => {
   })
 
   test('approving a listing records LISTING_APPROVED trust action', async ({ browser }) => {
+    let pcListingUrl = ''
+
+    await withContext(browser, 'tests/.auth/user.json', async (page) => {
+      pcListingUrl = await createPcListing(page)
+    })
+
     await withContext(browser, 'tests/.auth/super_admin.json', async (page) => {
-      await approveFirstPendingListing(page, '/admin/approvals')
+      await approvePendingPcListingByUrl(page, pcListingUrl)
     })
 
     await withContext(browser, 'tests/.auth/super_admin.json', async (page) => {
@@ -46,16 +70,18 @@ test.describe('Trust Effects E2E — Self-Contained', () => {
   test('admin trust adjustment resets score, user listing stays pending, admin approval triggers LISTING_APPROVED', async ({
     browser,
   }) => {
+    let pcListingUrl = ''
+
     await withContext(browser, 'tests/.auth/super_admin.json', async (page) => {
       await resetUserTrustScore(page, 'user@emuready')
     })
 
     await withContext(browser, 'tests/.auth/user.json', async (page) => {
-      await createPcListing(page)
+      pcListingUrl = await createPcListing(page)
     })
 
     await withContext(browser, 'tests/.auth/super_admin.json', async (page) => {
-      await approveFirstPendingListing(page, '/admin/approvals')
+      await approvePendingPcListingByUrl(page, pcListingUrl)
     })
 
     await withContext(browser, 'tests/.auth/super_admin.json', async (page) => {
@@ -64,8 +90,14 @@ test.describe('Trust Effects E2E — Self-Contained', () => {
   })
 
   test('rejecting a listing records LISTING_REJECTED trust action', async ({ browser }) => {
+    let pcListingUrl = ''
+
+    await withContext(browser, 'tests/.auth/user.json', async (page) => {
+      pcListingUrl = await createPcListing(page)
+    })
+
     await withContext(browser, 'tests/.auth/super_admin.json', async (page) => {
-      await rejectFirstPendingListing(page, '/admin/approvals')
+      await rejectPendingPcListingByUrl(page, pcListingUrl)
     })
 
     await withContext(browser, 'tests/.auth/super_admin.json', async (page) => {
@@ -99,14 +131,7 @@ test.describe('Trust Effects E2E — Self-Contained', () => {
 
   test('voting on a handheld listing records UPVOTE trust action', async ({ browser }) => {
     await withContext(browser, 'tests/.auth/user.json', async (page) => {
-      await page.goto('/listings')
-
-      const rows = page.locator('table tbody tr')
-      await expect(rows.first()).toBeVisible()
-
-      const link = rows.first().locator('a[href*="/listings/"]').first()
-      await link.click()
-      await page.waitForLoadState('domcontentloaded')
+      await openFirstHandheldListing(page)
 
       const confirmButton = page.getByRole('button', { name: /confirm/i })
       await expect(confirmButton).toBeVisible()
@@ -128,35 +153,21 @@ test.describe('Trust Effects E2E — Self-Contained', () => {
   test('changing a vote (upvote → downvote) reverses previous then applies new trust', async ({
     browser,
   }) => {
-    // User upvotes a listing, then changes to downvote
     await withContext(browser, 'tests/.auth/user.json', async (page) => {
-      await page.goto('/listings')
-      const rows = page.locator('table tbody tr')
-      await expect(rows.first()).toBeVisible()
-
-      const link = rows.first().locator('a[href*="/listings/"]').first()
-      await link.click()
-      await page.waitForLoadState('domcontentloaded')
+      await openFirstHandheldListing(page)
 
       const confirmButton = page.getByRole('button', { name: /confirm/i })
       const inaccurateButton = page.getByRole('button', { name: /inaccurate/i })
       await expect(confirmButton).toBeVisible()
       await expect(inaccurateButton).toBeVisible()
 
-      // Ensure upvote is active
-      const wasConfirmed = await confirmButton.getAttribute('aria-pressed')
-      if (wasConfirmed !== 'true') {
-        await confirmButton.click()
-        await expect(confirmButton).toHaveAttribute('aria-pressed', 'true')
-      }
+      await ensureVoteButtonPressed(confirmButton)
 
-      // Change to downvote — click the "Inaccurate" button
       await inaccurateButton.click()
       await expect(inaccurateButton).toHaveAttribute('aria-pressed', 'true')
       await expect(confirmButton).toHaveAttribute('aria-pressed', 'false')
     })
 
-    // Admin verifies trust log has the reversal description
     await withContext(browser, 'tests/.auth/super_admin.json', async (page) => {
       await verifyTrustLogContains(page, 'Trust reversal due to vote change or removal')
     })
@@ -164,25 +175,13 @@ test.describe('Trust Effects E2E — Self-Contained', () => {
 
   test('toggling off an upvote reverses the trust award', async ({ browser }) => {
     await withContext(browser, 'tests/.auth/user.json', async (page) => {
-      await page.goto('/listings')
-      const rows = page.locator('table tbody tr')
-      await expect(rows.first()).toBeVisible()
-
-      const link = rows.first().locator('a[href*="/listings/"]').first()
-      await link.click()
-      await page.waitForLoadState('domcontentloaded')
+      await openFirstHandheldListing(page)
 
       const confirmButton = page.getByRole('button', { name: /confirm/i })
       await expect(confirmButton).toBeVisible()
 
-      // Ensure upvote is active
-      const wasPressed = await confirmButton.getAttribute('aria-pressed')
-      if (wasPressed !== 'true') {
-        await confirmButton.click()
-        await expect(confirmButton).toHaveAttribute('aria-pressed', 'true')
-      }
+      await ensureVoteButtonPressed(confirmButton)
 
-      // Toggle off
       await confirmButton.click()
       await expect(confirmButton).toHaveAttribute('aria-pressed', 'false')
     })
