@@ -16,6 +16,6 @@ LEFT JOIN "SoC" s ON d."socId" = s.id
 INNER JOIN "Listing" l ON l."deviceId" = d.id
 WHERE l.status = 'APPROVED'
   AND ($1::timestamp IS NULL OR l."createdAt" >= $1)
-GROUP BY d.id, b.id, b.name, s.manufacturer, s.name
-ORDER BY "listingCount" DESC
+GROUP BY d.id, d."modelName", b.id, b.name, s.manufacturer, s.name
+ORDER BY "listingCount" DESC, b.name ASC, d."modelName" ASC
 LIMIT $2

@@ -3,6 +3,7 @@ import { clerk } from '@clerk/testing/playwright'
 import { test as setup, type Page } from '@playwright/test'
 import { PrismaClient, Role } from '@orm'
 import { registerCookieConsent } from './helpers/cookie-consent'
+import { registerExternalServiceMocks } from './helpers/external-services'
 
 const authFiles = {
   user: path.join(__dirname, '.auth/user.json'),
@@ -40,6 +41,7 @@ async function authenticateUser(
   const userButtonSelector = '.cl-userButtonTrigger, .cl-userButton, [data-clerk-user-button]'
 
   await registerCookieConsent(page.context())
+  await registerExternalServiceMocks(page)
 
   try {
     await page.goto('/', { waitUntil: 'load' })

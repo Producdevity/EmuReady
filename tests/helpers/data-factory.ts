@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test'
 import { registerCookieConsent } from './cookie-consent'
+import { registerExternalServiceMocks } from './external-services'
 import type { Browser, Locator, Page } from '@playwright/test'
 
 const VALID_CUSTOM_FIELD_TEXT_VALUE = 'https://example.com'
@@ -441,6 +442,7 @@ export async function withContext(
   const ctx = await browser.newContext({ storageState })
   await registerCookieConsent(ctx)
   const page = await ctx.newPage()
+  await registerExternalServiceMocks(page)
   try {
     await fn(page)
   } finally {

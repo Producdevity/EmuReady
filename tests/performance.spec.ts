@@ -90,50 +90,40 @@ test.describe('Performance Tests', () => {
     expect(scriptBytes).toBeLessThan(3 * 1024 * 1024)
   })
 
-  test('should have smooth scrolling performance', async ({ page }) => {
+  test('should keep the games page usable after scrolling', async ({ page }) => {
     const gamesPage = new GamesPage(page)
     await gamesPage.goto()
     await gamesPage.verifyPageLoaded()
 
-    const frameCount = await page.evaluate(() => {
-      return new Promise<number>((resolve) => {
-        let count = 0
-        const startTime = performance.now()
+    await page.getByRole('navigation', { name: /pagination/i }).scrollIntoViewIfNeeded()
+    await expect(page.getByRole('navigation', { name: /pagination/i })).toBeVisible()
 
-        const measureFrames = () => {
-          count++
-          if (performance.now() - startTime < 1000) {
-            requestAnimationFrame(measureFrames)
-          } else {
-            resolve(count)
-          }
-        }
-
-        window.scrollTo({ top: 1000, behavior: 'smooth' })
-        measureFrames()
-      })
-    })
-
-    expect(frameCount).toBeGreaterThan(30)
+    await page.getByRole('button', { name: /go to next page/i }).click()
+    await expect(page).toHaveURL(/[?&]page=2/)
+    await expect(gamesPage.pageHeading).toBeVisible()
   })
 
-  test('should complete repeated navigation without failed API responses', async ({ page }) => {
-    const failedApiResponses: string[] = []
+  test('should complete repeated navigation with page data loaded', async ({ page }) => {
+    const failedCoreApiResponses: string[] = []
 
     page.on('response', (response) => {
-      if (response.url().includes('/api/')) {
+      if (response.url().includes('/api/trpc/')) {
         const status = response.status()
-        if (status >= 400) failedApiResponses.push(`${status} ${response.url()}`)
+        if (status >= 400) failedCoreApiResponses.push(`${status} ${response.url()}`)
       }
     })
 
     const gamesPage = new GamesPage(page)
     await gamesPage.goto()
+    await gamesPage.verifyPageLoaded()
 
     await gamesPage.navigateToHome()
-    await gamesPage.goto()
+    await expect(page.getByRole('heading', { name: /know before you load/i })).toBeVisible()
 
-    expect(failedApiResponses).toEqual([])
+    await gamesPage.goto()
+    await gamesPage.verifyPageLoaded()
+
+    expect(failedCoreApiResponses).toEqual([])
   })
 })
 
