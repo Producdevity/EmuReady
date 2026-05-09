@@ -9,14 +9,14 @@ if (!STORAGE_PREFIX) {
 }
 
 function applyConsent(prefix: string) {
-  localStorage.setItem(`${prefix}cookie_consent`, 'true')
+  localStorage.setItem(`${prefix}cookie_consent`, JSON.stringify(true))
   localStorage.setItem(
     `${prefix}cookie_preferences`,
     JSON.stringify({ necessary: true, analytics: false, performance: false }),
   )
-  localStorage.setItem(`${prefix}cookie_consent_date`, new Date().toISOString())
-  localStorage.setItem(`${prefix}analytics_enabled`, 'false')
-  localStorage.setItem(`${prefix}performance_enabled`, 'false')
+  localStorage.setItem(`${prefix}cookie_consent_date`, JSON.stringify(new Date().toISOString()))
+  localStorage.setItem(`${prefix}analytics_enabled`, JSON.stringify(false))
+  localStorage.setItem(`${prefix}performance_enabled`, JSON.stringify(false))
 
   const styleId = '__e2e_cookie_consent_hidden__'
   const css = '[data-testid="cookie-consent"]{display:none !important;}'
