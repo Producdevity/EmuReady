@@ -3,6 +3,8 @@ import { registerCookieConsent } from './cookie-consent'
 import type { Browser, Locator, Page } from '@playwright/test'
 
 const VALID_CUSTOM_FIELD_TEXT_VALUE = 'https://example.com'
+const HANDHELD_LISTING_GAME_SEARCH_TERM = 'Mario Kart 8 Deluxe'
+const HANDHELD_LISTING_EMULATOR_SEARCH_TERM = 'Ryujinx'
 const PC_LISTING_EMULATOR_SEARCH_TERM = 'Ryujinx'
 const PC_LISTING_GAME_SEARCH_TERMS = ['Zelda', 'Mario', 'Metroid', 'Animal', 'Sonic'] as const
 const PC_LISTING_CPU_SEARCH_TERMS = [
@@ -165,9 +167,13 @@ export async function createHandheldListing(page: Page): Promise<void> {
     page.getByRole('heading', { name: /create.*handheld.*compatibility.*report/i }),
   ).toBeVisible()
 
-  await selectAutocompleteOption(page, /search for a game/i, 'Mario')
+  await selectAutocompleteOption(page, /search for a game/i, HANDHELD_LISTING_GAME_SEARCH_TERM)
   await selectAutocompleteOption(page, /search for a device/i, 'Rog')
-  await selectAutocompleteOption(page, /search for emulators/i, PC_LISTING_EMULATOR_SEARCH_TERM)
+  await selectAutocompleteOption(
+    page,
+    /search for emulators/i,
+    HANDHELD_LISTING_EMULATOR_SEARCH_TERM,
+  )
 
   await expect(page.getByText('Loading emulator-specific fields...')).toBeHidden()
 
