@@ -1,12 +1,13 @@
 import { test, expect } from './fixtures'
 import {
   approveFirstPendingListing,
+  ensureApprovedPcListing,
   createPcListing,
   rejectFirstPendingListing,
   resetUserTrustScore,
   withContext,
 } from './helpers/data-factory'
-import type { Page } from './fixtures'
+import type { Page } from '@playwright/test'
 
 async function verifyTrustLogContains(page: Page, actionText: string) {
   await page.goto('/admin/trust-logs', { waitUntil: 'domcontentloaded' })
@@ -73,13 +74,10 @@ test.describe('Trust Effects E2E — Self-Contained', () => {
   })
 
   test('voting on a PC listing records UPVOTE trust action', async ({ browser }) => {
+    const pcListingUrl = await ensureApprovedPcListing(browser)
+
     await withContext(browser, 'tests/.auth/user.json', async (page) => {
-      await page.goto('/pc-listings')
-
-      const rows = page.locator('tbody tr')
-      await expect(rows.first()).toBeVisible()
-
-      await rows.first().locator('a').first().click()
+      await page.goto(pcListingUrl)
       await page.waitForLoadState('domcontentloaded')
 
       const confirmButton = page.getByRole('button', { name: /confirm/i })

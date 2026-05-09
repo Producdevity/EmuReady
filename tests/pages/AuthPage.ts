@@ -1,6 +1,5 @@
-import { expect } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
 import { BasePage } from './BasePage'
-import type { Page } from '@playwright/test'
 
 export class AuthPage extends BasePage {
   constructor(page: Page) {

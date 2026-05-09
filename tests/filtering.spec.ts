@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures'
 import { ListingsPage } from './pages/ListingsPage'
-import type { Locator, Page } from './fixtures'
+import type { Locator, Page } from '@playwright/test'
 
 async function selectFirstFilterOption(page: Page, filterButton: Locator) {
   await filterButton.click()

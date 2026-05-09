@@ -104,7 +104,9 @@ test.describe('Voting Functionality Tests', () => {
     await listingsPage.clickFirstListing()
     await page.waitForLoadState('domcontentloaded')
 
-    const progressBar = page.getByRole('progressbar', { name: /success rate/i })
+    const progressBar = page.getByRole('progressbar', {
+      name: /community verification success rate/i,
+    })
     await expect(progressBar).toBeVisible()
 
     const valueNow = await progressBar.getAttribute('aria-valuenow')

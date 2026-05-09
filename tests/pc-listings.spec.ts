@@ -1,6 +1,5 @@
 import path from 'path'
 import { test, expect } from './fixtures'
-import { createApprovedPcListing } from './helpers/data-factory'
 
 test.describe('PC Listings', () => {
   test.describe('PC Listings Page', () => {
@@ -21,16 +20,10 @@ test.describe('PC Listings', () => {
       await expect(page.locator('th').filter({ hasText: /emulator/i })).toBeVisible()
     })
 
-    test.describe('with at least one approved listing', () => {
-      test.beforeAll(async ({ browser }) => {
-        await createApprovedPcListing(browser)
-      })
+    test('should display table rows', async ({ page }) => {
+      await page.goto('/pc-listings')
 
-      test('should display table rows', async ({ page }) => {
-        await page.goto('/pc-listings')
-
-        await expect(page.locator('tbody tr').first()).toBeVisible()
-      })
+      await expect(page.locator('tbody tr').first()).toBeVisible()
     })
 
     test('should sort by CPU column', async ({ page }) => {
@@ -71,22 +64,16 @@ test.describe('PC Listings', () => {
   })
 
   test.describe('PC Listings Navigation', () => {
-    test.describe('with at least one approved listing', () => {
-      test.beforeAll(async ({ browser }) => {
-        await createApprovedPcListing(browser)
-      })
+    test('should navigate to PC listing detail on row click', async ({ page }) => {
+      await page.goto('/pc-listings')
+      await page.waitForLoadState('domcontentloaded')
 
-      test('should navigate to PC listing detail on row click', async ({ page }) => {
-        await page.goto('/pc-listings')
-        await page.waitForLoadState('domcontentloaded')
+      const rows = page.locator('tbody tr')
+      await expect(rows.first()).toBeVisible()
 
-        const rows = page.locator('tbody tr')
-        await expect(rows.first()).toBeVisible()
-
-        const link = rows.first().locator('a[href*="/pc-listings/"]').first()
-        await link.click()
-        await expect(page).toHaveURL(/\/pc-listings\/[a-z0-9]/)
-      })
+      const link = rows.first().locator('a[href*="/pc-listings/"]').first()
+      await link.click()
+      await expect(page).toHaveURL(/\/pc-listings\/[a-z0-9]/)
     })
 
     test('should show Add PC Report button', async ({ page }) => {

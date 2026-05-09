@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import type { Page } from './fixtures'
+import type { Page } from '@playwright/test'
 
 function bellButton(page: Page) {
   return page

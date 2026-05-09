@@ -195,7 +195,10 @@ export async function createPcListing(page: Page): Promise<string> {
   return page.url()
 }
 
-export async function createApprovedPcListing(browser: Browser): Promise<string> {
+export async function ensureApprovedPcListing(browser: Browser): Promise<string> {
+  const existing = await findFirstApprovedPcListing(browser)
+  if (existing) return existing
+
   let detailUrl = ''
 
   await withContext(browser, 'tests/.auth/user.json', async (page) => {
@@ -204,6 +207,23 @@ export async function createApprovedPcListing(browser: Browser): Promise<string>
 
   await withContext(browser, 'tests/.auth/super_admin.json', async (page) => {
     await approveFirstPendingListing(page, '/admin/pc-listing-approvals')
+  })
+
+  return detailUrl
+}
+
+async function findFirstApprovedPcListing(browser: Browser): Promise<string | null> {
+  let detailUrl: string | null = null
+
+  await withContext(browser, 'tests/.auth/user.json', async (page) => {
+    await page.goto('/pc-listings')
+    await page.waitForLoadState('domcontentloaded')
+
+    const firstLink = page.locator('tbody tr a[href*="/pc-listings/"]').first()
+    if (!(await firstLink.isVisible({ timeout: 2000 }).catch(() => false))) return
+
+    const href = await firstLink.getAttribute('href')
+    if (href) detailUrl = new URL(href, page.url()).href
   })
 
   return detailUrl
