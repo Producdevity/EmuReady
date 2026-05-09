@@ -69,8 +69,9 @@ test.describe('Notification System', () => {
       await page.goto('/notifications')
       await page.waitForLoadState('domcontentloaded')
 
-      // "All" label appears in filter cards, select options, and elsewhere.
-      await expect(page.getByText(/^all$/i).first()).toBeVisible()
+      const allCategoryFilter = page.getByText(/^all$/i).first()
+
+      await expect(allCategoryFilter).toBeVisible()
       await expect(page.getByText(/engagement/i).first()).toBeVisible()
       await expect(page.getByText(/moderation/i).first()).toBeVisible()
     })
