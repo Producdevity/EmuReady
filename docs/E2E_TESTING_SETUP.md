@@ -19,7 +19,8 @@ npx playwright install
 
 2. Configure test environment:
 - Copy `.env.test.example` to `.env.test.local`
-- Add test user credentials to `.env.test.local`
+- Set database and Clerk environment variables
+- Seed the database with `npm run db:seed`
 
 ## Configuration
 
@@ -43,14 +44,7 @@ tests/
 
 ## Authentication
 
-The auth setup creates state files for test users that already exist in your database. Tests check authentication status dynamically using the `isAuthenticated()` helper rather than relying on storage states.
-
-Test roles configured in `.env.test.local`:
-- Regular user
-- Author
-- Moderator  
-- Developer
-- Admin
+The auth setup creates Playwright storage states for seeded Clerk users.
 
 ## Writing Tests
 
@@ -122,29 +116,6 @@ pkill -f "next start" || pkill -f "next dev"
 - Check if production build is up to date: `npm run build`
 
 ### Authentication issues
-- Verify test users exist in database
+- Verify the database was seeded
 - Check Clerk keys are valid
 - Ensure `.env.test.local` is configured correctly
-
-### Rate limiting errors
-Tests may hit rate limits during parallel execution. Reduce workers in playwright.config.ts if needed.
-
-### Missing elements
-- Tests expect certain data-testid attributes that may not exist
-- Admin tests require actual admin authentication
-
-## Test Status
-
-Current test suite includes 238 tests covering:
-- Accessibility
-- Authentication flows
-- Admin dashboard
-- User flows
-- Navigation
-- Forms
-- Comments
-- Voting
-- Error handling
-- Performance
-
-All tests should pass when the database is properly seeded with test users. The seeder creates all required test accounts with appropriate roles.
