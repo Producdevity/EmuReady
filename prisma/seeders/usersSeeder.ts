@@ -11,7 +11,6 @@ type UserData = {
   username: string
 }
 
-// These users will be created in both Clerk and database for development testing
 const users: UserData[] = [
   {
     email: 'superadmin@emuready.com',
@@ -72,7 +71,6 @@ async function cleanupExistingUsers(prisma: PrismaClient) {
 
   for (const userData of users) {
     try {
-      // Find and delete from Clerk
       const existingClerkUsers = await clerk.users.getUserList({
         emailAddress: [userData.email],
       })
@@ -83,7 +81,6 @@ async function cleanupExistingUsers(prisma: PrismaClient) {
         console.info(`🗑️  Deleted Clerk user: ${userData.email}`)
       }
 
-      // Delete from database
       await prisma.user.deleteMany({ where: { email: userData.email } })
       console.info(`🗑️  Deleted database user: ${userData.email}`)
     } catch {
@@ -128,11 +125,12 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
         action = 'created'
       } else {
         clerkUser = existingClerkUsers.data[0]
-        await clerk.users.updateUser(clerkUser.id, {
+        clerkUser = await clerk.users.updateUser(clerkUser.id, {
+          username: userData.username,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
           password: DEFAULT_SEED_PASSWORD,
           skipPasswordChecks: true,
-        })
-        await clerk.users.updateUserMetadata(clerkUser.id, {
           publicMetadata: { role: userData.role },
         })
         action = 'reconciled'
@@ -144,6 +142,7 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
           clerkId: clerkUser.id,
           name: userData.name,
           role: userData.role,
+          profileImage: clerkUser.imageUrl || null,
         },
         create: {
           clerkId: clerkUser.id,
