@@ -104,18 +104,6 @@ DATABASE_DIRECT_URL=postgresql://...
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
 
-# Test Users (must exist in database)
-TEST_USER_EMAIL=user@emuready.com
-TEST_USER_PASSWORD=DevPassword123!
-TEST_AUTHOR_EMAIL=author@emuready.com
-TEST_AUTHOR_PASSWORD=DevPassword123!
-TEST_MODERATOR_EMAIL=moderator@emuready.com
-TEST_MODERATOR_PASSWORD=DevPassword123!
-TEST_DEVELOPER_EMAIL=developer@emuready.com
-TEST_DEVELOPER_PASSWORD=DevPassword123!
-TEST_ADMIN_EMAIL=admin@emuready.com
-TEST_ADMIN_PASSWORD=DevPassword123!
-
 # Test Configuration
 NEXT_PUBLIC_DISABLE_COOKIE_BANNER=true
 NEXT_PUBLIC_LOCAL_STORAGE_PREFIX="@TestEmuReady_"
