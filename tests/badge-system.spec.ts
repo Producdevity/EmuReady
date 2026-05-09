@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { test, expect } from './fixtures'
 
 test.describe('Badge System', () => {
@@ -28,11 +29,26 @@ test.describe('Badge System', () => {
       await expect(page.locator('table').or(page.getByText(/no badges/i))).toBeVisible()
     })
 
-    test('should display badge table with expected columns', async ({ page }) => {
+    test('should create a badge and display table columns', async ({ page }) => {
+      const badgeName = `E2E Badge ${randomUUID()}`
+
       await page.goto('/admin/badges', { waitUntil: 'domcontentloaded' })
+
+      await page.getByRole('button', { name: /create badge/i }).click()
+
+      const dialog = page.locator('[role="dialog"]')
+      await expect(dialog).toBeVisible()
+
+      await dialog.getByPlaceholder(/enter badge name/i).fill(badgeName)
+      await dialog.getByPlaceholder(/enter badge description/i).fill('Created by e2e')
+      await dialog.getByRole('button', { name: /create badge/i }).click()
+
+      await expect(dialog).toBeHidden()
+      await page.getByPlaceholder(/search badges/i).fill(badgeName)
 
       const table = page.locator('table')
       await expect(table).toBeVisible()
+      await expect(table.locator('tbody tr', { hasText: badgeName })).toBeVisible()
 
       const headerText = await page.locator('thead').textContent()
       expect(headerText?.toLowerCase()).toMatch(/badge/)
