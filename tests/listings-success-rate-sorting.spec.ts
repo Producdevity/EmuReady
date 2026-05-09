@@ -1,5 +1,19 @@
 import path from 'path'
+import { errors, type Page } from '@playwright/test'
 import { test, expect } from './fixtures'
+
+async function dismissCommunitySupportBanner(page: Page) {
+  const dismissBanner = page.getByRole('button', { name: /dismiss community support/i }).first()
+
+  try {
+    await dismissBanner.waitFor({ state: 'visible', timeout: 1000 })
+  } catch (error) {
+    if (error instanceof errors.TimeoutError) return
+    throw error
+  }
+
+  await dismissBanner.click()
+}
 
 test.describe('Success Rate Sorting', () => {
   test.use({ storageState: path.join(__dirname, '.auth/user.json') })
@@ -8,11 +22,7 @@ test.describe('Success Rate Sorting', () => {
     await page.goto('/listings')
     await page.waitForLoadState('domcontentloaded')
 
-    const dismissBanner = page.getByRole('button', { name: /dismiss community support/i })
-
-    if (await dismissBanner.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await dismissBanner.click()
-    }
+    await dismissCommunitySupportBanner(page)
   })
 
   test('should sort by success rate ascending on first click', async ({ page }) => {
