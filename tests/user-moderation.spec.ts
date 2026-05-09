@@ -1,10 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { test, expect } from './fixtures'
 import { resetUserBanActionTarget } from './helpers/user-ban-fixtures'
-import {
-  USER_BAN_ACTION_TARGET,
-  USER_BAN_TABLE_FIXTURE,
-} from '../prisma/seeders/userModerationFixtures'
+import { USER_BAN_ACTION_TARGET, USER_BAN_TABLE_FIXTURE } from '../prisma/seed-data/userModeration'
 import type { Page } from '@playwright/test'
 
 async function gotoUserBans(page: Page) {

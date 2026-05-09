@@ -1,5 +1,5 @@
 import { PrismaClient } from '@orm'
-import { USER_BAN_ACTION_TARGET } from '../../prisma/seeders/userModerationFixtures'
+import { USER_BAN_ACTION_TARGET } from '../../prisma/seed-data/userModeration'
 
 async function withPrisma<T>(fn: (prisma: PrismaClient) => Promise<T>): Promise<T> {
   const prisma = new PrismaClient()
