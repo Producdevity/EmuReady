@@ -1,4 +1,6 @@
+import { randomUUID } from 'node:crypto'
 import { expect } from '@playwright/test'
+import { PrismaClient } from '@orm'
 import { registerCookieConsent } from './cookie-consent'
 import { registerExternalServiceMocks } from './external-services'
 import type { Browser, Locator, Page } from '@playwright/test'
@@ -6,39 +8,16 @@ import type { Browser, Locator, Page } from '@playwright/test'
 const VALID_CUSTOM_FIELD_TEXT_VALUE = 'https://example.com'
 const HANDHELD_LISTING_GAME_SEARCH_TERM = 'Mario Kart 8 Deluxe'
 const HANDHELD_LISTING_EMULATOR_SEARCH_TERM = 'Ryujinx'
+const PC_LISTING_GAME_SEARCH_TERM = 'Mario Kart 8 Deluxe'
 const PC_LISTING_EMULATOR_SEARCH_TERM = 'Ryujinx'
-const PC_LISTING_GAME_SEARCH_TERMS = [
-  'Mario Kart 8 Deluxe',
-  'Metroid Dread',
-  'Bayonetta 3',
-  'Hades',
-  'Octopath Traveler',
-] as const
-const PC_LISTING_CPU_SEARCH_TERMS = [
-  'Core Ultra 9 285K',
-  'Ryzen 9 9950X',
-  'M4 Max',
-  'Core i9-14900K',
-  'Ryzen 7 9800X3D',
-] as const
-const PC_LISTING_GPU_SEARCH_TERMS = [
-  undefined,
-  'GeForce RTX 5090',
-  'GeForce RTX 5080',
-  'GeForce RTX 4090',
-  'Radeon RX 7900 XTX',
-  'Arc B580',
-] as const
+const PC_LISTING_CPU_BRAND_NAME = 'E2E'
+const PC_LISTING_CPU_MODEL_PREFIX = 'E2E CPU'
 
-const PC_LISTING_CANDIDATES = PC_LISTING_GAME_SEARCH_TERMS.flatMap((gameSearchTerm) =>
-  PC_LISTING_CPU_SEARCH_TERMS.flatMap((cpuSearchTerm) =>
-    PC_LISTING_GPU_SEARCH_TERMS.map((gpuSearchTerm) => ({
-      gameSearchTerm,
-      cpuSearchTerm,
-      gpuSearchTerm,
-    })),
-  ),
-)
+interface PcListingCandidate {
+  gameSearchTerm: string
+  cpuSearchTerm: string
+  gpuSearchTerm?: string
+}
 
 export async function selectAutocompleteOption(
   page: Page,
@@ -196,10 +175,7 @@ export async function createHandheldListing(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/listings(?!\/new)/)
 }
 
-async function fillPcListingForm(
-  page: Page,
-  candidate: (typeof PC_LISTING_CANDIDATES)[number],
-): Promise<void> {
+async function fillPcListingForm(page: Page, candidate: PcListingCandidate): Promise<void> {
   await page.goto('/pc-listings/new')
   await page.waitForLoadState('domcontentloaded')
 
@@ -233,6 +209,30 @@ async function fillPcListingForm(
   await notesField.fill('E2E test PC listing')
 }
 
+async function createPcListingCpu(): Promise<string> {
+  const prisma = new PrismaClient()
+  const modelName = `${PC_LISTING_CPU_MODEL_PREFIX} ${randomUUID()}`
+
+  try {
+    const brand = await prisma.deviceBrand.upsert({
+      where: { name: PC_LISTING_CPU_BRAND_NAME },
+      update: {},
+      create: { name: PC_LISTING_CPU_BRAND_NAME },
+    })
+
+    await prisma.cpu.create({
+      data: {
+        brandId: brand.id,
+        modelName,
+      },
+    })
+  } finally {
+    await prisma.$disconnect()
+  }
+
+  return modelName
+}
+
 async function submitPcListingForm(page: Page): Promise<'created' | 'already-exists'> {
   const responsePromise = page.waitForResponse(
     (response) =>
@@ -253,14 +253,15 @@ async function submitPcListingForm(page: Page): Promise<'created' | 'already-exi
 }
 
 export async function createPcListing(page: Page): Promise<string> {
-  for (const candidate of PC_LISTING_CANDIDATES) {
-    await fillPcListingForm(page, candidate)
+  await fillPcListingForm(page, {
+    gameSearchTerm: PC_LISTING_GAME_SEARCH_TERM,
+    cpuSearchTerm: await createPcListingCpu(),
+  })
 
-    const result = await submitPcListingForm(page)
-    if (result === 'created') return page.url()
-  }
+  const result = await submitPcListingForm(page)
+  if (result === 'created') return page.url()
 
-  throw new Error('createPcListing: every fixture combination already exists')
+  throw new Error('createPcListing: unique CPU fixture still produced a duplicate listing')
 }
 
 function getListingIdFromDetailUrl(detailUrl: string): string {
