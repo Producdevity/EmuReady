@@ -3,6 +3,7 @@ import { registerCookieConsent } from './cookie-consent'
 import type { Browser, Locator, Page } from '@playwright/test'
 
 const VALID_CUSTOM_FIELD_TEXT_VALUE = 'https://example.com'
+const PC_LISTING_EMULATOR_SEARCH_TERM = 'Ryujinx'
 const PC_LISTING_GAME_SEARCH_TERMS = ['Zelda', 'Mario', 'Metroid', 'Animal', 'Sonic'] as const
 const PC_LISTING_CPU_SEARCH_TERMS = [
   'Core Ultra 9 285K',
@@ -166,7 +167,7 @@ export async function createHandheldListing(page: Page): Promise<void> {
 
   await selectAutocompleteOption(page, /search for a game/i, 'Mario')
   await selectAutocompleteOption(page, /search for a device/i, 'Rog')
-  await selectAutocompleteOption(page, /search for emulators/i, '')
+  await selectAutocompleteOption(page, /search for emulators/i, PC_LISTING_EMULATOR_SEARCH_TERM)
 
   await expect(page.getByText('Loading emulator-specific fields...')).toBeHidden()
 
@@ -208,7 +209,7 @@ async function fillPcListingForm(
   await expect(osVersionInput).toBeVisible()
   await osVersionInput.fill('Windows 11')
 
-  await selectAutocompleteOption(page, /search for emulators/i, '')
+  await selectAutocompleteOption(page, /search for emulators/i, PC_LISTING_EMULATOR_SEARCH_TERM)
 
   await expect(page.getByText('Loading emulator-specific fields...')).toBeHidden()
 
