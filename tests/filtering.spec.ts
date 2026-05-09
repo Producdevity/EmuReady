@@ -12,6 +12,21 @@ async function selectFirstFilterOption(page: Page, filterButton: Locator) {
 }
 
 test.describe('Filtering Tests', () => {
+  test('should close a filter dropdown with Escape', async ({ page }) => {
+    const listingsPage = new ListingsPage(page)
+    await listingsPage.goto()
+    await listingsPage.verifyPageLoaded()
+
+    await listingsPage.deviceFilter.click()
+
+    const firstOption = page.locator('label:has(input[type="checkbox"])').first()
+    await expect(firstOption).toBeVisible()
+
+    await page.keyboard.press('Escape')
+
+    await expect(firstOption).toBeHidden()
+  })
+
   test('should display filter controls on the listings page', async ({ page }) => {
     const listingsPage = new ListingsPage(page)
     await listingsPage.goto()
