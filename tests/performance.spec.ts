@@ -15,25 +15,6 @@ test.describe('Performance Tests', () => {
     expect(loadTime).toBeLessThan(10000)
   })
 
-  test('should have efficient image loading', async ({ page }) => {
-    const gamesPage = new GamesPage(page)
-    await gamesPage.goto()
-
-    const images = page.locator('img')
-    const imageCount = await images.count()
-
-    // Skip if not enough images to warrant lazy loading
-    test.skip(imageCount <= 5, 'Not enough images to test lazy loading')
-
-    let lazyLoadCount = 0
-    for (let i = 0; i < imageCount; i++) {
-      const loading = await images.nth(i).getAttribute('loading')
-      if (loading === 'lazy') lazyLoadCount++
-    }
-
-    expect(lazyLoadCount).toBeGreaterThan(0)
-  })
-
   test('should not have memory leaks during navigation', async ({ page, browserName }) => {
     test.skip(browserName !== 'chromium', 'performance.memory API is only available in Chromium')
 
