@@ -489,7 +489,10 @@ function ListingsPage() {
                     <tr
                       key={listing.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-                      onClick={() => router.push(`/listings/${listing.id}`)}
+                      onClick={(e) => {
+                        if (e.ctrlKey || e.metaKey || e.shiftKey) return
+                        router.push(`/listings/${listing.id}`)
+                      }}
                     >
                       {columnVisibility.isColumnVisible('game') && (
                         <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
