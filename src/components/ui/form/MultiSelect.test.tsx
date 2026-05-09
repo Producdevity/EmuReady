@@ -72,7 +72,6 @@ describe('MultiSelect', () => {
     const onChange = vi.fn()
     render(<MultiSelect label="Test Select" value={[]} onChange={onChange} options={mockOptions} />)
 
-    // Open dropdown
     fireEvent.click(screen.getByRole('button'))
 
     await waitFor(() => {
@@ -94,7 +93,6 @@ describe('MultiSelect', () => {
       />,
     )
 
-    // Open dropdown by clicking the main select button
     const selectButton = screen.getByRole('button', { expanded: false })
     fireEvent.click(selectButton)
 
@@ -110,7 +108,6 @@ describe('MultiSelect', () => {
     const onChange = vi.fn()
     render(<MultiSelect label="Test Select" value={[]} onChange={onChange} options={mockOptions} />)
 
-    // Open dropdown
     fireEvent.click(screen.getByRole('button'))
 
     await waitFor(() => {
@@ -126,7 +123,6 @@ describe('MultiSelect', () => {
     const onChange = vi.fn()
     render(<MultiSelect label="Test Select" value={[]} onChange={onChange} options={mockOptions} />)
 
-    // Open dropdown
     fireEvent.click(screen.getByRole('button'))
 
     await waitFor(() => {
@@ -148,7 +144,6 @@ describe('MultiSelect', () => {
       />,
     )
 
-    // Open dropdown by clicking the main select button
     const selectButton = screen.getByRole('button', { expanded: false })
     fireEvent.click(selectButton)
 
@@ -188,14 +183,12 @@ describe('MultiSelect', () => {
       </div>,
     )
 
-    // Open dropdown
     fireEvent.click(screen.getByRole('button'))
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText('Search test select...')).toBeInTheDocument()
     })
 
-    // Click outside
     fireEvent.mouseDown(screen.getByTestId('outside'))
 
     await waitFor(() => {
@@ -304,7 +297,6 @@ describe('MultiSelect', () => {
     const onChange = vi.fn()
     render(<MultiSelect label="Test Select" value={[]} onChange={onChange} options={mockOptions} />)
 
-    // Open dropdown
     fireEvent.click(screen.getByRole('button'))
 
     await waitFor(() => {
@@ -312,13 +304,11 @@ describe('MultiSelect', () => {
       fireEvent.change(searchInput, { target: { value: 'test query' } })
     })
 
-    // Clear search button should appear
     const clearSearchButton = screen.getByRole('button', {
       name: 'Clear search',
     })
     fireEvent.click(clearSearchButton)
 
-    // Search input should be cleared
     const searchInput = screen.getByPlaceholderText('Search test select...')
     expect(searchInput).toHaveValue('')
   })
@@ -382,17 +372,15 @@ describe('MultiSelect', () => {
       />,
     )
 
-    // Open dropdown by clicking the main select button specifically
     const selectButton = screen.getByLabelText('Test Select multi-select')
     fireEvent.click(selectButton)
 
     await waitFor(() => {
       const labels = screen.getAllByRole('checkbox')
-      // Selected options should appear first
-      expect(labels[0]).toBeChecked() // Option 3
-      expect(labels[1]).toBeChecked() // Option 4
-      expect(labels[2]).not.toBeChecked() // Option 1
-      expect(labels[3]).not.toBeChecked() // Option 2
+      expect(labels[0]).toBeChecked()
+      expect(labels[1]).toBeChecked()
+      expect(labels[2]).not.toBeChecked()
+      expect(labels[3]).not.toBeChecked()
     })
   })
 })

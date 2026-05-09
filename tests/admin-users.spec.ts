@@ -98,7 +98,6 @@ test.describe('Admin User Management Tests - Requires Admin Role', () => {
 
     const modal = page.locator('[role="dialog"]')
     await expect(modal).toBeVisible()
-    // Wait for modal content to finish loading
     await expect(modal.getByText(/loading/i)).toBeHidden()
 
     const tabButtons = modal.locator('button').filter({ hasText: /listings|votes|trust/i })

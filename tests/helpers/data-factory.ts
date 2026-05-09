@@ -1,6 +1,34 @@
 import { expect } from '@playwright/test'
 import { registerCookieConsent } from './cookie-consent'
-import type { Browser, Page } from '@playwright/test'
+import type { Browser, Locator, Page } from '@playwright/test'
+
+const VALID_CUSTOM_FIELD_TEXT_VALUE = 'https://example.com'
+const PC_LISTING_GAME_SEARCH_TERMS = ['Zelda', 'Mario', 'Metroid', 'Animal', 'Sonic'] as const
+const PC_LISTING_CPU_SEARCH_TERMS = [
+  'Core Ultra 9 285K',
+  'Ryzen 9 9950X',
+  'M4 Max',
+  'Core i9-14900K',
+  'Ryzen 7 9800X3D',
+] as const
+const PC_LISTING_GPU_SEARCH_TERMS = [
+  undefined,
+  'GeForce RTX 5090',
+  'GeForce RTX 5080',
+  'GeForce RTX 4090',
+  'Radeon RX 7900 XTX',
+  'Arc B580',
+] as const
+
+const PC_LISTING_CANDIDATES = PC_LISTING_GAME_SEARCH_TERMS.flatMap((gameSearchTerm) =>
+  PC_LISTING_CPU_SEARCH_TERMS.flatMap((cpuSearchTerm) =>
+    PC_LISTING_GPU_SEARCH_TERMS.map((gpuSearchTerm) => ({
+      gameSearchTerm,
+      cpuSearchTerm,
+      gpuSearchTerm,
+    })),
+  ),
+)
 
 export async function selectAutocompleteOption(
   page: Page,
@@ -19,8 +47,6 @@ export async function selectAutocompleteOption(
   const options = listbox.locator('[role="option"]')
 
   if (searchTerm) {
-    // Waiting on a filtered match avoids racing the debounced search and
-    // clicking an unfiltered option before the filter has applied.
     const matchingOption = options.filter({ hasText: new RegExp(searchTerm, 'i') })
     await expect(matchingOption.first()).toBeVisible()
     await matchingOption.first().click()
@@ -29,6 +55,23 @@ export async function selectAutocompleteOption(
     await options.first().click()
   }
 
+  await expect(listbox).toBeHidden()
+}
+
+async function isOptionalCombobox(combobox: Locator): Promise<boolean> {
+  const containerText = await combobox
+    .locator('xpath=ancestor::div[position() <= 3]')
+    .first()
+    .textContent()
+
+  return /optional/i.test(containerText ?? '')
+}
+
+async function selectFirstComboboxOption(page: Page, combobox: Locator) {
+  await combobox.click()
+  const listbox = page.locator('[role="listbox"]')
+  await expect(listbox).toBeVisible()
+  await listbox.locator('[role="option"]').first().click()
   await expect(listbox).toBeHidden()
 }
 
@@ -58,11 +101,6 @@ async function fillEmptySelects(page: Page) {
 }
 
 async function fillRequiredComboboxes(page: Page) {
-  // Must run before fillEmptyTextInputs — combobox inputs match the generic
-  // text-input selector otherwise and get stuffed with a URL instead of a
-  // selected option. Game/device/emulator comboboxes are already replaced
-  // with cards by the caller, so remaining visible empty comboboxes are
-  // custom-field autocompletes (e.g., Driver Version for Eden).
   const comboboxes = page.locator('form [role="combobox"]')
   const comboboxCount = await comboboxes.count()
 
@@ -73,26 +111,13 @@ async function fillRequiredComboboxes(page: Page) {
     const value = await combobox.inputValue()
     if (value && value.length > 0) continue
 
-    // Optional comboboxes (e.g., GPU) live inside a section whose label
-    // contains "Optional" — leave them empty.
-    const containerText = await combobox
-      .locator('xpath=ancestor::div[position() <= 3]')
-      .first()
-      .textContent()
-    if (containerText && /optional/i.test(containerText)) continue
+    if (await isOptionalCombobox(combobox)) continue
 
-    await combobox.click()
-    const listbox = page.locator('[role="listbox"]')
-    await expect(listbox).toBeVisible()
-    await listbox.locator('[role="option"]').first().click()
-    await expect(listbox).toBeHidden()
+    await selectFirstComboboxOption(page, combobox)
   }
 }
 
 async function fillEmptyTextInputs(page: Page) {
-  // `https://example.com` is valid for both plain-text and url-typed custom
-  // fields (e.g., YouTube, Screenshots). A plain word like "test" would pass
-  // the text fields but fail URL validation on the URL ones.
   const textInputs = page.locator(
     'form input[type="text"]:not([role="combobox"]):not([placeholder*="Search" i]):not([placeholder*="Select for" i]), form input[type="number"], form input[type="url"]',
   )
@@ -109,15 +134,12 @@ async function fillEmptyTextInputs(page: Page) {
     if (type === 'number') {
       await input.fill('1')
     } else {
-      await input.fill('https://example.com')
+      await input.fill(VALID_CUSTOM_FIELD_TEXT_VALUE)
     }
   }
 }
 
 async function checkRequiredBooleanFields(page: Page) {
-  // Required boolean custom fields start as `undefined` and the form validates
-  // them as missing until explicitly set. Clicking the checkbox converts
-  // undefined → true, satisfying the validation.
   const checkboxes = page.locator('form input[type="checkbox"]')
   const checkboxCount = await checkboxes.count()
 
@@ -160,12 +182,19 @@ export async function createHandheldListing(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/listings(?!\/new)/)
 }
 
-export async function createPcListing(page: Page): Promise<string> {
+async function fillPcListingForm(
+  page: Page,
+  candidate: (typeof PC_LISTING_CANDIDATES)[number],
+): Promise<void> {
   await page.goto('/pc-listings/new')
   await page.waitForLoadState('domcontentloaded')
 
-  await selectAutocompleteOption(page, /search for a game/i, 'Zelda')
-  await selectAutocompleteOption(page, /select a cpu/i, 'Intel')
+  await selectAutocompleteOption(page, /search for a game/i, candidate.gameSearchTerm)
+  await selectAutocompleteOption(page, /select a cpu/i, candidate.cpuSearchTerm)
+
+  if (candidate.gpuSearchTerm) {
+    await selectAutocompleteOption(page, /select a gpu/i, candidate.gpuSearchTerm)
+  }
 
   const memoryInput = page.getByPlaceholder(/e\.g\., 16/i)
   await expect(memoryInput).toBeVisible()
@@ -188,11 +217,123 @@ export async function createPcListing(page: Page): Promise<string> {
   const notesField = page.getByPlaceholder(/share your experience/i)
   await expect(notesField).toBeVisible()
   await notesField.fill('E2E test PC listing')
+}
+
+async function submitPcListingForm(page: Page): Promise<'created' | 'already-exists'> {
+  const responsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/trpc/pcListings.create') &&
+      response.request().method() === 'POST',
+  )
 
   await page.getByRole('button', { name: /create compatibility report/i }).click()
 
+  const response = await responsePromise
+  if (response.status() === 409) return 'already-exists'
+  if (!response.ok()) {
+    throw new Error(`PC listing creation failed with HTTP ${response.status()}`)
+  }
+
   await page.waitForURL(/\/pc-listings\/(?!new)[^/?#]+/)
-  return page.url()
+  return 'created'
+}
+
+export async function createPcListing(page: Page): Promise<string> {
+  for (const candidate of PC_LISTING_CANDIDATES) {
+    await fillPcListingForm(page, candidate)
+
+    const result = await submitPcListingForm(page)
+    if (result === 'created') return page.url()
+  }
+
+  throw new Error('createPcListing: every fixture combination already exists')
+}
+
+function getListingIdFromDetailUrl(detailUrl: string): string {
+  const segments = new URL(detailUrl).pathname.split('/').filter(Boolean)
+  const listingId = segments[segments.length - 1]
+
+  if (!listingId) throw new Error(`Could not determine listing id from ${detailUrl}`)
+
+  return listingId
+}
+
+async function confirmApprovalDialog(page: Page) {
+  const dialog = page.locator('[role="dialog"]')
+  await expect(dialog).toBeVisible()
+
+  const confirmButton = dialog.getByRole('button', {
+    name: /approve anyway|confirm approval/i,
+  })
+  await expect(confirmButton).toBeVisible()
+  await confirmButton.click()
+
+  await expect(dialog).toBeHidden()
+}
+
+async function approvePendingListingRow(page: Page, row: Locator) {
+  const approveButton = row.locator('button[title^="Approve"]').first()
+  await expect(approveButton).toBeVisible()
+  await approveButton.click()
+
+  await confirmApprovalDialog(page)
+}
+
+export async function approvePendingPcListingByUrl(page: Page, detailUrl: string): Promise<void> {
+  const listingId = getListingIdFromDetailUrl(detailUrl)
+  await page.goto('/admin/pc-listing-approvals?sortField=createdAt&sortDirection=desc', {
+    waitUntil: 'domcontentloaded',
+  })
+  await expect(page.getByText(/loading/i)).toBeHidden()
+
+  const row = page
+    .locator('tbody tr', {
+      has: page.locator(`a[href="/pc-listings/${listingId}"]`),
+    })
+    .first()
+  await expect(row).toBeVisible()
+
+  await approvePendingListingRow(page, row)
+}
+
+async function rejectPendingListingRow(page: Page, row: Locator): Promise<void> {
+  const rejectButton = row.locator('button[title^="Reject"]').first()
+  await expect(rejectButton).toBeVisible()
+
+  await rejectButton.click()
+
+  const dialog = page.locator('[role="dialog"]')
+  await expect(dialog).toBeVisible()
+
+  const textarea = dialog.locator('textarea')
+  await expect(textarea).toBeVisible()
+  await textarea.fill('Rejected by E2E test')
+
+  const confirmBtn = dialog
+    .locator('button')
+    .filter({ hasText: /confirm|reject/i })
+    .last()
+  await expect(confirmBtn).toBeVisible()
+  await confirmBtn.click()
+
+  await expect(dialog).toBeHidden()
+}
+
+export async function rejectPendingPcListingByUrl(page: Page, detailUrl: string): Promise<void> {
+  const listingId = getListingIdFromDetailUrl(detailUrl)
+  await page.goto('/admin/pc-listing-approvals?sortField=createdAt&sortDirection=desc', {
+    waitUntil: 'domcontentloaded',
+  })
+  await expect(page.getByText(/loading/i)).toBeHidden()
+
+  const row = page
+    .locator('tbody tr', {
+      has: page.locator(`a[href="/pc-listings/${listingId}"]`),
+    })
+    .first()
+  await expect(row).toBeVisible()
+
+  await rejectPendingListingRow(page, row)
 }
 
 export async function ensureApprovedPcListing(browser: Browser): Promise<string> {
@@ -206,7 +347,7 @@ export async function ensureApprovedPcListing(browser: Browser): Promise<string>
   })
 
   await withContext(browser, 'tests/.auth/super_admin.json', async (page) => {
-    await approveFirstPendingListing(page, '/admin/pc-listing-approvals')
+    await approvePendingPcListingByUrl(page, detailUrl)
   })
 
   return detailUrl
@@ -229,69 +370,12 @@ async function findFirstApprovedPcListing(browser: Browser): Promise<string | nu
   return detailUrl
 }
 
-export async function approveFirstPendingListing(
-  page: Page,
-  approvalPath: '/admin/approvals' | '/admin/pc-listing-approvals',
-): Promise<void> {
-  await page.goto(approvalPath, { waitUntil: 'domcontentloaded' })
-  await expect(page.getByText(/loading/i)).toBeHidden()
-
-  // Handheld buttons have title="Approve Listing", PC has "Approve PC Listing".
-  const approveButton = page.locator('button[title^="Approve"]').first()
-  await expect(approveButton).toBeVisible()
-
-  await approveButton.click()
-
-  const dialog = page.locator('[role="dialog"]')
-  await expect(dialog).toBeVisible()
-
-  const confirmBtn = dialog
-    .locator('button')
-    .filter({ hasText: /confirm|approve/i })
-    .last()
-  await expect(confirmBtn).toBeVisible()
-  await confirmBtn.click()
-
-  await expect(dialog).toBeHidden()
-}
-
-export async function rejectFirstPendingListing(
-  page: Page,
-  approvalPath: '/admin/approvals' | '/admin/pc-listing-approvals',
-): Promise<void> {
-  await page.goto(approvalPath, { waitUntil: 'domcontentloaded' })
-  await expect(page.getByText(/loading/i)).toBeHidden()
-
-  const rejectButton = page.locator('button[title^="Reject"]').first()
-  await expect(rejectButton).toBeVisible()
-
-  await rejectButton.click()
-
-  const dialog = page.locator('[role="dialog"]')
-  await expect(dialog).toBeVisible()
-
-  const textarea = dialog.locator('textarea')
-  await expect(textarea).toBeVisible()
-  await textarea.fill('Rejected by E2E test')
-
-  const confirmBtn = dialog
-    .locator('button')
-    .filter({ hasText: /confirm|reject/i })
-    .last()
-  await expect(confirmBtn).toBeVisible()
-  await confirmBtn.click()
-
-  await expect(dialog).toBeHidden()
-}
-
 export async function createReport(page: Page): Promise<void> {
   await page.goto('/listings')
 
   const rows = page.locator('table tbody tr')
   await expect(rows.first()).toBeVisible()
 
-  // The Report button only renders for non-author viewers, so we iterate
-  // over several listings until we find one the current user didn't author.
   const rowCount = await rows.count()
   const maxAttempts = Math.min(rowCount, 15)
 
@@ -322,15 +406,15 @@ export async function createReport(page: Page): Promise<void> {
     const submitBtn = dialog.getByRole('button', { name: /submit report/i })
     await submitBtn.click()
 
-    // "Already reported" is a valid outcome — the goal is that a report
-    // exists in the DB, not that this specific run created it.
-    const alreadyReportedError = dialog.getByText(/already reported/i)
-    const resolved = await Promise.race([
+    const reportOutcome = await Promise.race([
       dialog.waitFor({ state: 'hidden' }).then(() => 'success' as const),
-      alreadyReportedError.waitFor({ state: 'visible' }).then(() => 'already-exists' as const),
+      dialog
+        .getByText(/already reported/i)
+        .waitFor({ state: 'visible' })
+        .then(() => 'already-exists' as const),
     ])
 
-    if (resolved === 'success' || resolved === 'already-exists') return
+    if (reportOutcome === 'success' || reportOutcome === 'already-exists') return
   }
 
   throw new Error(`createReport: could not find a listing to report after ${maxAttempts} attempts`)
@@ -372,13 +456,13 @@ export async function resetUserTrustScore(page: Page, targetUserEmail: string): 
 
   await dialog.getByRole('button', { name: /trust actions/i }).click()
 
-  let remaining = currentScore
+  let remaining = -currentScore
 
-  while (remaining > 0) {
-    const batch = Math.min(remaining, 1000)
+  while (remaining !== 0) {
+    const batch = Math.sign(remaining) * Math.min(Math.abs(remaining), 1000)
 
     await dialog.getByLabel('Reason for trust adjustment').fill('E2E: resetting trust score')
-    await dialog.getByLabel('Custom trust adjustment value').fill(String(-batch))
+    await dialog.getByLabel('Custom trust adjustment value').fill(String(batch))
     await dialog.getByRole('button', { name: /apply/i }).click()
     await expect(page.getByText(/trust score adjusted/i)).toBeVisible()
 

@@ -9,21 +9,17 @@ import {
 test.describe.serial('Test Data Setup', () => {
   test.setTimeout(120000)
 
-  test('ensure approved handheld listing exists', async ({ browser }) => {
+  test('ensure handheld listing creation works', async ({ browser }) => {
     await withContext(browser, 'tests/.auth/user.json', async (page) => {
       await createHandheldListing(page)
     })
   })
 
-  test('ensure approved PC listing exists', async ({ browser }) => {
-    // Seed user has trust score 0 and creates pending PC listings, so the
-    // listing is created as a regular user and then approved as super_admin.
+  test('ensure approved PC listing exists for list and voting tests', async ({ browser }) => {
     await ensureApprovedPcListing(browser)
   })
 
-  test('ensure report exists for admin-reports tests', async ({ browser }) => {
-    // Reporter must differ from the listing author — the Report button is
-    // hidden on listings you authored.
+  test('ensure report exists from a non-author account', async ({ browser }) => {
     await withContext(browser, 'tests/.auth/author.json', async (page) => {
       await createReport(page)
     })

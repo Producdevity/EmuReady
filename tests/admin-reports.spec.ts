@@ -83,8 +83,6 @@ test.describe('Admin Reports Management Tests - Requires Admin Role', () => {
   test('should display report statistics', async ({ page }) => {
     const statsLabels = [/total reports/i, /pending/i, /under review/i, /resolved/i, /dismissed/i]
 
-    // These labels may appear multiple times on the page (stats, table status
-    // column, action buttons). Use .first() to match the stats label.
     for (const label of statsLabels) {
       await expect(page.getByText(label).first()).toBeVisible()
     }
@@ -99,8 +97,6 @@ test.describe('Admin Reports Management Tests - Requires Admin Role', () => {
     const dialog = page.locator('[role="dialog"]')
     await expect(dialog).toBeVisible()
 
-    // "View Listing" is a button that opens the listing in a new tab via
-    // window.open — not an anchor tag.
     const viewListingButton = dialog.getByRole('button', { name: /view listing/i })
     await expect(viewListingButton).toBeVisible()
 

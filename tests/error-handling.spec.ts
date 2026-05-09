@@ -57,8 +57,6 @@ test.describe('Error Handling Tests', () => {
       '/listings?device=invalid-device-123&emulator=non-existent-emulator&performance=super-invalid',
     )
 
-    // Page layout has nested <main> elements, so strict-mode selectors on
-    // main fail. The heading is a unique non-crash indicator.
     const listingsPage = new ListingsPage(page)
     await expect(listingsPage.pageHeading).toBeVisible()
   })

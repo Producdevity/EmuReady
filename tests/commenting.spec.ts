@@ -80,9 +80,9 @@ test.describe('Commenting System Tests', () => {
 
     const commentCards = page.locator('[id^="comment-"]')
     const emptyState = page.getByText(/no comments yet/i)
+    const commentsContent = commentCards.first().or(emptyState)
 
-    // Either comments or empty state must be visible
-    await expect(commentCards.first().or(emptyState)).toBeVisible()
+    await expect(commentsContent).toBeVisible()
   })
 
   test('should not show reply button for unauthenticated users', async ({ page }) => {

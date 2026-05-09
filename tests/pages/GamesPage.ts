@@ -16,7 +16,6 @@ export class GamesPage extends BasePage {
   }
 
   get addGameButton() {
-    // On the /games library page, "Add Game" is an anchor link to /games/new.
     return this.page.getByRole('link', { name: /add game/i })
   }
 
