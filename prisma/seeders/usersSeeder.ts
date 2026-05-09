@@ -36,6 +36,7 @@ const users: UserData[] = [
     username: 'moderator',
     role: Role.MODERATOR,
   },
+  // TODO: Assign emulators to Developer User
   {
     email: 'developer@emuready.com',
     name: 'Developer User',
