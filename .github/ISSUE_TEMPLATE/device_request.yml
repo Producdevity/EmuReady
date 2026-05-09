@@ -1,0 +1,71 @@
+name: Device Request
+description: Request a new device for EmuReady.
+title: "[Device Request]: "
+labels: ["device-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please provide accurate device details. This helps prevent duplicate or incorrect entries.
+
+  - type: checkboxes
+    id: existing-device
+    attributes:
+      label: Existing Device Check
+      options:
+        - label: I have confirmed this device is not already listed on EmuReady.
+          required: true
+
+  - type: input
+    id: device-brand
+    attributes:
+      label: Device Brand
+      description: The manufacturer or brand name.
+      placeholder: Valve, ASUS, Xiaomi, Samsung
+    validations:
+      required: true
+
+  - type: input
+    id: device-name
+    attributes:
+      label: Device Name
+      description: The full device model name.
+      placeholder: Galaxy S24 Ultra
+    validations:
+      required: true
+
+  - type: input
+    id: device-soc
+    attributes:
+      label: Device SoC
+      description: The system on chip used by the device.
+      placeholder: Snapdragon 8 Gen 3, Apple A17 Pro, Exynos 2400
+    validations:
+      required: true
+
+  - type: textarea
+    id: device-links
+    attributes:
+      label: Source Links
+      description: Add an official product page or reliable source for the device details.
+      placeholder: https://...
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-notes
+    attributes:
+      label: Additional Notes
+      description: Add platform support, variants, or anything else we should know.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I checked the spelling and model details to prevent duplicates.
+          required: true
+        - label: I confirmed this device can run at least one emulator listed on EmuReady.
+          required: true
