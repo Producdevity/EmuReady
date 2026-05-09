@@ -19,7 +19,7 @@ interface Props {
 function CpuModal(props: Props) {
   const createCpu = api.cpus.create.useMutation()
   const updateCpu = api.cpus.update.useMutation()
-  const deviceBrandsQuery = api.deviceBrands.get.useQuery()
+  const deviceBrandsQuery = api.deviceBrands.get.useQuery({ limit: 100 })
 
   const [brandId, setBrandId] = useState('')
   const [modelName, setModelName] = useState('')
