@@ -1,5 +1,5 @@
 import { setupClerkTestingToken } from '@clerk/testing/playwright'
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { AuthPage } from './pages/AuthPage'
 import { GamesPage } from './pages/GamesPage'
 import { HomePage } from './pages/HomePage'

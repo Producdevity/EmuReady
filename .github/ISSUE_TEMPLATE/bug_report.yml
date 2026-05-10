@@ -1,0 +1,78 @@
+name: Bug Report
+description: Report a reproducible issue in EmuReady.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please include enough detail for someone else to reproduce the problem.
+
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: Existing Issue Check
+      options:
+        - label: I have searched existing issues and did not find a duplicate.
+          required: true
+
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: What happened?
+      description: Describe the bug clearly.
+      placeholder: The page/action did X, but I expected Y.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps To Reproduce
+      description: List the exact steps needed to reproduce the issue.
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. See ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: Describe what should have happened instead.
+      placeholder: I expected ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include the OS, browser, device, and app version or commit when relevant.
+      placeholder: |
+        OS:
+        Browser:
+        Device:
+        EmuReady version or commit:
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots-logs
+    attributes:
+      label: Screenshots Or Logs
+      description: Add screenshots, logs, console errors, or network errors if available.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I can reproduce this on the current production version of EmuReady.
+          required: true
+        - label: I provided enough information for someone else to reproduce the issue.
+          required: true

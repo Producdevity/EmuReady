@@ -19,7 +19,7 @@ interface Props {
 function GpuModal(props: Props) {
   const createGpu = api.gpus.create.useMutation()
   const updateGpu = api.gpus.update.useMutation()
-  const deviceBrandsQuery = api.deviceBrands.get.useQuery()
+  const deviceBrandsQuery = api.deviceBrands.get.useQuery({ limit: 100 })
 
   const [brandId, setBrandId] = useState('')
   const [modelName, setModelName] = useState('')

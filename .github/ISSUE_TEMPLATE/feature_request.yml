@@ -1,0 +1,59 @@
+name: Feature Request
+description: Suggest an idea or improvement for EmuReady.
+title: "[Feature Request]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please explain the problem or workflow this feature would improve.
+
+  - type: checkboxes
+    id: existing-feature
+    attributes:
+      label: Existing Feature Request Check
+      options:
+        - label: I have searched existing issues and did not find this feature request.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Or Use Case
+      description: Describe the problem, limitation, or workflow this feature would improve.
+      placeholder: I want to ..., but currently ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: Describe what you would like to happen.
+      placeholder: EmuReady should ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions or workarounds you considered.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add screenshots, examples, links, or other useful context.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I provided enough context and motivation for this request.
+          required: true

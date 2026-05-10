@@ -1,4 +1,5 @@
 import { clerkClient } from '@clerk/nextjs/server'
+import { type User as ClerkUser } from '@clerk/nextjs/server'
 import { type PrismaClient, Role } from '@orm'
 
 type UserData = {
@@ -10,7 +11,6 @@ type UserData = {
   username: string
 }
 
-// These users will be created in both Clerk and database for development testing
 const users: UserData[] = [
   {
     email: 'superadmin@emuready.com',
@@ -36,6 +36,7 @@ const users: UserData[] = [
     username: 'moderator',
     role: Role.MODERATOR,
   },
+  // TODO: Assign emulators to Developer User
   {
     email: 'developer@emuready.com',
     name: 'Developer User',
@@ -71,7 +72,6 @@ async function cleanupExistingUsers(prisma: PrismaClient) {
 
   for (const userData of users) {
     try {
-      // Find and delete from Clerk
       const existingClerkUsers = await clerk.users.getUserList({
         emailAddress: [userData.email],
       })
@@ -82,7 +82,6 @@ async function cleanupExistingUsers(prisma: PrismaClient) {
         console.info(`🗑️  Deleted Clerk user: ${userData.email}`)
       }
 
-      // Delete from database
       await prisma.user.deleteMany({ where: { email: userData.email } })
       console.info(`🗑️  Deleted database user: ${userData.email}`)
     } catch {
@@ -99,40 +98,54 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
   }
 
   console.info('🌱 Seeding users...')
-  console.info('📝 Creating users in both Clerk and database for development.')
-  console.info(`🔑 Default password for all seed users: ${DEFAULT_SEED_PASSWORD}`)
+  console.info('📝 Reconciling Clerk + database state for seed users.')
+  console.info('🔑 Seed users were synchronized with the configured default password.')
 
   const clerk = await clerkClient()
-
+  const failedUsers: string[] = []
   for (const userData of users) {
     try {
-      // Check if user already exists in database
-      const existingUser = await prisma.user.findUnique({
-        where: { email: userData.email },
+      const existingClerkUsers = await clerk.users.getUserList({
+        emailAddress: [userData.email],
       })
 
-      if (existingUser) {
-        console.info(`✓ User ${userData.email} already exists in database`)
-        continue
+      let clerkUser: ClerkUser
+      let action: 'created' | 'reconciled'
+
+      if (existingClerkUsers.totalCount === 0) {
+        console.info(`Creating Clerk user: ${userData.email}`)
+        clerkUser = await clerk.users.createUser({
+          emailAddress: [userData.email],
+          username: userData.username,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          password: DEFAULT_SEED_PASSWORD,
+          skipPasswordChecks: true,
+          publicMetadata: { role: userData.role },
+        })
+        action = 'created'
+      } else {
+        clerkUser = existingClerkUsers.data[0]
+        clerkUser = await clerk.users.updateUser(clerkUser.id, {
+          username: userData.username,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          password: DEFAULT_SEED_PASSWORD,
+          skipPasswordChecks: true,
+          publicMetadata: { role: userData.role },
+        })
+        action = 'reconciled'
       }
 
-      // Create user in Clerk first
-      console.info(`Creating Clerk user: ${userData.email}`)
-      const clerkUser = await clerk.users.createUser({
-        emailAddress: [userData.email],
-        username: userData.username,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        password: DEFAULT_SEED_PASSWORD,
-        skipPasswordChecks: true, // For development only
-        publicMetadata: {
+      await prisma.user.upsert({
+        where: { email: userData.email },
+        update: {
+          clerkId: clerkUser.id,
+          name: userData.name,
           role: userData.role,
+          profileImage: clerkUser.imageUrl || null,
         },
-      })
-
-      // Then create user in database with the Clerk ID
-      await prisma.user.create({
-        data: {
+        create: {
           clerkId: clerkUser.id,
           email: userData.email,
           name: userData.name,
@@ -142,51 +155,15 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
         },
       })
 
-      console.info(`✅ Created user: ${userData.email} (clerkId: ${clerkUser.id})`)
-    } catch (error: unknown) {
-      const clerkError = error as {
-        errors?: { code: string }[]
-      }
-
-      if (clerkError?.errors?.[0]?.code === 'form_identifier_exists') {
-        console.warn(`⚠️  User ${userData.email} already exists in Clerk`)
-
-        // Try to find the Clerk user and create database record
-        try {
-          const existingClerkUsers = await clerk.users.getUserList({
-            emailAddress: [userData.email],
-          })
-
-          if (existingClerkUsers.totalCount > 0) {
-            const clerkUser = existingClerkUsers.data[0]
-
-            // Update their metadata to ensure role is set
-            await clerk.users.updateUserMetadata(clerkUser.id, {
-              publicMetadata: { role: userData.role },
-            })
-
-            // Create database record if it doesn't exist
-            await prisma.user.upsert({
-              where: { email: userData.email },
-              update: {},
-              create: {
-                clerkId: clerkUser.id,
-                email: userData.email,
-                name: userData.name,
-                role: userData.role,
-                profileImage: clerkUser.imageUrl || null,
-              },
-            })
-
-            console.info(`✅ Synced existing user: ${userData.email}`)
-          }
-        } catch (syncError) {
-          console.error(`❌ Failed to sync existing user ${userData.email}:`, syncError)
-        }
-      } else {
-        console.error(`❌ Failed to create user ${userData.email}:`, error)
-      }
+      console.info(`✅ ${action} user: ${userData.email} (clerkId: ${clerkUser.id})`)
+    } catch (error) {
+      failedUsers.push(userData.email)
+      console.error(`❌ Failed to seed user ${userData.email}:`, error)
     }
+  }
+
+  if (failedUsers.length > 0) {
+    throw new Error(`Failed to seed users: ${failedUsers.join(', ')}`)
   }
 
   console.info('✅ Users seeding completed')

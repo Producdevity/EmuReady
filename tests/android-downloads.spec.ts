@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 
 test('Profile downloads tab loads (if feature-flag enabled)', async ({ page }) => {
   await page.goto('/profile?tab=downloads')

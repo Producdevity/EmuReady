@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 
 test.describe('Custom Fields System', () => {
   test.describe('Admin Custom Field Template Management', () => {

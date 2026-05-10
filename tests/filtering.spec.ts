@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { ListingsPage } from './pages/ListingsPage'
 import type { Locator, Page } from '@playwright/test'
 
@@ -7,13 +7,26 @@ async function selectFirstFilterOption(page: Page, filterButton: Locator) {
   const firstOption = page.locator('label:has(input[type="checkbox"])').first()
   await expect(firstOption).toBeVisible()
   await firstOption.click()
-  // MultiSelect doesn't close on Escape and a lingering open dropdown blocks
-  // subsequent clicks, so toggle the filter button to dismiss it.
   await filterButton.click()
   await expect(firstOption).toBeHidden()
 }
 
 test.describe('Filtering Tests', () => {
+  test('should close a filter dropdown with Escape', async ({ page }) => {
+    const listingsPage = new ListingsPage(page)
+    await listingsPage.goto()
+    await listingsPage.verifyPageLoaded()
+
+    await listingsPage.deviceFilter.click()
+
+    const firstOption = page.locator('label:has(input[type="checkbox"])').first()
+    await expect(firstOption).toBeVisible()
+
+    await page.keyboard.press('Escape')
+
+    await expect(firstOption).toBeHidden()
+  })
+
   test('should display filter controls on the listings page', async ({ page }) => {
     const listingsPage = new ListingsPage(page)
     await listingsPage.goto()

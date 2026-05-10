@@ -31,8 +31,6 @@ export class ListingsPage extends BasePage {
     return this.page.getByText(/no listings found|no results|empty|nothing found/i)
   }
 
-  // Filters are MultiSelect components rendered as buttons with aria-label
-  // like "Devices multi-select", "Emulators multi-select", etc.
   get deviceFilter() {
     return this.page.getByRole('button', { name: /devices multi-select/i })
   }
@@ -50,8 +48,6 @@ export class ListingsPage extends BasePage {
   }
 
   get clearFiltersButton() {
-    // The Active Filters section renders a "Clear All" button when filters
-    // are applied (scoped to avoid "Clear all selections" per-field buttons).
     return this.page.getByRole('button', { name: /^clear all$/i })
   }
 

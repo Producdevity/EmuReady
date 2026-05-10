@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { GamesPage } from './pages/GamesPage'
 import { HomePage } from './pages/HomePage'
 import { ListingsPage } from './pages/ListingsPage'
@@ -136,9 +136,9 @@ test.describe('Content Display Tests', () => {
   })
 
   test('should show empty state when search returns no games', async ({ page }) => {
-    // A no-match search term exercises the same empty-state branch as a
-    // truly empty database, without needing to mock the tRPC query.
-    await page.goto('/games?search=zzqqxxnotarealgame42')
+    const noMatchSearchTerm = 'zzqqxxnotarealgame42'
+
+    await page.goto(`/games?search=${noMatchSearchTerm}`)
 
     await expect(page.getByText(/no games found matching your criteria/i)).toBeVisible()
   })

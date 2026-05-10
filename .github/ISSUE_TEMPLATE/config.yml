@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Contributing Guidelines
-    url: ../CONTRIBUTING.md
+    url: https://github.com/Producdevity/EmuReady/blob/master/CONTRIBUTING.md
     about: Please read the contributing guidelines before submitting an issue.

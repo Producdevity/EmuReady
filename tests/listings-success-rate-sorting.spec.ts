@@ -1,5 +1,19 @@
 import path from 'path'
-import { test, expect } from '@playwright/test'
+import { errors, type Page } from '@playwright/test'
+import { test, expect } from './fixtures'
+
+async function dismissCommunitySupportBanner(page: Page) {
+  const dismissBanner = page.getByRole('button', { name: /dismiss community support/i }).first()
+
+  try {
+    await dismissBanner.waitFor({ state: 'visible', timeout: 1000 })
+  } catch (error) {
+    if (error instanceof errors.TimeoutError) return
+    throw error
+  }
+
+  await dismissBanner.click()
+}
 
 test.describe('Success Rate Sorting', () => {
   test.use({ storageState: path.join(__dirname, '.auth/user.json') })
@@ -8,15 +22,7 @@ test.describe('Success Rate Sorting', () => {
     await page.goto('/listings')
     await page.waitForLoadState('domcontentloaded')
 
-    // The community support banner overlays the table header and intercepts
-    // sort clicks if it's still present.
-    const dismissBanner = page.getByRole('button', { name: /dismiss community support/i })
-    try {
-      await dismissBanner.waitFor({ state: 'visible', timeout: 1000 })
-      await dismissBanner.click()
-    } catch {
-      // Banner not present — nothing to dismiss
-    }
+    await dismissCommunitySupportBanner(page)
   })
 
   test('should sort by success rate ascending on first click', async ({ page }) => {

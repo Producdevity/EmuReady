@@ -1,7 +1,7 @@
 'use client'
 
 import { ChevronDown, X } from 'lucide-react'
-import { useState, useRef, useEffect, useMemo, type ReactNode } from 'react'
+import { useState, useRef, useEffect, useMemo, type KeyboardEvent, type ReactNode } from 'react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { searchItems } from '@/utils/simpleSearch'
@@ -104,6 +104,12 @@ export function MultiSelect(props: Props) {
     }
   }, [])
 
+  const closeDropdown = () => {
+    setIsOpen(false)
+    setSearchQuery('')
+    buttonRef.current?.focus()
+  }
+
   const handleToggle = (optionId: string) => {
     const newValue = props.value.includes(optionId)
       ? props.value.filter((id) => id !== optionId)
@@ -118,6 +124,14 @@ export function MultiSelect(props: Props) {
   const handleRemoveOption = (optionId: string) => {
     const newValue = props.value.filter((id) => id !== optionId)
     props.onChange(newValue)
+  }
+
+  const handleDropdownKeyDown = (ev: KeyboardEvent<HTMLDivElement>) => {
+    if (ev.key !== 'Escape' || !isOpen) return
+
+    ev.preventDefault()
+    ev.stopPropagation()
+    closeDropdown()
   }
 
   const handleClearSearch = () => {
@@ -147,7 +161,7 @@ export function MultiSelect(props: Props) {
         {props.label}
       </label>
 
-      <div ref={dropdownRef} className="relative">
+      <div ref={dropdownRef} className="relative" onKeyDown={handleDropdownKeyDown}>
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
@@ -185,14 +199,14 @@ export function MultiSelect(props: Props) {
                 <div
                   role="button"
                   tabIndex={0}
-                  onClick={(e) => {
-                    e.stopPropagation()
+                  onClick={(ev) => {
+                    ev.stopPropagation()
                     handleClearAll()
                   }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      e.stopPropagation()
+                  onKeyDown={(ev) => {
+                    if (ev.key === 'Enter' || ev.key === ' ') {
+                      ev.preventDefault()
+                      ev.stopPropagation()
                       handleClearAll()
                     }
                   }}

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { ListingsPage } from './pages/ListingsPage'
 
 test.describe('Voting Functionality Tests', () => {
@@ -104,12 +104,15 @@ test.describe('Voting Functionality Tests', () => {
     await listingsPage.clickFirstListing()
     await page.waitForLoadState('domcontentloaded')
 
-    const verificationHeading = page.getByRole('heading', {
-      name: /community verification/i,
+    const progressBar = page.getByRole('progressbar', {
+      name: /community verification success rate/i,
     })
-    await expect(verificationHeading).toBeVisible()
+    await expect(progressBar).toBeVisible()
 
-    await expect(page.getByText(/\d+%/)).toBeVisible()
-    await expect(page.getByText(/verified by \d+ users/i)).toBeVisible()
+    const valueNow = await progressBar.getAttribute('aria-valuenow')
+    expect(valueNow).toMatch(/^\d+$/)
+    const numericValue = Number(valueNow)
+    expect(numericValue).toBeGreaterThanOrEqual(0)
+    expect(numericValue).toBeLessThanOrEqual(100)
   })
 })

@@ -1,7 +1,5 @@
-import { type Page, test, expect } from '@playwright/test'
-
-// Mirrors voting.spec.ts for handheld listings — PcVoteButtons wraps the
-// shared VoteButtons component, so both should behave identically.
+import { test, expect } from './fixtures'
+import type { Page } from '@playwright/test'
 
 async function navigateToFirstPcListing(page: Page) {
   await page.goto('/pc-listings')
@@ -75,13 +73,16 @@ test.describe('PC Listing Voting Functionality Tests', () => {
   test('should display progress bar for success rate', async ({ page }) => {
     await navigateToFirstPcListing(page)
 
-    const verificationHeading = page.getByRole('heading', {
-      name: /community verification/i,
+    const progressBar = page.getByRole('progressbar', {
+      name: /community verification success rate/i,
     })
-    await expect(verificationHeading).toBeVisible()
+    await expect(progressBar).toBeVisible()
 
-    await expect(page.getByText(/\d+%/)).toBeVisible()
-    await expect(page.getByText(/verified by \d+ users/i)).toBeVisible()
+    const valueNow = await progressBar.getAttribute('aria-valuenow')
+    expect(valueNow).toMatch(/^\d+$/)
+    const numericValue = Number(valueNow)
+    expect(numericValue).toBeGreaterThanOrEqual(0)
+    expect(numericValue).toBeLessThanOrEqual(100)
   })
 })
 
@@ -98,14 +99,12 @@ test.describe('PC Listing Vote — Toggle and Change Flows (Authenticated)', () 
 
     const initial = await confirmButton.getAttribute('aria-pressed')
 
-    // Click once → flip
     await confirmButton.click()
     await expect(confirmButton).toHaveAttribute(
       'aria-pressed',
       initial === 'true' ? 'false' : 'true',
     )
 
-    // Click again → flip back
     await confirmButton.click()
     await expect(confirmButton).toHaveAttribute('aria-pressed', initial ?? 'false')
   })
@@ -116,14 +115,12 @@ test.describe('PC Listing Vote — Toggle and Change Flows (Authenticated)', () 
     const confirmButton = page.getByRole('button', { name: /confirm/i })
     const inaccurateButton = page.getByRole('button', { name: /inaccurate/i })
 
-    // Ensure upvote is active
     const confirmPressed = await confirmButton.getAttribute('aria-pressed')
     if (confirmPressed !== 'true') {
       await confirmButton.click()
       await expect(confirmButton).toHaveAttribute('aria-pressed', 'true')
     }
 
-    // Change to downvote
     await inaccurateButton.click()
     await expect(inaccurateButton).toHaveAttribute('aria-pressed', 'true')
     await expect(confirmButton).toHaveAttribute('aria-pressed', 'false')

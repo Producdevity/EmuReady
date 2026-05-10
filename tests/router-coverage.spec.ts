@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 
 test.describe('Router Security Verification', () => {
   test('protected endpoints should reject unauthenticated requests', async ({ request }) => {
@@ -46,8 +46,9 @@ test.describe('Data Validation Verification', () => {
       headers: { 'Content-Type': 'application/json' },
     })
 
-    // 400 = bad input; 401/403 = unauthenticated (both are acceptable outcomes)
-    expect([400, 401, 403]).toContain(response.status())
+    const validRejectionStatuses = [400, 401, 403]
+
+    expect(validRejectionStatuses).toContain(response.status())
   })
 
   test('should handle malformed tRPC requests', async ({ request }) => {

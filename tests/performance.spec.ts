@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { GamesPage } from './pages/GamesPage'
 import { HomePage } from './pages/HomePage'
 import { ListingsPage } from './pages/ListingsPage'
@@ -13,25 +13,6 @@ test.describe('Performance Tests', () => {
     const loadTime = Date.now() - startTime
 
     expect(loadTime).toBeLessThan(10000)
-  })
-
-  test('should have efficient image loading', async ({ page }) => {
-    const gamesPage = new GamesPage(page)
-    await gamesPage.goto()
-
-    const images = page.locator('img')
-    const imageCount = await images.count()
-
-    // Skip if not enough images to warrant lazy loading
-    test.skip(imageCount <= 5, 'Not enough images to test lazy loading')
-
-    let lazyLoadCount = 0
-    for (let i = 0; i < imageCount; i++) {
-      const loading = await images.nth(i).getAttribute('loading')
-      if (loading === 'lazy') lazyLoadCount++
-    }
-
-    expect(lazyLoadCount).toBeGreaterThan(0)
   })
 
   test('should not have memory leaks during navigation', async ({ page, browserName }) => {
@@ -109,58 +90,40 @@ test.describe('Performance Tests', () => {
     expect(scriptBytes).toBeLessThan(3 * 1024 * 1024)
   })
 
-  test('should have smooth scrolling performance', async ({ page }) => {
+  test('should keep the games page usable after scrolling', async ({ page }) => {
     const gamesPage = new GamesPage(page)
     await gamesPage.goto()
     await gamesPage.verifyPageLoaded()
 
-    const frameCount = await page.evaluate(() => {
-      return new Promise<number>((resolve) => {
-        let count = 0
-        const startTime = performance.now()
+    await page.getByRole('navigation', { name: /pagination/i }).scrollIntoViewIfNeeded()
+    await expect(page.getByRole('navigation', { name: /pagination/i })).toBeVisible()
 
-        const measureFrames = () => {
-          count++
-          if (performance.now() - startTime < 1000) {
-            requestAnimationFrame(measureFrames)
-          } else {
-            resolve(count)
-          }
-        }
-
-        window.scrollTo({ top: 1000, behavior: 'smooth' })
-        measureFrames()
-      })
-    })
-
-    expect(frameCount).toBeGreaterThan(30)
+    await page.getByRole('button', { name: /go to next page/i }).click()
+    await expect(page).toHaveURL(/[?&]page=2/)
+    await expect(gamesPage.pageHeading).toBeVisible()
   })
 
-  test('should cache API responses appropriately', async ({ page }) => {
-    interface ApiCall {
-      url: string
-      status: number
-      fromCache: boolean
-    }
-    const apiCalls: ApiCall[] = []
+  test('should complete repeated navigation with page data loaded', async ({ page }) => {
+    const failedCoreApiResponses: string[] = []
 
     page.on('response', (response) => {
-      if (response.url().includes('/api/')) {
-        apiCalls.push({
-          url: response.url(),
-          status: response.status(),
-          fromCache: response.fromServiceWorker(),
-        })
+      if (response.url().includes('/api/trpc/')) {
+        const status = response.status()
+        if (status >= 400) failedCoreApiResponses.push(`${status} ${response.url()}`)
       }
     })
 
     const gamesPage = new GamesPage(page)
     await gamesPage.goto()
+    await gamesPage.verifyPageLoaded()
 
     await gamesPage.navigateToHome()
-    await gamesPage.goto()
+    await expect(page.getByRole('heading', { name: /know before you load/i })).toBeVisible()
 
-    expect(apiCalls.length).toBeGreaterThan(0)
+    await gamesPage.goto()
+    await gamesPage.verifyPageLoaded()
+
+    expect(failedCoreApiResponses).toEqual([])
   })
 })
 

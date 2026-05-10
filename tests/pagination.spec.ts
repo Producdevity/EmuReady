@@ -1,13 +1,9 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { GamesPage } from './pages/GamesPage'
 import { ListingsPage } from './pages/ListingsPage'
 import type { Page } from '@playwright/test'
 
-// The Pagination component renders its navigation buttons twice in the same
-// <nav> — once inside a `hidden md:flex` desktop wrapper and once inside a
-// `md:hidden` mobile wrapper — so every aria-label resolves to 2 elements.
-// Scoping to the desktop wrapper gives strict-mode locators a single match.
-function desktopPagination(page: Page) {
+function desktopPaginationControls(page: Page) {
   return page.locator('nav[aria-label="Pagination navigation"] > div.hidden.md\\:flex')
 }
 
@@ -19,7 +15,7 @@ test.describe('Pagination Tests', () => {
     await listingsPage.goto()
     await expect(listingsPage.listingItems.first()).toBeVisible()
 
-    const pagination = desktopPagination(page)
+    const pagination = desktopPaginationControls(page)
     await expect(pagination).toBeVisible()
     await expect(pagination.getByRole('button', { name: 'Go to previous page' })).toBeDisabled()
     await expect(pagination.getByRole('button', { name: 'Go to next page' })).toBeEnabled()
@@ -31,7 +27,7 @@ test.describe('Pagination Tests', () => {
     await listingsPage.goto()
     await expect(listingsPage.listingItems.first()).toBeVisible()
 
-    const pagination = desktopPagination(page)
+    const pagination = desktopPaginationControls(page)
     const currentPage = pagination.locator('button[aria-current="page"]')
     const nextButton = pagination.getByRole('button', { name: 'Go to next page' })
     const prevButton = pagination.getByRole('button', { name: 'Go to previous page' })
@@ -56,7 +52,7 @@ test.describe('Pagination Tests', () => {
     await expect(listingsPage.listingItems.first()).toBeVisible()
 
     await expect(
-      desktopPagination(page).getByText(/Showing \d+ to \d+ of \d+ results/),
+      desktopPaginationControls(page).getByText(/Showing \d+ to \d+ of \d+ results/),
     ).toBeVisible()
   })
 
@@ -65,7 +61,7 @@ test.describe('Pagination Tests', () => {
     await listingsPage.goto()
     await expect(listingsPage.listingItems.first()).toBeVisible()
 
-    const pagination = desktopPagination(page)
+    const pagination = desktopPaginationControls(page)
     const currentPage = pagination.locator('button[aria-current="page"]')
 
     await expect(currentPage).toHaveText('1')
@@ -78,7 +74,7 @@ test.describe('Pagination Tests', () => {
     await gamesPage.goto()
     await expect(gamesPage.gameItems.first()).toBeVisible()
 
-    const pagination = desktopPagination(page)
+    const pagination = desktopPaginationControls(page)
     const page2Button = pagination.getByRole('button', { name: 'Go to page 2' })
     await expect(page2Button).toBeVisible()
     await page2Button.click()
@@ -91,7 +87,7 @@ test.describe('Pagination Tests', () => {
     await listingsPage.goto()
     await expect(listingsPage.listingItems.first()).toBeVisible()
 
-    const pagination = desktopPagination(page)
+    const pagination = desktopPaginationControls(page)
     const lastPageButton = pagination.getByRole('button', { name: 'Go to last page' })
     await expect(lastPageButton).toBeVisible()
     await lastPageButton.click()

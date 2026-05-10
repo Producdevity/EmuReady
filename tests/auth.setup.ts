@@ -1,8 +1,10 @@
 import path from 'path'
 import { clerk } from '@clerk/testing/playwright'
 import { test as setup, type Page } from '@playwright/test'
+import { PrismaClient, Role } from '@orm'
+import { registerCookieConsent } from './helpers/cookie-consent'
+import { registerExternalServiceMocks } from './helpers/external-services'
 
-// Define auth files for different roles
 const authFiles = {
   user: path.join(__dirname, '.auth/user.json'),
   author: path.join(__dirname, '.auth/author.json'),
@@ -12,11 +14,34 @@ const authFiles = {
   super_admin: path.join(__dirname, '.auth/super_admin.json'),
 }
 
-// Helper function to login with specific credentials
-async function authenticateUser(page: Page, email: string, password: string, role: string) {
+const prisma = new PrismaClient()
+const seedPassword = 'DevPassword123!'
+
+async function verifySeededRole(email: string, expectedRole: Role) {
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { role: true },
+  })
+
+  if (!user) throw new Error(`Expected seeded test user to exist: ${email}`)
+  if (user.role !== expectedRole) {
+    throw new Error(`Expected ${email} to have role ${expectedRole}, received ${user.role}`)
+  }
+}
+
+async function authenticateUser(
+  page: Page,
+  email: string,
+  password: string,
+  role: string,
+  expectedRole: Role,
+) {
   console.log(`🔐 Setting up authentication for ${role}: ${email}`)
 
   const userButtonSelector = '.cl-userButtonTrigger, .cl-userButton, [data-clerk-user-button]'
+
+  await registerCookieConsent(page.context())
+  await registerExternalServiceMocks(page)
 
   try {
     await page.goto('/', { waitUntil: 'load' })
@@ -32,6 +57,7 @@ async function authenticateUser(page: Page, email: string, password: string, rol
 
     await page.reload({ waitUntil: 'domcontentloaded' })
     await page.waitForSelector(userButtonSelector, { timeout: 8000 })
+    await verifySeededRole(email, expectedRole)
 
     console.log(`✅ Successfully authenticated ${role}: ${email}`)
     return true
@@ -45,12 +71,10 @@ async function authenticateUser(page: Page, email: string, password: string, rol
   }
 }
 
-// Clean up any previous auth states on startup
 setup.beforeAll(async () => {
   const fs = await import('fs')
   const authDir = path.join(__dirname, '.auth')
 
-  // Create .auth directory if it doesn't exist
   if (!fs.existsSync(authDir)) {
     fs.mkdirSync(authDir, { recursive: true })
   }
@@ -58,56 +82,58 @@ setup.beforeAll(async () => {
   console.log('🧹 Auth setup initialized')
 })
 
-// Auth setup tests
+setup.afterAll(async () => {
+  await prisma.$disconnect()
+})
+
 const authConfigs = [
   {
     role: 'user',
-    email: process.env.TEST_USER_EMAIL,
-    password: process.env.TEST_USER_PASSWORD,
+    expectedRole: Role.USER,
+    email: 'user@emuready.com',
+    password: seedPassword,
     file: authFiles.user,
   },
   {
     role: 'super_admin',
-    email: process.env.TEST_SUPER_ADMIN_EMAIL,
-    password: process.env.TEST_SUPER_ADMIN_PASSWORD,
+    expectedRole: Role.SUPER_ADMIN,
+    email: 'superadmin@emuready.com',
+    password: seedPassword,
     file: authFiles.super_admin,
   },
   {
     role: 'admin',
-    email: process.env.TEST_ADMIN_EMAIL,
-    password: process.env.TEST_ADMIN_PASSWORD,
+    expectedRole: Role.ADMIN,
+    email: 'admin@emuready.com',
+    password: seedPassword,
     file: authFiles.admin,
   },
   {
     role: 'moderator',
-    email: process.env.TEST_MODERATOR_EMAIL,
-    password: process.env.TEST_MODERATOR_PASSWORD,
+    expectedRole: Role.MODERATOR,
+    email: 'moderator@emuready.com',
+    password: seedPassword,
     file: authFiles.moderator,
   },
   {
     role: 'author',
-    email: process.env.TEST_AUTHOR_EMAIL,
-    password: process.env.TEST_AUTHOR_PASSWORD,
+    expectedRole: Role.AUTHOR,
+    email: 'author@emuready.com',
+    password: seedPassword,
     file: authFiles.author,
   },
   {
     role: 'developer',
-    email: process.env.TEST_DEVELOPER_EMAIL,
-    password: process.env.TEST_DEVELOPER_PASSWORD,
+    expectedRole: Role.DEVELOPER,
+    email: 'developer@emuready.com',
+    password: seedPassword,
     file: authFiles.developer,
   },
 ]
 
-// Generate setup tests for each role that has credentials
 for (const config of authConfigs) {
-  if (config.email && config.password) {
-    setup(`authenticate as ${config.role}`, async ({ page }) => {
-      await authenticateUser(page, config.email!, config.password!, config.role)
-      await page.context().storageState({ path: config.file })
-    })
-  } else {
-    setup.skip(`authenticate as ${config.role}`, async () => {
-      console.log(`⚠️  Skipping ${config.role} auth - credentials not provided`)
-    })
-  }
+  setup(`authenticate as ${config.role}`, async ({ page }) => {
+    await authenticateUser(page, config.email, config.password, config.role, config.expectedRole)
+    await page.context().storageState({ path: config.file })
+  })
 }

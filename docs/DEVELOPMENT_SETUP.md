@@ -1,175 +1,45 @@
-# Development Setup Guide
+# Development Setup
 
-## Quick Start (No Webhooks Required!)
+## Local App
 
-The easiest way to get started with development:
+1. Copy `.env.example` to `.env.local` and fill in the database and Clerk values.
+2. Install dependencies with `npm install`.
+3. Apply migrations with `npm run db:migrate:dev`.
+4. Seed local data with `npm run db:seed`.
+5. Start the app with `npm run dev`.
 
-**Option 1: One command setup**
-```bash
-npm run dev:setup
-```
-This seeds the database and starts the dev server in one go!
+The seed script reconciles Clerk users and database users. The canonical seeded account list and password live in `prisma/seeders/usersSeeder.ts`.
 
-**Option 2: Manual setup**  
-1. **Start your app**: `npm run dev`
-2. **Seed the database**: `npx prisma db seed` 
-3. **Login with test users**:
-   - **admin@emuready.com** / `DevPassword123!` 
-   - **user@emuready.com** / `DevPassword123!`
-   - etc.
+## Webhooks
 
-That's it! 🎉 No webhook setup needed for development.
+Webhook setup is only needed when working on Clerk webhook behavior. Local development with seeded users does not require webhooks.
 
-## Why No Webhooks for Development?
+To test webhooks locally:
 
-If you aren't planning to test or work on anything related to Clerk webhooks, you can skip the webhook setup entirely. 
-The app will still function correctly with seeded test users and roles.
-Just keep it in mind when something like `Roles` don't appear to be working as expected, this might be the reason.
+1. Start the app with `npm run dev`.
+2. Expose the app with a tunnel such as `ngrok http 3000` or Cloudflare Tunnel.
+3. Configure the Clerk webhook endpoint as `https://<tunnel-host>/api/webhooks/clerk`.
+4. Subscribe to `user.created`, `user.updated`, and `user.deleted`.
+5. Add the Clerk webhook secret to `.env.local` as `CLERK_WEBHOOK_SECRET`.
 
-Feel free to ask for help in the #dev channel on the [Discord server](https://discord.gg/fWQXvFeZcY) if you run into any issues!
+See `docs/AUTHENTICATION_SETUP.md` and `docs/WEBHOOK_TROUBLESHOOTING.md` for tunnel and webhook-specific details.
 
-## Optional: Webhook Setup (For Production-Like Testing)
+## Environment
 
-If you want to test the full production flow locally, you can set up webhooks:
-
-### Prerequisites
-- Sign up for [ngrok account](https://dashboard.ngrok.com/signup) (free)
-- Get your authtoken: `ngrok config add-authtoken YOUR_TOKEN`
-
-### Quick Webhook Setup
-1. **Start development server**: `npm run dev`
-2. **Start ngrok tunnel**: `ngrok http 3001` (note: app runs on port 3001 if 3000 is busy)
-3. **Configure in Clerk Dashboard**:
-   - Add endpoint: `https://YOUR_NGROK_URL.ngrok.io/api/webhooks/clerk`
-   - Subscribe to: `user.created`, `user.updated`, `user.deleted`
-   - Copy webhook secret to `.env.local` as `CLERK_WEBHOOK_SECRET`
-
-## Seeded Test Users
-
-When you run `npm run db:seed`, the following users are created in both Clerk and your database:
-
-- **superadmin@emuready.com** - SUPER_ADMIN role
-- **admin@emuready.com** - ADMIN role  
-- **author@emuready.com** - AUTHOR role
-- **user@emuready.com** - USER role
-
-**Default Password**: `DevPassword123!`
-
-These users can be used immediately for testing different role permissions and features.
-
-### Additional Test Users (Optional)
-
-If you need more test users, you can create them through:
-
-#### Option 1: Sign Up Through the App
-1. Start your development server: `npm run dev`
-2. Go to your app homepage
-3. Click "Sign Up" and create additional test accounts
-
-#### Option 2: Create Users in Clerk Dashboard
-1. Go to [Clerk Dashboard](https://dashboard.clerk.com)
-2. Select your application
-3. Navigate to **Users** in the sidebar
-4. Click **Create User** 
-5. Fill in user details
-6. The webhook will automatically create the database record
-
-### Assigning Roles to Additional Users
-
-For users created outside the seeder:
-
-#### Method 1: Through Admin Interface
-1. Log in with `admin@emuready.com` (password: `DevPassword123!`)
-2. Use the admin interface to assign roles to other users
-
-#### Method 2: Direct Database Update
-```sql
--- Make a user an admin
-UPDATE "User" SET role = 'ADMIN' WHERE email = 'new-admin@test.com';
-
--- Make a user an author  
-UPDATE "User" SET role = 'AUTHOR' WHERE email = 'author@test.com';
-```
-
-After updating roles in the database, sync them to Clerk:
-```bash
-curl -X POST http://localhost:3000/api/admin/sync-roles
-```
-
-### Testing Different Authentication Flows
-
-1. **OAuth Testing**: Test GitHub, Google login flows
-2. **Email/Password**: Test traditional signup/signin
-3. **Role-based Access**: Test different user roles and permissions
-4. **Profile Updates**: Test updating user information through Clerk
-
-### Environment Variables for Development
-
-Make sure you have these in your `.env.local`:
+Use `.env.example` as the source for supported local environment variables. The common required values are:
 
 ```env
-# Clerk Authentication
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_key
-CLERK_SECRET_KEY=sk_test_your_key
-CLERK_WEBHOOK_SECRET=whsec_your_webhook_secret
-
-# Database
-DATABASE_URL=your_database_url
-DATABASE_DIRECT_URL=your_direct_database_url
-
-# App Configuration
+DATABASE_URL=...
+DATABASE_DIRECT_URL=...
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
+CLERK_SECRET_KEY=...
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-
-# API Protection (Required for production, optional for development)
-# Generate with: 
-```js
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-```env
-INTERNAL_API_KEY=your_secure_random_api_key_here
-```
+External provider keys such as `RAWG_API_KEY`, `THE_GAMES_DB_API_KEY`, and reCAPTCHA keys are only needed for the features that call those services.
 
-# Optional: Additional services
-```
-RAWG_API_KEY=your_rawg_api_key_here
-NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your_recaptcha_site_key_here
-RECAPTCHA_SECRET_KEY=your_recaptcha_secret_key_here
-THE_GAMES_DB_API_KEY=your_tgdb_api_key_here
-```
+## Troubleshooting
 
-#### API Protection
-
-The `INTERNAL_API_KEY` is used to protect against API abuse and unauthorized access. While optional for local development, it's **required for production deployment**. 
-
-**For Development:**
-- The app allows requests from `localhost:3000` and `localhost:3001` automatically
-- You can skip setting `INTERNAL_API_KEY` during local development
-- Rate limiting is still active (100 requests per 3 minutes per IP)
-
-**For Production:**
-- `INTERNAL_API_KEY` is **mandatory** to prevent API abuse
-- Only requests from your domain or with valid API keys are allowed
-- Generate a secure key using: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
-
-**API Protection Features:**
-- Rate limiting: 100 requests per 3-minute window per IP
-- Origin validation: Only allows requests from authorized domains
-- Security headers: Adds appropriate security headers to responses
-
-### Troubleshooting
-
-#### User Not Created in Database
-- Check that webhooks are properly configured
-- Verify ngrok tunnel is active and URL is correct in Clerk Dashboard  
-- Check server logs for webhook errors
-
-#### Role Not Updating in Frontend
-- Verify role was updated in database
-- Call the role sync endpoint: `POST /api/admin/sync-roles`
-- Clear browser cache/cookies and re-login
-
-#### Can't Access Admin Features
-- Verify user has ADMIN role in database
-- Check that role is synced to Clerk publicMetadata
-- Ensure you're using the correct email for your admin user 
+- If seeded login fails, rerun `npm run db:seed` and confirm the Clerk keys point at the same Clerk app used by the seeder.
+- If a webhook-created user is missing in the database, verify `CLERK_WEBHOOK_SECRET` and the Clerk webhook event subscriptions.
+- If an admin role changed directly in the database, use the admin role sync endpoint or rerun the relevant seed/setup flow so Clerk metadata matches the database.

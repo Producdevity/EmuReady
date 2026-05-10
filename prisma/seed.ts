@@ -14,6 +14,7 @@ import performanceScalesSeeder from './seeders/performanceScalesSeeder'
 import permissionsSeeder from './seeders/permissionsSeeder'
 import socSeeder from './seeders/socSeeder'
 import systemsSeeder from './seeders/systemsSeeder'
+import userModerationFixturesSeeder from './seeders/userModerationFixturesSeeder'
 import usersSeeder from './seeders/usersSeeder'
 import { batchOperations } from '../src/server/utils/transactions'
 
@@ -187,6 +188,7 @@ async function main() {
     await performanceScalesSeeder(prisma)
     await systemsSeeder(prisma)
     await usersSeeder(prisma)
+    await userModerationFixturesSeeder(prisma)
     await emulatorsSeeder(prisma)
     await azaharCustomFieldsSeeder(prisma)
     await edenCustomFieldsSeeder(prisma)
