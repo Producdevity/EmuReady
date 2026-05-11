@@ -42,20 +42,21 @@ export function ListingsHeader(props: Props) {
             </motion.div>
           </motion.div>
 
-          <motion.p
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
             className="text-sm text-gray-600 dark:text-gray-400"
           >
             {props.isLoading ? (
-              <span className="flex items-center gap-2">
-                <motion.div
+              <span className="inline-flex items-center gap-2">
+                <motion.span
+                  aria-hidden="true"
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                  className="w-3 h-3 border border-blue-500 border-t-transparent rounded-full"
+                  className="inline-block w-3 h-3 border border-blue-500 border-t-transparent rounded-full"
                 />
-                Loading listings...
+                <span>Loading listings...</span>
               </span>
             ) : (
               <span>
@@ -63,7 +64,7 @@ export function ListingsHeader(props: Props) {
                 {props.listingsCount !== 1 ? 's' : ''} found
               </span>
             )}
-          </motion.p>
+          </motion.div>
         </div>
 
         <div className="flex items-center gap-2 ml-4">
