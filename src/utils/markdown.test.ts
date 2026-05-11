@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { hasMarkdownSyntax, parseMarkdown } from './markdown'
+import { hasMarkdownSyntax, parseMarkdown, stripMarkdown } from './markdown'
 
 describe('Markdown Utils', () => {
   describe('hasMarkdownSyntax', () => {
@@ -139,31 +139,50 @@ This is **bold** and this is *italic*.
       const text = '<script>alert("XSS")</script>**safe text**'
       const result = parseMarkdown(text)
       expect(result).not.toContain('<script>')
-      expect(result).not.toContain('alert')
+      expect(
+        new DOMParser().parseFromString(result, 'text/html').querySelector('script'),
+      ).toBeNull()
       expect(result).toContain('safe text')
     })
 
-    it('should strip dangerous markdown link protocols', () => {
+    it('should not create links for dangerous markdown protocols', () => {
       const result = parseMarkdown('[bad](javascript:alert(1))')
 
-      expect(result).not.toContain('javascript:')
-      expect(result).not.toContain('href=')
+      const doc = new DOMParser().parseFromString(result, 'text/html')
+
+      expect(doc.querySelector('a')).toBeNull()
     })
 
-    it('should strip unsafe data URI markdown links', () => {
+    it('should not create links for unsafe data URI markdown protocols', () => {
       const result = parseMarkdown('[bad](data:text/html;base64,PHNjcmlwdD4=)')
 
-      expect(result).not.toContain('data:')
-      expect(result).not.toContain('href=')
+      const doc = new DOMParser().parseFromString(result, 'text/html')
+
+      expect(doc.querySelector('a')).toBeNull()
     })
 
-    it('should strip event handler attributes from raw HTML input', () => {
-      // noinspection HtmlDeprecatedAttribute,HtmlUnknownTarget
+    it('should not create elements from raw HTML with event handlers', () => {
       const result = parseMarkdown('<img src=x onerror=alert(1) alt="x">safe')
+      const doc = new DOMParser().parseFromString(result, 'text/html')
 
       expect(result).not.toContain('<img')
-      expect(result).not.toContain('onerror')
+      expect(doc.querySelector('img')).toBeNull()
+      expect(doc.querySelector('[onerror]')).toBeNull()
       expect(result).toContain('safe')
+    })
+
+    it('should preserve formatting when text mentions dangerous protocols', () => {
+      const result = parseMarkdown('Never use `javascript:` URLs with **markdown**')
+
+      expect(result).toContain('<code>javascript:</code>')
+      expect(result).toContain('<strong>markdown</strong>')
+    })
+
+    it('should preserve formatting for benign assignments', () => {
+      const result = parseMarkdown('one = **safe**')
+
+      expect(result).toContain('one = <strong>safe</strong>')
+      expect(stripMarkdown('one = **safe**')).toBe('one = safe')
     })
 
     it('should handle markdown-it linkify ReDoS input quickly', () => {

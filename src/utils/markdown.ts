@@ -72,21 +72,6 @@ const TEXT_ONLY_CONFIG: Config = {
   ALLOWED_ATTR: [],
 }
 
-const DANGEROUS_PATTERNS = [
-  /javascript:/i,
-  /data:(?!image\/)/i,
-  /vbscript:/i,
-  /<script\b/i,
-  /on\w+\s*=/i,
-]
-
-const DANGEROUS_TEXT_REPLACEMENTS = [
-  /javascript:/gi,
-  /data:(?!image\/)/gi,
-  /vbscript:/gi,
-  /on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi,
-]
-
 let purify: DOMPurify | null = null
 
 function getPurify(): DOMPurify {
@@ -114,6 +99,10 @@ function loadJSDOM(): JSDOMConstructor {
 }
 
 function getServerRequire(): JSDOMRequire {
+  if (typeof process.getBuiltinModule !== 'function') {
+    throw new Error('Node module loader is unavailable for server-side markdown sanitization')
+  }
+
   const moduleBuiltin = process.getBuiltinModule('module')
   if (!moduleBuiltin) {
     throw new Error('Node module loader is unavailable for server-side markdown sanitization')
@@ -122,29 +111,18 @@ function getServerRequire(): JSDOMRequire {
   return moduleBuiltin.createRequire(`${process.cwd()}/package.json`)
 }
 
-function containsDangerousInput(markdownText: string): boolean {
-  return DANGEROUS_PATTERNS.some((pattern) => pattern.test(markdownText))
-}
-
 function sanitizeHtml(html: string, config: Config = PURIFY_CONFIG): string {
   return getPurify().sanitize(html, config)
 }
 
 function sanitizePlainText(markdownText: string): string {
-  const textOnly = sanitizeHtml(markdownText, TEXT_ONLY_CONFIG)
-
-  return DANGEROUS_TEXT_REPLACEMENTS.reduce(
-    (cleanText, pattern) => cleanText.replace(pattern, ''),
-    textOnly,
-  )
+  return sanitizeHtml(markdownText, TEXT_ONLY_CONFIG)
 }
 
 export function parseMarkdown(markdownText: string): string {
   if (!markdownText) return ''
 
   try {
-    if (containsDangerousInput(markdownText)) return sanitizePlainText(markdownText)
-
     const html = md.render(markdownText)
 
     return sanitizeHtml(html)
@@ -176,10 +154,6 @@ export function stripMarkdown(markdownText: string): string {
   if (!markdownText) return ''
 
   try {
-    if (containsDangerousInput(markdownText)) {
-      return sanitizePlainText(markdownText).replace(/\s+/g, ' ').trim()
-    }
-
     const html = md.render(markdownText)
     const textOnly = sanitizeHtml(html, TEXT_ONLY_CONFIG)
 
@@ -212,7 +186,7 @@ export function validateMarkdown(markdownText: string): {
 
   dangerousPatterns.forEach((pattern) => {
     if (pattern.test(markdownText)) {
-      errors.push('Potentially dangerous content detected')
+      errors.push('Masterhacker detected.')
     }
   })
 
