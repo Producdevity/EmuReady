@@ -65,10 +65,9 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
       return
     }
 
-    // Validate markdown content
     const validationResult = validateMarkdown(content)
     if (!validationResult.isValid) {
-      toast.error(`Invalid content: ${validationResult.errors.join(', ')}`)
+      toast.error(`Invalid content: ${validationResult.errors[0]}`)
       return
     }
 

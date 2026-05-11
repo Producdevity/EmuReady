@@ -8,6 +8,19 @@ type JSDOMRequire = (moduleName: string) => { JSDOM: JSDOMConstructor }
 declare const __non_webpack_require__: JSDOMRequire
 
 const JSDOM_PACKAGE_NAME = 'js' + 'dom'
+const MARKDOWN_PARSE_ERROR = 'Invalid markdown syntax'
+
+type MarkdownValidationResult =
+  | {
+      isValid: true
+      cleanText: string
+      errors: []
+    }
+  | {
+      isValid: false
+      cleanText: string
+      errors: [typeof MARKDOWN_PARSE_ERROR]
+    }
 
 const md = new MarkdownIt({
   html: false,
@@ -16,6 +29,13 @@ const md = new MarkdownIt({
   linkify: true,
   typographer: false,
 })
+const defaultValidateLink = md.validateLink.bind(md)
+
+md.validateLink = function validateMarkdownLink(url: string) {
+  if (url.trim().toLowerCase().startsWith('data:')) return false
+
+  return defaultValidateLink(url)
+}
 
 md.renderer.rules.link_open = function linkOpen(tokens, idx, options, env, renderer) {
   const token = tokens[idx]
@@ -119,13 +139,15 @@ function sanitizePlainText(markdownText: string): string {
   return sanitizeHtml(markdownText, TEXT_ONLY_CONFIG)
 }
 
+function renderMarkdown(markdownText: string): string {
+  return sanitizeHtml(md.render(markdownText))
+}
+
 export function parseMarkdown(markdownText: string): string {
   if (!markdownText) return ''
 
   try {
-    const html = md.render(markdownText)
-
-    return sanitizeHtml(html)
+    return renderMarkdown(markdownText)
   } catch (error) {
     console.warn('Markdown parsing failed:', error)
     return sanitizePlainText(markdownText)
@@ -174,18 +196,17 @@ export function validateMarkdown(markdownText: string): {
   }
 
   try {
-    const cleanText = parseMarkdown(markdownText)
     return {
       isValid: true,
-      cleanText,
+      cleanText: renderMarkdown(markdownText),
       errors: [],
-    }
+    } satisfies MarkdownValidationResult
   } catch (error) {
     console.warn('Markdown validation failed:', error)
     return {
       isValid: false,
-      cleanText: markdownText,
-      errors: ['Invalid markdown syntax'],
-    }
+      cleanText: sanitizePlainText(markdownText),
+      errors: [MARKDOWN_PARSE_ERROR],
+    } satisfies MarkdownValidationResult
   }
 }

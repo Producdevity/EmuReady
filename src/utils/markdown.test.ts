@@ -161,6 +161,23 @@ This is **bold** and this is *italic*.
       expect(doc.querySelector('a')).toBeNull()
     })
 
+    it('should render safe markdown images', () => {
+      const result = parseMarkdown('![remote](https://example.com/x.png "Remote")')
+      const doc = new DOMParser().parseFromString(result, 'text/html')
+      const image = doc.querySelector('img')
+
+      expect(image?.getAttribute('src')).toBe('https://example.com/x.png')
+      expect(image?.getAttribute('alt')).toBe('remote')
+      expect(image?.getAttribute('title')).toBe('Remote')
+    })
+
+    it('should not render data URI image sources', () => {
+      const result = parseMarkdown('![bad](data:image/png;base64,AAAA)')
+      const doc = new DOMParser().parseFromString(result, 'text/html')
+
+      expect(doc.querySelector('img')).toBeNull()
+    })
+
     it('should not create elements from raw HTML with event handlers', () => {
       // noinspection HtmlUnknownTarget,HtmlDeprecatedAttribute
       const result = parseMarkdown('<img src=x onerror=alert(1) alt="x">safe')
