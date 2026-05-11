@@ -18,27 +18,24 @@ describe('isAllowedRequestOrigin', () => {
     expect(
       isAllowedRequestOrigin({
         allowedOrigins,
-        requestOrigin: 'http://localhost:3000',
         source: 'https://emuready.com/listings',
       }),
     ).toBe(true)
   })
 
-  it('allows same-origin browser requests when the origin is configured', () => {
+  it('allows request sources when their origin is configured', () => {
     expect(
       isAllowedRequestOrigin({
         allowedOrigins,
-        requestOrigin: 'https://emuready.com',
         source: 'https://emuready.com/listings/abc',
       }),
     ).toBe(true)
   })
 
-  it('rejects same-origin browser requests when the origin is not configured', () => {
+  it('rejects request sources when their origin is not configured', () => {
     expect(
       isAllowedRequestOrigin({
         allowedOrigins,
-        requestOrigin: 'https://preview.example',
         source: 'https://preview.example/listings/abc',
       }),
     ).toBe(false)
@@ -48,7 +45,6 @@ describe('isAllowedRequestOrigin', () => {
     expect(
       isAllowedRequestOrigin({
         allowedOrigins,
-        requestOrigin: 'https://emuready.com',
         source: 'https://attacker.example/listings',
       }),
     ).toBe(false)
@@ -58,7 +54,6 @@ describe('isAllowedRequestOrigin', () => {
     expect(
       isAllowedRequestOrigin({
         allowedOrigins,
-        requestOrigin: 'https://emuready.com',
         source: null,
       }),
     ).toBe(false)

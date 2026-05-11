@@ -92,16 +92,12 @@ function isValidOrigin(req: NextRequest): boolean {
   const allowedOrigins = getAllowedOrigins()
 
   // Allow requests from valid origins (exact match)
-  if (
-    isAllowedRequestOrigin({ allowedOrigins, requestOrigin: req.nextUrl.origin, source: origin })
-  ) {
+  if (isAllowedRequestOrigin({ allowedOrigins, source: origin })) {
     return true
   }
 
   // Allow requests with valid referer (exact match)
-  if (
-    isAllowedRequestOrigin({ allowedOrigins, requestOrigin: req.nextUrl.origin, source: referer })
-  ) {
+  if (isAllowedRequestOrigin({ allowedOrigins, source: referer })) {
     return true
   }
 
