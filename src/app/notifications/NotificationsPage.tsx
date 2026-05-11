@@ -1,11 +1,13 @@
 'use client'
 
+import { SignInButton, useUser } from '@clerk/nextjs'
 import { motion } from 'framer-motion'
 import { Bell, Filter, Trash2, Check, Settings, Search } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Pagination, LocalizedDate } from '@/components/ui'
 import { api } from '@/lib/api'
+import { logger } from '@/lib/logger'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -35,9 +37,56 @@ const CATEGORIES = [
   },
 ] as const
 
+function parseSelectedCategory(value: string): NotificationCategory | 'all' {
+  if (value === NotificationCategory.ENGAGEMENT) return NotificationCategory.ENGAGEMENT
+  if (value === NotificationCategory.CONTENT) return NotificationCategory.CONTENT
+  if (value === NotificationCategory.SYSTEM) return NotificationCategory.SYSTEM
+  if (value === NotificationCategory.MODERATION) return NotificationCategory.MODERATION
+  return 'all'
+}
+
+function NotificationsLoading() {
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4 animate-pulse" />
+          <p className="text-gray-600 dark:text-gray-400">Loading notifications...</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SignInRequired() {
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="flex items-center justify-center py-16">
+        <div className="text-center max-w-md">
+          <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Notifications</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2 mb-6">
+            Sign in to view and manage your notifications.
+          </p>
+          <SignInButton mode="modal">
+            <button
+              type="button"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            >
+              Sign in
+            </button>
+          </SignInButton>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function NotificationsPage() {
   const router = useRouter()
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const { isLoaded, isSignedIn } = useUser()
+  const isAuthenticated = isSignedIn === true
+  const [selectedCategory, setSelectedCategory] = useState<NotificationCategory | 'all'>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [selectedNotifications, setSelectedNotifications] = useState<Set<string>>(new Set())
@@ -46,14 +95,18 @@ function NotificationsPage() {
 
   const utils = api.useUtils()
 
-  const notificationsQuery = api.notifications.get.useQuery({
-    limit,
-    page,
-    category: selectedCategory === 'all' ? undefined : (selectedCategory as NotificationCategory),
-  })
+  const notificationsQuery = api.notifications.get.useQuery(
+    {
+      limit,
+      page,
+      category: selectedCategory === 'all' ? undefined : selectedCategory,
+    },
+    { enabled: isAuthenticated },
+  )
 
-  // Fetch stats
-  const statsQuery = api.notifications.getNotificationStats.useQuery()
+  const statsQuery = api.notifications.getNotificationStats.useQuery(undefined, {
+    enabled: isAuthenticated,
+  })
 
   // Mutations
   const markAsReadMutation = api.notifications.markAsRead.useMutation({
@@ -62,6 +115,7 @@ function NotificationsPage() {
       setSelectedNotifications(new Set())
     },
     onError: (error) => {
+      logger.error('[NotificationsPage]: Failed to mark as read', error)
       toast.error(`Failed to mark as read: ${getErrorMessage(error)}`)
     },
   })
@@ -73,6 +127,7 @@ function NotificationsPage() {
       toast.success('All notifications marked as read')
     },
     onError: (error) => {
+      logger.error('[NotificationsPage]: Failed to mark all as read', error)
       toast.error(`Failed to mark all as read: ${getErrorMessage(error)}`)
     },
   })
@@ -84,6 +139,7 @@ function NotificationsPage() {
       toast.success('Notifications deleted')
     },
     onError: (error) => {
+      logger.error('[NotificationsPage]: Failed to delete notification', error)
       toast.error(`Failed to delete notifications: ${getErrorMessage(error)}`)
     },
   })
@@ -154,6 +210,10 @@ function NotificationsPage() {
       notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       notification.message.toLowerCase().includes(searchTerm.toLowerCase()),
   )
+
+  if (!isLoaded) return <NotificationsLoading />
+
+  if (!isAuthenticated) return <SignInRequired />
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -233,7 +293,7 @@ function NotificationsPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => {
-                  setSelectedCategory(e.target.value)
+                  setSelectedCategory(parseSelectedCategory(e.target.value))
                   setPage(1)
                 }}
                 className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
