@@ -15,8 +15,10 @@ const PRODUCTION_ORIGINS = [
  * Partner sites that consume our API
  */
 const PARTNER_ORIGINS = [
-  'https://eden-emu.dev', // Eden website - shows EmuReady listings
-  'https://eden-emulator-github-io.vercel.app', // Eden staging website
+  'https://eden-emu.dev',
+  'https://eden-emulator-github-io.vercel.app',
+  'https://retrocatalog.com',
+  'https://steamuready.com',
 ]
 
 /**
@@ -66,6 +68,27 @@ export function getAllowedOrigins(): string[] {
   if (appUrl && !origins.includes(appUrl)) origins.push(appUrl)
 
   return origins
+}
+
+export function getOriginFromUrl(url: string): string | null {
+  try {
+    const parsedUrl = new URL(url)
+    return `${parsedUrl.protocol}//${parsedUrl.host}`
+  } catch {
+    return null
+  }
+}
+
+export function isAllowedRequestOrigin(params: {
+  allowedOrigins: string[]
+  source: string | null
+}): boolean {
+  if (!params.source) return false
+
+  const sourceOrigin = getOriginFromUrl(params.source)
+  if (!sourceOrigin) return params.allowedOrigins.includes(params.source)
+
+  return params.allowedOrigins.includes(sourceOrigin)
 }
 
 /**

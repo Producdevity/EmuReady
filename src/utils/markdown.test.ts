@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { hasMarkdownSyntax, parseMarkdown } from './markdown'
+import { hasMarkdownSyntax, parseMarkdown, stripMarkdown, validateMarkdown } from './markdown'
 
 describe('Markdown Utils', () => {
   describe('hasMarkdownSyntax', () => {
@@ -139,9 +139,104 @@ This is **bold** and this is *italic*.
       const text = '<script>alert("XSS")</script>**safe text**'
       const result = parseMarkdown(text)
       expect(result).not.toContain('<script>')
-      expect(result).not.toContain('alert')
-      // When dangerous content is detected, the text is returned sanitized but not parsed
+      expect(
+        new DOMParser().parseFromString(result, 'text/html').querySelector('script'),
+      ).toBeNull()
       expect(result).toContain('safe text')
+    })
+
+    it('should not create links for dangerous markdown protocols', () => {
+      const result = parseMarkdown('[bad](javascript:alert(1))')
+
+      const doc = new DOMParser().parseFromString(result, 'text/html')
+
+      expect(doc.querySelector('a')).toBeNull()
+    })
+
+    it('should not create links for unsafe data URI markdown protocols', () => {
+      const result = parseMarkdown('[bad](data:text/html;base64,PHNjcmlwdD4=)')
+
+      const doc = new DOMParser().parseFromString(result, 'text/html')
+
+      expect(doc.querySelector('a')).toBeNull()
+      expect(doc.querySelector('[href]')).toBeNull()
+    })
+
+    it('should render safe markdown images', () => {
+      const result = parseMarkdown('![remote](https://example.com/x.png "Remote")')
+      const doc = new DOMParser().parseFromString(result, 'text/html')
+      const image = doc.querySelector('img')
+
+      expect(image?.getAttribute('src')).toBe('https://example.com/x.png')
+      expect(image?.getAttribute('alt')).toBe('remote')
+      expect(image?.getAttribute('title')).toBe('Remote')
+    })
+
+    it('should not render data URI image sources', () => {
+      const result = parseMarkdown('![bad](data:image/png;base64,AAAA)')
+      const doc = new DOMParser().parseFromString(result, 'text/html')
+
+      expect(doc.querySelector('img')).toBeNull()
+    })
+
+    it('should not create elements from raw HTML with event handlers', () => {
+      // noinspection HtmlUnknownTarget,HtmlDeprecatedAttribute
+      const result = parseMarkdown('<img src=x onerror=alert(1) alt="x">safe')
+      const doc = new DOMParser().parseFromString(result, 'text/html')
+
+      expect(result).not.toContain('<img')
+      expect(doc.querySelector('img')).toBeNull()
+      expect(doc.querySelector('[onerror]')).toBeNull()
+      expect(result).toContain('safe')
+    })
+
+    it('should preserve formatting when text mentions dangerous protocols', () => {
+      const result = parseMarkdown('Never use `javascript:` URLs with **markdown**')
+
+      expect(result).toContain('<code>javascript:</code>')
+      expect(result).toContain('<strong>markdown</strong>')
+    })
+
+    it('should preserve formatting for benign assignments', () => {
+      const result = parseMarkdown('one = **safe**')
+
+      expect(result).toContain('one = <strong>safe</strong>')
+      expect(stripMarkdown('one = **safe**')).toBe('one = safe')
+    })
+
+    it('should handle markdown-it linkify ReDoS input quickly', () => {
+      const redosInput = `https://example.com/${'*'.repeat(30000)}!`
+      const start = performance.now()
+
+      const result = parseMarkdown(redosInput)
+      const duration = performance.now() - start
+
+      expect(typeof result).toBe('string')
+      expect(duration).toBeLessThan(3000)
+    }, 5000)
+  })
+
+  describe('validateMarkdown', () => {
+    it('should preserve valid markdown that describes unsafe protocols', () => {
+      const result = validateMarkdown('Never use `javascript:` URLs with **markdown**')
+
+      expect(result.isValid).toBe(true)
+      expect(result.errors).toEqual([])
+      expect(result.cleanText).toContain('<code>javascript:</code>')
+      expect(result.cleanText).toContain('<strong>markdown</strong>')
+    })
+
+    it('should return sanitized output without duplicate validation errors', () => {
+      const result = validateMarkdown(
+        '<script>alert("xss")</script><img src=x onerror=alert(1)>safe',
+      )
+      const doc = new DOMParser().parseFromString(result.cleanText, 'text/html')
+
+      expect(result.isValid).toBe(true)
+      expect(result.errors).toEqual([])
+      expect(doc.querySelector('script')).toBeNull()
+      expect(doc.querySelector('img')).toBeNull()
+      expect(result.cleanText).toContain('safe')
     })
   })
 })

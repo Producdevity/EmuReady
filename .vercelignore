@@ -29,6 +29,8 @@ tests/.auth/*.json
 # -------------------------------------
 backups/
 *.sql
+!prisma/sql/*.sql
+!prisma/sql/**/*.sql
 *.pgdump
 *.data.sql
 *.zip
