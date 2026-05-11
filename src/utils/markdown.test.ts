@@ -162,6 +162,7 @@ This is **bold** and this is *italic*.
     })
 
     it('should not create elements from raw HTML with event handlers', () => {
+      // noinspection HtmlUnknownTarget,HtmlDeprecatedAttribute
       const result = parseMarkdown('<img src=x onerror=alert(1) alt="x">safe')
       const doc = new DOMParser().parseFromString(result, 'text/html')
 
