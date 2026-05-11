@@ -88,15 +88,12 @@ function isValidOrigin(req: NextRequest): boolean {
   const origin = req.headers.get('origin')
   const referer = req.headers.get('referer')
 
-  // Get the centralized allowed origins
   const allowedOrigins = getAllowedOrigins()
 
-  // Allow requests from valid origins (exact match)
   if (isAllowedRequestOrigin({ allowedOrigins, source: origin })) {
     return true
   }
 
-  // Allow requests with valid referer (exact match)
   if (isAllowedRequestOrigin({ allowedOrigins, source: referer })) {
     return true
   }
