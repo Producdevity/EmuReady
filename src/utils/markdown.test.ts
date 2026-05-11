@@ -140,8 +140,40 @@ This is **bold** and this is *italic*.
       const result = parseMarkdown(text)
       expect(result).not.toContain('<script>')
       expect(result).not.toContain('alert')
-      // When dangerous content is detected, the text is returned sanitized but not parsed
       expect(result).toContain('safe text')
+    })
+
+    it('should strip dangerous markdown link protocols', () => {
+      const result = parseMarkdown('[bad](javascript:alert(1))')
+
+      expect(result).not.toContain('javascript:')
+      expect(result).not.toContain('href=')
+    })
+
+    it('should strip unsafe data URI markdown links', () => {
+      const result = parseMarkdown('[bad](data:text/html;base64,PHNjcmlwdD4=)')
+
+      expect(result).not.toContain('data:')
+      expect(result).not.toContain('href=')
+    })
+
+    it('should strip event handler attributes from raw HTML input', () => {
+      const result = parseMarkdown('<img src=x onerror=alert(1)>safe')
+
+      expect(result).not.toContain('<img')
+      expect(result).not.toContain('onerror')
+      expect(result).toContain('safe')
+    })
+
+    it('should handle markdown-it linkify ReDoS input quickly', () => {
+      const redosInput = `https://example.com/${'*'.repeat(30000)}!`
+      const start = Date.now()
+
+      const result = parseMarkdown(redosInput)
+      const duration = Date.now() - start
+
+      expect(typeof result).toBe('string')
+      expect(duration).toBeLessThan(1000)
     })
   })
 })

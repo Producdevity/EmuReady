@@ -68,6 +68,28 @@ export function getAllowedOrigins(): string[] {
   return origins
 }
 
+export function getOriginFromUrl(url: string): string | null {
+  try {
+    const parsedUrl = new URL(url)
+    return `${parsedUrl.protocol}//${parsedUrl.host}`
+  } catch {
+    return null
+  }
+}
+
+export function isAllowedRequestOrigin(params: {
+  allowedOrigins: string[]
+  requestOrigin: string
+  source: string | null
+}): boolean {
+  if (!params.source) return false
+
+  const sourceOrigin = getOriginFromUrl(params.source)
+  if (!sourceOrigin) return params.allowedOrigins.includes(params.source)
+
+  return params.allowedOrigins.includes(sourceOrigin)
+}
+
 /**
  * Get CORS headers for a request
  */

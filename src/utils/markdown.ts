@@ -1,24 +1,29 @@
-import DOMPurify from 'dompurify'
+import createDOMPurify, { type Config, type DOMPurify } from 'dompurify'
 import MarkdownIt from 'markdown-it'
+import type { JSDOM } from 'jsdom'
 
-// Configure markdown-it with safe settings
+type JSDOMConstructor = typeof JSDOM
+type JSDOMRequire = (moduleName: string) => { JSDOM: JSDOMConstructor }
+
+declare const __non_webpack_require__: JSDOMRequire
+
+const JSDOM_PACKAGE_NAME = 'js' + 'dom'
+
 const md = new MarkdownIt({
-  html: false, // Disable raw HTML
-  xhtmlOut: true, // Use XHTML-style tags
-  breaks: true, // Convert line breaks to <br>
-  linkify: true, // Auto-convert URLs to links
-  typographer: false, // Disable smart quotes for security
+  html: false,
+  xhtmlOut: true,
+  breaks: true,
+  linkify: true,
+  typographer: false,
 })
 
-// Configure link renderer to add target and rel attributes
-md.renderer.rules.link_open = (tokens, idx, options, env, renderer) => {
+md.renderer.rules.link_open = function linkOpen(tokens, idx, options, env, renderer) {
   const token = tokens[idx]
   token.attrSet('target', '_blank')
   token.attrSet('rel', 'noopener noreferrer')
   return renderer.renderToken(tokens, idx, options)
 }
 
-//  DOMPurify with safe settings for markdown
 const ALLOWED_TAGS = [
   'p',
   'br',
@@ -52,17 +57,9 @@ const ALLOWED_TAGS = [
   'td',
 ]
 
-const ALLOWED_ATTR = [
-  'href',
-  'title',
-  'alt',
-  'src',
-  'class', // For code highlighting
-  'target', // For opening links in new tab
-  'rel', // For security (noopener noreferrer)
-]
+const ALLOWED_ATTR = ['href', 'title', 'alt', 'src', 'class', 'target', 'rel']
 
-const PURIFY_CONFIG = {
+const PURIFY_CONFIG: Config = {
   ALLOWED_TAGS,
   ALLOWED_ATTR,
   ALLOW_DATA_ATTR: false,
@@ -70,135 +67,131 @@ const PURIFY_CONFIG = {
   FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover'],
 }
 
-/**
- * Simple sanitization for server-side or when DOMPurify is not available
- * @param html - The HTML string to sanitize
- * @returns The sanitized HTML string
- */
-function basicSanitize(html: string): string {
-  // Remove dangerous content but preserve safe HTML tags
-  return (
-    html
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
-      .replace(/javascript:/gi, '') // Remove javascript
-      .replace(/vbscript:/gi, '') // Remove vbscript
-      .replace(/data:(?!image\/)/gi, '') // Remove data URLs except images
-      .replace(/on\w+\s*=\s*[^>\s]+/gi, '') // Remove event handlers
-      // Remove dangerous tags but keep safe ones
-      .replace(/<(script|object|embed|form|input|iframe|link|meta|style)[^>]*>/gi, '')
-      .replace(/<\/(script|object|embed|form|input|iframe|link|meta|style)>/gi, '')
-  )
+const TEXT_ONLY_CONFIG: Config = {
+  ALLOWED_TAGS: [],
+  ALLOWED_ATTR: [],
 }
 
-// DOMPurify for client-side usage only
-const isClient = typeof window !== 'undefined'
-
-// needs to work in both environments
-let purify: typeof DOMPurify | { sanitize: (html: string, options?: unknown) => string }
-
-if (isClient) {
-  // Client-side - use standard DOMPurify
-  purify = DOMPurify
-} else {
-  // Server-side - use basic sanitization for now since JSDOM is being a little whiny bitch
-  // TODO: Fix this
-  purify = {
-    sanitize: (html: string) => basicSanitize(html),
-  }
-}
-
-// Security patterns to detect potentially dangerous content
 const DANGEROUS_PATTERNS = [
+  /javascript:/i,
+  /data:(?!image\/)/i,
+  /vbscript:/i,
+  /<script\b/i,
+  /on\w+\s*=/i,
+]
+
+const DANGEROUS_TEXT_REPLACEMENTS = [
   /javascript:/gi,
   /data:(?!image\/)/gi,
   /vbscript:/gi,
-  /<script\b/gi,
-  /on\w+\s*=/gi,
+  /on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi,
 ]
 
-/**
- * Parse Markdown text to HTML with security sanitization
- * @param markdownText - The Markdown text to parse
- * @returns Sanitized HTML string
- */
+let purify: DOMPurify | null = null
+
+function getPurify(): DOMPurify {
+  purify ??= createPurify()
+
+  return purify
+}
+
+function createPurify(): DOMPurify {
+  if (typeof window !== 'undefined') {
+    return createDOMPurify(window)
+  }
+
+  const JSDOM = loadJSDOM()
+
+  return createDOMPurify(new JSDOM('').window)
+}
+
+function loadJSDOM(): JSDOMConstructor {
+  if (typeof __non_webpack_require__ === 'function') {
+    return __non_webpack_require__(JSDOM_PACKAGE_NAME).JSDOM
+  }
+
+  return getServerRequire()(JSDOM_PACKAGE_NAME).JSDOM
+}
+
+function getServerRequire(): JSDOMRequire {
+  const moduleBuiltin = process.getBuiltinModule('module')
+  if (!moduleBuiltin) {
+    throw new Error('Node module loader is unavailable for server-side markdown sanitization')
+  }
+
+  const serverRequire: JSDOMRequire = moduleBuiltin.createRequire(`${process.cwd()}/package.json`)
+
+  return serverRequire
+}
+
+function containsDangerousInput(markdownText: string): boolean {
+  return DANGEROUS_PATTERNS.some((pattern) => pattern.test(markdownText))
+}
+
+function sanitizeHtml(html: string, config: Config = PURIFY_CONFIG): string {
+  return getPurify().sanitize(html, config)
+}
+
+function sanitizePlainText(markdownText: string): string {
+  const textOnly = sanitizeHtml(markdownText, TEXT_ONLY_CONFIG)
+
+  return DANGEROUS_TEXT_REPLACEMENTS.reduce(
+    (cleanText, pattern) => cleanText.replace(pattern, ''),
+    textOnly,
+  )
+}
+
 export function parseMarkdown(markdownText: string): string {
   if (!markdownText) return ''
 
   try {
-    // Check for dangerous patterns first
-    for (const pattern of DANGEROUS_PATTERNS) {
-      if (pattern.test(markdownText)) {
-        // Return plain text if dangerous content is detected
-        return basicSanitize(markdownText)
-      }
-    }
+    if (containsDangerousInput(markdownText)) return sanitizePlainText(markdownText)
 
-    // Parse markdown to HTML
     const html = md.render(markdownText)
 
-    // Sanitize the HTML using DOMPurify or basic sanitization
-    return isClient ? purify.sanitize(html, PURIFY_CONFIG) : purify.sanitize(html)
+    return sanitizeHtml(html)
   } catch (error) {
     console.warn('Markdown parsing failed:', error)
-    // Return escaped plain text as fallback
-    return isClient
-      ? purify.sanitize(markdownText, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
-      : purify.sanitize(markdownText)
+    return sanitizePlainText(markdownText)
   }
 }
 
-/**
- * Check if text contains Markdown syntax
- * @param text - Text to check
- * @returns true if text appears to contain markdown
- */
 export function hasMarkdownSyntax(text: string): boolean {
   if (!text) return false
 
-  // Common markdown patterns
   const markdownPatterns = [
-    /\*\*.*?\*\*/, // Bold
-    /\*.*?\*/, // Italic
-    /`.*?`/, // Inline code
-    /^#{1,6}\s/m, // Headers (multiline)
-    /^\s*[\-*+]\s/m, // Lists (multiline)
-    /^\s*\d+\.\s/m, // Numbered lists (multiline)
-    /\[.*?\]\(.*?\)/, // Links
-    /^>\s/m, // Blockquotes (multiline)
-    /```[\s\S]*?```/, // Code blocks
+    /\*\*.*?\*\*/,
+    /\*.*?\*/,
+    /`.*?`/,
+    /^#{1,6}\s/m,
+    /^\s*[\-*+]\s/m,
+    /^\s*\d+\.\s/m,
+    /\[.*?\]\(.*?\)/,
+    /^>\s/m,
+    /```[\s\S]*?```/,
   ]
 
   return markdownPatterns.some((pattern) => pattern.test(text))
 }
 
-/**
- * Strip Markdown syntax and return plain text
- * @param markdownText - Markdown text
- * @returns Plain text without Markdown syntax
- */
 export function stripMarkdown(markdownText: string): string {
   if (!markdownText) return ''
 
   try {
-    // Parse to HTML then strip all tags to get plain text
-    const html = md.render(markdownText)
-    const textOnly = isClient
-      ? purify.sanitize(html, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
-      : purify.sanitize(html)
+    if (containsDangerousInput(markdownText)) {
+      return sanitizePlainText(markdownText).replace(/\s+/g, ' ').trim()
+    }
 
-    // Clean up extra whitespace
+    const html = md.render(markdownText)
+    const textOnly = sanitizeHtml(html, TEXT_ONLY_CONFIG)
+
     return textOnly.replace(/\s+/g, ' ').trim()
   } catch (error) {
     console.warn('Stripping markdown failed:', error)
-    return markdownText
+    return sanitizePlainText(markdownText)
   }
 }
 
-/**
- * Validate markdown content for security
- * @param markdownText - Markdown text to validate
- * @returns Object with validation result and cleaned text
- */
 export function validateMarkdown(markdownText: string): {
   isValid: boolean
   cleanText: string
@@ -210,7 +203,6 @@ export function validateMarkdown(markdownText: string): {
     return { isValid: true, cleanText: '', errors: [] }
   }
 
-  // Check for potentially dangerous content
   const dangerousPatterns = [
     /javascript:/i,
     /data:.*base64/i,

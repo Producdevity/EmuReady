@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-import { getAllowedOrigins } from '@/lib/cors'
+import { getAllowedOrigins, isAllowedRequestOrigin } from '@/lib/cors'
 import { ms } from '@/utils/time'
 import type { NextRequest, NextFetchEvent } from 'next/server'
 
@@ -91,23 +91,19 @@ function isValidOrigin(req: NextRequest): boolean {
   // Get the centralized allowed origins
   const allowedOrigins = getAllowedOrigins()
 
-  // Helper function to check if a URL exactly matches an allowed origin
-  const isExactOriginMatch = (url: string): boolean => {
-    try {
-      const urlObj = new URL(url)
-      const baseUrl = `${urlObj.protocol}//${urlObj.host}`
-      return allowedOrigins.includes(baseUrl)
-    } catch {
-      // Invalid URL, check for exact string match
-      return allowedOrigins.includes(url)
-    }
+  // Allow requests from valid origins (exact match)
+  if (
+    isAllowedRequestOrigin({ allowedOrigins, requestOrigin: req.nextUrl.origin, source: origin })
+  ) {
+    return true
   }
 
-  // Allow requests from valid origins (exact match)
-  if (origin && isExactOriginMatch(origin)) return true
-
   // Allow requests with valid referer (exact match)
-  if (referer && isExactOriginMatch(referer)) return true
+  if (
+    isAllowedRequestOrigin({ allowedOrigins, requestOrigin: req.nextUrl.origin, source: referer })
+  ) {
+    return true
+  }
 
   // Allow requests with no origin/referer (server-side, mobile apps, etc.) but check for the API key
   if (!origin && !referer) {
