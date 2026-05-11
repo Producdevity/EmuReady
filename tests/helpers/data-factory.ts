@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { expect } from '@playwright/test'
-import { PrismaClient } from '@orm'
+import { ApprovalStatus, PcOs, PrismaClient } from '@orm'
 import { registerCookieConsent } from './cookie-consent'
 import { registerExternalServiceMocks } from './external-services'
 import type { Browser, Locator, Page } from '@playwright/test'
@@ -12,11 +12,18 @@ const PC_LISTING_GAME_SEARCH_TERM = 'Mario Kart 8 Deluxe'
 const PC_LISTING_EMULATOR_SEARCH_TERM = 'Ryujinx'
 const PC_LISTING_CPU_BRAND_NAME = 'E2E'
 const PC_LISTING_CPU_MODEL_PREFIX = 'E2E CPU'
+const REPORT_TARGET_AUTHOR_EMAIL = 'user@emuready.com'
+const REPORTER_EMAIL = 'author@emuready.com'
 
 interface PcListingCandidate {
   gameSearchTerm: string
   cpuSearchTerm: string
   gpuSearchTerm?: string
+}
+
+interface ListingFixture {
+  id: string
+  path: string
 }
 
 export async function selectAutocompleteOption(
@@ -265,12 +272,100 @@ export async function createPcListing(page: Page): Promise<string> {
 }
 
 function getListingIdFromDetailUrl(detailUrl: string): string {
-  const segments = new URL(detailUrl).pathname.split('/').filter(Boolean)
+  const segments = new URL(detailUrl, 'http://localhost:3000').pathname.split('/').filter(Boolean)
   const listingId = segments[segments.length - 1]
 
   if (!listingId) throw new Error(`Could not determine listing id from ${detailUrl}`)
 
   return listingId
+}
+
+async function getE2EUserId(prisma: PrismaClient, email: string): Promise<string> {
+  const user = await prisma.user.findUnique({ where: { email }, select: { id: true } })
+
+  if (!user) throw new Error(`Could not find E2E user: ${email}`)
+
+  return user.id
+}
+
+async function getFixtureListingDependencies(prisma: PrismaClient) {
+  const game = await prisma.game.findFirst({
+    where: { status: ApprovalStatus.APPROVED },
+    select: { id: true, systemId: true },
+  })
+  if (!game) throw new Error('Could not find approved game for report fixture')
+
+  const emulator = await prisma.emulator.findFirst({
+    where: { systems: { some: { id: game.systemId } } },
+    select: { id: true },
+  })
+  if (!emulator) throw new Error('Could not find emulator for report fixture')
+
+  const performance = await prisma.performanceScale.findFirst({ select: { id: true } })
+  if (!performance) throw new Error('Could not find performance scale for report fixture')
+
+  return { emulator, game, performance }
+}
+
+async function createApprovedHandheldListingFixture(authorEmail: string): Promise<ListingFixture> {
+  const prisma = new PrismaClient()
+
+  try {
+    const authorId = await getE2EUserId(prisma, authorEmail)
+    const { game, emulator, performance } = await getFixtureListingDependencies(prisma)
+    const device = await prisma.device.findFirst({ select: { id: true } })
+    if (!device) throw new Error('Could not find device for report fixture')
+
+    const listing = await prisma.listing.create({
+      data: {
+        authorId,
+        gameId: game.id,
+        emulatorId: emulator.id,
+        deviceId: device.id,
+        performanceId: performance.id,
+        status: ApprovalStatus.APPROVED,
+        processedAt: new Date(),
+        notes: `E2E report fixture ${randomUUID()}`,
+      },
+      select: { id: true },
+    })
+
+    return { id: listing.id, path: `/listings/${listing.id}` }
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
+async function createApprovedPcListingFixture(authorEmail: string): Promise<ListingFixture> {
+  const prisma = new PrismaClient()
+
+  try {
+    const authorId = await getE2EUserId(prisma, authorEmail)
+    const { game, emulator, performance } = await getFixtureListingDependencies(prisma)
+    const cpu = await prisma.cpu.findFirst({ select: { id: true } })
+    if (!cpu) throw new Error('Could not find CPU for report fixture')
+
+    const pcListing = await prisma.pcListing.create({
+      data: {
+        authorId,
+        gameId: game.id,
+        emulatorId: emulator.id,
+        cpuId: cpu.id,
+        memorySize: 16,
+        os: PcOs.WINDOWS,
+        osVersion: 'Windows 11',
+        performanceId: performance.id,
+        status: ApprovalStatus.APPROVED,
+        processedAt: new Date(),
+        notes: `E2E PC report fixture ${randomUUID()}`,
+      },
+      select: { id: true },
+    })
+
+    return { id: pcListing.id, path: `/pc-listings/${pcListing.id}` }
+  } finally {
+    await prisma.$disconnect()
+  }
 }
 
 async function confirmApprovalDialog(page: Page) {
@@ -351,88 +446,134 @@ export async function rejectPendingPcListingByUrl(page: Page, detailUrl: string)
   await rejectPendingListingRow(page, row)
 }
 
-export async function ensureApprovedPcListing(browser: Browser): Promise<string> {
-  const existing = await findFirstApprovedPcListing(browser)
-  if (existing) return existing
+async function findFirstApprovedPcListing(): Promise<string | null> {
+  const prisma = new PrismaClient()
 
-  let detailUrl = ''
+  try {
+    const pcListing = await prisma.pcListing.findFirst({
+      where: {
+        status: ApprovalStatus.APPROVED,
+        author: { email: { not: REPORT_TARGET_AUTHOR_EMAIL } },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true },
+    })
 
-  await withContext(browser, 'tests/.auth/user.json', async (page) => {
-    detailUrl = await createPcListing(page)
-  })
-
-  await withContext(browser, 'tests/.auth/super_admin.json', async (page) => {
-    await approvePendingPcListingByUrl(page, detailUrl)
-  })
-
-  return detailUrl
+    return pcListing ? `/pc-listings/${pcListing.id}` : null
+  } finally {
+    await prisma.$disconnect()
+  }
 }
 
-async function findFirstApprovedPcListing(browser: Browser): Promise<string | null> {
-  let detailUrl: string | null = null
+export async function ensureApprovedPcListing(): Promise<string> {
+  const existing = await findFirstApprovedPcListing()
+  if (existing) return existing
 
-  await withContext(browser, 'tests/.auth/user.json', async (page) => {
-    await page.goto('/pc-listings')
-    await page.waitForLoadState('domcontentloaded')
+  return (await createApprovedPcListingFixture(REPORTER_EMAIL)).path
+}
 
-    const firstLink = page.locator('tbody tr a[href*="/pc-listings/"]').first()
-    if (!(await firstLink.isVisible({ timeout: 2000 }).catch(() => false))) return
+async function submitReportDialog(page: Page, description: string): Promise<Locator> {
+  const dialog = page.locator('[role="dialog"]')
+  await expect(dialog).toBeVisible()
 
-    const href = await firstLink.getAttribute('href')
-    if (href) detailUrl = new URL(href, page.url()).href
-  })
+  const reasonSelect = dialog.locator('select')
+  await expect(reasonSelect).toBeVisible()
+  await reasonSelect.selectOption({ index: 1 })
 
-  return detailUrl
+  const textarea = dialog.locator('textarea')
+  await expect(textarea).toBeVisible()
+  await textarea.fill(description)
+
+  const submitBtn = dialog.getByRole('button', { name: /submit report/i })
+  await submitBtn.click()
+
+  return dialog
+}
+
+async function openReportDialog(page: Page, listingPath: string): Promise<void> {
+  await page.goto(listingPath)
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+
+  const reportButton = page.getByRole('button', { name: /^report$/i })
+  await expect(reportButton).toBeVisible()
+  await reportButton.click()
 }
 
 export async function createReport(page: Page): Promise<void> {
-  await page.goto('/listings')
+  const target = await createApprovedHandheldListingFixture(REPORT_TARGET_AUTHOR_EMAIL)
 
-  const rows = page.locator('table tbody tr')
-  await expect(rows.first()).toBeVisible()
+  await openReportDialog(page, target.path)
 
-  const rowCount = await rows.count()
-  const maxAttempts = Math.min(rowCount, 15)
+  const dialog = await submitReportDialog(page, 'E2E test report for admin-reports testing')
+  await expect(dialog).toBeHidden()
+}
 
-  for (let i = 0; i < maxAttempts; i++) {
-    await page.goto('/listings')
-    await expect(rows.first()).toBeVisible()
+export async function createPcReport(page: Page): Promise<void> {
+  const target = await createApprovedPcListingFixture(REPORT_TARGET_AUTHOR_EMAIL)
 
-    const link = rows.nth(i).locator('a[href*="/listings/"]').first()
-    await link.click()
-    await expect(page).toHaveURL(/\/listings\/[^/]+$/)
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  await openReportDialog(page, target.path)
 
-    const reportButton = page.getByRole('button', { name: /^report$/i })
-    if ((await reportButton.count()) === 0) continue
-    await reportButton.click()
+  const dialog = await submitReportDialog(page, 'E2E test PC report for admin-reports testing')
+  await expect(dialog).toBeHidden()
+}
 
-    const dialog = page.locator('[role="dialog"]')
-    await expect(dialog).toBeVisible()
+async function expectNoHandheldReportCreated(fixture: ListingFixture): Promise<void> {
+  const prisma = new PrismaClient()
 
-    const reasonSelect = dialog.locator('select')
-    await expect(reasonSelect).toBeVisible()
-    await reasonSelect.selectOption({ index: 1 })
+  try {
+    const reporterId = await getE2EUserId(prisma, REPORTER_EMAIL)
+    const reportCount = await prisma.listingReport.count({
+      where: { listingId: fixture.id, reportedById: reporterId },
+    })
 
-    const textarea = dialog.locator('textarea')
-    await expect(textarea).toBeVisible()
-    await textarea.fill('E2E test report for admin-reports testing')
+    expect(reportCount).toBe(0)
+  } finally {
+    await prisma.$disconnect()
+  }
+}
 
-    const submitBtn = dialog.getByRole('button', { name: /submit report/i })
-    await submitBtn.click()
+async function expectNoPcReportCreated(fixture: ListingFixture): Promise<void> {
+  const prisma = new PrismaClient()
 
-    const reportOutcome = await Promise.race([
-      dialog.waitFor({ state: 'hidden' }).then(() => 'success' as const),
-      dialog
-        .getByText(/already reported/i)
-        .waitFor({ state: 'visible' })
-        .then(() => 'already-exists' as const),
-    ])
+  try {
+    const reporterId = await getE2EUserId(prisma, REPORTER_EMAIL)
+    const reportCount = await prisma.pcListingReport.count({
+      where: { pcListingId: fixture.id, reportedById: reporterId },
+    })
 
-    if (reportOutcome === 'success' || reportOutcome === 'already-exists') return
+    expect(reportCount).toBe(0)
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
+async function expectOwnReportBlocked(page: Page, fixture: ListingFixture): Promise<void> {
+  await page.goto(fixture.path)
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+
+  const reportButton = page.getByRole('button', { name: /^report$/i })
+  if ((await reportButton.count()) === 0) {
+    await expect(reportButton).toHaveCount(0)
+    return
   }
 
-  throw new Error(`createReport: could not find a listing to report after ${maxAttempts} attempts`)
+  await reportButton.click()
+  const dialog = await submitReportDialog(page, 'E2E own-listing report rejection check')
+  await expect(dialog.getByText(/cannot report your own listing/i)).toBeVisible()
+}
+
+export async function expectOwnHandheldReportBlocked(page: Page): Promise<void> {
+  const target = await createApprovedHandheldListingFixture(REPORTER_EMAIL)
+
+  await expectOwnReportBlocked(page, target)
+  await expectNoHandheldReportCreated(target)
+}
+
+export async function expectOwnPcReportBlocked(page: Page): Promise<void> {
+  const target = await createApprovedPcListingFixture(REPORTER_EMAIL)
+
+  await expectOwnReportBlocked(page, target)
+  await expectNoPcReportCreated(target)
 }
 
 export async function withContext(

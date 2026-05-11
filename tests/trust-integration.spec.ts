@@ -106,7 +106,7 @@ test.describe('Trust Effects E2E — Self-Contained', () => {
   })
 
   test('voting on a PC listing records UPVOTE trust action', async ({ browser }) => {
-    const pcListingUrl = await ensureApprovedPcListing(browser)
+    const pcListingUrl = await ensureApprovedPcListing()
 
     await withContext(browser, 'tests/.auth/user.json', async (page) => {
       await page.goto(pcListingUrl)
