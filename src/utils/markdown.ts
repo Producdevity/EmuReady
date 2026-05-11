@@ -7,8 +7,16 @@ type JSDOMRequire = (moduleName: string) => { JSDOM: JSDOMConstructor }
 
 declare const __non_webpack_require__: JSDOMRequire
 
+// Runtime-only package name prevents client bundlers from statically including jsdom.
 const JSDOM_PACKAGE_NAME = 'js' + 'dom'
 const MARKDOWN_PARSE_ERROR = 'Invalid markdown syntax'
+const HTML_ESCAPE_ENTITIES: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+}
 
 type MarkdownValidationResult =
   | {
@@ -135,8 +143,15 @@ function sanitizeHtml(html: string, config: Config = PURIFY_CONFIG): string {
   return getPurify().sanitize(html, config)
 }
 
-function sanitizePlainText(markdownText: string): string {
-  return sanitizeHtml(markdownText, TEXT_ONLY_CONFIG)
+function escapeHtml(markdownText: string): string {
+  return markdownText.replace(
+    /[&<>"']/g,
+    (character) => HTML_ESCAPE_ENTITIES[character] ?? character,
+  )
+}
+
+function escapePlainText(markdownText: string): string {
+  return escapeHtml(markdownText).replace(/\s+/g, ' ').trim()
 }
 
 function renderMarkdown(markdownText: string): string {
@@ -150,7 +165,7 @@ export function parseMarkdown(markdownText: string): string {
     return renderMarkdown(markdownText)
   } catch (error) {
     console.warn('Markdown parsing failed:', error)
-    return sanitizePlainText(markdownText)
+    return escapeHtml(markdownText)
   }
 }
 
@@ -182,7 +197,7 @@ export function stripMarkdown(markdownText: string): string {
     return textOnly.replace(/\s+/g, ' ').trim()
   } catch (error) {
     console.warn('Stripping markdown failed:', error)
-    return sanitizePlainText(markdownText)
+    return escapePlainText(markdownText)
   }
 }
 
@@ -205,7 +220,7 @@ export function validateMarkdown(markdownText: string): {
     console.warn('Markdown validation failed:', error)
     return {
       isValid: false,
-      cleanText: sanitizePlainText(markdownText),
+      cleanText: escapeHtml(markdownText),
       errors: [MARKDOWN_PARSE_ERROR],
     } satisfies MarkdownValidationResult
   }

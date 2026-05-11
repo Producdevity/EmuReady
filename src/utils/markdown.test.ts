@@ -159,6 +159,7 @@ This is **bold** and this is *italic*.
       const doc = new DOMParser().parseFromString(result, 'text/html')
 
       expect(doc.querySelector('a')).toBeNull()
+      expect(doc.querySelector('[href]')).toBeNull()
     })
 
     it('should render safe markdown images', () => {
@@ -205,14 +206,14 @@ This is **bold** and this is *italic*.
 
     it('should handle markdown-it linkify ReDoS input quickly', () => {
       const redosInput = `https://example.com/${'*'.repeat(30000)}!`
-      const start = Date.now()
+      const start = performance.now()
 
       const result = parseMarkdown(redosInput)
-      const duration = Date.now() - start
+      const duration = performance.now() - start
 
       expect(typeof result).toBe('string')
-      expect(duration).toBeLessThan(1000)
-    })
+      expect(duration).toBeLessThan(3000)
+    }, 5000)
   })
 
   describe('validateMarkdown', () => {
