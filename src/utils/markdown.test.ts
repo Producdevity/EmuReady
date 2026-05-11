@@ -158,7 +158,8 @@ This is **bold** and this is *italic*.
     })
 
     it('should strip event handler attributes from raw HTML input', () => {
-      const result = parseMarkdown('<img src=x onerror=alert(1)>safe')
+      // noinspection HtmlDeprecatedAttribute,HtmlUnknownTarget
+      const result = parseMarkdown('<img src=x onerror=alert(1) alt="x">safe')
 
       expect(result).not.toContain('<img')
       expect(result).not.toContain('onerror')

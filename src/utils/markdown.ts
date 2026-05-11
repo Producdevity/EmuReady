@@ -119,9 +119,7 @@ function getServerRequire(): JSDOMRequire {
     throw new Error('Node module loader is unavailable for server-side markdown sanitization')
   }
 
-  const serverRequire: JSDOMRequire = moduleBuiltin.createRequire(`${process.cwd()}/package.json`)
-
-  return serverRequire
+  return moduleBuiltin.createRequire(`${process.cwd()}/package.json`)
 }
 
 function containsDangerousInput(markdownText: string): boolean {
@@ -166,7 +164,7 @@ export function hasMarkdownSyntax(text: string): boolean {
     /^#{1,6}\s/m,
     /^\s*[\-*+]\s/m,
     /^\s*\d+\.\s/m,
-    /\[.*?\]\(.*?\)/,
+    /\[.*?]\(.*?\)/,
     /^>\s/m,
     /```[\s\S]*?```/,
   ]
