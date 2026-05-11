@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { hasMarkdownSyntax, parseMarkdown, stripMarkdown } from './markdown'
+import { hasMarkdownSyntax, parseMarkdown, stripMarkdown, validateMarkdown } from './markdown'
 
 describe('Markdown Utils', () => {
   describe('hasMarkdownSyntax', () => {
@@ -195,6 +195,30 @@ This is **bold** and this is *italic*.
 
       expect(typeof result).toBe('string')
       expect(duration).toBeLessThan(1000)
+    })
+  })
+
+  describe('validateMarkdown', () => {
+    it('should preserve valid markdown that describes unsafe protocols', () => {
+      const result = validateMarkdown('Never use `javascript:` URLs with **markdown**')
+
+      expect(result.isValid).toBe(true)
+      expect(result.errors).toEqual([])
+      expect(result.cleanText).toContain('<code>javascript:</code>')
+      expect(result.cleanText).toContain('<strong>markdown</strong>')
+    })
+
+    it('should return sanitized output without duplicate validation errors', () => {
+      const result = validateMarkdown(
+        '<script>alert("xss")</script><img src=x onerror=alert(1)>safe',
+      )
+      const doc = new DOMParser().parseFromString(result.cleanText, 'text/html')
+
+      expect(result.isValid).toBe(true)
+      expect(result.errors).toEqual([])
+      expect(doc.querySelector('script')).toBeNull()
+      expect(doc.querySelector('img')).toBeNull()
+      expect(result.cleanText).toContain('safe')
     })
   })
 })

@@ -169,41 +169,23 @@ export function validateMarkdown(markdownText: string): {
   cleanText: string
   errors: string[]
 } {
-  const errors: string[] = []
-
   if (!markdownText) {
     return { isValid: true, cleanText: '', errors: [] }
   }
 
-  const dangerousPatterns = [
-    /javascript:/i,
-    /data:.*base64/i,
-    /vbscript:/i,
-    /<script/i,
-    /onload=/i,
-    /onerror=/i,
-  ]
-
-  dangerousPatterns.forEach((pattern) => {
-    if (pattern.test(markdownText)) {
-      errors.push('Masterhacker detected.')
-    }
-  })
-
   try {
     const cleanText = parseMarkdown(markdownText)
     return {
-      isValid: errors.length === 0,
+      isValid: true,
       cleanText,
-      errors,
+      errors: [],
     }
   } catch (error) {
     console.warn('Markdown validation failed:', error)
-    errors.push('Invalid markdown syntax')
     return {
       isValid: false,
       cleanText: markdownText,
-      errors,
+      errors: ['Invalid markdown syntax'],
     }
   }
 }
