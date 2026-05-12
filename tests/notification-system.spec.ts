@@ -2,10 +2,11 @@ import { test, expect } from './fixtures'
 import type { Page } from '@playwright/test'
 
 function bellButton(page: Page) {
-  return page
-    .locator('button')
-    .filter({ has: page.locator('svg.lucide-bell, svg[class*="bell"]') })
-    .first()
+  return page.getByRole('button', { name: /open notifications/i })
+}
+
+function notificationDropdown(page: Page) {
+  return page.getByRole('region', { name: /^Notifications$/ })
 }
 
 test.describe('Notification System', () => {
@@ -25,7 +26,7 @@ test.describe('Notification System', () => {
 
       await bellButton(page).click()
 
-      await expect(page.getByText('Notifications').first()).toBeVisible()
+      await expect(notificationDropdown(page)).toBeVisible()
     })
 
     test('should show close button in dropdown', async ({ page }) => {
@@ -34,7 +35,9 @@ test.describe('Notification System', () => {
 
       await bellButton(page).click()
 
-      const closeButton = page.getByRole('button', { name: /close notifications/i })
+      const closeButton = notificationDropdown(page).getByRole('button', {
+        name: /close notifications/i,
+      })
       await expect(closeButton).toBeVisible()
       await closeButton.click()
     })
@@ -45,10 +48,9 @@ test.describe('Notification System', () => {
 
       await bellButton(page).click()
 
-      const emptyState = page.getByText(/no notifications yet/i)
-      const notificationItems = page
-        .locator('[class*="hover:bg-gray"]')
-        .filter({ has: page.locator('[class*="font-medium"]') })
+      const dropdown = notificationDropdown(page)
+      const emptyState = dropdown.getByTestId('notification-empty-state')
+      const notificationItems = dropdown.getByTestId('notification-item')
 
       await expect(emptyState.or(notificationItems.first())).toBeVisible()
     })
@@ -90,10 +92,7 @@ test.describe('Notification System', () => {
       await page.goto('/')
       await page.waitForLoadState('domcontentloaded')
 
-      const bell = page
-        .locator('button')
-        .filter({ has: page.locator('svg.lucide-bell, svg[class*="bell"]') })
-      await expect(bell).toHaveCount(0)
+      await expect(bellButton(page)).toHaveCount(0)
     })
   })
 })
