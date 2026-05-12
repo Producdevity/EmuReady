@@ -13,7 +13,7 @@ function addComponent(componentName: string): void {
   try {
     // Run the shadcn command
     console.log(`💾 Adding component: ${componentName}`)
-    execSync(`npx shadcn@latest add ${componentName}`, { stdio: 'inherit' })
+    execSync(`pnpm dlx shadcn@latest add ${componentName}`, { stdio: 'inherit' })
 
     // Rename the generated file
     // Update uiDir based on your project structure

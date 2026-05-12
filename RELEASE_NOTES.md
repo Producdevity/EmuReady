@@ -134,7 +134,7 @@
 **For Developers:**
 
 - Repository pattern provides cleaner data access - use repositories instead of direct Prisma calls
-- Run `npm run check` after all changes - zero warnings/errors tolerance
+- Run `pnpm check` after all changes - zero warnings/errors tolerance
 - Use `PAGINATION.DEFAULT_LIMIT` constant instead of magic number 20
 - New test suites require proper authentication setup
 
@@ -503,8 +503,8 @@ _This release represents EmuReady's evolution into a comprehensive compatibility
 
 **🔧 Developer Tools**
 
-- **CLI Documentation Generator**: `npm run docs:generate` creates up-to-date API docs
-- **Watch Mode**: `npm run docs:watch` automatically regenerates docs when router files change
+- **CLI Documentation Generator**: `pnpm docs:generate` creates up-to-date API docs
+- **Watch Mode**: `pnpm docs:watch` automatically regenerates docs when router files change
 - **Static File Generation**: OpenAPI spec available at `/api/docs/api/openapi.json`
 
 ## 🐳 Docker Development Environment
@@ -522,7 +522,7 @@ _This release represents EmuReady's evolution into a comprehensive compatibility
 - **Test Users**: Pre-seeded accounts for all user roles (admin, author, user)
 - **Persistent Data**: Database changes survive container restarts
 - **Environment Management**: Automatic `.env.docker` configuration
-- **Command Integration**: Run any npm script inside containers with ease
+- **Command Integration**: Run any package script inside containers with ease
 
 ## 🖼️ Enhanced Image Handling
 

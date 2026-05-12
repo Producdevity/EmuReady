@@ -333,8 +333,8 @@ emulation compatibility data.
 <details open>
 <summary><strong>📋 Prerequisites</strong></summary>
 
-- **Node.js** 22+ ([Download](https://nodejs.org/))
-- **npm** 11+ (comes with Node.js)
+- **Node.js** 22.17.0+ ([Download](https://nodejs.org/))
+- **pnpm** 11.1.0 (pinned in `package.json`; enable with `corepack enable pnpm`)
 - **PostgreSQL** 14+ ([Download](https://www.postgresql.org/download/) or use [Docker](https://hub.docker.com/_/postgres))
 - **Git** ([Download](https://git-scm.com/))
 
@@ -344,7 +344,7 @@ emulation compatibility data.
 <summary><strong>⚡ One-Line Setup</strong></summary>
 
 ```bash
-git clone https://github.com/Producdevity/emuready.git && cd emuready && npm install && cp .env.example .env
+corepack enable pnpm && git clone https://github.com/Producdevity/emuready.git && cd emuready && pnpm install && cp .env.example .env
 ```
 
 </details>
@@ -362,7 +362,8 @@ cd emuready
 ### 2. **Install dependencies**
 
 ```bash
-npm install
+corepack enable pnpm
+pnpm install
 ```
 
 ### 3. **Set up environment variables**
@@ -391,18 +392,18 @@ THE_GAMES_DB_API_KEY="your_thegamesdb_api_key"
 ### 4. **Set up the database**
 
 ```bash
-npx prisma generate
-npm run db:migrate:dev  # For development with migrations
+pnpm exec prisma generate
+pnpm db:migrate:dev  # For development with migrations
 # OR
-npm run db:push         # For quick schema sync without migrations
+pnpm db:push         # For quick schema sync without migrations
 
-npm run db:seed         # Optional: Seed with sample data
+pnpm db:seed         # Optional: Seed with sample data
 ```
 
 ### 5. **Run the development server**
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 ### 6. **Open [http://localhost:3000](http://localhost:3000)**
@@ -413,45 +414,45 @@ npm run dev
 
 ### **Development**
 
-- `npm run dev` - Start development server with Turbopack
-- `npm run dev:strict` - Start with React strict mode enabled
-- `npm run build` - Build for production
-- `npm run start` - Start production server
+- `pnpm dev` - Start development server with Turbopack
+- `pnpm dev:debug` - Start the development server with Next.js debug logging
+- `pnpm build` - Build for production
+- `pnpm start` - Start production server
 
 ### **Code Quality**
 
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Fix linting issues automatically
-- `npm run format` - Format code with Prettier
-- `npm run types` - Check TypeScript types
-- `npm run check` - Run lint and typecheck together
-- `npm run prepare-deploy` - Full deployment prep (format, lint, typecheck, test, build)
+- `pnpm lint` - Run ESLint
+- `pnpm lint:fix` - Fix linting issues automatically
+- `pnpm format` - Format code with Prettier
+- `pnpm types` - Check TypeScript types
+- `pnpm check` - Run lint and typecheck together
+- `pnpm prepare-deploy` - Full deployment prep (format, lint, typecheck, test, build)
 
 ### **Testing**
 
-- `npm run test` - Run unit tests with Vitest
-- `npm run test:watch` - Run tests in watch mode
-- `npm run test:ci` - Run tests for CI
-- `npm run test:e2e` - Run Playwright end-to-end tests (in progress)
+- `pnpm test` - Run unit tests with Vitest
+- `pnpm test:watch` - Run tests in watch mode
+- `pnpm test:ci` - Run tests for CI
+- `pnpm test:e2e` - Run Playwright end-to-end tests (in progress)
 
 ### **Database (Prisma)**
 
-- `npx prisma generate` - Generate Prisma client
-- `npx prisma db push` - Push schema changes to database
-- `npx prisma db seed` - Seed database with sample data
-- `npx prisma studio` - Open Prisma Studio GUI
-- `npx prisma migrate dev` - Create and apply migration
-- `npx prisma migrate deploy` - Apply migrations in production
+- `pnpm exec prisma generate` - Generate Prisma client
+- `pnpm exec prisma db push` - Push schema changes to database
+- `pnpm exec prisma db seed` - Seed database with sample data
+- `pnpm exec prisma studio` - Open Prisma Studio GUI
+- `pnpm exec prisma migrate dev` - Create and apply migration
+- `pnpm exec prisma migrate deploy` - Apply migrations in production
 
 ### **Bundle Analysis**
 
-- `npm run analyze` - Analyze bundle size
-- `npm run clean` - Clean build cache
+- `pnpm analyze` - Analyze bundle size
+- `pnpm clean` - Clean build cache
 
 ### **API Documentation**
 
-- `npm run docs:generate` - Generate OpenAPI documentation for mobile endpoints
-- `npm run docs:watch` - Watch mobile router files and regenerate docs on changes
+- `pnpm docs:generate` - Generate OpenAPI documentation for mobile endpoints
+- `pnpm docs:watch` - Watch mobile router files and regenerate docs on changes
 
 ## Development Tools & Guidelines
 

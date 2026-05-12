@@ -8,7 +8,8 @@ on:
       - "tests/**"
       - "playwright.config.ts"
       - "package.json"
-      - "package-lock.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
 
 jobs:
   e2e-tests:
@@ -55,11 +56,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22.16.0
-          cache: npm
+          node-version-file: .nvmrc
+          cache: pnpm
 
       - name: Install system dependencies for Sharp
         run: |
@@ -67,25 +71,25 @@ jobs:
           sudo apt-get install -y libvips-dev
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma client
-        run: npx prisma generate
+        run: pnpm exec prisma generate
 
       - name: Run database migrations
-        run: npx prisma migrate deploy
+        run: pnpm exec prisma migrate deploy
 
       - name: Seed test database
-        run: npx prisma db seed
+        run: pnpm exec prisma db seed
 
       - name: Build application
-        run: npm run build
+        run: pnpm build
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: pnpm exec playwright install --with-deps
 
       - name: Run E2E tests
-        run: npm run test:e2e:ci
+        run: pnpm test:e2e:ci
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

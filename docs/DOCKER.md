@@ -137,7 +137,7 @@ Once Docker is running, access your application at:
 
 ## Viewing Logs
 
-To see real-time application logs (equivalent to `npm run dev` terminal output):
+To see real-time application logs (equivalent to `pnpm dev` terminal output):
 
 ```bash
 ./scripts/docker-dev.sh logs        # All application logs
@@ -153,29 +153,29 @@ To see real-time application logs (equivalent to `npm run dev` terminal output):
 docker exec -it emuready-app sh
 
 # Now you can run any command:
-npm install leftpad
-npm run test
-npm run types
-npm run lint
-npx playwright test
+pnpm add leftpad
+pnpm test
+pnpm types
+pnpm lint
+pnpm exec playwright test
 ```
 
 ### Or by executing them directly
 ```bash
 # Run tests
-docker exec emuready-app npm run test
+docker exec emuready-app pnpm test
 
 # Install a new package
-docker exec emuready-app npm install package-name
+docker exec emuready-app pnpm add package-name
 
 # Run TypeScript checks
-docker exec emuready-app npm run types
+docker exec emuready-app pnpm types
 
 # Run linting
-docker exec emuready-app npm run lint
+docker exec emuready-app pnpm lint
 
 # Run Playwright tests
-docker exec emuready-app npx playwright test
+docker exec emuready-app pnpm exec playwright test
 ```
 
 ## Development Commands
@@ -190,7 +190,7 @@ The `./scripts/docker-dev.sh` script provides several useful commands:
 # Restart just the Next.js app (keep database running)
 ./scripts/docker-dev.sh restart
 
-# Rebuild app container (installs new npm packages, skips database seeding)
+# Rebuild app container (installs new packages, skips database seeding)
 ./scripts/docker-dev.sh rebuild
 
 # Start with webhook support
@@ -365,7 +365,7 @@ You can use both Docker and manual setup on the same project:
 ./scripts/docker-dev.sh stop
 
 # Start manual setup
-npm run dev
+pnpm dev
 ```
 
 The setups use different databases and won't conflict.
@@ -395,7 +395,7 @@ When contributing:
 - **Hot reload works**: No need to restart containers when editing code
 - **Prisma Studio**: Access your database visually at http://localhost:5555 (starts automatically)
 - **Smart seeding**: Only runs once on first setup, use `reseed` command to reseed manually
-- **New packages**: Use `./scripts/docker-dev.sh rebuild` after adding npm packages to install them without reseeding
+- **New packages**: Use `./scripts/docker-dev.sh rebuild` after adding packages to install them without reseeding
 
 ## Need Help?
 
@@ -423,7 +423,7 @@ Different situations require different restart approaches:
 ```bash
 ./scripts/docker-dev.sh rebuild
 ```
-**Use when:** You've added new npm packages or changed dependencies  
+**Use when:** You've added new packages or changed dependencies
 **What it does:** Rebuilds the app container, installs new packages, skips database seeding  
 **Speed:** ~30-60 seconds  
 **Database:** Preserves existing data and seeding state  

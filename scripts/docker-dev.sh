@@ -96,10 +96,10 @@ restart() {
     print_status "App available at: http://localhost:3000"
 }
 
-# Rebuild app container (for new npm packages)
+# Rebuild app container after package changes
 rebuild() {
     print_status "Rebuilding Next.js app with new packages..."
-    print_status "This will install new npm packages but skip database seeding"
+    print_status "This will install new packages but skip database seeding"
     docker compose up --build -d app
     print_success "App rebuilt and started"
     print_status "App available at: http://localhost:3000"
@@ -131,14 +131,14 @@ logs() {
 # Run database migrations
 migrate() {
     print_status "Running database migrations..."
-    docker compose exec app npx prisma migrate dev
+    docker compose exec app pnpm exec prisma migrate dev
     print_success "Migrations completed"
 }
 
 # Seed the database
 seed() {
     print_status "Seeding database..."
-    docker compose exec app npx prisma db seed
+    docker compose exec app pnpm exec prisma db seed
     print_success "Database seeded"
 }
 
@@ -146,7 +146,7 @@ seed() {
 reseed() {
     print_status "Removing seed flag and reseeding database..."
     docker compose exec app rm -f .setup/seeded
-    docker compose exec app npx prisma db seed
+    docker compose exec app pnpm exec prisma db seed
     docker compose exec app touch .setup/seeded
     print_success "Database reseeded"
 }
@@ -158,7 +158,7 @@ reset_db() {
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         print_status "Resetting database..."
-        docker compose exec app npx prisma migrate reset --force
+        docker compose exec app pnpm exec prisma migrate reset --force
         docker compose exec app rm -f .setup/seeded
         print_success "Database reset"
     else
@@ -195,7 +195,7 @@ show_help() {
     echo "  start       Start development environment (default)"
     echo "  webhooks    Start with webhook support (cloudflared tunnel)"
     echo "  restart     Restart just the Next.js app (keep DB running)"
-    echo "  rebuild     Rebuild app container (for new npm packages)"
+    echo "  rebuild     Rebuild app container after package changes"
     echo "  stop        Stop all services"
     echo "  clean       Stop and remove everything (including data)"
     echo "  status      Show service status and URLs"

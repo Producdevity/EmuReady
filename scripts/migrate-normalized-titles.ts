@@ -6,11 +6,11 @@
  * It populates the normalizedTitle field for all existing Game records.
  *
  * Usage:
- *   npm run db:migrate:deploy  # First, apply the schema migration
- *   npx tsx scripts/migrate-normalized-titles.ts  # Then, run this script (loads .env.local automatically)
+ *   pnpm db:migrate:deploy  # First, apply the schema migration
+ *   pnpm exec tsx scripts/migrate-normalized-titles.ts  # Then, run this script (loads .env.local automatically)
  *
  * Or use the db-cmd wrapper:
- *   ./scripts/db-cmd.sh npx tsx scripts/migrate-normalized-titles.ts
+ *   ./scripts/db-cmd.sh pnpm exec tsx scripts/migrate-normalized-titles.ts
  */
 
 import { config } from 'dotenv'

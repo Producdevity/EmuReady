@@ -64,8 +64,7 @@ export default defineConfig({
     ? undefined
     : {
         command:
-          process.env.PWTEST_SERVER_COMMAND ||
-          (isCI ? 'npm run start' : 'npm run build && npm run start'),
+          process.env.PWTEST_SERVER_COMMAND || (isCI ? 'pnpm start' : 'pnpm build && pnpm start'),
         url: 'http://localhost:3000',
         reuseExistingServer: !isCI,
         timeout: isCI ? 180 * 1000 : 300 * 1000, // 3 minutes in CI, 5 minutes locally (includes build)

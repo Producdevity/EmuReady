@@ -4,23 +4,23 @@
 
 ```bash
 # Run tests with UI (for development)
-npm run test:e2e
+pnpm test:e2e
 
 # Run tests headless (for CI)
-npm run test:e2e:ci
+pnpm test:e2e:ci
 ```
 
 ## Prerequisites
 
 1. Install Playwright browsers:
 ```bash
-npx playwright install
+pnpm exec playwright install
 ```
 
 2. Configure test environment:
 - Copy `.env.test.example` to `.env.test.local`
 - Set database and Clerk environment variables
-- Seed the database with `npm run db:seed`
+- Seed the database with `pnpm db:seed`
 
 ## Configuration
 
@@ -64,13 +64,13 @@ test('should navigate to games page', async ({ page }) => {
 
 ```bash
 # Run a specific test file
-npx playwright test tests/navigation.spec.ts
+pnpm exec playwright test tests/navigation.spec.ts
 
 # Run tests matching a pattern
-npx playwright test -g "should display"
+pnpm exec playwright test -g "should display"
 
 # Run with specific reporter
-npx playwright test --reporter=html
+pnpm exec playwright test --reporter=html
 ```
 
 ## CI/CD Integration
@@ -79,10 +79,10 @@ GitHub Actions example:
 
 ```yaml
 - name: Install Playwright
-  run: npx playwright install --with-deps
+  run: pnpm exec playwright install --with-deps
 
 - name: Run E2E tests
-  run: npm run test:e2e:ci
+  run: pnpm test:e2e:ci
 ```
 
 ## Environment Variables
@@ -113,7 +113,7 @@ pkill -f "next start" || pkill -f "next dev"
 
 ### Tests timing out
 - Increase timeout in playwright.config.ts
-- Check if production build is up to date: `npm run build`
+- Check if production build is up to date: `pnpm build`
 
 ### Authentication issues
 - Verify the database was seeded

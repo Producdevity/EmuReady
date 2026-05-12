@@ -123,7 +123,8 @@ cd emuready
 3. Install dependencies
 
 ```bash
-npm install
+corepack enable pnpm
+pnpm install
 ```
 
 4. Set up environment variables
@@ -143,8 +144,8 @@ For local development, this key is optional as localhost origins are automatical
 5. Setup database
 
 ```bash
-npx prisma generate
-npx prisma db push
+pnpm exec prisma generate
+pnpm exec prisma db push
 ```
 
 It is recommended to use a local database for development. You can use SQLite or PostgreSQL. If you want to use PostgreSQL, make sure to set up the connection string in the `.env` file.
@@ -159,17 +160,17 @@ datasource db {
 6. Run in development mode
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Make sure all tests and checks pass before creating a pull request:
 
 ```bash
-npm run lint
-npm run types
-npm run build
+pnpm lint
+pnpm types
+pnpm build
 # or
-npm run prepare-deploy
+pnpm prepare-deploy
 ```
 
 7. Setup Clerk for authentication
@@ -216,8 +217,8 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/) speci
 We use ESLint and Prettier to maintain code style and best practices. Please make sure your code adheres to the style guidelines by running:
 
 ```bash
-npm run lint
-npm run format
+pnpm lint
+pnpm format
 ```
 
 #### Destructuring Props in React Components
@@ -241,7 +242,7 @@ We recommend writing tests for new features and bug fixes. Run existing tests wi
 #### Unit Tests
 
 ```bash
-npm test
+pnpm test
 ```
 
 #### End-to-End Tests
@@ -255,16 +256,10 @@ Quick commands:
 
 ```bash
 # Interactive test runner with UI (recommended for development)
-npm run test:e2e
+pnpm test:e2e
 
-# Run tests with visible browsers
-npm run test:e2e:headed
-
-# Headless mode for CI
-npm run test:e2e:headless
-
-# Debug mode
-npm run test:e2e:debug
+# Headless CI run
+pnpm test:e2e:ci
 ```
 
 ---
