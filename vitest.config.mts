@@ -17,7 +17,7 @@ export default defineConfig({
     },
     testTimeout: 15000,
     hookTimeout: 10000,
-    reporters: process.env.CI ? ['basic'] : ['default'],
+    reporters: process.env.CI ? [['default', { summary: false }], 'github-actions'] : ['default'],
     silent: false,
   },
 })
