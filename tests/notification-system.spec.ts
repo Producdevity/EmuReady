@@ -6,7 +6,7 @@ function bellButton(page: Page) {
 }
 
 function notificationDropdown(page: Page) {
-  return page.getByRole('region', { name: /^Notifications$/ })
+  return page.getByRole('region', { name: /^Notifications$/i })
 }
 
 test.describe('Notification System', () => {
