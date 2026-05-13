@@ -20,7 +20,7 @@ export function BundleSizeMonitor() {
     // Get  bundle information from Next.js build output
     const fetchBundleInfo = async () => {
       try {
-        // In production, this would connect to your build analytics
+        // TODO: In production, this would connect to the build analytics
         // For now, we'll use performance.getEntriesByType to get script sizes
         const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[]
 
@@ -148,7 +148,7 @@ export function BundleSizeMonitor() {
       <div className="mt-4 pt-4 border-t">
         <p className="text-xs text-muted-foreground">
           Bundle sizes are measured from loaded resources. For detailed analysis, run{' '}
-          <code className="px-1 py-0.5 bg-muted rounded">npm run analyze</code>
+          <code className="px-1 py-0.5 bg-muted rounded">pnpm analyze</code>
         </p>
       </div>
     </Card>

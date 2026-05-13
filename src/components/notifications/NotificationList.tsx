@@ -36,7 +36,10 @@ function NotificationList(props: Props) {
 
   if (props.notifications.length === 0) {
     return (
-      <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+      <div
+        className="p-8 text-center text-gray-500 dark:text-gray-400"
+        data-testid="notification-empty-state"
+      >
         <Bell className="w-12 h-12 mx-auto mb-3 opacity-30" />
         <p>No notifications yet</p>
       </div>
@@ -49,6 +52,7 @@ function NotificationList(props: Props) {
         <div
           key={notification.id}
           onClick={() => props.onNotificationClick(notification)}
+          data-testid="notification-item"
           className={cn(
             'p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer',
             !notification.isRead && 'bg-blue-50 dark:bg-blue-900/20',

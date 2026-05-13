@@ -11,7 +11,9 @@ const mockLogAction = vi.fn().mockResolvedValue(undefined)
 
 vi.mock('@/lib/trust/service', () => ({
   applyTrustAction: (...args: unknown[]) => mockApplyTrustAction(...args),
-  TrustService: vi.fn().mockImplementation(() => ({ logAction: mockLogAction })),
+  TrustService: vi.fn().mockImplementation(function MockTrustService() {
+    return { logAction: mockLogAction }
+  }),
 }))
 
 vi.mock('@/server/utils/vote-trust-effects', () => ({
@@ -90,20 +92,24 @@ const mockRepositoryGetExistingVote = vi.fn()
 const mockIsDeveloperVerified = vi.fn()
 
 vi.mock('@/server/repositories/pc-listings.repository', () => ({
-  PcListingsRepository: vi.fn().mockImplementation(() => ({
-    create: mockRepositoryCreate,
-    getById: mockRepositoryGetById,
-    approve: mockRepositoryApprove,
-    reject: mockRepositoryReject,
-    getExistingVote: mockRepositoryGetExistingVote,
-    isDeveloperVerifiedForEmulator: mockIsDeveloperVerified,
-    list: vi.fn().mockResolvedValue({ pcListings: [], pagination: {} }),
-    getUserVote: vi.fn().mockResolvedValue(null),
-  })),
+  PcListingsRepository: vi.fn().mockImplementation(function MockPcListingsRepository() {
+    return {
+      create: mockRepositoryCreate,
+      getById: mockRepositoryGetById,
+      approve: mockRepositoryApprove,
+      reject: mockRepositoryReject,
+      getExistingVote: mockRepositoryGetExistingVote,
+      isDeveloperVerifiedForEmulator: mockIsDeveloperVerified,
+      list: vi.fn().mockResolvedValue({ pcListings: [], pagination: {} }),
+      getUserVote: vi.fn().mockResolvedValue(null),
+    }
+  }),
 }))
 
 vi.mock('@/server/repositories/user-pc-presets.repository', () => ({
-  UserPcPresetsRepository: vi.fn().mockImplementation(() => ({})),
+  UserPcPresetsRepository: vi.fn().mockImplementation(function MockUserPcPresetsRepository() {
+    return {}
+  }),
 }))
 
 const { pcListingsRouter } = await import('./pcListings')

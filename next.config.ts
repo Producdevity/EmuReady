@@ -5,6 +5,7 @@ import type { Configuration as WebpackConfiguration } from 'webpack'
 
 const nextConfig: NextConfig = {
   images: {
+    unoptimized: process.env.NEXT_IMAGE_UNOPTIMIZED === 'true',
     dangerouslyAllowSVG: true,
     qualities: [50, 75, 85, 100],
     localPatterns: [
@@ -61,6 +62,8 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  transpilePackages: ['import-in-the-middle', 'require-in-the-middle'],
+
   serverExternalPackages: ['@prisma/client', 'jsdom', 'markdown-it', 'dompurify'],
 
   outputFileTracingIncludes: {
@@ -113,7 +116,6 @@ const nextConfig: NextConfig = {
 
   async headers() {
     const headers = [
-      // Service worker files should never be cached by the browser
       {
         source: '/service-worker.js',
         headers: [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' }],
@@ -201,16 +203,13 @@ const withBundleAnalyzer = NextBundleAnalyzer({
 
 export default withSentryConfig(withBundleAnalyzer(nextConfig), {
   // For all available options, see:
-  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/build/
 
   org: 'hexelnet',
   project: 'emuready',
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
-
-  // For all available options, see:
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
   // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,
@@ -221,12 +220,7 @@ export default withSentryConfig(withBundleAnalyzer(nextConfig), {
   // side errors will fail.
   // tunnelRoute: "/monitoring",
 
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
-
-  // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-  // See the following for more information:
-  // https://docs.sentry.io/product/crons/
-  // https://vercel.com/docs/cron-jobs
-  automaticVercelMonitors: true,
+  bundleSizeOptimizations: {
+    excludeDebugStatements: true,
+  },
 })

@@ -8,7 +8,24 @@ on:
       - "tests/**"
       - "playwright.config.ts"
       - "package.json"
-      - "package-lock.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  push:
+    branches: [master, staging]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "playwright.config.ts"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   e2e-tests:
@@ -23,7 +40,7 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_DB: emuready_test
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres -d emuready_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -46,6 +63,7 @@ jobs:
       RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
       THE_GAMES_DB_API_KEY: ${{ secrets.THE_GAMES_DB_API_KEY }}
       # Test configuration
+      NEXT_IMAGE_UNOPTIMIZED: "true"
       NEXT_PUBLIC_DISABLE_COOKIE_BANNER: "true"
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
       NEXT_PUBLIC_DISCORD_LINK: "https://discord.gg/test"
@@ -53,42 +71,41 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 22.16.0
-          cache: npm
-
-      - name: Install system dependencies for Sharp
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libvips-dev
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
-
-      - name: Generate Prisma client
-        run: npx prisma generate
+        run: pnpm install --frozen-lockfile
 
       - name: Run database migrations
-        run: npx prisma migrate deploy
+        run: pnpm exec prisma migrate deploy
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
 
       - name: Seed test database
-        run: npx prisma db seed
+        run: pnpm exec prisma db seed
 
       - name: Build application
-        run: npm run build
+        run: pnpm build
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Run E2E tests
-        run: npm run test:e2e:ci
+        run: pnpm test:e2e:ci
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: playwright-report
@@ -96,7 +113,7 @@ jobs:
           retention-days: 30
 
       - name: Upload test videos
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: test-videos

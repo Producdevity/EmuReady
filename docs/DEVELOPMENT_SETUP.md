@@ -3,10 +3,10 @@
 ## Local App
 
 1. Copy `.env.example` to `.env.local` and fill in the database and Clerk values.
-2. Install dependencies with `npm install`.
-3. Apply migrations with `npm run db:migrate:dev`.
-4. Seed local data with `npm run db:seed`.
-5. Start the app with `npm run dev`.
+2. Enable pnpm with `corepack enable pnpm`, then install dependencies with `pnpm install`.
+3. Apply migrations with `pnpm db:migrate:dev`.
+4. Seed local data with `pnpm db:seed`.
+5. Start the app with `pnpm dev`.
 
 The seed script reconciles Clerk users and database users. The canonical seeded account list and password live in `prisma/seeders/usersSeeder.ts`.
 
@@ -16,7 +16,7 @@ Webhook setup is only needed when working on Clerk webhook behavior. Local devel
 
 To test webhooks locally:
 
-1. Start the app with `npm run dev`.
+1. Start the app with `pnpm dev`.
 2. Expose the app with a tunnel such as `ngrok http 3000` or Cloudflare Tunnel.
 3. Configure the Clerk webhook endpoint as `https://<tunnel-host>/api/webhooks/clerk`.
 4. Subscribe to `user.created`, `user.updated`, and `user.deleted`.
@@ -40,6 +40,6 @@ External provider keys such as `RAWG_API_KEY`, `THE_GAMES_DB_API_KEY`, and reCAP
 
 ## Troubleshooting
 
-- If seeded login fails, rerun `npm run db:seed` and confirm the Clerk keys point at the same Clerk app used by the seeder.
+- If seeded login fails, rerun `pnpm db:seed` and confirm the Clerk keys point at the same Clerk app used by the seeder.
 - If a webhook-created user is missing in the database, verify `CLERK_WEBHOOK_SECRET` and the Clerk webhook event subscriptions.
 - If an admin role changed directly in the database, use the admin role sync endpoint or rerun the relevant seed/setup flow so Clerk metadata matches the database.

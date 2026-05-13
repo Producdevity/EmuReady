@@ -35,25 +35,27 @@ vi.mock('@orm', () => ({
       desc: 'desc',
     },
   },
-  PrismaClient: vi.fn().mockImplementation(() => ({
-    $transaction: vi.fn(),
-    $queryRawTyped: vi.fn().mockResolvedValue([]),
-    customFieldDefinition: {
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-    },
-    listing: {
-      create: vi.fn(),
-      findFirst: vi.fn(),
-    },
-    listingCustomFieldValue: {
-      create: vi.fn(),
-    },
-    user: {
-      findUnique: vi.fn(),
-    },
-    $disconnect: vi.fn(),
-  })),
+  PrismaClient: vi.fn().mockImplementation(function MockPrismaClient() {
+    return {
+      $transaction: vi.fn(),
+      $queryRawTyped: vi.fn().mockResolvedValue([]),
+      customFieldDefinition: {
+        findMany: vi.fn(),
+        findUnique: vi.fn(),
+      },
+      listing: {
+        create: vi.fn(),
+        findFirst: vi.fn(),
+      },
+      listingCustomFieldValue: {
+        create: vi.fn(),
+      },
+      user: {
+        findUnique: vi.fn(),
+      },
+      $disconnect: vi.fn(),
+    }
+  }),
   CustomFieldType: {
     TEXT: 'TEXT',
     TEXTAREA: 'TEXTAREA',
@@ -335,18 +337,31 @@ afterEach(() => {
 })
 
 // Mock ResizeObserver for components that use it
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}))
+class MockResizeObserver implements ResizeObserver {
+  constructor(_callback: ResizeObserverCallback) {}
+
+  observe = vi.fn()
+  unobserve = vi.fn()
+  disconnect = vi.fn()
+}
+
+global.ResizeObserver = MockResizeObserver
 
 // Mock IntersectionObserver for components that use it
-global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}))
+class MockIntersectionObserver implements IntersectionObserver {
+  readonly root = null
+  readonly rootMargin = ''
+  readonly thresholds = []
+
+  constructor(_callback: IntersectionObserverCallback, _options?: IntersectionObserverInit) {}
+
+  observe = vi.fn()
+  unobserve = vi.fn()
+  disconnect = vi.fn()
+  takeRecords = vi.fn((): IntersectionObserverEntry[] => [])
+}
+
+global.IntersectionObserver = MockIntersectionObserver
 
 // Mock matchMedia for responsive components - only if window is available
 if (typeof window !== 'undefined') {

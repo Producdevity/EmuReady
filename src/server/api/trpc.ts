@@ -97,9 +97,7 @@ async function createSessionFromClerkUserId(userId: string): Promise<Nullable<Se
         console.warn(
           `🔧 Dev mode: User with clerkId ${userId} not found in database and auto-creation failed.`,
         )
-        console.warn(
-          '   Either run the seeder (npx prisma db seed) or set up webhooks for auto-sync.',
-        )
+        console.warn('   Either run the seeder (pnpm db:seed) or set up webhooks for auto-sync.')
       } else {
         console.warn(
           `User with clerkId ${userId} not found in database and auto-creation failed. Check webhook configuration.`,

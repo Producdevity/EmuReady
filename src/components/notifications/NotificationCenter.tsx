@@ -148,6 +148,9 @@ function NotificationCenter(props: Props) {
     <div className={cn('relative', props.className)}>
       {/* Notification Bell Button */}
       <button
+        aria-label={
+          unreadCount > 0 ? `Open notifications (${unreadCount} unread)` : 'Open notifications'
+        }
         onClick={(ev) => {
           ev.stopPropagation()
           setIsOpen(!isOpen)
@@ -178,6 +181,8 @@ function NotificationCenter(props: Props) {
             transition={{ duration: 0.2 }}
             className="hidden md:block absolute right-0 top-full mt-2 w-96 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-96 overflow-hidden"
             onClick={(ev) => ev.stopPropagation()}
+            role="region"
+            aria-label="Notifications"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
@@ -259,6 +264,9 @@ function NotificationCenter(props: Props) {
                   }}
                   className="fixed inset-x-0 bottom-0 z-50 flex h-[85vh] max-h-[85vh] flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl md:hidden dark:bg-gray-800"
                   onClick={(ev) => ev.stopPropagation()}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Notifications"
                 >
                   {/* Handle Bar */}
                   <div className="flex flex-shrink-0 justify-center pb-2 pt-3">

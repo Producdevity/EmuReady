@@ -64,17 +64,17 @@ services:
     command: >
       sh -c "
         echo 'Waiting for database...' &&
-        npx prisma migrate deploy &&
+        pnpm exec prisma migrate deploy &&
         if [ ! -f .setup/seeded ]; then
           echo 'Running initial database seed...' &&
-          npx prisma db seed &&
+          pnpm exec prisma db seed &&
           mkdir -p .setup &&
           touch .setup/seeded &&
           echo 'Initial setup completed';
         else
           echo 'Database already seeded, skipping seed step';
         fi &&
-        npm run dev
+        pnpm dev
       "
 
   # Prisma Studio - Database Admin Interface
@@ -105,7 +105,7 @@ services:
     command: >
       sh -c "
         echo 'Starting Prisma Studio...' &&
-        npx prisma studio --hostname 0.0.0.0 --port 5555
+        pnpm exec prisma studio --hostname 0.0.0.0 --port 5555
       "
 
   # Cloudflared Tunnel for Clerk Webhooks
