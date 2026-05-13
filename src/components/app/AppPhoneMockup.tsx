@@ -56,9 +56,8 @@ function BaseAppPhoneMockup(props: Props) {
                   src={slides[activeIndex]}
                   alt={props.alt}
                   fill
-                  priority
                   className="object-cover"
-                  sizes="(min-width: 1024px) 19rem, 60vw"
+                  sizes="(max-width: 384px) calc(100vw - 8rem), 16rem"
                 />
               </motion.div>
             </AnimatePresence>
