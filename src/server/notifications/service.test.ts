@@ -1,10 +1,57 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { NotificationType } from '@orm'
+import { DeliveryChannel, NotificationCategory, NotificationType } from '@orm'
 import { NOTIFICATION_EVENTS } from './eventEmitter'
 import type { NotificationEventData } from './eventEmitter'
 import type { NotificationService } from './service'
+import type { NotificationData } from './types'
 
-// ── Mocks ──────────────────────────────────────────────────────────
+interface NotificationContext {
+  pcListingId?: string
+  listingId?: string
+  listingTitle?: string
+  gameTitle?: string
+  gameId?: string
+  deviceName?: string
+  emulatorName?: string
+}
+
+interface NotificationServiceInternals {
+  getUsersForEvent(eventData: NotificationEventData): Promise<string[]>
+  handleNotificationEvent(eventData: NotificationEventData): Promise<void>
+  notifyMatchingHardwareUsers(
+    eventData: NotificationEventData,
+    alreadyNotifiedIds: string[],
+  ): Promise<void>
+  notifyGameFollowers(
+    eventData: NotificationEventData,
+    alreadyNotifiedIds: string[],
+    type: 'listing' | 'pcListing',
+  ): Promise<void>
+  mapEventToNotificationType(eventType: string): NotificationType | null
+  enrichContextWithData(
+    eventData: NotificationEventData,
+    notificationType: NotificationType,
+  ): Promise<NotificationContext>
+}
+
+interface ListingMockOptions {
+  id?: string
+  authorId?: string
+  deviceId?: string
+  gameId?: string
+  gameTitle?: string
+  deviceModelName?: string
+  deviceBrandName?: string
+  socId?: string | null
+  emulatorId?: string
+  emulatorName?: string
+}
+
+function getNotificationServiceInternals(
+  service: NotificationService,
+): NotificationServiceInternals {
+  return service as unknown as NotificationServiceInternals
+}
 
 vi.mock('@orm', async () => {
   const actual = await import('@orm')
@@ -77,7 +124,9 @@ vi.mock('@/lib/logger', () => ({
 
 const { mockIterateFollowerUserIds, mockScheduleNotification } = vi.hoisted(() => ({
   mockIterateFollowerUserIds: vi.fn(),
-  mockScheduleNotification: vi.fn().mockReturnValue('batch-id-1'),
+  mockScheduleNotification: vi
+    .fn<(data: NotificationData, scheduledFor?: Date, maxAttempts?: number) => string>()
+    .mockReturnValue('batch-id-1'),
 }))
 vi.mock('@/server/repositories/game-follow.repository', () => {
   class MockGameFollowRepository {
@@ -87,10 +136,14 @@ vi.mock('@/server/repositories/game-follow.repository', () => {
 })
 
 vi.mock('@/server/repositories/notification-preferences.repository', () => ({
-  NotificationPreferencesRepository: vi.fn().mockImplementation(() => ({
-    getByType: vi.fn().mockResolvedValue(null),
-    getListingPreference: vi.fn().mockResolvedValue(null),
-  })),
+  NotificationPreferencesRepository: vi
+    .fn()
+    .mockImplementation(function MockNotificationPreferencesRepository() {
+      return {
+        getByType: vi.fn().mockResolvedValue(null),
+        getListingPreference: vi.fn().mockResolvedValue(null),
+      }
+    }),
 }))
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -120,6 +173,29 @@ function makeEvent(overrides: Partial<NotificationEventData> = {}): Notification
   }
 }
 
+function makeListingRecord(options: ListingMockOptions = {}) {
+  const id = options.id ?? 'listing-1'
+  const deviceId = options.deviceId ?? 'device-1'
+  const gameId = options.gameId ?? 'game-1'
+  const gameTitle = options.gameTitle ?? 'Test Game'
+  const emulatorId = options.emulatorId ?? 'emu-1'
+  const emulatorName = options.emulatorName ?? 'Emu'
+
+  return {
+    id,
+    authorId: options.authorId ?? 'author-1',
+    deviceId,
+    game: { id: gameId, title: gameTitle },
+    device: {
+      id: deviceId,
+      modelName: options.deviceModelName ?? 'RP4',
+      brand: { name: options.deviceBrandName ?? 'Retroid' },
+      socId: options.socId ?? null,
+    },
+    emulator: { id: emulatorId, name: emulatorName },
+  }
+}
+
 function mockGameFollowIterator(userIds: string[]) {
   mockIterateFollowerUserIds.mockImplementation(async function* () {
     yield userIds
@@ -127,34 +203,33 @@ function mockGameFollowIterator(userIds: string[]) {
 }
 
 function getScheduledUserIds(): string[] {
-  return mockScheduleNotification.mock.calls.map((call: { userId: string }[]) => call[0].userId)
+  return mockScheduleNotification.mock.calls.map((call) => call[0].userId)
 }
-
-// ── Tests ──────────────────────────────────────────────────────────
 
 describe('NotificationService', () => {
   let service: NotificationService
+  let serviceInternals: NotificationServiceInternals
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(async () => {
     resetMocks()
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     const { NotificationService } = await import('./service')
     service = new NotificationService()
+    serviceInternals = getNotificationServiceInternals(service)
   })
 
   afterEach(() => {
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
+    consoleErrorSpy.mockRestore()
     vi.clearAllMocks()
   })
 
   describe('getUsersForEvent', () => {
     it('listing.approved returns the listing author', async () => {
-      mockPrisma.listing.findUnique.mockResolvedValue({
-        authorId: 'author-1',
-        deviceId: 'device-1',
-        device: { socId: null },
-      })
+      mockPrisma.listing.findUnique.mockResolvedValue(makeListingRecord())
 
-      // @ts-expect-error accessing private method for testing
-      const users = await service.getUsersForEvent(makeEvent())
+      const users = await serviceInternals.getUsersForEvent(makeEvent())
       expect(users).toContain('author-1')
     })
 
@@ -168,8 +243,7 @@ describe('NotificationService', () => {
         payload: { pcListingId: 'pc-listing-1' },
       })
 
-      // @ts-expect-error accessing private method for testing
-      const users = await service.getUsersForEvent(event)
+      const users = await serviceInternals.getUsersForEvent(event)
       expect(users).toContain('pc-author-1')
     })
 
@@ -183,46 +257,34 @@ describe('NotificationService', () => {
         payload: { pcListingId: 'pc-listing-1' },
       })
 
-      // @ts-expect-error accessing private method for testing
-      const users = await service.getUsersForEvent(event)
+      const users = await serviceInternals.getUsersForEvent(event)
       expect(users).toContain('pc-author-1')
     })
 
     it('excludes the actor from recipients', async () => {
-      mockPrisma.listing.findUnique.mockResolvedValue({
-        authorId: 'admin-1',
-        deviceId: 'device-1',
-        device: { socId: null },
-      })
+      mockPrisma.listing.findUnique.mockResolvedValue(makeListingRecord({ authorId: 'admin-1' }))
 
-      // @ts-expect-error accessing private method for testing
-      const users = await service.getUsersForEvent(makeEvent({ triggeredBy: 'admin-1' }))
+      const users = await serviceInternals.getUsersForEvent(makeEvent({ triggeredBy: 'admin-1' }))
       expect(users).not.toContain('admin-1')
     })
 
     it('filters out banned users', async () => {
-      mockPrisma.listing.findUnique.mockResolvedValue({
-        authorId: 'banned-author',
-        deviceId: 'device-1',
-        device: { socId: null },
-      })
+      mockPrisma.listing.findUnique.mockResolvedValue(
+        makeListingRecord({ authorId: 'banned-author' }),
+      )
       mockPrisma.userBan.findMany.mockResolvedValue([{ userId: 'banned-author' }])
 
-      // @ts-expect-error accessing private method for testing
-      const users = await service.getUsersForEvent(makeEvent())
+      const users = await serviceInternals.getUsersForEvent(makeEvent())
       expect(users).not.toContain('banned-author')
     })
 
     it('filters out users who blocked the triggering user', async () => {
-      mockPrisma.listing.findUnique.mockResolvedValue({
-        authorId: 'blocker-user',
-        deviceId: 'device-1',
-        device: { socId: null },
-      })
+      mockPrisma.listing.findUnique.mockResolvedValue(
+        makeListingRecord({ authorId: 'blocker-user' }),
+      )
       mockPrisma.userRelationship.findMany.mockResolvedValue([{ senderId: 'blocker-user' }])
 
-      // @ts-expect-error accessing private method for testing
-      const users = await service.getUsersForEvent(makeEvent())
+      const users = await serviceInternals.getUsersForEvent(makeEvent())
       expect(users).not.toContain('blocker-user')
     })
 
@@ -232,8 +294,7 @@ describe('NotificationService', () => {
         NOTIFICATION_EVENTS.FOLLOWED_GAME_NEW_PC_LISTING,
       ]) {
         const event = makeEvent({ eventType, payload: { gameId: 'game-1' } })
-        // @ts-expect-error accessing private method for testing
-        const users = await service.getUsersForEvent(event)
+        const users = await serviceInternals.getUsersForEvent(event)
         expect(users).toEqual([])
       }
     })
@@ -241,23 +302,16 @@ describe('NotificationService', () => {
 
   describe('handleNotificationEvent', () => {
     it('listing.approved triggers notifyGameFollowers for handheld', async () => {
-      mockPrisma.listing.findUnique.mockResolvedValue({
-        authorId: 'author-1',
-        deviceId: 'device-1',
-        device: { socId: null },
-        game: { id: 'game-1', title: 'Test Game' },
-        emulator: { name: 'Emu', id: 'emu-1' },
-      })
+      mockPrisma.listing.findUnique.mockResolvedValue(makeListingRecord())
       mockPrisma.user.findUnique.mockResolvedValue({ name: 'Admin' })
       mockPrisma.user.findMany.mockResolvedValue([])
       mockPrisma.device.findUnique.mockResolvedValue(null)
       mockPrisma.notification.create.mockResolvedValue({ id: 'notif-1' })
       mockPrisma.notification.findUnique.mockResolvedValue({ id: 'notif-1' })
 
-      const spy = vi.spyOn(service as never, 'notifyGameFollowers').mockResolvedValue(undefined)
+      const spy = vi.spyOn(serviceInternals, 'notifyGameFollowers').mockResolvedValue(undefined)
 
-      // @ts-expect-error accessing private method for testing
-      await service.handleNotificationEvent(makeEvent())
+      await serviceInternals.handleNotificationEvent(makeEvent())
 
       expect(spy).toHaveBeenCalledWith(makeEvent(), ['author-1'], 'listing')
     })
@@ -271,7 +325,7 @@ describe('NotificationService', () => {
       mockPrisma.notification.create.mockResolvedValue({ id: 'notif-2' })
       mockPrisma.notification.findUnique.mockResolvedValue({ id: 'notif-2' })
 
-      const spy = vi.spyOn(service as never, 'notifyGameFollowers').mockResolvedValue(undefined)
+      const spy = vi.spyOn(serviceInternals, 'notifyGameFollowers').mockResolvedValue(undefined)
 
       const event = makeEvent({
         eventType: NOTIFICATION_EVENTS.PC_LISTING_APPROVED,
@@ -280,31 +334,25 @@ describe('NotificationService', () => {
         payload: { pcListingId: 'pc-listing-1' },
       })
 
-      // @ts-expect-error accessing private method for testing
-      await service.handleNotificationEvent(event)
+      await serviceInternals.handleNotificationEvent(event)
 
       expect(spy).toHaveBeenCalledWith(event, ['pc-author-1'], 'pcListing')
     })
 
     it('listing.approved triggers notifyMatchingHardwareUsers', async () => {
-      mockPrisma.listing.findUnique.mockResolvedValue({
-        authorId: 'author-1',
-        deviceId: 'device-1',
-        device: { socId: 'soc-1' },
-        game: { id: 'game-1', title: 'Test' },
-        emulator: { name: 'Emu', id: 'emu-1' },
-      })
+      mockPrisma.listing.findUnique.mockResolvedValue(
+        makeListingRecord({ gameTitle: 'Test', socId: 'soc-1' }),
+      )
       mockPrisma.user.findUnique.mockResolvedValue({ name: 'Admin' })
       mockPrisma.user.findMany.mockResolvedValue([])
       mockPrisma.device.findUnique.mockResolvedValue(null)
       mockPrisma.notification.create.mockResolvedValue({ id: 'notif-1' })
       mockPrisma.notification.findUnique.mockResolvedValue({ id: 'notif-1' })
 
-      vi.spyOn(service as never, 'notifyGameFollowers').mockResolvedValue(undefined)
-      const spy = vi.spyOn(service as never, 'notifyMatchingHardwareUsers')
+      vi.spyOn(serviceInternals, 'notifyGameFollowers').mockResolvedValue(undefined)
+      const spy = vi.spyOn(serviceInternals, 'notifyMatchingHardwareUsers')
 
-      // @ts-expect-error accessing private method for testing
-      await service.handleNotificationEvent(makeEvent())
+      await serviceInternals.handleNotificationEvent(makeEvent())
 
       expect(spy).toHaveBeenCalledWith(makeEvent(), ['author-1'])
     })
@@ -318,8 +366,8 @@ describe('NotificationService', () => {
       mockPrisma.notification.create.mockResolvedValue({ id: 'notif-2' })
       mockPrisma.notification.findUnique.mockResolvedValue({ id: 'notif-2' })
 
-      vi.spyOn(service as never, 'notifyGameFollowers').mockResolvedValue(undefined)
-      const spy = vi.spyOn(service as never, 'notifyMatchingHardwareUsers')
+      vi.spyOn(serviceInternals, 'notifyGameFollowers').mockResolvedValue(undefined)
+      const spy = vi.spyOn(serviceInternals, 'notifyMatchingHardwareUsers')
 
       const event = makeEvent({
         eventType: NOTIFICATION_EVENTS.PC_LISTING_APPROVED,
@@ -328,33 +376,30 @@ describe('NotificationService', () => {
         payload: { pcListingId: 'pc-listing-1' },
       })
 
-      // @ts-expect-error accessing private method for testing
-      await service.handleNotificationEvent(event)
+      await serviceInternals.handleNotificationEvent(event)
 
       expect(spy).not.toHaveBeenCalled()
     })
 
     it('does not crash on unknown event types', async () => {
       await expect(
-        // @ts-expect-error accessing private method for testing
-        service.handleNotificationEvent(makeEvent({ eventType: 'unknown.event', payload: {} })),
+        serviceInternals.handleNotificationEvent(
+          makeEvent({ eventType: 'unknown.event', payload: {} }),
+        ),
       ).resolves.not.toThrow()
     })
   })
 
   describe('notifyGameFollowers', () => {
     it('creates notifications for game followers (handheld)', async () => {
-      mockPrisma.listing.findUnique.mockResolvedValue({
-        game: { id: 'game-1', title: 'Zelda' },
-      })
+      mockPrisma.listing.findUnique.mockResolvedValue(makeListingRecord({ gameTitle: 'Zelda' }))
       mockGameFollowIterator(['follower-1', 'follower-2'])
       mockPrisma.user.findUnique.mockResolvedValue({ name: 'Admin' })
       mockPrisma.game.findUnique.mockResolvedValue({ id: 'game-1', title: 'Zelda' })
       mockPrisma.notification.create.mockResolvedValue({ id: 'notif-1' })
       mockPrisma.notification.findUnique.mockResolvedValue({ id: 'notif-1' })
 
-      // @ts-expect-error accessing private method for testing
-      await service.notifyGameFollowers(
+      await serviceInternals.notifyGameFollowers(
         makeEvent({ payload: { listingId: 'listing-1' } }),
         ['author-1'],
         'listing',
@@ -382,8 +427,7 @@ describe('NotificationService', () => {
         payload: { pcListingId: 'pc-listing-1' },
       })
 
-      // @ts-expect-error accessing private method for testing
-      await service.notifyGameFollowers(event, [], 'pcListing')
+      await serviceInternals.notifyGameFollowers(event, [], 'pcListing')
 
       const call = mockScheduleNotification.mock.calls[0][0] as {
         userId: string
@@ -394,17 +438,14 @@ describe('NotificationService', () => {
     })
 
     it('excludes already-notified users', async () => {
-      mockPrisma.listing.findUnique.mockResolvedValue({
-        game: { id: 'game-1', title: 'Zelda' },
-      })
+      mockPrisma.listing.findUnique.mockResolvedValue(makeListingRecord({ gameTitle: 'Zelda' }))
       mockGameFollowIterator(['author-1', 'follower-1'])
       mockPrisma.user.findUnique.mockResolvedValue({ name: 'Admin' })
       mockPrisma.game.findUnique.mockResolvedValue({ id: 'game-1', title: 'Zelda' })
       mockPrisma.notification.create.mockResolvedValue({ id: 'notif-1' })
       mockPrisma.notification.findUnique.mockResolvedValue({ id: 'notif-1' })
 
-      // @ts-expect-error accessing private method for testing
-      await service.notifyGameFollowers(
+      await serviceInternals.notifyGameFollowers(
         makeEvent({ payload: { listingId: 'listing-1' } }),
         ['author-1'],
         'listing',
@@ -416,17 +457,14 @@ describe('NotificationService', () => {
     })
 
     it('excludes the triggering user', async () => {
-      mockPrisma.listing.findUnique.mockResolvedValue({
-        game: { id: 'game-1', title: 'Zelda' },
-      })
+      mockPrisma.listing.findUnique.mockResolvedValue(makeListingRecord({ gameTitle: 'Zelda' }))
       mockGameFollowIterator(['admin-1', 'follower-1'])
       mockPrisma.user.findUnique.mockResolvedValue({ name: 'Admin' })
       mockPrisma.game.findUnique.mockResolvedValue({ id: 'game-1', title: 'Zelda' })
       mockPrisma.notification.create.mockResolvedValue({ id: 'notif-1' })
       mockPrisma.notification.findUnique.mockResolvedValue({ id: 'notif-1' })
 
-      // @ts-expect-error accessing private method for testing
-      await service.notifyGameFollowers(
+      await serviceInternals.notifyGameFollowers(
         makeEvent({ triggeredBy: 'admin-1', payload: { listingId: 'listing-1' } }),
         [],
         'listing',
@@ -438,9 +476,7 @@ describe('NotificationService', () => {
     })
 
     it('filters out banned followers', async () => {
-      mockPrisma.listing.findUnique.mockResolvedValue({
-        game: { id: 'game-1', title: 'Zelda' },
-      })
+      mockPrisma.listing.findUnique.mockResolvedValue(makeListingRecord({ gameTitle: 'Zelda' }))
       mockGameFollowIterator(['banned-user', 'clean-user'])
       mockPrisma.userBan.findMany.mockResolvedValue([{ userId: 'banned-user' }])
       mockPrisma.user.findUnique.mockResolvedValue({ name: 'Admin' })
@@ -448,8 +484,7 @@ describe('NotificationService', () => {
       mockPrisma.notification.create.mockResolvedValue({ id: 'notif-1' })
       mockPrisma.notification.findUnique.mockResolvedValue({ id: 'notif-1' })
 
-      // @ts-expect-error accessing private method for testing
-      await service.notifyGameFollowers(
+      await serviceInternals.notifyGameFollowers(
         makeEvent({ payload: { listingId: 'listing-1' } }),
         [],
         'listing',
@@ -463,8 +498,7 @@ describe('NotificationService', () => {
     it('skips when no game found for listing', async () => {
       mockPrisma.listing.findUnique.mockResolvedValue(null)
 
-      // @ts-expect-error accessing private method for testing
-      await service.notifyGameFollowers(
+      await serviceInternals.notifyGameFollowers(
         makeEvent({ payload: { listingId: 'non-existent' } }),
         [],
         'listing',
@@ -486,14 +520,12 @@ describe('NotificationService', () => {
     ]
 
     it.each(mappings)('%s maps to correct NotificationType', (eventType, expectedType) => {
-      // @ts-expect-error accessing private method for testing
-      const result = service.mapEventToNotificationType(eventType)
+      const result = serviceInternals.mapEventToNotificationType(eventType)
       expect(result).toBe(expectedType)
     })
 
     it('returns null for unknown event types', () => {
-      // @ts-expect-error accessing private method for testing
-      expect(service.mapEventToNotificationType('unknown.event')).toBeNull()
+      expect(serviceInternals.mapEventToNotificationType('unknown.event')).toBeNull()
     })
   })
 
@@ -504,8 +536,7 @@ describe('NotificationService', () => {
       })
       mockPrisma.user.findUnique.mockResolvedValue({ name: 'Admin' })
 
-      // @ts-expect-error accessing private method for testing
-      const context = await service.enrichContextWithData(
+      const context = await serviceInternals.enrichContextWithData(
         makeEvent({
           eventType: NOTIFICATION_EVENTS.PC_LISTING_APPROVED,
           payload: { pcListingId: 'pc-listing-1' },
@@ -520,16 +551,16 @@ describe('NotificationService', () => {
     })
 
     it('enriches handheld listing data when listingId is present', async () => {
-      mockPrisma.listing.findUnique.mockResolvedValue({
-        id: 'listing-1',
-        game: { title: 'Zelda', id: 'game-1' },
-        device: { modelName: 'RP4', id: 'dev-1', brand: { name: 'Retroid' } },
-        emulator: { name: 'AetherSX2', id: 'emu-1' },
-      })
+      mockPrisma.listing.findUnique.mockResolvedValue(
+        makeListingRecord({
+          gameTitle: 'Zelda',
+          deviceId: 'dev-1',
+          emulatorName: 'AetherSX2',
+        }),
+      )
       mockPrisma.user.findUnique.mockResolvedValue({ name: 'Admin' })
 
-      // @ts-expect-error accessing private method for testing
-      const context = await service.enrichContextWithData(
+      const context = await serviceInternals.enrichContextWithData(
         makeEvent({ payload: { listingId: 'listing-1' } }),
         NotificationType.LISTING_APPROVED,
       )
@@ -538,6 +569,98 @@ describe('NotificationService', () => {
       expect(context.listingTitle).toBe('Zelda')
       expect(context.deviceName).toBe('Retroid RP4')
       expect(context.emulatorName).toBe('AetherSX2')
+    })
+  })
+
+  describe('createNotificationFromEvent', () => {
+    it('creates a scheduled listing approval notification from enriched listing data', async () => {
+      mockPrisma.listing.findUnique.mockResolvedValue(
+        makeListingRecord({
+          gameTitle: 'The Legend of Zelda',
+          deviceModelName: 'Pocket S',
+          deviceBrandName: 'AYN',
+          emulatorName: 'Sudachi',
+        }),
+      )
+      mockPrisma.user.findUnique.mockResolvedValue({ name: 'Moderator' })
+
+      const result = await service.createNotificationFromEvent(
+        makeEvent({
+          payload: {
+            listingId: 'listing-1',
+            approvedBy: 'admin-1',
+            approvedAt: '2026-05-13T14:00:00.000Z',
+          },
+        }),
+        'author-1',
+      )
+
+      expect(result).toBe('batch-id-1')
+      expect(mockPrisma.notification.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: 'author-1',
+            type: NotificationType.LISTING_APPROVED,
+          }),
+        }),
+      )
+      expect(mockScheduleNotification).toHaveBeenCalledTimes(1)
+
+      const notification = mockScheduleNotification.mock.calls[0][0]
+      expect(notification).toMatchObject({
+        userId: 'author-1',
+        type: NotificationType.LISTING_APPROVED,
+        category: NotificationCategory.MODERATION,
+        title: 'Your listing has been approved',
+        message: 'Your listing "The Legend of Zelda" has been approved by Moderator',
+        actionUrl: '/listings/listing-1',
+        deliveryChannel: DeliveryChannel.IN_APP,
+        metadata: {
+          listingId: 'listing-1',
+          approvedBy: 'Moderator',
+          approvedAt: '2026-05-13T14:00:00.000Z',
+        },
+      })
+    })
+
+    it('creates a scheduled PC listing approval notification with the PC listing URL', async () => {
+      mockPrisma.pcListing.findUnique.mockResolvedValue({
+        game: { id: 'game-2', title: 'Elden Ring' },
+      })
+      mockPrisma.user.findUnique.mockResolvedValue({ name: 'Moderator' })
+
+      const result = await service.createNotificationFromEvent(
+        makeEvent({
+          eventType: NOTIFICATION_EVENTS.PC_LISTING_APPROVED,
+          entityType: 'pcListing',
+          entityId: 'pc-listing-1',
+          payload: {
+            pcListingId: 'pc-listing-1',
+            approvedBy: 'admin-1',
+            approvedAt: '2026-05-13T14:00:00.000Z',
+          },
+        }),
+        'pc-author-1',
+      )
+
+      expect(result).toBe('batch-id-1')
+      expect(mockScheduleNotification).toHaveBeenCalledTimes(1)
+
+      const notification = mockScheduleNotification.mock.calls[0][0]
+      expect(notification).toMatchObject({
+        userId: 'pc-author-1',
+        type: NotificationType.LISTING_APPROVED,
+        category: NotificationCategory.MODERATION,
+        title: 'Your listing has been approved',
+        message: 'Your listing "Elden Ring" has been approved by Moderator',
+        actionUrl: '/pc-listings/pc-listing-1',
+        deliveryChannel: DeliveryChannel.IN_APP,
+        metadata: {
+          pcListingId: 'pc-listing-1',
+          approvedBy: 'Moderator',
+          approvedAt: '2026-05-13T14:00:00.000Z',
+        },
+      })
     })
   })
 
