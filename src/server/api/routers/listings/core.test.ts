@@ -12,10 +12,12 @@ const mockReverseLogAction = vi.fn().mockResolvedValue(undefined)
 
 vi.mock('@/lib/trust/service', () => ({
   applyTrustAction: (...args: unknown[]) => mockApplyTrustAction(...args),
-  TrustService: vi.fn().mockImplementation(() => ({
-    logAction: mockLogAction,
-    reverseLogAction: mockReverseLogAction,
-  })),
+  TrustService: vi.fn().mockImplementation(function MockTrustService() {
+    return {
+      logAction: mockLogAction,
+      reverseLogAction: mockReverseLogAction,
+    }
+  }),
 }))
 
 vi.mock('@/server/utils/vote-trust-effects', () => ({
@@ -68,9 +70,11 @@ vi.mock('@/server/utils/security-validation', () => ({
 }))
 
 vi.mock('@/server/repositories/listings.repository', () => ({
-  ListingsRepository: vi.fn().mockImplementation(() => ({
-    getExistingVote: vi.fn().mockResolvedValue(null),
-  })),
+  ListingsRepository: vi.fn().mockImplementation(function MockListingsRepository() {
+    return {
+      getExistingVote: vi.fn().mockResolvedValue(null),
+    }
+  }),
 }))
 
 const { coreRouter } = await import('./core')

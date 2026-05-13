@@ -9,9 +9,11 @@ const mockApplyManualAdjustment = vi.fn().mockResolvedValue(undefined)
 
 vi.mock('@/lib/trust/service', () => ({
   applyMonthlyActiveBonus: (...args: unknown[]) => mockApplyMonthlyActiveBonus(...args),
-  TrustService: vi.fn().mockImplementation(() => ({
-    applyManualAdjustment: (...args: unknown[]) => mockApplyManualAdjustment(...args),
-  })),
+  TrustService: vi.fn().mockImplementation(function MockTrustService() {
+    return {
+      applyManualAdjustment: (...args: unknown[]) => mockApplyManualAdjustment(...args),
+    }
+  }),
 }))
 
 const mockPrismaTrustActionLogFindMany = vi.fn().mockResolvedValue([])

@@ -6,10 +6,12 @@ const mockLogAction = vi.fn()
 const mockReverseLogAction = vi.fn()
 
 vi.mock('@/lib/trust/service', () => ({
-  TrustService: vi.fn().mockImplementation(() => ({
-    logAction: mockLogAction,
-    reverseLogAction: mockReverseLogAction,
-  })),
+  TrustService: vi.fn().mockImplementation(function MockTrustService() {
+    return {
+      logAction: mockLogAction,
+      reverseLogAction: mockReverseLogAction,
+    }
+  }),
 }))
 
 const USER_ID = 'voter-1'

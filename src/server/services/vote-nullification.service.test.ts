@@ -13,10 +13,12 @@ vi.mock('@/server/services/audit.service', () => ({
 const mockApplyManualAdjustment = vi.fn()
 const mockApplyBulkManualAdjustments = vi.fn()
 vi.mock('@/lib/trust/service', () => ({
-  TrustService: vi.fn().mockImplementation(() => ({
-    applyManualAdjustment: (...args: unknown[]) => mockApplyManualAdjustment(...args),
-    applyBulkManualAdjustments: (...args: unknown[]) => mockApplyBulkManualAdjustments(...args),
-  })),
+  TrustService: vi.fn().mockImplementation(function MockTrustService() {
+    return {
+      applyManualAdjustment: (...args: unknown[]) => mockApplyManualAdjustment(...args),
+      applyBulkManualAdjustments: (...args: unknown[]) => mockApplyBulkManualAdjustments(...args),
+    }
+  }),
 }))
 
 vi.mock('@/utils/wilson-score', () => ({

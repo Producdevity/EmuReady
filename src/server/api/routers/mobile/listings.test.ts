@@ -14,7 +14,9 @@ vi.mock('@/schemas/apiAccess', () => ({
 }))
 
 vi.mock('@/server/repositories/api-keys.repository', () => ({
-  ApiKeysRepository: vi.fn().mockImplementation(() => ({})),
+  ApiKeysRepository: vi.fn().mockImplementation(function MockApiKeysRepository() {
+    return {}
+  }),
 }))
 
 const mockApplyTrustAction = vi.fn().mockResolvedValue(undefined)
@@ -24,7 +26,9 @@ const mockLogAction = vi.fn().mockResolvedValue(undefined)
 
 vi.mock('@/lib/trust/service', () => ({
   applyTrustAction: (...args: unknown[]) => mockApplyTrustAction(...args),
-  TrustService: vi.fn().mockImplementation(() => ({ logAction: mockLogAction })),
+  TrustService: vi.fn().mockImplementation(function MockTrustService() {
+    return { logAction: mockLogAction }
+  }),
 }))
 
 vi.mock('@/server/utils/vote-trust-effects', () => ({
@@ -43,9 +47,11 @@ vi.mock('@/lib/analytics', () => ({
 }))
 
 vi.mock('@/server/repositories/comments.repository', () => ({
-  CommentsRepository: vi.fn().mockImplementation(() => ({
-    listByListing: vi.fn().mockResolvedValue([]),
-  })),
+  CommentsRepository: vi.fn().mockImplementation(function MockCommentsRepository() {
+    return {
+      listByListing: vi.fn().mockResolvedValue([]),
+    }
+  }),
 }))
 
 const mockEmitNotificationEvent = vi.fn()
