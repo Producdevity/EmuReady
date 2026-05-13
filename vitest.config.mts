@@ -11,11 +11,7 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
     exclude: ['playwright.config.ts'],
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        singleThread: true,
-      },
-    },
+    fileParallelism: false,
     typecheck: {
       enabled: false,
     },

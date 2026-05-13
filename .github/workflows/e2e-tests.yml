@@ -30,7 +30,7 @@ concurrency:
 jobs:
   e2e-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 30
 
     services:
       postgres:
@@ -63,6 +63,7 @@ jobs:
       RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
       THE_GAMES_DB_API_KEY: ${{ secrets.THE_GAMES_DB_API_KEY }}
       # Test configuration
+      NEXT_IMAGE_UNOPTIMIZED: "true"
       NEXT_PUBLIC_DISABLE_COOKIE_BANNER: "true"
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
       NEXT_PUBLIC_DISCORD_LINK: "https://discord.gg/test"
@@ -90,11 +91,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate Prisma client
-        run: pnpm db:generate
-
       - name: Run database migrations
         run: pnpm exec prisma migrate deploy
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
 
       - name: Seed test database
         run: pnpm exec prisma db seed
@@ -103,7 +104,7 @@ jobs:
         run: pnpm build
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Run E2E tests
         run: pnpm test:e2e:ci

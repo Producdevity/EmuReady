@@ -5,6 +5,7 @@ import type { Configuration as WebpackConfiguration } from 'webpack'
 
 const nextConfig: NextConfig = {
   images: {
+    unoptimized: process.env.NEXT_IMAGE_UNOPTIMIZED === 'true',
     dangerouslyAllowSVG: true,
     qualities: [50, 75, 85, 100],
     localPatterns: [

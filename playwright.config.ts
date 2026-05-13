@@ -35,7 +35,7 @@ export default defineConfig({
     navigationTimeout: 30 * 1000,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: isCI ? 'on-first-retry' : 'retain-on-failure',
   },
 
   /* Configure projects for major browsers */
