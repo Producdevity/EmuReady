@@ -1,4 +1,4 @@
-# 🚀 EmuReady Release Notes – 13 May 2026 (v0.10.0) Changes since v0.10.0
+# 🚀 EmuReady Release Notes – 13 May 2026 (v0.13.0) Changes since v0.10.0
 
 Apologies for not sharing proper release notes for some time. A lot has changes and we will do an attempt at listing the biggest changes.
 
