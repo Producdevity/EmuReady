@@ -116,7 +116,6 @@ const nextConfig: NextConfig = {
 
   async headers() {
     const headers = [
-      // trpc endpoints are dynamic; prevent intermediary/proxy caching
       {
         source: '/service-worker.js',
         headers: [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' }],
