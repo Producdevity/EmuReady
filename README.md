@@ -117,8 +117,6 @@ Production site: [www.emuready.com](https://www.emuready.com)
 EmuReady is a Next.js application written in TypeScript. It uses PostgreSQL with Prisma, tRPC for application APIs, Clerk for authentication, Tailwind CSS
 for styling, Vitest for unit tests, and Playwright for browser tests.
 
-The exact package versions are intentionally left to `package.json` and the lockfile so this README does not need to change for routine upgrades.
-
 ## Local Development
 
 ### Prerequisites
