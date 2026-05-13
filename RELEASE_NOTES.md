@@ -1,3 +1,58 @@
+# 🚀 EmuReady Release Notes – 13 May 2026 (v0.10.0) Changes since v0.10.0
+
+Apologies for not sharing proper release notes for some time. A lot has changes and we will do an attempt at listing the biggest changes.
+
+There is A LOT but this summarizes user-facing, moderation, and contributor-facing changes added after v0.10.0 for the 0.13.x release line. Routine version bumps, small copy edits, and internal cleanup are omitted unless they affect day-to-day use or maintenance.
+
+## Users
+
+- Profile pages now include separate areas for bookmarks, followed games, followers, following, friends, blocked users, privacy settings, hardware preferences, PC presets, and notification preferences.
+- Public profiles can show approved reports, vote activity, success-rate summaries, bookmarks, and followed games when the user has made those sections visible.
+- Added a feed for recent compatibility activity, with separate community and following views.
+- Bookmarks and game follows now work across handheld and PC reports, and followed games can trigger notifications when new reports are approved.
+- The downloads page supports EmuReady app access through Play purchases, Patreon, or manual entitlements.
+- The home page now includes platform stats, top contributors, trending devices, trending emulators, app promotion, and entry points for browsing or submitting reports.
+- Game discovery now includes Steam search, batch Steam App ID lookup, normalized title matching, artwork selection changes, age ratings, and separate handheld/PC report sections on game pages.
+- Device and emulator pages include additional metadata, including RetroCatalog hardware specs where available.
+- Compatibility report browsing now includes updated labels, active filter summaries, clear-all controls, page-size controls, loading and empty states, mobile filter changes, and a new `/v2/listings` view.
+- Report detail pages include clickable system/device/emulator badges, pinned comments, updated edit/report/verify actions, responsive layout changes, and safer markdown rendering.
+- Notes, comments, and emulator descriptions now offer translation when non-English text is detected with enough confidence.
+- Report forms include emulator-specific config importers and field handling for Eden, Azahar, and GameNative.
+- PC reports now share more behavior with handheld reports, including reports, approvals, votes, filters, comments, verification, PC specs display, and FreeBSD/Other OS options.
+- Added or expanded emulator support and assets for GameNative, ARMSX2, Kenji-NX, Sumi, Eden, Azahar, and Dolphin MMJR.
+- Updated mobile search, notifications, footer links, support buttons, app screenshots, and responsive layouts across the site.
+
+## Moderators and admins
+
+- Added admin areas for API access, audit logs, Android app entitlements, releases, vote investigation, title ID tools, and database/cache monitoring.
+- API access management supports user and system keys, quotas, expiration, revocation, secret display, and a developer-facing access page.
+- Release and entitlement tooling manages Android app access through Play, Patreon, and manual grants, with download tracking and eligible-user notifications.
+- User management includes active ban state, follower/following counts, author risk signals, report history, and common ban reasons.
+- Approval and report queues include PC report parity, bulk approval confirmations, author risk warnings, direct user links, image previews, and custom field review sections.
+- Vote moderation can inspect suspicious voting patterns and nullify or restore votes across handheld reports, PC reports, and comments while keeping trust adjustments consistent.
+- Spam detection and author risk profiling were added to help identify risky submissions and repeat abuse.
+- Custom field management supports categories, drag-and-drop ordering, JSON export, default value indicators, template application, and expanded seeded field sets for supported emulators.
+- Title ID tools support Switch and 3DS lookup workflows, including provider statistics and best-match display.
+- Audit logging and permission logs cover more moderation, role, permission, and system changes.
+- Admin tables and workflows include shared layouts, updated column defaults, direct user links, image indicators, quick edit buttons, open-in-tabs actions, and empty states.
+
+## Developers and contributors
+
+- Switched the project from npm to pnpm 11, including CI, Docker, docs, lockfile handling, and workspace configuration changes.
+- PR checks now run lint/type-check, unit tests, production build, and E2E tests as separate GitHub Actions jobs.
+- Updated Next, Clerk, tRPC, React Query, Axios, DOMPurify, markdown-it, PostCSS, and related Next packages for the security-floor upgrade, without crossing into Next 16 or Clerk 7.
+- Updated Sentry to the v10 Next.js setup and aligned the configuration with Next 15.5/Turbopack build behavior.
+- Prisma now uses TypedSQL for selected contributor, author-risk, and trending-device queries, with generated SQL files included for deployment.
+- The data model gained API keys, usage windows, audit logs, custom field categories, Android entitlements/releases/downloads, external accounts, social relationships, bookmarks, game follows, vote nullification, and extracted user settings.
+- The server layer added or expanded repositories and services for API keys, audit logs, social features, bookmarks, game follows, entitlements, releases, vote investigation, vote nullification, author risk, spam detection, report stats, Patreon, Google Play orders, RetroCatalog, and notification enrichment.
+- The mobile/catalog API expanded with compatibility scoring, cached device data, driver-version lookup, release metadata, API reference pages, and refreshed OpenAPI output.
+- E2E and unit tests now cover seeded fixtures, external-service mocks, deterministic users, auth setup, report ownership, vote moderation, notification enrichment, Playwright/Vitest runtime settings, and CI database setup.
+- Markdown sanitization now uses a DOMPurify/jsdom server path with tests for unsafe HTML, links, images, data URIs, and parser edge cases.
+- CORS, origin validation, CSP, service-worker caching, image handling, and deployment tracing were updated as part of the security and production-readiness work.
+- README, development setup, Docker docs, E2E docs, and GitHub issue templates were shortened to reduce stale project documentation.
+
+---
+
 # 🚀 EmuReady Release Notes - 25 August 2025 (v0.10.0)
 
 ## 🎮 Enhanced Game Discovery
