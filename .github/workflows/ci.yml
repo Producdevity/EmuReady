@@ -172,8 +172,5 @@ jobs:
       - name: Generate Prisma client
         run: pnpm db:generate
 
-      - name: Seed test database
-        run: pnpm exec prisma db seed
-
       - name: Build
         run: pnpm build

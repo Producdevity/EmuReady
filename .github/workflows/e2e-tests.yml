@@ -83,11 +83,6 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
-      - name: Install system dependencies for Sharp
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libvips-dev
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
