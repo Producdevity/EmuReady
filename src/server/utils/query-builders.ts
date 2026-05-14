@@ -130,7 +130,7 @@ function createNestedContains(field: string, value: string): SearchCondition {
  * Build filter for NSFW content based on user preferences
  */
 export function buildNsfwFilter(
-  showNsfw?: boolean | null,
+  showNsfw: boolean | null = false,
   fieldName = 'isErotic',
 ): Record<string, boolean> | undefined {
   return showNsfw === false ? { [fieldName]: false } : undefined
