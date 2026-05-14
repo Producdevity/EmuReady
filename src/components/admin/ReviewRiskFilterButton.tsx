@@ -1,5 +1,5 @@
 import { ShieldAlert } from 'lucide-react'
-import { ToggleButton } from '@/components/ui'
+import { ToggleButton } from '@/components/ui/ToggleButton'
 
 interface Props {
   isActive: boolean
