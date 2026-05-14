@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { PAGINATION, CHAR_LIMITS } from '@/data/constants'
+import { REVIEW_RISK_FILTERS, ReviewRiskFilterSchema } from '@/schemas/submissionRisk'
 import { ApprovalStatus, PcOs, ReportReason, ReportStatus } from '@orm'
 
 export const CreatePcListingSchema = z.object({
@@ -73,6 +74,7 @@ export const GetPendingPcListingsSchema = z
       ])
       .optional(),
     sortDirection: z.enum(['asc', 'desc']).optional(),
+    riskFilter: ReviewRiskFilterSchema.default(REVIEW_RISK_FILTERS.ALL),
   })
   .optional()
 

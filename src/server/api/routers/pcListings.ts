@@ -64,7 +64,11 @@ import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifica
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
 import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
 import { logAudit } from '@/server/services/audit.service'
-import { computeAuthorRiskProfiles } from '@/server/services/author-risk.service'
+import {
+  attachReviewRiskProfiles,
+  computeReviewRiskProfiles,
+  getRiskyReviewItemIds,
+} from '@/server/services/review-risk.service'
 import { listingStatsCache } from '@/server/utils/cache'
 import { paginate } from '@/server/utils/pagination'
 import { isUserBanned } from '@/server/utils/query-builders'
@@ -436,7 +440,15 @@ export const pcListingsRouter = createTRPCRouter({
     }
 
     const repository = new PcListingsRepository(ctx.prisma)
-    const { search, page = 1, limit = 20, sortField, sortDirection = 'asc' } = input ?? {}
+    const {
+      search,
+      page = 1,
+      limit = 20,
+      sortField,
+      sortDirection = 'asc',
+      riskFilter = 'all',
+    } = input ?? {}
+    const filterRiskyListings = riskFilter === 'risky'
 
     // For developers, filter by their assigned emulators
     let emulatorIds: string[] | undefined
@@ -452,6 +464,31 @@ export const pcListingsRouter = createTRPCRouter({
       }
     }
 
+    if (filterRiskyListings) {
+      const riskCandidates = await repository.getPendingListingRiskCandidates({
+        emulatorIds,
+        search,
+        sortField,
+        sortDirection: sortDirection ?? 'asc',
+        canSeeBannedUsers: true,
+      })
+      const riskProfiles = await computeReviewRiskProfiles(ctx.prisma, riskCandidates)
+      const riskyPcListingIds = getRiskyReviewItemIds(riskCandidates, riskProfiles)
+      const paginatedRiskyPcListingIds = riskyPcListingIds.slice((page - 1) * limit, page * limit)
+      const pagePcListings = await repository.getPendingListingsByIds(paginatedRiskyPcListingIds)
+      const pagePcListingMap = new Map(pagePcListings.map((listing) => [listing.id, listing]))
+      const sortedPagePcListings = paginatedRiskyPcListingIds.flatMap((pcListingId) => {
+        const listing = pagePcListingMap.get(pcListingId)
+        return listing ? [listing] : []
+      })
+      const paginatedPcListings = attachReviewRiskProfiles(sortedPagePcListings, riskProfiles)
+
+      return {
+        pcListings: paginatedPcListings,
+        pagination: paginate({ total: riskyPcListingIds.length, page, limit }),
+      }
+    }
+
     const result = await repository.getPendingListings({
       emulatorIds,
       search,
@@ -459,39 +496,14 @@ export const pcListingsRouter = createTRPCRouter({
       limit,
       sortField,
       sortDirection: sortDirection ?? 'asc',
-      canSeeBannedUsers: true, // Moderators can see listings from banned users
+      canSeeBannedUsers: true,
     })
 
-    // Compute author risk profiles
-    const uniqueAuthorIds = [...new Set(result.pcListings.map((l) => l.authorId))]
-    const existingBansMap = new Map<string, { reason: string }[]>()
-    for (const listing of result.pcListings) {
-      if (
-        listing.author?.userBans &&
-        listing.author.userBans.length > 0 &&
-        !existingBansMap.has(listing.authorId)
-      ) {
-        existingBansMap.set(
-          listing.authorId,
-          listing.author.userBans.map((b) => ({ reason: b.reason })),
-        )
-      }
-    }
-    const riskProfiles = await computeAuthorRiskProfiles(
-      ctx.prisma,
-      uniqueAuthorIds,
-      existingBansMap,
-    )
+    const riskProfiles = await computeReviewRiskProfiles(ctx.prisma, result.pcListings)
+    const paginatedPcListings = attachReviewRiskProfiles(result.pcListings, riskProfiles)
 
     return {
-      pcListings: result.pcListings.map((listing) => ({
-        ...listing,
-        authorRiskProfile: riskProfiles.get(listing.authorId) ?? {
-          authorId: listing.authorId,
-          signals: [],
-          highestSeverity: null,
-        },
-      })),
+      pcListings: paginatedPcListings,
       pagination: result.pagination,
     }
   }),

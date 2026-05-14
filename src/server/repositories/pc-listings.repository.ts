@@ -6,6 +6,7 @@
 import { PAGINATION } from '@/data/constants'
 import { AppError, ResourceError } from '@/lib/errors'
 import { canUserAutoApprove } from '@/lib/trust/service'
+import { EMULATOR_VERSION_FIELD_NAME } from '@/schemas/submissionRisk'
 import { computeVoteCounts } from '@/server/utils/moderator-info'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { sanitizeInput } from '@/server/utils/security-validation'
@@ -36,6 +37,19 @@ export interface PcListingFilters {
   memoryMin?: number
   memoryMax?: number
   canSeeBannedUsers?: boolean
+}
+
+export interface PcListingRiskCandidate {
+  id: string
+  authorId: string
+  author: { userBans: { reason: string }[] } | null
+  customFieldValues: {
+    value: unknown
+    customFieldDefinition: {
+      name: string
+      label: string
+    }
+  }[]
 }
 
 export class PcListingsRepository extends BaseRepository {
@@ -790,6 +804,60 @@ export class PcListingsRepository extends BaseRepository {
       canSeeBannedUsers = false,
     } = filters
 
+    const where = this.buildPendingListingsWhere({ emulatorIds, search, canSeeBannedUsers })
+    const actualOffset = calculateOffset({ page }, limit)
+    const orderBy = this.buildOrderBy(sortField, sortDirection)
+
+    const [total, pcListings] = await Promise.all([
+      this.prisma.pcListing.count({ where }),
+      this.prisma.pcListing.findMany({
+        where,
+        include: PcListingsRepository.includes.forList,
+        orderBy,
+        skip: actualOffset,
+        take: limit,
+      }),
+    ])
+
+    return {
+      pcListings,
+      pagination: paginate({ total: total, page, limit: limit }),
+    }
+  }
+
+  async getPendingListingRiskCandidates(filters: {
+    emulatorIds?: string[]
+    search?: string
+    sortField?: string
+    sortDirection?: 'asc' | 'desc'
+    canSeeBannedUsers?: boolean
+  }): Promise<PcListingRiskCandidate[]> {
+    return this.prisma.pcListing.findMany({
+      where: this.buildPendingListingsWhere(filters),
+      select: this.getPendingListingRiskCandidateSelect(),
+      orderBy: this.buildOrderBy(filters.sortField, filters.sortDirection ?? 'asc'),
+    })
+  }
+
+  async getPendingListingsByIds(pcListingIds: string[]): Promise<
+    Prisma.PcListingGetPayload<{
+      include: typeof PcListingsRepository.includes.forList
+    }>[]
+  > {
+    if (pcListingIds.length === 0) return []
+
+    return this.prisma.pcListing.findMany({
+      where: { id: { in: pcListingIds }, status: ApprovalStatus.PENDING },
+      include: PcListingsRepository.includes.forList,
+    })
+  }
+
+  private buildPendingListingsWhere(filters: {
+    emulatorIds?: string[]
+    search?: string
+    canSeeBannedUsers?: boolean
+  }): Prisma.PcListingWhereInput {
+    const { emulatorIds, search, canSeeBannedUsers = false } = filters
     const baseWhere: Prisma.PcListingWhereInput = {
       status: ApprovalStatus.PENDING,
       ...(emulatorIds?.length ? { emulatorId: { in: emulatorIds } } : {}),
@@ -806,33 +874,36 @@ export class PcListingsRepository extends BaseRepository {
         : {}),
     }
 
-    // Apply banned user filtering
     const shadowBanFilter = canSeeBannedUsers ? undefined : buildShadowBanFilter(null)
-    const where = {
+    return {
       ...baseWhere,
       ...(shadowBanFilter && { author: shadowBanFilter }),
     }
+  }
 
-    const actualOffset = calculateOffset({ page }, limit)
-    const orderBy = this.buildOrderBy(sortField, sortDirection)
-
-    const [total, pcListings] = await Promise.all([
-      this.prisma.pcListing.count({ where }),
-      this.prisma.pcListing.findMany({
-        where,
-        include: PcListingsRepository.includes.forList,
-        orderBy,
-        skip: actualOffset,
-        take: limit,
-      }),
-    ])
-
-    const pagination = paginate({ total: total, page, limit: limit })
-
+  private getPendingListingRiskCandidateSelect() {
     return {
-      pcListings,
-      pagination,
-    }
+      id: true,
+      authorId: true,
+      author: {
+        select: {
+          userBans: {
+            where: {
+              isActive: true,
+              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+            },
+            select: { reason: true },
+          },
+        },
+      },
+      customFieldValues: {
+        where: { customFieldDefinition: { name: EMULATOR_VERSION_FIELD_NAME } },
+        select: {
+          value: true,
+          customFieldDefinition: { select: { name: true, label: true } },
+        },
+      },
+    } satisfies Prisma.PcListingSelect
   }
 
   /**

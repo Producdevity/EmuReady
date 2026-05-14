@@ -6,7 +6,7 @@ import {
   RejectionNotesInput,
   CustomFieldsApprovalSection,
 } from '@/app/listings/components/shared/approval/ApprovalModalSharedComponents'
-import { AuthorRiskWarningBanner, Modal, Button } from '@/components/ui'
+import { ReviewRiskWarningBanner, Modal, Button } from '@/components/ui'
 import { type RouterOutput } from '@/types/trpc'
 import { ApprovalStatus } from '@orm'
 
@@ -25,7 +25,9 @@ interface Props {
 }
 
 function ApprovalModal(props: Props) {
-  const hasRisk = props.selectedListingForApproval.authorRiskProfile?.highestSeverity !== null
+  const hasRisk =
+    Boolean(props.selectedListingForApproval.authorRiskProfile?.highestSeverity) ||
+    Boolean(props.selectedListingForApproval.submissionRiskProfile?.highestSeverity)
   const actionText = props.approvalDecision === ApprovalStatus.APPROVED ? 'Approve' : 'Reject'
   const modalTitle = `${actionText} Listing: ${props.selectedListingForApproval.game.title}`
 
@@ -51,7 +53,10 @@ function ApprovalModal(props: Props) {
       size="lg"
     >
       <div className="space-y-4">
-        <AuthorRiskWarningBanner riskProfile={props.selectedListingForApproval.authorRiskProfile} />
+        <ReviewRiskWarningBanner
+          authorRiskProfile={props.selectedListingForApproval.authorRiskProfile}
+          submissionRiskProfile={props.selectedListingForApproval.submissionRiskProfile}
+        />
 
         {/* Listing Details Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

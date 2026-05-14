@@ -1,6 +1,7 @@
 import { PAGINATION } from '@/data/constants'
 import { AppError, ResourceError } from '@/lib/errors'
 import { canUserAutoApprove } from '@/lib/trust/service'
+import { EMULATOR_VERSION_FIELD_NAME } from '@/schemas/submissionRisk'
 import { validateCustomFields } from '@/server/api/routers/listings/validation'
 import { computeVoteCounts } from '@/server/utils/moderator-info'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
@@ -43,6 +44,28 @@ export interface ListingFilters {
   userId?: string
   userRole?: Role
   showNsfw?: boolean
+}
+
+export interface PendingListingsFilters {
+  emulatorIds?: string[]
+  search?: string | null
+  page?: number
+  limit?: number
+  sortField?: string | null
+  sortDirection?: 'asc' | 'desc' | null
+}
+
+export interface ListingRiskCandidate {
+  id: string
+  authorId: string
+  author: { userBans: { reason: string }[] } | null
+  customFieldValues: {
+    value: unknown
+    customFieldDefinition: {
+      name: string
+      label: string
+    }
+  }[]
 }
 
 /**
@@ -446,6 +469,171 @@ export class ListingsRepository extends BaseRepository {
       userVote: userVote?.value ?? null,
       isVerifiedDeveloper,
     }
+  }
+
+  async listVerifiedEmulatorIdsByUserId(userId: string): Promise<string[]> {
+    const verifiedEmulators = await this.prisma.verifiedDeveloper.findMany({
+      where: { userId },
+      select: { emulatorId: true },
+    })
+
+    return verifiedEmulators.map((verifiedEmulator) => verifiedEmulator.emulatorId)
+  }
+
+  async getPendingListings(filters: PendingListingsFilters) {
+    const page = filters.page ?? 1
+    const limit = filters.limit ?? 20
+    const where = this.buildPendingListingsWhere(filters)
+    const orderBy = this.buildPendingListingsOrderBy(filters.sortField, filters.sortDirection)
+    const offset = calculateOffset({ page }, limit)
+
+    const [total, listings] = await Promise.all([
+      this.prisma.listing.count({ where }),
+      this.prisma.listing.findMany({
+        where,
+        include: this.getPendingListingInclude(),
+        orderBy,
+        skip: offset,
+        take: limit,
+      }),
+    ])
+
+    return {
+      listings,
+      pagination: paginate({ total, page, limit }),
+    }
+  }
+
+  async getPendingListingRiskCandidates(
+    filters: PendingListingsFilters,
+  ): Promise<ListingRiskCandidate[]> {
+    return this.prisma.listing.findMany({
+      where: this.buildPendingListingsWhere(filters),
+      select: this.getPendingListingRiskCandidateSelect(),
+      orderBy: this.buildPendingListingsOrderBy(filters.sortField, filters.sortDirection),
+    })
+  }
+
+  async getPendingListingsByIds(listingIds: string[]) {
+    if (listingIds.length === 0) return []
+
+    return this.prisma.listing.findMany({
+      where: { id: { in: listingIds }, status: ApprovalStatus.PENDING },
+      include: this.getPendingListingInclude(),
+    })
+  }
+
+  private buildPendingListingsWhere(filters: PendingListingsFilters): Prisma.ListingWhereInput {
+    const where: Prisma.ListingWhereInput = { status: ApprovalStatus.PENDING }
+
+    if (filters.emulatorIds?.length) {
+      where.emulatorId = { in: filters.emulatorIds }
+    }
+
+    const search = filters.search?.trim()
+    if (search) {
+      where.OR = [
+        { game: { title: { contains: search, mode: this.mode } } },
+        { game: { system: { name: { contains: search, mode: this.mode } } } },
+        { device: { modelName: { contains: search, mode: this.mode } } },
+        { device: { brand: { name: { contains: search, mode: this.mode } } } },
+        { emulator: { name: { contains: search, mode: this.mode } } },
+        { author: { name: { contains: search, mode: this.mode } } },
+      ]
+    }
+
+    return where
+  }
+
+  private buildPendingListingsOrderBy(
+    sortField?: string | null,
+    sortDirection?: 'asc' | 'desc' | null,
+  ): Prisma.ListingOrderByWithRelationInput {
+    const direction = sortDirection ?? Prisma.SortOrder.asc
+
+    switch (sortField) {
+      case 'game.title':
+        return { game: { title: direction } }
+      case 'game.system.name':
+        return { game: { system: { name: direction } } }
+      case 'device':
+        return { device: { modelName: direction } }
+      case 'emulator.name':
+        return { emulator: { name: direction } }
+      case 'author.name':
+        return { author: { name: direction } }
+      case 'createdAt':
+        return { createdAt: direction }
+      default:
+        return { createdAt: Prisma.SortOrder.asc }
+    }
+  }
+
+  private getActiveBanWhere(): Prisma.UserBanWhereInput {
+    return {
+      isActive: true,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+    }
+  }
+
+  private getPendingListingInclude() {
+    return {
+      game: { include: { system: true } },
+      device: { include: { brand: true } },
+      emulator: true,
+      author: {
+        select: {
+          id: true,
+          name: true,
+          userBans: {
+            where: this.getActiveBanWhere(),
+            select: { id: true, reason: true, bannedAt: true, expiresAt: true },
+          },
+        },
+      },
+      performance: true,
+      customFieldValues: {
+        include: {
+          customFieldDefinition: {
+            select: {
+              id: true,
+              type: true,
+              label: true,
+              name: true,
+              options: true,
+              defaultValue: true,
+              rangeDecimals: true,
+              rangeUnit: true,
+              categoryId: true,
+              categoryOrder: true,
+              category: { select: { id: true, name: true, displayOrder: true } },
+            },
+          },
+        },
+      },
+    } satisfies Prisma.ListingInclude
+  }
+
+  private getPendingListingRiskCandidateSelect() {
+    return {
+      id: true,
+      authorId: true,
+      author: {
+        select: {
+          userBans: {
+            where: this.getActiveBanWhere(),
+            select: { reason: true },
+          },
+        },
+      },
+      customFieldValues: {
+        where: { customFieldDefinition: { name: EMULATOR_VERSION_FIELD_NAME } },
+        select: {
+          value: true,
+          customFieldDefinition: { select: { name: true, label: true } },
+        },
+      },
+    } satisfies Prisma.ListingSelect
   }
 
   /**

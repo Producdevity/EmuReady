@@ -1,4 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
+import { RISK_SIGNAL_TYPES } from '@/schemas/authorRisk'
+import { SUBMISSION_RISK_SIGNAL_TYPES } from '@/schemas/submissionRisk'
 import { ApprovalStatus, PcOs, Role, TrustAction } from '@orm'
 
 vi.unmock('@/server/api/trpc')
@@ -8,6 +10,8 @@ const mockApplyTrustAction = vi.fn().mockResolvedValue(undefined)
 const mockHandleListingVoteTrustEffects = vi.fn().mockResolvedValue(undefined)
 const mockHandleCommentVoteTrustEffects = vi.fn().mockResolvedValue(undefined)
 const mockLogAction = vi.fn().mockResolvedValue(undefined)
+const mockComputeAuthorRiskProfiles = vi.fn().mockResolvedValue(new Map())
+const mockComputeSubmissionRiskProfiles = vi.fn().mockResolvedValue(new Map())
 
 vi.mock('@/lib/trust/service', () => ({
   applyTrustAction: (...args: unknown[]) => mockApplyTrustAction(...args),
@@ -73,7 +77,34 @@ vi.mock('@/server/services/audit.service', () => ({
 }))
 
 vi.mock('@/server/services/author-risk.service', () => ({
-  computeAuthorRiskProfiles: vi.fn().mockResolvedValue(new Map()),
+  computeAuthorRiskProfiles: (...args: unknown[]) => mockComputeAuthorRiskProfiles(...args),
+  createExistingAuthorBansMap: (
+    listings: readonly {
+      authorId: string
+      author?: { userBans?: readonly { reason: string }[] } | null
+    }[],
+  ) => {
+    const existingBansMap = new Map<string, { reason: string }[]>()
+
+    for (const listing of listings) {
+      if (
+        listing.author?.userBans &&
+        listing.author.userBans.length > 0 &&
+        !existingBansMap.has(listing.authorId)
+      ) {
+        existingBansMap.set(
+          listing.authorId,
+          listing.author.userBans.map((ban) => ({ reason: ban.reason })),
+        )
+      }
+    }
+
+    return existingBansMap
+  },
+}))
+
+vi.mock('@/server/services/submission-risk.service', () => ({
+  computeSubmissionRiskProfiles: (...args: unknown[]) => mockComputeSubmissionRiskProfiles(...args),
 }))
 
 vi.mock('@/server/api/utils/pinPermissions', () => ({
@@ -90,6 +121,10 @@ const mockRepositoryApprove = vi.fn()
 const mockRepositoryReject = vi.fn()
 const mockRepositoryGetExistingVote = vi.fn()
 const mockIsDeveloperVerified = vi.fn()
+const mockRepositoryGetPendingListings = vi.fn()
+const mockRepositoryGetPendingListingRiskCandidates = vi.fn()
+const mockRepositoryGetPendingListingsByIds = vi.fn()
+const mockRepositoryGetVerifiedEmulatorIds = vi.fn()
 
 vi.mock('@/server/repositories/pc-listings.repository', () => ({
   PcListingsRepository: vi.fn().mockImplementation(function MockPcListingsRepository() {
@@ -100,6 +135,10 @@ vi.mock('@/server/repositories/pc-listings.repository', () => ({
       reject: mockRepositoryReject,
       getExistingVote: mockRepositoryGetExistingVote,
       isDeveloperVerifiedForEmulator: mockIsDeveloperVerified,
+      getPendingListings: mockRepositoryGetPendingListings,
+      getPendingListingRiskCandidates: mockRepositoryGetPendingListingRiskCandidates,
+      getPendingListingsByIds: mockRepositoryGetPendingListingsByIds,
+      getVerifiedEmulatorIds: mockRepositoryGetVerifiedEmulatorIds,
       list: vi.fn().mockResolvedValue({ pcListings: [], pagination: {} }),
       getUserVote: vi.fn().mockResolvedValue(null),
     }
@@ -117,7 +156,10 @@ const { pcListingsRouter } = await import('./pcListings')
 const USER_ID = '00000000-0000-4000-a000-000000000001'
 const AUTHOR_ID = '00000000-0000-4000-a000-000000000002'
 const ADMIN_ID = '00000000-0000-4000-a000-000000000003'
+const CLEAN_AUTHOR_ID = '00000000-0000-4000-a000-000000000004'
 const LISTING_ID = '00000000-0000-4000-a000-000000000010'
+const LISTING_ID_B = '00000000-0000-4000-a000-000000000011'
+const LISTING_ID_C = '00000000-0000-4000-a000-000000000012'
 const COMMENT_ID = '00000000-0000-4000-a000-000000000020'
 
 function createMockPrisma() {
@@ -178,6 +220,15 @@ describe('pcListings trust integration', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockRepositoryGetExistingVote.mockResolvedValue(null)
+    mockRepositoryGetVerifiedEmulatorIds.mockResolvedValue([])
+    mockRepositoryGetPendingListings.mockResolvedValue({
+      pcListings: [],
+      pagination: { total: 0, pages: 0, page: 1, offset: 0, limit: 20 },
+    })
+    mockRepositoryGetPendingListingRiskCandidates.mockResolvedValue([])
+    mockRepositoryGetPendingListingsByIds.mockResolvedValue([])
+    mockComputeAuthorRiskProfiles.mockResolvedValue(new Map())
+    mockComputeSubmissionRiskProfiles.mockResolvedValue(new Map())
   })
 
   describe('vote', () => {
@@ -419,6 +470,94 @@ describe('pcListings trust integration', () => {
         action: TrustAction.LISTING_CREATED,
         context: { pcListingId: newListingId },
       })
+    })
+  })
+
+  describe('pending', () => {
+    it('filters to review-risk PC listings when riskFilter is risky', async () => {
+      const submissionRiskListing = {
+        id: LISTING_ID,
+        authorId: AUTHOR_ID,
+        author: { id: AUTHOR_ID, name: 'Submission Risk Author', userBans: [] },
+      }
+      const authorRiskListing = {
+        id: LISTING_ID_B,
+        authorId: USER_ID,
+        author: { id: USER_ID, name: 'Author Risk Author', userBans: [] },
+      }
+      const cleanListing = {
+        id: LISTING_ID_C,
+        authorId: CLEAN_AUTHOR_ID,
+        author: { id: CLEAN_AUTHOR_ID, name: 'Clean Author', userBans: [] },
+      }
+
+      mockRepositoryGetPendingListingRiskCandidates.mockResolvedValue([
+        submissionRiskListing,
+        authorRiskListing,
+        cleanListing,
+      ])
+      mockRepositoryGetPendingListingsByIds.mockResolvedValue([
+        submissionRiskListing,
+        authorRiskListing,
+      ])
+      mockComputeAuthorRiskProfiles.mockResolvedValue(
+        new Map([
+          [AUTHOR_ID, { authorId: AUTHOR_ID, signals: [], highestSeverity: null }],
+          [
+            USER_ID,
+            {
+              authorId: USER_ID,
+              signals: [
+                {
+                  type: RISK_SIGNAL_TYPES.NEW_AUTHOR,
+                  severity: 'low',
+                  label: 'New Author',
+                  description: 'No previously approved listings',
+                },
+              ],
+              highestSeverity: 'low',
+            },
+          ],
+          [CLEAN_AUTHOR_ID, { authorId: CLEAN_AUTHOR_ID, signals: [], highestSeverity: null }],
+        ]),
+      )
+      mockComputeSubmissionRiskProfiles.mockResolvedValue(
+        new Map([
+          [
+            LISTING_ID,
+            {
+              listingId: LISTING_ID,
+              signals: [
+                {
+                  type: SUBMISSION_RISK_SIGNAL_TYPES.PLACEHOLDER_EMULATOR_VERSION,
+                  severity: 'high',
+                  label: 'Placeholder Emulator Version',
+                  description: 'Submitted emulator version resembles placeholder text.',
+                },
+              ],
+              highestSeverity: 'high',
+            },
+          ],
+          [LISTING_ID_B, { listingId: LISTING_ID_B, signals: [], highestSeverity: null }],
+          [LISTING_ID_C, { listingId: LISTING_ID_C, signals: [], highestSeverity: null }],
+        ]),
+      )
+
+      const { caller } = createCaller({ userId: ADMIN_ID, role: Role.MODERATOR })
+
+      const result = await caller.pending({ riskFilter: 'risky', page: 1, limit: 20 })
+
+      expect(mockRepositoryGetPendingListingRiskCandidates).toHaveBeenCalledWith(
+        expect.objectContaining({ canSeeBannedUsers: true }),
+      )
+      expect(mockRepositoryGetPendingListingsByIds).toHaveBeenCalledWith([LISTING_ID, LISTING_ID_B])
+      expect(mockRepositoryGetPendingListings).not.toHaveBeenCalled()
+      expect(result.pcListings).toHaveLength(2)
+      expect(result.pcListings[0].id).toBe(LISTING_ID)
+      expect(result.pcListings[0].submissionRiskProfile.highestSeverity).toBe('high')
+      expect(result.pcListings[1].id).toBe(LISTING_ID_B)
+      expect(result.pcListings[1].authorRiskProfile.highestSeverity).toBe('low')
+      expect(result.pagination.total).toBe(2)
     })
   })
 

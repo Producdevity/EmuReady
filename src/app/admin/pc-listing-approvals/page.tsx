@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import { useAdminTable } from '@/app/admin/hooks'
+import { useAdminTable, useReviewRiskFilter } from '@/app/admin/hooks'
 import { confirmBulkApproval } from '@/app/admin/utils'
 import {
   AdminPageLayout,
@@ -15,11 +15,11 @@ import {
   AdminSearchFilters,
   AdminStatsDisplay,
   AdminTableNoResults,
+  ReviewRiskFilterButton,
 } from '@/components/admin'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   ApproveButton,
-  AuthorRiskIndicator,
   BulkActions,
   Button,
   ColumnVisibilityControl,
@@ -28,6 +28,7 @@ import {
   LocalizedDate,
   Pagination,
   RejectButton,
+  ReviewRiskIndicator,
   SortableHeader,
   ViewButton,
   Tooltip,
@@ -95,6 +96,11 @@ function PcListingApprovalsPage() {
   )
 
   const emulatorLogos = useEmulatorLogos()
+  const [selectedListingIds, setSelectedListingIds] = useState<string[]>([])
+  const reviewRiskFilter = useReviewRiskFilter({
+    clearSelection: () => setSelectedListingIds([]),
+    resetPage: () => table.setPage(1),
+  })
 
   const currentUserQuery = api.users.me.useQuery()
   const pendingPcListingsQuery = api.pcListings.pending.useQuery({
@@ -103,6 +109,7 @@ function PcListingApprovalsPage() {
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
     search: isEmpty(table.search) ? undefined : table.search,
+    riskFilter: reviewRiskFilter.riskFilter,
   })
 
   const gameStatsQuery = api.games.stats.useQuery()
@@ -115,7 +122,6 @@ function PcListingApprovalsPage() {
     useState<PendingPcListing | null>(null)
   const [approvalNotes, setApprovalNotes] = useState('')
   const [approvalDecision, setApprovalDecision] = useState<ApprovalStatus | null>(null)
-  const [selectedListingIds, setSelectedListingIds] = useState<string[]>([])
   const confirm = useConfirmDialog()
 
   const utils = api.useUtils()
@@ -343,7 +349,12 @@ function PcListingApprovalsPage() {
       <AdminSearchFilters<PcApprovalSortField>
         table={table}
         searchPlaceholder="Search PC listings..."
-      />
+      >
+        <ReviewRiskFilterButton
+          isActive={reviewRiskFilter.isRiskOnly}
+          onToggle={reviewRiskFilter.toggleRiskFilter}
+        />
+      </AdminSearchFilters>
 
       {pcListings.length > 0 && (
         <BulkActions
@@ -375,7 +386,10 @@ function PcListingApprovalsPage() {
         {pendingPcListingsQuery.isPending ? (
           <LoadingSpinner text="Loading pending PC listings..." />
         ) : pcListings.length === 0 ? (
-          <AdminTableNoResults icon={Clock} hasQuery={!!table.search} />
+          <AdminTableNoResults
+            icon={Clock}
+            hasQuery={!!table.search || reviewRiskFilter.isRiskOnly}
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -560,8 +574,9 @@ function PcListingApprovalsPage() {
                               'N/A'
                             )}
                           </span>
-                          <AuthorRiskIndicator
-                            riskProfile={listing.authorRiskProfile}
+                          <ReviewRiskIndicator
+                            authorRiskProfile={listing.authorRiskProfile}
+                            submissionRiskProfile={listing.submissionRiskProfile}
                             size="sm"
                             onInvestigate={(authorId) =>
                               router.push(`/admin/users?userId=${authorId}&tab=reports`)
