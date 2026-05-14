@@ -28,7 +28,7 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  allowedDevOrigins: ['dev.emuready.com'],
+  allowedDevOrigins: ['dev.emuready.com', '127.0.0.1'],
 
   turbopack: {
     rules: {
@@ -115,6 +115,7 @@ const nextConfig: NextConfig = {
   },
 
   async headers() {
+    const isProduction = process.env.NODE_ENV === 'production'
     const headers = [
       {
         source: '/service-worker.js',
@@ -124,10 +125,15 @@ const nextConfig: NextConfig = {
         source: '/sw-register.js',
         headers: [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' }],
       },
-      // Static assets with hash - cache immutable
+      // Static assets are immutable in production and uncached in dev.
       {
         source: '/_next/static/:path*',
-        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+        headers: isProduction
+          ? [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }]
+          : [
+              { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
+              { key: 'Pragma', value: 'no-cache' },
+            ],
       },
       // Images and other assets - cache with revalidation
       {
@@ -182,7 +188,7 @@ const nextConfig: NextConfig = {
     ]
 
     // In dev disable HTML caching to avoid stale content via proxies
-    if (process.env.NODE_ENV !== 'production') {
+    if (!isProduction) {
       headers.push({
         // All routes except static assets and API
         source: '/((?!_next|api|favicon|service-worker\\.js|sw-register\\.js).*)',
