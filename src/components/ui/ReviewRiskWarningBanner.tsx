@@ -6,17 +6,7 @@ import { type Severity } from '@/schemas/common'
 import { type SubmissionRiskProfile } from '@/schemas/submissionRisk'
 import { severityBadgeVariant, severityIconConfig } from './AuthorRiskIndicator'
 import { Badge } from './Badge'
-
-interface RiskSignalForDisplay {
-  severity: Severity
-  label: string
-  description: string
-}
-
-interface RiskGroupForDisplay {
-  title: string
-  signals: RiskSignalForDisplay[]
-}
+import { getHighestReviewRiskSeverity, getReviewRiskGroups } from './reviewRiskDisplay'
 
 interface Props {
   authorRiskProfile: AuthorRiskProfile | null | undefined
@@ -30,42 +20,9 @@ const severityBorderConfig: Record<Severity, string> = {
   low: 'border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20',
 }
 
-// TODO: consider abstracting these 30~ lines of duplicated lines across multiple files
-const SEVERITY_ORDER: Record<Severity, number> = {
-  low: 1,
-  medium: 2,
-  high: 3,
-}
-
-function getRiskGroups(props: Props): RiskGroupForDisplay[] {
-  const groups: RiskGroupForDisplay[] = []
-
-  if (props.submissionRiskProfile && props.submissionRiskProfile.signals.length > 0) {
-    groups.push({ title: 'Submission Risk', signals: props.submissionRiskProfile.signals })
-  }
-
-  if (props.authorRiskProfile && props.authorRiskProfile.signals.length > 0) {
-    groups.push({ title: 'Author Risk', signals: props.authorRiskProfile.signals })
-  }
-
-  return groups
-}
-
-function getHighestSeverity(groups: RiskGroupForDisplay[]): Severity | null {
-  let max: Severity | null = null
-
-  for (const group of groups) {
-    for (const signal of group.signals) {
-      if (!max || SEVERITY_ORDER[signal.severity] > SEVERITY_ORDER[max]) max = signal.severity
-    }
-  }
-
-  return max
-}
-
 export function ReviewRiskWarningBanner(props: Props) {
-  const groups = getRiskGroups(props)
-  const severity = getHighestSeverity(groups)
+  const groups = getReviewRiskGroups(props)
+  const severity = getHighestReviewRiskSeverity(groups)
   if (!severity) return null
 
   const config = severityIconConfig[severity]

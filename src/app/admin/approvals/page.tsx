@@ -8,6 +8,7 @@ import { isEmpty } from 'remeda'
 import { useAdminTable, useReviewRiskFilter } from '@/app/admin/hooks'
 import { confirmBulkApproval } from '@/app/admin/utils'
 import {
+  AdminErrorState,
   AdminPageLayout,
   AdminTableContainer,
   AdminNotificationBanner,
@@ -20,7 +21,6 @@ import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   ApproveButton,
   BulkActions,
-  Button,
   ColumnVisibilityControl,
   DisplayToggleButton,
   LoadingSpinner,
@@ -262,19 +262,14 @@ function AdminApprovalsPage() {
     }
   }
 
-  // TODO: extract this to a generic Admin error component
   if (pendingListingsQuery.error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center py-12">
-          <p className="text-red-600 dark:text-red-400 text-lg">
-            Error loading pending listings: {pendingListingsQuery.error.message}
-          </p>
-          <Button onClick={() => pendingListingsQuery.refetch()} className="mt-4">
-            Try Again
-          </Button>
-        </div>
-      </div>
+      <AdminErrorState
+        message={`Error loading pending listings: ${pendingListingsQuery.error.message}`}
+        onRetry={() => {
+          void pendingListingsQuery.refetch()
+        }}
+      />
     )
   }
 

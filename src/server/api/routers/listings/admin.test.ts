@@ -206,7 +206,10 @@ describe('listing admin pending approvals', () => {
       sortField: undefined,
       sortDirection: undefined,
     })
-    expect(mockGetPendingListingsByIds).toHaveBeenCalledWith([LISTING_ID, LISTING_ID_B])
+    expect(mockGetPendingListingsByIds).toHaveBeenCalledWith([LISTING_ID, LISTING_ID_B], {
+      emulatorIds: undefined,
+      search: undefined,
+    })
     expect(mockGetPendingListings).not.toHaveBeenCalled()
     expect(result.listings).toHaveLength(2)
     expect(result.listings[0].id).toBe(LISTING_ID)

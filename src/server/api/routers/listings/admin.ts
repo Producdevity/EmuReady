@@ -96,7 +96,10 @@ export const adminRouter = createTRPCRouter({
       const riskProfiles = await computeReviewRiskProfiles(ctx.prisma, riskCandidates)
       const riskyListingIds = getRiskyReviewItemIds(riskCandidates, riskProfiles)
       const paginatedRiskyListingIds = riskyListingIds.slice(skip, skip + limit)
-      const pageListings = await repository.getPendingListingsByIds(paginatedRiskyListingIds)
+      const pageListings = await repository.getPendingListingsByIds(paginatedRiskyListingIds, {
+        emulatorIds,
+        search,
+      })
       const pageListingMap = new Map(pageListings.map((listing) => [listing.id, listing]))
       const sortedPageListings = paginatedRiskyListingIds.flatMap((listingId) => {
         const listing = pageListingMap.get(listingId)

@@ -52,6 +52,23 @@ export interface PcListingRiskCandidate {
   }[]
 }
 
+export interface PendingPcListingsFilters {
+  emulatorIds?: string[]
+  search?: string
+  page?: number
+  limit?: number
+  sortField?: string
+  sortDirection?: 'asc' | 'desc'
+  canSeeBannedUsers?: boolean
+}
+
+function getActiveUserBanWhere(): Prisma.UserBanWhereInput {
+  return {
+    isActive: true,
+    OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+  }
+}
+
 export class PcListingsRepository extends BaseRepository {
   // Static query shapes for this repository
   static readonly includes = {
@@ -82,10 +99,7 @@ export class PcListingsRepository extends BaseRepository {
       author: {
         include: {
           userBans: {
-            where: {
-              isActive: true,
-              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-            },
+            where: getActiveUserBanWhere(),
             select: { id: true, reason: true, bannedAt: true, expiresAt: true },
           },
         },
@@ -772,17 +786,7 @@ export class PcListingsRepository extends BaseRepository {
   /**
    * Get pending PC listings with optional filtering
    */
-  async getPendingListings(
-    filters: {
-      emulatorIds?: string[]
-      search?: string
-      page?: number
-      limit?: number
-      sortField?: string
-      sortDirection?: 'asc' | 'desc'
-      canSeeBannedUsers?: boolean
-    } = {},
-  ): Promise<{
+  async getPendingListings(filters: PendingPcListingsFilters = {}): Promise<{
     pcListings: Prisma.PcListingGetPayload<{
       include: typeof PcListingsRepository.includes.forList
     }>[]
@@ -825,13 +829,9 @@ export class PcListingsRepository extends BaseRepository {
     }
   }
 
-  async getPendingListingRiskCandidates(filters: {
-    emulatorIds?: string[]
-    search?: string
-    sortField?: string
-    sortDirection?: 'asc' | 'desc'
-    canSeeBannedUsers?: boolean
-  }): Promise<PcListingRiskCandidate[]> {
+  async getPendingListingRiskCandidates(
+    filters: PendingPcListingsFilters,
+  ): Promise<PcListingRiskCandidate[]> {
     return this.prisma.pcListing.findMany({
       where: this.buildPendingListingsWhere(filters),
       select: this.getPendingListingRiskCandidateSelect(),
@@ -839,7 +839,10 @@ export class PcListingsRepository extends BaseRepository {
     })
   }
 
-  async getPendingListingsByIds(pcListingIds: string[]): Promise<
+  async getPendingListingsByIds(
+    pcListingIds: string[],
+    filters: PendingPcListingsFilters = {},
+  ): Promise<
     Prisma.PcListingGetPayload<{
       include: typeof PcListingsRepository.includes.forList
     }>[]
@@ -847,16 +850,14 @@ export class PcListingsRepository extends BaseRepository {
     if (pcListingIds.length === 0) return []
 
     return this.prisma.pcListing.findMany({
-      where: { id: { in: pcListingIds }, status: ApprovalStatus.PENDING },
+      where: {
+        AND: [{ id: { in: pcListingIds } }, this.buildPendingListingsWhere(filters)],
+      },
       include: PcListingsRepository.includes.forList,
     })
   }
 
-  private buildPendingListingsWhere(filters: {
-    emulatorIds?: string[]
-    search?: string
-    canSeeBannedUsers?: boolean
-  }): Prisma.PcListingWhereInput {
+  private buildPendingListingsWhere(filters: PendingPcListingsFilters): Prisma.PcListingWhereInput {
     const { emulatorIds, search, canSeeBannedUsers = false } = filters
     const baseWhere: Prisma.PcListingWhereInput = {
       status: ApprovalStatus.PENDING,
@@ -888,10 +889,7 @@ export class PcListingsRepository extends BaseRepository {
       author: {
         select: {
           userBans: {
-            where: {
-              isActive: true,
-              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-            },
+            where: getActiveUserBanWhere(),
             select: { reason: true },
           },
         },

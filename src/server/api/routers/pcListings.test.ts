@@ -550,7 +550,14 @@ describe('pcListings trust integration', () => {
       expect(mockRepositoryGetPendingListingRiskCandidates).toHaveBeenCalledWith(
         expect.objectContaining({ canSeeBannedUsers: true }),
       )
-      expect(mockRepositoryGetPendingListingsByIds).toHaveBeenCalledWith([LISTING_ID, LISTING_ID_B])
+      expect(mockRepositoryGetPendingListingsByIds).toHaveBeenCalledWith(
+        [LISTING_ID, LISTING_ID_B],
+        {
+          emulatorIds: undefined,
+          search: undefined,
+          canSeeBannedUsers: true,
+        },
+      )
       expect(mockRepositoryGetPendingListings).not.toHaveBeenCalled()
       expect(result.pcListings).toHaveLength(2)
       expect(result.pcListings[0].id).toBe(LISTING_ID)

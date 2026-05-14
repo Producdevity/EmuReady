@@ -1,4 +1,5 @@
 export * from './AdminNotificationBanner'
+export * from './AdminErrorState'
 export * from './AdminPageLayout'
 export * from './AdminSearchFilters'
 export * from './AdminStatsDisplay'

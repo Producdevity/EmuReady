@@ -514,11 +514,13 @@ export class ListingsRepository extends BaseRepository {
     })
   }
 
-  async getPendingListingsByIds(listingIds: string[]) {
+  async getPendingListingsByIds(listingIds: string[], filters: PendingListingsFilters = {}) {
     if (listingIds.length === 0) return []
 
     return this.prisma.listing.findMany({
-      where: { id: { in: listingIds }, status: ApprovalStatus.PENDING },
+      where: {
+        AND: [{ id: { in: listingIds } }, this.buildPendingListingsWhere(filters)],
+      },
       include: this.getPendingListingInclude(),
     })
   }

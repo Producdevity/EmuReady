@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import userEvent from '@testing-library/user-event'
+import { describe, expect, it, vi } from 'vitest'
 import { RISK_SIGNAL_TYPES, type AuthorRiskProfile } from '@/schemas/authorRisk'
 import { SUBMISSION_RISK_SIGNAL_TYPES, type SubmissionRiskProfile } from '@/schemas/submissionRisk'
 import { ReviewRiskIndicator } from './ReviewRiskIndicator'
@@ -64,5 +65,49 @@ describe('ReviewRiskIndicator', () => {
       'aria-label',
       'Review risk: high severity, 1 signal',
     )
+  })
+
+  it('calls investigate from pointer and keyboard activation when author risk exists', async () => {
+    const user = userEvent.setup()
+    const onInvestigate = vi.fn()
+
+    render(
+      <ReviewRiskIndicator
+        authorRiskProfile={authorRiskProfile}
+        submissionRiskProfile={submissionRiskProfile}
+        onInvestigate={onInvestigate}
+      />,
+    )
+
+    const button = screen.getByRole('button', {
+      name: 'Review risk: high severity, 2 signals',
+    })
+    await user.click(button)
+    button.focus()
+    await user.keyboard('{Enter}')
+    await user.keyboard(' ')
+
+    expect(onInvestigate).toHaveBeenCalledTimes(3)
+    expect(onInvestigate).toHaveBeenNthCalledWith(1, authorRiskProfile.authorId)
+    expect(onInvestigate).toHaveBeenNthCalledWith(2, authorRiskProfile.authorId)
+    expect(onInvestigate).toHaveBeenNthCalledWith(3, authorRiskProfile.authorId)
+  })
+
+  it('does not expose investigate action for submission-only risk', () => {
+    const onInvestigate = vi.fn()
+
+    render(
+      <ReviewRiskIndicator
+        authorRiskProfile={null}
+        submissionRiskProfile={submissionRiskProfile}
+        onInvestigate={onInvestigate}
+      />,
+    )
+
+    expect(screen.getByRole('status')).toHaveAttribute(
+      'aria-label',
+      'Review risk: high severity, 1 signal',
+    )
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 })

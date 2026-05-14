@@ -9,6 +9,7 @@ import { isEmpty } from 'remeda'
 import { useAdminTable, useReviewRiskFilter } from '@/app/admin/hooks'
 import { confirmBulkApproval } from '@/app/admin/utils'
 import {
+  AdminErrorState,
   AdminPageLayout,
   AdminTableContainer,
   AdminNotificationBanner,
@@ -21,7 +22,6 @@ import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   ApproveButton,
   BulkActions,
-  Button,
   ColumnVisibilityControl,
   DisplayToggleButton,
   LoadingSpinner,
@@ -267,16 +267,12 @@ function PcListingApprovalsPage() {
 
   if (pendingPcListingsQuery.error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center py-12">
-          <p className="text-red-600 dark:text-red-400 text-lg">
-            Error loading pending PC listings: {pendingPcListingsQuery.error.message}
-          </p>
-          <Button onClick={() => pendingPcListingsQuery.refetch()} className="mt-4">
-            Try Again
-          </Button>
-        </div>
-      </div>
+      <AdminErrorState
+        message={`Error loading pending PC listings: ${pendingPcListingsQuery.error.message}`}
+        onRetry={() => {
+          void pendingPcListingsQuery.refetch()
+        }}
+      />
     )
   }
 
