@@ -12,6 +12,14 @@ type SoCData = {
 const socs: SoCData[] = [
   // Qualcomm Snapdragon
   {
+    name: 'Snapdragon 8 Elite Gen 5',
+    manufacturer: 'Qualcomm',
+    architecture: 'ARM64',
+    processNode: '3nm',
+    cpuCores: 8,
+    gpuModel: 'Adreno 840',
+  },
+  {
     name: 'Snapdragon 8 Elite',
     manufacturer: 'Qualcomm',
     architecture: 'ARM64',
@@ -822,6 +830,14 @@ const socs: SoCData[] = [
     processNode: '4nm',
     cpuCores: 8,
     gpuModel: 'Adreno 720',
+  },
+  {
+    name: 'Snapdragon 6 Gen 3',
+    manufacturer: 'Qualcomm',
+    architecture: 'ARM64',
+    processNode: '4nm',
+    cpuCores: 8,
+    gpuModel: 'Adreno 710',
   },
   {
     name: 'Snapdragon 6 Gen 1',
