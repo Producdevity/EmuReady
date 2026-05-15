@@ -34,7 +34,7 @@ function createAuthorRiskProfile(signals: AuthorRiskProfile['signals']): AuthorR
 }
 
 describe('isPlaceholderLikeEmulatorVersion', () => {
-  it.each(['v0.1.4', 'v0.14', '014', 'o14', 'V 0 1 4'])(
+  it.each(['v0.1.4', 'v0.14', '014', 'o14', 'V 0 1 4', '0.1.4', '0.14', '01.4'])(
     'detects placeholder-like value %s',
     (value) => {
       expect(isPlaceholderLikeEmulatorVersion(value)).toBe(true)
