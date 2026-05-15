@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { RISK_SIGNAL_TYPES } from '@/schemas/authorRisk'
 import { SUBMISSION_RISK_SIGNAL_TYPES } from '@/schemas/submissionRisk'
 import { Role } from '@orm'
+import type * as AuthorRiskService from '@/server/services/author-risk.service'
 
 vi.unmock('@/server/api/trpc')
 
@@ -16,32 +17,14 @@ const mockGetPendingListingRiskCandidates = vi.fn()
 const mockGetPendingListingsByIds = vi.fn()
 const mockGetPendingListings = vi.fn()
 
-vi.mock('@/server/services/author-risk.service', () => ({
-  computeAuthorRiskProfiles: (...args: unknown[]) => mockComputeAuthorRiskProfiles(...args),
-  createExistingAuthorBansMap: (
-    listings: readonly {
-      authorId: string
-      author?: { userBans?: readonly { reason: string }[] } | null
-    }[],
-  ) => {
-    const existingBansMap = new Map<string, { reason: string }[]>()
+vi.mock('@/server/services/author-risk.service', async (importOriginal) => {
+  const actual = await importOriginal<typeof AuthorRiskService>()
 
-    for (const listing of listings) {
-      if (
-        listing.author?.userBans &&
-        listing.author.userBans.length > 0 &&
-        !existingBansMap.has(listing.authorId)
-      ) {
-        existingBansMap.set(
-          listing.authorId,
-          listing.author.userBans.map((ban) => ({ reason: ban.reason })),
-        )
-      }
-    }
-
-    return existingBansMap
-  },
-}))
+  return {
+    computeAuthorRiskProfiles: (...args: unknown[]) => mockComputeAuthorRiskProfiles(...args),
+    createExistingAuthorBansMap: actual.createExistingAuthorBansMap,
+  }
+})
 
 vi.mock('@/server/services/submission-risk.service', () => ({
   computeSubmissionRiskProfiles: (...args: unknown[]) => mockComputeSubmissionRiskProfiles(...args),
@@ -217,5 +200,62 @@ describe('listing admin pending approvals', () => {
     expect(result.listings[1].id).toBe(LISTING_ID_B)
     expect(result.listings[1].authorRiskProfile.highestSeverity).toBe('low')
     expect(result.pagination.total).toBe(2)
+  })
+
+  it('loads pending listings directly when risk filter is all', async () => {
+    const listing = {
+      id: LISTING_ID,
+      authorId: AUTHOR_ID,
+      author: { userBans: [] },
+      customFieldValues: [],
+    }
+    mockGetPendingListings.mockResolvedValueOnce({
+      listings: [listing],
+      pagination: { total: 1, pages: 1, page: 1, offset: 0, limit: 20 },
+    })
+
+    const { caller } = createCaller()
+
+    const result = await caller.getPending({ riskFilter: 'all', page: 1, limit: 20 })
+
+    expect(mockGetPendingListings).toHaveBeenCalledWith({
+      emulatorIds: undefined,
+      search: undefined,
+      page: 1,
+      limit: 20,
+      sortField: undefined,
+      sortDirection: undefined,
+    })
+    expect(mockGetPendingListingRiskCandidates).not.toHaveBeenCalled()
+    expect(mockGetPendingListingsByIds).not.toHaveBeenCalled()
+    expect(result.listings).toHaveLength(1)
+    expect(result.listings[0].id).toBe(LISTING_ID)
+    expect(result.pagination.total).toBe(1)
+  })
+
+  it('returns an empty page when no risk-only candidates are risky', async () => {
+    const cleanListing = {
+      id: LISTING_ID_C,
+      authorId: CLEAN_AUTHOR_ID,
+      author: { userBans: [] },
+      customFieldValues: [],
+    }
+    mockGetPendingListingRiskCandidates.mockResolvedValueOnce([cleanListing])
+    mockComputeAuthorRiskProfiles.mockResolvedValue(
+      new Map([
+        [CLEAN_AUTHOR_ID, { authorId: CLEAN_AUTHOR_ID, signals: [], highestSeverity: null }],
+      ]),
+    )
+    mockComputeSubmissionRiskProfiles.mockResolvedValue(
+      new Map([[LISTING_ID_C, { listingId: LISTING_ID_C, signals: [], highestSeverity: null }]]),
+    )
+
+    const { caller } = createCaller()
+
+    const result = await caller.getPending({ riskFilter: 'risky', page: 1, limit: 20 })
+
+    expect(mockGetPendingListingsByIds).not.toHaveBeenCalled()
+    expect(result.listings).toHaveLength(0)
+    expect(result.pagination.total).toBe(0)
   })
 })

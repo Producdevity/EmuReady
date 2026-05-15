@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { RISK_SIGNAL_TYPES } from '@/schemas/authorRisk'
 import { SUBMISSION_RISK_SIGNAL_TYPES } from '@/schemas/submissionRisk'
 import { ApprovalStatus, PcOs, Role, TrustAction } from '@orm'
+import type * as AuthorRiskService from '@/server/services/author-risk.service'
 
 vi.unmock('@/server/api/trpc')
 vi.unmock('@/server/api/root')
@@ -76,32 +77,14 @@ vi.mock('@/server/services/audit.service', () => ({
   logAudit: vi.fn().mockResolvedValue(undefined),
 }))
 
-vi.mock('@/server/services/author-risk.service', () => ({
-  computeAuthorRiskProfiles: (...args: unknown[]) => mockComputeAuthorRiskProfiles(...args),
-  createExistingAuthorBansMap: (
-    listings: readonly {
-      authorId: string
-      author?: { userBans?: readonly { reason: string }[] } | null
-    }[],
-  ) => {
-    const existingBansMap = new Map<string, { reason: string }[]>()
+vi.mock('@/server/services/author-risk.service', async (importOriginal) => {
+  const actual = await importOriginal<typeof AuthorRiskService>()
 
-    for (const listing of listings) {
-      if (
-        listing.author?.userBans &&
-        listing.author.userBans.length > 0 &&
-        !existingBansMap.has(listing.authorId)
-      ) {
-        existingBansMap.set(
-          listing.authorId,
-          listing.author.userBans.map((ban) => ({ reason: ban.reason })),
-        )
-      }
-    }
-
-    return existingBansMap
-  },
-}))
+  return {
+    computeAuthorRiskProfiles: (...args: unknown[]) => mockComputeAuthorRiskProfiles(...args),
+    createExistingAuthorBansMap: actual.createExistingAuthorBansMap,
+  }
+})
 
 vi.mock('@/server/services/submission-risk.service', () => ({
   computeSubmissionRiskProfiles: (...args: unknown[]) => mockComputeSubmissionRiskProfiles(...args),
@@ -474,6 +457,51 @@ describe('pcListings trust integration', () => {
   })
 
   describe('pending', () => {
+    it('loads pending PC listings directly when risk filter is all', async () => {
+      const listing = {
+        id: LISTING_ID,
+        authorId: AUTHOR_ID,
+        author: { id: AUTHOR_ID, name: 'Pending Author', userBans: [] },
+      }
+      mockRepositoryGetPendingListings.mockResolvedValueOnce({
+        pcListings: [listing],
+        pagination: { total: 1, pages: 1, page: 1, offset: 0, limit: 20 },
+      })
+
+      const { caller } = createCaller({ userId: ADMIN_ID, role: Role.MODERATOR })
+
+      const result = await caller.pending({ riskFilter: 'all', page: 1, limit: 20 })
+
+      expect(mockRepositoryGetPendingListings).toHaveBeenCalledWith({
+        emulatorIds: undefined,
+        search: undefined,
+        page: 1,
+        limit: 20,
+        sortField: undefined,
+        sortDirection: 'asc',
+        canSeeBannedUsers: true,
+      })
+      expect(mockRepositoryGetPendingListingRiskCandidates).not.toHaveBeenCalled()
+      expect(mockRepositoryGetPendingListingsByIds).not.toHaveBeenCalled()
+      expect(result.pcListings).toHaveLength(1)
+      expect(result.pcListings[0].id).toBe(LISTING_ID)
+      expect(result.pagination.total).toBe(1)
+    })
+
+    it('uses the direct pending path when risk filter is omitted', async () => {
+      const { caller } = createCaller({ userId: ADMIN_ID, role: Role.MODERATOR })
+
+      const result = await caller.pending({ page: 1, limit: 20 })
+
+      expect(mockRepositoryGetPendingListings).toHaveBeenCalledWith(
+        expect.objectContaining({ canSeeBannedUsers: true }),
+      )
+      expect(mockRepositoryGetPendingListingRiskCandidates).not.toHaveBeenCalled()
+      expect(mockRepositoryGetPendingListingsByIds).not.toHaveBeenCalled()
+      expect(result.pcListings).toHaveLength(0)
+      expect(result.pagination.total).toBe(0)
+    })
+
     it('filters to review-risk PC listings when riskFilter is risky', async () => {
       const submissionRiskListing = {
         id: LISTING_ID,
@@ -565,6 +593,31 @@ describe('pcListings trust integration', () => {
       expect(result.pcListings[1].id).toBe(LISTING_ID_B)
       expect(result.pcListings[1].authorRiskProfile.highestSeverity).toBe('low')
       expect(result.pagination.total).toBe(2)
+    })
+
+    it('returns an empty page when no risk-only PC listing candidates are risky', async () => {
+      const cleanListing = {
+        id: LISTING_ID_C,
+        authorId: CLEAN_AUTHOR_ID,
+        author: { id: CLEAN_AUTHOR_ID, name: 'Clean Author', userBans: [] },
+      }
+      mockRepositoryGetPendingListingRiskCandidates.mockResolvedValueOnce([cleanListing])
+      mockComputeAuthorRiskProfiles.mockResolvedValue(
+        new Map([
+          [CLEAN_AUTHOR_ID, { authorId: CLEAN_AUTHOR_ID, signals: [], highestSeverity: null }],
+        ]),
+      )
+      mockComputeSubmissionRiskProfiles.mockResolvedValue(
+        new Map([[LISTING_ID_C, { listingId: LISTING_ID_C, signals: [], highestSeverity: null }]]),
+      )
+
+      const { caller } = createCaller({ userId: ADMIN_ID, role: Role.MODERATOR })
+
+      const result = await caller.pending({ riskFilter: 'risky', page: 1, limit: 20 })
+
+      expect(mockRepositoryGetPendingListingsByIds).not.toHaveBeenCalled()
+      expect(result.pcListings).toHaveLength(0)
+      expect(result.pagination.total).toBe(0)
     })
   })
 
