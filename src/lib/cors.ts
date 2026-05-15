@@ -21,6 +21,18 @@ const PARTNER_ORIGINS = [
   'https://steamuready.com',
 ]
 
+const LOCAL_TEST_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3000',
+]
+
+function addMissingOrigins(origins: string[], additionalOrigins: string[]) {
+  for (const origin of additionalOrigins) {
+    if (!origins.includes(origin)) origins.push(origin)
+  }
+}
+
 /**
  * Get allowed CORS origins from environment variables
  * This is the single source of truth for allowed origins
@@ -35,33 +47,27 @@ export function getAllowedOrigins(): string[] {
     origins = envOrigins.split(',').map((origin) => origin.trim())
   } else if (process.env.NODE_ENV === 'development') {
     // Default to localhost for development
-    origins = ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000']
+    origins = [...LOCAL_TEST_ORIGINS]
   } else {
     // In production without env vars, use hardcoded production origins
     origins = [...PRODUCTION_ORIGINS]
   }
 
+  if (process.env.CI === 'true') {
+    addMissingOrigins(origins, LOCAL_TEST_ORIGINS)
+  }
+
   // Always include production origins if we're in production
   if (process.env.NODE_ENV === 'production') {
-    for (const prodOrigin of PRODUCTION_ORIGINS) {
-      if (!origins.includes(prodOrigin)) {
-        origins.push(prodOrigin)
-      }
-    }
+    addMissingOrigins(origins, PRODUCTION_ORIGINS)
   }
 
   // Always include partner origins
-  for (const partnerOrigin of PARTNER_ORIGINS) {
-    if (!origins.includes(partnerOrigin)) {
-      origins.push(partnerOrigin)
-    }
-  }
+  addMissingOrigins(origins, PARTNER_ORIGINS)
 
   // Always include mobile app origins
   const mobileOrigins = ['capacitor://localhost', 'ionic://localhost']
-  for (const mobileOrigin of mobileOrigins) {
-    if (!origins.includes(mobileOrigin)) origins.push(mobileOrigin)
-  }
+  addMissingOrigins(origins, mobileOrigins)
 
   // Include app URL if set
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
