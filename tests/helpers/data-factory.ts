@@ -600,7 +600,7 @@ export async function resetUserTrustScore(page: Page, targetUserEmail: string): 
 
   const userRow = page.locator('table tbody tr').filter({ hasText: targetUserEmail }).first()
   await expect(userRow).toBeVisible()
-  await userRow.locator('button').first().click()
+  await userRow.getByRole('button', { name: 'View User Details' }).click()
 
   const dialog = page.locator('[role="dialog"]')
   await expect(dialog).toBeVisible()
