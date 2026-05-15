@@ -479,7 +479,6 @@ describe('pcListings trust integration', () => {
         limit: 20,
         sortField: undefined,
         sortDirection: 'asc',
-        canSeeBannedUsers: true,
       })
       expect(mockRepositoryGetPendingListingRiskCandidates).not.toHaveBeenCalled()
       expect(mockRepositoryGetPendingListingsByIds).not.toHaveBeenCalled()
@@ -493,9 +492,14 @@ describe('pcListings trust integration', () => {
 
       const result = await caller.pending({ page: 1, limit: 20 })
 
-      expect(mockRepositoryGetPendingListings).toHaveBeenCalledWith(
-        expect.objectContaining({ canSeeBannedUsers: true }),
-      )
+      expect(mockRepositoryGetPendingListings).toHaveBeenCalledWith({
+        emulatorIds: undefined,
+        search: undefined,
+        page: 1,
+        limit: 20,
+        sortField: undefined,
+        sortDirection: 'asc',
+      })
       expect(mockRepositoryGetPendingListingRiskCandidates).not.toHaveBeenCalled()
       expect(mockRepositoryGetPendingListingsByIds).not.toHaveBeenCalled()
       expect(result.pcListings).toHaveLength(0)
@@ -575,15 +579,17 @@ describe('pcListings trust integration', () => {
 
       const result = await caller.pending({ riskFilter: 'risky', page: 1, limit: 20 })
 
-      expect(mockRepositoryGetPendingListingRiskCandidates).toHaveBeenCalledWith(
-        expect.objectContaining({ canSeeBannedUsers: true }),
-      )
+      expect(mockRepositoryGetPendingListingRiskCandidates).toHaveBeenCalledWith({
+        emulatorIds: undefined,
+        search: undefined,
+        sortField: undefined,
+        sortDirection: 'asc',
+      })
       expect(mockRepositoryGetPendingListingsByIds).toHaveBeenCalledWith(
         [LISTING_ID, LISTING_ID_B],
         {
           emulatorIds: undefined,
           search: undefined,
-          canSeeBannedUsers: true,
         },
       )
       expect(mockRepositoryGetPendingListings).not.toHaveBeenCalled()

@@ -32,6 +32,23 @@ describe('query-builders', () => {
       })
     })
 
+    it('should allow regular users to see their own content', () => {
+      const filter = buildShadowBanFilter(Role.USER, 'user123')
+      expect(filter).toEqual({
+        OR: [
+          { id: 'user123' },
+          {
+            userBans: {
+              none: {
+                isActive: true,
+                OR: [{ expiresAt: null }, { expiresAt: { gt: expect.any(Date) } }],
+              },
+            },
+          },
+        ],
+      })
+    })
+
     it('should return shadow ban filter for unauthenticated users', () => {
       const filter = buildShadowBanFilter(null)
       expect(filter).toBeDefined()

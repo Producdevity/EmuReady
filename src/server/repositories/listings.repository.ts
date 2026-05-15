@@ -415,24 +415,19 @@ export class ListingsRepository extends BaseRepository {
 
   /**
    * Get a single listing by ID with full details and optional access control.
-   * When canSeeBannedUsers is false, hides listings from banned authors and REJECTED listings.
+   * When canSeeBannedUsers is false, hides listings from banned authors except the requester,
+   * and hides REJECTED listings.
    */
   async byIdWithAccess(id: string, userId?: string, canSeeBannedUsers: boolean = false) {
+    const shadowBanFilter = canSeeBannedUsers ? undefined : buildShadowBanFilter(null, userId)
     const where: Prisma.ListingWhereInput = {
       id,
       ...(canSeeBannedUsers
         ? {}
         : {
-            author: {
-              userBans: {
-                none: {
-                  isActive: true,
-                  OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-                },
-              },
-            },
             NOT: { status: ApprovalStatus.REJECTED },
           }),
+      ...(shadowBanFilter && { author: shadowBanFilter }),
     }
 
     const listing = await this.prisma.listing.findFirst({

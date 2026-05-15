@@ -470,7 +470,6 @@ export const pcListingsRouter = createTRPCRouter({
         search,
         sortField,
         sortDirection: sortDirection ?? 'asc',
-        canSeeBannedUsers: true,
       })
       const riskProfiles = await computeReviewRiskProfiles(ctx.prisma, riskCandidates)
       const riskyPcListingIds = getRiskyReviewItemIds(riskCandidates, riskProfiles)
@@ -480,7 +479,6 @@ export const pcListingsRouter = createTRPCRouter({
           ? await repository.getPendingListingsByIds(paginatedRiskyPcListingIds, {
               emulatorIds,
               search,
-              canSeeBannedUsers: true,
             })
           : []
       const pagePcListingMap = new Map(pagePcListings.map((listing) => [listing.id, listing]))
@@ -503,7 +501,6 @@ export const pcListingsRouter = createTRPCRouter({
       limit,
       sortField,
       sortDirection: sortDirection ?? 'asc',
-      canSeeBannedUsers: true,
     })
 
     const riskProfiles = await computeReviewRiskProfiles(ctx.prisma, result.pcListings)
