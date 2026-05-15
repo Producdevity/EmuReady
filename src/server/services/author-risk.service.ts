@@ -341,7 +341,7 @@ export async function computeAuthorRiskProfiles(
           RISK_SIGNAL_TYPES.PREVIOUSLY_REJECTED,
           'low',
           'Previously Rejected',
-          `${rejectedCount} rejected listing${rejectedCount > 1 ? 's' : ''}`,
+          `${rejectedCount} rejected listings`,
         ),
       )
     }
