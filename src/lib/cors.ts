@@ -53,7 +53,7 @@ export function getAllowedOrigins(): string[] {
     origins = [...PRODUCTION_ORIGINS]
   }
 
-  if (process.env.CI === 'true') {
+  if (process.env.CI === 'true' && process.env.NODE_ENV !== 'production') {
     addMissingOrigins(origins, LOCAL_TEST_ORIGINS)
   }
 

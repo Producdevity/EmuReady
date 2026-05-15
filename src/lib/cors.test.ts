@@ -18,8 +18,9 @@ describe('getAllowedOrigins', () => {
     vi.unstubAllEnvs()
   })
 
-  it('allows localhost during CI production-mode E2E runs', () => {
+  it('allows localhost during CI E2E runs', () => {
     vi.stubEnv('CI', 'true')
+    vi.stubEnv('NODE_ENV', 'test')
     vi.stubEnv('NEXT_PUBLIC_ALLOWED_ORIGINS', '')
     vi.stubEnv('ALLOWED_ORIGINS', '')
 
