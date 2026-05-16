@@ -27,6 +27,10 @@ export class ListingsPage extends BasePage {
     return this.page.locator('table tbody tr')
   }
 
+  get firstListingDeviceCell() {
+    return this.listingItems.first().locator('td').nth(2)
+  }
+
   get noListingsMessage() {
     return this.page.getByText(/no listings found|no results|empty|nothing found/i)
   }
@@ -68,6 +72,11 @@ export class ListingsPage extends BasePage {
     const link = firstRow.locator('a[href*="/listings/"]').first()
     await link.click()
     await expect(this.page).toHaveURL(/\/listings\/[^/]+/)
+  }
+
+  async getFirstListingDeviceName() {
+    await expect(this.firstListingDeviceCell).toBeVisible()
+    return (await this.firstListingDeviceCell.innerText()).trim()
   }
 
   async verifyPageLoaded() {
