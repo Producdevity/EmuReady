@@ -138,7 +138,12 @@ export function NotesSection(props: NotesSectionProps) {
   )
 }
 
-const REJECTION_PRESETS = ['Low effort', 'Missing information', 'Incorrect information'] as const
+const REJECTION_PRESETS = [
+  'Low effort',
+  'Missing information',
+  'Incorrect information',
+  'Emulator version incorrect/missing',
+] as const
 
 interface RejectionNotesInputProps {
   id: string
