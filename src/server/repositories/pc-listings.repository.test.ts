@@ -89,6 +89,14 @@ describe('PC listing repository query builders', () => {
       expect(where).toMatchObject({ status: ApprovalStatus.PENDING })
       expect(where).not.toHaveProperty('author')
     })
+
+    it('filters out NSFW games unless explicitly enabled', () => {
+      expect(buildPcListingListWhere({}).game).toMatchObject({ isErotic: false })
+      expect(buildPcListingListWhere({ showNsfw: false }).game).toMatchObject({
+        isErotic: false,
+      })
+      expect(buildPcListingListWhere({ showNsfw: true }).game).not.toHaveProperty('isErotic')
+    })
   })
 
   describe('buildPendingPcListingsWhere', () => {
@@ -110,6 +118,12 @@ describe('PC listing repository query builders', () => {
         ],
       })
       expect(where).not.toHaveProperty('author')
+    })
+
+    it('ignores blank approval queue search values', () => {
+      expect(buildPendingPcListingsWhere({ search: '   ' })).toEqual({
+        status: ApprovalStatus.PENDING,
+      })
     })
   })
 })

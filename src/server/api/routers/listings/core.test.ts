@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
-import { Role } from '@orm'
+import { PERMISSIONS } from '@/utils/permission-system'
+import { ApprovalStatus, Role } from '@orm'
 
 vi.unmock('@/server/api/trpc')
 vi.unmock('@/server/api/root')
@@ -9,6 +10,8 @@ const mockHandleListingVoteTrustEffects = vi.fn().mockResolvedValue(undefined)
 const mockHandleCommentVoteTrustEffects = vi.fn().mockResolvedValue(undefined)
 const mockLogAction = vi.fn().mockResolvedValue(undefined)
 const mockReverseLogAction = vi.fn().mockResolvedValue(undefined)
+const mockVerifyRecaptcha = vi.fn().mockResolvedValue({ success: true })
+const mockRepositoryCreate = vi.fn()
 
 vi.mock('@/lib/trust/service', () => ({
   applyTrustAction: (...args: unknown[]) => mockApplyTrustAction(...args),
@@ -47,7 +50,7 @@ vi.mock('@/server/utils/query-builders', () => ({
 }))
 
 vi.mock('@/lib/captcha/verify', () => ({
-  verifyRecaptcha: vi.fn().mockResolvedValue({ success: true }),
+  verifyRecaptcha: (...args: unknown[]) => mockVerifyRecaptcha(...args),
   getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
 }))
 
@@ -72,6 +75,7 @@ vi.mock('@/server/utils/security-validation', () => ({
 vi.mock('@/server/repositories/listings.repository', () => ({
   ListingsRepository: vi.fn().mockImplementation(function MockListingsRepository() {
     return {
+      create: mockRepositoryCreate,
       getExistingVote: vi.fn().mockResolvedValue(null),
     }
   }),
@@ -103,6 +107,9 @@ function createMockPrisma() {
     user: {
       findUnique: vi.fn().mockResolvedValue({ id: USER_ID }),
     },
+    game: {
+      findUnique: vi.fn().mockResolvedValue({ systemId: '00000000-0000-4000-a000-000000000040' }),
+    },
   }
 
   return {
@@ -113,7 +120,9 @@ function createMockPrisma() {
 
 type MockPrisma = ReturnType<typeof createMockPrisma>
 
-function createCaller(overrides: { userId?: string; role?: Role; prisma?: MockPrisma } = {}) {
+function createCaller(
+  overrides: { userId?: string; role?: Role; permissions?: string[]; prisma?: MockPrisma } = {},
+) {
   const prisma = overrides.prisma ?? createMockPrisma()
   return {
     caller: coreRouter.createCaller({
@@ -123,7 +132,7 @@ function createCaller(overrides: { userId?: string; role?: Role; prisma?: MockPr
           email: 'test@test.com',
           name: 'Test User',
           role: overrides.role ?? Role.USER,
-          permissions: [],
+          permissions: overrides.permissions ?? [],
           showNsfw: false,
         },
       },
@@ -137,6 +146,53 @@ function createCaller(overrides: { userId?: string; role?: Role; prisma?: MockPr
 describe('handheld listings trust integration (core.ts)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  describe('create', () => {
+    it('verifies recaptcha before creating a handheld listing', async () => {
+      mockRepositoryCreate.mockResolvedValue({
+        id: LISTING_ID,
+        status: ApprovalStatus.PENDING,
+      })
+
+      const { caller } = createCaller({ permissions: [PERMISSIONS.CREATE_LISTING] })
+
+      await caller.create({
+        gameId: '00000000-0000-4000-a000-000000000030',
+        deviceId: '00000000-0000-4000-a000-000000000031',
+        emulatorId: '00000000-0000-4000-a000-000000000032',
+        performanceId: 1,
+        recaptchaToken: 'valid-token',
+      })
+
+      expect(mockVerifyRecaptcha).toHaveBeenCalledWith({
+        token: 'valid-token',
+        expectedAction: 'create_listing',
+        userIP: expect.any(String),
+      })
+      expect(mockRepositoryCreate).toHaveBeenCalled()
+    })
+
+    it('does not create a handheld listing when recaptcha verification fails', async () => {
+      mockVerifyRecaptcha.mockResolvedValueOnce({
+        success: false,
+        error: 'Missing reCAPTCHA token',
+      })
+
+      const { caller } = createCaller({ permissions: [PERMISSIONS.CREATE_LISTING] })
+
+      await expect(
+        caller.create({
+          gameId: '00000000-0000-4000-a000-000000000030',
+          deviceId: '00000000-0000-4000-a000-000000000031',
+          emulatorId: '00000000-0000-4000-a000-000000000032',
+          performanceId: 1,
+        }),
+      ).rejects.toThrow(/CAPTCHA/)
+
+      expect(mockRepositoryCreate).not.toHaveBeenCalled()
+      expect(mockApplyTrustAction).not.toHaveBeenCalled()
+    })
   })
 
   describe('vote', () => {

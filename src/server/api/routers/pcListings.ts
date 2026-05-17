@@ -40,6 +40,7 @@ import {
   VotePcListingSchema,
 } from '@/schemas/pcListing'
 import {
+  createListingProcedure,
   createTRPCRouter,
   moderatorProcedure,
   permissionProcedure,
@@ -67,9 +68,10 @@ import { logAudit } from '@/server/services/audit.service'
 import {
   attachReviewRiskProfiles,
   computeReviewRiskProfiles,
-  getRiskyReviewItemIds,
+  getRiskOnlyReviewPage,
 } from '@/server/services/review-risk.service'
 import { listingStatsCache } from '@/server/utils/cache'
+import { normalizeCustomFieldValues } from '@/server/utils/custom-field-values'
 import { paginate } from '@/server/utils/pagination'
 import { isUserBanned } from '@/server/utils/query-builders'
 import { validatePagination } from '@/server/utils/security-validation'
@@ -89,11 +91,42 @@ import {
   ApprovalStatus,
   AuditAction,
   AuditEntityType,
-  type Prisma,
+  Prisma,
   ReportStatus,
   Role,
   TrustAction,
 } from '@orm'
+
+function isJsonRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function toPrismaNestedJsonValue(value: unknown): Prisma.InputJsonValue | null {
+  if (value === null) return null
+  if (typeof value === 'string') return value
+  if (typeof value === 'number') return value
+  if (typeof value === 'boolean') return value
+  if (Array.isArray(value)) return value.map(toPrismaNestedJsonValue)
+  if (isJsonRecord(value)) {
+    const result: Record<string, Prisma.InputJsonValue | null> = {}
+    for (const [key, entryValue] of Object.entries(value)) {
+      result[key] = toPrismaNestedJsonValue(entryValue)
+    }
+
+    return result
+  }
+
+  return AppError.invalidInput('customFieldValues')
+}
+
+function toPrismaCustomFieldValue(value: unknown): Prisma.InputJsonValue | typeof Prisma.JsonNull {
+  if (value === undefined) return Prisma.JsonNull
+
+  const normalizedValue = toPrismaNestedJsonValue(value)
+  if (normalizedValue === null) return Prisma.JsonNull
+
+  return normalizedValue
+}
 
 export const pcListingsRouter = createTRPCRouter({
   // PC Listing procedures
@@ -260,28 +293,36 @@ export const pcListingsRouter = createTRPCRouter({
       return pcListing
     }),
 
-  create: protectedProcedure.input(CreatePcListingSchema).mutation(async ({ ctx, input }) => {
+  create: createListingProcedure.input(CreatePcListingSchema).mutation(async ({ ctx, input }) => {
     // TODO: Add spam detection via `checkSpamContent` from
     // `@/server/utils/spam-check` (currently only applied in mobile routes).
     // Block: UX/product sign-off needed since existing web users would start
     // seeing spam-block errors. Mirror mobile: `{ userId, content: notes, entityType: 'listing' }`.
+    const { recaptchaToken, ...payload } = input
     const authorId = ctx.session.user.id
+    const clientIP = ctx.headers ? getClientIP(ctx.headers) : undefined
+    const captchaResult = await verifyRecaptcha({
+      token: recaptchaToken,
+      expectedAction: RECAPTCHA_CONFIG.actions.CREATE_LISTING,
+      userIP: clientIP,
+    })
+
+    if (!captchaResult.success) return AppError.captcha(captchaResult.error)
+
     const repository = new PcListingsRepository(ctx.prisma)
     const newListing = await repository.create({
       authorId,
       userRole: ctx.session.user.role,
-      gameId: input.gameId,
-      cpuId: input.cpuId,
-      gpuId: input.gpuId ?? null,
-      emulatorId: input.emulatorId,
-      performanceId: input.performanceId,
-      memorySize: input.memorySize,
-      os: input.os,
-      osVersion: input.osVersion,
-      notes: input.notes ?? null,
-      customFieldValues: (input.customFieldValues
-        ? (input.customFieldValues as { customFieldDefinitionId: string; value: unknown }[])
-        : null) as { customFieldDefinitionId: string; value: unknown }[] | null,
+      gameId: payload.gameId,
+      cpuId: payload.cpuId,
+      gpuId: payload.gpuId ?? null,
+      emulatorId: payload.emulatorId,
+      performanceId: payload.performanceId,
+      memorySize: payload.memorySize,
+      os: payload.os,
+      osVersion: payload.osVersion,
+      notes: payload.notes ?? null,
+      customFieldValues: normalizeCustomFieldValues(payload.customFieldValues),
     })
 
     await applyTrustAction({
@@ -298,10 +339,10 @@ export const pcListingsRouter = createTRPCRouter({
       await invalidateListPages()
       await invalidateSitemap()
       await revalidateByTag('pc-listings')
-      await revalidateByTag(`game-${input.gameId}`)
-      await revalidateByTag(`cpu-${input.cpuId}`)
-      if (input.gpuId) {
-        await revalidateByTag(`gpu-${input.gpuId}`)
+      await revalidateByTag(`game-${payload.gameId}`)
+      await revalidateByTag(`cpu-${payload.cpuId}`)
+      if (payload.gpuId) {
+        await revalidateByTag(`gpu-${payload.gpuId}`)
       }
     }
 
@@ -420,7 +461,7 @@ export const pcListingsRouter = createTRPCRouter({
           data: customFieldValues.map((cfv) => ({
             pcListingId: id,
             customFieldDefinitionId: cfv.customFieldDefinitionId,
-            value: cfv.value,
+            value: toPrismaCustomFieldValue(cfv.value),
           })),
         })
       }
@@ -465,32 +506,27 @@ export const pcListingsRouter = createTRPCRouter({
     }
 
     if (filterRiskyListings) {
-      const riskCandidates = await repository.getPendingListingRiskCandidates({
-        emulatorIds,
-        search,
-        sortField,
-        sortDirection: sortDirection ?? 'asc',
+      const riskPage = await getRiskOnlyReviewPage({
+        prisma: ctx.prisma,
+        page,
+        limit,
+        loadCandidates: () =>
+          repository.getPendingListingRiskCandidates({
+            emulatorIds,
+            search,
+            sortField,
+            sortDirection: sortDirection ?? 'asc',
+          }),
+        loadItemsByIds: (pcListingIds) =>
+          repository.getPendingListingsByIds(pcListingIds, {
+            emulatorIds,
+            search,
+          }),
       })
-      const riskProfiles = await computeReviewRiskProfiles(ctx.prisma, riskCandidates)
-      const riskyPcListingIds = getRiskyReviewItemIds(riskCandidates, riskProfiles)
-      const paginatedRiskyPcListingIds = riskyPcListingIds.slice((page - 1) * limit, page * limit)
-      const pagePcListings =
-        paginatedRiskyPcListingIds.length > 0
-          ? await repository.getPendingListingsByIds(paginatedRiskyPcListingIds, {
-              emulatorIds,
-              search,
-            })
-          : []
-      const pagePcListingMap = new Map(pagePcListings.map((listing) => [listing.id, listing]))
-      const sortedPagePcListings = paginatedRiskyPcListingIds.flatMap((pcListingId) => {
-        const listing = pagePcListingMap.get(pcListingId)
-        return listing ? [listing] : []
-      })
-      const paginatedPcListings = attachReviewRiskProfiles(sortedPagePcListings, riskProfiles)
 
       return {
-        pcListings: paginatedPcListings,
-        pagination: paginate({ total: riskyPcListingIds.length, page, limit }),
+        pcListings: riskPage.items,
+        pagination: paginate({ total: riskPage.total, page, limit }),
       }
     }
 
@@ -904,7 +940,7 @@ export const pcListingsRouter = createTRPCRouter({
             data: customFieldValues.map((cfv) => ({
               pcListingId: id,
               customFieldDefinitionId: cfv.customFieldDefinitionId,
-              value: cfv.value,
+              value: toPrismaCustomFieldValue(cfv.value),
             })),
           })
         }

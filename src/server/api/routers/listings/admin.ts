@@ -39,7 +39,7 @@ import { PcListingsRepository } from '@/server/repositories/pc-listings.reposito
 import {
   attachReviewRiskProfiles,
   computeReviewRiskProfiles,
-  getRiskyReviewItemIds,
+  getRiskOnlyReviewPage,
 } from '@/server/services/review-risk.service'
 import { listingStatsCache } from '@/server/utils/cache/instances'
 import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
@@ -70,7 +70,6 @@ export const adminRouter = createTRPCRouter({
       sortDirection,
       riskFilter = 'all',
     } = input ?? {}
-    const skip = (page - 1) * limit
     const filterRiskyListings = riskFilter === 'risky'
     let emulatorIds: string[] | undefined
 
@@ -87,32 +86,27 @@ export const adminRouter = createTRPCRouter({
     }
 
     if (filterRiskyListings) {
-      const riskCandidates = await repository.getPendingListingRiskCandidates({
-        emulatorIds,
-        search,
-        sortField,
-        sortDirection,
+      const riskPage = await getRiskOnlyReviewPage({
+        prisma: ctx.prisma,
+        page,
+        limit,
+        loadCandidates: () =>
+          repository.getPendingListingRiskCandidates({
+            emulatorIds,
+            search,
+            sortField,
+            sortDirection,
+          }),
+        loadItemsByIds: (listingIds) =>
+          repository.getPendingListingsByIds(listingIds, {
+            emulatorIds,
+            search,
+          }),
       })
-      const riskProfiles = await computeReviewRiskProfiles(ctx.prisma, riskCandidates)
-      const riskyListingIds = getRiskyReviewItemIds(riskCandidates, riskProfiles)
-      const paginatedRiskyListingIds = riskyListingIds.slice(skip, skip + limit)
-      const pageListings =
-        paginatedRiskyListingIds.length > 0
-          ? await repository.getPendingListingsByIds(paginatedRiskyListingIds, {
-              emulatorIds,
-              search,
-            })
-          : []
-      const pageListingMap = new Map(pageListings.map((listing) => [listing.id, listing]))
-      const sortedPageListings = paginatedRiskyListingIds.flatMap((listingId) => {
-        const listing = pageListingMap.get(listingId)
-        return listing ? [listing] : []
-      })
-      const paginatedListings = attachReviewRiskProfiles(sortedPageListings, riskProfiles)
 
       return {
-        listings: paginatedListings,
-        pagination: paginate({ total: riskyListingIds.length, page, limit }),
+        listings: riskPage.items,
+        pagination: paginate({ total: riskPage.total, page, limit }),
       }
     }
 

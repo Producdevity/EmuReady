@@ -19,6 +19,22 @@ interface ReviewRiskProfiles {
   submissionRiskProfiles: Map<string, SubmissionRiskProfile>
 }
 
+interface RiskOnlyReviewPageParams<
+  TCandidate extends ReviewRiskCandidate,
+  TListing extends { id: string; authorId: string },
+> {
+  prisma: RiskPrismaClient
+  page: number
+  limit: number
+  loadCandidates: () => Promise<readonly TCandidate[]>
+  loadItemsByIds: (ids: string[]) => Promise<readonly TListing[]>
+}
+
+interface RiskOnlyReviewPage<TListing extends { id: string; authorId: string }> {
+  items: ReviewRiskEnriched<TListing>[]
+  total: number
+}
+
 export type ReviewRiskEnriched<TListing extends { id: string; authorId: string }> = TListing & {
   authorRiskProfile: AuthorRiskProfile
   submissionRiskProfile: SubmissionRiskProfile
@@ -81,4 +97,26 @@ export function attachReviewRiskProfiles<TListing extends { id: string; authorId
       profiles.submissionRiskProfiles.get(listing.id) ??
       createEmptySubmissionRiskProfile(listing.id),
   }))
+}
+
+export async function getRiskOnlyReviewPage<
+  TCandidate extends ReviewRiskCandidate,
+  TListing extends { id: string; authorId: string },
+>(params: RiskOnlyReviewPageParams<TCandidate, TListing>): Promise<RiskOnlyReviewPage<TListing>> {
+  const candidates = await params.loadCandidates()
+  const profiles = await computeReviewRiskProfiles(params.prisma, candidates)
+  const riskyItemIds = getRiskyReviewItemIds(candidates, profiles)
+  const offset = (params.page - 1) * params.limit
+  const pageItemIds = riskyItemIds.slice(offset, offset + params.limit)
+  const pageItems = pageItemIds.length > 0 ? await params.loadItemsByIds(pageItemIds) : []
+  const pageItemMap = new Map(pageItems.map((item) => [item.id, item]))
+  const sortedPageItems = pageItemIds.flatMap((itemId) => {
+    const item = pageItemMap.get(itemId)
+    return item ? [item] : []
+  })
+
+  return {
+    items: attachReviewRiskProfiles(sortedPageItems, profiles),
+    total: riskyItemIds.length,
+  }
 }

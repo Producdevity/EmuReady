@@ -65,7 +65,7 @@ function AddPcListingPage() {
   const createPcListing = api.pcListings.create.useMutation()
   const performanceScalesQuery = api.performanceScales.get.useQuery()
   const presetsQuery = api.pcListings.presets.get.useQuery({})
-  const recaptchaHook = useRecaptchaForCreateListing()
+  const { executeForCreateListing, isCaptchaEnabled } = useRecaptchaForCreateListing()
   const { handleKeyDown } = useFormKeyDown()
 
   const { gameSearchTerm, setGameSearchTerm, loadGameItems } = useGameLoader()
@@ -195,11 +195,14 @@ function AddPcListingPage() {
         return toast.error('You must be signed in to create a Compatibility Report.')
       }
       try {
-        const recaptchaToken = (await recaptchaHook.executeForCreateListing?.()) ?? undefined
+        const recaptchaToken = isCaptchaEnabled ? await executeForCreateListing() : null
+        if (isCaptchaEnabled && !recaptchaToken) {
+          return toast.error('CAPTCHA verification could not start. Please refresh and try again.')
+        }
 
         const result = await createPcListing.mutateAsync({
           ...data,
-          recaptchaToken,
+          ...(recaptchaToken && { recaptchaToken }),
         })
 
         analytics.listing.created({
@@ -228,7 +231,8 @@ function AddPcListingPage() {
     },
     [
       currentUserQuery.data?.id,
-      recaptchaHook,
+      executeForCreateListing,
+      isCaptchaEnabled,
       createPcListing,
       selectedGame?.system?.id,
       parsedCustomFields.length,

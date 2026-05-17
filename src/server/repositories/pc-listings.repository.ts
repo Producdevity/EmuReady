@@ -14,7 +14,11 @@ import { roleIncludesRole } from '@/utils/permission-system'
 import { calculateWilsonScore } from '@/utils/wilson-score'
 import { Prisma, ApprovalStatus, type PcOs, Role } from '@orm'
 import { BaseRepository } from './base.repository'
-import { buildApprovalStatusFilter, buildShadowBanFilter } from '../utils/query-builders'
+import {
+  buildApprovalStatusFilter,
+  buildNsfwFilter,
+  buildShadowBanFilter,
+} from '../utils/query-builders'
 
 export interface PcListingFilters {
   gameId?: string
@@ -103,7 +107,7 @@ export function buildPcListingListWhere(
     ...(myListings && userId ? { authorId: userId } : {}),
     game: {
       system: { key: { not: 'microsoft_windows' } },
-      ...(showNsfw === false ? { isErotic: false } : {}),
+      ...buildNsfwFilter(showNsfw),
       ...(systemIds?.length ? { systemId: { in: systemIds } } : {}),
     },
     ...(cpuIds?.length ? { cpuId: { in: cpuIds } } : {}),
@@ -156,7 +160,8 @@ export function buildPendingPcListingsWhere(
   filters: PendingPcListingsFilters,
   mode: Prisma.QueryMode = Prisma.QueryMode.insensitive,
 ): Prisma.PcListingWhereInput {
-  const { emulatorIds, search } = filters
+  const { emulatorIds } = filters
+  const search = filters.search?.trim()
 
   return {
     status: ApprovalStatus.PENDING,

@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { RISK_SIGNAL_TYPES } from '@/schemas/authorRisk'
 import { SUBMISSION_RISK_SIGNAL_TYPES } from '@/schemas/submissionRisk'
+import { PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus, PcOs, Role, TrustAction } from '@orm'
 import type * as AuthorRiskService from '@/server/services/author-risk.service'
 
@@ -49,7 +50,7 @@ vi.mock('@/lib/captcha/verify', () => ({
 }))
 
 vi.mock('@/lib/captcha/config', () => ({
-  RECAPTCHA_CONFIG: { actions: { VOTE: 'VOTE' } },
+  RECAPTCHA_CONFIG: { actions: { CREATE_LISTING: 'create_listing', VOTE: 'VOTE' } },
 }))
 
 vi.mock('@/server/utils/query-builders', () => ({
@@ -178,7 +179,9 @@ function createMockPrisma() {
 
 type MockPrisma = ReturnType<typeof createMockPrisma>
 
-function createCaller(overrides: { userId?: string; role?: Role; prisma?: MockPrisma } = {}) {
+function createCaller(
+  overrides: { userId?: string; role?: Role; permissions?: string[]; prisma?: MockPrisma } = {},
+) {
   const prisma = overrides.prisma ?? createMockPrisma()
   return {
     caller: pcListingsRouter.createCaller({
@@ -188,7 +191,7 @@ function createCaller(overrides: { userId?: string; role?: Role; prisma?: MockPr
           email: 'test@test.com',
           name: 'Test User',
           role: overrides.role ?? Role.USER,
-          permissions: [],
+          permissions: overrides.permissions ?? [],
           showNsfw: false,
         },
       },
@@ -436,7 +439,7 @@ describe('pcListings trust integration', () => {
         status: ApprovalStatus.PENDING,
       })
 
-      const { caller } = createCaller()
+      const { caller } = createCaller({ permissions: [PERMISSIONS.CREATE_LISTING] })
 
       await caller.create({
         gameId: '00000000-0000-4000-a000-000000000030',
@@ -453,6 +456,58 @@ describe('pcListings trust integration', () => {
         action: TrustAction.LISTING_CREATED,
         context: { pcListingId: newListingId },
       })
+    })
+
+    it('verifies recaptcha before creating a PC listing', async () => {
+      const newListingId = '00000000-0000-4000-a000-000000000099'
+      mockRepositoryCreate.mockResolvedValue({
+        id: newListingId,
+        status: ApprovalStatus.PENDING,
+      })
+
+      const { caller } = createCaller({ permissions: [PERMISSIONS.CREATE_LISTING] })
+
+      await caller.create({
+        gameId: '00000000-0000-4000-a000-000000000030',
+        cpuId: '00000000-0000-4000-a000-000000000031',
+        emulatorId: '00000000-0000-4000-a000-000000000032',
+        performanceId: 1,
+        memorySize: 16,
+        os: PcOs.WINDOWS,
+        osVersion: '11',
+        recaptchaToken: 'valid-token',
+      })
+
+      expect(mockVerifyRecaptcha).toHaveBeenCalledWith({
+        token: 'valid-token',
+        expectedAction: 'create_listing',
+        userIP: expect.any(String),
+      })
+      expect(mockRepositoryCreate).toHaveBeenCalled()
+    })
+
+    it('does not create a PC listing when recaptcha verification fails', async () => {
+      mockVerifyRecaptcha.mockResolvedValueOnce({
+        success: false,
+        error: 'Missing reCAPTCHA token',
+      })
+
+      const { caller } = createCaller({ permissions: [PERMISSIONS.CREATE_LISTING] })
+
+      await expect(
+        caller.create({
+          gameId: '00000000-0000-4000-a000-000000000030',
+          cpuId: '00000000-0000-4000-a000-000000000031',
+          emulatorId: '00000000-0000-4000-a000-000000000032',
+          performanceId: 1,
+          memorySize: 16,
+          os: PcOs.WINDOWS,
+          osVersion: '11',
+        }),
+      ).rejects.toThrow(/CAPTCHA/)
+
+      expect(mockRepositoryCreate).not.toHaveBeenCalled()
+      expect(mockApplyTrustAction).not.toHaveBeenCalled()
     })
   })
 

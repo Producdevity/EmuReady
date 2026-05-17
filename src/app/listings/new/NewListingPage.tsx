@@ -429,9 +429,11 @@ function AddListingPage() {
     let recaptchaToken: string | null = null
     if (isCaptchaEnabled) {
       recaptchaToken = await executeForCreateListing()
+      if (!recaptchaToken) {
+        return toast.error('CAPTCHA verification could not start. Please refresh and try again.')
+      }
     }
 
-    // Schema validation handles all validation including custom fields
     createListingMutation.mutate({
       ...data,
       ...(recaptchaToken && { recaptchaToken }),
