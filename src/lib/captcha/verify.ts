@@ -1,4 +1,4 @@
-import { RECAPTCHA_CONFIG, isCaptchaEnabled } from './config'
+import { RECAPTCHA_CONFIG, isCaptchaVerificationEnabled } from './config'
 
 interface RecaptchaResponse {
   success: boolean
@@ -10,7 +10,7 @@ interface RecaptchaResponse {
 }
 
 interface VerifyRecaptchaParams {
-  token: string
+  token?: string | null
   expectedAction: string
   userIP?: string
 }
@@ -27,13 +27,21 @@ export async function verifyRecaptcha(
 ): Promise<VerifyRecaptchaResult> {
   const { token, expectedAction, userIP } = params
 
-  // If CAPTCHA is not enabled, always return success
-  if (!isCaptchaEnabled()) {
+  if (!isCaptchaVerificationEnabled()) {
     console.warn('CAPTCHA is disabled - skipping verification')
     return {
       success: true,
       score: 1.0,
       action: expectedAction,
+    }
+  }
+
+  if (!token) {
+    return {
+      success: false,
+      score: 0,
+      action: expectedAction,
+      error: 'Missing reCAPTCHA token',
     }
   }
 

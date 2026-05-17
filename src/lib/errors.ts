@@ -145,7 +145,7 @@ export class AppError {
     })
   }
 
-  static captcha(message?: string) {
+  static captcha(message?: string): never {
     throw new TRPCError({
       code: ERROR_CODES.BAD_REQUEST,
       message: message ? `CAPTCHA verification failed: ${message}` : ERROR_MESSAGES.INVALID_CAPTCHA,
