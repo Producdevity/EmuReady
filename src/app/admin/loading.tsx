@@ -1,4 +1,4 @@
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { LoadingSpinner } from '@/components/ui'
 
 export default function AdminLoading() {
   return (

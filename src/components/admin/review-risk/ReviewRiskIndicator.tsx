@@ -1,8 +1,13 @@
 'use client'
 
-import { severityBadgeVariant, severityIconConfig } from '@/components/ui/AuthorRiskIndicator'
-import { Badge } from '@/components/ui/Badge'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/Tooltip'
+import {
+  Badge,
+  severityBadgeVariant,
+  severityIconConfig,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { type AuthorRiskProfile } from '@/schemas/authorRisk'
 import { type SubmissionRiskProfile } from '@/schemas/submissionRisk'

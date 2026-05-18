@@ -1,7 +1,6 @@
 'use client'
 
-import { severityBadgeVariant, severityIconConfig } from '@/components/ui/AuthorRiskIndicator'
-import { Badge } from '@/components/ui/Badge'
+import { Badge, severityBadgeVariant, severityIconConfig } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { type AuthorRiskProfile } from '@/schemas/authorRisk'
 import { type Severity } from '@/schemas/common'

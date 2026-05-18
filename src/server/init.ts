@@ -229,6 +229,10 @@ export function getServiceStatus() {
 }
 
 export function initializeServerOnce(): Promise<void> {
-  globalForServices.initializationPromise ??= initializeServer().catch(logger.error)
+  globalForServices.initializationPromise ??= initializeServer().catch((error: unknown) => {
+    globalForServices.initializationPromise = undefined
+    logger.error('[init] Failed to initialize server services', error)
+    throw error
+  })
   return globalForServices.initializationPromise
 }

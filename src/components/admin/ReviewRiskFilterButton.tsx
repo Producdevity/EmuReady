@@ -2,7 +2,7 @@
 
 import { ShieldAlert } from 'lucide-react'
 import { useId } from 'react'
-import { Switch } from '@/components/ui/Switch'
+import { Switch } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
 interface Props {

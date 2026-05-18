@@ -1,4 +1,4 @@
-import { LocalizedDate } from '@/components/ui/LocalizedDate'
+import { LocalizedDate } from '@/components/ui'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
