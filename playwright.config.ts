@@ -2,10 +2,20 @@ import path from 'path'
 import { defineConfig, devices } from '@playwright/test'
 import dotenv from 'dotenv'
 
-dotenv.config({ path: path.resolve(__dirname, '.env.local') })
 dotenv.config({ path: path.resolve(__dirname, '.env.test.local') })
+dotenv.config({ path: path.resolve(__dirname, '.env.test') })
 
 const isCI = !!process.env.CI
+const isGitHubActions = process.env.GITHUB_ACTIONS === 'true'
+
+function createWebServerEnv(): { [key: string]: string } {
+  const env: { [key: string]: string } = {}
+  for (const [key, value] of Object.entries(process.env)) {
+    if (typeof value === 'string') env[key] = value
+  }
+  env.NODE_ENV ||= 'test'
+  return env
+}
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -59,15 +69,17 @@ export default defineConfig({
     },
   ],
 
-  /* Let Playwright handle starting the server - removed manual handling */
+  /* Let Playwright handle starting the server */
   webServer: process.env.PWTEST_SKIP_WEBSERVER
     ? undefined
     : {
         command:
-          process.env.PWTEST_SERVER_COMMAND || (isCI ? 'pnpm start' : 'pnpm build && pnpm start'),
+          process.env.PWTEST_SERVER_COMMAND ||
+          (isGitHubActions ? 'pnpm start' : 'pnpm build && pnpm start'),
         url: 'http://localhost:3000',
+        env: createWebServerEnv(),
         reuseExistingServer: !isCI,
-        timeout: isCI ? 180 * 1000 : 300 * 1000, // 3 minutes in CI, 5 minutes locally (includes build)
+        timeout: isGitHubActions ? 180 * 1000 : 300 * 1000,
         stdout: 'pipe',
         stderr: 'pipe',
       },
