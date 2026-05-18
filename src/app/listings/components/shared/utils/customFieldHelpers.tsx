@@ -1,5 +1,4 @@
 import { Controller, type Control, type FieldValues, type FieldPath } from 'react-hook-form'
-import { isCustomFieldValueEmpty } from '@/utils/custom-fields'
 import { type CustomFieldType } from '@orm'
 import { CustomFieldRenderer, type CustomFieldDefinitionWithOptions } from '../CustomFieldRenderer'
 
@@ -91,5 +90,3 @@ export function renderCustomField<TFieldValues extends FieldValues = FieldValues
     </div>
   )
 }
-
-export { isCustomFieldValueEmpty }

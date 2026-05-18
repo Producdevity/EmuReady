@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { type CustomFieldDefinitionWithOptions } from '@/utils/custom-field-validation'
 import { CustomFieldType } from '@orm'
-import createDynamicListingSchema, {
-  type CustomFieldDefinitionWithOptions,
-} from './createDynamicListingSchema'
+import createDynamicListingSchema from './createDynamicListingSchema'
 
 describe('createDynamicListingSchema - Custom Field Validation', () => {
   const baseValidData = {

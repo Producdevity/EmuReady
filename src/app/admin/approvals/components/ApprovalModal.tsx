@@ -6,7 +6,8 @@ import {
   RejectionNotesInput,
   CustomFieldsApprovalSection,
 } from '@/app/listings/components/shared/approval/ApprovalModalSharedComponents'
-import { ReviewRiskWarningBanner, Modal, Button } from '@/components/ui'
+import { ReviewRiskWarningBanner } from '@/components/admin'
+import { Modal, Button } from '@/components/ui'
 import { type RouterOutput } from '@/types/trpc'
 import { ApprovalStatus } from '@orm'
 

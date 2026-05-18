@@ -17,6 +17,7 @@ import {
   AdminStatsDisplay,
   AdminTableNoResults,
   ReviewRiskFilterButton,
+  ReviewRiskIndicator,
 } from '@/components/admin'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
@@ -28,7 +29,6 @@ import {
   LocalizedDate,
   Pagination,
   RejectButton,
-  ReviewRiskIndicator,
   SortableHeader,
   ViewButton,
   Tooltip,

@@ -1,11 +1,11 @@
 'use client'
 
+import { severityBadgeVariant, severityIconConfig } from '@/components/ui/AuthorRiskIndicator'
+import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
 import { type AuthorRiskProfile } from '@/schemas/authorRisk'
 import { type Severity } from '@/schemas/common'
 import { type SubmissionRiskProfile } from '@/schemas/submissionRisk'
-import { severityBadgeVariant, severityIconConfig } from './AuthorRiskIndicator'
-import { Badge } from './Badge'
 import { getHighestReviewRiskSeverity, getReviewRiskGroups } from './reviewRiskDisplay'
 
 interface Props {

@@ -228,7 +228,7 @@ export function getServiceStatus() {
   }
 }
 
-// Auto-initialize on module load with singleton pattern
-if (typeof window === 'undefined' && !globalForServices.initializationPromise) {
-  globalForServices.initializationPromise = initializeServer().catch(logger.error)
+export function initializeServerOnce(): Promise<void> {
+  globalForServices.initializationPromise ??= initializeServer().catch(logger.error)
+  return globalForServices.initializationPromise
 }

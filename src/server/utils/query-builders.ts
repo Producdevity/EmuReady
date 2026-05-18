@@ -133,7 +133,7 @@ export function buildNsfwFilter(
   showNsfw: boolean | null = false,
   fieldName = 'isErotic',
 ): Record<string, boolean> | undefined {
-  return showNsfw === false ? { [fieldName]: false } : undefined
+  return showNsfw === true ? undefined : { [fieldName]: false }
 }
 
 /**

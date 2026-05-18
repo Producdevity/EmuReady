@@ -1,5 +1,3 @@
-pmOnFail: ignore
-
 allowBuilds:
   '@clerk/shared': false
   '@prisma/client': true

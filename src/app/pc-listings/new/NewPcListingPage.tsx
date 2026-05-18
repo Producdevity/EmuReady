@@ -28,12 +28,11 @@ import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
 import { MarkdownEditor } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
+import { type CustomFieldDefinitionWithOptions } from '@/utils/custom-field-validation'
 import { parseCustomFieldOptions, getCustomFieldDefaultValue } from '@/utils/custom-fields'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { PcOs } from '@orm'
-import createDynamicPcListingSchema, {
-  type CustomFieldDefinitionWithOptions,
-} from './form-schemas/createDynamicPcListingSchema'
+import createDynamicPcListingSchema from './form-schemas/createDynamicPcListingSchema'
 
 export type PcListingFormValues = RouterInput['pcListings']['create']
 

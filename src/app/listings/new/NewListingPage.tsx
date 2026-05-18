@@ -25,6 +25,7 @@ import { MarkdownEditor } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import { type RouterInput } from '@/types/trpc'
+import { type CustomFieldDefinitionWithOptions } from '@/utils/custom-field-validation'
 import { parseCustomFieldOptions, getCustomFieldDefaultValue } from '@/utils/custom-fields'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { formatCountLabel } from '@/utils/text'
@@ -42,9 +43,7 @@ import {
   ListingFormAuthGuard,
 } from '../components/shared'
 import { useGameLoader, useEmulatorLoader, usePreSelectedGame, useFormKeyDown } from '../hooks'
-import createDynamicListingSchema, {
-  type CustomFieldDefinitionWithOptions,
-} from './form-schemas/createDynamicListingSchema'
+import createDynamicListingSchema from './form-schemas/createDynamicListingSchema'
 import listingFormSchema from './form-schemas/listingFormSchema'
 import { useEmulatorConfigImporter } from './hooks/useEmulatorConfigImporter'
 import { reconcileDriverValue } from '../components/shared/custom-fields/driverVersionUtils'

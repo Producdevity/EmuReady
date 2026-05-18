@@ -147,6 +147,10 @@ describe('query-builders', () => {
       expect(buildNsfwFilter()).toEqual({ isErotic: false })
     })
 
+    it('should return filter when showNsfw is null', () => {
+      expect(buildNsfwFilter(null)).toEqual({ isErotic: false })
+    })
+
     it('should return undefined when showNsfw is true', () => {
       expect(buildNsfwFilter(true)).toBeUndefined()
     })
