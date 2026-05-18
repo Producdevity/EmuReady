@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { PAGINATION } from '@/data/constants'
 import { JsonValueSchema, ListingType } from '@/schemas/common'
+import { REVIEW_RISK_FILTERS, ReviewRiskFilterSchema } from '@/schemas/submissionRisk'
 import { ApprovalStatus } from '@orm'
 
 export const CreateListingSchema = z.object({
@@ -72,6 +73,7 @@ export const GetPendingListingsSchema = z
       .nullable()
       .optional(),
     sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
+    riskFilter: ReviewRiskFilterSchema.default(REVIEW_RISK_FILTERS.ALL),
   })
   .optional()
 

@@ -29,7 +29,7 @@ Fixes # (issue)
 
 ## Checklist
 
-- [ ] My code follows the [style guidelines](../CONTRIBUTING.md#code-style) of this project
+- [ ] My code follows the [style guidelines](https://github.com/Producdevity/EmuReady/blob/master/CONTRIBUTING.md#code-style) of this project
 - [ ] I have performed a self-review of my code
 - [ ] I have made corresponding changes to the documentation
 - [ ] I have checked that all checks (lint, typecheck, test) pass

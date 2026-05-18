@@ -51,7 +51,7 @@ export default function TestingPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const hostname = window.location.hostname
-      const allowedHosts = ['localhost', 'staging.emuready.com', 'dev.emuready.com']
+      const allowedHosts = ['localhost', '127.0.0.1', 'staging.emuready.com', 'dev.emuready.com']
       setIsAllowed(allowedHosts.some((host) => hostname.includes(host)))
     }
   }, [])

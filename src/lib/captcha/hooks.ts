@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react'
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
-import { isCaptchaEnabled, RECAPTCHA_CONFIG } from './config'
+import { isCaptchaClientEnabled, RECAPTCHA_CONFIG } from './config'
 
 interface UseRecaptchaResult {
   executeRecaptcha: (action: string) => Promise<string | null>
@@ -15,7 +15,7 @@ export function useRecaptcha(): UseRecaptchaResult {
 
   const executeRecaptcha = useCallback(
     async (action: string): Promise<string | null> => {
-      if (!isCaptchaEnabled()) {
+      if (!isCaptchaClientEnabled()) {
         console.warn('CAPTCHA is disabled')
         return null
       }
@@ -38,7 +38,7 @@ export function useRecaptcha(): UseRecaptchaResult {
   return {
     executeRecaptcha,
     isRecaptchaLoaded: Boolean(executeGoogleRecaptcha),
-    isCaptchaEnabled: isCaptchaEnabled(),
+    isCaptchaEnabled: isCaptchaClientEnabled(),
   }
 }
 

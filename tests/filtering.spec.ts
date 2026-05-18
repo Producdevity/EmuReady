@@ -2,9 +2,10 @@ import { test, expect } from './fixtures'
 import { ListingsPage } from './pages/ListingsPage'
 import type { Locator, Page } from '@playwright/test'
 
-async function selectFirstFilterOption(page: Page, filterButton: Locator) {
+async function selectFirstFilterOption(page: Page, filterButton: Locator, optionText?: string) {
   await filterButton.click()
-  const firstOption = page.locator('label:has(input[type="checkbox"])').first()
+  const options = page.locator('label:has(input[type="checkbox"])')
+  const firstOption = optionText ? options.filter({ hasText: optionText }).first() : options.first()
   await expect(firstOption).toBeVisible()
   await firstOption.click()
   await filterButton.click()
@@ -119,7 +120,8 @@ test.describe('Filtering Tests', () => {
     await listingsPage.verifyPageLoaded()
     await expect(listingsPage.listingItems.first()).toBeVisible()
 
-    await selectFirstFilterOption(page, listingsPage.deviceFilter)
+    const deviceName = await listingsPage.getFirstListingDeviceName()
+    await selectFirstFilterOption(page, listingsPage.deviceFilter, deviceName)
     await expect(page).toHaveURL(/[?&]deviceIds=/)
 
     await listingsPage.clickFirstListing()

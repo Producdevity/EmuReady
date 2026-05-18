@@ -9,8 +9,15 @@ import { TIME_CONSTANTS } from '@/utils/time'
 import { ApprovalStatus, type PrismaClient } from '@orm'
 import { getAuthorReportStats, getAuthorVoteStats, getAuthorsWithApprovedListings } from '@orm/sql'
 
-interface ExistingBan {
+export interface ExistingAuthorBan {
   reason: string
+}
+
+export interface AuthorBanRiskCandidate {
+  authorId: string
+  author?: {
+    userBans?: readonly ExistingAuthorBan[]
+  } | null
 }
 
 const SEVERITY_ORDER: Record<Severity, number> = {
@@ -152,7 +159,7 @@ async function batchGetRejectionCounts(
 export async function computeAuthorRiskProfiles(
   prisma: PrismaClient,
   authorIds: string[],
-  existingBans: Map<string, ExistingBan[]>,
+  existingBans: Map<string, ExistingAuthorBan[]>,
 ): Promise<Map<string, AuthorRiskProfile>> {
   const profileMap = new Map<string, AuthorRiskProfile>()
 
@@ -212,7 +219,7 @@ export async function computeAuthorRiskProfiles(
           RISK_SIGNAL_TYPES.ACTIVE_REPORTS,
           'low',
           'Active Reports',
-          `${reportCount} active report${reportCount > 1 ? 's' : ''} across listings`,
+          `${reportCount} active reports across listings`,
         ),
       )
     }
@@ -277,6 +284,7 @@ export async function computeAuthorRiskProfiles(
 
     // NEGATIVE_TRUST_SCORE
     const trustScore = trustScores.get(authorId) ?? 0
+    // TODO: Replace fixed trust-score thresholds with an account-history calibrated risk model.
     if (trustScore < -50) {
       signals.push(
         createSignal(
@@ -308,6 +316,7 @@ export async function computeAuthorRiskProfiles(
 
     // PREVIOUSLY_REJECTED
     const rejectedCount = rejectionCounts.get(authorId) ?? 0
+    // TODO: Weight rejection history against author reputation and approved contribution history.
     if (rejectedCount >= 6) {
       signals.push(
         createSignal(
@@ -332,7 +341,7 @@ export async function computeAuthorRiskProfiles(
           RISK_SIGNAL_TYPES.PREVIOUSLY_REJECTED,
           'low',
           'Previously Rejected',
-          `${rejectedCount} rejected listing${rejectedCount > 1 ? 's' : ''}`,
+          `${rejectedCount} rejected listings`,
         ),
       )
     }
@@ -345,4 +354,25 @@ export async function computeAuthorRiskProfiles(
   }
 
   return profileMap
+}
+
+export function createExistingAuthorBansMap(
+  listings: readonly AuthorBanRiskCandidate[],
+): Map<string, ExistingAuthorBan[]> {
+  const existingBansMap = new Map<string, ExistingAuthorBan[]>()
+
+  for (const listing of listings) {
+    if (
+      listing.author?.userBans &&
+      listing.author.userBans.length > 0 &&
+      !existingBansMap.has(listing.authorId)
+    ) {
+      existingBansMap.set(
+        listing.authorId,
+        listing.author.userBans.map((ban) => ({ reason: ban.reason })),
+      )
+    }
+  }
+
+  return existingBansMap
 }

@@ -13,6 +13,7 @@
 
 # testing
 /coverage
+/output
 /tests/screenshots
 test-results.log
 

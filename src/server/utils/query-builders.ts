@@ -1,27 +1,27 @@
 import { hasRolePermission } from '@/utils/permissions'
 import { type Prisma, type PrismaClient, ApprovalStatus, Role } from '@orm'
 
-/**
- * Build where clause for shadow ban filtering
- * Excludes content from banned users for non-moderators
- */
 export function buildShadowBanFilter(
   userRole?: Role | null,
-  _userId?: string | null,
+  userId?: string | null,
 ): Prisma.UserWhereInput | undefined {
-  // Moderators and above can see all content
   if (userRole && hasRolePermission(userRole, Role.MODERATOR)) {
     return undefined
   }
 
-  // Regular users don't see content from banned users
-  return {
+  const visibleAuthorFilter: Prisma.UserWhereInput = {
     userBans: {
       none: {
         isActive: true,
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
     },
+  }
+
+  if (!userId) return visibleAuthorFilter
+
+  return {
+    OR: [{ id: userId }, visibleAuthorFilter],
   }
 }
 
@@ -130,10 +130,10 @@ function createNestedContains(field: string, value: string): SearchCondition {
  * Build filter for NSFW content based on user preferences
  */
 export function buildNsfwFilter(
-  showNsfw?: boolean | null,
+  showNsfw: boolean | null = false,
   fieldName = 'isErotic',
 ): Record<string, boolean> | undefined {
-  return showNsfw === false ? { [fieldName]: false } : undefined
+  return showNsfw === true ? undefined : { [fieldName]: false }
 }
 
 /**

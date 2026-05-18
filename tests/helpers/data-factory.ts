@@ -592,6 +592,22 @@ export async function withContext(
   }
 }
 
+async function openUserDetailsDialog(page: Page, userRow: Locator): Promise<Locator> {
+  const viewDetailsButton = userRow.getByRole('button', { name: 'View User Details' })
+  await expect(viewDetailsButton).toBeVisible()
+
+  const dialog = page.locator('[role="dialog"]')
+  await expect(async () => {
+    if (!(await dialog.isVisible())) {
+      await viewDetailsButton.click()
+    }
+
+    await expect(dialog).toBeVisible({ timeout: 2000 })
+  }).toPass({ timeout: 10000 })
+
+  return dialog
+}
+
 export async function resetUserTrustScore(page: Page, targetUserEmail: string): Promise<void> {
   await page.goto('/admin/users', { waitUntil: 'domcontentloaded' })
   await expect(page.getByText(/loading/i)).toBeHidden()
@@ -600,10 +616,7 @@ export async function resetUserTrustScore(page: Page, targetUserEmail: string): 
 
   const userRow = page.locator('table tbody tr').filter({ hasText: targetUserEmail }).first()
   await expect(userRow).toBeVisible()
-  await userRow.locator('button').first().click()
-
-  const dialog = page.locator('[role="dialog"]')
-  await expect(dialog).toBeVisible()
+  const dialog = await openUserDetailsDialog(page, userRow)
 
   const scoreElement = dialog.getByLabel('Trust score value')
   await expect(scoreElement).toBeVisible()

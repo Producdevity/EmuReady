@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isCustomFieldValueEmpty } from './customFieldHelpers'
+import { isCustomFieldValueEmpty } from '@/utils/custom-fields'
 
 describe('isCustomFieldValueEmpty', () => {
   it('treats nullish values as empty', () => {

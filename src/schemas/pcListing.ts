@@ -1,5 +1,7 @@
 import { z } from 'zod'
 import { PAGINATION, CHAR_LIMITS } from '@/data/constants'
+import { JsonValueSchema } from '@/schemas/common'
+import { REVIEW_RISK_FILTERS, ReviewRiskFilterSchema } from '@/schemas/submissionRisk'
 import { ApprovalStatus, PcOs, ReportReason, ReportStatus } from '@orm'
 
 export const CreatePcListingSchema = z.object({
@@ -16,11 +18,11 @@ export const CreatePcListingSchema = z.object({
     .array(
       z.object({
         customFieldDefinitionId: z.string().uuid(),
-        value: z.any(), // Zod .any() for Prisma.JsonValue; validation happens implicitly by structure
+        value: JsonValueSchema.optional(),
       }),
     )
     .optional(),
-  recaptchaToken: z.string().optional(), // reCAPTCHA token for bot protection
+  recaptchaToken: z.string().nullable().optional(),
 })
 
 export const GetPcListingsSchema = z.object({
@@ -73,6 +75,7 @@ export const GetPendingPcListingsSchema = z
       ])
       .optional(),
     sortDirection: z.enum(['asc', 'desc']).optional(),
+    riskFilter: ReviewRiskFilterSchema.default(REVIEW_RISK_FILTERS.ALL),
   })
   .optional()
 
@@ -178,7 +181,7 @@ export const UpdatePcListingAdminSchema = z.object({
     .array(
       z.object({
         customFieldDefinitionId: z.string().uuid(),
-        value: z.any(),
+        value: JsonValueSchema.optional(),
       }),
     )
     .optional(),
@@ -195,7 +198,7 @@ export const UpdatePcListingUserSchema = z.object({
     .array(
       z.object({
         customFieldDefinitionId: z.string().uuid(),
-        value: z.any(),
+        value: JsonValueSchema.optional(),
       }),
     )
     .optional(),

@@ -36,7 +36,11 @@ import {
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
-import { computeAuthorRiskProfiles } from '@/server/services/author-risk.service'
+import {
+  attachReviewRiskProfiles,
+  computeReviewRiskProfiles,
+  getRiskOnlyReviewPage,
+} from '@/server/services/review-risk.service'
 import { listingStatsCache } from '@/server/utils/cache/instances'
 import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
 import { paginate } from '@/server/utils/pagination'
@@ -56,157 +60,71 @@ export const adminRouter = createTRPCRouter({
         : new PcListingsRepository(ctx.prisma).getModeratorInfo(input.id)
     }),
 
-  // TODO: abstract to service or repository
   getPending: developerProcedure.input(GetPendingListingsSchema).query(async ({ ctx, input }) => {
-    const { search, page = 1, limit = 20, sortField, sortDirection } = input ?? {}
-    const skip = (page - 1) * limit
-
-    // Build where clause for search
-    let where: Prisma.ListingWhereInput = { status: ApprovalStatus.PENDING }
+    const repository = new ListingsRepository(ctx.prisma)
+    const {
+      search,
+      page = 1,
+      limit = 20,
+      sortField,
+      sortDirection,
+      riskFilter = 'all',
+    } = input ?? {}
+    const filterRiskyListings = riskFilter === 'risky'
+    let emulatorIds: string[] | undefined
 
     // For developers, only show listings for their verified emulators
     if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
-      // Get user's verified emulators
-      const verifiedEmulators = await ctx.prisma.verifiedDeveloper.findMany({
-        where: { userId: ctx.session.user.id },
-        select: { emulatorId: true },
-      })
-
-      const emulatorIds = verifiedEmulators.map((ve) => ve.emulatorId)
+      emulatorIds = await repository.listVerifiedEmulatorIdsByUserId(ctx.session.user.id)
 
       if (emulatorIds.length === 0) {
-        // Developer has no verified emulators, return empty result
         return {
           listings: [],
           pagination: paginate({ total: 0, page, limit }),
         }
       }
-
-      where.emulatorId = { in: emulatorIds }
     }
 
-    if (search && search.trim() !== '') {
-      where = {
-        ...where,
-        OR: [
-          { game: { title: { contains: search, mode } } },
-          { game: { system: { name: { contains: search, mode } } } },
-          { device: { modelName: { contains: search, mode } } },
-          { device: { brand: { name: { contains: search, mode } } } },
-          { emulator: { name: { contains: search, mode } } },
-          { author: { name: { contains: search, mode } } },
-        ],
+    if (filterRiskyListings) {
+      const riskPage = await getRiskOnlyReviewPage({
+        prisma: ctx.prisma,
+        page,
+        limit,
+        loadCandidates: () =>
+          repository.getPendingListingRiskCandidates({
+            emulatorIds,
+            search,
+            sortField,
+            sortDirection,
+          }),
+        loadItemsByIds: (listingIds) =>
+          repository.getPendingListingsByIds(listingIds, {
+            emulatorIds,
+            search,
+          }),
+      })
+
+      return {
+        listings: riskPage.items,
+        pagination: paginate({ total: riskPage.total, page, limit }),
       }
     }
 
-    // Build orderBy clause
-    let orderBy: Prisma.ListingOrderByWithRelationInput = {
-      createdAt: 'asc', // Default sorting
-    }
-
-    if (sortField && sortDirection) {
-      switch (sortField) {
-        case 'game.title':
-          orderBy = { game: { title: sortDirection } }
-          break
-        case 'game.system.name':
-          orderBy = { game: { system: { name: sortDirection } } }
-          break
-        case 'device':
-          orderBy = { device: { modelName: sortDirection } }
-          break
-        case 'emulator.name':
-          orderBy = { emulator: { name: sortDirection } }
-          break
-        case 'author.name':
-          orderBy = { author: { name: sortDirection } }
-          break
-        case 'createdAt':
-          orderBy = { createdAt: sortDirection }
-          break
-      }
-    }
-
-    const listings = await ctx.prisma.listing.findMany({
-      where,
-      include: {
-        game: { include: { system: true } },
-        device: { include: { brand: true } },
-        emulator: true,
-        author: {
-          select: {
-            id: true,
-            name: true,
-            userBans: {
-              where: {
-                isActive: true,
-                OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-              },
-              select: { id: true, reason: true, bannedAt: true, expiresAt: true },
-            },
-          },
-        },
-        performance: true,
-        customFieldValues: {
-          include: {
-            customFieldDefinition: {
-              select: {
-                id: true,
-                type: true,
-                label: true,
-                name: true,
-                options: true,
-                defaultValue: true,
-                rangeDecimals: true,
-                rangeUnit: true,
-                categoryId: true,
-                categoryOrder: true,
-                category: { select: { id: true, name: true, displayOrder: true } },
-              },
-            },
-          },
-        },
-      },
-      orderBy,
-      skip,
-      take: limit,
+    const result = await repository.getPendingListings({
+      emulatorIds,
+      search,
+      page,
+      limit,
+      sortField,
+      sortDirection,
     })
 
-    // Compute author risk profiles
-    const uniqueAuthorIds = [...new Set(listings.map((l) => l.authorId))]
-    const existingBansMap = new Map<string, { reason: string }[]>()
-    for (const listing of listings) {
-      if (
-        listing.author?.userBans &&
-        listing.author.userBans.length > 0 &&
-        !existingBansMap.has(listing.authorId)
-      ) {
-        existingBansMap.set(
-          listing.authorId,
-          listing.author.userBans.map((b) => ({ reason: b.reason })),
-        )
-      }
-    }
-    const riskProfiles = await computeAuthorRiskProfiles(
-      ctx.prisma,
-      uniqueAuthorIds,
-      existingBansMap,
-    )
-
-    const listingsWithRiskProfiles = listings.map((listing) => ({
-      ...listing,
-      authorRiskProfile: riskProfiles.get(listing.authorId) ?? {
-        authorId: listing.authorId,
-        signals: [],
-        highestSeverity: null,
-      },
-    }))
-
-    const totalListings = await ctx.prisma.listing.count({ where })
+    const riskProfiles = await computeReviewRiskProfiles(ctx.prisma, result.listings)
+    const paginatedListings = attachReviewRiskProfiles(result.listings, riskProfiles)
 
     return {
-      listings: listingsWithRiskProfiles,
-      pagination: paginate({ total: totalListings, page, limit: limit }),
+      listings: paginatedListings,
+      pagination: result.pagination,
     }
   }),
 

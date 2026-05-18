@@ -3,6 +3,179 @@ import { withSentryConfig } from '@sentry/nextjs'
 import type { NextConfig } from 'next'
 import type { Configuration as WebpackConfiguration } from 'webpack'
 
+const isVercelBuild = process.env.VERCEL === '1'
+
+const recaptchaScriptSources = [
+  'https://www.google.com/recaptcha/',
+  'https://www.gstatic.com/recaptcha/',
+]
+
+const recaptchaConnectSources = ['https://www.google.com/recaptcha/']
+
+const recaptchaFrameSources = [
+  'https://www.google.com/recaptcha/',
+  'https://recaptcha.google.com/recaptcha/',
+]
+
+const contentSecurityPolicyDirectives = [
+  {
+    name: 'default-src',
+    sources: ["'self'"],
+  },
+  {
+    name: 'script-src',
+    sources: [
+      "'self'",
+      "'unsafe-inline'",
+      "'unsafe-eval'",
+      'https://www.googletagmanager.com',
+      'https://static.cloudflareinsights.com',
+      'https://va.vercel-scripts.com',
+      'https://*.clerk.com',
+      'https://*.clerk.accounts.dev',
+      'https://clerk.emuready.com',
+      'https://challenges.cloudflare.com',
+      'https://vercel.live',
+      'https://*.vercel.live',
+      'https://storage.ko-fi.com',
+      'https://ko-fi.com',
+      'https://unpkg.com',
+      ...recaptchaScriptSources,
+    ],
+  },
+  {
+    name: 'style-src',
+    sources: [
+      "'self'",
+      "'unsafe-inline'",
+      'https://*.clerk.com',
+      'https://*.clerk.accounts.dev',
+      'https://clerk.emuready.com',
+      'https://storage.ko-fi.com',
+      'https://fonts.googleapis.com',
+      'https://unpkg.com',
+    ],
+  },
+  {
+    name: 'img-src',
+    sources: [
+      "'self'",
+      'data:',
+      'https://placehold.co',
+      'https://*.clerk.com',
+      'https://*.clerk.accounts.dev',
+      'https://img.clerk.com',
+      'https://clerk.emuready.com',
+      'https://cdn.thegamesdb.net',
+      'https://images.igdb.com',
+      'https://media.rawg.io',
+      'https://www.googletagmanager.com',
+      'https://assets.nintendo.com',
+      'https://*.google-analytics.com',
+      'https://storage.ko-fi.com',
+      'https://vercel.com',
+      'https://files.catbox.moe',
+    ],
+  },
+  {
+    name: 'font-src',
+    sources: [
+      "'self'",
+      'https://*.clerk.com',
+      'https://*.clerk.accounts.dev',
+      'https://clerk.emuready.com',
+      'https://fonts.gstatic.com',
+      'https://fonts.googleapis.com',
+      'https://vercel.live',
+      'data:',
+    ],
+  },
+  {
+    name: 'connect-src',
+    sources: [
+      "'self'",
+      'https://*.google-analytics.com',
+      'https://www.googletagmanager.com',
+      'https://api.mymemory.translated.net',
+      'https://fonts.googleapis.com',
+      'https://fonts.gstatic.com',
+      'https://*.clerk.com',
+      'https://*.clerk.accounts.dev',
+      'https://clerk.emuready.com',
+      'wss://*.clerk.accounts.dev',
+      'wss://clerk.emuready.com',
+      'https://va.vercel-scripts.com',
+      'https://challenges.cloudflare.com',
+      'https://storage.ko-fi.com',
+      'https://clerk-telemetry.com',
+      'https://vercel.live',
+      'https://*.vercel.live',
+      'wss://ws-us3.pusher.com',
+      'https://api.github.com',
+      'https://*.ingest.sentry.io',
+      'https://*.ingest.us.sentry.io',
+      'https://*.r2.cloudflarestorage.com',
+      'https://cdn.emuready.com',
+      'https://retrocatalog.com',
+      ...recaptchaConnectSources,
+    ],
+  },
+  {
+    name: 'frame-src',
+    sources: [
+      "'self'",
+      'blob:',
+      'https://*.clerk.com',
+      'https://*.clerk.accounts.dev',
+      'https://clerk.emuready.com',
+      'https://challenges.cloudflare.com',
+      'https://vercel.live',
+      'https://*.vercel.live',
+      'https://ko-fi.com',
+      ...recaptchaFrameSources,
+    ],
+  },
+  {
+    name: 'worker-src',
+    sources: ["'self'", 'blob:'],
+  },
+  {
+    name: 'object-src',
+    sources: ["'none'"],
+  },
+  {
+    name: 'base-uri',
+    sources: ["'self'"],
+  },
+  {
+    name: 'form-action',
+    sources: ["'self'"],
+  },
+  {
+    name: 'frame-ancestors',
+    sources: ["'none'"],
+  },
+  {
+    name: 'block-all-mixed-content',
+    sources: [],
+  },
+  {
+    name: 'upgrade-insecure-requests',
+    sources: [],
+  },
+]
+
+function formatContentSecurityPolicyDirective(directive: {
+  name: string
+  sources: string[]
+}): string {
+  return [directive.name, ...directive.sources].join(' ')
+}
+
+function createContentSecurityPolicy(): string {
+  return contentSecurityPolicyDirectives.map(formatContentSecurityPolicyDirective).join('; ')
+}
+
 const nextConfig: NextConfig = {
   images: {
     unoptimized: process.env.NEXT_IMAGE_UNOPTIMIZED === 'true',
@@ -28,7 +201,7 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  allowedDevOrigins: ['dev.emuready.com'],
+  allowedDevOrigins: ['dev.emuready.com', '127.0.0.1'],
 
   turbopack: {
     rules: {
@@ -115,6 +288,7 @@ const nextConfig: NextConfig = {
   },
 
   async headers() {
+    const isProduction = process.env.NODE_ENV === 'production'
     const headers = [
       {
         source: '/service-worker.js',
@@ -124,10 +298,15 @@ const nextConfig: NextConfig = {
         source: '/sw-register.js',
         headers: [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' }],
       },
-      // Static assets with hash - cache immutable
+      // Static assets are immutable in production and uncached in dev.
       {
         source: '/_next/static/:path*',
-        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+        headers: isProduction
+          ? [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }]
+          : [
+              { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
+              { key: 'Pragma', value: 'no-cache' },
+            ],
       },
       // Images and other assets - cache with revalidation
       {
@@ -157,22 +336,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://static.cloudflareinsights.com https://va.vercel-scripts.com https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://challenges.cloudflare.com https://vercel.live https://*.vercel.live https://storage.ko-fi.com https://ko-fi.com https://unpkg.com",
-              "style-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://storage.ko-fi.com https://fonts.googleapis.com https://unpkg.com",
-              "img-src 'self' data: https://placehold.co https://*.clerk.com https://*.clerk.accounts.dev https://img.clerk.com https://clerk.emuready.com https://cdn.thegamesdb.net https://images.igdb.com https://media.rawg.io https://www.googletagmanager.com https://assets.nintendo.com https://*.google-analytics.com https://storage.ko-fi.com https://vercel.com https://files.catbox.moe",
-              "font-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://fonts.gstatic.com https://fonts.googleapis.com https://vercel.live data:",
-              "connect-src 'self' https://*.google-analytics.com https://www.googletagmanager.com https://api.mymemory.translated.net https://fonts.googleapis.com https://fonts.gstatic.com https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com wss://*.clerk.accounts.dev wss://clerk.emuready.com https://va.vercel-scripts.com https://challenges.cloudflare.com https://storage.ko-fi.com https://clerk-telemetry.com https://vercel.live https://*.vercel.live wss://ws-us3.pusher.com https://api.github.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.r2.cloudflarestorage.com https://cdn.emuready.com https://retrocatalog.com",
-              "frame-src 'self' blob: https://*.clerk.com https://*.clerk.accounts.dev https://clerk.emuready.com https://challenges.cloudflare.com https://vercel.live https://*.vercel.live https://ko-fi.com",
-              "worker-src 'self' blob:",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'none'",
-              'block-all-mixed-content',
-              'upgrade-insecure-requests',
-            ].join('; '),
+            value: createContentSecurityPolicy(),
           },
           { key: 'X-XSS-Protection', value: '1; mode=block' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -182,7 +346,7 @@ const nextConfig: NextConfig = {
     ]
 
     // In dev disable HTML caching to avoid stale content via proxies
-    if (process.env.NODE_ENV !== 'production') {
+    if (!isProduction) {
       headers.push({
         // All routes except static assets and API
         source: '/((?!_next|api|favicon|service-worker\\.js|sw-register\\.js).*)',
@@ -213,6 +377,10 @@ export default withSentryConfig(withBundleAnalyzer(nextConfig), {
 
   // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,
+
+  sourcemaps: {
+    disable: !isVercelBuild,
+  },
 
   // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
   // This can increase your server load as well as your hosting bill.

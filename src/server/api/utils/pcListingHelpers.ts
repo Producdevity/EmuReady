@@ -1,4 +1,5 @@
-import type { Prisma } from '@orm'
+import { buildShadowBanFilter } from '@/server/utils/query-builders'
+import type { Prisma, Role } from '@orm'
 
 /**
  * Common include for PC listings queries
@@ -100,20 +101,13 @@ export function buildPcListingOrderBy(
 export function buildPcListingWhere(
   baseWhere: Prisma.PcListingWhereInput,
   canSeeBannedUsers: boolean = false,
+  userRole?: Role | null,
+  userId?: string | null,
 ): Prisma.PcListingWhereInput {
   const where = { ...baseWhere }
 
-  // Filter out listings from banned users (shadow ban)
-  if (!canSeeBannedUsers) {
-    where.author = {
-      userBans: {
-        none: {
-          isActive: true,
-          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-        },
-      },
-    }
-  }
+  const shadowBanFilter = canSeeBannedUsers ? undefined : buildShadowBanFilter(userRole, userId)
+  if (shadowBanFilter) where.author = shadowBanFilter
 
   return where
 }

@@ -4,9 +4,12 @@
  * for one-time initialization of services
  */
 
+import { PHASE_PRODUCTION_BUILD } from 'next/constants'
+
 export async function register() {
-  if (process.env.NEXT_RUNTIME === 'nodejs') {
-    // Only run server initialization in Node.js runtime (not edge)
-    await import('./src/server/init')
-  }
+  if (process.env.NEXT_RUNTIME !== 'nodejs') return
+  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) return
+
+  const { initializeServerOnce } = await import('./src/server/init')
+  await initializeServerOnce()
 }

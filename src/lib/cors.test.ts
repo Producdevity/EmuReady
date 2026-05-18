@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { getOriginFromUrl, isAllowedRequestOrigin } from './cors'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { getAllowedOrigins, getOriginFromUrl, isAllowedRequestOrigin } from './cors'
 
 const allowedOrigins = ['https://emuready.com', 'capacitor://localhost']
 
@@ -10,6 +10,21 @@ describe('getOriginFromUrl', () => {
 
   it('returns null for invalid URLs', () => {
     expect(getOriginFromUrl('not a url')).toBeNull()
+  })
+})
+
+describe('getAllowedOrigins', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('allows localhost during CI E2E runs', () => {
+    vi.stubEnv('CI', 'true')
+    vi.stubEnv('NODE_ENV', 'test')
+    vi.stubEnv('NEXT_PUBLIC_ALLOWED_ORIGINS', '')
+    vi.stubEnv('ALLOWED_ORIGINS', '')
+
+    expect(getAllowedOrigins()).toEqual(expect.arrayContaining(['http://localhost:3000']))
   })
 })
 

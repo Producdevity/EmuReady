@@ -106,7 +106,12 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
     }
 
     // Apply banned user filtering
-    const where = buildPcListingWhere(baseWhere, canSeeBannedUsers)
+    const where = buildPcListingWhere(
+      baseWhere,
+      canSeeBannedUsers,
+      ctx.session?.user?.role,
+      ctx.session?.user?.id,
+    )
 
     const [pcListings, total] = await Promise.all([
       ctx.prisma.pcListing.findMany({

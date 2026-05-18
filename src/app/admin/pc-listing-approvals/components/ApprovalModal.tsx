@@ -9,7 +9,8 @@ import {
   RejectionNotesInput,
   CustomFieldsApprovalSection,
 } from '@/app/listings/components/shared/approval/ApprovalModalSharedComponents'
-import { AuthorRiskWarningBanner, Button, Modal } from '@/components/ui'
+import { ReviewRiskWarningBanner } from '@/components/admin'
+import { Button, Modal } from '@/components/ui'
 import { useEmulatorLogos } from '@/hooks'
 import { type RouterOutput } from '@/types/trpc'
 import { ApprovalStatus } from '@orm'
@@ -31,7 +32,9 @@ interface Props {
 function ApprovalModal(props: Props) {
   const emulatorLogos = useEmulatorLogos()
 
-  const hasRisk = props.selectedPcListingForApproval.authorRiskProfile?.highestSeverity !== null
+  const hasRisk =
+    Boolean(props.selectedPcListingForApproval.authorRiskProfile?.highestSeverity) ||
+    Boolean(props.selectedPcListingForApproval.submissionRiskProfile?.highestSeverity)
 
   const getModalTitle = () => {
     const actionText = props.approvalDecision === ApprovalStatus.APPROVED ? 'Approve' : 'Reject'
@@ -56,8 +59,9 @@ function ApprovalModal(props: Props) {
       size="lg"
     >
       <div className="space-y-4">
-        <AuthorRiskWarningBanner
-          riskProfile={props.selectedPcListingForApproval.authorRiskProfile}
+        <ReviewRiskWarningBanner
+          authorRiskProfile={props.selectedPcListingForApproval.authorRiskProfile}
+          submissionRiskProfile={props.selectedPcListingForApproval.submissionRiskProfile}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

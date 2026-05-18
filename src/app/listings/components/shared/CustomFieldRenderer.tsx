@@ -2,6 +2,7 @@
 
 import { type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import CustomFieldTypeDriverVersion from '@/app/listings/components/shared/custom-fields/CustomFieldTypeDriverVersion'
+import { isCustomFieldValueEmpty } from '@/utils/custom-fields'
 import { CustomFieldType } from '@orm'
 import {
   CustomFieldTypeBoolean,
@@ -10,7 +11,6 @@ import {
   CustomFieldTypeText,
   CustomFieldTypeTextArea,
   getCustomFieldTypeIcon,
-  isCustomFieldValueEmpty,
 } from './index'
 
 export interface CustomFieldOptionUI {

@@ -27,6 +27,7 @@ import {
 } from '@/server/cache/invalidation'
 import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
+import { normalizeCustomFieldValues } from '@/server/utils/custom-field-values'
 import { getDriverVersions } from '@/server/utils/driver-versions'
 import { isUserBanned } from '@/server/utils/query-builders'
 import { sanitizeInput, validatePagination } from '@/server/utils/security-validation'
@@ -149,17 +150,14 @@ export const coreRouter = createTRPCRouter({
     // `@/server/utils/spam-check` (currently only applied in mobile routes).
     // Block: UX/product sign-off needed since existing web users would start
     // seeing spam-block errors. Mirror mobile: `{ userId, content: notes, entityType: 'listing' }`.
-    // Verify CAPTCHA if token is provided
-    if (recaptchaToken) {
-      const clientIP = ctx.headers ? getClientIP(ctx.headers) : undefined
-      const captchaResult = await verifyRecaptcha({
-        token: recaptchaToken,
-        expectedAction: RECAPTCHA_CONFIG.actions.CREATE_LISTING,
-        userIP: clientIP,
-      })
+    const clientIP = ctx.headers ? getClientIP(ctx.headers) : undefined
+    const captchaResult = await verifyRecaptcha({
+      token: recaptchaToken,
+      expectedAction: RECAPTCHA_CONFIG.actions.CREATE_LISTING,
+      userIP: clientIP,
+    })
 
-      if (!captchaResult.success) return AppError.captcha(captchaResult.error)
-    }
+    if (!captchaResult.success) return AppError.captcha(captchaResult.error)
 
     const userExists = await ctx.prisma.user.findUnique({
       where: { id: authorId },
@@ -179,9 +177,7 @@ export const coreRouter = createTRPCRouter({
       userRole: ctx.session.user.role,
       ...payload,
       notes: payload.notes ?? null,
-      customFieldValues: (payload.customFieldValues
-        ? (payload.customFieldValues as { customFieldDefinitionId: string; value: unknown }[])
-        : null) as { customFieldDefinitionId: string; value: unknown }[] | null,
+      customFieldValues: normalizeCustomFieldValues(payload.customFieldValues),
     })
 
     // Post-create side effects (trust, notifications, analytics, cache)

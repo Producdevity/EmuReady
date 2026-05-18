@@ -3,13 +3,13 @@
 import { type PropsWithChildren, type ReactNode } from 'react'
 import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3'
 import { TRPCProvider } from '@/lib/api'
-import { RECAPTCHA_CONFIG, isCaptchaEnabled } from '@/lib/captcha/config'
+import { RECAPTCHA_CONFIG, isCaptchaClientEnabled } from '@/lib/captcha/config'
 import ThemeProvider from './ThemeProvider'
 import { ConfirmDialogProvider } from './ui'
 
 function Providers(props: PropsWithChildren) {
   const recaptchaWrapper = (children: ReactNode) => {
-    return !isCaptchaEnabled() ? (
+    return !isCaptchaClientEnabled() ? (
       <>{children}</>
     ) : (
       <GoogleReCaptchaProvider
