@@ -1,267 +1,159 @@
 # Contributing to EmuReady
 
-First off, thanks for taking the time to contribute! ❤️
+EmuReady is a community-maintained emulation compatibility platform. Keep contributions scoped, tested, and consistent with the existing architecture.
 
-All types of contributions are encouraged and valued. See the [Table of Contents](#table-of-contents) for different ways to help and details about how this project handles them. Please make sure to read the relevant section before making your contribution. It will make it a lot easier for us maintainers and smooth out the experience for all involved.
+## Issues and Security
 
-> And if you like the project, but just don't have time to contribute, that's fine. There are other easy ways to support the project and show your appreciation, which we would also be very happy about:
->
-> - Star the project
-> - Just use it
+Before opening an issue, search existing [issues](https://github.com/Producdevity/emuready/issues) and check the [README](README.md) plus relevant files in [docs](docs).
 
-## Table of Contents
+Good bug reports include reproduction steps, expected vs actual behavior, relevant browser/device/emulator context, and logs or screenshots when useful.
 
-- [Code of Conduct](#code-of-conduct)
-- [I Have a Question](#i-have-a-question)
-- [I Want To Contribute](#i-want-to-contribute)
-  - [Reporting Bugs](#reporting-bugs)
-  - [Suggesting Enhancements](#suggesting-enhancements)
-  - [Your First Code Contribution](#your-first-code-contribution)
-  - [Improving The Documentation](#improving-the-documentation)
-- [Development Guidelines](#development-guidelines)
-  - [Commit Messages](#commit-messages)
-  - [Pull Requests](#pull-requests)
-  - [Development Workflow](#development-workflow)
-  - [Code Style](#code-style)
-  - [Testing](#testing)
+Feature requests should describe the user or moderator problem, the proposed behavior, and any obvious data, moderation, security, or performance tradeoffs.
 
-## Code of Conduct
+Do not report security issues in public GitHub issues. Contact a maintainer privately on Discord.
 
-This project and everyone participating in it is governed by the
-[EmuReady Code of Conduct (TODO)](CODE_OF_CONDUCT.md).
-By participating, you are expected to uphold this code. Please report unacceptable behavior
-to the project maintainers.
+## Local Setup
 
-## I Have a Question
+Prerequisites:
 
-> If you want to ask a question, we assume that you have read the available [Documentation](README.md).
-
-Before you ask a question, it is best to search for existing [Issues](https://github.com/Producdevity/emuready/issues) that might help you. In case you have found a suitable issue and still need clarification, you can write your question in this issue.
-
-If you still feel the need to ask a question and need clarification, we recommend the following:
-
-- Open an [Issue](https://github.com/Producdevity/emuready/issues/new).
-- Provide as much context as you can about what you're running into.
-- Provide project and platform versions, depending on what seems relevant.
-
-We will then take care of the issue as soon as possible.
-
-## I Want To Contribute
-
-### Reporting Bugs
-
-#### Before Submitting a Bug Report
-
-A good bug report shouldn't leave others needing to chase you up for more information. Therefore, we ask you to investigate carefully, collect information and describe the issue in detail in your report. Please complete the following steps in advance to help us fix any potential bug as fast as possible.
-
-- Make sure that you are using the latest version.
-- Determine if your bug is really a bug and not an error on your side e.g. using incompatible environment components/versions.
-- To see if other users have experienced (and potentially already solved) the same issue you are having, check if there is not already a bug report existing for your bug or error in the [bug tracker](https://github.com/Producdevity/emuready/issues?q=label%3Abug).
-- Collect information about the bug:
-  - Stack trace (Browser Console, Terminal, etc.)
-  - OS, Platform and Version (Windows, Linux, macOS)
-  - Browser and Version (Chrome, Firefox, Safari, etc.)
-  - Possibly your input and the output
-  - Can you reliably reproduce the issue? And can you also reproduce it with older versions?
-
-#### How Do I Submit a Good Bug Report?
-
-We use GitHub issues to track bugs and errors. If you run into an issue with the project:
-
-- Open an [Issue](https://github.com/Producdevity/emuready/issues/new).
-- Explain the behavior you would expect and the actual behavior.
-- Please provide as much context as possible and describe the _reproduction steps_ that someone else can follow to recreate the issue on their own.
-- Provide the information you collected in the previous section.
-
-Once it's filed:
-
-- The project team will label the issue accordingly.
-- A team member will try to reproduce the issue with your provided steps. If there are no reproduction steps or no obvious way to reproduce the issue, the team will ask you for those steps. Bugs without steps will not be addressed until they can be reproduced.
-- If the team is able to reproduce the issue, it will be prioritized according to severity and other considerations, and then fixed when possible.
-
-### Suggesting Enhancements
-
-This section guides you through submitting an enhancement suggestion for EmuReady, including completely new features and minor improvements to existing functionality.
-
-#### Before Submitting an Enhancement
-
-- Make sure that you are using the latest version. (The website will always be up to date, but if you are running a local version, make sure to update it with last changes on `master`.)
-- Read the [documentation](README.md) carefully and find out if the functionality is already covered, maybe by an individual configuration.
-- Perform a [search](https://github.com/Producdevity/emuready/issues) to see if the enhancement has already been suggested. If it has, add a comment to the existing issue instead of opening a new one.
-- Find out whether your idea fits with the scope and aims of the project. It's up to you to make a strong case to convince the project's developers of the merits of this feature.
-
-#### How Do I Submit a Good Enhancement Suggestion?
-
-Enhancement suggestions are tracked as [GitHub issues](https://github.com/Producdevity/emuready/issues).
-
-- Use a **clear and descriptive title** for the issue to identify the suggestion.
-- Provide a **step-by-step description of the suggested enhancement** in as many details as possible.
-- **Describe the current behavior** and **explain which behavior you expected to see instead** and why.
-- **Explain why this enhancement would be useful** to most EmuReady users or moderators.
-- List some other applications where this enhancement exists, if applicable.
-- **Specify the name and version of the OS** you're using.
-
-### Your First Code Contribution
-
-Unsure where to begin contributing to EmuReady? You can start by looking through these `beginner` and `help-wanted` issues:
-
-- [Beginner issues](https://github.com/Producdevity/emuready/issues?q=label%3A%22good+first+issue%22) - issues which should only require a few lines of code, and a test or two.
-- [Help wanted issues](https://github.com/Producdevity/emuready/issues?q=label%3A%22help+wanted%22) - issues which should be a bit more involved than beginner issues.
-
-#### Local Development
-
-To set up the project locally for development:
-
-1. Fork the repository
-2. Clone your fork
-
-```bash
-git clone https://github.com/your-username/emuready.git
-cd emuready
-```
-
-3. Install dependencies
+- Node.js `v22.17.0`, matching [.nvmrc](.nvmrc)
+- pnpm through Corepack; this repo uses `pnpm@11.1.0`
+- PostgreSQL
+- Clerk credentials for authenticated flows
 
 ```bash
 corepack enable pnpm
 pnpm install
-```
-
-4. Set up environment variables
-
-```bash
 cp .env.example .env.local
-```
-
-**Important:** For production deployments, you must also set the `INTERNAL_API_KEY` environment variable to protect against API abuse. Generate a secure key with:
-
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
-
-For local development, this key is optional as localhost origins are automatically allowed. See [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md) for complete environment variable documentation.
-
-5. Setup database
-
-```bash
-pnpm exec prisma generate
-pnpm exec prisma db push
-```
-
-It is recommended to use a local database for development. You can use SQLite or PostgreSQL. If you want to use PostgreSQL, make sure to set up the connection string in the `.env` file.
-
-```prisma
-datasource db {
-  provider  = "sqlite"
-  url       = "file:./dev.db"
-}
-```
-
-6. Run in development mode
-
-```bash
+pnpm db:generate
+pnpm db:migrate:dev
+pnpm db:seed
 pnpm dev
 ```
 
-Make sure all tests and checks pass before creating a pull request:
+Then open [http://localhost:3000](http://localhost:3000).
+
+Use [.env.example](.env.example) as the source of truth for local environment variables. The usual required values are:
+
+```env
+DATABASE_URL=...
+DATABASE_DIRECT_URL=...
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
+CLERK_SECRET_KEY=...
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+INTERNAL_API_KEY=...
+```
+
+See [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md), [docs/DOCKER.md](docs/DOCKER.md), and [docs/AUTHENTICATION_SETUP.md](docs/AUTHENTICATION_SETUP.md) for setup variants.
+
+## Commands
+
+```bash
+pnpm dev              # Next.js dev server
+pnpm dev:turbo        # Next.js dev server with Turbopack
+pnpm check            # eslint --fix, Next typegen, and TypeScript
+pnpm lint             # ESLint without fixes
+pnpm types            # Next typegen and tsc --noEmit
+pnpm format           # Prettier
+pnpm test             # Unit tests
+pnpm test:e2e         # Playwright UI runner
+pnpm test:e2e:ci      # Playwright headless
+pnpm build            # Production build
+pnpm build:turbo      # Turbopack production build
+```
+
+`pnpm check` can modify files because it runs `eslint --fix`. Use `pnpm lint && pnpm types` for a read-only CI-style check.
+
+## Database
+
+This project uses PostgreSQL with Prisma. The Prisma client is generated into `prisma/generated/client`.
+
+```bash
+pnpm db:generate
+pnpm db:migrate:dev
+pnpm db:migrate:create
+pnpm db:migrate:deploy
+pnpm db:migrate:status
+pnpm db:seed
+pnpm db:studio
+```
+
+Use migrations for committed schema changes. Do not use `db:push` as a pull request substitute for migrations.
+
+## Testing
+
+Run the checks appropriate to the change. For most code changes:
 
 ```bash
 pnpm lint
 pnpm types
+pnpm test
 pnpm build
-# or
-pnpm prepare-deploy
 ```
 
-7. Setup Clerk for authentication
-
-If you want to test and use authentication, you can set up a free Clerk development environment:
-. You will need to create a Clerk account and set up an application.
-. Follow the [Clerk Setup Guide](docs/AUTHENTICATION_SETUP.md) for detailed instructions.
-
-### Improving The Documentation
-
-Documentation improvements are always welcome. The documentation is in the `README.md` file and other markdown files throughout the repository.
-
-## Development Guidelines
-
-### Commit Messages
-
-We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification for our commit messages:
-
-- `fix`: a commit of the type fix patches a bug in your codebase
-- `feat`: a commit of the type feat introduces a new feature to the codebase
-- `docs`: documentation only changes
-- `style`: changes that do not affect the meaning of the code (white-space, formatting, etc)
-- `refactor`: a code change that neither fixes a bug nor adds a feature
-- `perf`: a code change that improves performance
-- `test`: adding missing tests or correcting existing tests
-- `chore`: changes to the build process or auxiliary tools
-
-### Pull Requests
-
-- Fill in the required pull request template
-- Include issue numbers in the PR title when applicable
-- Include screenshots and animated GIFs in your pull request whenever possible
-
-### Development Workflow
-
-1. Create a new branch from `master` for your changes
-2. Make your changes
-3. Test your changes locally
-4. Push your branch and create a pull request
-5. Address any code review feedback
-
-### Code Style
-
-We use ESLint and Prettier to maintain code style and best practices. Please make sure your code adheres to the style guidelines by running:
+For UI, routing, authentication, moderation, or browser-flow changes, also run relevant Playwright coverage:
 
 ```bash
-pnpm lint
-pnpm format
+pnpm exec playwright install chromium
+pnpm test:e2e:ci
 ```
 
-#### Destructuring Props in React Components
+Playwright reads `.env.test.local` and `.env.test`. See [docs/E2E_TESTING_SETUP.md](docs/E2E_TESTING_SETUP.md).
 
-Try to avoid destructuring props in React Components. This is open for discussion of course, but here are some articles that explain why:
+## Pull Requests
+
+- Base the branch on the branch the PR targets. Use `master` unless the issue or release flow says to target `staging`.
+- Keep scope tight. Avoid mixing feature work, unrelated refactors, and formatting churn.
+- Add or update tests for behavior changes.
+- Update docs for setup, routing, environment, API, or workflow changes.
+- List the checks you ran in the PR description.
+- Include screenshots or recordings for user-facing UI changes.
+
+CI runs lint, type-check, unit tests, and a production build. The E2E workflow runs for relevant source, test, Playwright, package, and workspace changes.
+
+Prefer [Conventional Commits](https://www.conventionalcommits.org/) for commit messages.
+
+## Code Style
+
+- No `any`, `z.any()`, `as any`, `@ts-ignore`, or `@ts-expect-error`.
+- Prefer `unknown` plus type guards when input shape is unknown.
+- Use generated Prisma types where they apply.
+- Use enum values from `@orm` instead of string literals.
+- Prefer top-level function declarations.
+- Use `useConfirmDialog` from `@/components/ui` instead of `window.confirm()`.
+- Keep comments rare, factual, and tied to constraints that code cannot express clearly.
+
+### React Props
+
+Do not destructure component props in the function signature. Use `props.foo`.
+
+Component prop interfaces should be named `Props`.
+
+Reference:
 
 - [Breaking the Habit: The Overuse of Object Destructuring in React](https://medium.com/@Producdevity/breaking-the-habit-the-overuse-of-object-destructuring-in-react-5404ab53eb6d)
 - [Destructuring Props in React: The Quiet Problem That Keeps Growing](https://medium.com/@Producdevity/destructuring-props-in-react-the-quiet-problem-that-keeps-growing-c58ab3bf2ce2)
 
-#### File Naming Conventions
+### File Naming
 
-- Use `PascalCase` for component filenames (e.g., `MyComponent.tsx`)
-- Use `camelCase` for other filenames (e.g., `myHelperFunction.ts`)
-- Files with a single component should be named after that component (e.g., `MyComponent.tsx`)
-- Files with a single function should be named after that function (e.g., `myHelperFunction.ts`)
+- Use `PascalCase` for component files.
+- Use `camelCase` for non-component TypeScript files.
+- Name single-component files after the component.
+- Name single-function files after the function.
 
-### Testing
+## Architecture
 
-We recommend writing tests for new features and bug fixes. Run existing tests with:
+- Put Zod schemas in `src/schemas/*`; do not define them inline in routers.
+- Keep routers focused on orchestration, input validation, permissions, and response formatting.
+- Put database access in repository classes under `src/server/repositories/`.
+- Put multi-step business logic in services under `src/server/services/`.
+- Use `adminProcedure` or `permissionProcedure(PERMISSION)` when available.
+- Use `AppError` and `ResourceError` patterns for consistent errors.
 
-#### Unit Tests
+Listings and PC listings should stay behaviorally aligned unless product requirements explicitly diverge. Shared behavior belongs in shared utilities or components.
 
-```bash
-pnpm test
-```
+Use `Listing` and `PcListing` for the existing internal models. User-facing copy should use compatibility reports, device reports, and PC reports instead of exposing internal model names.
 
-#### End-to-End Tests
+Filter behavior belongs in controllers. Content components should render fields and call passed handlers. Page state hooks should own URL sync and local UI state, but not per-filter analytics.
 
-> This is still a work in progress, but we have a basic setup for E2E tests using Playwright.
-> Not all tests are green yet, but we are working on improving coverage.
-
-For comprehensive E2E testing setup and guidelines, see our [E2E Testing Setup Guide](docs/E2E_TESTING_SETUP.md).
-
-Quick commands:
-
-```bash
-# Interactive test runner with UI (recommended for development)
-pnpm test:e2e
-
-# Headless CI run
-pnpm test:e2e:ci
-```
-
----
-
-Thank you for contributing to EmuReady! ❤️
+Async multi-selects should use `src/components/ui/form/async-multi-select/AsyncMultiSelect.tsx` as the base. Entity wrappers should stay thin, and selected chips must remain visible even when the current search result page does not include them.
