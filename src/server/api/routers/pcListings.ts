@@ -1408,7 +1408,7 @@ export const pcListingsRouter = createTRPCRouter({
 
         let voteResult
         let scoreChange: number
-        let trustAction: 'upvote' | 'downvote' | 'change' | 'remove' | null = null
+        let trustAction: 'upvote' | 'downvote' | 'change' | 'remove' | null
 
         if (existingVote) {
           if (existingVote.value === value) {
