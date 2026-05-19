@@ -4,12 +4,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Filter, FilterX, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { isNullish } from 'remeda'
-import {
-  CustomFieldValue,
-  type FieldValueLike,
-} from '@/app/listings/components/shared/CustomFieldValue'
 import { DetailFieldRow } from '@/app/listings/components/shared/details/DetailFieldRow'
 import { isDefaultValue } from '@/app/listings/components/shared/utils/isDefaultValue'
+import {
+  CompatibilityReportCustomFieldValue,
+  type CompatibilityCustomFieldValue,
+} from '@/components/compatibility/custom-fields'
 import { Badge, Button } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useLocalStorage } from '@/hooks'
@@ -18,7 +18,7 @@ import { sortCustomFieldsByCategory } from '@/utils/sortCustomFields'
 
 interface Props {
   title?: string
-  fieldValues: (FieldValueLike & { id: string })[]
+  fieldValues: (CompatibilityCustomFieldValue & { id: string })[]
 }
 
 const TOGGLE_DELAY_MS = 400
@@ -150,7 +150,7 @@ export function CustomFieldsSection(props: Props) {
                       <dl className={cn(showIndicator && 'pr-10')}>
                         <DetailFieldRow
                           label={fieldValue.customFieldDefinition.label ?? 'Field'}
-                          value={<CustomFieldValue fieldValue={fieldValue} />}
+                          value={<CompatibilityReportCustomFieldValue fieldValue={fieldValue} />}
                         />
                       </dl>
                     </motion.div>

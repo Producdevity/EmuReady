@@ -1,29 +1,49 @@
 'use client'
 
 import { isNumber } from 'remeda'
-import { DRIVER_VERSION_FIELD_NAME } from '@/app/listings/components/shared/CustomFieldRenderer'
 import { Badge } from '@/components/ui'
+import { DRIVER_VERSION_FIELD_NAME } from '@/constants/customFields'
 import { CustomFieldType } from '@orm'
+import { type CompatibilityCustomFieldValue } from './types'
 
-export interface FieldValueLike {
-  value: unknown
-  customFieldDefinition: {
-    type: CustomFieldType
-    label?: string
-    name?: string | null
-    options?: unknown
-    defaultValue?: unknown
-    rangeDecimals?: number | null
-    rangeUnit?: string | null
-    categoryId?: string | null
-    category?: { id: string; name: string } | null
+interface Props {
+  fieldValue: CompatibilityCustomFieldValue
+}
+
+interface SelectOption {
+  value: string
+  label: string
+}
+
+function isSelectOption(value: unknown): value is SelectOption {
+  if (typeof value !== 'object' || value === null) return false
+  if (!('value' in value) || !('label' in value)) return false
+  return typeof value.value === 'string' && typeof value.label === 'string'
+}
+
+function getSelectOptions(value: unknown): SelectOption[] {
+  if (!Array.isArray(value)) return []
+  return value.filter(isSelectOption)
+}
+
+function formatDriverVersion(value: string): string {
+  if (value.includes('|||')) {
+    const [displayValue] = value.split('|||')
+    return displayValue ?? value
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(value)
+    if (typeof parsed !== 'object' || parsed === null) return value
+    if ('display' in parsed && typeof parsed.display === 'string') return parsed.display
+    if ('release' in parsed && typeof parsed.release === 'string') return parsed.release
+    return 'Custom Driver'
+  } catch {
+    return value
   }
 }
 
-interface Props {
-  fieldValue: FieldValueLike
-}
-export function CustomFieldValue(props: Props) {
+export function CompatibilityReportCustomFieldValue(props: Props) {
   switch (props.fieldValue.customFieldDefinition.type) {
     case CustomFieldType.BOOLEAN:
       return (
@@ -33,11 +53,9 @@ export function CustomFieldValue(props: Props) {
       )
 
     case CustomFieldType.SELECT: {
-      const opts = (props.fieldValue.customFieldDefinition.options || []) as {
-        value: string
-        label: string
-      }[]
-      const option = opts.find((opt) => opt.value === String(props.fieldValue.value))
+      const option = getSelectOptions(props.fieldValue.customFieldDefinition.options).find(
+        (selectOption) => selectOption.value === String(props.fieldValue.value),
+      )
       return option?.label ?? String(props.fieldValue.value)
     }
 
@@ -76,39 +94,24 @@ export function CustomFieldValue(props: Props) {
     }
 
     case CustomFieldType.TEXT: {
-      const valueStr = String(props.fieldValue.value ?? '')
+      const value = String(props.fieldValue.value ?? '')
 
       if (props.fieldValue.customFieldDefinition.name === DRIVER_VERSION_FIELD_NAME) {
-        let displayValue = valueStr
-        if (valueStr.includes('|||')) {
-          ;[displayValue] = valueStr.split('|||')
-        } else {
-          try {
-            const parsed = JSON.parse(valueStr)
-            if (parsed && typeof parsed === 'object') {
-              displayValue = parsed.display || parsed.release || 'Custom Driver'
-            }
-          } catch {
-            // Not JSON, use as-is
-          }
-        }
-
-        return displayValue
+        return formatDriverVersion(value)
       }
 
-      // For regular text: use badge style for short single words, plain text for longer content
-      const isSingleWord = !valueStr.includes(' ') && valueStr.length > 0
-      const isShortWord = valueStr.length <= 20
+      const isSingleWord = !value.includes(' ') && value.length > 0
+      const isShortWord = value.length <= 20
 
       if (isSingleWord && isShortWord) {
         return (
           <Badge variant="default" className="font-normal">
-            {valueStr}
+            {value}
           </Badge>
         )
       }
 
-      return valueStr
+      return value
     }
 
     case CustomFieldType.TEXTAREA:

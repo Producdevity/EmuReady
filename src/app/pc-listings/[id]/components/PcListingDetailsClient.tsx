@@ -5,7 +5,6 @@ import { ArrowLeft, Monitor, Cpu, HardDrive, Globe2, Hash } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef } from 'react'
 import { VoteReminderBanner } from '@/app/listings/[id]/components/vote-reminder/VoteReminderBanner'
-import { ListingApprovalActions } from '@/app/listings/components/shared/approval/ListingApprovalActions'
 import { CustomFieldsSection } from '@/app/listings/components/shared/CustomFieldsSection'
 import { ActionButtonsStack } from '@/app/listings/components/shared/details/ActionButtonsStack'
 import { AuthorPanel } from '@/app/listings/components/shared/details/AuthorPanel'
@@ -20,6 +19,7 @@ import { VotingSection } from '@/app/listings/components/shared/details/VotingSe
 import { NotesSection } from '@/app/listings/components/shared/NotesSection'
 import { GameImage } from '@/app/listings/shared/components'
 import CommunitySupportBanner from '@/components/banners/CommunitySupportBanner'
+import { CompatibilityReportApprovalActions } from '@/components/compatibility/review'
 import { BannedUserBadge, Button, Card } from '@/components/ui'
 import { PC_OS_LABELS } from '@/data/pc-os'
 import { api } from '@/lib/api'
@@ -235,7 +235,7 @@ function PcListingDetailsClient(props: Props) {
                   }
                   onSuccess={refreshData}
                 />
-                <ListingApprovalActions
+                <CompatibilityReportApprovalActions
                   listing={props.pcListing}
                   listingType="pc"
                   onApprovalSuccess={refreshData}

@@ -101,6 +101,7 @@ vi.mock('@/server/utils/security-validation', () => ({
 
 const mockRepositoryCreate = vi.fn()
 const mockRepositoryGetById = vi.fn()
+const mockRepositoryGetByIdWithDetails = vi.fn()
 const mockRepositoryApprove = vi.fn()
 const mockRepositoryReject = vi.fn()
 const mockRepositoryGetExistingVote = vi.fn()
@@ -115,6 +116,7 @@ vi.mock('@/server/repositories/pc-listings.repository', () => ({
     return {
       create: mockRepositoryCreate,
       getById: mockRepositoryGetById,
+      getByIdWithDetails: mockRepositoryGetByIdWithDetails,
       approve: mockRepositoryApprove,
       reject: mockRepositoryReject,
       getExistingVote: mockRepositoryGetExistingVote,
@@ -169,6 +171,9 @@ function createMockPrisma() {
       findMany: vi.fn().mockResolvedValue([]),
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
+    userBan: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
   }
 
   return {
@@ -206,6 +211,7 @@ describe('pcListings trust integration', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockRepositoryGetExistingVote.mockResolvedValue(null)
+    mockRepositoryGetByIdWithDetails.mockResolvedValue(null)
     mockRepositoryGetVerifiedEmulatorIds.mockResolvedValue([])
     mockRepositoryGetPendingListings.mockResolvedValue({
       pcListings: [],
@@ -508,6 +514,66 @@ describe('pcListings trust integration', () => {
 
       expect(mockRepositoryCreate).not.toHaveBeenCalled()
       expect(mockApplyTrustAction).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('byId', () => {
+    it('hides review risk profiles for non-reviewers', async () => {
+      mockRepositoryGetByIdWithDetails.mockResolvedValueOnce({
+        id: LISTING_ID,
+        authorId: AUTHOR_ID,
+        customFieldValues: [],
+      })
+      const { caller, prisma } = createCaller()
+
+      const result = await caller.byId({ id: LISTING_ID })
+
+      expect(mockRepositoryGetByIdWithDetails).toHaveBeenCalledWith(LISTING_ID, false, USER_ID)
+      expect(prisma.userBan.findMany).not.toHaveBeenCalled()
+      expect(result).toMatchObject({
+        id: LISTING_ID,
+        authorRiskProfile: null,
+        submissionRiskProfile: null,
+      })
+    })
+
+    it('attaches review risk profiles for moderators viewing detail pages', async () => {
+      const pcListing = {
+        id: LISTING_ID,
+        authorId: AUTHOR_ID,
+        customFieldValues: [],
+      }
+      mockRepositoryGetByIdWithDetails.mockResolvedValueOnce(pcListing)
+      const { caller, prisma } = createCaller({ role: Role.MODERATOR })
+      prisma.userBan.findMany.mockResolvedValueOnce([{ reason: 'Spam' }])
+      mockComputeAuthorRiskProfiles.mockResolvedValueOnce(
+        new Map([[AUTHOR_ID, { authorId: AUTHOR_ID, signals: [], highestSeverity: null }]]),
+      )
+      mockComputeSubmissionRiskProfiles.mockResolvedValueOnce(
+        new Map([[LISTING_ID, { listingId: LISTING_ID, signals: [], highestSeverity: null }]]),
+      )
+
+      const result = await caller.byId({ id: LISTING_ID })
+
+      expect(mockRepositoryGetByIdWithDetails).toHaveBeenCalledWith(LISTING_ID, true, USER_ID)
+      expect(prisma.userBan.findMany).toHaveBeenCalledWith({
+        where: {
+          userId: AUTHOR_ID,
+          isActive: true,
+          OR: [{ expiresAt: null }, { expiresAt: { gt: expect.any(Date) } }],
+        },
+        select: { reason: true },
+      })
+      expect(mockComputeAuthorRiskProfiles).toHaveBeenCalledWith(
+        prisma,
+        [AUTHOR_ID],
+        new Map([[AUTHOR_ID, [{ reason: 'Spam' }]]]),
+      )
+      expect(result).toMatchObject({
+        id: LISTING_ID,
+        authorRiskProfile: { authorId: AUTHOR_ID },
+        submissionRiskProfile: { listingId: LISTING_ID },
+      })
     })
   })
 

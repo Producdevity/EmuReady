@@ -1,6 +1,11 @@
 'use client'
 
 import {
+  getHighestReviewRiskSeverity,
+  getReviewRiskGroups,
+  getReviewRiskSignalCount,
+} from '@/components/compatibility/review'
+import {
   Badge,
   severityBadgeVariant,
   severityIconConfig,
@@ -11,11 +16,6 @@ import {
 import { cn } from '@/lib/utils'
 import { type AuthorRiskProfile } from '@/schemas/authorRisk'
 import { type SubmissionRiskProfile } from '@/schemas/submissionRisk'
-import {
-  getHighestReviewRiskSeverity,
-  getReviewRiskGroups,
-  getReviewRiskSignalCount,
-} from './reviewRiskDisplay'
 
 interface Props {
   authorRiskProfile: AuthorRiskProfile | null | undefined
