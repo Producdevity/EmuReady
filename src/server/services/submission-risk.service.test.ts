@@ -75,6 +75,30 @@ describe('computeSubmissionRiskProfiles', () => {
     expect(signal?.severity).toBe('high')
   })
 
+  it('keeps placeholder severity high for a new author with rejected listings', async () => {
+    const profile = computeSubmissionRiskProfile(
+      createSubmission('v0.1.4'),
+      createAuthorRiskProfile([
+        {
+          type: RISK_SIGNAL_TYPES.NEW_AUTHOR,
+          severity: 'low',
+          label: 'New Author',
+          description: 'No previously approved listings',
+        },
+        {
+          type: RISK_SIGNAL_TYPES.PREVIOUSLY_REJECTED,
+          severity: 'low',
+          label: 'Previously Rejected',
+          description: '2 rejected listings',
+        },
+      ]),
+      { trustScore: 0, approvedListings: 0 },
+    )
+
+    expect(profile.signals[0]?.severity).toBe('high')
+    expect(profile.highestSeverity).toBe('high')
+  })
+
   it('lowers placeholder severity for authors with multiple approved listings', async () => {
     const profile = computeSubmissionRiskProfile(createSubmission('v0.14'), undefined, {
       trustScore: 0,
