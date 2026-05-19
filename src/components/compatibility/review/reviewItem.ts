@@ -1,6 +1,7 @@
 import { type AuthorRiskProfile } from '@/schemas/authorRisk'
 import { type SubmissionRiskProfile } from '@/schemas/submissionRisk'
-import { ApprovalStatus, type CustomFieldType } from '@orm'
+import { ApprovalStatus } from '@orm'
+import { type CompatibilityCustomFieldValue } from '../custom-fields'
 
 export const CompatibilityReportReviewDecision = {
   APPROVED: ApprovalStatus.APPROVED,
@@ -9,23 +10,6 @@ export const CompatibilityReportReviewDecision = {
 
 export type CompatibilityReportReviewDecision =
   (typeof CompatibilityReportReviewDecision)[keyof typeof CompatibilityReportReviewDecision]
-
-export interface FieldValueLike {
-  id?: string
-  value: unknown
-  customFieldDefinition: {
-    id?: string
-    type: CustomFieldType
-    label?: string
-    name?: string | null
-    options?: unknown
-    defaultValue?: unknown
-    rangeDecimals?: number | null
-    rangeUnit?: string | null
-    categoryId?: string | null
-    category?: { id: string; name: string } | null
-  }
-}
 
 export interface CompatibilityReportReviewGame {
   title: string
@@ -69,7 +53,7 @@ export interface CompatibilityReportReviewItem {
   createdAt: Date
   performance: CompatibilityReportReviewPerformance | null
   notes: string | null
-  customFieldValues?: readonly FieldValueLike[]
+  customFieldValues?: readonly CompatibilityCustomFieldValue[]
   authorRiskProfile?: AuthorRiskProfile | null
   submissionRiskProfile?: SubmissionRiskProfile | null
 }
@@ -87,7 +71,7 @@ interface CompatibilityReportReviewSourceBase {
   createdAt: Date
   performance: CompatibilityReportReviewPerformance | null
   notes: string | null
-  customFieldValues?: readonly FieldValueLike[]
+  customFieldValues?: readonly CompatibilityCustomFieldValue[]
   authorRiskProfile?: AuthorRiskProfile | null
   submissionRiskProfile?: SubmissionRiskProfile | null
 }

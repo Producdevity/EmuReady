@@ -1,5 +1,4 @@
 export * from './CompatibilityReportApprovalActions'
-export * from './CompatibilityReportCustomFieldValue'
 export * from './CompatibilityReportReviewModalAdapter'
 export * from './CompatibilityReportReviewModal'
 export * from './ReviewRiskWarningBanner'

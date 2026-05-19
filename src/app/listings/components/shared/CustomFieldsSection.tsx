@@ -8,8 +8,8 @@ import { DetailFieldRow } from '@/app/listings/components/shared/details/DetailF
 import { isDefaultValue } from '@/app/listings/components/shared/utils/isDefaultValue'
 import {
   CompatibilityReportCustomFieldValue,
-  type FieldValueLike,
-} from '@/components/compatibility/review'
+  type CompatibilityCustomFieldValue,
+} from '@/components/compatibility/custom-fields'
 import { Badge, Button } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useLocalStorage } from '@/hooks'
@@ -18,7 +18,7 @@ import { sortCustomFieldsByCategory } from '@/utils/sortCustomFields'
 
 interface Props {
   title?: string
-  fieldValues: (FieldValueLike & { id: string })[]
+  fieldValues: (CompatibilityCustomFieldValue & { id: string })[]
 }
 
 const TOGGLE_DELAY_MS = 400

@@ -1,11 +1,11 @@
 import { isNullish } from 'remeda'
-import type { FieldValueLike } from '@/components/compatibility/review'
+import type { CompatibilityCustomFieldValue } from '@/components/compatibility/custom-fields'
 
 /**
  * Checks if a custom field value is the default value for its definition
  * @param fieldValue
  */
-export function isDefaultValue(fieldValue: FieldValueLike): boolean {
+export function isDefaultValue(fieldValue: CompatibilityCustomFieldValue): boolean {
   const defaultValue = fieldValue.customFieldDefinition.defaultValue
   const currentValue = fieldValue.value
 

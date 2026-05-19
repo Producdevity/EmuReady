@@ -3,11 +3,14 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
+import {
+  CompatibilityReportCustomFieldValue,
+  type CompatibilityCustomFieldValue,
+} from '@/components/compatibility/custom-fields'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import { Badge, Button, Input, LocalizedDate, Modal, PerformanceBadge } from '@/components/ui'
 import { useEmulatorLogos } from '@/hooks'
 import getImageUrl from '@/utils/getImageUrl'
-import { CompatibilityReportCustomFieldValue } from './CompatibilityReportCustomFieldValue'
 import {
   type CompatibilityReportReviewAuthor,
   CompatibilityReportReviewDecision,
@@ -16,7 +19,6 @@ import {
   type CompatibilityReportReviewHardware,
   type CompatibilityReportReviewItem,
   type CompatibilityReportReviewPerformance,
-  type FieldValueLike,
 } from './reviewItem'
 import { ReviewRiskWarningBanner } from './ReviewRiskWarningBanner'
 
@@ -206,7 +208,7 @@ function RejectionNotesInput(props: {
   )
 }
 
-function getCustomFieldReviewKey(fieldValue: FieldValueLike, index: number): string {
+function getCustomFieldReviewKey(fieldValue: CompatibilityCustomFieldValue, index: number): string {
   const uniqueId = fieldValue.id ?? fieldValue.customFieldDefinition.id
   if (uniqueId) return uniqueId
 
@@ -218,7 +220,7 @@ function getCustomFieldReviewKey(fieldValue: FieldValueLike, index: number): str
 }
 
 function CustomFieldsApprovalSection(props: {
-  fieldValues: readonly FieldValueLike[] | undefined
+  fieldValues: readonly CompatibilityCustomFieldValue[] | undefined
 }) {
   const [expanded, setExpanded] = useState(false)
 
