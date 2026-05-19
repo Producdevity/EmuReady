@@ -27,11 +27,7 @@ import {
 } from '@/server/cache/invalidation'
 import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
-import {
-  attachHiddenReviewRiskProfiles,
-  attachReviewRiskProfile,
-  getActiveAuthorBansForReviewRisk,
-} from '@/server/services/review-risk.service'
+import { attachReviewRiskProfileForViewer } from '@/server/services/review-risk.service'
 import { normalizeCustomFieldValues } from '@/server/utils/custom-field-values'
 import { getDriverVersions } from '@/server/utils/driver-versions'
 import { isUserBanned } from '@/server/utils/query-builders'
@@ -142,8 +138,6 @@ export const coreRouter = createTRPCRouter({
   byId: publicProcedure.input(GetListingByIdSchema).query(async ({ ctx, input }) => {
     const userRole = ctx.session?.user?.role
     const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
-    const canReviewListings =
-      roleIncludesRole(userRole, Role.MODERATOR) || roleIncludesRole(userRole, Role.DEVELOPER)
 
     const repository = new ListingsRepository(ctx.prisma)
     const listing = await repository.byIdWithAccess(
@@ -153,15 +147,10 @@ export const coreRouter = createTRPCRouter({
     )
 
     if (!listing) return listing
-    if (!canReviewListings) return attachHiddenReviewRiskProfiles(listing)
-
-    const userBans = await getActiveAuthorBansForReviewRisk(ctx.prisma, listing.authorId)
-
-    return await attachReviewRiskProfile(ctx.prisma, listing, {
-      id: listing.id,
-      authorId: listing.authorId,
-      author: { userBans },
-      customFieldValues: listing.customFieldValues,
+    return await attachReviewRiskProfileForViewer({
+      prisma: ctx.prisma,
+      listing,
+      userRole,
     })
   }),
 

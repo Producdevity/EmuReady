@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { ApprovalStatusBadge, ApproveButton, Button, RejectButton } from '@/components/ui'
 import { api } from '@/lib/api'
 import { logger } from '@/lib/logger'
@@ -10,11 +9,9 @@ import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { ApprovalStatus, Role } from '@orm'
-import {
-  CompatibilityReportReviewModal,
-  type CompatibilityReportReviewAuthor,
-  type CompatibilityReportReviewItem,
-} from './CompatibilityReportReviewModal'
+import { CompatibilityReportReviewModalAdapter } from './CompatibilityReportReviewModalAdapter'
+import { type CompatibilityReportReviewDecision } from './reviewItem'
+import { useCompatibilityReportReviewDecisionModal } from './useCompatibilityReportReviewDecisionModal'
 
 type HandheldListing = NonNullable<RouterOutput['listings']['byId']>
 type PcListing = NonNullable<RouterOutput['pcListings']['byId']>
@@ -26,42 +23,12 @@ interface Props {
   className?: string
 }
 
-function isHandheldListing(listing: HandheldListing | PcListing): listing is HandheldListing {
-  return 'device' in listing
-}
-
-function getAuthor(listing: HandheldListing | PcListing): CompatibilityReportReviewAuthor {
-  return {
-    id: listing.author?.id ?? listing.authorId,
-    name: listing.author?.name ?? null,
-  }
-}
-
-function toReviewItem(listing: HandheldListing | PcListing): CompatibilityReportReviewItem {
-  return {
-    game: listing.game,
-    hardware: isHandheldListing(listing)
-      ? { type: 'device', device: listing.device }
-      : { type: 'pc', cpu: listing.cpu, gpu: listing.gpu },
-    emulator: listing.emulator,
-    author: getAuthor(listing),
-    createdAt: listing.createdAt,
-    performance: listing.performance,
-    notes: listing.notes,
-    customFieldValues: listing.customFieldValues,
-    authorRiskProfile: listing.authorRiskProfile,
-    submissionRiskProfile: listing.submissionRiskProfile,
-  }
-}
-
 function getReportLabel(listingType: ListingType): string {
   return listingType === 'handheld' ? 'Listing' : 'PC Listing'
 }
 
 export function CompatibilityReportApprovalActions(props: Props) {
-  const [showModal, setShowModal] = useState(false)
-  const [approvalDecision, setApprovalDecision] = useState<ApprovalStatus>(ApprovalStatus.APPROVED)
-  const [rejectionNotes, setRejectionNotes] = useState('')
+  const reviewModal = useCompatibilityReportReviewDecisionModal<HandheldListing | PcListing>()
 
   const currentUserQuery = api.users.me.useQuery()
 
@@ -93,36 +60,35 @@ export function CompatibilityReportApprovalActions(props: Props) {
   const isAlreadyReviewed = !isPending
   const reportLabel = getReportLabel(props.listingType)
 
-  const handleOpenModal = (decision: ApprovalStatus) => {
-    setApprovalDecision(decision)
-    setRejectionNotes('')
-    setShowModal(true)
+  const handleOpenModal = (decision: CompatibilityReportReviewDecision) => {
+    reviewModal.open(props.listing, decision)
   }
 
   const handleCloseModal = () => {
-    setShowModal(false)
-    setRejectionNotes('')
+    reviewModal.close()
   }
 
   const handleConfirm = async () => {
+    if (!reviewModal.selectedReport || !reviewModal.decision) return
+
     try {
-      if (approvalDecision === ApprovalStatus.APPROVED) {
+      if (reviewModal.decision === ApprovalStatus.APPROVED) {
         if (props.listingType === 'handheld') {
-          await handheldApproveMutation.mutateAsync({ listingId: props.listing.id })
+          await handheldApproveMutation.mutateAsync({ listingId: reviewModal.selectedReport.id })
         } else {
-          await pcApproveMutation.mutateAsync({ pcListingId: props.listing.id })
+          await pcApproveMutation.mutateAsync({ pcListingId: reviewModal.selectedReport.id })
         }
         toast.success(`${reportLabel} approved successfully`)
       } else {
         if (props.listingType === 'handheld') {
           await handheldRejectMutation.mutateAsync({
-            listingId: props.listing.id,
-            notes: rejectionNotes || undefined,
+            listingId: reviewModal.selectedReport.id,
+            notes: reviewModal.notes || undefined,
           })
         } else {
           await pcRejectMutation.mutateAsync({
-            pcListingId: props.listing.id,
-            notes: rejectionNotes || undefined,
+            pcListingId: reviewModal.selectedReport.id,
+            notes: reviewModal.notes || undefined,
           })
         }
         toast.success(`${reportLabel} rejected successfully`)
@@ -134,7 +100,7 @@ export function CompatibilityReportApprovalActions(props: Props) {
         await props.onApprovalSuccess()
       }
     } catch (error) {
-      const action = approvalDecision === ApprovalStatus.APPROVED ? 'approve' : 'reject'
+      const action = reviewModal.decision === ApprovalStatus.APPROVED ? 'approve' : 'reject'
       logger.error(`Failed to ${action} ${reportLabel}:`, error)
       toast.error(`Failed to ${action} ${reportLabel}: ${getErrorMessage(error)}`)
     }
@@ -191,15 +157,15 @@ export function CompatibilityReportApprovalActions(props: Props) {
         )}
       </div>
 
-      {showModal && (
-        <CompatibilityReportReviewModal
-          isOpen={showModal}
+      {reviewModal.isOpen && reviewModal.selectedReport && reviewModal.decision && (
+        <CompatibilityReportReviewModalAdapter
+          isOpen={reviewModal.isOpen}
           onClose={handleCloseModal}
-          decision={approvalDecision}
+          decision={reviewModal.decision}
           reportLabel={reportLabel}
-          report={toReviewItem(props.listing)}
-          rejectionNotes={rejectionNotes}
-          onRejectionNotesChange={setRejectionNotes}
+          report={reviewModal.selectedReport}
+          rejectionNotes={reviewModal.notes}
+          onRejectionNotesChange={reviewModal.setNotes}
           onSubmit={handleConfirm}
           isSubmitting={approveMutation.isPending || rejectMutation.isPending}
         />

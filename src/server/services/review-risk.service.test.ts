@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { RISK_SIGNAL_TYPES, type AuthorRiskProfile } from '@/schemas/authorRisk'
 import { SUBMISSION_RISK_SIGNAL_TYPES, type SubmissionRiskProfile } from '@/schemas/submissionRisk'
+import { Role } from '@orm'
 import {
   attachHiddenReviewRiskProfiles,
   attachReviewRiskProfiles,
+  canViewReviewRiskProfiles,
   getActiveAuthorBansForReviewRisk,
   getRiskyReviewItemIds,
 } from './review-risk.service'
@@ -105,5 +107,12 @@ describe('review risk helpers', () => {
       },
       select: { reason: true },
     })
+  })
+
+  it('uses reviewer roles as the single gate for detail risk visibility', () => {
+    expect(canViewReviewRiskProfiles(Role.USER)).toBe(false)
+    expect(canViewReviewRiskProfiles(Role.DEVELOPER)).toBe(true)
+    expect(canViewReviewRiskProfiles(Role.MODERATOR)).toBe(true)
+    expect(canViewReviewRiskProfiles(null)).toBe(false)
   })
 })

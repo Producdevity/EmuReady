@@ -67,10 +67,8 @@ import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.r
 import { logAudit } from '@/server/services/audit.service'
 import {
   attachReviewRiskProfiles,
-  attachHiddenReviewRiskProfiles,
-  attachReviewRiskProfile,
+  attachReviewRiskProfileForViewer,
   computeReviewRiskProfiles,
-  getActiveAuthorBansForReviewRisk,
   getRiskOnlyReviewPage,
 } from '@/server/services/review-risk.service'
 import { listingStatsCache } from '@/server/utils/cache'
@@ -160,7 +158,8 @@ export const pcListingsRouter = createTRPCRouter({
 
   byId: publicProcedure.input(GetPcListingByIdSchema).query(async ({ ctx, input }) => {
     const repository = new PcListingsRepository(ctx.prisma)
-    const canSeeBannedUsers = ctx.session?.user ? isModerator(ctx.session.user.role) : false
+    const userRole = ctx.session?.user?.role
+    const canSeeBannedUsers = userRole ? isModerator(userRole) : false
 
     const pcListing = await repository.getByIdWithDetails(
       input.id,
@@ -170,19 +169,10 @@ export const pcListingsRouter = createTRPCRouter({
 
     if (!pcListing) return ResourceError.pcListing.notFound()
 
-    const canReviewListings =
-      roleIncludesRole(ctx.session?.user?.role, Role.MODERATOR) ||
-      roleIncludesRole(ctx.session?.user?.role, Role.DEVELOPER)
-
-    if (!canReviewListings) return attachHiddenReviewRiskProfiles(pcListing)
-
-    const userBans = await getActiveAuthorBansForReviewRisk(ctx.prisma, pcListing.authorId)
-
-    return await attachReviewRiskProfile(ctx.prisma, pcListing, {
-      id: pcListing.id,
-      authorId: pcListing.authorId,
-      author: { userBans },
-      customFieldValues: pcListing.customFieldValues,
+    return await attachReviewRiskProfileForViewer({
+      prisma: ctx.prisma,
+      listing: pcListing,
+      userRole,
     })
   }),
 

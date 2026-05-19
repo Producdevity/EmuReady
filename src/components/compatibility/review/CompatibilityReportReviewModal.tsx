@@ -6,67 +6,25 @@ import { useState } from 'react'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import { Badge, Button, Input, LocalizedDate, Modal, PerformanceBadge } from '@/components/ui'
 import { useEmulatorLogos } from '@/hooks'
-import { type AuthorRiskProfile } from '@/schemas/authorRisk'
-import { type SubmissionRiskProfile } from '@/schemas/submissionRisk'
 import getImageUrl from '@/utils/getImageUrl'
 import { ApprovalStatus } from '@orm'
+import { CompatibilityReportCustomFieldValue } from './CompatibilityReportCustomFieldValue'
 import {
-  CompatibilityReportCustomFieldValue,
+  type CompatibilityReportReviewAuthor,
+  type CompatibilityReportReviewDecision,
+  type CompatibilityReportReviewEmulator,
+  type CompatibilityReportReviewGame,
+  type CompatibilityReportReviewHardware,
+  type CompatibilityReportReviewItem,
+  type CompatibilityReportReviewPerformance,
   type FieldValueLike,
-} from './CompatibilityReportCustomFieldValue'
+} from './reviewItem'
 import { ReviewRiskWarningBanner } from './ReviewRiskWarningBanner'
-
-export interface CompatibilityReportReviewGame {
-  title: string
-  imageUrl: string | null
-  system: {
-    name: string
-    key: string | null
-  }
-}
-
-export interface CompatibilityReportReviewAuthor {
-  id: string
-  name: string | null
-}
-
-export interface CompatibilityReportReviewEmulator {
-  name: string
-  logo: string | null
-}
-
-export interface CompatibilityReportReviewPerformance {
-  rank: number
-  label: string
-  description: string | null
-}
-
-interface HardwareBrandModel {
-  brand: { name: string }
-  modelName: string
-}
-
-export type CompatibilityReportReviewHardware =
-  | { type: 'device'; device: HardwareBrandModel }
-  | { type: 'pc'; cpu: HardwareBrandModel; gpu?: HardwareBrandModel | null }
-
-export interface CompatibilityReportReviewItem {
-  game: CompatibilityReportReviewGame
-  hardware: CompatibilityReportReviewHardware
-  emulator: CompatibilityReportReviewEmulator
-  author: CompatibilityReportReviewAuthor
-  createdAt: Date
-  performance: CompatibilityReportReviewPerformance | null
-  notes: string | null
-  customFieldValues?: readonly FieldValueLike[]
-  authorRiskProfile?: AuthorRiskProfile | null
-  submissionRiskProfile?: SubmissionRiskProfile | null
-}
 
 interface Props {
   isOpen: boolean
   onClose: () => void
-  decision: ApprovalStatus
+  decision: CompatibilityReportReviewDecision
   reportLabel: string
   report: CompatibilityReportReviewItem
   rejectionNotes: string
@@ -248,6 +206,17 @@ function RejectionNotesInput(props: {
   )
 }
 
+function getCustomFieldReviewKey(fieldValue: FieldValueLike, index: number): string {
+  const uniqueId = fieldValue.id ?? fieldValue.customFieldDefinition.id
+  if (uniqueId) return uniqueId
+
+  const fallback =
+    fieldValue.customFieldDefinition.name ??
+    fieldValue.customFieldDefinition.label ??
+    'custom-field'
+  return `${fallback}-${index}`
+}
+
 function CustomFieldsApprovalSection(props: {
   fieldValues: readonly FieldValueLike[] | undefined
 }) {
@@ -291,8 +260,11 @@ function CustomFieldsApprovalSection(props: {
           </button>
         )}
         {expanded &&
-          remainingFields.map((fieldValue) => (
-            <div key={fieldValue.customFieldDefinition.label} className="flex items-baseline gap-2">
+          remainingFields.map((fieldValue, index) => (
+            <div
+              key={getCustomFieldReviewKey(fieldValue, index)}
+              className="flex items-baseline gap-2"
+            >
               <dt className="text-gray-500 dark:text-gray-400 shrink-0">
                 {fieldValue.customFieldDefinition.label}
               </dt>

@@ -13,19 +13,19 @@ const mockReverseLogAction = vi.fn().mockResolvedValue(undefined)
 const mockVerifyRecaptcha = vi.fn().mockResolvedValue({ success: true })
 const mockRepositoryCreate = vi.fn()
 const mockRepositoryByIdWithAccess = vi.fn()
-const mockAttachHiddenReviewRiskProfiles = vi.fn((listing: { id: string; authorId: string }) => ({
-  ...listing,
-  authorRiskProfile: null,
-  submissionRiskProfile: null,
-}))
-const mockAttachReviewRiskProfile = vi.fn(
-  async (_prisma: unknown, listing: { id: string; authorId: string }) => ({
-    ...listing,
-    authorRiskProfile: { authorId: listing.authorId, signals: [], highestSeverity: null },
-    submissionRiskProfile: { listingId: listing.id, signals: [], highestSeverity: null },
+const mockAttachReviewRiskProfileForViewer = vi.fn(
+  async (params: { listing: { id: string; authorId: string }; userRole?: Role | null }) => ({
+    ...params.listing,
+    authorRiskProfile:
+      params.userRole === Role.MODERATOR
+        ? { authorId: params.listing.authorId, signals: [], highestSeverity: null }
+        : null,
+    submissionRiskProfile:
+      params.userRole === Role.MODERATOR
+        ? { listingId: params.listing.id, signals: [], highestSeverity: null }
+        : null,
   }),
 )
-const mockGetActiveAuthorBansForReviewRisk = vi.fn().mockResolvedValue([])
 
 vi.mock('@/lib/trust/service', () => ({
   applyTrustAction: (...args: unknown[]) => mockApplyTrustAction(...args),
@@ -82,9 +82,7 @@ vi.mock('@/server/services/audit.service', () => ({
 }))
 
 vi.mock('@/server/services/review-risk.service', () => ({
-  attachHiddenReviewRiskProfiles: mockAttachHiddenReviewRiskProfiles,
-  attachReviewRiskProfile: mockAttachReviewRiskProfile,
-  getActiveAuthorBansForReviewRisk: mockGetActiveAuthorBansForReviewRisk,
+  attachReviewRiskProfileForViewer: mockAttachReviewRiskProfileForViewer,
 }))
 
 vi.mock('@/server/utils/security-validation', () => ({
@@ -229,8 +227,11 @@ describe('handheld listings trust integration (core.ts)', () => {
       const result = await caller.byId({ id: LISTING_ID })
 
       expect(mockRepositoryByIdWithAccess).toHaveBeenCalledWith(LISTING_ID, USER_ID, false)
-      expect(mockAttachHiddenReviewRiskProfiles).toHaveBeenCalledWith(listing)
-      expect(mockGetActiveAuthorBansForReviewRisk).not.toHaveBeenCalled()
+      expect(mockAttachReviewRiskProfileForViewer).toHaveBeenCalledWith({
+        prisma: expect.any(Object),
+        listing,
+        userRole: Role.USER,
+      })
       expect(result).toMatchObject({
         id: LISTING_ID,
         authorRiskProfile: null,
@@ -245,18 +246,15 @@ describe('handheld listings trust integration (core.ts)', () => {
         customFieldValues: [],
       }
       mockRepositoryByIdWithAccess.mockResolvedValueOnce(listing)
-      mockGetActiveAuthorBansForReviewRisk.mockResolvedValueOnce([{ reason: 'Spam' }])
       const { caller, prisma } = createCaller({ role: Role.MODERATOR })
 
       await caller.byId({ id: LISTING_ID })
 
       expect(mockRepositoryByIdWithAccess).toHaveBeenCalledWith(LISTING_ID, USER_ID, true)
-      expect(mockGetActiveAuthorBansForReviewRisk).toHaveBeenCalledWith(prisma, AUTHOR_ID)
-      expect(mockAttachReviewRiskProfile).toHaveBeenCalledWith(prisma, listing, {
-        id: LISTING_ID,
-        authorId: AUTHOR_ID,
-        author: { userBans: [{ reason: 'Spam' }] },
-        customFieldValues: [],
+      expect(mockAttachReviewRiskProfileForViewer).toHaveBeenCalledWith({
+        prisma,
+        listing,
+        userRole: Role.MODERATOR,
       })
     })
   })

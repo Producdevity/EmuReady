@@ -3,10 +3,9 @@ import { describe, expect, it, vi } from 'vitest'
 import { RISK_SIGNAL_TYPES } from '@/schemas/authorRisk'
 import { SUBMISSION_RISK_SIGNAL_TYPES } from '@/schemas/submissionRisk'
 import { ApprovalStatus, CustomFieldType } from '@orm'
-import {
-  CompatibilityReportReviewModal,
-  type CompatibilityReportReviewItem,
-} from './CompatibilityReportReviewModal'
+import { CompatibilityReportReviewModal } from './CompatibilityReportReviewModal'
+import { CompatibilityReportReviewModalAdapter } from './CompatibilityReportReviewModalAdapter'
+import { type CompatibilityReportReviewItem } from './reviewItem'
 
 vi.mock('@/hooks', () => ({
   useEmulatorLogos: () => ({
@@ -142,5 +141,96 @@ describe('CompatibilityReportReviewModal', () => {
 
     expect(onRejectionNotesChange).toHaveBeenCalledWith('Missing information')
     expect(screen.getByRole('button', { name: 'Confirm Rejection' })).toBeInTheDocument()
+  })
+
+  it('renders expanded custom fields with duplicate labels without key collisions', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    renderReviewModal({
+      customFieldValues: [
+        {
+          value: '1.0.0',
+          customFieldDefinition: {
+            type: CustomFieldType.TEXT,
+            label: 'Version',
+          },
+        },
+        {
+          value: 'enabled',
+          customFieldDefinition: {
+            type: CustomFieldType.TEXT,
+            label: 'Duplicate',
+          },
+        },
+        {
+          value: 'disabled',
+          customFieldDefinition: {
+            type: CustomFieldType.TEXT,
+            label: 'Duplicate',
+          },
+        },
+      ],
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show 2 more settings' }))
+
+    const duplicateKeyWarnings = consoleError.mock.calls.filter((call) =>
+      call.some((value) => String(value).includes('Encountered two children with the same key')),
+    )
+    expect(duplicateKeyWarnings).toHaveLength(0)
+    expect(screen.getByText('enabled')).toBeInTheDocument()
+    expect(screen.getByText('disabled')).toBeInTheDocument()
+
+    consoleError.mockRestore()
+  })
+
+  it('maps device report sources before rendering the shared decision modal', () => {
+    render(
+      <CompatibilityReportReviewModalAdapter
+        isOpen
+        onClose={vi.fn()}
+        decision={ApprovalStatus.APPROVED}
+        reportLabel="Listing"
+        report={{
+          ...baseReport,
+          authorId: 'author-1',
+          device: { brand: { name: 'ASUS' }, modelName: 'ROG Ally' },
+        }}
+        rejectionNotes=""
+        onRejectionNotesChange={vi.fn()}
+        onSubmit={vi.fn()}
+        isSubmitting={false}
+      />,
+    )
+
+    expect(screen.getByRole('dialog', { name: /approve listing/i })).toBeInTheDocument()
+    expect(screen.getByText('Device')).toBeInTheDocument()
+    expect(screen.getByText(/ASUS ROG Ally/)).toBeInTheDocument()
+  })
+
+  it('maps PC report sources before rendering the shared decision modal', () => {
+    render(
+      <CompatibilityReportReviewModalAdapter
+        isOpen
+        onClose={vi.fn()}
+        decision={ApprovalStatus.REJECTED}
+        reportLabel="PC Listing"
+        report={{
+          ...baseReport,
+          authorId: 'author-1',
+          cpu: { brand: { name: 'AMD' }, modelName: 'Ryzen 7' },
+          gpu: { brand: { name: 'NVIDIA' }, modelName: 'RTX 4070' },
+        }}
+        rejectionNotes=""
+        onRejectionNotesChange={vi.fn()}
+        onSubmit={vi.fn()}
+        isSubmitting={false}
+      />,
+    )
+
+    expect(screen.getByRole('dialog', { name: /reject pc listing/i })).toBeInTheDocument()
+    expect(screen.getByText('Hardware')).toBeInTheDocument()
+    expect(screen.getByText(/Ryzen 7/)).toBeInTheDocument()
+    expect(screen.getByText(/RTX 4070/)).toBeInTheDocument()
   })
 })

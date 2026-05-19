@@ -10,8 +10,11 @@ import {
   computeSubmissionRiskProfiles,
   type SubmissionForRisk,
 } from '@/server/services/submission-risk.service'
+import { roleIncludesRole } from '@/utils/permission-system'
+import { Role } from '@orm'
 
 type RiskPrismaClient = Parameters<typeof computeAuthorRiskProfiles>[0]
+type DetailReviewRiskPrismaClient = RiskPrismaClient & ActiveAuthorBansPrismaClient
 
 export type ReviewRiskCandidate = AuthorBanRiskCandidate & SubmissionForRisk
 
@@ -160,6 +163,29 @@ export async function getActiveAuthorBansForReviewRisk(
       OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
     },
     select: { reason: true },
+  })
+}
+
+export function canViewReviewRiskProfiles(userRole?: Role | null): boolean {
+  return roleIncludesRole(userRole, Role.MODERATOR) || roleIncludesRole(userRole, Role.DEVELOPER)
+}
+
+export async function attachReviewRiskProfileForViewer<TListing extends SubmissionForRisk>(params: {
+  prisma: DetailReviewRiskPrismaClient
+  listing: TListing
+  userRole?: Role | null
+}): Promise<ReviewRiskEnriched<TListing> | HiddenReviewRiskEnriched<TListing>> {
+  if (!canViewReviewRiskProfiles(params.userRole)) {
+    return attachHiddenReviewRiskProfiles(params.listing)
+  }
+
+  const userBans = await getActiveAuthorBansForReviewRisk(params.prisma, params.listing.authorId)
+
+  return await attachReviewRiskProfile(params.prisma, params.listing, {
+    id: params.listing.id,
+    authorId: params.listing.authorId,
+    author: { userBans },
+    customFieldValues: params.listing.customFieldValues,
   })
 }
 

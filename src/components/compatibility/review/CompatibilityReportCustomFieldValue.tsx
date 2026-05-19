@@ -4,21 +4,7 @@ import { isNumber } from 'remeda'
 import { Badge } from '@/components/ui'
 import { DRIVER_VERSION_FIELD_NAME } from '@/constants/customFields'
 import { CustomFieldType } from '@orm'
-
-export interface FieldValueLike {
-  value: unknown
-  customFieldDefinition: {
-    type: CustomFieldType
-    label?: string
-    name?: string | null
-    options?: unknown
-    defaultValue?: unknown
-    rangeDecimals?: number | null
-    rangeUnit?: string | null
-    categoryId?: string | null
-    category?: { id: string; name: string } | null
-  }
-}
+import { type FieldValueLike } from './reviewItem'
 
 interface Props {
   fieldValue: FieldValueLike
