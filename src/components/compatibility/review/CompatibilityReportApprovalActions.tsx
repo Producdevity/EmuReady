@@ -10,10 +10,14 @@ import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { ApprovalStatus, Role } from '@orm'
-import { ListingApprovalModal } from './ListingApprovalModal'
+import {
+  CompatibilityReportReviewModal,
+  type CompatibilityReportReviewAuthor,
+  type CompatibilityReportReviewItem,
+} from './CompatibilityReportReviewModal'
 
-type HandheldListing = RouterOutput['listings']['byId']
-type PcListing = RouterOutput['pcListings']['byId']
+type HandheldListing = NonNullable<RouterOutput['listings']['byId']>
+type PcListing = NonNullable<RouterOutput['pcListings']['byId']>
 
 interface Props {
   listing: HandheldListing | PcListing
@@ -22,9 +26,41 @@ interface Props {
   className?: string
 }
 
-export function ListingApprovalActions(props: Props) {
+function isHandheldListing(listing: HandheldListing | PcListing): listing is HandheldListing {
+  return 'device' in listing
+}
+
+function getAuthor(listing: HandheldListing | PcListing): CompatibilityReportReviewAuthor {
+  return {
+    id: listing.author?.id ?? listing.authorId,
+    name: listing.author?.name ?? null,
+  }
+}
+
+function toReviewItem(listing: HandheldListing | PcListing): CompatibilityReportReviewItem {
+  return {
+    game: listing.game,
+    hardware: isHandheldListing(listing)
+      ? { type: 'device', device: listing.device }
+      : { type: 'pc', cpu: listing.cpu, gpu: listing.gpu },
+    emulator: listing.emulator,
+    author: getAuthor(listing),
+    createdAt: listing.createdAt,
+    performance: listing.performance,
+    notes: listing.notes,
+    customFieldValues: listing.customFieldValues,
+    authorRiskProfile: listing.authorRiskProfile,
+    submissionRiskProfile: listing.submissionRiskProfile,
+  }
+}
+
+function getReportLabel(listingType: ListingType): string {
+  return listingType === 'handheld' ? 'Listing' : 'PC Listing'
+}
+
+export function CompatibilityReportApprovalActions(props: Props) {
   const [showModal, setShowModal] = useState(false)
-  const [modalAction, setModalAction] = useState<'approve' | 'reject'>('approve')
+  const [approvalDecision, setApprovalDecision] = useState<ApprovalStatus>(ApprovalStatus.APPROVED)
   const [rejectionNotes, setRejectionNotes] = useState('')
 
   const currentUserQuery = api.users.me.useQuery()
@@ -55,9 +91,10 @@ export function ListingApprovalActions(props: Props) {
 
   const isPending = props.listing.status === ApprovalStatus.PENDING
   const isAlreadyReviewed = !isPending
+  const reportLabel = getReportLabel(props.listingType)
 
-  const handleOpenModal = (action: 'approve' | 'reject') => {
-    setModalAction(action)
+  const handleOpenModal = (decision: ApprovalStatus) => {
+    setApprovalDecision(decision)
     setRejectionNotes('')
     setShowModal(true)
   }
@@ -69,13 +106,13 @@ export function ListingApprovalActions(props: Props) {
 
   const handleConfirm = async () => {
     try {
-      if (modalAction === 'approve') {
+      if (approvalDecision === ApprovalStatus.APPROVED) {
         if (props.listingType === 'handheld') {
           await handheldApproveMutation.mutateAsync({ listingId: props.listing.id })
         } else {
           await pcApproveMutation.mutateAsync({ pcListingId: props.listing.id })
         }
-        toast.success('Listing approved successfully')
+        toast.success(`${reportLabel} approved successfully`)
       } else {
         if (props.listingType === 'handheld') {
           await handheldRejectMutation.mutateAsync({
@@ -88,7 +125,7 @@ export function ListingApprovalActions(props: Props) {
             notes: rejectionNotes || undefined,
           })
         }
-        toast.success('Listing rejected successfully')
+        toast.success(`${reportLabel} rejected successfully`)
       }
 
       handleCloseModal()
@@ -97,9 +134,9 @@ export function ListingApprovalActions(props: Props) {
         await props.onApprovalSuccess()
       }
     } catch (error) {
-      logger.error('Failed to approve listing:', error)
-      const message = getErrorMessage(error)
-      toast.error(`Failed to ${modalAction} listing: ${message}`)
+      const action = approvalDecision === ApprovalStatus.APPROVED ? 'approve' : 'reject'
+      logger.error(`Failed to ${action} ${reportLabel}:`, error)
+      toast.error(`Failed to ${action} ${reportLabel}: ${getErrorMessage(error)}`)
     }
   }
 
@@ -110,14 +147,14 @@ export function ListingApprovalActions(props: Props) {
       } else {
         await pcResetMutation.mutateAsync({ pcListingId: props.listing.id })
       }
-      toast.success('Listing reset to pending')
+      toast.success(`${reportLabel} reset to pending`)
 
       if (props.onApprovalSuccess) {
         await props.onApprovalSuccess()
       }
     } catch (error) {
-      logger.error('Failed to reset listing to pending:', error)
-      toast.error(`Failed to reset listing: ${getErrorMessage(error)}`)
+      logger.error(`Failed to reset ${reportLabel} to pending:`, error)
+      toast.error(`Failed to reset ${reportLabel}: ${getErrorMessage(error)}`)
     }
   }
 
@@ -127,21 +164,21 @@ export function ListingApprovalActions(props: Props) {
         {isPending && (
           <div className="flex gap-3 flex-wrap align-center justify-center">
             <ApproveButton
-              onClick={() => handleOpenModal('approve')}
+              onClick={() => handleOpenModal(ApprovalStatus.APPROVED)}
               disabled={approveMutation.isPending || rejectMutation.isPending}
-              title="Approve Listing"
+              title={`Approve ${reportLabel}`}
             />
             <RejectButton
-              onClick={() => handleOpenModal('reject')}
+              onClick={() => handleOpenModal(ApprovalStatus.REJECTED)}
               disabled={approveMutation.isPending || rejectMutation.isPending}
-              title="Reject Listing"
+              title={`Reject ${reportLabel}`}
             />
           </div>
         )}
 
         {isAlreadyReviewed && canResetToPending && (
           <div className="flex items-center gap-3 flex-wrap justify-center">
-            <ApprovalStatusBadge status={props.listing.status as ApprovalStatus} />
+            <ApprovalStatusBadge status={props.listing.status} />
             <Button
               variant="outline"
               size="sm"
@@ -155,15 +192,16 @@ export function ListingApprovalActions(props: Props) {
       </div>
 
       {showModal && (
-        <ListingApprovalModal
-          listing={props.listing}
-          listingType={props.listingType}
-          action={modalAction}
+        <CompatibilityReportReviewModal
+          isOpen={showModal}
+          onClose={handleCloseModal}
+          decision={approvalDecision}
+          reportLabel={reportLabel}
+          report={toReviewItem(props.listing)}
           rejectionNotes={rejectionNotes}
           onRejectionNotesChange={setRejectionNotes}
-          onConfirm={handleConfirm}
-          onClose={handleCloseModal}
-          isLoading={approveMutation.isPending || rejectMutation.isPending}
+          onSubmit={handleConfirm}
+          isSubmitting={approveMutation.isPending || rejectMutation.isPending}
         />
       )}
     </>

@@ -1,5 +1,5 @@
 import { isNullish } from 'remeda'
-import type { FieldValueLike } from '@/app/listings/components/shared/CustomFieldValue'
+import type { FieldValueLike } from '@/components/compatibility/review'
 
 /**
  * Checks if a custom field value is the default value for its definition

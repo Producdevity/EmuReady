@@ -2,6 +2,7 @@
 
 import { type Control, type FieldPath, type FieldValues } from 'react-hook-form'
 import CustomFieldTypeDriverVersion from '@/app/listings/components/shared/custom-fields/CustomFieldTypeDriverVersion'
+import { DRIVER_VERSION_FIELD_NAME } from '@/constants/customFields'
 import { isCustomFieldValueEmpty } from '@/utils/custom-fields'
 import { CustomFieldType } from '@orm'
 import {
@@ -53,8 +54,6 @@ interface Props<TFieldValues extends FieldValues = FieldValues> {
   control: Control<TFieldValues>
   errorMessage?: string
 }
-
-export const DRIVER_VERSION_FIELD_NAME = 'dynamic_driver_version' as const
 
 export function CustomFieldRenderer<TFieldValues extends FieldValues = FieldValues>(
   props: Props<TFieldValues>,

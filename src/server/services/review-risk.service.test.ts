@@ -1,7 +1,12 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { RISK_SIGNAL_TYPES, type AuthorRiskProfile } from '@/schemas/authorRisk'
 import { SUBMISSION_RISK_SIGNAL_TYPES, type SubmissionRiskProfile } from '@/schemas/submissionRisk'
-import { attachReviewRiskProfiles, getRiskyReviewItemIds } from './review-risk.service'
+import {
+  attachHiddenReviewRiskProfiles,
+  attachReviewRiskProfiles,
+  getActiveAuthorBansForReviewRisk,
+  getRiskyReviewItemIds,
+} from './review-risk.service'
 
 const AUTHOR_ID = '00000000-0000-4000-a000-000000000001'
 const CLEAN_AUTHOR_ID = '00000000-0000-4000-a000-000000000002'
@@ -73,6 +78,32 @@ describe('review risk helpers', () => {
         signals: [],
         highestSeverity: null,
       },
+    })
+  })
+
+  it('attaches null profiles when review risk is hidden from non-reviewers', () => {
+    expect(attachHiddenReviewRiskProfiles({ id: LISTING_ID, authorId: AUTHOR_ID })).toEqual({
+      id: LISTING_ID,
+      authorId: AUTHOR_ID,
+      authorRiskProfile: null,
+      submissionRiskProfile: null,
+    })
+  })
+
+  it('loads only active author bans for review risk detail enrichment', async () => {
+    const findMany = vi.fn().mockResolvedValue([{ reason: 'Spam' }])
+    const prisma = { userBan: { findMany } }
+
+    await expect(getActiveAuthorBansForReviewRisk(prisma, AUTHOR_ID)).resolves.toEqual([
+      { reason: 'Spam' },
+    ])
+    expect(findMany).toHaveBeenCalledWith({
+      where: {
+        userId: AUTHOR_ID,
+        isActive: true,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: expect.any(Date) } }],
+      },
+      select: { reason: true },
     })
   })
 })
