@@ -10,7 +10,7 @@ import getErrorMessage from '@/utils/getErrorMessage'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { ApprovalStatus, Role } from '@orm'
 import { CompatibilityReportReviewModalAdapter } from './CompatibilityReportReviewModalAdapter'
-import { type CompatibilityReportReviewDecision } from './reviewItem'
+import { CompatibilityReportReviewDecision } from './reviewItem'
 import { useCompatibilityReportReviewDecisionModal } from './useCompatibilityReportReviewDecisionModal'
 
 type HandheldListing = NonNullable<RouterOutput['listings']['byId']>
@@ -72,7 +72,7 @@ export function CompatibilityReportApprovalActions(props: Props) {
     if (!reviewModal.selectedReport || !reviewModal.decision) return
 
     try {
-      if (reviewModal.decision === ApprovalStatus.APPROVED) {
+      if (reviewModal.decision === CompatibilityReportReviewDecision.APPROVED) {
         if (props.listingType === 'handheld') {
           await handheldApproveMutation.mutateAsync({ listingId: reviewModal.selectedReport.id })
         } else {
@@ -100,7 +100,8 @@ export function CompatibilityReportApprovalActions(props: Props) {
         await props.onApprovalSuccess()
       }
     } catch (error) {
-      const action = reviewModal.decision === ApprovalStatus.APPROVED ? 'approve' : 'reject'
+      const action =
+        reviewModal.decision === CompatibilityReportReviewDecision.APPROVED ? 'approve' : 'reject'
       logger.error(`Failed to ${action} ${reportLabel}:`, error)
       toast.error(`Failed to ${action} ${reportLabel}: ${getErrorMessage(error)}`)
     }
@@ -130,12 +131,12 @@ export function CompatibilityReportApprovalActions(props: Props) {
         {isPending && (
           <div className="flex gap-3 flex-wrap align-center justify-center">
             <ApproveButton
-              onClick={() => handleOpenModal(ApprovalStatus.APPROVED)}
+              onClick={() => handleOpenModal(CompatibilityReportReviewDecision.APPROVED)}
               disabled={approveMutation.isPending || rejectMutation.isPending}
               title={`Approve ${reportLabel}`}
             />
             <RejectButton
-              onClick={() => handleOpenModal(ApprovalStatus.REJECTED)}
+              onClick={() => handleOpenModal(CompatibilityReportReviewDecision.REJECTED)}
               disabled={approveMutation.isPending || rejectMutation.isPending}
               title={`Reject ${reportLabel}`}
             />

@@ -7,11 +7,10 @@ import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import { Badge, Button, Input, LocalizedDate, Modal, PerformanceBadge } from '@/components/ui'
 import { useEmulatorLogos } from '@/hooks'
 import getImageUrl from '@/utils/getImageUrl'
-import { ApprovalStatus } from '@orm'
 import { CompatibilityReportCustomFieldValue } from './CompatibilityReportCustomFieldValue'
 import {
   type CompatibilityReportReviewAuthor,
-  type CompatibilityReportReviewDecision,
+  CompatibilityReportReviewDecision,
   type CompatibilityReportReviewEmulator,
   type CompatibilityReportReviewGame,
   type CompatibilityReportReviewHardware,
@@ -127,6 +126,7 @@ function UserInfoSection(props: { author: CompatibilityReportReviewAuthor; creat
         <Link
           href={`/users/${props.author.id}`}
           target="_blank"
+          rel="noopener noreferrer"
           className="text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300"
         >
           {props.author.name || 'Unknown'}
@@ -292,14 +292,19 @@ export function CompatibilityReportReviewModal(props: Props) {
   const hasRisk =
     Boolean(props.report.authorRiskProfile?.highestSeverity) ||
     Boolean(props.report.submissionRiskProfile?.highestSeverity)
-  const actionText = props.decision === ApprovalStatus.APPROVED ? 'Approve' : 'Reject'
+  const actionText =
+    props.decision === CompatibilityReportReviewDecision.APPROVED ? 'Approve' : 'Reject'
   const modalTitle = `${actionText} ${props.reportLabel}: ${props.report.game.title}`
 
   const buttonVariant =
-    props.decision === ApprovalStatus.REJECTED ? 'danger' : hasRisk ? 'destructive' : 'default'
+    props.decision === CompatibilityReportReviewDecision.REJECTED
+      ? 'danger'
+      : hasRisk
+        ? 'destructive'
+        : 'default'
 
   const buttonText =
-    props.decision === ApprovalStatus.REJECTED
+    props.decision === CompatibilityReportReviewDecision.REJECTED
       ? 'Confirm Rejection'
       : hasRisk
         ? 'Approve Anyway'
@@ -327,7 +332,7 @@ export function CompatibilityReportReviewModal(props: Props) {
         <NotesSection notes={props.report.notes} />
         <CustomFieldsApprovalSection fieldValues={props.report.customFieldValues} />
 
-        {props.decision === ApprovalStatus.REJECTED && (
+        {props.decision === CompatibilityReportReviewDecision.REJECTED && (
           <RejectionNotesInput
             id="rejectionNotes"
             value={props.rejectionNotes}

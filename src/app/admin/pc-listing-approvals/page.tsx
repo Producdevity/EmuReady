@@ -20,6 +20,7 @@ import {
   ReviewRiskIndicator,
 } from '@/components/admin'
 import {
+  CompatibilityReportReviewDecision,
   CompatibilityReportReviewModalAdapter,
   useCompatibilityReportReviewDecisionModal,
 } from '@/components/compatibility/review'
@@ -56,7 +57,6 @@ import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import getImageUrl from '@/utils/getImageUrl'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
-import { ApprovalStatus } from '@orm'
 
 type PendingPcListing = RouterOutput['pcListings']['pending']['pcListings'][number]
 type PcApprovalSortField =
@@ -221,7 +221,6 @@ function PcListingApprovalsPage() {
     if (!confirmed) return
 
     await bulkApproveMutation.mutateAsync({ pcListingIds: listingIds })
-    await invalidateQueries()
     approvalModal.close()
   }
 
@@ -237,12 +236,12 @@ function PcListingApprovalsPage() {
 
   const handleApprovalSubmit = () => {
     if (!approvalModal.selectedReport || !approvalModal.decision) return
-    if (approvalModal.decision === ApprovalStatus.APPROVED) {
+    if (approvalModal.decision === CompatibilityReportReviewDecision.APPROVED) {
       return approveMutation.mutate({
         pcListingId: approvalModal.selectedReport.id,
       } satisfies RouterInput['pcListings']['approve'])
     }
-    if (approvalModal.decision === ApprovalStatus.REJECTED) {
+    if (approvalModal.decision === CompatibilityReportReviewDecision.REJECTED) {
       return rejectMutation.mutate({
         pcListingId: approvalModal.selectedReport.id,
         notes: approvalModal.notes || undefined,
@@ -356,7 +355,6 @@ function PcListingApprovalsPage() {
               label: 'Reject Selected',
               onAction: async (listingIds, notes) => {
                 await bulkRejectMutation.mutateAsync({ pcListingIds: listingIds, notes })
-                await invalidateQueries()
               },
             },
           }}
@@ -498,6 +496,7 @@ function PcListingApprovalsPage() {
                         <Link
                           href={`/pc-listings/${listing.id}`}
                           target="_blank"
+                          rel="noopener noreferrer"
                           className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
                         >
                           {listing.game.title}
@@ -589,7 +588,12 @@ function PcListingApprovalsPage() {
                           ) && (
                             <ApproveButton
                               title="Approve PC Listing"
-                              onClick={() => approvalModal.open(listing, ApprovalStatus.APPROVED)}
+                              onClick={() =>
+                                approvalModal.open(
+                                  listing,
+                                  CompatibilityReportReviewDecision.APPROVED,
+                                )
+                              }
                               disabled={approveMutation.isPending}
                             />
                           )}
@@ -599,7 +603,12 @@ function PcListingApprovalsPage() {
                           ) && (
                             <RejectButton
                               title="Reject PC Listing"
-                              onClick={() => approvalModal.open(listing, ApprovalStatus.REJECTED)}
+                              onClick={() =>
+                                approvalModal.open(
+                                  listing,
+                                  CompatibilityReportReviewDecision.REJECTED,
+                                )
+                              }
                               disabled={rejectMutation.isPending}
                             />
                           )}

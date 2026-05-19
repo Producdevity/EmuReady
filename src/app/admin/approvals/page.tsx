@@ -19,6 +19,7 @@ import {
   ReviewRiskIndicator,
 } from '@/components/admin'
 import {
+  CompatibilityReportReviewDecision,
   CompatibilityReportReviewModalAdapter,
   useCompatibilityReportReviewDecisionModal,
 } from '@/components/compatibility/review'
@@ -54,7 +55,6 @@ import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
-import { ApprovalStatus } from '@orm'
 
 type PendingListing = RouterOutput['listings']['getPending']['listings'][number]
 type ApprovalSortField =
@@ -218,7 +218,6 @@ function AdminApprovalsPage() {
     if (!confirmed) return
 
     await bulkApproveMutation.mutateAsync({ listingIds })
-    await invalidateQueries()
     approvalModal.close()
   }
 
@@ -234,12 +233,12 @@ function AdminApprovalsPage() {
 
   const handleApprovalSubmit = () => {
     if (!approvalModal.selectedReport || !approvalModal.decision) return
-    if (approvalModal.decision === ApprovalStatus.APPROVED) {
+    if (approvalModal.decision === CompatibilityReportReviewDecision.APPROVED) {
       return approveMutation.mutate({
         listingId: approvalModal.selectedReport.id,
       } satisfies RouterInput['listings']['approveListing'])
     }
-    if (approvalModal.decision === ApprovalStatus.REJECTED) {
+    if (approvalModal.decision === CompatibilityReportReviewDecision.REJECTED) {
       return rejectMutation.mutate({
         listingId: approvalModal.selectedReport.id,
         notes: approvalModal.notes || null,
@@ -351,7 +350,6 @@ function AdminApprovalsPage() {
               label: 'Reject Selected',
               onAction: async (listingIds, notes) => {
                 await bulkRejectMutation.mutateAsync({ listingIds, notes })
-                await invalidateQueries()
               },
             },
           }}
@@ -463,6 +461,7 @@ function AdminApprovalsPage() {
                         <Link
                           href={`/listings/${listing.id}`}
                           target="_blank"
+                          rel="noopener noreferrer"
                           className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
                         >
                           {listing.game.title}
@@ -549,7 +548,12 @@ function AdminApprovalsPage() {
                           ) && (
                             <ApproveButton
                               title="Approve Listing"
-                              onClick={() => approvalModal.open(listing, ApprovalStatus.APPROVED)}
+                              onClick={() =>
+                                approvalModal.open(
+                                  listing,
+                                  CompatibilityReportReviewDecision.APPROVED,
+                                )
+                              }
                               disabled={approveMutation.isPending}
                             />
                           )}
@@ -559,7 +563,12 @@ function AdminApprovalsPage() {
                           ) && (
                             <RejectButton
                               title="Reject Listing"
-                              onClick={() => approvalModal.open(listing, ApprovalStatus.REJECTED)}
+                              onClick={() =>
+                                approvalModal.open(
+                                  listing,
+                                  CompatibilityReportReviewDecision.REJECTED,
+                                )
+                              }
                               disabled={rejectMutation.isPending}
                             />
                           )}

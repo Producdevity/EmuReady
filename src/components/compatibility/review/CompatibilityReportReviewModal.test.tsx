@@ -2,10 +2,10 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { RISK_SIGNAL_TYPES } from '@/schemas/authorRisk'
 import { SUBMISSION_RISK_SIGNAL_TYPES } from '@/schemas/submissionRisk'
-import { ApprovalStatus, CustomFieldType } from '@orm'
+import { CustomFieldType } from '@orm'
 import { CompatibilityReportReviewModal } from './CompatibilityReportReviewModal'
 import { CompatibilityReportReviewModalAdapter } from './CompatibilityReportReviewModalAdapter'
-import { type CompatibilityReportReviewItem } from './reviewItem'
+import { CompatibilityReportReviewDecision, type CompatibilityReportReviewItem } from './reviewItem'
 
 vi.mock('@/hooks', () => ({
   useEmulatorLogos: () => ({
@@ -77,7 +77,7 @@ function renderReviewModal(overrides: Partial<CompatibilityReportReviewItem> = {
     <CompatibilityReportReviewModal
       isOpen
       onClose={onClose}
-      decision={ApprovalStatus.APPROVED}
+      decision={CompatibilityReportReviewDecision.APPROVED}
       reportLabel="Listing"
       report={report}
       rejectionNotes=""
@@ -112,7 +112,7 @@ describe('CompatibilityReportReviewModal', () => {
       <CompatibilityReportReviewModal
         isOpen
         onClose={vi.fn()}
-        decision={ApprovalStatus.REJECTED}
+        decision={CompatibilityReportReviewDecision.REJECTED}
         reportLabel="PC Listing"
         report={{
           ...baseReport,
@@ -189,7 +189,7 @@ describe('CompatibilityReportReviewModal', () => {
       <CompatibilityReportReviewModalAdapter
         isOpen
         onClose={vi.fn()}
-        decision={ApprovalStatus.APPROVED}
+        decision={CompatibilityReportReviewDecision.APPROVED}
         reportLabel="Listing"
         report={{
           ...baseReport,
@@ -213,7 +213,7 @@ describe('CompatibilityReportReviewModal', () => {
       <CompatibilityReportReviewModalAdapter
         isOpen
         onClose={vi.fn()}
-        decision={ApprovalStatus.REJECTED}
+        decision={CompatibilityReportReviewDecision.REJECTED}
         reportLabel="PC Listing"
         report={{
           ...baseReport,
