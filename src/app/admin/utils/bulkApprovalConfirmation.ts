@@ -35,7 +35,8 @@ export async function confirmBulkApproval<T extends ListingWithRiskProfile>(
   confirm: ConfirmFn,
   entityLabel: string,
 ): Promise<boolean> {
-  const selectedListings = allListings.filter((listing) => selectedIds.includes(listing.id))
+  const selectedIdSet = new Set(selectedIds)
+  const selectedListings = allListings.filter((listing) => selectedIdSet.has(listing.id))
   const riskyListings = selectedListings.filter((listing) => getHighestRiskSeverity(listing))
 
   if (riskyListings.length > 0) {
@@ -49,7 +50,7 @@ export async function confirmBulkApproval<T extends ListingWithRiskProfile>(
 
     return confirm({
       title: 'Bulk Approval Warning',
-      description: `You are about to approve ${selectedIds.length} ${entityLabel}, including ${riskyListings.length} with review risk signals (highest: ${highestRisk}).\n\nFlagged authors:\n${riskyAuthors.map((name) => `  ${name}`).join('\n')}\n\nAre you sure you want to proceed?`,
+      description: `You are about to approve ${selectedListings.length} ${entityLabel}, including ${riskyListings.length} with review risk signals (highest: ${highestRisk}).\n\nFlagged authors:\n${riskyAuthors.map((name) => `  ${name}`).join('\n')}\n\nAre you sure you want to proceed?`,
       confirmText: 'Approve Selected',
     })
   }

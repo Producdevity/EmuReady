@@ -72,6 +72,25 @@ describe('confirmBulkApproval', () => {
     expect(confirm.mock.calls[0]?.[0].description).toContain('highest: high')
   })
 
+  it('uses the loaded selected listing count in risk warnings', async () => {
+    const confirm = createConfirm()
+
+    await confirmBulkApproval<TestListing>(
+      [
+        {
+          id: 'listing-1',
+          author: { name: 'Risky Author' },
+          submissionRiskProfile: { highestSeverity: 'high' },
+        },
+      ],
+      ['listing-1', 'stale-listing-id'],
+      confirm,
+      'listings',
+    )
+
+    expect(confirm.mock.calls[0]?.[0].description).toContain('approve 1 listings')
+  })
+
   it('uses the normal confirmation when selected listings have no risk', async () => {
     const confirm = createConfirm()
 
