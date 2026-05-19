@@ -1,10 +1,14 @@
 import { type AuthorRiskProfile } from '@/schemas/authorRisk'
 import { type SubmissionRiskProfile } from '@/schemas/submissionRisk'
-import { type ApprovalStatus, type CustomFieldType } from '@orm'
+import { ApprovalStatus, type CustomFieldType } from '@orm'
+
+export const CompatibilityReportReviewDecision = {
+  APPROVED: ApprovalStatus.APPROVED,
+  REJECTED: ApprovalStatus.REJECTED,
+}
 
 export type CompatibilityReportReviewDecision =
-  | typeof ApprovalStatus.APPROVED
-  | typeof ApprovalStatus.REJECTED
+  (typeof CompatibilityReportReviewDecision)[keyof typeof CompatibilityReportReviewDecision]
 
 export interface FieldValueLike {
   id?: string
