@@ -145,9 +145,9 @@ async function batchGetAuthorCredibility(
   return credibilityMap
 }
 
-function hasOnlyNewAuthorRisk(authorRiskProfile: AuthorRiskProfile | undefined): boolean {
+function hasNewAuthorRisk(authorRiskProfile: AuthorRiskProfile | undefined): boolean {
   if (!authorRiskProfile || authorRiskProfile.signals.length === 0) return false
-  return authorRiskProfile.signals.every((signal) => signal.type === RISK_SIGNAL_TYPES.NEW_AUTHOR)
+  return authorRiskProfile.signals.some((signal) => signal.type === RISK_SIGNAL_TYPES.NEW_AUTHOR)
 }
 
 function getPlaceholderVersionSeverity(params: {
@@ -162,7 +162,9 @@ function getPlaceholderVersionSeverity(params: {
   if (isCredibleAuthor) return 'low'
 
   if (params.authorRiskProfile?.highestSeverity === 'high') return 'high'
-  if (!params.authorRiskProfile || hasOnlyNewAuthorRisk(params.authorRiskProfile)) return 'high'
+  if (!params.authorRiskProfile) return 'high'
+  if (credibility.approvedListings === 0 || hasNewAuthorRisk(params.authorRiskProfile))
+    return 'high'
   if (params.authorRiskProfile.highestSeverity === 'medium') return 'high'
 
   return 'medium'
