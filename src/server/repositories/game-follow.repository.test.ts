@@ -15,7 +15,7 @@ vi.mock('@orm/client', async () => {
 })
 
 function createMockPrisma() {
-  const mock = {
+  return {
     gameFollow: {
       findUnique: vi.fn(),
       findMany: vi.fn(),
@@ -30,7 +30,6 @@ function createMockPrisma() {
       findUnique: vi.fn(),
     },
   } as unknown as PrismaClient
-  return mock
 }
 
 describe('GameFollowRepository', () => {
@@ -278,6 +277,7 @@ describe('GameFollowRepository', () => {
         orderBy: { id: 'asc' },
         take: 5,
       })
+      expect(batches.length).toBe(1)
     })
   })
 
