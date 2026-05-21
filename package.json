@@ -47,8 +47,8 @@
     "test:ci": "vitest run",
     "test:e2e": "playwright test --ui",
     "test:e2e:ci": "CI=true DISABLE_RATE_LIMIT=true NEXT_IMAGE_UNOPTIMIZED=true playwright test",
-    "types": "next typegen && tsc --noEmit",
-    "vercel:build": "pnpm exec prisma migrate deploy && next build",
+    "types": "pnpm db:generate && next typegen && tsc --noEmit",
+    "vercel:build": "pnpm exec prisma migrate deploy && pnpm db:generate && next build",
     "version:sync": "node scripts/sync-version.js"
   },
   "dependencies": {
