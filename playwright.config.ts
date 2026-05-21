@@ -1,9 +1,12 @@
 import path from 'path'
+import { fileURLToPath } from 'url'
 import { defineConfig, devices } from '@playwright/test'
 import dotenv from 'dotenv'
 
-dotenv.config({ path: path.resolve(__dirname, '.env.test.local') })
-dotenv.config({ path: path.resolve(__dirname, '.env.test') })
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
+dotenv.config({ path: path.resolve(currentDir, '.env.test.local') })
+dotenv.config({ path: path.resolve(currentDir, '.env.test') })
 
 const isCI = !!process.env.CI
 const isGitHubActions = process.env.GITHUB_ACTIONS === 'true'
@@ -37,7 +40,7 @@ export default defineConfig({
     timeout: 10 * 1000,
   },
 
-  globalSetup: require.resolve('./tests/global.setup.ts'),
+  globalSetup: path.resolve(currentDir, './tests/global.setup.ts'),
 
   use: {
     baseURL: 'http://localhost:3000',
