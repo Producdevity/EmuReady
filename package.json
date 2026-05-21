@@ -101,6 +101,8 @@
     "markdown-it": "14.1.1",
     "next": "15.5.18",
     "next-themes": "^0.4.6",
+    "pg": "8.21.0",
+    "pg-pool": "3.14.0",
     "postcss": "8.5.14",
     "react": "19.1.4",
     "react-dom": "19.1.4",
