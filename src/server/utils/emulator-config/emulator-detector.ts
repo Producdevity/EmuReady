@@ -11,7 +11,7 @@ import {
   convertToGameNativeConfig,
   serializeGameNativeConfig,
 } from './gamenative/gamenative.converter'
-import type { Prisma } from '@orm'
+import type { Prisma } from '@orm/client'
 
 export interface EmulatorConfigResult {
   type: EmulatorConfigType

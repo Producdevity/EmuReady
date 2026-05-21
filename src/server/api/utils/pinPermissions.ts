@@ -1,5 +1,5 @@
 import { roleIncludesRole } from '@/utils/permission-system'
-import { type Prisma, type PrismaClient, Role } from '@orm'
+import { type Prisma, type PrismaClient, Role } from '@orm/client'
 
 type PrismaLike = PrismaClient | Prisma.TransactionClient
 

@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { RISK_SIGNAL_TYPES } from '@/schemas/authorRisk'
 import { SUBMISSION_RISK_SIGNAL_TYPES } from '@/schemas/submissionRisk'
-import { Role } from '@orm'
+import { Role } from '@orm/client'
 import type * as AuthorRiskService from '@/server/services/author-risk.service'
 
 vi.unmock('@/server/api/trpc')

@@ -16,7 +16,7 @@ import {
   buildOrderBy,
   type PaginationResult,
 } from '@/server/utils/pagination'
-import { Prisma, ApiUsagePeriod } from '@orm'
+import { Prisma, ApiUsagePeriod } from '@orm/client'
 import { BaseRepository } from './base.repository'
 
 const USAGE_WINDOW_FACTORY: Record<ApiUsagePeriod, (now: Date) => Date> = {

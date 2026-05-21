@@ -17,9 +17,9 @@ const TRUST_LEVEL_ICONS: Record<TrustLevelName, LucideIcon> = {
   Newcomer: Users,
   Contributor: UserCheck,
   Trusted: Shield,
-  Verified: Award,
-  Elite: Crown,
-  Core: Star,
+  'Trusted+': Award,
+  'Trusted++': Crown,
+  'Trusted+++': Star,
 }
 
 const TRUST_LEVEL_COLORS: Record<
@@ -29,9 +29,9 @@ const TRUST_LEVEL_COLORS: Record<
   Newcomer: 'default',
   Contributor: 'primary',
   Trusted: 'success',
-  Verified: 'info',
-  Elite: 'warning',
-  Core: 'danger',
+  'Trusted+': 'info',
+  'Trusted++': 'warning',
+  'Trusted+++': 'danger',
 }
 
 const sizeClasses = {

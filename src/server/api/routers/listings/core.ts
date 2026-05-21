@@ -37,7 +37,7 @@ import { updateListingVoteCounts } from '@/server/utils/vote-counts'
 import { handleListingVoteTrustEffects } from '@/server/utils/vote-trust-effects'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { ms } from '@/utils/time'
-import { ApprovalStatus, Prisma, Role, TrustAction } from '@orm'
+import { ApprovalStatus, Prisma, Role, TrustAction } from '@orm/client'
 import { validateCustomFields } from './validation'
 
 const EDIT_TIME_LIMIT_MINUTES = 60

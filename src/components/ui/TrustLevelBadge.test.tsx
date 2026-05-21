@@ -41,9 +41,9 @@ describe('TrustLevelBadge', () => {
       expect(screen.getByText('50%')).toBeInTheDocument()
     })
 
-    it('does not render progress at the highest level (Core)', () => {
+    it('does not render progress at the highest level (Trusted+++)', () => {
       render(<TrustLevelBadge trustScore={2000} showProgress />)
-      expect(screen.getByText('Core')).toBeInTheDocument()
+      expect(screen.getByText('Trusted+++')).toBeInTheDocument()
       expect(screen.queryByText(/Progress to/)).not.toBeInTheDocument()
     })
 

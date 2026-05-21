@@ -1,4 +1,4 @@
-import type { Prisma } from '@orm'
+import type { Prisma } from '@orm/client'
 
 export type ProcessedSortField =
   | 'processedAt'

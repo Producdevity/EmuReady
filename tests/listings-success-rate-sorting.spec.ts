@@ -1,6 +1,9 @@
 import path from 'path'
+import { fileURLToPath } from 'url'
 import { errors, type Page } from '@playwright/test'
 import { test, expect } from './fixtures'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 async function dismissCommunitySupportBanner(page: Page) {
   const dismissBanner = page.getByRole('button', { name: /dismiss community support/i }).first()
@@ -16,7 +19,7 @@ async function dismissCommunitySupportBanner(page: Page) {
 }
 
 test.describe('Success Rate Sorting', () => {
-  test.use({ storageState: path.join(__dirname, '.auth/user.json') })
+  test.use({ storageState: path.join(currentDir, '.auth/user.json') })
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/listings')

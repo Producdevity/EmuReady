@@ -1,5 +1,5 @@
 import { ResourceError } from '@/lib/errors'
-import { Prisma, type DeviceBrand } from '@orm'
+import { Prisma, type DeviceBrand } from '@orm/client'
 import { BaseRepository } from './base.repository'
 import type {
   GetDeviceBrandsInput,

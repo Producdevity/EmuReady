@@ -8,7 +8,7 @@ import {
 import { createTRPCRouter, publicProcedure, protectedProcedure } from '@/server/api/trpc'
 import * as igdb from '@/server/igdb'
 import { hasRolePermission } from '@/utils/permissions'
-import { Role } from '@orm'
+import { Role } from '@orm/client'
 
 export const igdbRouter = createTRPCRouter({
   searchGames: publicProcedure.input(SearchGamesSchema).query(async ({ input }) => {

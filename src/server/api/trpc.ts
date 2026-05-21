@@ -10,7 +10,7 @@ import { hasDeveloperAccessToEmulator } from '@/server/utils/permissions'
 import { type Nullable } from '@/types/utils'
 import { hasPermissionInContext, PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
-import { Role } from '@orm'
+import { Role } from '@orm/client'
 
 type User = {
   id: string

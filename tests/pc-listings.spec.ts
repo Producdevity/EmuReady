@@ -1,5 +1,8 @@
 import path from 'path'
+import { fileURLToPath } from 'url'
 import { test, expect } from './fixtures'
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
 
 test.describe('PC Listings', () => {
   test.describe('PC Listings Page', () => {
@@ -87,7 +90,7 @@ test.describe('PC Listings', () => {
   })
 
   test.describe('PC Listings with Authentication', () => {
-    test.use({ storageState: path.join(__dirname, '.auth/user.json') })
+    test.use({ storageState: path.join(currentDir, '.auth/user.json') })
 
     test('should toggle My Reports filter', async ({ page }) => {
       await page.goto('/pc-listings')

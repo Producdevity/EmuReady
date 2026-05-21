@@ -1,5 +1,5 @@
 import { batchQueries } from '@/server/utils/query-performance'
-import type { PrismaClient } from '@orm'
+import type { PrismaClient } from '@orm/client'
 
 interface AuthorReportCounts {
   totalReports: number

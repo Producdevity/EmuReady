@@ -21,7 +21,7 @@ import type {
   TGDBPlatformsResponse,
   GameImageOption,
 } from '@/types/tgdb'
-import type { NotificationType } from '@orm'
+import type { NotificationType } from '@orm/client'
 
 // Game statistics cache
 export const gameStatsCache = new MemoryCache<{

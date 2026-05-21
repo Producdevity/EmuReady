@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { expect } from '@playwright/test'
-import { ApprovalStatus, PcOs, PrismaClient } from '@orm'
+import { createPrismaClient } from '@/server/prisma-client'
+import { ApprovalStatus, PcOs, type PrismaClient } from '@orm/client'
 import { registerCookieConsent } from './cookie-consent'
 import { registerExternalServiceMocks } from './external-services'
 import type { Browser, Locator, Page } from '@playwright/test'
@@ -217,7 +218,7 @@ async function fillPcListingForm(page: Page, candidate: PcListingCandidate): Pro
 }
 
 async function createPcListingCpu(): Promise<string> {
-  const prisma = new PrismaClient()
+  const prisma = createPrismaClient()
   const modelName = `${PC_LISTING_CPU_MODEL_PREFIX} ${randomUUID()}`
 
   try {
@@ -330,7 +331,7 @@ async function getFixtureListingDependencies(prisma: PrismaClient) {
 export async function createPendingHandheldListingFixture(
   authorEmail: string = REPORTER_EMAIL,
 ): Promise<ListingFixture> {
-  const prisma = new PrismaClient()
+  const prisma = createPrismaClient()
 
   try {
     const authorId = await getE2EUserId(prisma, authorEmail)
@@ -360,7 +361,7 @@ export async function createPendingHandheldListingFixture(
 export async function createPendingPcListingFixture(
   authorEmail: string = REPORTER_EMAIL,
 ): Promise<ListingFixture> {
-  const prisma = new PrismaClient()
+  const prisma = createPrismaClient()
 
   try {
     const authorId = await getE2EUserId(prisma, authorEmail)
@@ -390,7 +391,7 @@ export async function createPendingPcListingFixture(
 }
 
 async function createApprovedHandheldListingFixture(authorEmail: string): Promise<ListingFixture> {
-  const prisma = new PrismaClient()
+  const prisma = createPrismaClient()
 
   try {
     const authorId = await getE2EUserId(prisma, authorEmail)
@@ -419,7 +420,7 @@ async function createApprovedHandheldListingFixture(authorEmail: string): Promis
 }
 
 async function createApprovedPcListingFixture(authorEmail: string): Promise<ListingFixture> {
-  const prisma = new PrismaClient()
+  const prisma = createPrismaClient()
 
   try {
     const authorId = await getE2EUserId(prisma, authorEmail)
@@ -529,7 +530,7 @@ export async function rejectPendingPcListingByUrl(page: Page, detailUrl: string)
 }
 
 async function findFirstApprovedPcListing(): Promise<string | null> {
-  const prisma = new PrismaClient()
+  const prisma = createPrismaClient()
 
   try {
     const pcListing = await prisma.pcListing.findFirst({
@@ -600,7 +601,7 @@ export async function createPcReport(page: Page): Promise<void> {
 }
 
 async function expectNoHandheldReportCreated(fixture: ListingFixture): Promise<void> {
-  const prisma = new PrismaClient()
+  const prisma = createPrismaClient()
 
   try {
     const reporterId = await getE2EUserId(prisma, REPORTER_EMAIL)
@@ -615,7 +616,7 @@ async function expectNoHandheldReportCreated(fixture: ListingFixture): Promise<v
 }
 
 async function expectNoPcReportCreated(fixture: ListingFixture): Promise<void> {
-  const prisma = new PrismaClient()
+  const prisma = createPrismaClient()
 
   try {
     const reporterId = await getE2EUserId(prisma, REPORTER_EMAIL)

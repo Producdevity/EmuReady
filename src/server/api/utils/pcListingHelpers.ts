@@ -1,5 +1,5 @@
 import { buildShadowBanFilter } from '@/server/utils/query-builders'
-import type { Prisma, Role } from '@orm'
+import type { Prisma, Role } from '@orm/client'
 
 /**
  * Common include for PC listings queries

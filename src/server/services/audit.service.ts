@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { logger } from '@/lib/logger'
 import { AuditLogsRepository } from '@/server/repositories/audit-logs.repository'
-import { type AuditAction, type AuditEntityType, type Prisma, type PrismaClient } from '@orm'
+import { type AuditAction, type AuditEntityType, type Prisma, type PrismaClient } from '@orm/client'
 
 const MetadataSchema = z.record(z.string(), z.unknown()).optional()
 

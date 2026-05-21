@@ -4,7 +4,7 @@ import {
   getTopContributorsRaw,
   getUserContributionBreakdown,
 } from './contributors.service'
-import type { PrismaClient } from '@orm'
+import type { PrismaClient } from '@orm/client'
 
 const createMockPrisma = () => ({
   listing: {

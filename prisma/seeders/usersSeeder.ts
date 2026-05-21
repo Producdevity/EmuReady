@@ -1,6 +1,6 @@
 import { clerkClient } from '@clerk/nextjs/server'
 import { type User as ClerkUser } from '@clerk/nextjs/server'
-import { type PrismaClient, Role } from '@orm'
+import { type PrismaClient, Role } from '@orm/client'
 
 type UserData = {
   email: string

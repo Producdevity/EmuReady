@@ -1,6 +1,6 @@
 import { TrustService } from '@/lib/trust/service'
 import { type ListingType } from '@/schemas/common'
-import { TrustAction, type PrismaClient, type Prisma } from '@orm'
+import { TrustAction, type PrismaClient, type Prisma } from '@orm/client'
 
 type VoteAction = 'created' | 'updated' | 'deleted'
 

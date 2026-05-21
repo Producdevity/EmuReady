@@ -35,7 +35,7 @@ import {
   TrustAction,
   AuditAction,
   AuditEntityType,
-} from '@orm'
+} from '@orm/client'
 
 const LISTING_STATS_CACHE_KEY = 'listing-stats'
 const mode = Prisma.QueryMode.insensitive

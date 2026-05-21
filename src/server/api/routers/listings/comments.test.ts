@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
-import { Role } from '@orm'
+import { Role } from '@orm/client'
 
 vi.unmock('@/server/api/trpc')
 vi.unmock('@/server/api/root')

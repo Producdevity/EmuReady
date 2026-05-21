@@ -1,4 +1,4 @@
-import { Role, ApprovalStatus, type PrismaClient } from '@orm'
+import { Role, ApprovalStatus, type PrismaClient } from '@orm/client'
 
 // Helper function to get random element from array
 function getRandomElement<T>(array: T[]): T {

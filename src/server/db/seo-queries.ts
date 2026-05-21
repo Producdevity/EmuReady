@@ -2,7 +2,7 @@ import { getFromCache } from '@/lib/cache/seo-cache'
 import { withMetrics } from '@/lib/monitoring/seo-metrics'
 import { prisma } from '@/server/db'
 import { ms } from '@/utils/time'
-import { ApprovalStatus } from '@orm'
+import { ApprovalStatus } from '@orm/client'
 
 /**
  * Database queries optimized for SEO metadata generation.

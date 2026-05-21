@@ -1,6 +1,6 @@
 import { PAGINATION } from '@/data/constants'
 import { ResourceError } from '@/lib/errors'
-import { Prisma, type SoC } from '@orm'
+import { Prisma, type SoC } from '@orm/client'
 import { BaseRepository } from './base.repository'
 import type { GetSoCsInput, CreateSoCInput, UpdateSoCInput } from '@/schemas/soc'
 

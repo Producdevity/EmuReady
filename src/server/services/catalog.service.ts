@@ -13,7 +13,7 @@ import type {
   EmulatorCompatibility,
   SystemCompatibility,
 } from '@/schemas/mobile'
-import type { Role, PrismaClient } from '@orm'
+import type { Role, PrismaClient } from '@orm/client'
 
 export interface GetDeviceCompatibilityInput {
   deviceId?: string

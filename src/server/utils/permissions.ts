@@ -1,6 +1,6 @@
 import { prisma } from '@/server/db'
 import { hasRolePermission } from '@/utils/permissions'
-import { type PrismaClient, Role } from '@orm'
+import { type PrismaClient, Role } from '@orm/client'
 
 /**
  * Checks if a user is a verified developer for a specific emulator

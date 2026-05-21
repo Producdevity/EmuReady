@@ -1,4 +1,4 @@
-import { type PrismaClient, CustomFieldType, type Prisma } from '@orm'
+import { type PrismaClient, CustomFieldType, type Prisma } from '@orm/client'
 
 type TemplateFieldData = {
   name: string

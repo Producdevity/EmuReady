@@ -15,7 +15,7 @@ import {
   type Prisma,
   RelationshipStatus,
   Role,
-} from '@orm'
+} from '@orm/client'
 import { createEmailService } from './emailService'
 import { type NotificationEventData, notificationEventEmitter } from './eventEmitter'
 import { notificationRateLimitService } from './rateLimitService'

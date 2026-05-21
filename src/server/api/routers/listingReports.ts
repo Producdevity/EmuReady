@@ -20,7 +20,7 @@ import { paginate } from '@/server/utils/pagination'
 import { batchQueries } from '@/server/utils/query-performance'
 import { validateEnum, sanitizeInput, validatePagination } from '@/server/utils/security-validation'
 import { PERMISSIONS } from '@/utils/permission-system'
-import { ApprovalStatus, type Prisma, ReportStatus, TrustAction, ReportReason } from '@orm'
+import { ApprovalStatus, type Prisma, ReportStatus, TrustAction, ReportReason } from '@orm/client'
 
 export const listingReportsRouter = createTRPCRouter({
   stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {

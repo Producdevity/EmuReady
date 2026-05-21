@@ -1,22 +1,14 @@
+import { createPrismaClient } from '@/server/prisma-client'
 import { normalizeString } from '@/utils/text'
-import { PrismaClient } from '@orm'
+import type { PrismaClient } from '@orm/client'
 
-/**
- * Global instance of PrismaClient to prevent multiple instances
- *
- * NOTE: Prisma automatically uses DATABASE_DIRECT_URL (from schema.prisma) for:
- * - Interactive transactions
- * - Migrations
- *
- * Add connection_limit=1 to your DATABASE_URL in production env vars. I didn't do this and it's not fun.
- */
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
+  prisma: ReturnType<typeof createPrismaClient> | undefined
 }
 
 const basePrisma =
   globalForPrisma.prisma ??
-  new PrismaClient({
+  createPrismaClient({
     log:
       process.env.NODE_ENV === 'production'
         ? ['error']
@@ -24,14 +16,10 @@ const basePrisma =
           ? ['query', 'error', 'warn']
           : ['error'],
     transactionOptions: {
-      timeout: 10000, // 10 seconds instead of default 5 seconds
+      timeout: 10000,
     },
   })
 
-/**
- * Extended Prisma Client with auto-population middleware
- * Automatically normalizes game titles for accent-insensitive search
- */
 const extendedClient = basePrisma.$extends({
   query: {
     game: {
@@ -71,7 +59,6 @@ const extendedClient = basePrisma.$extends({
 export const prisma = extendedClient as unknown as PrismaClient
 export type ExtendedPrismaClient = typeof extendedClient
 
-// Store in global only in development for hot-reload support
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = basePrisma
 }

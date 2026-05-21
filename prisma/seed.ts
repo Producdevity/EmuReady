@@ -1,4 +1,4 @@
-import { PrismaClient } from '@orm'
+import { createPrismaClient } from '@/server/prisma-client'
 import azaharCustomFieldsSeeder from './seeders/azaharCustomFieldsSeeder'
 import clearTestDataSeeder from './seeders/clearTestDataSeeder'
 import cpuSeeder from './seeders/cpuSeeder'
@@ -18,7 +18,7 @@ import userModerationFixturesSeeder from './seeders/userModerationFixturesSeeder
 import usersSeeder from './seeders/usersSeeder'
 import { batchOperations } from '../src/server/utils/transactions'
 
-const prisma = new PrismaClient()
+const prisma = createPrismaClient()
 
 async function clearDb() {
   console.warn('🗑️ Clearing database...')

@@ -27,7 +27,6 @@ interface GenericCommentFormProps {
   editingComment?: { id: string; content: string }
   config: CommentFormConfig
 
-  // Callbacks
   onSubmit: (data: {
     content: string
     parentId?: string
@@ -37,7 +36,6 @@ interface GenericCommentFormProps {
   onSuccess?: () => void
   onCancel?: () => void
 
-  // Optional recaptcha hook
   getRecaptchaToken?: () => Promise<string | null>
 
   // Loading states
@@ -71,7 +69,6 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
       return
     }
 
-    // Use the content directly - markdown parsing will handle sanitization
     const trimmedContent = content.trim()
     if (!trimmedContent) {
       toast.error('Comment cannot be empty')
@@ -115,7 +112,6 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
     props.onCancel?.()
   }
 
-  // Sign in prompt for unauthenticated users
   if (!user && props.config.showSignInPrompt !== false) {
     return (
       <div className="mb-2 text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -175,6 +171,7 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
               </Button>
             )}
 
+            {/*TODO: allow Cmd+Enter or Ctrl+Enter to submit*/}
             <Button
               type="submit"
               size="sm"
@@ -207,6 +204,7 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
             Cancel
           </Button>
         )}
+        {/*TODO: allow Cmd+Enter or Ctrl+Enter to submit*/}
         <Button
           type="submit"
           variant="primary"

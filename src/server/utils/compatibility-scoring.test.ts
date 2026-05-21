@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ApprovalStatus } from '@orm'
+import { ApprovalStatus } from '@orm/client'
 import {
   getPerformanceQualityScore,
   getVerificationBoost,

@@ -1,5 +1,5 @@
 import { PLATFORM_MAPPINGS } from '@/data/constants'
-import { type PrismaClient } from '@orm'
+import { type PrismaClient } from '@orm/client'
 
 type SystemData = {
   name: string

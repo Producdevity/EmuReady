@@ -12,7 +12,7 @@ import {
   ApiKeyUsageRepository,
   type ApiKeyWithUser,
 } from '@/server/repositories/api-keys.repository'
-import { type PrismaClient, ApiUsagePeriod } from '@orm'
+import { type PrismaClient, ApiUsagePeriod } from '@orm/client'
 
 interface GenerateKeyResult {
   apiKey: ApiKeyWithUser

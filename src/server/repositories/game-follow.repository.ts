@@ -1,11 +1,11 @@
 import { BATCH_SIZES } from '@/data/constants'
 import { ResourceError } from '@/lib/errors'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
-import { ApprovalStatus } from '@orm'
+import { ApprovalStatus } from '@orm/client'
 import { BaseRepository } from './base.repository'
 import { hiddenList, visibleList, hiddenCounts, visibleCounts } from './types'
 import type { VisibilityContext, VisibilityGatedList, VisibilityGatedCounts } from './types'
-import type { Prisma } from '@orm'
+import type { Prisma } from '@orm/client'
 
 const gameFollowSelects = {
   followWithGame: {

@@ -15,11 +15,7 @@ vi.mock('@orm/sql', () => ({
   getTopContributors: vi.fn(() => ({ sql: 'getTopContributors', params: [] })),
 }))
 
-// Mock the entire Prisma client module to prevent database initialization
-vi.mock('@orm', () => ({
-  // Prisma namespace — includes raw SQL tagged templates and the
-  // runtime-enum-like objects that router modules reference at module top
-  // (e.g. `const mode = Prisma.QueryMode.insensitive`).
+const ormMock = {
   Prisma: {
     sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
       strings: Array.from(strings),
@@ -66,9 +62,10 @@ vi.mock('@orm', () => ({
   },
   PcOs: {
     WINDOWS: 'WINDOWS',
-    MAC_OS: 'MAC_OS',
     LINUX: 'LINUX',
-    CHROME_OS: 'CHROME_OS',
+    MACOS: 'MACOS',
+    FREEBSD: 'FREEBSD',
+    OTHER: 'OTHER',
   },
   ApprovalStatus: {
     PENDING: 'PENDING',
@@ -108,6 +105,8 @@ vi.mock('@orm', () => ({
     HELPFUL_COMMENT: 'HELPFUL_COMMENT',
     ADMIN_ADJUSTMENT_POSITIVE: 'ADMIN_ADJUSTMENT_POSITIVE',
     ADMIN_ADJUSTMENT_NEGATIVE: 'ADMIN_ADJUSTMENT_NEGATIVE',
+    VOTE_NULLIFICATION_REVERSAL: 'VOTE_NULLIFICATION_REVERSAL',
+    VOTE_CHANGE_REVERSAL: 'VOTE_CHANGE_REVERSAL',
   },
   ReportReason: {
     INAPPROPRIATE_CONTENT: 'INAPPROPRIATE_CONTENT',
@@ -137,6 +136,13 @@ vi.mock('@orm', () => ({
     COMMENT_DOWNVOTED: 'COMMENT_DOWNVOTED',
     WEEKLY_DIGEST: 'WEEKLY_DIGEST',
     MONTHLY_ACTIVE_BONUS: 'MONTHLY_ACTIVE_BONUS',
+    NEW_FOLLOWER: 'NEW_FOLLOWER',
+    FRIEND_REQUEST_RECEIVED: 'FRIEND_REQUEST_RECEIVED',
+    FRIEND_REQUEST_ACCEPTED: 'FRIEND_REQUEST_ACCEPTED',
+    FOLLOWED_USER_NEW_LISTING: 'FOLLOWED_USER_NEW_LISTING',
+    FOLLOWED_USER_NEW_PC_LISTING: 'FOLLOWED_USER_NEW_PC_LISTING',
+    FOLLOWED_GAME_NEW_LISTING: 'FOLLOWED_GAME_NEW_LISTING',
+    FOLLOWED_GAME_NEW_PC_LISTING: 'FOLLOWED_GAME_NEW_PC_LISTING',
 
     LISTING_COMMENT: 'LISTING_COMMENT',
     LISTING_VOTE_UP: 'LISTING_VOTE_UP',
@@ -165,8 +171,7 @@ vi.mock('@orm', () => ({
     PERMISSION_DELETED: 'PERMISSION_DELETED',
     ROLE_PERMISSION_ASSIGNED: 'ROLE_PERMISSION_ASSIGNED',
     ROLE_PERMISSION_REMOVED: 'ROLE_PERMISSION_REMOVED',
-    USER_PERMISSION_ASSIGNED: 'USER_PERMISSION_ASSIGNED',
-    USER_PERMISSION_REMOVED: 'USER_PERMISSION_REMOVED',
+    USER_ROLE_CHANGED: 'USER_ROLE_CHANGED',
   },
   TailwindColor: {
     yellow: 'yellow',
@@ -200,6 +205,10 @@ vi.mock('@orm', () => ({
     UNASSIGN: 'UNASSIGN',
     BAN: 'BAN',
     UNBAN: 'UNBAN',
+    PIN: 'PIN',
+    UNPIN: 'UNPIN',
+    NULLIFY_VOTES: 'NULLIFY_VOTES',
+    RESTORE_VOTES: 'RESTORE_VOTES',
   },
   AuditEntityType: {
     USER: 'USER',
@@ -211,9 +220,13 @@ vi.mock('@orm', () => ({
     COMMENT: 'COMMENT',
     REPORT: 'REPORT',
     EMULATOR: 'EMULATOR',
+    VOTE: 'VOTE',
     OTHER: 'OTHER',
   },
-}))
+}
+
+vi.mock('@orm', () => ormMock)
+vi.mock('@orm/client', () => ormMock)
 
 // Mock the database module to use a mock prisma client
 vi.mock('../server/db', () => ({

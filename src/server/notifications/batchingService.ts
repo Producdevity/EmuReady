@@ -5,7 +5,7 @@ import {
   DeliveryChannel,
   NotificationCategory,
   NotificationType,
-} from '@orm'
+} from '@orm/client'
 import { createEmailService } from './emailService'
 import { realtimeNotificationService } from './realtimeService'
 import type { NotificationData } from './types'

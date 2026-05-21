@@ -12,7 +12,7 @@ import type {
   StringConfigValue,
   ResolutionSetup,
 } from './eden.types'
-import type { Prisma } from '@orm'
+import type { Prisma } from '@orm/client'
 
 const DEFAULT_PACKAGE_NAME = 'dev.eden.eden_emulator'
 

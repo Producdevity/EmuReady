@@ -96,7 +96,7 @@ import {
   ReportStatus,
   Role,
   TrustAction,
-} from '@orm'
+} from '@orm/client'
 
 function isJsonRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)

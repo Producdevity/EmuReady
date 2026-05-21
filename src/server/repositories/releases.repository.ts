@@ -1,5 +1,5 @@
 import { AppError } from '@/lib/errors'
-import { type Prisma } from '@orm'
+import { type Prisma } from '@orm/client'
 import { BaseRepository } from './base.repository'
 
 export class ReleasesRepository extends BaseRepository {

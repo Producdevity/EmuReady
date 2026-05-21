@@ -41,7 +41,7 @@ import {
   handleListingVoteTrustEffects,
 } from '@/server/utils/vote-trust-effects'
 import { isModerator } from '@/utils/permissions'
-import { ApprovalStatus, Prisma, type PrismaClient, type Role } from '@orm'
+import { ApprovalStatus, Prisma, type PrismaClient, type Role } from '@orm/client'
 
 // Helper for getting listings using the repository
 async function getListingsHelper(

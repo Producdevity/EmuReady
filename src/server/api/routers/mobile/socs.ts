@@ -2,7 +2,7 @@ import { ResourceError } from '@/lib/errors'
 import { GetSoCsSchema, GetSoCByIdSchema } from '@/schemas/soc'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
 import { paginate } from '@/server/utils/pagination'
-import type { Prisma } from '@orm'
+import type { Prisma } from '@orm/client'
 
 export const mobileSocsRouter = createMobileTRPCRouter({
   /**

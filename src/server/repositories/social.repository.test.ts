@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Role, type PrismaClient } from '@orm'
+import { Role, type PrismaClient } from '@orm/client'
 import { SocialRepository } from './social.repository'
 
-vi.mock('@orm', async () => {
-  const actual = await import('@orm')
+vi.mock('@orm/client', async () => {
+  const actual = await import('@orm/client')
   return {
     ...actual,
     Prisma: {

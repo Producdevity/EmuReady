@@ -2,7 +2,7 @@ import { BATCH_SIZES } from '@/data/constants'
 import { AppError, ResourceError, ValidationError } from '@/lib/errors'
 import { logger } from '@/lib/logger'
 import { hasRolePermission } from '@/utils/permissions'
-import { Prisma, Role, type PrismaClient } from '@orm'
+import { Prisma, Role, type PrismaClient } from '@orm/client'
 import type { VisibilityContext } from './types'
 
 /**

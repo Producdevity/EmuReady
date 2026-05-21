@@ -8,7 +8,7 @@ import {
   type SubmissionRiskSignal,
   type SubmissionRiskSignalType,
 } from '@/schemas/submissionRisk'
-import { ApprovalStatus, type PrismaClient } from '@orm'
+import { ApprovalStatus, type PrismaClient } from '@orm/client'
 
 interface CustomFieldDefinitionForRisk {
   name: string

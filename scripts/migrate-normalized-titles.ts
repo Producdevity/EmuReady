@@ -14,13 +14,13 @@
  */
 
 import { config } from 'dotenv'
+import { createPrismaClient } from '@/server/prisma-client'
 import { normalizeString } from '@/utils/text'
-import { PrismaClient } from '@orm'
 
 // Load environment variables from .env.local (same as db-cmd.sh does)
 config({ path: '.env.local' })
 
-const prisma = new PrismaClient()
+const prisma = createPrismaClient()
 
 async function migrateNormalizedTitles() {
   console.log('Starting normalizedTitle migration...')

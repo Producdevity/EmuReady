@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
-import { TrustAction } from '@orm'
+import { TrustAction } from '@orm/client'
 import { handleCommentVoteTrustEffects, handleListingVoteTrustEffects } from './vote-trust-effects'
 
 const mockLogAction = vi.fn()

@@ -3,7 +3,13 @@ import { TrustService } from '@/lib/trust/service'
 import { type ListingType } from '@/schemas/common'
 import { logAudit } from '@/server/services/audit.service'
 import { calculateWilsonScore } from '@/utils/wilson-score'
-import { AuditAction, AuditEntityType, TrustAction, type Prisma, type PrismaClient } from '@orm'
+import {
+  AuditAction,
+  AuditEntityType,
+  TrustAction,
+  type Prisma,
+  type PrismaClient,
+} from '@orm/client'
 
 type PrismaClientOrTransaction = PrismaClient | Prisma.TransactionClient
 

@@ -29,7 +29,7 @@ import type {
   FEXCorePreset,
   DinputMapperType,
 } from './gamenative.types'
-import type { Prisma } from '@orm'
+import type { Prisma } from '@orm/client'
 
 export interface CustomFieldValue {
   customFieldDefinition: {

@@ -63,8 +63,8 @@ import {
 } from '@/server/utils/threeDsGameSearch'
 import { transactionalBatch } from '@/server/utils/transactions'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { ApprovalStatus, Role, TrustAction } from '@orm'
-import type { Prisma } from '@orm'
+import { ApprovalStatus, Role, TrustAction } from '@orm/client'
+import type { Prisma } from '@orm/client'
 
 const GAME_STATS_CACHE_KEY = 'game-stats'
 

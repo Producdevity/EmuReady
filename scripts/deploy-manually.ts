@@ -378,7 +378,7 @@ async function deploy() {
     process.exit(1)
   }
 
-  // Step 5: Confirm production deployment
+  // Step 5: Confirm deployment
   printStep(5, 6, 'Deployment confirmation')
 
   if (target === 'production') {
@@ -405,6 +405,16 @@ async function deploy() {
 
     if (!doubleConfirm) {
       printInfo('Production deployment cancelled')
+      process.exit(0)
+    }
+  } else {
+    const confirmDeploy = await confirm(
+      `Deploy the prebuilt output to ${target.toUpperCase()}?`,
+      false,
+    )
+
+    if (!confirmDeploy) {
+      printInfo(`${target} deployment cancelled`)
       process.exit(0)
     }
   }

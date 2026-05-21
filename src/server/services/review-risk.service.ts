@@ -11,7 +11,7 @@ import {
   type SubmissionForRisk,
 } from '@/server/services/submission-risk.service'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { Role } from '@orm'
+import { Role } from '@orm/client'
 
 type RiskPrismaClient = Parameters<typeof computeAuthorRiskProfiles>[0]
 type DetailReviewRiskPrismaClient = RiskPrismaClient & ActiveAuthorBansPrismaClient

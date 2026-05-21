@@ -8,7 +8,7 @@ import {
 } from '@/schemas/customFieldTemplate'
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { hasRolePermission } from '@/utils/permissions'
-import { CustomFieldType, Prisma, Role } from '@orm'
+import { CustomFieldType, Prisma, Role } from '@orm/client'
 import type { TRPCContext } from '@/server/api/trpc'
 
 const FIELDS_INCLUDE = {
