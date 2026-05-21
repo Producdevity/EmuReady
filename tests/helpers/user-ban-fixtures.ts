@@ -1,8 +1,9 @@
-import { PrismaClient } from '@orm'
+import { createPrismaClient } from '@/server/prisma-client'
 import { USER_BAN_ACTION_TARGET } from '../../prisma/seed-data/userModeration'
+import type { PrismaClient } from '@orm/client'
 
 async function withPrisma<T>(fn: (prisma: PrismaClient) => Promise<T>): Promise<T> {
-  const prisma = new PrismaClient()
+  const prisma = createPrismaClient()
 
   try {
     return await fn(prisma)

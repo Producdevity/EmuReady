@@ -9,7 +9,7 @@ import { notificationService } from '@/server/notifications/service'
 import { notificationTemplateEngine } from '@/server/notifications/templates'
 import { paginate } from '@/server/utils/pagination'
 import { formatEnumLabel } from '@/utils/format'
-import { NotificationType, Role } from '@orm'
+import { NotificationType, Role } from '@orm/client'
 
 export const mobileNotificationsRouter = createMobileTRPCRouter({
   /**

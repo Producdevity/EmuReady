@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ApprovalStatus, Role } from '@orm'
+import { ApprovalStatus, Role } from '@orm/client'
 import {
   buildShadowBanFilter,
   buildApprovalStatusFilter,

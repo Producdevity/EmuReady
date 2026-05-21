@@ -15,7 +15,7 @@ import {
   searchTitleIds,
 } from '@/server/utils/titleIdProviders'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { Role } from '@orm'
+import { Role } from '@orm/client'
 
 const titleIdAccessProcedure = protectedProcedure.use(({ ctx, next }) => {
   const user = ctx.session.user

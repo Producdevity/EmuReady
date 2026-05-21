@@ -1,5 +1,5 @@
 import { AppError } from '@/lib/errors'
-import type { Prisma, PrismaClient } from '@orm'
+import type { Prisma, PrismaClient } from '@orm/client'
 
 // Types
 interface TransactionOptions {

@@ -18,7 +18,7 @@ import {
   PatreonError,
   getPatreonCampaignId,
 } from '@/server/services/patreon.service'
-import { EntitlementSource, EntitlementStatus } from '@orm'
+import { EntitlementSource, EntitlementStatus } from '@orm/client'
 
 export const entitlementsRouter = createTRPCRouter({
   // Returns current entitlements and a simple eligibility flag.

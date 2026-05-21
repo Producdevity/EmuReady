@@ -4,7 +4,7 @@ import {
   type GetVotesOnAuthorListingsInput,
 } from '@/schemas/voteInvestigation'
 import { paginate } from '@/server/utils/pagination'
-import { type PrismaClient } from '@orm'
+import { type PrismaClient } from '@orm/client'
 
 interface UnifiedVote {
   id: string

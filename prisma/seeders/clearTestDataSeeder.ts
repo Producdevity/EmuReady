@@ -1,4 +1,4 @@
-import { type PrismaClient } from '@orm'
+import { type PrismaClient } from '@orm/client'
 
 // These are the exact sample notes used in listingsSeeder.ts
 // We'll use these to identify which listings were created by the seeder

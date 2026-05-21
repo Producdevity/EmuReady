@@ -1,7 +1,7 @@
 import { ResourceError } from '@/lib/errors'
 import { GetDeviceBrandsSchema, GetDeviceBrandByIdSchema } from '@/schemas/deviceBrand'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
-import type { Prisma } from '@orm'
+import type { Prisma } from '@orm/client'
 
 export const mobileDeviceBrandsRouter = createMobileTRPCRouter({
   /**

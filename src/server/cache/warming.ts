@@ -10,7 +10,7 @@ import {
 } from '@/server/db/seo-queries'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
 import { ms } from '@/utils/time'
-import { ApprovalStatus } from '@orm'
+import { ApprovalStatus } from '@orm/client'
 
 /**
  * Cache warming strategies for popular content

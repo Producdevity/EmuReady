@@ -1,7 +1,7 @@
 import { RATE_LIMITS } from '@/data/constants'
 import { prisma } from '@/server/db'
 import { ms } from '@/utils/time'
-import { NotificationType } from '@orm'
+import { NotificationType } from '@orm/client'
 
 export interface RateLimitRule {
   type: NotificationType | 'GLOBAL'

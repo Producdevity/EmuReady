@@ -6,7 +6,7 @@ import {
 } from '@/schemas/authorRisk'
 import { type Severity } from '@/schemas/common'
 import { TIME_CONSTANTS } from '@/utils/time'
-import { ApprovalStatus, type PrismaClient } from '@orm'
+import { ApprovalStatus, type PrismaClient } from '@orm/client'
 import { getAuthorReportStats, getAuthorVoteStats, getAuthorsWithApprovedListings } from '@orm/sql'
 
 export interface ExistingAuthorBan {

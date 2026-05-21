@@ -1,8 +1,8 @@
 import { ResourceError } from '@/lib/errors'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
-import { Role } from '@orm'
+import { Role } from '@orm/client'
 import { BaseRepository } from './base.repository'
-import type { Prisma, UserBan } from '@orm'
+import type { Prisma, UserBan } from '@orm/client'
 
 type BanWithDetails = UserBan & {
   user: {

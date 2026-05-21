@@ -7,7 +7,7 @@ import {
   VerifyListingSchema,
 } from '@/schemas/listingVerification'
 import { paginate } from '@/server/utils/pagination'
-import { TrustAction } from '@orm'
+import { TrustAction } from '@orm/client'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 
 export const listingVerificationsRouter = createTRPCRouter({

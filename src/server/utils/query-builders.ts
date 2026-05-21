@@ -1,5 +1,5 @@
 import { hasRolePermission } from '@/utils/permissions'
-import { type Prisma, type PrismaClient, ApprovalStatus, Role } from '@orm'
+import { type Prisma, type PrismaClient, ApprovalStatus, Role } from '@orm/client'
 
 export function buildShadowBanFilter(
   userRole?: Role | null,

@@ -3,7 +3,7 @@ import { createTRPCRouter, moderatorProcedure, protectedProcedure } from '@/serv
 import { getServiceStatus } from '@/server/init'
 import { ActivityService } from '@/server/services/activity.service'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { Role } from '@orm'
+import { Role } from '@orm/client'
 
 export const activityRouter = createTRPCRouter({
   /**

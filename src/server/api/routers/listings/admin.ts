@@ -45,7 +45,7 @@ import { listingStatsCache } from '@/server/utils/cache/instances'
 import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
 import { paginate } from '@/server/utils/pagination'
 import { hasRolePermission } from '@/utils/permissions'
-import { Prisma, ApprovalStatus, TrustAction, Role } from '@orm'
+import { Prisma, ApprovalStatus, TrustAction, Role } from '@orm/client'
 
 const LISTING_STATS_CACHE_KEY = 'listing-stats'
 

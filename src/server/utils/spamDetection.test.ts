@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { type PrismaClient } from '@orm'
+import { type PrismaClient } from '@orm/client'
 import { SpamDetectionService } from './spamDetection'
 
 const mockPrisma = {

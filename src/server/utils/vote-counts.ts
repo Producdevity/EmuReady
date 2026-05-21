@@ -1,5 +1,5 @@
 import { calculateWilsonScore } from '@/utils/wilson-score'
-import { type Prisma } from '@orm'
+import { type Prisma } from '@orm/client'
 
 type UpdateVoteOperation = 'create' | 'update' | 'delete'
 

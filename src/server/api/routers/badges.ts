@@ -20,7 +20,7 @@ import {
 import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
-import { type Prisma, Role } from '@orm'
+import { type Prisma, Role } from '@orm/client'
 
 export const badgesRouter = createTRPCRouter({
   // Get all badges (admin only)

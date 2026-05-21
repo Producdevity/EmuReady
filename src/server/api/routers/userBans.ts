@@ -22,7 +22,7 @@ import { nullifyUserVotes, restoreUserVotes } from '@/server/services/vote-nulli
 import { withRetryTransaction } from '@/server/utils/transactions'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
-import { AuditAction, AuditEntityType, Role } from '@orm'
+import { AuditAction, AuditEntityType, Role } from '@orm/client'
 
 export const userBansRouter = createTRPCRouter({
   stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {

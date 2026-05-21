@@ -46,8 +46,8 @@ import {
   roleIncludesRole,
 } from '@/utils/permission-system'
 import { sanitizeBio } from '@/utils/sanitization'
-import { ApprovalStatus, Role } from '@orm'
-import type { Prisma, PrismaClient } from '@orm'
+import { ApprovalStatus, Role } from '@orm/client'
+import type { Prisma, PrismaClient } from '@orm/client'
 
 function accumulateVoteGroups(groups: { value: boolean; _count: { _all: number } }[]) {
   return groups.reduce(

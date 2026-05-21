@@ -9,7 +9,7 @@ import {
   suggestIndexes,
   analyzeQueryComplexity,
 } from '@/server/utils/query-performance'
-import { ApprovalStatus, ReportStatus } from '@orm'
+import { ApprovalStatus, ReportStatus } from '@orm/client'
 
 export const cacheRouter = createTRPCRouter({
   /**

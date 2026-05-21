@@ -6,8 +6,8 @@ import {
 } from '@/schemas/entitlementsAdmin'
 import { createTRPCRouter, adminProcedure } from '@/server/api/trpc'
 import { EntitlementsRepository } from '@/server/repositories/entitlements.repository'
-import { EntitlementStatus } from '@orm'
-import { type Prisma } from '@orm'
+import { EntitlementStatus } from '@orm/client'
+import { type Prisma } from '@orm/client'
 
 export const adminEntitlementsRouter = createTRPCRouter({
   grant: adminProcedure.input(AdminGrantEntitlementSchema).mutation(async ({ ctx, input }) => {

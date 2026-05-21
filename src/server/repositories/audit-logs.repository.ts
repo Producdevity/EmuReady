@@ -6,7 +6,7 @@ import {
 } from '@/server/utils/pagination'
 import { ms } from '@/utils/time'
 import { BaseRepository } from './base.repository'
-import type { Prisma, AuditAction, AuditEntityType } from '@orm'
+import type { Prisma, AuditAction, AuditEntityType } from '@orm/client'
 
 export class AuditLogsRepository extends BaseRepository {
   static readonly includes = {

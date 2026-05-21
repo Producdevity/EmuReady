@@ -1,6 +1,6 @@
 import { AppError, ResourceError } from '@/lib/errors'
 import { hasRolePermission } from '@/utils/permissions'
-import { type Prisma, EntitlementStatus, type EntitlementSource, Role } from '@orm'
+import { type Prisma, EntitlementStatus, type EntitlementSource, Role } from '@orm/client'
 import { BaseRepository } from './base.repository'
 
 export class EntitlementsRepository extends BaseRepository {

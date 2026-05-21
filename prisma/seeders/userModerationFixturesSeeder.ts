@@ -1,4 +1,4 @@
-import { type PrismaClient, Role } from '@orm'
+import { type PrismaClient, Role } from '@orm/client'
 import { USER_BAN_ACTION_TARGET, USER_BAN_TABLE_FIXTURE } from '../seed-data/userModeration'
 
 const MODERATION_TARGETS = [USER_BAN_TABLE_FIXTURE, USER_BAN_ACTION_TARGET]

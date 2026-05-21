@@ -13,7 +13,7 @@ import {
 } from '@/server/api/trpc'
 import { paginate } from '@/server/utils/pagination'
 import { hasRolePermission } from '@/utils/permissions'
-import { Role, Prisma } from '@orm'
+import { Role, Prisma } from '@orm/client'
 
 export const verifiedDevelopersRouter = createTRPCRouter({
   getVerifiedDevelopers: manageEmulatorVerifiedDevelopersProcedure

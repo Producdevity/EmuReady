@@ -1,6 +1,6 @@
 import { ResourceError } from '@/lib/errors'
 import { sanitizeBio } from '@/utils/sanitization'
-import { type Prisma } from '@orm'
+import { type Prisma } from '@orm/client'
 import { BaseRepository } from './base.repository'
 import type { UpdateUserPreferencesSchema } from '@/schemas/userPreferences'
 import type { z } from 'zod'

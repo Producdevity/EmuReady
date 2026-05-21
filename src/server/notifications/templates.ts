@@ -1,5 +1,5 @@
 import { sanitizeText } from '@/utils/sanitization'
-import { NotificationType, NotificationCategory } from '@orm'
+import { NotificationType, NotificationCategory } from '@orm/client'
 import type { NotificationTemplate } from './types'
 
 export interface TemplateContext {

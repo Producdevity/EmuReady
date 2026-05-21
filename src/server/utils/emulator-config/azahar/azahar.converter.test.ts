@@ -5,7 +5,7 @@ import {
   type AzaharConfigInput,
   type CustomFieldValue,
 } from './azahar.converter'
-import type { Prisma } from '@orm'
+import type { Prisma } from '@orm/client'
 
 function createField(name: string, value: Prisma.JsonValue): CustomFieldValue {
   return {

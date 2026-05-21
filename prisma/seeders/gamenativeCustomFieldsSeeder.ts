@@ -1,4 +1,4 @@
-import { CustomFieldType, Prisma, type PrismaClient } from '@orm'
+import { CustomFieldType, Prisma, type PrismaClient } from '@orm/client'
 
 interface SelectOption {
   value: string

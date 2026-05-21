@@ -1,5 +1,11 @@
 import { type Severity } from '@/schemas/common'
-import type { PerformanceScale, ListingDeveloperVerification, Game, System, Emulator } from '@orm'
+import type {
+  PerformanceScale,
+  ListingDeveloperVerification,
+  Game,
+  System,
+  Emulator,
+} from '@orm/client'
 
 /**
  * Compatibility Scoring Utility for RetroCatalog Integration

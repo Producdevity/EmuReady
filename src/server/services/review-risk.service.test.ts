@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { RISK_SIGNAL_TYPES, type AuthorRiskProfile } from '@/schemas/authorRisk'
 import { SUBMISSION_RISK_SIGNAL_TYPES, type SubmissionRiskProfile } from '@/schemas/submissionRisk'
-import { Role } from '@orm'
+import { Role } from '@orm/client'
 import {
   attachHiddenReviewRiskProfiles,
   attachReviewRiskProfiles,

@@ -5,7 +5,7 @@ import {
   ValidationPatterns,
 } from '@/server/utils/security-validation'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { type Prisma, Role } from '@orm'
+import { type Prisma, Role } from '@orm/client'
 import { BaseRepository } from './base.repository'
 
 /**

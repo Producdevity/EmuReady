@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { getAuthorReportCounts } from './report-stats.service'
-import type { PrismaClient } from '@orm'
+import type { PrismaClient } from '@orm/client'
 
 function createMockPrisma() {
   return {

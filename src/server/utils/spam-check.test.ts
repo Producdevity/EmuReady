@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import analytics from '@/lib/analytics'
-import { type PrismaClient } from '@orm'
+import { type PrismaClient } from '@orm/client'
 import { checkSpamContent } from './spam-check'
 import { SpamDetectionService } from './spamDetection'
 

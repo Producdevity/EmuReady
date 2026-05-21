@@ -15,11 +15,7 @@ vi.mock('@orm/sql', () => ({
   getTopContributors: vi.fn(() => ({ sql: 'getTopContributors', params: [] })),
 }))
 
-// Mock the entire Prisma client module to prevent database initialization
-vi.mock('@orm', () => ({
-  // Prisma namespace — includes raw SQL tagged templates and the
-  // runtime-enum-like objects that router modules reference at module top
-  // (e.g. `const mode = Prisma.QueryMode.insensitive`).
+const ormMock = {
   Prisma: {
     sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
       strings: Array.from(strings),
@@ -213,7 +209,10 @@ vi.mock('@orm', () => ({
     EMULATOR: 'EMULATOR',
     OTHER: 'OTHER',
   },
-}))
+}
+
+vi.mock('@orm', () => ormMock)
+vi.mock('@orm/client', () => ormMock)
 
 // Mock the database module to use a mock prisma client
 vi.mock('../server/db', () => ({

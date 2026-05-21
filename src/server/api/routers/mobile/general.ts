@@ -1,6 +1,6 @@
 import { SearchSuggestionsSchema } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
-import { ApprovalStatus } from '@orm'
+import { ApprovalStatus } from '@orm/client'
 
 export const mobileGeneralRouter = createMobileTRPCRouter({
   /**

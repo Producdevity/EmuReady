@@ -1,7 +1,7 @@
 import { PAGINATION } from '@/data/constants'
 import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { type Prisma, Role } from '@orm'
+import { type Prisma, Role } from '@orm/client'
 import { BaseRepository } from './base.repository'
 
 export interface CommentFilters {

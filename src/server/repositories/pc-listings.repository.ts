@@ -12,7 +12,7 @@ import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { sanitizeInput } from '@/server/utils/security-validation'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { calculateWilsonScore } from '@/utils/wilson-score'
-import { Prisma, ApprovalStatus, type PcOs, Role } from '@orm'
+import { Prisma, ApprovalStatus, type PcOs, Role } from '@orm/client'
 import { BaseRepository } from './base.repository'
 import {
   buildApprovalStatusFilter,

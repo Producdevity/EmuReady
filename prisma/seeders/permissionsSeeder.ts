@@ -1,4 +1,4 @@
-import { type PrismaClient, Role, PermissionCategory } from '@orm'
+import { type PrismaClient, Role, PermissionCategory } from '@orm/client'
 
 interface PermissionDefinition {
   key: string

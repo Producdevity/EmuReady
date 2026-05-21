@@ -22,7 +22,7 @@ import { isUserBanned } from '@/server/utils/query-builders'
 import { handleCommentVoteTrustEffects } from '@/server/utils/vote-trust-effects'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { canDeleteComment, canEditComment } from '@/utils/permissions'
-import { AuditAction, AuditEntityType, Role } from '@orm'
+import { AuditAction, AuditEntityType, Role } from '@orm/client'
 
 export const commentsRouter = createTRPCRouter({
   create: protectedProcedure.input(CreateCommentSchema).mutation(async ({ ctx, input }) => {

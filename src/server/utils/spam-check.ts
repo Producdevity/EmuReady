@@ -1,7 +1,7 @@
 import analytics from '@/lib/analytics'
 import { AppError } from '@/lib/errors'
 import { SpamDetectionService } from '@/server/utils/spamDetection'
-import { type PrismaClient } from '@orm'
+import { type PrismaClient } from '@orm/client'
 
 type SpamEntityType = 'listing' | 'comment'
 

@@ -1,6 +1,6 @@
 import { roleIncludesRole } from '@/utils/permission-system'
-import { Role } from '@orm'
-import type { PrismaClient } from '@orm'
+import { Role } from '@orm/client'
+import type { PrismaClient } from '@orm/client'
 
 interface ProfileAccessContext {
   currentUserId?: string

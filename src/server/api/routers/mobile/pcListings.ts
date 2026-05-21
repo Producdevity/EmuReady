@@ -22,7 +22,7 @@ import { PcListingsRepository } from '@/server/repositories/pc-listings.reposito
 import { listingStatsCache } from '@/server/utils/cache'
 import { paginate } from '@/server/utils/pagination'
 import { isModerator } from '@/utils/permissions'
-import { Prisma, ApprovalStatus, TrustAction } from '@orm'
+import { Prisma, ApprovalStatus, TrustAction } from '@orm/client'
 
 export const mobilePcListingsRouter = createMobileTRPCRouter({
   /**

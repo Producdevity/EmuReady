@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { PERMISSIONS } from '@/utils/permission-system'
-import { ApprovalStatus, Role } from '@orm'
+import { ApprovalStatus, Role } from '@orm/client'
 
 vi.unmock('@/server/api/trpc')
 vi.unmock('@/server/api/root')

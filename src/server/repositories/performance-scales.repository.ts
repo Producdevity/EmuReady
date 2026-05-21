@@ -1,5 +1,5 @@
 import { ResourceError } from '@/lib/errors'
-import { Prisma, type PerformanceScale } from '@orm'
+import { Prisma, type PerformanceScale } from '@orm/client'
 import { BaseRepository } from './base.repository'
 import type {
   GetPerformanceScalesInput,

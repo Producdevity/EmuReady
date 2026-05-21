@@ -13,7 +13,7 @@ import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { notificationService } from '@/server/notifications/service'
 import { NotificationPreferencesRepository } from '@/server/repositories/notification-preferences.repository'
 import { hasRolePermission } from '@/utils/permissions'
-import { DeliveryChannel, NotificationCategory, Role } from '@orm'
+import { DeliveryChannel, NotificationCategory, Role } from '@orm/client'
 
 export const notificationsRouter = createTRPCRouter({
   get: protectedProcedure.input(GetNotificationsSchema).query(async ({ ctx, input }) => {

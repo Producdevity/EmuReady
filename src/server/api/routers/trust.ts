@@ -11,7 +11,7 @@ import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
 import { prisma } from '@/server/db'
 import { paginate } from '@/server/utils/pagination'
 import { hasRolePermission } from '@/utils/permissions'
-import { type Prisma, Role } from '@orm'
+import { type Prisma, Role } from '@orm/client'
 
 export const trustRouter = createTRPCRouter({
   // Get trust logs for admin dashboard (SUPER_ADMIN only)

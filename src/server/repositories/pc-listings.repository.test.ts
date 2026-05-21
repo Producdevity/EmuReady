@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ApprovalStatus, Prisma, Role } from '@orm'
+import { ApprovalStatus, Prisma, Role } from '@orm/client'
 import { buildPcListingListWhere, buildPendingPcListingsWhere } from './pc-listings.repository'
 
 const USER_ID = 'user-123'

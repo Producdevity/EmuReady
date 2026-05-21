@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { nullifyUserVotes, restoreUserVotes } from './vote-nullification.service'
-import type { PrismaClient } from '@orm'
+import type { PrismaClient } from '@orm/client'
 
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },

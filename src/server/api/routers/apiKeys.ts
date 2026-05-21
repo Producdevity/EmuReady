@@ -19,9 +19,9 @@ import {
 } from '@/server/api/trpc'
 import { ApiAccessService } from '@/server/services/api-access.service'
 import { hasRolePermission } from '@/utils/permissions'
-import { Role } from '@orm'
+import { Role } from '@orm/client'
 import type { ApiKeyWithUser } from '@/server/repositories/api-keys.repository'
-import type { PrismaClient } from '@orm'
+import type { PrismaClient } from '@orm/client'
 
 function mapApiKey(apiKey: ApiKeyWithUser) {
   return {

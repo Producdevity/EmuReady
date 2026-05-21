@@ -13,7 +13,7 @@ import {
 } from '@/server/utils/query-builders'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { calculateWilsonScore } from '@/utils/wilson-score'
-import { Prisma, ApprovalStatus, Role } from '@orm'
+import { Prisma, ApprovalStatus, Role } from '@orm/client'
 import { BaseRepository } from './base.repository'
 
 export interface ListingFilters {

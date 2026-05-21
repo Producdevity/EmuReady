@@ -1,5 +1,5 @@
 import { normalizeString } from '@/utils/text'
-import { ApprovalStatus, Role, type PrismaClient } from '@orm'
+import { ApprovalStatus, Role, type PrismaClient } from '@orm/client'
 
 type GameData = {
   title: string

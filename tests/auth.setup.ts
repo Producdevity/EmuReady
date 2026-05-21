@@ -1,7 +1,8 @@
 import path from 'path'
 import { clerk } from '@clerk/testing/playwright'
 import { test as setup, type Page } from '@playwright/test'
-import { PrismaClient, Role } from '@orm'
+import { createPrismaClient } from '@/server/prisma-client'
+import { Role } from '@orm/client'
 import { registerCookieConsent } from './helpers/cookie-consent'
 import { registerExternalServiceMocks } from './helpers/external-services'
 
@@ -14,7 +15,7 @@ const authFiles = {
   super_admin: path.join(__dirname, '.auth/super_admin.json'),
 }
 
-const prisma = new PrismaClient()
+const prisma = createPrismaClient()
 const seedPassword = 'DevPassword123!'
 
 async function verifySeededRole(email: string, expectedRole: Role) {

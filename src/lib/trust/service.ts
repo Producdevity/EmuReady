@@ -3,7 +3,7 @@ import analytics from '@/lib/analytics'
 import { ResourceError } from '@/lib/errors'
 import { prisma } from '@/server/db'
 import { validateData } from '@/server/utils/validation'
-import { TrustAction, type Prisma, type PrismaClient } from '@orm'
+import { TrustAction, type Prisma, type PrismaClient } from '@orm/client'
 import { TRUST_ACTIONS, TRUST_CONFIG, getTrustLevel, hasTrustLevel } from './config'
 
 const UNKNOWN_TRUST_LEVEL_NAME = 'Unranked'

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { DeliveryChannel, NotificationCategory, NotificationType } from '@orm'
+import { DeliveryChannel, NotificationCategory, NotificationType } from '@orm/client'
 import { NOTIFICATION_EVENTS } from './eventEmitter'
 import type { NotificationEventData } from './eventEmitter'
 import type { NotificationService } from './service'
@@ -53,8 +53,8 @@ function getNotificationServiceInternals(
   return service as unknown as NotificationServiceInternals
 }
 
-vi.mock('@orm', async () => {
-  const actual = await import('@orm')
+vi.mock('@orm/client', async () => {
+  const actual = await import('@orm/client')
   return {
     ...actual,
     Prisma: {
