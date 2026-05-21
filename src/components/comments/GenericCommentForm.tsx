@@ -175,6 +175,7 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
               </Button>
             )}
 
+            {/*TODO: allow Cmd+Enter or Ctrl+Enter to submit*/}
             <Button
               type="submit"
               size="sm"
