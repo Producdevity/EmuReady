@@ -1,4 +1,5 @@
 import path from 'path'
+import { fileURLToPath } from 'url'
 import { clerk } from '@clerk/testing/playwright'
 import { test as setup, type Page } from '@playwright/test'
 import { createPrismaClient } from '@/server/prisma-client'
@@ -6,13 +7,15 @@ import { Role } from '@orm/client'
 import { registerCookieConsent } from './helpers/cookie-consent'
 import { registerExternalServiceMocks } from './helpers/external-services'
 
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
 const authFiles = {
-  user: path.join(__dirname, '.auth/user.json'),
-  author: path.join(__dirname, '.auth/author.json'),
-  moderator: path.join(__dirname, '.auth/moderator.json'),
-  developer: path.join(__dirname, '.auth/developer.json'),
-  admin: path.join(__dirname, '.auth/admin.json'),
-  super_admin: path.join(__dirname, '.auth/super_admin.json'),
+  user: path.join(currentDir, '.auth/user.json'),
+  author: path.join(currentDir, '.auth/author.json'),
+  moderator: path.join(currentDir, '.auth/moderator.json'),
+  developer: path.join(currentDir, '.auth/developer.json'),
+  admin: path.join(currentDir, '.auth/admin.json'),
+  super_admin: path.join(currentDir, '.auth/super_admin.json'),
 }
 
 const prisma = createPrismaClient()
@@ -74,7 +77,7 @@ async function authenticateUser(
 
 setup.beforeAll(async () => {
   const fs = await import('fs')
-  const authDir = path.join(__dirname, '.auth')
+  const authDir = path.join(currentDir, '.auth')
 
   if (!fs.existsSync(authDir)) {
     fs.mkdirSync(authDir, { recursive: true })
