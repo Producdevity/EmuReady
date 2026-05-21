@@ -25,14 +25,13 @@ import { canDeleteComment, canEditComment } from '@/utils/permissions'
 import { AuditAction, AuditEntityType, Role } from '@orm/client'
 
 export const commentsRouter = createTRPCRouter({
+  // TODO: This should use a repository, too much logic in here.
   create: protectedProcedure.input(CreateCommentSchema).mutation(async ({ ctx, input }) => {
     const { listingId, content, parentId, recaptchaToken } = input
     const userId = ctx.session.user.id
 
     // TODO: Add spam detection via `checkSpamContent` from
     // `@/server/utils/spam-check` (currently only applied in mobile routes).
-    // Block: UX/product sign-off needed since existing web users would start
-    // seeing spam-block errors. Mirror mobile: `{ userId, content, entityType: 'comment' }`.
     // Verify CAPTCHA if token is provided
     if (recaptchaToken) {
       const clientIP = ctx.headers ? getClientIP(ctx.headers) : undefined
@@ -45,7 +44,6 @@ export const commentsRouter = createTRPCRouter({
       if (!captchaResult.success) return AppError.captcha(captchaResult.error)
     }
 
-    // Check if listing exists
     const listing = await ctx.prisma.listing.findUnique({
       where: { id: listingId },
     })
@@ -337,7 +335,7 @@ export const commentsRouter = createTRPCRouter({
 
       let voteResult
       let scoreChange: number
-      let trustActionNeeded: 'upvote' | 'downvote' | 'change' | 'remove' | null = null
+      let trustActionNeeded: 'upvote' | 'downvote' | 'change' | 'remove' | null
 
       if (existingVote) {
         // If vote is the same, remove the vote (toggle)
