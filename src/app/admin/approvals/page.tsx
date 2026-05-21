@@ -18,6 +18,11 @@ import {
   ReviewRiskFilterButton,
   ReviewRiskIndicator,
 } from '@/components/admin'
+import {
+  CompatibilityReportReviewDecision,
+  CompatibilityReportReviewModalAdapter,
+  useCompatibilityReportReviewDecisionModal,
+} from '@/components/compatibility/review'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   ApproveButton,
@@ -50,8 +55,6 @@ import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
-import { ApprovalStatus } from '@orm'
-import ApprovalModal from './components/ApprovalModal'
 
 type PendingListing = RouterOutput['listings']['getPending']['listings'][number]
 type ApprovalSortField =
@@ -110,11 +113,7 @@ function AdminApprovalsPage() {
   const gameStatsQuery = api.games.stats.useQuery()
   const listingStatsQuery = api.listings.stats.useQuery()
 
-  const [showApprovalModal, setShowApprovalModal] = useState(false)
-  const [selectedListingForApproval, setSelectedListingForApproval] =
-    useState<PendingListing | null>(null)
-  const [approvalNotes, setApprovalNotes] = useState('')
-  const [approvalDecision, setApprovalDecision] = useState<ApprovalStatus | null>(null)
+  const approvalModal = useCompatibilityReportReviewDecisionModal<PendingListing>()
   const confirm = useConfirmDialog()
 
   const utils = api.useUtils()
@@ -140,12 +139,12 @@ function AdminApprovalsPage() {
       analytics.admin.listingApproved({
         listingId: variables.listingId,
         adminId: currentUserQuery.data?.id ?? 'unknown',
-        gameId: selectedListingForApproval?.game.id,
-        systemId: selectedListingForApproval?.game.system.id,
+        gameId: approvalModal.selectedReport?.game.id,
+        systemId: approvalModal.selectedReport?.game.system.id,
       })
 
       await invalidateQueries()
-      closeApprovalModal()
+      approvalModal.close()
     },
     onError: (err) => {
       console.error('Failed to approve listing:', err)
@@ -161,12 +160,12 @@ function AdminApprovalsPage() {
         listingId: variables.listingId,
         adminId: currentUserQuery.data?.id ?? 'unknown',
         reason: variables.notes ?? undefined,
-        gameId: selectedListingForApproval?.game.id,
-        systemId: selectedListingForApproval?.game.system.id,
+        gameId: approvalModal.selectedReport?.game.id,
+        systemId: approvalModal.selectedReport?.game.system.id,
       })
 
       await invalidateQueries()
-      closeApprovalModal()
+      approvalModal.close()
     },
     onError: (err) => {
       console.error('Failed to reject listing:', err)
@@ -219,8 +218,7 @@ function AdminApprovalsPage() {
     if (!confirmed) return
 
     await bulkApproveMutation.mutateAsync({ listingIds })
-    await invalidateQueries()
-    closeApprovalModal()
+    approvalModal.close()
   }
 
   const handleSelectAll = (selected: boolean) => {
@@ -233,31 +231,17 @@ function AdminApprovalsPage() {
     )
   }
 
-  const openApprovalModal = (listing: PendingListing, decision: ApprovalStatus) => {
-    setSelectedListingForApproval(listing)
-    setApprovalDecision(decision)
-    setApprovalNotes('')
-    setShowApprovalModal(true)
-  }
-
-  const closeApprovalModal = () => {
-    setShowApprovalModal(false)
-    setSelectedListingForApproval(null)
-    setApprovalNotes('')
-    setApprovalDecision(null)
-  }
-
   const handleApprovalSubmit = () => {
-    if (!selectedListingForApproval || !approvalDecision) return
-    if (approvalDecision === ApprovalStatus.APPROVED) {
+    if (!approvalModal.selectedReport || !approvalModal.decision) return
+    if (approvalModal.decision === CompatibilityReportReviewDecision.APPROVED) {
       return approveMutation.mutate({
-        listingId: selectedListingForApproval.id,
+        listingId: approvalModal.selectedReport.id,
       } satisfies RouterInput['listings']['approveListing'])
     }
-    if (approvalDecision === ApprovalStatus.REJECTED) {
+    if (approvalModal.decision === CompatibilityReportReviewDecision.REJECTED) {
       return rejectMutation.mutate({
-        listingId: selectedListingForApproval.id,
-        notes: approvalNotes || null,
+        listingId: approvalModal.selectedReport.id,
+        notes: approvalModal.notes || null,
       } satisfies RouterInput['listings']['rejectListing'])
     }
   }
@@ -366,7 +350,6 @@ function AdminApprovalsPage() {
               label: 'Reject Selected',
               onAction: async (listingIds, notes) => {
                 await bulkRejectMutation.mutateAsync({ listingIds, notes })
-                await invalidateQueries()
               },
             },
           }}
@@ -478,6 +461,7 @@ function AdminApprovalsPage() {
                         <Link
                           href={`/listings/${listing.id}`}
                           target="_blank"
+                          rel="noopener noreferrer"
                           className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
                         >
                           {listing.game.title}
@@ -564,7 +548,12 @@ function AdminApprovalsPage() {
                           ) && (
                             <ApproveButton
                               title="Approve Listing"
-                              onClick={() => openApprovalModal(listing, ApprovalStatus.APPROVED)}
+                              onClick={() =>
+                                approvalModal.open(
+                                  listing,
+                                  CompatibilityReportReviewDecision.APPROVED,
+                                )
+                              }
                               disabled={approveMutation.isPending}
                             />
                           )}
@@ -574,7 +563,12 @@ function AdminApprovalsPage() {
                           ) && (
                             <RejectButton
                               title="Reject Listing"
-                              onClick={() => openApprovalModal(listing, ApprovalStatus.REJECTED)}
+                              onClick={() =>
+                                approvalModal.open(
+                                  listing,
+                                  CompatibilityReportReviewDecision.REJECTED,
+                                )
+                              }
                               disabled={rejectMutation.isPending}
                             />
                           )}
@@ -611,18 +605,17 @@ function AdminApprovalsPage() {
         </div>
       )}
 
-      {/* Approval Modal */}
-      {showApprovalModal && selectedListingForApproval && approvalDecision && (
-        <ApprovalModal
-          showApprovalModal={showApprovalModal}
-          closeApprovalModal={closeApprovalModal}
-          selectedListingForApproval={selectedListingForApproval}
-          approvalDecision={approvalDecision}
-          approvalNotes={approvalNotes}
-          setApprovalNotes={setApprovalNotes}
-          handleApprovalSubmit={handleApprovalSubmit}
-          approveMutation={approveMutation}
-          rejectMutation={rejectMutation}
+      {approvalModal.isOpen && approvalModal.selectedReport && approvalModal.decision && (
+        <CompatibilityReportReviewModalAdapter
+          isOpen={approvalModal.isOpen}
+          onClose={approvalModal.close}
+          decision={approvalModal.decision}
+          reportLabel="Listing"
+          report={approvalModal.selectedReport}
+          rejectionNotes={approvalModal.notes}
+          onRejectionNotesChange={approvalModal.setNotes}
+          onSubmit={handleApprovalSubmit}
+          isSubmitting={approveMutation.isPending || rejectMutation.isPending}
         />
       )}
     </AdminPageLayout>

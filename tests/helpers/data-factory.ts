@@ -240,6 +240,26 @@ async function createPcListingCpu(): Promise<string> {
   return modelName
 }
 
+async function createPcListingCpuFixture(prisma: PrismaClient): Promise<string> {
+  const modelName = `${PC_LISTING_CPU_MODEL_PREFIX} ${randomUUID()}`
+
+  const brand = await prisma.deviceBrand.upsert({
+    where: { name: PC_LISTING_CPU_BRAND_NAME },
+    update: {},
+    create: { name: PC_LISTING_CPU_BRAND_NAME },
+  })
+
+  const cpu = await prisma.cpu.create({
+    data: {
+      brandId: brand.id,
+      modelName,
+    },
+    select: { id: true },
+  })
+
+  return cpu.id
+}
+
 async function submitPcListingForm(page: Page): Promise<'created' | 'already-exists'> {
   const responsePromise = page.waitForResponse(
     (response) =>
@@ -305,6 +325,68 @@ async function getFixtureListingDependencies(prisma: PrismaClient) {
   if (!performance) throw new Error('Could not find performance scale for report fixture')
 
   return { emulator, game, performance }
+}
+
+export async function createPendingHandheldListingFixture(
+  authorEmail: string = REPORTER_EMAIL,
+): Promise<ListingFixture> {
+  const prisma = new PrismaClient()
+
+  try {
+    const authorId = await getE2EUserId(prisma, authorEmail)
+    const { game, emulator, performance } = await getFixtureListingDependencies(prisma)
+    const device = await prisma.device.findFirst({ select: { id: true } })
+    if (!device) throw new Error('Could not find device for pending report fixture')
+
+    const listing = await prisma.listing.create({
+      data: {
+        authorId,
+        gameId: game.id,
+        emulatorId: emulator.id,
+        deviceId: device.id,
+        performanceId: performance.id,
+        status: ApprovalStatus.PENDING,
+        notes: `E2E pending report fixture ${randomUUID()}`,
+      },
+      select: { id: true },
+    })
+
+    return { id: listing.id, path: `/listings/${listing.id}` }
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
+export async function createPendingPcListingFixture(
+  authorEmail: string = REPORTER_EMAIL,
+): Promise<ListingFixture> {
+  const prisma = new PrismaClient()
+
+  try {
+    const authorId = await getE2EUserId(prisma, authorEmail)
+    const { game, emulator, performance } = await getFixtureListingDependencies(prisma)
+    const cpuId = await createPcListingCpuFixture(prisma)
+
+    const pcListing = await prisma.pcListing.create({
+      data: {
+        authorId,
+        gameId: game.id,
+        emulatorId: emulator.id,
+        cpuId,
+        memorySize: 16,
+        os: PcOs.WINDOWS,
+        osVersion: 'Windows 11',
+        performanceId: performance.id,
+        status: ApprovalStatus.PENDING,
+        notes: `E2E pending PC report fixture ${randomUUID()}`,
+      },
+      select: { id: true },
+    })
+
+    return { id: pcListing.id, path: `/pc-listings/${pcListing.id}` }
+  } finally {
+    await prisma.$disconnect()
+  }
 }
 
 async function createApprovedHandheldListingFixture(authorEmail: string): Promise<ListingFixture> {

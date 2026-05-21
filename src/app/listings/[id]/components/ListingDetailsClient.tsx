@@ -4,7 +4,6 @@ import { motion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef } from 'react'
-import { ListingApprovalActions } from '@/app/listings/components/shared/approval/ListingApprovalActions'
 import { CustomFieldsSection } from '@/app/listings/components/shared/CustomFieldsSection'
 import { ActionButtonsStack } from '@/app/listings/components/shared/details/ActionButtonsStack'
 import { AuthorPanel } from '@/app/listings/components/shared/details/AuthorPanel'
@@ -18,6 +17,7 @@ import { VotingSection } from '@/app/listings/components/shared/details/VotingSe
 import { NotesSection } from '@/app/listings/components/shared/NotesSection'
 import { GameImage } from '@/app/listings/shared/components'
 import CommunitySupportBanner from '@/components/banners/CommunitySupportBanner'
+import { CompatibilityReportApprovalActions } from '@/components/compatibility/review'
 import { BannedUserBadge, Button, Card } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
@@ -172,7 +172,7 @@ function ListingDetailsClient(props: Props) {
                   listingId={props.listing.id}
                   emulatorId={props.listing.emulatorId}
                 />
-                <ListingApprovalActions
+                <CompatibilityReportApprovalActions
                   listing={props.listing}
                   listingType="handheld"
                   onApprovalSuccess={refreshData}

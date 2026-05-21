@@ -4,15 +4,19 @@ import {
   type AuthorBanRiskCandidate,
   computeAuthorRiskProfiles,
   createExistingAuthorBansMap,
+  type ExistingAuthorBan,
 } from '@/server/services/author-risk.service'
 import {
   computeSubmissionRiskProfiles,
   type SubmissionForRisk,
 } from '@/server/services/submission-risk.service'
+import { roleIncludesRole } from '@/utils/permission-system'
+import { Role } from '@orm'
 
 type RiskPrismaClient = Parameters<typeof computeAuthorRiskProfiles>[0]
+type DetailReviewRiskPrismaClient = RiskPrismaClient & ActiveAuthorBansPrismaClient
 
-type ReviewRiskCandidate = AuthorBanRiskCandidate & SubmissionForRisk
+export type ReviewRiskCandidate = AuthorBanRiskCandidate & SubmissionForRisk
 
 interface ReviewRiskProfiles {
   authorRiskProfiles: Map<string, AuthorRiskProfile>
@@ -35,10 +39,29 @@ interface RiskOnlyReviewPage<TListing extends { id: string; authorId: string }> 
   total: number
 }
 
+interface ActiveAuthorBansPrismaClient {
+  userBan: {
+    findMany: (args: {
+      where: {
+        userId: string
+        isActive: true
+        OR: [{ expiresAt: null }, { expiresAt: { gt: Date } }]
+      }
+      select: { reason: true }
+    }) => Promise<ExistingAuthorBan[]>
+  }
+}
+
 export type ReviewRiskEnriched<TListing extends { id: string; authorId: string }> = TListing & {
   authorRiskProfile: AuthorRiskProfile
   submissionRiskProfile: SubmissionRiskProfile
 }
+
+export type HiddenReviewRiskEnriched<TListing extends { id: string; authorId: string }> =
+  TListing & {
+    authorRiskProfile: null
+    submissionRiskProfile: null
+  }
 
 function createEmptyAuthorRiskProfile(authorId: string): AuthorRiskProfile {
   return { authorId, signals: [], highestSeverity: null }
@@ -97,6 +120,73 @@ export function attachReviewRiskProfiles<TListing extends { id: string; authorId
       profiles.submissionRiskProfiles.get(listing.id) ??
       createEmptySubmissionRiskProfile(listing.id),
   }))
+}
+
+export function attachHiddenReviewRiskProfiles<TListing extends { id: string; authorId: string }>(
+  listing: TListing,
+): HiddenReviewRiskEnriched<TListing> {
+  return {
+    ...listing,
+    authorRiskProfile: null,
+    submissionRiskProfile: null,
+  }
+}
+
+export async function attachReviewRiskProfile<
+  TListing extends { id: string; authorId: string },
+  TCandidate extends ReviewRiskCandidate,
+>(
+  prisma: RiskPrismaClient,
+  listing: TListing,
+  candidate: TCandidate,
+): Promise<ReviewRiskEnriched<TListing>> {
+  const profiles = await computeReviewRiskProfiles(prisma, [candidate])
+  const [enrichedListing] = attachReviewRiskProfiles([listing], profiles)
+
+  return (
+    enrichedListing ?? {
+      ...listing,
+      authorRiskProfile: createEmptyAuthorRiskProfile(listing.authorId),
+      submissionRiskProfile: createEmptySubmissionRiskProfile(listing.id),
+    }
+  )
+}
+
+export async function getActiveAuthorBansForReviewRisk(
+  prisma: ActiveAuthorBansPrismaClient,
+  authorId: string,
+): Promise<ExistingAuthorBan[]> {
+  return await prisma.userBan.findMany({
+    where: {
+      userId: authorId,
+      isActive: true,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+    },
+    select: { reason: true },
+  })
+}
+
+export function canViewReviewRiskProfiles(userRole?: Role | null): boolean {
+  return roleIncludesRole(userRole, Role.MODERATOR) || roleIncludesRole(userRole, Role.DEVELOPER)
+}
+
+export async function attachReviewRiskProfileForViewer<TListing extends SubmissionForRisk>(params: {
+  prisma: DetailReviewRiskPrismaClient
+  listing: TListing
+  userRole?: Role | null
+}): Promise<ReviewRiskEnriched<TListing> | HiddenReviewRiskEnriched<TListing>> {
+  if (!canViewReviewRiskProfiles(params.userRole)) {
+    return attachHiddenReviewRiskProfiles(params.listing)
+  }
+
+  const userBans = await getActiveAuthorBansForReviewRisk(params.prisma, params.listing.authorId)
+
+  return await attachReviewRiskProfile(params.prisma, params.listing, {
+    id: params.listing.id,
+    authorId: params.listing.authorId,
+    author: { userBans },
+    customFieldValues: params.listing.customFieldValues,
+  })
 }
 
 export async function getRiskOnlyReviewPage<

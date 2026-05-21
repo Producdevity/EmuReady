@@ -67,6 +67,7 @@ import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.r
 import { logAudit } from '@/server/services/audit.service'
 import {
   attachReviewRiskProfiles,
+  attachReviewRiskProfileForViewer,
   computeReviewRiskProfiles,
   getRiskOnlyReviewPage,
 } from '@/server/services/review-risk.service'
@@ -157,7 +158,8 @@ export const pcListingsRouter = createTRPCRouter({
 
   byId: publicProcedure.input(GetPcListingByIdSchema).query(async ({ ctx, input }) => {
     const repository = new PcListingsRepository(ctx.prisma)
-    const canSeeBannedUsers = ctx.session?.user ? isModerator(ctx.session.user.role) : false
+    const userRole = ctx.session?.user?.role
+    const canSeeBannedUsers = userRole ? isModerator(userRole) : false
 
     const pcListing = await repository.getByIdWithDetails(
       input.id,
@@ -167,7 +169,11 @@ export const pcListingsRouter = createTRPCRouter({
 
     if (!pcListing) return ResourceError.pcListing.notFound()
 
-    return pcListing
+    return await attachReviewRiskProfileForViewer({
+      prisma: ctx.prisma,
+      listing: pcListing,
+      userRole,
+    })
   }),
 
   canEdit: protectedProcedure.input(GetPcListingForUserEditSchema).query(async ({ ctx, input }) => {
@@ -1402,7 +1408,7 @@ export const pcListingsRouter = createTRPCRouter({
 
         let voteResult
         let scoreChange: number
-        let trustAction: 'upvote' | 'downvote' | 'change' | 'remove' | null = null
+        let trustAction: 'upvote' | 'downvote' | 'change' | 'remove' | null
 
         if (existingVote) {
           if (existingVote.value === value) {

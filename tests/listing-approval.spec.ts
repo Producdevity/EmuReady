@@ -1,4 +1,33 @@
 import { test, expect } from './fixtures'
+import {
+  createPendingHandheldListingFixture,
+  createPendingPcListingFixture,
+} from './helpers/data-factory'
+import type { Locator, Page } from '@playwright/test'
+
+async function openReviewDialog(page: Page, path: string, name: RegExp) {
+  await page.goto(path, { waitUntil: 'domcontentloaded' })
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+
+  await page.getByRole('button', { name }).click()
+
+  const dialog = page.locator('[role="dialog"]')
+  await expect(dialog).toBeVisible()
+
+  return dialog
+}
+
+async function expectSharedReviewDetails(dialog: Locator) {
+  await expect(dialog.getByRole('heading', { name: 'Game' })).toBeVisible()
+  await expect(dialog.getByRole('heading', { name: 'Emulator' })).toBeVisible()
+  await expect(dialog.getByRole('heading', { name: 'Submitted By' })).toBeVisible()
+  await expect(dialog.getByRole('heading', { name: 'Performance' })).toBeVisible()
+}
+
+async function closeDialog(dialog: Locator) {
+  await dialog.getByRole('button', { name: /cancel/i }).click()
+  await expect(dialog).toBeHidden()
+}
 
 test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
   test.use({ storageState: 'tests/.auth/super_admin.json' })
@@ -86,5 +115,46 @@ test.describe('Listing Approval Workflow Tests - Requires Admin Role', () => {
     await expect(approveSelected).toBeVisible()
 
     await selectAll.uncheck()
+  })
+
+  test('should use the shared approval modal on listing detail pages', async ({ page }) => {
+    const fixture = await createPendingHandheldListingFixture()
+
+    const approveDialog = await openReviewDialog(page, fixture.path, /^approve listing$/i)
+    await expect(approveDialog.getByText(/approve listing:/i)).toBeVisible()
+    await expectSharedReviewDetails(approveDialog)
+    await expect(approveDialog.getByText('Device')).toBeVisible()
+    await expect(
+      approveDialog.getByRole('button', { name: /confirm approval|approve anyway/i }),
+    ).toBeVisible()
+    await closeDialog(approveDialog)
+
+    const rejectDialog = await openReviewDialog(page, fixture.path, /^reject listing$/i)
+    await expect(rejectDialog.getByText(/reject listing:/i)).toBeVisible()
+    await expectSharedReviewDetails(rejectDialog)
+    await expect(rejectDialog.getByText('Missing information')).toBeVisible()
+    await expect(rejectDialog.getByRole('button', { name: /confirm rejection/i })).toBeVisible()
+    await closeDialog(rejectDialog)
+  })
+
+  test('should use the shared approval modal on PC listing detail pages', async ({ page }) => {
+    const fixture = await createPendingPcListingFixture()
+
+    const approveDialog = await openReviewDialog(page, fixture.path, /^approve pc listing$/i)
+    await expect(approveDialog.getByText(/approve pc listing:/i)).toBeVisible()
+    await expectSharedReviewDetails(approveDialog)
+    await expect(approveDialog.getByText('Hardware')).toBeVisible()
+    await expect(approveDialog.getByText(/CPU:/)).toBeVisible()
+    await expect(
+      approveDialog.getByRole('button', { name: /confirm approval|approve anyway/i }),
+    ).toBeVisible()
+    await closeDialog(approveDialog)
+
+    const rejectDialog = await openReviewDialog(page, fixture.path, /^reject pc listing$/i)
+    await expect(rejectDialog.getByText(/reject pc listing:/i)).toBeVisible()
+    await expectSharedReviewDetails(rejectDialog)
+    await expect(rejectDialog.getByText('Missing information')).toBeVisible()
+    await expect(rejectDialog.getByRole('button', { name: /confirm rejection/i })).toBeVisible()
+    await closeDialog(rejectDialog)
   })
 })

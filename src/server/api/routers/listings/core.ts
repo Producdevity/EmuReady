@@ -27,6 +27,7 @@ import {
 } from '@/server/cache/invalidation'
 import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
+import { attachReviewRiskProfileForViewer } from '@/server/services/review-risk.service'
 import { normalizeCustomFieldValues } from '@/server/utils/custom-field-values'
 import { getDriverVersions } from '@/server/utils/driver-versions'
 import { isUserBanned } from '@/server/utils/query-builders'
@@ -139,7 +140,18 @@ export const coreRouter = createTRPCRouter({
     const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
 
     const repository = new ListingsRepository(ctx.prisma)
-    return await repository.byIdWithAccess(input.id, ctx.session?.user?.id, canSeeBannedUsers)
+    const listing = await repository.byIdWithAccess(
+      input.id,
+      ctx.session?.user?.id,
+      canSeeBannedUsers,
+    )
+
+    if (!listing) return listing
+    return await attachReviewRiskProfileForViewer({
+      prisma: ctx.prisma,
+      listing,
+      userRole,
+    })
   }),
 
   create: createListingProcedure.input(CreateListingSchema).mutation(async ({ ctx, input }) => {
