@@ -1,5 +1,5 @@
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
-import { type NextRequest } from 'next/server'
+import { connection, type NextRequest } from 'next/server'
 import { appRouter } from '@/server/api/root'
 import { createAppRouterTRPCContext } from '@/server/api/trpc'
 
@@ -18,4 +18,9 @@ const handler = async (req: NextRequest) => {
   })
 }
 
-export { handler as GET, handler as POST }
+async function GET(req: NextRequest) {
+  await connection()
+  return handler(req)
+}
+
+export { GET, handler as POST }
