@@ -183,6 +183,12 @@ const handleClerkAuth = clerkMiddleware(async (auth, req) => {
 export async function proxy(req: NextRequest, evt: NextFetchEvent) {
   const pathname = req.nextUrl.pathname
 
+  if (pathname === '/api/mobile/auth') {
+    const response = await handleClerkAuth(req, evt)
+    if (!response) return applyDevNoStoreHeader(NextResponse.next(), req)
+    return applyDevNoStoreHeader(response, req)
+  }
+
   if (pathname.startsWith('/api/mobile/')) {
     const apiProtectionResponse = protectTRPCAPI(req)
     if (apiProtectionResponse) return apiProtectionResponse
