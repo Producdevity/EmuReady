@@ -2,6 +2,7 @@ import typescriptEslint from '@typescript-eslint/eslint-plugin'
 import typescriptParser from '@typescript-eslint/parser'
 import eslintConfigPrettier from 'eslint-config-prettier'
 import nextCoreWebVitals from 'eslint-config-next/core-web-vitals'
+import nextTypeScript from 'eslint-config-next/typescript'
 
 const eslintConfig = [
   {
@@ -29,6 +30,7 @@ const eslintConfig = [
     ],
   },
   ...nextCoreWebVitals,
+  ...nextTypeScript,
   eslintConfigPrettier,
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
@@ -49,15 +51,14 @@ const eslintConfig = [
       'no-case-declarations': 'off',
       'no-prototype-builtins': 'off',
       'no-redeclare': 'off',
-      // Next 16's flat config enables React Compiler rollout checks. Keep this upgrade
-      // focused on framework/caching behavior; enable these after fixing existing violations.
-      'react-hooks/purity': 'off',
-      'react-hooks/static-components': 'off',
-      'react-hooks/immutability': 'off',
-      'react-hooks/incompatible-library': 'off',
-      'react-hooks/preserve-manual-memoization': 'off',
-      'react-hooks/refs': 'off',
-      'react-hooks/set-state-in-effect': 'off',
+      // TODO: set to error in followup PR
+      'react-hooks/purity': 'warn',
+      'react-hooks/static-components': 'warn',
+      'react-hooks/immutability': 'warn',
+      'react-hooks/incompatible-library': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
+      'react-hooks/refs': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
     },
   },
   {
