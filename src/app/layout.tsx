@@ -60,21 +60,27 @@ export default function RootLayout(props: PropsWithChildren) {
             <Toaster richColors closeButton />
             {env.IS_PROD && !env.DISABLE_COOKIE_BANNER && <CookieConsent />}
             <div className="flex flex-col min-h-screen bg-background text-foreground">
-              <Navbar />
+              <Suspense fallback={null}>
+                <Navbar />
+              </Suspense>
               <Main>{props.children}</Main>
               <Footer />
             </div>
           </Providers>
           {env.IS_PROD && (
-            <>
+            <Suspense fallback={null}>
               <SessionTracker />
               <PageViewTracker />
               <SpeedInsights />
               <KofiWidget />
               <GoogleAnalytics gaId={env.GA_ID} />
-            </>
+            </Suspense>
           )}
-          {env.VERCEL_ANALYTICS_ENABLED && <Analytics />}
+          {env.VERCEL_ANALYTICS_ENABLED && (
+            <Suspense fallback={null}>
+              <Analytics />
+            </Suspense>
+          )}
         </ClerkBoundary>
       </body>
     </html>
@@ -84,7 +90,9 @@ export default function RootLayout(props: PropsWithChildren) {
 function ClerkBoundary(props: PropsWithChildren) {
   if (process.env.NODE_ENV !== 'development') {
     return (
-      <ClerkProvider appearance={{ baseTheme: shadesOfPurple }}>{props.children}</ClerkProvider>
+      <Suspense fallback={null}>
+        <ClerkProvider appearance={{ baseTheme: shadesOfPurple }}>{props.children}</ClerkProvider>
+      </Suspense>
     )
   }
 
