@@ -7,9 +7,12 @@ const nextCacheMocks = vi.hoisted(() => ({
 
 vi.mock('next/cache', () => nextCacheMocks)
 
-const { invalidatePcListing, invalidatePcListingSeoForUpdate, revalidateByTag } = await import(
-  './invalidation'
-)
+const {
+  invalidateListingSeo,
+  invalidatePcListing,
+  invalidatePcListingSeoForUpdate,
+  revalidateByTag,
+} = await import('./invalidation')
 
 describe('cache invalidation', () => {
   beforeEach(() => {
@@ -45,5 +48,23 @@ describe('cache invalidation', () => {
     expect(nextCacheMocks.revalidateTag).toHaveBeenCalledWith('cpu-new-cpu', 'max')
     expect(nextCacheMocks.revalidateTag).toHaveBeenCalledWith('gpu-gpu-1', 'max')
     expect(nextCacheMocks.revalidateTag).toHaveBeenCalledTimes(8)
+  })
+
+  it('invalidates handheld listing SEO paths and tags consistently', async () => {
+    await invalidateListingSeo({
+      id: 'listing-1',
+      gameId: 'game-1',
+      deviceId: 'device-1',
+      emulatorId: 'emulator-1',
+    })
+
+    expect(nextCacheMocks.revalidatePath).toHaveBeenCalledWith('/listings/listing-1')
+    expect(nextCacheMocks.revalidatePath).toHaveBeenCalledWith('/listings')
+    expect(nextCacheMocks.revalidatePath).toHaveBeenCalledWith('/sitemap.xml')
+    expect(nextCacheMocks.revalidateTag).toHaveBeenCalledWith('listing-listing-1', 'max')
+    expect(nextCacheMocks.revalidateTag).toHaveBeenCalledWith('listings', 'max')
+    expect(nextCacheMocks.revalidateTag).toHaveBeenCalledWith('game-game-1', 'max')
+    expect(nextCacheMocks.revalidateTag).toHaveBeenCalledWith('device-device-1', 'max')
+    expect(nextCacheMocks.revalidateTag).toHaveBeenCalledWith('emulator-emulator-1', 'max')
   })
 })

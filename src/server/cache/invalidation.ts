@@ -7,6 +7,13 @@ interface PcListingSeoTarget {
   gpuId: string | null
 }
 
+interface ListingSeoTarget {
+  id: string
+  gameId: string
+  deviceId: string
+  emulatorId: string
+}
+
 export async function invalidateGame(gameId: string) {
   const startTime = performance.now()
 
@@ -83,6 +90,10 @@ export async function invalidatePcListingSeo(listing: PcListingSeoTarget) {
   await invalidatePcListingSeoTargets([listing.id], [listing])
 }
 
+export async function invalidateListingSeo(listing: ListingSeoTarget) {
+  await invalidateListingSeoTargets([listing.id], [listing])
+}
+
 export async function invalidatePcListingSeoForUpdate(
   previous: PcListingSeoTarget,
   next: PcListingSeoTarget,
@@ -97,12 +108,31 @@ export async function invalidatePcListingsSeo(listings: PcListingSeoTarget[]) {
   )
 }
 
+export async function invalidateListingsSeo(listings: ListingSeoTarget[]) {
+  await invalidateListingSeoTargets(
+    listings.map((listing) => listing.id),
+    listings,
+  )
+}
+
 export async function revalidateByTag(tag: string) {
   try {
     revalidateTag(tag, 'max')
   } catch (error) {
     console.error(`Failed to revalidate tag: ${tag}`, error)
   }
+}
+
+async function invalidateListingSeoTargets(listingIds: string[], tagTargets: ListingSeoTarget[]) {
+  if (listingIds.length === 0 && tagTargets.length === 0) return
+
+  const uniqueListingIds = [...new Set(listingIds)]
+  const tags = collectListingSeoTags(tagTargets)
+
+  await Promise.all(uniqueListingIds.map((listingId) => invalidateListing(listingId)))
+  await invalidateListPages()
+  await invalidateSitemap()
+  await Promise.all([...tags].map((tag) => revalidateByTag(tag)))
 }
 
 async function invalidatePcListingSeoTargets(
@@ -118,6 +148,18 @@ async function invalidatePcListingSeoTargets(
   await invalidateListPages()
   await invalidateSitemap()
   await Promise.all([...tags].map((tag) => revalidateByTag(tag)))
+}
+
+function collectListingSeoTags(listings: ListingSeoTarget[]): Set<string> {
+  const tags = new Set<string>(['listings'])
+
+  for (const listing of listings) {
+    tags.add(`game-${listing.gameId}`)
+    tags.add(`device-${listing.deviceId}`)
+    tags.add(`emulator-${listing.emulatorId}`)
+  }
+
+  return tags
 }
 
 function collectPcListingSeoTags(listings: PcListingSeoTarget[]): Set<string> {

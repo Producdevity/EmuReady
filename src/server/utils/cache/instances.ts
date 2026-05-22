@@ -119,3 +119,13 @@ export function invalidateCatalogCompatibilityCacheForDevice(deviceId: string): 
 
   return deleted
 }
+
+export function invalidateCatalogCompatibilityCacheForDevices(deviceIds: Iterable<string>): number {
+  let deleted = 0
+
+  for (const deviceId of new Set(deviceIds)) {
+    deleted += invalidateCatalogCompatibilityCacheForDevice(deviceId)
+  }
+
+  return deleted
+}
