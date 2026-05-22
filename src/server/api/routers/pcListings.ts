@@ -992,6 +992,23 @@ export const pcListingsRouter = createTRPCRouter({
         }
       }
 
+      if (pcListing.status === ApprovalStatus.APPROVED) {
+        await invalidatePcListingSeoForUpdate(
+          {
+            id,
+            gameId: pcListing.gameId,
+            cpuId: pcListing.cpuId,
+            gpuId: pcListing.gpuId,
+          },
+          {
+            id,
+            gameId: updatedPcListing.gameId,
+            cpuId: updatedPcListing.cpuId,
+            gpuId: updatedPcListing.gpuId,
+          },
+        )
+      }
+
       return updatedPcListing
     }),
 

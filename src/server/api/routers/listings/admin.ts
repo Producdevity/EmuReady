@@ -676,6 +676,16 @@ export const adminRouter = createTRPCRouter({
       listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
       const { validListings, bannedUserListings, notFoundOrNotPendingIds } = transactionResult
+      const { invalidateCatalogCompatibilityCacheForDevice } = await import(
+        '@/server/utils/cache/instances'
+      )
+      const deviceIdsToInvalidate = new Set([
+        ...validListings.map((listing) => listing.deviceId),
+        ...bannedUserListings.map((listing) => listing.deviceId),
+      ])
+      for (const deviceId of deviceIdsToInvalidate) {
+        invalidateCatalogCompatibilityCacheForDevice(deviceId)
+      }
 
       let message = `Successfully approved ${validListings.length} listing(s).`
 
@@ -830,6 +840,13 @@ export const adminRouter = createTRPCRouter({
       listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
       const { listingsToReject, notFoundOrNotPendingIds } = transactionResult
+      const { invalidateCatalogCompatibilityCacheForDevice } = await import(
+        '@/server/utils/cache/instances'
+      )
+      const deviceIdsToInvalidate = new Set(listingsToReject.map((listing) => listing.deviceId))
+      for (const deviceId of deviceIdsToInvalidate) {
+        invalidateCatalogCompatibilityCacheForDevice(deviceId)
+      }
 
       const message =
         notFoundOrNotPendingIds.length > 0
