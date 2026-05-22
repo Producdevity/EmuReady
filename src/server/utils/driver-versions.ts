@@ -144,7 +144,7 @@ export async function getDriverVersions(): Promise<DriverVersionsResponse> {
       releases,
       rateLimited: false,
     }
-    driverVersionsCache.set(CACHE_KEY, payload, ms.minutes(30))
+    driverVersionsCache.set(CACHE_KEY, payload, { ttl: ms.minutes(30) })
     return payload
   } catch (error) {
     if (isRateLimitError(error)) {
@@ -154,7 +154,7 @@ export async function getDriverVersions(): Promise<DriverVersionsResponse> {
         rateLimited: true,
         errorMessage: 'GitHub rate limit exceeded. Try again in a few minutes.',
       }
-      driverVersionsCache.set(CACHE_KEY, payload, ms.minutes(5))
+      driverVersionsCache.set(CACHE_KEY, payload, { ttl: ms.minutes(5) })
       return payload
     }
 
@@ -164,7 +164,7 @@ export async function getDriverVersions(): Promise<DriverVersionsResponse> {
       rateLimited: false,
       errorMessage: 'Failed to fetch driver versions. Please try again later.',
     }
-    driverVersionsCache.set(CACHE_KEY, payload, ms.minutes(2))
+    driverVersionsCache.set(CACHE_KEY, payload, { ttl: ms.minutes(2) })
     return payload
   }
 }

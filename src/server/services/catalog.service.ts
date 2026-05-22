@@ -8,12 +8,13 @@ import {
   MINIMUM_DEVICE_LISTINGS,
   type ScoringListingWithMetadata,
 } from '@/server/utils/compatibility-scoring'
+import { hasRolePermission } from '@/utils/permissions'
+import { Role, type PrismaClient } from '@orm/client'
 import type {
   DeviceCompatibilityResponse,
   EmulatorCompatibility,
   SystemCompatibility,
 } from '@/schemas/mobile'
-import type { Role, PrismaClient } from '@orm/client'
 
 export interface GetDeviceCompatibilityInput {
   deviceId?: string
@@ -53,7 +54,6 @@ export async function getDeviceCompatibility(
   const devicesRepo = new DevicesRepository(ctx.prisma)
   const listingsRepo = new ListingsRepository(ctx.prisma)
 
-  // Resolve device by ID or by name + brand
   let device
   if (input.deviceId) {
     device = await devicesRepo.byId(input.deviceId)
@@ -63,14 +63,14 @@ export async function getDeviceCompatibility(
 
   if (!device) throw ResourceError.device.notFound()
 
-  // Create cache key from device ID and input parameters (include SoC in key)
-  const cacheKey = `device:${device.id}:systems:${input.systemIds?.sort().join(',') ?? 'all'}:breakdown:${input.includeEmulatorBreakdown ?? true}:min:${input.minListingCount ?? 1}:soc:${device.socId ?? 'none'}`
+  const systemKey = input.systemIds ? [...input.systemIds].sort().join(',') : 'all'
+  const visibilityBucket =
+    ctx.userRole && hasRolePermission(ctx.userRole, Role.MODERATOR) ? 'moderator' : 'public'
+  const cacheKey = `device:${device.id}:systems:${systemKey}:breakdown:${input.includeEmulatorBreakdown ?? true}:min:${input.minListingCount ?? 1}:soc:${device.socId ?? 'none'}:visibility:${visibilityBucket}`
 
-  // Check cache first
   const cached = catalogCompatibilityCache.get(cacheKey)
   if (cached) return cached
 
-  // Fetch device-specific listings
   const deviceListings = await listingsRepo.getDeviceCompatibilityData(device.id, {
     systemIds: input.systemIds,
     userRole: ctx.userRole,
@@ -88,11 +88,10 @@ export async function getDeviceCompatibility(
       },
       systems: [],
       generatedAt: new Date(),
-      cacheExpiresIn: 600, // 10 minutes
+      cacheExpiresIn: 600,
     }
   }
 
-  // Get all verified developers for emulators in these listings
   const allListings = [...deviceListings]
   const emulatorIds = [...new Set(allListings.map((l) => l.emulatorId))]
   const verifiedDevs = await ctx.prisma.verifiedDeveloper.findMany({
@@ -100,7 +99,6 @@ export async function getDeviceCompatibility(
     select: { userId: true, emulatorId: true },
   })
 
-  // Create a map of verified developers: userId_emulatorId -> true
   const verifiedDevMap = new Set<string>()
   for (const vd of verifiedDevs) {
     verifiedDevMap.add(`${vd.userId}_${vd.emulatorId}`)
@@ -113,13 +111,11 @@ export async function getDeviceCompatibility(
 
   const deviceSystemAggregations = aggregateBySystem(listingsWithMetadata)
 
-  // Track data source info per system
   const dataSourceMap = new Map<
     string,
     { dataSource: 'device' | 'soc'; deviceCount: number; socCount: number; deviceIds: Set<string> }
   >()
 
-  // Initialize all device systems as 'device' source
   for (const sysAgg of deviceSystemAggregations) {
     dataSourceMap.set(sysAgg.system.id, {
       dataSource: 'device',
@@ -129,12 +125,10 @@ export async function getDeviceCompatibility(
     })
   }
 
-  // Identify systems needing SoC fallback
   const systemsNeedingFallback = deviceSystemAggregations.filter(
     (s) => s.listings.length < MINIMUM_DEVICE_LISTINGS,
   )
 
-  // If device has SoC AND some systems need fallback, fetch SoC data
   if (device.socId && systemsNeedingFallback.length > 0) {
     const socListings = await listingsRepo.getSocCompatibilityData(device.socId, device.id, {
       systemIds: systemsNeedingFallback.map((s) => s.system.id),
@@ -142,7 +136,6 @@ export async function getDeviceCompatibility(
     })
 
     if (socListings.length > 0) {
-      // Track unique devices contributing SoC data per system
       const socDevicesBySystem = new Map<string, Set<string>>()
 
       for (const listing of socListings) {
@@ -153,16 +146,13 @@ export async function getDeviceCompatibility(
         socDevicesBySystem.get(systemId)!.add(listing.deviceId)
       }
 
-      // Enhance SoC listings with metadata
       const socListingsWithMetadata: ScoringListingWithMetadata[] = socListings.map((listing) => ({
         ...listing,
         isVerifiedDeveloper: verifiedDevMap.has(`${listing.authorId}_${listing.emulatorId}`),
       }))
 
-      // Combine device + SoC listings
       listingsWithMetadata = [...listingsWithMetadata, ...socListingsWithMetadata]
 
-      // Update data source info for systems that used SoC fallback
       for (const sysAgg of systemsNeedingFallback) {
         const systemId = sysAgg.system.id
         const socDevices = socDevicesBySystem.get(systemId)
@@ -178,15 +168,12 @@ export async function getDeviceCompatibility(
     }
   }
 
-  // Re-aggregate with combined listings
   const systemAggregations = aggregateBySystem(listingsWithMetadata)
 
-  // Filter by minimum listing count
   const filteredSystems = systemAggregations.filter(
     (s) => s.listings.length >= (input.minListingCount ?? 1),
   )
 
-  // Convert to response format
   const systems: SystemCompatibility[] = filteredSystems.map((systemAgg) => {
     const confidence = calculateConfidenceLevel(systemAgg.listings.length, systemAgg.totalVotes)
     const sourceInfo = dataSourceMap.get(systemAgg.system.id)
@@ -255,7 +242,7 @@ export async function getDeviceCompatibility(
     cacheExpiresIn: 600, // 10 minutes
   }
 
-  catalogCompatibilityCache.set(cacheKey, response) // Cache the response
+  catalogCompatibilityCache.set(cacheKey, response)
 
   return response
 }

@@ -14,9 +14,8 @@ import {
 } from '@/server/api/mobileContext'
 import { pcListingInclude, buildPcListingWhere } from '@/server/api/utils/pcListingHelpers'
 import {
-  invalidateListPages,
-  invalidateSitemap,
-  revalidateByTag,
+  invalidatePcListingSeo,
+  invalidatePcListingSeoForUpdate,
 } from '@/server/cache/invalidation'
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
 import { listingStatsCache } from '@/server/utils/cache'
@@ -181,11 +180,13 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
     // Invalidate stats cache
     listingStatsCache.delete('pc-listing-stats')
 
-    // Invalidate pages if approved
     if (created.status === ApprovalStatus.APPROVED) {
-      await invalidateListPages()
-      await invalidateSitemap()
-      await revalidateByTag('pc-listings')
+      await invalidatePcListingSeo({
+        id: created.id,
+        gameId: created.gameId,
+        cpuId: created.cpuId,
+        gpuId: created.gpuId,
+      })
     }
 
     return created
@@ -197,10 +198,9 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
   update: mobileProtectedProcedure.input(UpdatePcListingSchema).mutation(async ({ ctx, input }) => {
     const { id, customFieldValues, ...updateData } = input
 
-    // Check if user owns the listing
     const existing = await ctx.prisma.pcListing.findUnique({
       where: { id },
-      select: { authorId: true },
+      select: { authorId: true, status: true, gameId: true, cpuId: true, gpuId: true },
     })
 
     if (!existing) return ResourceError.pcListing.notFound()
@@ -209,7 +209,7 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
       return ResourceError.pcListing.canOnlyEditOwn()
     }
 
-    return await ctx.prisma.pcListing.update({
+    const updated = await ctx.prisma.pcListing.update({
       where: { id },
       data: {
         ...updateData,
@@ -233,6 +233,25 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
         _count: { select: { reports: true, developerVerifications: true } },
       },
     })
+
+    if (existing.status === ApprovalStatus.APPROVED) {
+      await invalidatePcListingSeoForUpdate(
+        {
+          id,
+          gameId: existing.gameId,
+          cpuId: existing.cpuId,
+          gpuId: existing.gpuId,
+        },
+        {
+          id,
+          gameId: updated.gameId,
+          cpuId: updated.cpuId,
+          gpuId: updated.gpuId,
+        },
+      )
+    }
+
+    return updated
   }),
 
   /**

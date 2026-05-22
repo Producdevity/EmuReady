@@ -1,18 +1,18 @@
 import { revalidatePath, revalidateTag } from 'next/cache'
-import { invalidateCache } from '@/lib/cache/seo-cache'
 
-/**
- * Cache invalidation strategies for SEO content
- * Coordinates between in-memory cache and Next.js ISR cache
- */
+interface PcListingSeoTarget {
+  id: string
+  gameId: string
+  cpuId: string
+  gpuId: string | null
+}
 
 export async function invalidateGame(gameId: string) {
   const startTime = performance.now()
 
-  invalidateCache(`seo:game:${gameId}`)
-
   try {
     revalidatePath(`/games/${gameId}`)
+    revalidateTag(`game-${gameId}`, 'max')
   } catch (error) {
     console.error(`Failed to revalidate game path: ${gameId}`, error)
   }
@@ -24,40 +24,36 @@ export async function invalidateGame(gameId: string) {
 }
 
 export async function invalidateListing(listingId: string) {
-  invalidateCache(`seo:listing:${listingId}`)
-
   try {
     revalidatePath(`/listings/${listingId}`)
+    revalidateTag(`listing-${listingId}`, 'max')
   } catch (error) {
     console.error(`Failed to revalidate listing path: ${listingId}`, error)
   }
 }
 
 export async function invalidatePcListing(pcListingId: string) {
-  invalidateCache(`seo:pclisting:${pcListingId}`)
-
   try {
     revalidatePath(`/pc-listings/${pcListingId}`)
+    revalidateTag(`pc-listing-${pcListingId}`, 'max')
   } catch (error) {
     console.error(`Failed to revalidate PC listing path: ${pcListingId}`, error)
   }
 }
 
 export async function invalidateUser(userId: string) {
-  invalidateCache(`seo:user:${userId}`)
-
   try {
     revalidatePath(`/users/${userId}`)
+    revalidateTag(`user-${userId}`, 'max')
   } catch (error) {
     console.error(`Failed to revalidate user path: ${userId}`, error)
   }
 }
 
 export async function invalidateSitemap() {
-  invalidateCache(/^seo:sitemap:/)
-
   try {
     revalidatePath('/sitemap.xml')
+    revalidateTag('sitemap', 'max')
   } catch (error) {
     console.error('Failed to revalidate sitemap', error)
   }
@@ -77,23 +73,61 @@ export async function invalidateGameRelatedContent(gameId: string) {
   const startTime = performance.now()
 
   await invalidateGame(gameId)
-
-  const listingsInvalidated = invalidateCache(
-    new RegExp(`seo:(listing|pclisting):.*game:${gameId}`),
-  )
-
   await invalidateListPages()
 
   const duration = performance.now() - startTime
-  console.log(
-    `[SEO] Batch invalidation for game ${gameId}: ${listingsInvalidated} listings cleared in ${duration.toFixed(2)}ms`,
+  console.log(`[SEO] Batch invalidation for game ${gameId} completed in ${duration.toFixed(2)}ms`)
+}
+
+export async function invalidatePcListingSeo(listing: PcListingSeoTarget) {
+  await invalidatePcListingSeoTargets([listing.id], [listing])
+}
+
+export async function invalidatePcListingSeoForUpdate(
+  previous: PcListingSeoTarget,
+  next: PcListingSeoTarget,
+) {
+  await invalidatePcListingSeoTargets([previous.id], [previous, next])
+}
+
+export async function invalidatePcListingsSeo(listings: PcListingSeoTarget[]) {
+  await invalidatePcListingSeoTargets(
+    listings.map((listing) => listing.id),
+    listings,
   )
 }
 
 export async function revalidateByTag(tag: string) {
   try {
-    revalidateTag(tag)
+    revalidateTag(tag, 'max')
   } catch (error) {
     console.error(`Failed to revalidate tag: ${tag}`, error)
   }
+}
+
+async function invalidatePcListingSeoTargets(
+  listingIds: string[],
+  tagTargets: PcListingSeoTarget[],
+) {
+  if (listingIds.length === 0 && tagTargets.length === 0) return
+
+  const uniqueListingIds = [...new Set(listingIds)]
+  const tags = collectPcListingSeoTags(tagTargets)
+
+  await Promise.all(uniqueListingIds.map((listingId) => invalidatePcListing(listingId)))
+  await invalidateListPages()
+  await invalidateSitemap()
+  await Promise.all([...tags].map((tag) => revalidateByTag(tag)))
+}
+
+function collectPcListingSeoTags(listings: PcListingSeoTarget[]): Set<string> {
+  const tags = new Set<string>(['pc-listings'])
+
+  for (const listing of listings) {
+    tags.add(`game-${listing.gameId}`)
+    tags.add(`cpu-${listing.cpuId}`)
+    if (listing.gpuId) tags.add(`gpu-${listing.gpuId}`)
+  }
+
+  return tags
 }

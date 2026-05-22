@@ -20,9 +20,6 @@ import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import NotSignedInMessage from './components/NotSignedInMessage'
 
-export const dynamic = 'force-dynamic'
-
-// Define the System type for Autocomplete
 interface SystemOption extends AutocompleteOptionBase {
   id: string
   name: string
@@ -43,10 +40,8 @@ function AddGamePage() {
   const systemsQuery = api.systems.get.useQuery()
   const createGame = api.games.create.useMutation()
 
-  // Get user role from database using TRPC
   const userQuery = api.users.me.useQuery(undefined, { enabled: !!user })
 
-  // Get the selected system's name based on systemId
   const selectedSystem = systemId
     ? systemsQuery.data?.find((system) => system.id === systemId)
     : null
@@ -60,7 +55,6 @@ function AddGamePage() {
     return () => clearTimeout(timer)
   }, [success, error])
 
-  // Redirect non-authors users to IGDB search page
   useEffect(() => {
     if (
       isLoaded &&
@@ -78,7 +72,6 @@ function AddGamePage() {
 
   const isAuthor = hasRolePermission(userQuery.data.role, Role.AUTHOR)
 
-  // If not author, show loading while redirecting
   if (!isAuthor) return <LoadingSpinner />
 
   const handleSubmit = async (ev: FormEvent) => {
@@ -95,7 +88,6 @@ function AddGamePage() {
         isErotic,
       })
 
-      // Invalidate games queries to refresh the list
       await utils.games.get.invalidate()
       await utils.games.checkExistingByTgdbIds.invalidate()
       await utils.games.checkExistingByNamesAndSystems.invalidate()

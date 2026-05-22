@@ -1,11 +1,8 @@
 import { type NextRequest } from 'next/server'
 import { logger } from '@/lib/logger'
 
-export const dynamic = 'force-dynamic'
-
 /**
  * Only allow http and https URLs to prevent SSRF attacks
- * @param raw
  */
 function isAllowedUrl(raw?: string | null): URL | null {
   if (!raw) return null
@@ -48,7 +45,6 @@ export async function GET(req: NextRequest) {
       headers: {
         'Content-Type': contentType,
         'Cache-Control': cacheControl,
-        // Help common CDNs respect our intent
         'CDN-Cache-Control': cacheControl,
         'Vercel-CDN-Cache-Control': cacheControl,
       },

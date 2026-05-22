@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { RISK_SIGNAL_TYPES } from '@/schemas/authorRisk'
 import { SUBMISSION_RISK_SIGNAL_TYPES } from '@/schemas/submissionRisk'
+import { invalidatePcListingsSeo } from '@/server/cache/invalidation'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus, PcOs, Role, TrustAction } from '@orm/client'
 import type * as AuthorRiskService from '@/server/services/author-risk.service'
@@ -62,9 +63,9 @@ vi.mock('@/server/utils/cache', () => ({
 }))
 
 vi.mock('@/server/cache/invalidation', () => ({
-  invalidateListPages: vi.fn().mockResolvedValue(undefined),
-  invalidateSitemap: vi.fn().mockResolvedValue(undefined),
-  revalidateByTag: vi.fn().mockResolvedValue(undefined),
+  invalidatePcListingSeo: vi.fn().mockResolvedValue(undefined),
+  invalidatePcListingSeoForUpdate: vi.fn().mockResolvedValue(undefined),
+  invalidatePcListingsSeo: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('@/lib/analytics', () => ({
@@ -811,11 +812,15 @@ describe('pcListings trust integration', () => {
       const listing1 = {
         id: LISTING_ID,
         gameId: '00000000-0000-4000-a000-000000000040',
+        cpuId: '00000000-0000-4000-a000-000000000070',
+        gpuId: '00000000-0000-4000-a000-000000000080',
         authorId: AUTHOR_ID,
       }
       const listing2 = {
         id: '00000000-0000-4000-a000-000000000011',
         gameId: '00000000-0000-4000-a000-000000000041',
+        cpuId: '00000000-0000-4000-a000-000000000071',
+        gpuId: null,
         authorId: '00000000-0000-4000-a000-000000000050',
       }
 
@@ -836,6 +841,7 @@ describe('pcListings trust integration', () => {
         action: TrustAction.LISTING_APPROVED,
         context: expect.objectContaining({ pcListingId: '00000000-0000-4000-a000-000000000011' }),
       })
+      expect(invalidatePcListingsSeo).toHaveBeenCalledWith([listing1, listing2])
     })
   })
 

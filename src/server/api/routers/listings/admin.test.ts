@@ -51,6 +51,7 @@ vi.mock('@/server/cache/invalidation', () => ({
 
 vi.mock('@/server/utils/cache/instances', () => ({
   listingStatsCache: { delete: vi.fn(), get: vi.fn(), set: vi.fn() },
+  invalidateCatalogCompatibilityCacheForDevice: vi.fn(),
 }))
 
 vi.mock('@/server/utils/emulator-config/emulator-detector', () => ({

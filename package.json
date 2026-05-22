@@ -61,7 +61,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^5.0.1",
-    "@next/third-parties": "15.5.18",
+    "@next/third-parties": "16.2.6",
     "@prisma/adapter-pg": "7.8.0",
     "@prisma/client": "7.8.0",
     "@radix-ui/react-alert-dialog": "^1.1.14",
@@ -99,13 +99,13 @@
     "lucide-react": "^0.511.0",
     "mailersend": "^2.6.0",
     "markdown-it": "14.1.1",
-    "next": "15.5.18",
+    "next": "16.2.6",
     "next-themes": "^0.4.6",
     "pg": "8.21.0",
     "pg-pool": "3.14.0",
     "postcss": "8.5.14",
-    "react": "19.1.4",
-    "react-dom": "19.1.4",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
     "react-error-boundary": "^6.0.0",
     "react-google-recaptcha-v3": "^1.11.0",
     "react-hook-form": "^7.56.4",
@@ -123,8 +123,8 @@
     "@clerk/types": "4.101.23",
     "@eslint/eslintrc": "^3",
     "@eslint/js": "^9.28.0",
-    "@next/bundle-analyzer": "15.5.18",
-    "@next/eslint-plugin-next": "15.5.18",
+    "@next/bundle-analyzer": "16.2.6",
+    "@next/eslint-plugin-next": "16.2.6",
     "@playwright/test": "^1.60.0",
     "@svgr/webpack": "^8.1.0",
     "@tailwindcss/postcss": "^4.1.6",
@@ -135,8 +135,8 @@
     "@types/jsdom": "^21.1.7",
     "@types/markdown-it": "^14.1.2",
     "@types/node": "^20",
-    "@types/react": "19.1.8",
-    "@types/react-dom": "19.1.6",
+    "@types/react": "19.2.15",
+    "@types/react-dom": "19.2.3",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/webpack": "^5.28.5",
     "@typescript-eslint/eslint-plugin": "^8.34.0",
@@ -145,7 +145,7 @@
     "dotenv": "^16.5.0",
     "dotenv-cli": "^8.0.0",
     "eslint": "^9",
-    "eslint-config-next": "15.5.18",
+    "eslint-config-next": "16.2.6",
     "eslint-config-prettier": "^10.1.5",
     "eslint-import-resolver-typescript": "^4.4.3",
     "eslint-plugin-import": "^2.31.0",
@@ -173,7 +173,13 @@
     "sharp": "^0.33.5"
   },
   "overrides": {
-    "@types/react": "19.1.8",
-    "@types/react-dom": "19.1.6"
+    "@types/react": "19.2.15",
+    "@types/react-dom": "19.2.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "19.2.15",
+      "@types/react-dom": "19.2.3"
+    }
   }
 }

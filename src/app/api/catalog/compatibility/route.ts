@@ -24,10 +24,8 @@ import { getDeviceCompatibility } from '@/server/services/catalog.service'
  */
 export async function GET(request: NextRequest) {
   try {
-    // Validate API key and enforce quota limits
     const apiKey = await validateAndConsumeApiKey(request)
 
-    // Parse query parameters
     const searchParams = request.nextUrl.searchParams
 
     const deviceId = searchParams.get('deviceId') ?? undefined
@@ -37,13 +35,11 @@ export async function GET(request: NextRequest) {
     const includeEmulatorBreakdownParam = searchParams.get('includeEmulatorBreakdown')
     const minListingCountParam = searchParams.get('minListingCount')
 
-    // Parse array and boolean parameters
     const systemIds = systemIdsParam ? systemIdsParam.split(',').filter(Boolean) : undefined
     const includeEmulatorBreakdown =
       includeEmulatorBreakdownParam !== null ? includeEmulatorBreakdownParam === 'true' : undefined
     const minListingCount = minListingCountParam ? parseInt(minListingCountParam, 10) : undefined
 
-    // Validate input with Zod schema
     const input = GetDeviceCompatibilitySchema.parse({
       deviceId,
       deviceModelName,
@@ -59,15 +55,15 @@ export async function GET(request: NextRequest) {
       userId: apiKey.user.id,
     })
 
-    // Return JSON response
     return NextResponse.json(result, {
       status: 200,
       headers: {
-        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=300',
+        // This endpoint consumes API-key quota and may include role-scoped visibility.
+        // Keep intermediary caches out of the path; the service still uses its own LRU.
+        'Cache-Control': 'private, no-store',
       },
     })
   } catch (error) {
-    // Handle TRPCError (includes auth, quota, and other custom errors)
     if (error instanceof TRPCError) {
       const statusCodeMap: Record<string, number> = {
         BAD_REQUEST: 400,
@@ -89,7 +85,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Handle validation errors
     if (error instanceof ZodError) {
       return NextResponse.json(
         {
@@ -103,7 +98,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Handle not found errors
     if (error instanceof Error && error.message.includes('not found')) {
       return NextResponse.json(
         {
@@ -116,7 +110,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Handle unexpected errors
     console.error('Catalog compatibility API error:', error)
     return NextResponse.json(
       {

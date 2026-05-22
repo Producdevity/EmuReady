@@ -222,9 +222,10 @@ export const adminRouter = createTRPCRouter({
     await revalidateByTag(`device-${listingToApprove.deviceId}`)
     await revalidateByTag(`emulator-${listingToApprove.emulatorId}`)
 
-    // Invalidate catalog compatibility cache for this device
-    const { catalogCompatibilityCache } = await import('@/server/utils/cache/instances')
-    catalogCompatibilityCache.invalidatePattern(`device:${listingToApprove.deviceId}:*`)
+    const { invalidateCatalogCompatibilityCacheForDevice } = await import(
+      '@/server/utils/cache/instances'
+    )
+    invalidateCatalogCompatibilityCacheForDevice(listingToApprove.deviceId)
 
     // Apply trust action for listing approval to the author
     if (listingToApprove.authorId) {
@@ -342,9 +343,10 @@ export const adminRouter = createTRPCRouter({
     // Invalidate listing stats cache
     listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
-    // Invalidate catalog compatibility cache for this device
-    const { catalogCompatibilityCache } = await import('@/server/utils/cache/instances')
-    catalogCompatibilityCache.invalidatePattern(`device:${listingToReject.deviceId}:*`)
+    const { invalidateCatalogCompatibilityCacheForDevice } = await import(
+      '@/server/utils/cache/instances'
+    )
+    invalidateCatalogCompatibilityCacheForDevice(listingToReject.deviceId)
 
     return updatedListing
   }),
