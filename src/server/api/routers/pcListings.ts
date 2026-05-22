@@ -966,21 +966,17 @@ export const pcListingsRouter = createTRPCRouter({
 
       if (!pcListing) return ResourceError.pcListing.notFound()
 
-      // Update PC listing and handle custom field values
       const updatedPcListing = await ctx.prisma.pcListing.update({
         where: { id },
         data: { ...data, updatedAt: new Date() },
         include: pcListingDetailInclude,
       })
 
-      // Handle custom field values if provided
       if (customFieldValues) {
-        // Delete existing custom field values
         await ctx.prisma.pcListingCustomFieldValue.deleteMany({
           where: { pcListingId: id },
         })
 
-        // Create new custom field values
         if (customFieldValues.length > 0) {
           await ctx.prisma.pcListingCustomFieldValue.createMany({
             data: customFieldValues.map((cfv) => ({
@@ -992,21 +988,27 @@ export const pcListingsRouter = createTRPCRouter({
         }
       }
 
-      if (pcListing.status === ApprovalStatus.APPROVED) {
-        await invalidatePcListingSeoForUpdate(
-          {
-            id,
-            gameId: pcListing.gameId,
-            cpuId: pcListing.cpuId,
-            gpuId: pcListing.gpuId,
-          },
-          {
-            id,
-            gameId: updatedPcListing.gameId,
-            cpuId: updatedPcListing.cpuId,
-            gpuId: updatedPcListing.gpuId,
-          },
-        )
+      const previousSeoTarget = {
+        id,
+        gameId: pcListing.gameId,
+        cpuId: pcListing.cpuId,
+        gpuId: pcListing.gpuId,
+      }
+      const nextSeoTarget = {
+        id,
+        gameId: updatedPcListing.gameId,
+        cpuId: updatedPcListing.cpuId,
+        gpuId: updatedPcListing.gpuId,
+      }
+      const wasApproved = pcListing.status === ApprovalStatus.APPROVED
+      const isApproved = updatedPcListing.status === ApprovalStatus.APPROVED
+
+      if (wasApproved && isApproved) {
+        await invalidatePcListingSeoForUpdate(previousSeoTarget, nextSeoTarget)
+      } else if (wasApproved) {
+        await invalidatePcListingSeo(previousSeoTarget)
+      } else if (isApproved) {
+        await invalidatePcListingSeo(nextSeoTarget)
       }
 
       return updatedPcListing
