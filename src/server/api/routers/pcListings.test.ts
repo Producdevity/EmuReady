@@ -1,7 +1,11 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { RISK_SIGNAL_TYPES } from '@/schemas/authorRisk'
 import { SUBMISSION_RISK_SIGNAL_TYPES } from '@/schemas/submissionRisk'
-import { invalidatePcListingsSeo } from '@/server/cache/invalidation'
+import {
+  invalidatePcListingSeo,
+  invalidatePcListingSeoForUpdate,
+  invalidatePcListingsSeo,
+} from '@/server/cache/invalidation'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus, PcOs, Role, TrustAction } from '@orm/client'
 import type * as AuthorRiskService from '@/server/services/author-risk.service'
@@ -170,6 +174,7 @@ function createMockPrisma() {
     pcListing: {
       findUnique: vi.fn(),
       findMany: vi.fn().mockResolvedValue([]),
+      update: vi.fn(),
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
     userBan: {
@@ -804,6 +809,57 @@ describe('pcListings trust integration', () => {
           reason: 'Incomplete report',
         },
       })
+    })
+  })
+
+  describe('updateAdmin', () => {
+    it('invalidates public SEO when an admin update approves a PC report', async () => {
+      const gameId = '00000000-0000-4000-a000-000000000040'
+      const cpuId = '00000000-0000-4000-a000-000000000070'
+      const emulatorId = '00000000-0000-4000-a000-000000000060'
+      const updatedListing = {
+        id: LISTING_ID,
+        gameId,
+        cpuId,
+        gpuId: null,
+        status: ApprovalStatus.APPROVED,
+      }
+
+      const { caller, prisma } = createCaller({
+        userId: ADMIN_ID,
+        role: Role.MODERATOR,
+        permissions: [PERMISSIONS.APPROVE_LISTINGS],
+      })
+      prisma.pcListing.findUnique.mockResolvedValue({
+        id: LISTING_ID,
+        gameId,
+        cpuId,
+        gpuId: null,
+        status: ApprovalStatus.PENDING,
+        customFieldValues: [],
+      })
+      prisma.pcListing.update.mockResolvedValue(updatedListing)
+
+      await caller.updateAdmin({
+        id: LISTING_ID,
+        gameId,
+        cpuId,
+        emulatorId,
+        performanceId: 1,
+        memorySize: 16,
+        os: PcOs.WINDOWS,
+        osVersion: '11',
+        notes: 'Updated report',
+        status: ApprovalStatus.APPROVED,
+      })
+
+      expect(invalidatePcListingSeo).toHaveBeenCalledWith({
+        id: LISTING_ID,
+        gameId,
+        cpuId,
+        gpuId: null,
+      })
+      expect(invalidatePcListingSeoForUpdate).not.toHaveBeenCalled()
     })
   })
 
