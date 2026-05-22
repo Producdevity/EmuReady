@@ -1,5 +1,7 @@
 import { type Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { Suspense } from 'react'
+import { ListingDetailSkeleton } from '@/app/listings/shared/components'
 import { PageWithMetadata } from '@/components/seo/PageWithMetadata'
 import { generatePageMetadata, generateStructuredData } from '@/lib/seo/metadata'
 import { getListingForSEO } from '@/server/db/seo-queries'
@@ -25,7 +27,15 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   )
 }
 
-export default async function Page(props: Props) {
+export default function Page(props: Props) {
+  return (
+    <Suspense fallback={<ListingDetailSkeleton variant="handheld" />}>
+      <ListingPageContent params={props.params} />
+    </Suspense>
+  )
+}
+
+async function ListingPageContent(props: Props) {
   const params = await props.params
   const listing = await getListingForSEO(params.id)
 
@@ -43,7 +53,9 @@ export default async function Page(props: Props) {
 
   return (
     <PageWithMetadata structuredData={structuredData}>
-      <ListingDetailsPage />
+      <Suspense fallback={<ListingDetailSkeleton variant="handheld" />}>
+        <ListingDetailsPage />
+      </Suspense>
     </PageWithMetadata>
   )
 }
