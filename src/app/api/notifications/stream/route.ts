@@ -1,11 +1,13 @@
 import { auth } from '@clerk/nextjs/server'
-import { type NextRequest } from 'next/server'
+import { connection, type NextRequest } from 'next/server'
 import {
   realtimeNotificationService,
   createSSEResponse,
 } from '@/server/notifications/realtimeService'
 
 export async function GET(request: NextRequest) {
+  await connection()
+
   try {
     // Get authenticated user
     const { userId } = await auth()

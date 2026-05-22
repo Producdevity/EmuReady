@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { connection, NextResponse } from 'next/server'
 import { prisma } from '@/server/db'
 import type { NextRequest } from 'next/server'
 
@@ -109,6 +109,8 @@ interface HealthResponse {
  *                   description: Error message
  */
 export async function GET(_request: NextRequest) {
+  await connection()
+
   try {
     const dbStart = Date.now()
     await prisma.$queryRaw`SELECT 1`

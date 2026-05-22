@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server'
-import { type NextRequest, NextResponse } from 'next/server'
+import { connection, type NextRequest, NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 import { validateAndConsumeApiKey } from '@/lib/api/validateApiKey'
 import { GetDeviceCompatibilitySchema } from '@/schemas/mobile'
@@ -23,6 +23,8 @@ import { getDeviceCompatibility } from '@/server/services/catalog.service'
  * Either deviceId OR both deviceModelName and deviceBrandName must be provided.
  */
 export async function GET(request: NextRequest) {
+  await connection()
+
   try {
     const apiKey = await validateAndConsumeApiKey(request)
 

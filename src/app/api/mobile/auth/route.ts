@@ -1,9 +1,11 @@
 import { auth } from '@clerk/nextjs/server'
-import { type NextRequest, NextResponse } from 'next/server'
+import { connection, type NextRequest, NextResponse } from 'next/server'
 import { getCORSHeaders } from '@/lib/cors'
 import { prisma } from '@/server/db'
 
 export async function GET(request: NextRequest) {
+  await connection()
+
   try {
     const { userId } = await auth()
 

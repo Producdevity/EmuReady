@@ -1,4 +1,4 @@
-import { type NextRequest } from 'next/server'
+import { connection, type NextRequest } from 'next/server'
 import { logger } from '@/lib/logger'
 
 /**
@@ -16,6 +16,8 @@ function isAllowedUrl(raw?: string | null): URL | null {
 }
 
 export async function GET(req: NextRequest) {
+  await connection()
+
   const src = req.nextUrl.searchParams.get('url')
   const url = isAllowedUrl(src)
   if (!url) return new Response('Invalid or missing url parameter', { status: 400 })
