@@ -35,10 +35,9 @@ export const ADMIN_ROUTES = {
   API_ACCESS: '/admin/api-access',
   API_ACCESS_DEV: '/admin/api-access/developer',
 
-  // Reports & Monitoring
+  // Reports
   REPORTS: '/admin/reports',
   TRUST_LOGS: '/admin/trust-logs',
-  MONITORING: '/admin/monitoring',
   PERFORMANCE: '/admin/performance',
   ANDROID_RELEASES: '/admin/releases',
   ENTITLEMENTS: '/admin/entitlements',

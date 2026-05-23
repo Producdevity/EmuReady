@@ -17,7 +17,6 @@ import {
   Gavel,
   TrendingUp,
   Key,
-  Activity,
   FileKey,
   Award,
   Microchip,
@@ -41,7 +40,6 @@ const getAdminNavIcon = (href: string, className: string) => {
   if (href.includes(ADMIN_ROUTES.REPORTS)) return <AlertCircle className={className} />
   if (href.includes(ADMIN_ROUTES.USER_BANS)) return <Gavel className={className} />
   if (href.includes(ADMIN_ROUTES.TRUST_LOGS)) return <TrendingUp className={className} />
-  if (href.includes(ADMIN_ROUTES.MONITORING)) return <Activity className={className} />
   if (href.includes(ADMIN_ROUTES.PERMISSION_LOGS)) return <FileKey className={className} />
   if (href.includes(ADMIN_ROUTES.PERMISSIONS)) return <Key className={className} />
   if (href.includes(ADMIN_ROUTES.BADGES)) return <Award className={className} />
