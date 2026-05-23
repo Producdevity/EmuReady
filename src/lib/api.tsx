@@ -19,8 +19,8 @@ export function TRPCProvider(props: PropsWithChildren) {
           queries: {
             staleTime: ms.seconds(30),
             gcTime: ms.minutes(5),
-            refetchOnWindowFocus: true,
-            refetchOnReconnect: true,
+            refetchOnWindowFocus: false,
+            refetchOnReconnect: false,
             retry: shouldRetryTRPCQuery,
             retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
           },

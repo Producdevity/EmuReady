@@ -33,7 +33,6 @@ import { rawgRouter } from './routers/rawg'
 import { releasesRouter } from './routers/releases'
 import { socialRouter } from './routers/social'
 import { socsRouter } from './routers/socs'
-import { systemRouter } from './routers/system'
 import { systemsRouter } from './routers/systems'
 import { tgdbRouter } from './routers/tgdb'
 import { trustRouter } from './routers/trust'
@@ -55,7 +54,6 @@ export const appRouter = createTRPCRouter({
   deviceBrands: deviceBrandsRouter,
   socs: socsRouter,
   games: gamesRouter,
-  system: systemRouter,
   systems: systemsRouter,
   emulators: emulatorsRouter,
   users: usersRouter,

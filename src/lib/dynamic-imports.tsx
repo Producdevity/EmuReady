@@ -1,7 +1,6 @@
 import dynamic from 'next/dynamic'
 import { LoadingSpinner } from '@/components/ui'
 
-// Loading component for dynamic imports
 const LoadingFallback = () => (
   <div className="flex items-center justify-center p-4">
     <LoadingSpinner />
@@ -36,11 +35,6 @@ export const TranslatableMarkdown = dynamic(
 )
 
 // Admin components
-export const CustomFieldList = dynamic(
-  () => import('@/app/admin/emulators/[emulatorId]/custom-fields/components/CustomFieldList'),
-  { loading: LoadingFallback },
-)
-
 export const RolePermissionMatrix = dynamic(
   () => import('@/app/admin/permissions/components/RolePermissionMatrix'),
   { loading: LoadingFallback },

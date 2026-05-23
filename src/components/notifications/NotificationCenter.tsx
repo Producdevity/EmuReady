@@ -26,10 +26,15 @@ function NotificationCenter(props: Props) {
 
   const notificationsQuery = api.notifications.get.useQuery(
     { limit: 10, offset: 0 },
-    { enabled: !!user, refetchInterval: POLLING_INTERVALS.NOTIFICATIONS },
+    {
+      enabled: !!user,
+      refetchOnWindowFocus: true,
+      refetchInterval: POLLING_INTERVALS.NOTIFICATIONS,
+    },
   )
   const unreadCountQuery = api.notifications.getUnreadCount.useQuery(undefined, {
     enabled: !!user,
+    refetchOnWindowFocus: true,
     refetchInterval: POLLING_INTERVALS.NOTIFICATIONS,
   })
 

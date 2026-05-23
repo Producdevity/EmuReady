@@ -1,4 +1,3 @@
-import { batchQueries } from '@/server/utils/query-performance'
 import type { PrismaClient } from '@orm/client'
 
 interface AuthorReportCounts {
@@ -16,7 +15,7 @@ export async function getAuthorReportCounts(
   userId: string,
 ): Promise<AuthorReportCounts> {
   const [handheldReports, pcReports, handheldListingsReported, pcListingsReported] =
-    await batchQueries([
+    await Promise.all([
       prisma.listingReport.count({ where: { listing: { authorId: userId } } }),
       prisma.pcListingReport.count({ where: { pcListing: { authorId: userId } } }),
       prisma.listing.count({ where: { authorId: userId, reports: { some: {} } } }),
