@@ -33,7 +33,7 @@ import { getRoleVariant } from '@/utils/badge-colors'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
-import { type Role, Role as RoleEnum } from '@orm'
+import { Role } from '@orm'
 import UserBadgeModal from './components/UserBadgeModal'
 import UserDetailsModal, { type ActivityTab } from './components/UserDetailsModal'
 import UserRoleModal from './components/UserRoleModal'
@@ -95,10 +95,10 @@ function AdminUsersPage() {
   const canManageBadges = currentUserQuery.data?.permissions?.includes(PERMISSIONS.MANAGE_BADGES)
   const canChangeRoles = currentUserQuery.data?.permissions?.includes(PERMISSIONS.CHANGE_USER_ROLES)
   const isModerator =
-    hasRolePermission(currentUserQuery.data?.role, RoleEnum.MODERATOR) &&
-    !hasRolePermission(currentUserQuery.data?.role, RoleEnum.ADMIN)
+    hasRolePermission(currentUserQuery.data?.role, Role.MODERATOR) &&
+    !hasRolePermission(currentUserQuery.data?.role, Role.ADMIN)
   const canBanUsers =
-    hasRolePermission(currentUserQuery.data?.role, RoleEnum.MODERATOR) &&
+    hasRolePermission(currentUserQuery.data?.role, Role.MODERATOR) &&
     currentUserQuery.data?.permissions?.includes(PERMISSIONS.MANAGE_USER_BANS)
 
   const usersQuery = api.users.get.useQuery({

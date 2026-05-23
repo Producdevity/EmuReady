@@ -1,11 +1,6 @@
-/**
- * Nintendo 3DS title ID lookup with fuzzy search and caching
- * Mirrors the Nintendo Switch lookup flow but sources data from the 3DS title manifest
- */
-
 import Fuse from 'fuse.js'
+import { LRUCache } from 'lru-cache'
 import { ms } from '@/utils/time'
-import { MemoryCache } from './cache'
 import type { IFuseOptions } from 'fuse.js'
 
 interface RawThreeDsTitleEntry {
@@ -35,6 +30,11 @@ export interface ThreeDsGameSearchResult {
   score: number
   region: string
   productCode: string | null
+}
+
+interface CachedData<T> {
+  data: T
+  createdAt: Date
 }
 
 const REGION_PRIORITY = [
@@ -78,14 +78,14 @@ const FUSE_OPTIONS: IFuseOptions<ThreeDsGameEntry> = {
 const THREEDS_TITLES_URL = 'https://dantheman827.github.io/nus-info/titles.json'
 const THREEDS_TITLE_NAMES_URL = 'https://dantheman827.github.io/nus-info/title-names.json'
 
-const threeDsGamesDataCache = new MemoryCache<ThreeDsGameEntry[]>({
+const threeDsGamesDataCache = new LRUCache<string, CachedData<ThreeDsGameEntry[]>>({
   ttl: ms.days(1),
-  maxSize: 1,
+  max: 1,
 })
 
-const threeDsGamesFuseCache = new MemoryCache<Fuse<ThreeDsGameEntry>>({
+const threeDsGamesFuseCache = new LRUCache<string, Fuse<ThreeDsGameEntry>>({
   ttl: ms.days(1),
-  maxSize: 1,
+  max: 1,
 })
 
 function normalizeTitle(title: string): string {
@@ -205,11 +205,11 @@ async function fetchThreeDsGamesData(): Promise<ThreeDsGameEntry[]> {
 async function getThreeDsGamesData(): Promise<ThreeDsGameEntry[]> {
   const cacheKey = '3ds-games-data'
   const cached = threeDsGamesDataCache.get(cacheKey)
-  if (cached) return cached
+  if (cached) return cached.data
 
   try {
     const fresh = await fetchThreeDsGamesData()
-    threeDsGamesDataCache.set(cacheKey, fresh)
+    threeDsGamesDataCache.set(cacheKey, { data: fresh, createdAt: new Date() })
     return fresh
   } catch (error) {
     if (error instanceof Error) {
@@ -358,21 +358,20 @@ export async function getThreeDsGamesStats(): Promise<{
   const cached = threeDsGamesDataCache.get(cacheKey)
 
   if (cached) {
-    const lastUpdated = threeDsGamesDataCache.getCreatedAt(cacheKey)
     return {
-      totalGames: cached.length,
+      totalGames: cached.data.length,
       cacheStatus: 'hit',
-      lastUpdated: lastUpdated ?? undefined,
+      lastUpdated: cached.createdAt,
     }
   }
 
   try {
     const fresh = await getThreeDsGamesData()
-    const lastUpdated = threeDsGamesDataCache.getCreatedAt(cacheKey)
+    const cachedAfterRefresh = threeDsGamesDataCache.get(cacheKey)
     return {
       totalGames: fresh.length,
       cacheStatus: 'miss',
-      lastUpdated: lastUpdated ?? undefined,
+      lastUpdated: cachedAfterRefresh?.createdAt,
     }
   } catch {
     return {

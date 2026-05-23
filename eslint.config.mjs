@@ -1,16 +1,8 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { FlatCompat } from '@eslint/eslintrc'
 import typescriptEslint from '@typescript-eslint/eslint-plugin'
 import typescriptParser from '@typescript-eslint/parser'
-import importPlugin from 'eslint-plugin-import'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-})
+import eslintConfigPrettier from 'eslint-config-prettier'
+import nextCoreWebVitals from 'eslint-config-next/core-web-vitals'
+import nextTypeScript from 'eslint-config-next/typescript'
 
 const eslintConfig = [
   {
@@ -37,10 +29,9 @@ const eslintConfig = [
       'test-results/**',
     ],
   },
-  // Next.js + Prettier via FlatCompat
-  ...compat.config({
-    extends: ['next/core-web-vitals', 'next/typescript', 'prettier'],
-  }), // JS and TS global config
+  ...nextCoreWebVitals,
+  ...nextTypeScript,
+  eslintConfigPrettier,
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     languageOptions: {
@@ -55,14 +46,21 @@ const eslintConfig = [
       },
     },
     rules: {
-      // Your custom JS rules
       'prefer-template': 'error',
       'no-useless-escape': 'off',
       'no-case-declarations': 'off',
       'no-prototype-builtins': 'off',
       'no-redeclare': 'off',
+      // TODO: set to error after fixing existing React Compiler rule violations.
+      'react-hooks/purity': 'warn',
+      'react-hooks/static-components': 'warn',
+      'react-hooks/immutability': 'warn',
+      'react-hooks/incompatible-library': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
+      'react-hooks/refs': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
     },
-  }, // TypeScript config
+  },
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
@@ -73,9 +71,6 @@ const eslintConfig = [
         sourceType: 'module',
         ecmaFeatures: { jsx: true },
       },
-    },
-    plugins: {
-      '@typescript-eslint': typescriptEslint,
     },
     rules: {
       ...typescriptEslint.configs.recommended.rules,
@@ -101,7 +96,6 @@ const eslintConfig = [
   }, // Import plugin
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
-    plugins: { import: importPlugin },
     settings: {
       'import/resolver': {
         typescript: { project: './tsconfig.json' },

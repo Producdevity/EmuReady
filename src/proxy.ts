@@ -1,17 +1,18 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-import { getAllowedOrigins, isAllowedRequestOrigin } from '@/lib/cors'
+import { getAllowedOrigins, getOriginFromUrl, isAllowedRequestOrigin } from '@/lib/cors'
 import { ms } from '@/utils/time'
 import type { NextRequest, NextFetchEvent } from 'next/server'
 
-// In-memory rate limiting with automatic cleanup
-// TODO: For distributed deployments, consider Redis or database-backed rate limiting
+// Process-local rate limiting only; counts are not shared across server instances.
+// TODO: For production abuse control, prefer provider/WAF rate limits before traffic reaches Next.
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 
-// Rate limiting configuration
-const RATE_LIMIT_REQUESTS = process.env.NODE_ENV === 'test' ? 10000 : 100 // Much higher limit for tests
+const RATE_LIMIT_REQUESTS = process.env.NODE_ENV === 'test' ? 10000 : 100
 const RATE_LIMIT_WINDOW = ms.minutes(3)
+const RATE_LIMIT_CLEANUP_SAMPLE_RATE = 0.01
 const DEV_NO_STORE_HOSTS = new Set(['dev.emuready.com'])
+const LOCAL_RATE_LIMIT_BYPASS_IDENTIFIERS = new Set(['::1', '127.0.0.1', 'localhost', 'unknown'])
 
 function applyDevNoStoreHeader<T extends NextResponse | Response>(
   response: T,
@@ -29,39 +30,29 @@ function applyDevNoStoreHeader<T extends NextResponse | Response>(
 }
 
 function getClientIdentifier(req: NextRequest): string {
-  // Use IP from forwarded headers or fallback
   const forwarded = req.headers.get('x-forwarded-for')
   const realIp = req.headers.get('x-real-ip')
-  const cfConnectingIp = req.headers.get('cf-connecting-ip') // Cloudflare
+  const cfConnectingIp = req.headers.get('cf-connecting-ip')
 
   if (forwarded) return forwarded.split(',')[0].trim()
 
   return realIp || cfConnectingIp || 'unknown'
 }
 
-function checkRateLimit(identifier: string): boolean {
-  // Skip rate limiting if explicitly disabled (for E2E tests)
-  if (process.env.DISABLE_RATE_LIMIT === 'true') {
-    return true
-  }
+function shouldBypassRateLimit(identifier: string): boolean {
+  if (process.env.DISABLE_RATE_LIMIT === 'true') return true
 
-  // Skip rate limiting for localhost in test/development environments
-  if (
-    (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') &&
-    (identifier === '::1' ||
-      identifier === '127.0.0.1' ||
-      identifier === 'localhost' ||
-      identifier === 'unknown')
-  ) {
-    return true
-  }
+  if (process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'development') return false
+
+  return LOCAL_RATE_LIMIT_BYPASS_IDENTIFIERS.has(identifier)
+}
+
+function checkRateLimit(identifier: string): boolean {
+  if (shouldBypassRateLimit(identifier)) return true
 
   const now = Date.now()
 
-  // Clean up expired entries to prevent memory leaks
-  // Only clean every 100-ish requests to avoid performance impact
-  if (Math.random() < 0.01) {
-    // 1% chance per request
+  if (Math.random() < RATE_LIMIT_CLEANUP_SAMPLE_RATE) {
     for (const [key, value] of rateLimitMap.entries()) {
       if (now > value.resetTime) rateLimitMap.delete(key)
     }
@@ -70,14 +61,13 @@ function checkRateLimit(identifier: string): boolean {
   const userLimit = rateLimitMap.get(identifier)
 
   if (!userLimit || now > userLimit.resetTime) {
-    // Reset or create new limit window
     rateLimitMap.set(identifier, {
       count: 1,
       resetTime: now + RATE_LIMIT_WINDOW,
     })
     return true
   }
-  // Slow down boy, rate limit exceeded
+
   if (userLimit.count >= RATE_LIMIT_REQUESTS) return false
 
   userLimit.count++
@@ -90,6 +80,10 @@ function isValidOrigin(req: NextRequest): boolean {
 
   const allowedOrigins = getAllowedOrigins()
 
+  if (isSameOriginSource(req, origin) || isSameOriginSource(req, referer)) {
+    return true
+  }
+
   if (isAllowedRequestOrigin({ allowedOrigins, source: origin })) {
     return true
   }
@@ -98,7 +92,6 @@ function isValidOrigin(req: NextRequest): boolean {
     return true
   }
 
-  // Allow requests with no origin/referer (server-side, mobile apps, etc.) but check for the API key
   if (!origin && !referer) {
     const apiKey = req.headers.get('x-api-key')
     const internalApiKey = process.env.INTERNAL_API_KEY
@@ -108,28 +101,28 @@ function isValidOrigin(req: NextRequest): boolean {
   return false
 }
 
+function isSameOriginSource(req: NextRequest, source: string | null): boolean {
+  const sourceOrigin = getOriginFromUrl(source ?? '')
+  if (!sourceOrigin) return false
+
+  const host = req.headers.get('host')
+  if (!host) return false
+
+  return sourceOrigin === `${req.nextUrl.protocol}//${host}`
+}
+
 function protectTRPCAPI(req: NextRequest): NextResponse | null {
   const pathname = req.nextUrl.pathname
 
-  // Skip protection for mobile routes - they have their own CORS handling
   if (pathname.startsWith('/api/mobile/trpc/')) return null
 
-  // Only protect TRPC API routes
   if (!pathname.startsWith('/api/trpc/')) return null
 
-  // Skip protection for mobile procedures in the main tRPC router
   if (pathname.startsWith('/api/trpc/mobile.')) return null
 
   const clientId = getClientIdentifier(req)
 
-  // Check rate limit (skip if disabled or in test/dev environment for localhost)
-  const skipRateLimit =
-    process.env.DISABLE_RATE_LIMIT === 'true' ||
-    ((process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') &&
-      (clientId === '::1' ||
-        clientId === '127.0.0.1' ||
-        clientId === 'localhost' ||
-        clientId === 'unknown'))
+  const skipRateLimit = shouldBypassRateLimit(clientId)
 
   if (!skipRateLimit && !checkRateLimit(clientId)) {
     console.warn(`Rate limit exceeded for client: ${clientId}, path: ${pathname}`)
@@ -149,7 +142,6 @@ function protectTRPCAPI(req: NextRequest): NextResponse | null {
     )
   }
 
-  // Check origin for public API routes (skip in test environment)
   if (process.env.NODE_ENV !== 'test' && !isValidOrigin(req)) {
     console.warn(
       `Invalid origin for client: ${clientId}, origin: ${req.headers.get('origin')}, referer: ${req.headers.get('referer')}, path: ${pathname}`,
@@ -169,7 +161,6 @@ function protectTRPCAPI(req: NextRequest): NextResponse | null {
     )
   }
 
-  // Add security headers to successful requests
   const response = applyDevNoStoreHeader(NextResponse.next(), req)
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('X-Frame-Options', 'DENY')
@@ -190,8 +181,14 @@ const handleClerkAuth = clerkMiddleware(async (auth, req) => {
   return
 })
 
-export default async function middleware(req: NextRequest, evt: NextFetchEvent) {
+export async function proxy(req: NextRequest, evt: NextFetchEvent) {
   const pathname = req.nextUrl.pathname
+
+  if (pathname === '/api/mobile/auth') {
+    const response = await handleClerkAuth(req, evt)
+    if (!response) return applyDevNoStoreHeader(NextResponse.next(), req)
+    return applyDevNoStoreHeader(response, req)
+  }
 
   if (pathname.startsWith('/api/mobile/')) {
     const apiProtectionResponse = protectTRPCAPI(req)
@@ -212,9 +209,7 @@ export default async function middleware(req: NextRequest, evt: NextFetchEvent) 
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
     '/(api|trpc)(.*)',
   ],
 }

@@ -1,4 +1,3 @@
-import { LocalizedDate } from '@/components/ui/LocalizedDate'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -17,7 +16,7 @@ function TermsOfServicePage() {
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">Terms of Service</h1>
 
         <p className="text-gray-600 dark:text-gray-400 mb-8">
-          <strong>Last updated:</strong> <LocalizedDate date={new Date()} format="date" />
+          <strong>Last updated:</strong> April 1, 2026
         </p>
 
         <div className="space-y-8">

@@ -1,11 +1,13 @@
 import { auth } from '@clerk/nextjs/server'
-import { type NextRequest } from 'next/server'
+import { connection, type NextRequest } from 'next/server'
 import { prisma } from '@/server/db'
 import { notificationAnalyticsService } from '@/server/notifications/analyticsService'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 
 export async function GET(request: NextRequest) {
+  await connection()
+
   try {
     // Check if user is admin
     const { userId } = await auth()
@@ -14,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { clerkId: userId },
       select: { role: true },
     })
 

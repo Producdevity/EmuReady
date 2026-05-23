@@ -7,7 +7,8 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import { type Metadata, type Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import Script from 'next/script'
-import { type PropsWithChildren } from 'react'
+import { connection } from 'next/server'
+import { Suspense, type PropsWithChildren } from 'react'
 import { Toaster } from 'sonner'
 import CookieConsent from '@/components/CookieConsent'
 import Footer from '@/components/footer/Footer'
@@ -33,52 +34,74 @@ export const metadata: Metadata = defaultMetadata
 
 export default function RootLayout(props: PropsWithChildren) {
   return (
-    <ClerkProvider appearance={{ baseTheme: shadesOfPurple }}>
-      <html lang="en" suppressHydrationWarning>
-        <head>
-          {/* Service Worker Registration / Unregister in dev
-           * - In dev (not production), always load to proactively unregister any SW and clear caches
-           * - In prod, only load when explicitly enabled via NEXT_PUBLIC_ENABLE_SW
-           */}
-          {(env.ENABLE_SW || !env.IS_PROD) && (
-            <Script src="/sw-register.js" strategy="afterInteractive" />
-          )}
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <Script id="service-worker-config" strategy="beforeInteractive">
+          {`window.__EMUREADY_SW_ENABLED__ = ${env.ENABLE_SW ? 'true' : 'false'};`}
+        </Script>
+        <Script src="/sw-register.js" strategy="afterInteractive" />
 
-          {/* Initialize dataLayer for Google Analytics */}
-          {env.IS_PROD && env.GA_ID && (
-            <Script id="google-analytics-dataLayer" strategy="beforeInteractive">
-              {`
+        {env.IS_PROD && env.GA_ID && (
+          <Script id="google-analytics-dataLayer" strategy="beforeInteractive">
+            {`
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
                 gtag('js', new Date());
               `}
-            </Script>
-          )}
-
-          {/* Google Analytics Configuration */}
-        </head>
-        <body className={cn(inter.className, 'min-h-screen bg-background font-sans antialiased')}>
+          </Script>
+        )}
+      </head>
+      <body className={cn(inter.className, 'min-h-screen bg-background font-sans antialiased')}>
+        <ClerkBoundary>
           <Providers>
             <Toaster richColors closeButton />
             {env.IS_PROD && !env.DISABLE_COOKIE_BANNER && <CookieConsent />}
             <div className="flex flex-col min-h-screen bg-background text-foreground">
-              <Navbar />
+              <Suspense fallback={null}>
+                <Navbar />
+              </Suspense>
               <Main>{props.children}</Main>
               <Footer />
             </div>
           </Providers>
           {env.IS_PROD && (
-            <>
+            <Suspense fallback={null}>
               <SessionTracker />
               <PageViewTracker />
               <SpeedInsights />
               <KofiWidget />
               <GoogleAnalytics gaId={env.GA_ID} />
-            </>
+            </Suspense>
           )}
-          {env.VERCEL_ANALYTICS_ENABLED && <Analytics />}
-        </body>
-      </html>
-    </ClerkProvider>
+          {env.VERCEL_ANALYTICS_ENABLED && (
+            <Suspense fallback={null}>
+              <Analytics />
+            </Suspense>
+          )}
+        </ClerkBoundary>
+      </body>
+    </html>
   )
+}
+
+function ClerkBoundary(props: PropsWithChildren) {
+  if (process.env.NODE_ENV !== 'development') {
+    return (
+      <Suspense fallback={null}>
+        <ClerkProvider appearance={{ baseTheme: shadesOfPurple }}>{props.children}</ClerkProvider>
+      </Suspense>
+    )
+  }
+
+  return (
+    <Suspense fallback={null}>
+      <DevelopmentClerkProvider>{props.children}</DevelopmentClerkProvider>
+    </Suspense>
+  )
+}
+
+async function DevelopmentClerkProvider(props: PropsWithChildren) {
+  await connection()
+
+  return <ClerkProvider appearance={{ baseTheme: shadesOfPurple }}>{props.children}</ClerkProvider>
 }

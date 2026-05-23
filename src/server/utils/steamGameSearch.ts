@@ -1,13 +1,7 @@
-/**
- * Steam game data management with fuzzy search capabilities
- * Fetches and caches Steam game data from Steam Web API with periodic updates
- */
-
 import Fuse from 'fuse.js'
+import { LRUCache } from 'lru-cache'
 import { ms } from '@/utils/time'
-import { MemoryCache } from './cache'
 
-// Types for Steam game data
 interface SteamAppEntry {
   appid: number
   name: string
@@ -28,19 +22,21 @@ interface SteamGameSearchResult {
   score: number
 }
 
-// Cache for Steam games data - longer TTL since the list is large and updates periodically
-const steamGamesDataCache = new MemoryCache<SteamAppEntry[]>({
+interface CachedData<T> {
+  data: T
+  createdAt: Date
+}
+
+const steamGamesDataCache = new LRUCache<string, CachedData<SteamAppEntry[]>>({
   ttl: ms.days(1),
-  maxSize: 1,
+  max: 1,
 })
 
-// Cache for Fuse.js search instance - rebuild when data updates
-const steamGamesFuseCache = new MemoryCache<Fuse<SteamAppEntry>>({
+const steamGamesFuseCache = new LRUCache<string, Fuse<SteamAppEntry>>({
   ttl: ms.days(1),
-  maxSize: 1,
+  max: 1,
 })
 
-// Configuration for fuzzy search
 const FUSE_OPTIONS = {
   keys: [{ name: 'name', weight: 1.0 }],
   threshold: 0.4,
@@ -54,16 +50,11 @@ const FUSE_OPTIONS = {
 
 // ISteamApps/GetAppList/v2 was removed by Valve. The replacement requires a key.
 const STEAM_STORE_API_URL = 'https://api.steampowered.com/IStoreService/GetAppList/v1/'
-const FETCH_TIMEOUT_MS = 30_000 // 30s — avoids hanging on serverless cold starts
-const PAGE_SIZE = 50_000 // max allowed by the API
+const FETCH_TIMEOUT_MS = 30_000
+const PAGE_SIZE = 50_000
 
-// In-flight deduplication: prevents concurrent cold starts from each firing a fetch
 let inflightFetch: Promise<SteamAppEntry[]> | null = null
 
-/**
- * Fetches Steam games data from IStoreService/GetAppList/v1 with pagination.
- * Requires STEAM_API_KEY env var.
- */
 async function fetchSteamGamesData(): Promise<SteamAppEntry[]> {
   const apiKey = process.env.STEAM_API_KEY
   if (!apiKey) {
@@ -119,16 +110,12 @@ async function fetchSteamGamesData(): Promise<SteamAppEntry[]> {
   return allApps
 }
 
-/**
- * Gets cached Steam games data or fetches fresh data
- */
 export async function getSteamGamesData(): Promise<SteamAppEntry[]> {
   const cacheKey = 'steam-games-data'
 
   const cachedData = steamGamesDataCache.get(cacheKey)
-  if (cachedData) return cachedData
+  if (cachedData) return cachedData.data
 
-  // Deduplicate concurrent fetches so only one in-flight request runs at a time
   if (!inflightFetch) {
     inflightFetch = fetchSteamGamesData().finally(() => {
       inflightFetch = null
@@ -137,7 +124,7 @@ export async function getSteamGamesData(): Promise<SteamAppEntry[]> {
 
   try {
     const freshData = await inflightFetch
-    steamGamesDataCache.set(cacheKey, freshData)
+    steamGamesDataCache.set(cacheKey, { data: freshData, createdAt: new Date() })
     return freshData
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
@@ -149,17 +136,12 @@ export async function getSteamGamesData(): Promise<SteamAppEntry[]> {
   }
 }
 
-/**
- * Gets or creates Fuse.js search instance
- */
 async function getFuseInstance(): Promise<Fuse<SteamAppEntry>> {
   const cacheKey = 'steam-games-fuse'
 
-  // Try to get from cache first
   const cachedFuse = steamGamesFuseCache.get(cacheKey)
   if (cachedFuse) return cachedFuse
 
-  // Create new Fuse instance with fresh data
   const gamesData = await getSteamGamesData()
   const fuse = new Fuse(gamesData, FUSE_OPTIONS)
 
@@ -167,9 +149,6 @@ async function getFuseInstance(): Promise<Fuse<SteamAppEntry>> {
   return fuse
 }
 
-/**
- * Normalizes a title for better matching
- */
 function normalizeTitle(title: string): string {
   return title
     .toLowerCase()
@@ -178,12 +157,6 @@ function normalizeTitle(title: string): string {
     .trim()
 }
 
-/**
- * Searches for Steam App ID based on game name using fuzzy matching
- * @param gameName - The name of the game to search for
- * @param maxResults - Maximum number of results to return (default: 5)
- * @returns Array of search results with app IDs and match scores
- */
 export async function findSteamAppIdForGameName(
   gameName: string,
   maxResults: number = 5,
@@ -195,17 +168,14 @@ export async function findSteamAppIdForGameName(
     const searchTerm = gameName.trim().toLowerCase()
     const searchResults = fuse.search(searchTerm, { limit: maxResults * 2 })
 
-    // Filter and enhance results with better scoring
     const enhancedResults = searchResults
       .map((result) => {
         const item = result.item
         const fuseScore = result.score || 0
 
-        // Calculate enhanced score based on multiple factors
         const nameMatch = item.name.toLowerCase()
         const normalizedMatch = normalizeTitle(item.name)
 
-        // Exact match bonus
         let bonusScore = 0
         if (nameMatch === searchTerm || normalizedMatch === normalizeTitle(searchTerm)) {
           bonusScore = 40
@@ -213,7 +183,6 @@ export async function findSteamAppIdForGameName(
           bonusScore = 20
         }
 
-        // Word match bonus
         const searchWords = searchTerm.split(' ').filter((w) => w.length > 2)
         const nameWords = nameMatch.split(' ')
 
@@ -224,7 +193,6 @@ export async function findSteamAppIdForGameName(
           }
         })
 
-        // Penalize soundtrack/dlc/demo entries unless specifically searched for
         let contentBonus = 0
         const lowerName = nameMatch
         const isDlc =
@@ -243,7 +211,6 @@ export async function findSteamAppIdForGameName(
         if (isSoundtrack && !searchesForSoundtrack) contentBonus = -15
         if (isDemo && !searchesForDemo) contentBonus = -15
 
-        // Final score calculation
         const baseScore = Math.round((1 - fuseScore) * 100)
         const finalScore = Math.min(
           100,
@@ -262,7 +229,6 @@ export async function findSteamAppIdForGameName(
       })
       .filter((result) => result.score >= 30)
       .sort((a, b) => {
-        // Prioritize main game versions if scores are close
         if (Math.abs(a.score - b.score) <= 10) {
           const aExtra = a.isDlc || a.isSoundtrack || a.isDemo
           const bExtra = b.isDlc || b.isSoundtrack || b.isDemo
@@ -273,7 +239,6 @@ export async function findSteamAppIdForGameName(
       })
       .slice(0, maxResults)
 
-    // Remove the extra properties from final results
     return enhancedResults.map(({ isDlc, isSoundtrack, isDemo, ...result }) => result)
   } catch (error) {
     console.error('Error searching for Steam App ID:', error)
@@ -281,19 +246,11 @@ export async function findSteamAppIdForGameName(
   }
 }
 
-/**
- * Gets the best matching App ID for a game name (highest score)
- * @param gameName - The name of the game to search for
- * @returns The best matching App ID or null if no good match found
- */
 export async function getBestSteamAppIdMatch(gameName: string): Promise<string | null> {
   const results = await findSteamAppIdForGameName(gameName, 1)
   return results.length > 0 && results[0].score >= 50 ? results[0].appId : null
 }
 
-/**
- * Forces a refresh of the Steam games data cache
- */
 export async function refreshSteamGamesData(): Promise<void> {
   try {
     steamGamesDataCache.clear()
@@ -306,9 +263,6 @@ export async function refreshSteamGamesData(): Promise<void> {
   }
 }
 
-/**
- * Gets statistics about the cached Steam games data
- */
 export async function getSteamGamesStats(): Promise<{
   totalGames: number
   cacheStatus: 'hit' | 'miss' | 'empty'
@@ -318,21 +272,20 @@ export async function getSteamGamesStats(): Promise<{
   const cachedData = steamGamesDataCache.get(cacheKey)
 
   if (cachedData) {
-    const lastUpdated = steamGamesDataCache.getCreatedAt(cacheKey)
     return {
-      totalGames: cachedData.length,
+      totalGames: cachedData.data.length,
       cacheStatus: 'hit',
-      lastUpdated: lastUpdated || undefined,
+      lastUpdated: cachedData.createdAt,
     }
   }
 
   try {
     const freshData = await getSteamGamesData()
-    const lastUpdated = steamGamesDataCache.getCreatedAt(cacheKey)
+    const cached = steamGamesDataCache.get(cacheKey)
     return {
       totalGames: freshData.length,
       cacheStatus: 'miss',
-      lastUpdated: lastUpdated || undefined,
+      lastUpdated: cached?.createdAt,
     }
   } catch (error) {
     console.error('[steamGameSearch] getSteamGamesStats failed to load data:', error)

@@ -57,9 +57,9 @@ import {
 } from '@/server/api/utils/pcListingHelpers'
 import { canManageCommentPins } from '@/server/api/utils/pinPermissions'
 import {
-  invalidateListPages,
-  invalidateSitemap,
-  revalidateByTag,
+  invalidatePcListingSeo,
+  invalidatePcListingSeoForUpdate,
+  invalidatePcListingsSeo,
 } from '@/server/cache/invalidation'
 import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
@@ -340,16 +340,13 @@ export const pcListingsRouter = createTRPCRouter({
     // Invalidate stats cache when PC listing is created
     listingStatsCache.delete('pc-listing-stats')
 
-    // Invalidate SEO cache if listing is approved
     if (newListing.status === ApprovalStatus.APPROVED) {
-      await invalidateListPages()
-      await invalidateSitemap()
-      await revalidateByTag('pc-listings')
-      await revalidateByTag(`game-${payload.gameId}`)
-      await revalidateByTag(`cpu-${payload.cpuId}`)
-      if (payload.gpuId) {
-        await revalidateByTag(`gpu-${payload.gpuId}`)
-      }
+      await invalidatePcListingSeo({
+        id: newListing.id,
+        gameId: payload.gameId,
+        cpuId: payload.cpuId,
+        gpuId: payload.gpuId ?? null,
+      })
     }
 
     return newListing
@@ -371,8 +368,11 @@ export const pcListingsRouter = createTRPCRouter({
       where: { id: input.id },
     })
 
-    // Invalidate stats cache when PC listing is deleted
     listingStatsCache.delete('pc-listing-stats')
+
+    if (pcListing.status === ApprovalStatus.APPROVED) {
+      await invalidatePcListingSeo(pcListing)
+    }
 
     return deletedListing
   }),
@@ -380,10 +380,16 @@ export const pcListingsRouter = createTRPCRouter({
   update: protectedProcedure.input(UpdatePcListingUserSchema).mutation(async ({ ctx, input }) => {
     const EDIT_TIME_LIMIT_MINUTES = 60
 
-    // First check if user can edit this PC listing
     const pcListing = await ctx.prisma.pcListing.findUnique({
       where: { id: input.id },
-      select: { authorId: true, status: true, processedAt: true },
+      select: {
+        authorId: true,
+        status: true,
+        processedAt: true,
+        gameId: true,
+        cpuId: true,
+        gpuId: true,
+      },
     })
 
     if (!pcListing) return ResourceError.pcListing.notFound()
@@ -471,6 +477,23 @@ export const pcListingsRouter = createTRPCRouter({
           })),
         })
       }
+    }
+
+    if (pcListing.status === ApprovalStatus.APPROVED) {
+      await invalidatePcListingSeoForUpdate(
+        {
+          id,
+          gameId: pcListing.gameId,
+          cpuId: pcListing.cpuId,
+          gpuId: pcListing.gpuId,
+        },
+        {
+          id,
+          gameId: updatedPcListing.gameId,
+          cpuId: updatedPcListing.cpuId,
+          gpuId: updatedPcListing.gpuId,
+        },
+      )
     }
 
     return updatedPcListing
@@ -599,8 +622,14 @@ export const pcListingsRouter = createTRPCRouter({
       })
     }
 
-    // Invalidate stats cache when PC listing is approved
     listingStatsCache.delete('pc-listing-stats')
+
+    await invalidatePcListingSeo({
+      id: input.pcListingId,
+      gameId: pcListing.gameId,
+      cpuId: pcListing.cpuId,
+      gpuId: pcListing.gpuId,
+    })
 
     notificationEventEmitter.emitNotificationEvent({
       eventType: NOTIFICATION_EVENTS.PC_LISTING_APPROVED,
@@ -708,6 +737,15 @@ export const pcListingsRouter = createTRPCRouter({
 
       listingStatsCache.delete('pc-listing-stats')
 
+      if (pcListing.status === ApprovalStatus.APPROVED) {
+        await invalidatePcListingSeo({
+          id: input.pcListingId,
+          gameId: pcListing.gameId,
+          cpuId: pcListing.cpuId,
+          gpuId: pcListing.gpuId,
+        })
+      }
+
       return updatedListing
     }),
 
@@ -725,7 +763,7 @@ export const pcListingsRouter = createTRPCRouter({
 
       const pendingListings = await ctx.prisma.pcListing.findMany({
         where: { id: { in: input.pcListingIds }, status: ApprovalStatus.PENDING },
-        select: { id: true, gameId: true, authorId: true },
+        select: { id: true, gameId: true, cpuId: true, gpuId: true, authorId: true },
       })
 
       const result = await ctx.prisma.pcListing.updateMany({
@@ -756,6 +794,8 @@ export const pcListingsRouter = createTRPCRouter({
       )
 
       listingStatsCache.delete('pc-listing-stats')
+
+      await invalidatePcListingsSeo(pendingListings)
 
       for (const listing of pendingListings) {
         notificationEventEmitter.emitNotificationEvent({
@@ -926,21 +966,17 @@ export const pcListingsRouter = createTRPCRouter({
 
       if (!pcListing) return ResourceError.pcListing.notFound()
 
-      // Update PC listing and handle custom field values
       const updatedPcListing = await ctx.prisma.pcListing.update({
         where: { id },
         data: { ...data, updatedAt: new Date() },
         include: pcListingDetailInclude,
       })
 
-      // Handle custom field values if provided
       if (customFieldValues) {
-        // Delete existing custom field values
         await ctx.prisma.pcListingCustomFieldValue.deleteMany({
           where: { pcListingId: id },
         })
 
-        // Create new custom field values
         if (customFieldValues.length > 0) {
           await ctx.prisma.pcListingCustomFieldValue.createMany({
             data: customFieldValues.map((cfv) => ({
@@ -950,6 +986,29 @@ export const pcListingsRouter = createTRPCRouter({
             })),
           })
         }
+      }
+
+      const previousSeoTarget = {
+        id,
+        gameId: pcListing.gameId,
+        cpuId: pcListing.cpuId,
+        gpuId: pcListing.gpuId,
+      }
+      const nextSeoTarget = {
+        id,
+        gameId: updatedPcListing.gameId,
+        cpuId: updatedPcListing.cpuId,
+        gpuId: updatedPcListing.gpuId,
+      }
+      const wasApproved = pcListing.status === ApprovalStatus.APPROVED
+      const isApproved = updatedPcListing.status === ApprovalStatus.APPROVED
+
+      if (wasApproved && isApproved) {
+        await invalidatePcListingSeoForUpdate(previousSeoTarget, nextSeoTarget)
+      } else if (wasApproved) {
+        await invalidatePcListingSeo(previousSeoTarget)
+      } else if (isApproved) {
+        await invalidatePcListingSeo(nextSeoTarget)
       }
 
       return updatedPcListing

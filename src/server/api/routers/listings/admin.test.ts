@@ -43,14 +43,14 @@ vi.mock('@/server/notifications/eventEmitter', () => ({
 }))
 
 vi.mock('@/server/cache/invalidation', () => ({
-  invalidateListing: vi.fn().mockResolvedValue(undefined),
-  invalidateListPages: vi.fn().mockResolvedValue(undefined),
-  invalidateSitemap: vi.fn().mockResolvedValue(undefined),
-  revalidateByTag: vi.fn().mockResolvedValue(undefined),
+  invalidateListingSeo: vi.fn().mockResolvedValue(undefined),
+  invalidateListingsSeo: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock('@/server/utils/cache/instances', () => ({
   listingStatsCache: { delete: vi.fn(), get: vi.fn(), set: vi.fn() },
+  invalidateCatalogCompatibilityCacheForDevice: vi.fn(),
+  invalidateCatalogCompatibilityCacheForDevices: vi.fn(),
 }))
 
 vi.mock('@/server/utils/emulator-config/emulator-detector', () => ({

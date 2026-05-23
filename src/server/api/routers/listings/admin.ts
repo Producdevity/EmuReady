@@ -27,12 +27,7 @@ import {
   protectedProcedure,
 } from '@/server/api/trpc'
 import { buildProcessedOrderBy } from '@/server/api/utils/listingHelpers'
-import {
-  invalidateListing,
-  invalidateListPages,
-  invalidateSitemap,
-  revalidateByTag,
-} from '@/server/cache/invalidation'
+import { invalidateListingSeo, invalidateListingsSeo } from '@/server/cache/invalidation'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
@@ -41,7 +36,11 @@ import {
   computeReviewRiskProfiles,
   getRiskOnlyReviewPage,
 } from '@/server/services/review-risk.service'
-import { listingStatsCache } from '@/server/utils/cache/instances'
+import {
+  invalidateCatalogCompatibilityCacheForDevice,
+  invalidateCatalogCompatibilityCacheForDevices,
+  listingStatsCache,
+} from '@/server/utils/cache/instances'
 import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
 import { paginate } from '@/server/utils/pagination'
 import { hasRolePermission } from '@/utils/permissions'
@@ -212,19 +211,13 @@ export const adminRouter = createTRPCRouter({
       },
     })
 
-    // Invalidate SEO cache
-    await invalidateListing(listingId)
-    await invalidateListPages()
-    await invalidateSitemap()
-    await revalidateByTag('listings')
-    await revalidateByTag(`listing-${listingId}`)
-    await revalidateByTag(`game-${listingToApprove.gameId}`)
-    await revalidateByTag(`device-${listingToApprove.deviceId}`)
-    await revalidateByTag(`emulator-${listingToApprove.emulatorId}`)
-
-    // Invalidate catalog compatibility cache for this device
-    const { catalogCompatibilityCache } = await import('@/server/utils/cache/instances')
-    catalogCompatibilityCache.invalidatePattern(`device:${listingToApprove.deviceId}:*`)
+    await invalidateListingSeo({
+      id: listingId,
+      gameId: listingToApprove.gameId,
+      deviceId: listingToApprove.deviceId,
+      emulatorId: listingToApprove.emulatorId,
+    })
+    invalidateCatalogCompatibilityCacheForDevice(listingToApprove.deviceId)
 
     // Apply trust action for listing approval to the author
     if (listingToApprove.authorId) {
@@ -342,9 +335,7 @@ export const adminRouter = createTRPCRouter({
     // Invalidate listing stats cache
     listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
-    // Invalidate catalog compatibility cache for this device
-    const { catalogCompatibilityCache } = await import('@/server/utils/cache/instances')
-    catalogCompatibilityCache.invalidatePattern(`device:${listingToReject.deviceId}:*`)
+    invalidateCatalogCompatibilityCacheForDevice(listingToReject.deviceId)
 
     return updatedListing
   }),
@@ -630,17 +621,7 @@ export const adminRouter = createTRPCRouter({
         const { validListings } = transactionResult
         const approvedAt = new Date()
 
-        // Invalidate SEO cache for all approved listings
-        await Promise.all([
-          ...validListings.map((listing) => invalidateListing(listing.id)),
-          ...validListings.map((listing) => revalidateByTag(`listing-${listing.id}`)),
-          ...validListings.map((listing) => revalidateByTag(`game-${listing.gameId}`)),
-          ...validListings.map((listing) => revalidateByTag(`device-${listing.deviceId}`)),
-          ...validListings.map((listing) => revalidateByTag(`emulator-${listing.emulatorId}`)),
-        ])
-        await invalidateListPages()
-        await invalidateSitemap()
-        await revalidateByTag('listings')
+        await invalidateListingsSeo(validListings)
 
         // Emit notification events for each approved listing
         for (const listing of validListings) {
@@ -674,6 +655,10 @@ export const adminRouter = createTRPCRouter({
       listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
       const { validListings, bannedUserListings, notFoundOrNotPendingIds } = transactionResult
+      invalidateCatalogCompatibilityCacheForDevices([
+        ...validListings.map((listing) => listing.deviceId),
+        ...bannedUserListings.map((listing) => listing.deviceId),
+      ])
 
       let message = `Successfully approved ${validListings.length} listing(s).`
 
@@ -828,6 +813,9 @@ export const adminRouter = createTRPCRouter({
       listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
       const { listingsToReject, notFoundOrNotPendingIds } = transactionResult
+      invalidateCatalogCompatibilityCacheForDevices(
+        listingsToReject.map((listing) => listing.deviceId),
+      )
 
       const message =
         notFoundOrNotPendingIds.length > 0

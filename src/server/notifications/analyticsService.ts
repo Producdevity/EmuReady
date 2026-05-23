@@ -489,13 +489,6 @@ export class NotificationAnalyticsService {
     notificationAnalyticsCache.clear()
   }
 
-  /**
-   * Get cache statistics for monitoring
-   */
-  getCacheStats() {
-    return notificationAnalyticsCache.getStats()
-  }
-
   private buildDateFilter(startDate?: Date, endDate?: Date): Record<string, unknown> {
     const filter: Record<string, unknown> = {}
 

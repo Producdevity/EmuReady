@@ -1,0 +1,236 @@
+'use client'
+
+import { RedirectToSignIn, SignedIn, SignedOut, useUser } from '@clerk/nextjs'
+import { ChevronLeft, ChevronRight, Home } from 'lucide-react'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState, type PropsWithChildren } from 'react'
+import { isNumber } from 'remeda'
+import { ADMIN_ROUTES } from '@/app/admin/config/routes'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { api } from '@/lib/api'
+import { cn } from '@/lib/utils'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
+import { hasRolePermission } from '@/utils/permissions'
+import { Role } from '@orm'
+import AdminNavbar from './components/AdminNavbar'
+import {
+  adminNavItems,
+  superAdminNavItems,
+  moderatorNavItems,
+  getDeveloperNavItems,
+  type AdminNavItem,
+} from './data'
+
+export default function AdminLayoutClient(props: PropsWithChildren) {
+  const pathname = usePathname()
+  const router = useRouter()
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const { user, isLoaded } = useUser()
+
+  const userQuery = api.users.me.useQuery(undefined, {
+    enabled: !!user,
+  })
+
+  const verifiedEmulatorsQuery = api.verifiedDevelopers.getMyVerifiedEmulators.useQuery(undefined, {
+    enabled: !!userQuery.data && userQuery.data.role === Role.DEVELOPER,
+  })
+
+  const gameStatsQuery = api.games.stats.useQuery(undefined, {
+    enabled:
+      !!userQuery.data && hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
+    refetchInterval: 30000,
+    staleTime: 10000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  })
+
+  const listingStatsQuery = api.listings.stats.useQuery(undefined, {
+    enabled:
+      !!userQuery.data && hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
+    refetchInterval: 30000,
+    staleTime: 10000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  })
+
+  const pcListingStatsQuery = api.pcListings.stats.useQuery(undefined, {
+    enabled:
+      !!userQuery.data && hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
+    refetchInterval: 30000,
+    staleTime: 10000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  })
+
+  const isSuperAdmin = hasRolePermission(userQuery.data?.role, Role.SUPER_ADMIN)
+
+  const reportsStatsQuery = api.listingReports.stats.useQuery(undefined, {
+    enabled: !!userQuery.data && isSuperAdmin,
+    refetchInterval: 30000,
+    staleTime: 10000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  })
+  const isAdmin = hasRolePermission(userQuery.data?.role, Role.ADMIN)
+  const isModerator = hasRolePermission(userQuery.data?.role, Role.MODERATOR)
+  const isDeveloper = userQuery.data?.role === Role.DEVELOPER
+
+  const devPendingListingsQuery = api.listings.getPending.useQuery(
+    { page: 1, limit: 1 },
+    { enabled: isDeveloper },
+  )
+
+  const devPendingPcListingsQuery = api.pcListings.pending.useQuery(
+    { page: 1, limit: 1 },
+    { enabled: isDeveloper },
+  )
+
+  const hasAdminPanelAccess = hasPermission(
+    userQuery.data?.permissions,
+    PERMISSIONS.ACCESS_ADMIN_PANEL,
+  )
+
+  useEffect(() => {
+    if (!isLoaded || userQuery.isPending || !user) return
+
+    if (userQuery.data && !hasAdminPanelAccess) router.replace('/')
+  }, [isLoaded, user, userQuery.data, hasAdminPanelAccess, router, userQuery.isPending])
+
+  if (!isLoaded) return <LoadingSpinner size="lg" />
+
+  if (!user) {
+    return (
+      <SignedOut>
+        <RedirectToSignIn />
+      </SignedOut>
+    )
+  }
+
+  if (userQuery.isPending) return <LoadingSpinner size="lg" />
+
+  if (!userQuery.data) return null
+
+  if (!hasAdminPanelAccess) return null
+
+  const adminNavItemsWithCounts = adminNavItems.map((item) => {
+    if (item.href === ADMIN_ROUTES.GAME_APPROVALS && gameStatsQuery.data) {
+      return { ...item, count: gameStatsQuery.data.pending }
+    }
+    if (item.href === ADMIN_ROUTES.LISTING_APPROVALS && listingStatsQuery.data) {
+      return { ...item, count: listingStatsQuery.data.pending }
+    }
+    if (item.href === ADMIN_ROUTES.PC_LISTING_APPROVALS && pcListingStatsQuery.data) {
+      return { ...item, count: pcListingStatsQuery.data.pending }
+    }
+    return item
+  })
+
+  const superAdminNavItemsWithCounts = superAdminNavItems.map((item) => {
+    return item.href === ADMIN_ROUTES.REPORTS && reportsStatsQuery.data
+      ? { ...item, count: reportsStatsQuery.data.pending }
+      : item
+  })
+
+  let navItems: AdminNavItem[] = []
+  let superAdminItems: AdminNavItem[] = []
+
+  if (isSuperAdmin) {
+    navItems = adminNavItemsWithCounts
+    superAdminItems = superAdminNavItemsWithCounts
+  } else if (isAdmin) {
+    navItems = adminNavItemsWithCounts
+  } else if (isModerator) {
+    navItems = moderatorNavItems.map((item) => {
+      if (item.href === ADMIN_ROUTES.GAME_APPROVALS && gameStatsQuery.data) {
+        return { ...item, count: gameStatsQuery.data.pending }
+      }
+      if (item.href === ADMIN_ROUTES.LISTING_APPROVALS && listingStatsQuery.data) {
+        return { ...item, count: listingStatsQuery.data.pending }
+      }
+      if (item.href === ADMIN_ROUTES.PC_LISTING_APPROVALS && pcListingStatsQuery.data) {
+        return { ...item, count: pcListingStatsQuery.data.pending }
+      }
+      return item
+    })
+  } else if (isDeveloper && verifiedEmulatorsQuery.data) {
+    const emulatorIds = verifiedEmulatorsQuery.data.map((e) => e.id)
+    navItems = getDeveloperNavItems(emulatorIds)
+
+    const pendingHandheldCount = devPendingListingsQuery.data?.pagination.total
+    const pendingPcCount = devPendingPcListingsQuery.data?.pagination.total
+
+    navItems = navItems.map((item) => {
+      if (item.href === ADMIN_ROUTES.LISTING_APPROVALS && isNumber(pendingHandheldCount)) {
+        return { ...item, count: pendingHandheldCount }
+      }
+      if (item.href === ADMIN_ROUTES.PC_LISTING_APPROVALS && isNumber(pendingPcCount)) {
+        return { ...item, count: pendingPcCount }
+      }
+      return item
+    })
+  }
+
+  return (
+    <>
+      <SignedIn>
+        <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
+          <aside
+            className={cn(
+              'bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex-shrink-0 hidden md:flex flex-col transition-all duration-300 ease-in-out overflow-hidden',
+              isCollapsed ? 'w-20' : 'w-64',
+            )}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              {!isCollapsed && (
+                <Link href="/admin" className="font-bold text-gray-900 dark:text-white text-xl">
+                  Admin
+                </Link>
+              )}
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="p-1 rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-colors"
+              >
+                {isCollapsed ? (
+                  <ChevronRight className="w-5 h-5" />
+                ) : (
+                  <ChevronLeft className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+
+            <AdminNavbar
+              pathname={pathname}
+              isCollapsed={isCollapsed}
+              isSuperAdmin={isSuperAdmin}
+              adminNavItems={navItems}
+              superAdminNavItems={superAdminItems}
+            />
+
+            <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+              <Link
+                href="/"
+                className={cn(
+                  'flex items-center p-2 text-gray-600 dark:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors',
+                  isCollapsed ? 'justify-center' : 'justify-start',
+                )}
+              >
+                <Home className="w-5 h-5 min-w-5" />
+                {!isCollapsed && <span className="ml-3">Back to Site</span>}
+              </Link>
+            </div>
+          </aside>
+
+          <div className="flex-1 flex flex-col min-w-0">
+            <main className="flex-1 p-2 sm:px-4 md:px-6 overflow-auto">
+              <div className="max-w-full">{props.children}</div>
+            </main>
+          </div>
+        </div>
+      </SignedIn>
+      <SignedOut>
+        <RedirectToSignIn />
+      </SignedOut>
+    </>
+  )
+}

@@ -18,6 +18,18 @@ describe('captcha config', () => {
     expect(isCaptchaClientEnabled()).toBe(true)
     expect(isCaptchaVerificationEnabled()).toBe(false)
   })
+
+  it('uses the same explicit disable flag for client and server captcha', async () => {
+    vi.stubEnv('NEXT_PUBLIC_DISABLE_RECAPTCHA', 'true')
+    vi.stubEnv('NEXT_PUBLIC_RECAPTCHA_SITE_KEY', 'site-key')
+    vi.stubEnv('RECAPTCHA_SECRET_KEY', 'secret-key')
+    vi.resetModules()
+
+    const { isCaptchaClientEnabled, isCaptchaVerificationEnabled } = await import('./config')
+
+    expect(isCaptchaClientEnabled()).toBe(false)
+    expect(isCaptchaVerificationEnabled()).toBe(false)
+  })
 })
 
 describe('verifyRecaptcha', () => {

@@ -1,5 +1,6 @@
 import axios, { type AxiosError } from 'axios'
 import analytics from '@/lib/analytics'
+import { logger } from '@/lib/logger'
 
 const http = axios.create({
   timeout: 20000,
@@ -11,7 +12,7 @@ const http = axios.create({
 http.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    // Track errors to analytics
+    logger.error('HTTP Error:', error)
     analytics.performance.errorOccurred({
       errorType: 'api_request_error',
       errorMessage: error.message,

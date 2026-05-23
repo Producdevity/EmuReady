@@ -203,6 +203,31 @@ const nextConfig: NextConfig = {
 
   allowedDevOrigins: ['dev.emuready.com', '127.0.0.1'],
 
+  cacheComponents: true,
+
+  cacheLife: {
+    'seo-record': {
+      stale: 300,
+      revalidate: 3600,
+      expire: 86400,
+    },
+    'seo-report': {
+      stale: 300,
+      revalidate: 1800,
+      expire: 43200,
+    },
+    'seo-sitemap': {
+      stale: 300,
+      revalidate: 21600,
+      expire: 172800,
+    },
+    'seo-miss': {
+      stale: 30,
+      revalidate: 60,
+      expire: 300,
+    },
+  },
+
   turbopack: {
     rules: {
       '*.svg': {
@@ -272,10 +297,6 @@ const nextConfig: NextConfig = {
       'node_modules/**/examples/**/*',
       'node_modules/**/docs/**/*',
     ],
-  },
-
-  eslint: {
-    dirs: ['src', 'tests'],
   },
 
   webpack: (config: WebpackConfiguration) => {
