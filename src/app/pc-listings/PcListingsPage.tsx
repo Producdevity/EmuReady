@@ -42,6 +42,11 @@ import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { type RouterInput } from '@/types/trpc'
 import { filterNullAndEmpty } from '@/utils/filter'
+import {
+  isAnchorNavigationTarget,
+  openInNewTab,
+  shouldOpenInNewTab,
+} from '@/utils/navigation-events'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role, ApprovalStatus } from '@orm'
@@ -454,154 +459,178 @@ function PcListingsPage() {
                     listingsQuery.isFetching && 'opacity-50',
                   )}
                 >
-                  {listingsQuery.data?.pcListings.map((listing) => (
-                    <tr
-                      key={listing.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-                      onClick={() => router.push(`/pc-listings/${listing.id}`)}
-                    >
-                      {columnVisibility.isColumnVisible('game') && (
-                        <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
-                          <div className="flex items-center gap-2">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Link
-                                  href={`/pc-listings/${listing.id}`}
-                                  className="hover:text-blue-600 dark:hover:text-blue-400"
-                                >
-                                  {listing.game.title.substring(0, 30)}
-                                  {listing.game.title.length > 30 && '...'}
-                                </Link>
-                              </TooltipTrigger>
-                              <TooltipContent side="top">{listing.game.title}</TooltipContent>
-                            </Tooltip>
+                  {listingsQuery.data?.pcListings.map((listing) => {
+                    const listingHref = `/pc-listings/${listing.id}`
 
-                            {listing.status === ApprovalStatus.PENDING && (
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                                </TooltipTrigger>
-                                <TooltipContent>Under Review</TooltipContent>
-                              </Tooltip>
-                            )}
+                    return (
+                      <tr
+                        key={listing.id}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                        onClick={(event) => {
+                          if (isAnchorNavigationTarget(event)) return
 
-                            <BannedUserBadge
-                              author={listing.author}
-                              canView={isModerator}
-                              label="BANNED"
-                              tooltip="This user has been banned"
-                            />
-                          </div>
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('system') && (
-                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          {isSystemIconsHydrated && showSystemIcons && listing.game.system?.key ? (
+                          if (shouldOpenInNewTab(event)) {
+                            event.preventDefault()
+                            openInNewTab(listingHref)
+                            return
+                          }
+
+                          router.push(listingHref)
+                        }}
+                        onAuxClick={(event) => {
+                          if (isAnchorNavigationTarget(event) || !shouldOpenInNewTab(event)) return
+
+                          event.preventDefault()
+                          openInNewTab(listingHref)
+                        }}
+                      >
+                        {columnVisibility.isColumnVisible('game') && (
+                          <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
                             <div className="flex items-center gap-2">
-                              <SystemIcon
-                                name={listing.game.system.name}
-                                systemKey={listing.game.system.key}
-                                size="sm"
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Link
+                                    href={`/pc-listings/${listing.id}`}
+                                    className="hover:text-blue-600 dark:hover:text-blue-400"
+                                  >
+                                    {listing.game.title.substring(0, 30)}
+                                    {listing.game.title.length > 30 && '...'}
+                                  </Link>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">{listing.game.title}</TooltipContent>
+                              </Tooltip>
+
+                              {listing.status === ApprovalStatus.PENDING && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>Under Review</TooltipContent>
+                                </Tooltip>
+                              )}
+
+                              <BannedUserBadge
+                                author={listing.author}
+                                canView={isModerator}
+                                label="BANNED"
+                                tooltip="This user has been banned"
                               />
                             </div>
-                          ) : (
-                            (listing.game.system?.name ?? 'Unknown')
-                          )}
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('cpu') && (
-                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          {listing.cpu
-                            ? `${listing.cpu.brand.name} ${listing.cpu.modelName}`
-                            : 'N/A'}
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('gpu') && (
-                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          {listing.gpu
-                            ? `${listing.gpu.brand.name} ${listing.gpu.modelName}`
-                            : 'Integrated'}
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('memory') && (
-                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          {listing.memorySize}GB
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('os') && (
-                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">{listing.os}</td>
-                      )}
-                      {columnVisibility.isColumnVisible('emulator') && (
-                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          <div className="flex items-center gap-2">
-                            {listing.emulator ? (
-                              <EmulatorIcon
-                                name={listing.emulator.name}
-                                logo={listing.emulator.logo}
-                                showLogo={isEmulatorLogosHydrated && showEmulatorLogos}
-                                size="sm"
-                              />
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('system') && (
+                          <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                            {isSystemIconsHydrated &&
+                            showSystemIcons &&
+                            listing.game.system?.key ? (
+                              <div className="flex items-center gap-2">
+                                <SystemIcon
+                                  name={listing.game.system.name}
+                                  systemKey={listing.game.system.key}
+                                  size="sm"
+                                />
+                              </div>
                             ) : (
-                              'N/A'
+                              (listing.game.system?.name ?? 'Unknown')
                             )}
-                          </div>
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('performance') && (
-                        <td className="px-4 py-2">
-                          <PerformanceBadge
-                            rank={listing.performance?.rank ?? 8}
-                            label={listing.performance?.label ?? 'N/A'}
-                            description={listing.performance?.description}
-                          />
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('verified') && (
-                        <td className="px-4 py-2">
-                          <SuccessRateBar
-                            rate={listing.successRate * 100}
-                            voteCount={listing._count.votes}
-                          />
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('author') && (
-                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          {listing.author?.id ? (
-                            <Link
-                              href={`/users/${listing.author.id}`}
-                              className="text-blue-600 dark:text-indigo-400 hover:underline"
-                              onClick={(event) => event.stopPropagation()}
-                            >
-                              {listing.author.name ?? 'Anonymous'}
-                            </Link>
-                          ) : (
-                            <span>{listing.author?.name ?? 'Anonymous'}</span>
-                          )}
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('posted') && (
-                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          <LocalizedDate date={listing.createdAt} format="timeAgo" />
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('actions') && (
-                        <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end gap-2">
-                            {isAdmin && (
-                              <EditButton
-                                href={`/admin/pc-listings/${listing.id}/edit`}
-                                title="Edit PC Report"
-                              />
-                            )}
-                            <ViewButton
-                              href={`/pc-listings/${listing.id}`}
-                              title="View PC Report Details"
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('cpu') && (
+                          <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                            {listing.cpu
+                              ? `${listing.cpu.brand.name} ${listing.cpu.modelName}`
+                              : 'N/A'}
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('gpu') && (
+                          <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                            {listing.gpu
+                              ? `${listing.gpu.brand.name} ${listing.gpu.modelName}`
+                              : 'Integrated'}
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('memory') && (
+                          <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                            {listing.memorySize}GB
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('os') && (
+                          <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                            {listing.os}
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('emulator') && (
+                          <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                            <div className="flex items-center gap-2">
+                              {listing.emulator ? (
+                                <EmulatorIcon
+                                  name={listing.emulator.name}
+                                  logo={listing.emulator.logo}
+                                  showLogo={isEmulatorLogosHydrated && showEmulatorLogos}
+                                  size="sm"
+                                />
+                              ) : (
+                                'N/A'
+                              )}
+                            </div>
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('performance') && (
+                          <td className="px-4 py-2">
+                            <PerformanceBadge
+                              rank={listing.performance?.rank ?? 8}
+                              label={listing.performance?.label ?? 'N/A'}
+                              description={listing.performance?.description}
                             />
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('verified') && (
+                          <td className="px-4 py-2">
+                            <SuccessRateBar
+                              rate={listing.successRate * 100}
+                              voteCount={listing._count.votes}
+                            />
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('author') && (
+                          <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                            {listing.author?.id ? (
+                              <Link
+                                href={`/users/${listing.author.id}`}
+                                className="text-blue-600 dark:text-indigo-400 hover:underline"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                {listing.author.name ?? 'Anonymous'}
+                              </Link>
+                            ) : (
+                              <span>{listing.author?.name ?? 'Anonymous'}</span>
+                            )}
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('posted') && (
+                          <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                            <LocalizedDate date={listing.createdAt} format="timeAgo" />
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('actions') && (
+                          <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-2">
+                              {isAdmin && (
+                                <EditButton
+                                  href={`/admin/pc-listings/${listing.id}/edit`}
+                                  title="Edit PC Report"
+                                />
+                              )}
+                              <ViewButton
+                                href={`/pc-listings/${listing.id}`}
+                                title="View PC Report Details"
+                              />
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    )
+                  })}
                 </tbody>
               )}
             </table>
