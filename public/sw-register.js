@@ -1,4 +1,4 @@
-const CACHE_NAME = 'emuready_v0.13.1'
+const CACHE_NAME = 'emuready_v0.13.2'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
