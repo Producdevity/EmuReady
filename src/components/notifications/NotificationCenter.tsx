@@ -30,6 +30,7 @@ function NotificationCenter(props: Props) {
   )
   const unreadCountQuery = api.notifications.getUnreadCount.useQuery(undefined, {
     enabled: !!user,
+    refetchOnWindowFocus: true,
     refetchInterval: POLLING_INTERVALS.NOTIFICATIONS,
   })
 
