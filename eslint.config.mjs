@@ -51,7 +51,7 @@ const eslintConfig = [
       'no-case-declarations': 'off',
       'no-prototype-builtins': 'off',
       'no-redeclare': 'off',
-      // TODO: set to error in followup PR
+      // TODO: set to error after fixing existing React Compiler rule violations.
       'react-hooks/purity': 'warn',
       'react-hooks/static-components': 'warn',
       'react-hooks/immutability': 'warn',
