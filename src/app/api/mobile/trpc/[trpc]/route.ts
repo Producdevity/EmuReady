@@ -1,5 +1,5 @@
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
-import { type NextRequest, NextResponse } from 'next/server'
+import { connection, type NextRequest, NextResponse } from 'next/server'
 import { getCORSHeaders } from '@/lib/cors'
 import { createMobileTRPCFetchContext } from '@/server/api/mobileContext'
 import { mobileRouter } from '@/server/api/routers/mobile'
@@ -89,4 +89,9 @@ const handler = async (req: NextRequest) => {
   }
 }
 
-export { handler as GET, handler as POST }
+async function GET(req: NextRequest) {
+  await connection()
+  return handler(req)
+}
+
+export { GET, handler as POST }

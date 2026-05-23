@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/server/db'
 import type { Nullable } from '@/types/utils'
-import type { Role } from '@orm'
+import type { Role } from '@orm/client'
 
 interface User {
   id: string

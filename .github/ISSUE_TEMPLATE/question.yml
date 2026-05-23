@@ -1,0 +1,43 @@
+name: Question Or Support
+description: Ask a question or request support for EmuReady.
+title: "[Help]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please include enough context for someone else to understand what you need help with.
+
+  - type: checkboxes
+    id: existing-question
+    attributes:
+      label: Existing Question Check
+      options:
+        - label: I have searched existing issues and discussions for a similar question.
+          required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: Describe what you need help with.
+      placeholder: I am trying to understand ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What Have You Tried?
+      description: List any documentation, issues, settings, or resources you already checked.
+      placeholder: I checked ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Relevant Context
+      description: Add links, screenshots, logs, or examples that help explain the question.
+    validations:
+      required: false

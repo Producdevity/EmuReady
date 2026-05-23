@@ -1,0 +1,159 @@
+'use client'
+
+import { ArrowLeft } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { AdminErrorState } from '@/components/admin/AdminErrorState'
+import { Button, PageSkeletonLoading } from '@/components/ui'
+import { api } from '@/lib/api'
+import { isTRPCNotFoundError } from '@/lib/trpc-client-errors'
+import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
+import { Role } from '@orm'
+import EmulatorEditForm from './components/EmulatorEditForm'
+import ManageSupportedSystems from './components/ManageSupportedSystems'
+
+interface Props {
+  emulatorId: string
+}
+
+export default function EditEmulatorClientPage(props: Props) {
+  const router = useRouter()
+
+  const emulatorsQuery = api.emulators.byId.useQuery(
+    { id: props.emulatorId },
+    { enabled: !!props.emulatorId },
+  )
+  const currentUser = api.users.me.useQuery()
+  const verifiedDeveloperQuery = api.emulators.getVerifiedDeveloper.useQuery(
+    { emulatorId: props.emulatorId },
+    {
+      enabled: !!props.emulatorId && currentUser.data?.role === Role.DEVELOPER,
+    },
+  )
+
+  const user = currentUser.data
+  const hasManagePermission = hasPermission(user?.permissions, PERMISSIONS.MANAGE_CUSTOM_FIELDS)
+  const isDeveloper = user?.role === Role.DEVELOPER
+  const isVerifiedDeveloper = Boolean(verifiedDeveloperQuery.data)
+  const hasAccess = Boolean(user && hasManagePermission && (!isDeveloper || isVerifiedDeveloper))
+
+  const systemsQuery = api.systems.get.useQuery({}, { enabled: !!user && hasAccess })
+
+  const isLoading =
+    currentUser.isPending || emulatorsQuery.isLoading || verifiedDeveloperQuery.isLoading
+
+  if (isLoading) return <PageSkeletonLoading />
+
+  if (!user || !hasAccess) {
+    return (
+      <div className="container mx-auto p-8">
+        <Button
+          variant="outline"
+          size="sm"
+          icon={ArrowLeft}
+          onClick={() => router.back()}
+          className="mb-6"
+        >
+          Back
+        </Button>
+        <p className="text-lg text-gray-700 dark:text-gray-200">
+          You do not have permission to manage this emulator.
+        </p>
+      </div>
+    )
+  }
+
+  if (systemsQuery.isPending) return <PageSkeletonLoading />
+
+  if (emulatorsQuery.error) {
+    const isNotFound = isTRPCNotFoundError(emulatorsQuery.error)
+    return (
+      <AdminErrorState
+        title={isNotFound ? 'Emulator not found' : 'Unable to load emulator'}
+        message={
+          isNotFound
+            ? 'The emulator you are trying to edit was not found or is no longer available.'
+            : 'The emulator data could not be loaded. Please try again.'
+        }
+        onRetry={() => void emulatorsQuery.refetch()}
+      />
+    )
+  }
+
+  if (systemsQuery.error) {
+    return (
+      <AdminErrorState
+        title="Unable to load systems"
+        message="The system list could not be loaded. Please try again."
+        onRetry={() => void systemsQuery.refetch()}
+      />
+    )
+  }
+
+  if (!emulatorsQuery.data) {
+    return (
+      <AdminErrorState
+        title="Emulator not found"
+        message="The emulator you are trying to edit was not found or is no longer available."
+        onRetry={() => void emulatorsQuery.refetch()}
+      />
+    )
+  }
+
+  if (!systemsQuery.data) {
+    return (
+      <AdminErrorState
+        title="Unable to load systems"
+        message="The system list could not be loaded. Please try again."
+        onRetry={() => window.location.reload()}
+      />
+    )
+  }
+
+  return (
+    <div className="container mx-auto p-4 md:p-8">
+      <Button
+        variant="outline"
+        size="sm"
+        icon={ArrowLeft}
+        onClick={() => router.back()}
+        className="mb-6"
+      >
+        Back
+      </Button>
+
+      <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-white">
+        Edit Emulator:{' '}
+        <span className="text-blue-600 dark:text-blue-400">{emulatorsQuery.data.name}</span>
+      </h1>
+
+      <div className="space-y-10">
+        <section className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-6 text-gray-700 dark:text-gray-200 border-b pb-3 dark:border-gray-700">
+            Emulator Details
+          </h2>
+          <EmulatorEditForm emulator={emulatorsQuery.data} />
+        </section>
+
+        <section className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-6 text-gray-700 dark:text-gray-200 border-b pb-3 dark:border-gray-700">
+            Supported Systems
+          </h2>
+          <ManageSupportedSystems
+            emulatorId={emulatorsQuery.data.id}
+            allSystems={systemsQuery.data}
+            currentlySupportedSystems={emulatorsQuery.data.systems}
+          />
+        </section>
+
+        <section className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-6 text-gray-700 dark:text-gray-200 border-b pb-3 dark:border-gray-700">
+            Custom Fields
+          </h2>
+          <Button onClick={() => router.push(`/admin/emulators/${props.emulatorId}/custom-fields`)}>
+            Manage Custom Fields
+          </Button>
+        </section>
+      </div>
+    </div>
+  )
+}

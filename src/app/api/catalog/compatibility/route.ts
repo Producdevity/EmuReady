@@ -1,7 +1,10 @@
 import { TRPCError } from '@trpc/server'
-import { type NextRequest, NextResponse } from 'next/server'
+import { getHTTPStatusCodeFromError } from '@trpc/server/http'
+import { connection, type NextRequest, NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 import { validateAndConsumeApiKey } from '@/lib/api/validateApiKey'
+import { ERROR_CODES } from '@/lib/errors'
+import { logger } from '@/lib/logger'
 import { GetDeviceCompatibilitySchema } from '@/schemas/mobile'
 import { prisma } from '@/server/db'
 import { getDeviceCompatibility } from '@/server/services/catalog.service'
@@ -23,11 +26,11 @@ import { getDeviceCompatibility } from '@/server/services/catalog.service'
  * Either deviceId OR both deviceModelName and deviceBrandName must be provided.
  */
 export async function GET(request: NextRequest) {
+  await connection()
+
   try {
-    // Validate API key and enforce quota limits
     const apiKey = await validateAndConsumeApiKey(request)
 
-    // Parse query parameters
     const searchParams = request.nextUrl.searchParams
 
     const deviceId = searchParams.get('deviceId') ?? undefined
@@ -37,13 +40,11 @@ export async function GET(request: NextRequest) {
     const includeEmulatorBreakdownParam = searchParams.get('includeEmulatorBreakdown')
     const minListingCountParam = searchParams.get('minListingCount')
 
-    // Parse array and boolean parameters
     const systemIds = systemIdsParam ? systemIdsParam.split(',').filter(Boolean) : undefined
     const includeEmulatorBreakdown =
       includeEmulatorBreakdownParam !== null ? includeEmulatorBreakdownParam === 'true' : undefined
     const minListingCount = minListingCountParam ? parseInt(minListingCountParam, 10) : undefined
 
-    // Validate input with Zod schema
     const input = GetDeviceCompatibilitySchema.parse({
       deviceId,
       deviceModelName,
@@ -59,25 +60,16 @@ export async function GET(request: NextRequest) {
       userId: apiKey.user.id,
     })
 
-    // Return JSON response
     return NextResponse.json(result, {
       status: 200,
       headers: {
-        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=300',
+        // This endpoint consumes API-key quota and may include role-scoped visibility.
+        // Keep intermediary caches out of the path; the service still uses its own LRU.
+        'Cache-Control': 'private, no-store',
       },
     })
   } catch (error) {
-    // Handle TRPCError (includes auth, quota, and other custom errors)
     if (error instanceof TRPCError) {
-      const statusCodeMap: Record<string, number> = {
-        BAD_REQUEST: 400,
-        UNAUTHORIZED: 401,
-        FORBIDDEN: 403,
-        NOT_FOUND: 404,
-        TOO_MANY_REQUESTS: 429,
-        INTERNAL_SERVER_ERROR: 500,
-      }
-      const statusCode = statusCodeMap[error.code] || 500
       return NextResponse.json(
         {
           error: {
@@ -85,16 +77,15 @@ export async function GET(request: NextRequest) {
             message: error.message,
           },
         },
-        { status: statusCode },
+        { status: getHTTPStatusCodeFromError(error) },
       )
     }
 
-    // Handle validation errors
     if (error instanceof ZodError) {
       return NextResponse.json(
         {
           error: {
-            code: 'BAD_REQUEST',
+            code: ERROR_CODES.BAD_REQUEST,
             message: 'Invalid query parameters',
             details: error.errors,
           },
@@ -103,12 +94,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Handle not found errors
     if (error instanceof Error && error.message.includes('not found')) {
       return NextResponse.json(
         {
           error: {
-            code: 'NOT_FOUND',
+            code: ERROR_CODES.NOT_FOUND,
             message: error.message,
           },
         },
@@ -116,12 +106,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Handle unexpected errors
-    console.error('Catalog compatibility API error:', error)
+    logger.error('Catalog compatibility API error:', error)
     return NextResponse.json(
       {
         error: {
-          code: 'INTERNAL_SERVER_ERROR',
+          code: ERROR_CODES.INTERNAL_SERVER_ERROR,
           message: 'An unexpected error occurred',
         },
       },

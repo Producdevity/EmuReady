@@ -1,6 +1,6 @@
 import { prisma } from '@/server/db'
 import { notificationAnalyticsCache } from '@/server/utils/cache'
-import { DeliveryChannel, NotificationDeliveryStatus, type NotificationType } from '@orm'
+import { DeliveryChannel, NotificationDeliveryStatus, type NotificationType } from '@orm/client'
 
 export interface NotificationMetrics {
   totalSent: number
@@ -487,13 +487,6 @@ export class NotificationAnalyticsService {
 
   clearCache(): void {
     notificationAnalyticsCache.clear()
-  }
-
-  /**
-   * Get cache statistics for monitoring
-   */
-  getCacheStats() {
-    return notificationAnalyticsCache.getStats()
   }
 
   private buildDateFilter(startDate?: Date, endDate?: Date): Record<string, unknown> {

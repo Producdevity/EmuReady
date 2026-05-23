@@ -1,9 +1,9 @@
 import { renderHook, act } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { parseEmulatorConfig, registerEmulatorConfigMapper } from '@/shared/emulator-config'
+import { type CustomFieldDefinitionWithOptions } from '@/utils/custom-field-validation'
 import { CustomFieldType } from '@orm'
 import { useEmulatorConfigImporter } from '../useEmulatorConfigImporter'
-import type { CustomFieldDefinitionWithOptions } from '../../form-schemas/createDynamicListingSchema'
 import type * as EmulatorConfigModule from '@/shared/emulator-config'
 
 vi.mock('@/shared/emulator-config', async () => {

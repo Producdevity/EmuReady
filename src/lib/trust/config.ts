@@ -58,18 +58,23 @@ export const TRUST_ACTIONS = {
     description: 'Manual trust score decrease by admin',
   },
   [TrustAction.VOTE_NULLIFICATION_REVERSAL]: {
-    weight: 0, // Dynamic weight set during nullification
+    weight: 0,
     description: 'Trust reversal due to vote nullification or restoration',
+  },
+  [TrustAction.VOTE_CHANGE_REVERSAL]: {
+    weight: 0,
+    description: 'Trust reversal due to vote change or removal',
   },
 } as const
 
+// TODO: come up with better names
 export const TRUST_LEVELS = [
   { name: 'Newcomer', minScore: 0 },
   { name: 'Contributor', minScore: 100 },
   { name: 'Trusted', minScore: 250 },
-  { name: 'Verified', minScore: 500 },
-  { name: 'Elite', minScore: 1000 },
-  { name: 'Core', minScore: 1500 },
+  { name: 'Trusted+', minScore: 500 },
+  { name: 'Trusted++', minScore: 1000 },
+  { name: 'Trusted+++', minScore: 1500 },
 ] as const
 
 export type TrustLevel = (typeof TRUST_LEVELS)[number]

@@ -84,7 +84,7 @@ ingress:
 Start your local development server, for example:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Ensure the server is listening on the port specified in the config file.

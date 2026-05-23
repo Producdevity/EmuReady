@@ -6,21 +6,21 @@
  * It populates the normalizedTitle field for all existing Game records.
  *
  * Usage:
- *   npm run db:migrate:deploy  # First, apply the schema migration
- *   npx tsx scripts/migrate-normalized-titles.ts  # Then, run this script (loads .env.local automatically)
+ *   pnpm db:migrate:deploy  # First, apply the schema migration
+ *   pnpm exec tsx scripts/migrate-normalized-titles.ts  # Then, run this script (loads .env.local automatically)
  *
  * Or use the db-cmd wrapper:
- *   ./scripts/db-cmd.sh npx tsx scripts/migrate-normalized-titles.ts
+ *   ./scripts/db-cmd.sh pnpm exec tsx scripts/migrate-normalized-titles.ts
  */
 
 import { config } from 'dotenv'
+import { createPrismaClient } from '@/server/prisma-client'
 import { normalizeString } from '@/utils/text'
-import { PrismaClient } from '@orm'
 
 // Load environment variables from .env.local (same as db-cmd.sh does)
 config({ path: '.env.local' })
 
-const prisma = new PrismaClient()
+const prisma = createPrismaClient()
 
 async function migrateNormalizedTitles() {
   console.log('Starting normalizedTitle migration...')

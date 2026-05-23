@@ -11,7 +11,7 @@ import { createTRPCRouter, protectedProcedure, permissionProcedure } from '@/ser
 import { prisma } from '@/server/db'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
-import { Role } from '@orm'
+import { Role } from '@orm/client'
 
 const manageCustomFieldsProcedure = permissionProcedure(PERMISSIONS.MANAGE_CUSTOM_FIELDS)
 

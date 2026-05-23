@@ -6,13 +6,19 @@
 import { PAGINATION } from '@/data/constants'
 import { AppError, ResourceError } from '@/lib/errors'
 import { canUserAutoApprove } from '@/lib/trust/service'
+import { EMULATOR_VERSION_FIELD_NAME } from '@/schemas/submissionRisk'
+import { computeVoteCounts } from '@/server/utils/moderator-info'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { sanitizeInput } from '@/server/utils/security-validation'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { calculateWilsonScore } from '@/utils/wilson-score'
-import { Prisma, ApprovalStatus, type PcOs, Role } from '@orm'
+import { Prisma, ApprovalStatus, type PcOs, Role } from '@orm/client'
 import { BaseRepository } from './base.repository'
-import { buildShadowBanFilter } from '../utils/query-builders'
+import {
+  buildApprovalStatusFilter,
+  buildNsfwFilter,
+  buildShadowBanFilter,
+} from '../utils/query-builders'
 
 export interface PcListingFilters {
   gameId?: string
@@ -31,10 +37,147 @@ export interface PcListingFilters {
   userId?: string
   userRole?: Role
   showNsfw?: boolean
-  osFilter?: string[]
+  osFilter?: PcOs[]
   memoryMin?: number
   memoryMax?: number
   canSeeBannedUsers?: boolean
+}
+
+export interface PcListingRiskCandidate {
+  id: string
+  authorId: string
+  author: { userBans: { reason: string }[] } | null
+  customFieldValues: {
+    value: unknown
+    customFieldDefinition: {
+      name: string
+      label: string
+    }
+  }[]
+}
+
+export interface PendingPcListingsFilters {
+  emulatorIds?: string[]
+  search?: string
+  page?: number
+  limit?: number
+  sortField?: string
+  sortDirection?: 'asc' | 'desc'
+}
+
+function getActiveUserBanWhere(): Prisma.UserBanWhereInput {
+  return {
+    isActive: true,
+    OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+  }
+}
+
+function appendAndCondition(
+  where: Prisma.PcListingWhereInput,
+  condition: Prisma.PcListingWhereInput,
+) {
+  where.AND = [...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []), condition]
+}
+
+export function buildPcListingListWhere(
+  filters: PcListingFilters,
+  mode: Prisma.QueryMode = Prisma.QueryMode.insensitive,
+): Prisma.PcListingWhereInput {
+  const {
+    gameId,
+    systemIds,
+    cpuIds,
+    gpuIds,
+    emulatorIds,
+    performanceIds,
+    searchTerm,
+    approvalStatus,
+    myListings,
+    userId,
+    userRole,
+    showNsfw,
+    osFilter,
+    memoryMin,
+    memoryMax,
+    canSeeBannedUsers = false,
+  } = filters
+
+  const where: Prisma.PcListingWhereInput = {
+    ...(gameId ? { gameId } : {}),
+    ...(myListings && userId ? { authorId: userId } : {}),
+    game: {
+      system: { key: { not: 'microsoft_windows' } },
+      ...buildNsfwFilter(showNsfw),
+      ...(systemIds?.length ? { systemId: { in: systemIds } } : {}),
+    },
+    ...(cpuIds?.length ? { cpuId: { in: cpuIds } } : {}),
+    ...(gpuIds?.length ? { gpuId: { in: gpuIds } } : {}),
+    ...(emulatorIds?.length ? { emulatorId: { in: emulatorIds } } : {}),
+    ...(performanceIds?.length ? { performanceId: { in: performanceIds } } : {}),
+    ...(osFilter?.length ? { os: { in: osFilter } } : {}),
+    ...(memoryMin ? { memorySize: { gte: memoryMin } } : {}),
+    ...(memoryMax ? { memorySize: { lte: memoryMax } } : {}),
+    ...(searchTerm
+      ? {
+          OR: [
+            {
+              game: {
+                title: { contains: searchTerm, mode },
+                system: { key: { not: 'microsoft_windows' } },
+              },
+            },
+            { cpu: { modelName: { contains: searchTerm, mode } } },
+            { gpu: { modelName: { contains: searchTerm, mode } } },
+            { emulator: { name: { contains: searchTerm, mode } } },
+            { notes: { contains: searchTerm, mode } },
+          ],
+        }
+      : {}),
+  }
+
+  const statusFilter = buildApprovalStatusFilter(userRole, userId, approvalStatus, 'authorId')
+  if (statusFilter) {
+    if (Array.isArray(statusFilter)) {
+      if (where.OR) {
+        appendAndCondition(where, { OR: Array.isArray(where.OR) ? where.OR : [where.OR] })
+        appendAndCondition(where, { OR: statusFilter })
+        delete where.OR
+      } else {
+        where.OR = statusFilter
+      }
+    } else {
+      Object.assign(where, statusFilter)
+    }
+  }
+
+  const shadowBanFilter = canSeeBannedUsers ? undefined : buildShadowBanFilter(userRole, userId)
+  if (shadowBanFilter) where.author = shadowBanFilter
+
+  return where
+}
+
+export function buildPendingPcListingsWhere(
+  filters: PendingPcListingsFilters,
+  mode: Prisma.QueryMode = Prisma.QueryMode.insensitive,
+): Prisma.PcListingWhereInput {
+  const { emulatorIds } = filters
+  const search = filters.search?.trim()
+
+  return {
+    status: ApprovalStatus.PENDING,
+    ...(emulatorIds?.length ? { emulatorId: { in: emulatorIds } } : {}),
+    ...(search
+      ? {
+          OR: [
+            { game: { title: { contains: search, mode } } },
+            { cpu: { modelName: { contains: search, mode } } },
+            { gpu: { modelName: { contains: search, mode } } },
+            { emulator: { name: { contains: search, mode } } },
+            { author: { name: { contains: search, mode } } },
+          ],
+        }
+      : {}),
+  }
 }
 
 export class PcListingsRepository extends BaseRepository {
@@ -67,10 +210,7 @@ export class PcListingsRepository extends BaseRepository {
       author: {
         include: {
           userBans: {
-            where: {
-              isActive: true,
-              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-            },
+            where: getActiveUserBanWhere(),
             select: { id: true, reason: true, bannedAt: true, expiresAt: true },
           },
         },
@@ -187,70 +327,9 @@ export class PcListingsRepository extends BaseRepository {
       limit: number
     }
   }> {
-    const {
-      gameId,
-      systemIds,
-      cpuIds,
-      gpuIds,
-      emulatorIds,
-      performanceIds,
-      searchTerm,
-      page = 1,
-      limit = PAGINATION.DEFAULT_LIMIT,
-      sortField,
-      sortDirection,
-      approvalStatus = ApprovalStatus.APPROVED,
-      myListings,
-      userId,
-      showNsfw,
-      osFilter,
-      memoryMin,
-      memoryMax,
-      canSeeBannedUsers = false,
-    } = filters
+    const { page = 1, limit = PAGINATION.DEFAULT_LIMIT, sortField, sortDirection } = filters
 
-    // Build base where clause
-    const baseWhere: Prisma.PcListingWhereInput = {
-      status: approvalStatus,
-      ...(gameId ? { gameId } : {}),
-      ...(myListings && userId ? { authorId: userId } : {}),
-      // Exclude Microsoft Windows games since PC listings are for emulation
-      game: {
-        system: { key: { not: 'microsoft_windows' } },
-        ...(showNsfw === false ? { isErotic: false } : {}),
-        ...(systemIds?.length ? { systemId: { in: systemIds } } : {}),
-      },
-      ...(cpuIds?.length ? { cpuId: { in: cpuIds } } : {}),
-      ...(gpuIds?.length ? { gpuId: { in: gpuIds } } : {}),
-      ...(emulatorIds?.length ? { emulatorId: { in: emulatorIds } } : {}),
-      ...(performanceIds?.length ? { performanceId: { in: performanceIds } } : {}),
-      ...(osFilter?.length ? { os: { in: osFilter as PcOs[] } } : {}),
-      ...(memoryMin ? { memorySize: { gte: memoryMin } } : {}),
-      ...(memoryMax ? { memorySize: { lte: memoryMax } } : {}),
-      ...(searchTerm
-        ? {
-            OR: [
-              {
-                game: {
-                  title: { contains: searchTerm, mode: this.mode },
-                  system: { key: { not: 'microsoft_windows' } },
-                },
-              },
-              { cpu: { modelName: { contains: searchTerm, mode: this.mode } } },
-              { gpu: { modelName: { contains: searchTerm, mode: this.mode } } },
-              { emulator: { name: { contains: searchTerm, mode: this.mode } } },
-              { notes: { contains: searchTerm, mode: this.mode } },
-            ],
-          }
-        : {}),
-    }
-
-    // Apply banned user filtering
-    const shadowBanFilter = canSeeBannedUsers ? undefined : buildShadowBanFilter(null)
-    const where = {
-      ...baseWhere,
-      ...(shadowBanFilter && { author: shadowBanFilter }),
-    }
+    const where = buildPcListingListWhere(filters, this.mode)
 
     // Build orderBy based on sort field
     const orderBy: Prisma.PcListingOrderByWithRelationInput[] = []
@@ -365,8 +444,7 @@ export class PcListingsRepository extends BaseRepository {
       })
     | null
   > {
-    // Build where with banned user filtering
-    const shadowBanFilter = canSeeBannedUsers ? undefined : buildShadowBanFilter(null)
+    const shadowBanFilter = canSeeBannedUsers ? undefined : buildShadowBanFilter(null, userId)
     const where: Prisma.PcListingWhereInput = {
       id,
       ...(shadowBanFilter && { author: shadowBanFilter }),
@@ -757,17 +835,7 @@ export class PcListingsRepository extends BaseRepository {
   /**
    * Get pending PC listings with optional filtering
    */
-  async getPendingListings(
-    filters: {
-      emulatorIds?: string[]
-      search?: string
-      page?: number
-      limit?: number
-      sortField?: string
-      sortDirection?: 'asc' | 'desc'
-      canSeeBannedUsers?: boolean
-    } = {},
-  ): Promise<{
+  async getPendingListings(filters: PendingPcListingsFilters = {}): Promise<{
     pcListings: Prisma.PcListingGetPayload<{
       include: typeof PcListingsRepository.includes.forList
     }>[]
@@ -786,32 +854,9 @@ export class PcListingsRepository extends BaseRepository {
       limit = PAGINATION.DEFAULT_LIMIT,
       sortField,
       sortDirection = 'asc',
-      canSeeBannedUsers = false,
     } = filters
 
-    const baseWhere: Prisma.PcListingWhereInput = {
-      status: ApprovalStatus.PENDING,
-      ...(emulatorIds?.length ? { emulatorId: { in: emulatorIds } } : {}),
-      ...(search
-        ? {
-            OR: [
-              { game: { title: { contains: search, mode: this.mode } } },
-              { cpu: { modelName: { contains: search, mode: this.mode } } },
-              { gpu: { modelName: { contains: search, mode: this.mode } } },
-              { emulator: { name: { contains: search, mode: this.mode } } },
-              { author: { name: { contains: search, mode: this.mode } } },
-            ],
-          }
-        : {}),
-    }
-
-    // Apply banned user filtering
-    const shadowBanFilter = canSeeBannedUsers ? undefined : buildShadowBanFilter(null)
-    const where = {
-      ...baseWhere,
-      ...(shadowBanFilter && { author: shadowBanFilter }),
-    }
-
+    const where = this.buildPendingListingsWhere({ emulatorIds, search })
     const actualOffset = calculateOffset({ page }, limit)
     const orderBy = this.buildOrderBy(sortField, sortDirection)
 
@@ -826,12 +871,64 @@ export class PcListingsRepository extends BaseRepository {
       }),
     ])
 
-    const pagination = paginate({ total: total, page, limit: limit })
-
     return {
       pcListings,
-      pagination,
+      pagination: paginate({ total: total, page, limit: limit }),
     }
+  }
+
+  async getPendingListingRiskCandidates(
+    filters: PendingPcListingsFilters,
+  ): Promise<PcListingRiskCandidate[]> {
+    return this.prisma.pcListing.findMany({
+      where: this.buildPendingListingsWhere(filters),
+      select: this.getPendingListingRiskCandidateSelect(),
+      orderBy: this.buildOrderBy(filters.sortField, filters.sortDirection ?? 'asc'),
+    })
+  }
+
+  async getPendingListingsByIds(
+    pcListingIds: string[],
+    filters: PendingPcListingsFilters = {},
+  ): Promise<
+    Prisma.PcListingGetPayload<{
+      include: typeof PcListingsRepository.includes.forList
+    }>[]
+  > {
+    if (pcListingIds.length === 0) return []
+
+    return this.prisma.pcListing.findMany({
+      where: {
+        AND: [{ id: { in: pcListingIds } }, this.buildPendingListingsWhere(filters)],
+      },
+      include: PcListingsRepository.includes.forList,
+    })
+  }
+
+  private buildPendingListingsWhere(filters: PendingPcListingsFilters): Prisma.PcListingWhereInput {
+    return buildPendingPcListingsWhere(filters, this.mode)
+  }
+
+  private getPendingListingRiskCandidateSelect() {
+    return {
+      id: true,
+      authorId: true,
+      author: {
+        select: {
+          userBans: {
+            where: getActiveUserBanWhere(),
+            select: { reason: true },
+          },
+        },
+      },
+      customFieldValues: {
+        where: { customFieldDefinition: { name: EMULATOR_VERSION_FIELD_NAME } },
+        select: {
+          value: true,
+          customFieldDefinition: { select: { name: true, label: true } },
+        },
+      },
+    } satisfies Prisma.PcListingSelect
   }
 
   /**
@@ -944,5 +1041,59 @@ export class PcListingsRepository extends BaseRepository {
       where: { userId_emulatorId: { userId, emulatorId } },
     })
     return !!verified
+  }
+
+  private static readonly moderatorInfoUserSelect = {
+    id: true,
+    name: true,
+  } as const
+
+  private static readonly moderatorInfoVoteSelect = {
+    id: true,
+    value: true,
+    createdAt: true,
+    nullifiedAt: true,
+    user: { select: { id: true, name: true, trustScore: true } },
+  } as const
+
+  async getModeratorInfo(pcListingId: string) {
+    const pcListing = await this.handleDatabaseOperation(
+      () =>
+        this.prisma.pcListing.findUnique({
+          where: { id: pcListingId },
+          select: {
+            status: true,
+            processedAt: true,
+            processedNotes: true,
+            processedByUser: { select: PcListingsRepository.moderatorInfoUserSelect },
+          },
+        }),
+      'PcListing',
+    )
+
+    if (!pcListing) throw ResourceError.pcListing.notFound()
+
+    const votes = await this.handleDatabaseOperation(
+      () =>
+        this.prisma.pcListingVote.findMany({
+          where: { pcListingId },
+          orderBy: { createdAt: 'desc' },
+          select: PcListingsRepository.moderatorInfoVoteSelect,
+        }),
+      'PcListingVote',
+    )
+
+    const voteCounts = computeVoteCounts(votes)
+
+    return {
+      approval: {
+        status: pcListing.status,
+        processedAt: pcListing.processedAt,
+        processedNotes: pcListing.processedNotes,
+        processedBy: pcListing.processedByUser,
+      },
+      votes,
+      voteCounts,
+    }
   }
 }

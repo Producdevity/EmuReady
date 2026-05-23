@@ -6,7 +6,7 @@ import {
   PRIVATE_PROFILE_SETTINGS,
 } from '@/server/services/user-profile.service'
 import { paginate } from '@/server/utils/pagination'
-import { ApprovalStatus, Prisma } from '@orm'
+import { ApprovalStatus, Prisma } from '@orm/client'
 
 export const mobileUsersRouter = createMobileTRPCRouter({
   /**

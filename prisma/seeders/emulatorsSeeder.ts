@@ -1,4 +1,4 @@
-import { type PrismaClient } from '@orm'
+import { type PrismaClient } from '@orm/client'
 
 type EmulatorData = {
   name: string

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { FooterAppLinks } from '@/components/footer/components/FooterAppLinks'
 import { FooterBetaBadge } from '@/components/footer/components/FooterBetaBadge'
 import { FooterKofiButton } from '@/components/footer/components/FooterKofiButton'
@@ -12,6 +13,12 @@ import analytics from '@/lib/analytics'
 import { env } from '@/lib/env'
 
 function Footer() {
+  const [copyrightYear, setCopyrightYear] = useState<number | null>(null)
+
+  useEffect(() => {
+    setCopyrightYear(new Date().getUTCFullYear())
+  }, [])
+
   return (
     <footer className="relative overflow-hidden">
       <div className="absolute inset-0 -z-10">
@@ -177,7 +184,7 @@ function Footer() {
           <div className="relative pt-8 border-t border-gray-200/50 dark:border-gray-700/50">
             <div className="text-center">
               <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
-                &copy; {new Date().getFullYear()} EmuReady. All rights reserved.
+                &copy; {copyrightYear ? `${copyrightYear} ` : ''}EmuReady. All rights reserved.
               </p>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />

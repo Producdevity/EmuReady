@@ -26,7 +26,6 @@ import { logAudit } from '@/server/services/audit.service'
 import { listingStatsCache } from '@/server/utils/cache/instances'
 import { paginate } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
-import { createCountQuery } from '@/server/utils/query-performance'
 import { canBanUser } from '@/utils/permission-system'
 import {
   ApprovalStatus,
@@ -35,7 +34,7 @@ import {
   TrustAction,
   AuditAction,
   AuditEntityType,
-} from '@orm'
+} from '@orm/client'
 
 const LISTING_STATS_CACHE_KEY = 'listing-stats'
 const mode = Prisma.QueryMode.insensitive
@@ -59,26 +58,16 @@ export const mobileAdminRouter = createMobileTRPCRouter({
         activeUsers,
         bannedUsers,
       ] = await Promise.all([
-        createCountQuery(ctx.prisma.listing, {
-          status: ApprovalStatus.PENDING,
-        }),
-        createCountQuery(ctx.prisma.listing, {
-          status: ApprovalStatus.APPROVED,
-        }),
-        createCountQuery(ctx.prisma.listing, {
-          status: ApprovalStatus.REJECTED,
-        }),
-        createCountQuery(ctx.prisma.game, { status: ApprovalStatus.PENDING }),
-        createCountQuery(ctx.prisma.game, { status: ApprovalStatus.APPROVED }),
-        createCountQuery(ctx.prisma.game, { status: ApprovalStatus.REJECTED }),
-        createCountQuery(ctx.prisma.listingReport, {
-          status: ReportStatus.PENDING,
-        }),
-        createCountQuery(ctx.prisma.listingReport, {
-          status: ReportStatus.RESOLVED,
-        }),
-        createCountQuery(ctx.prisma.user, {}),
-        createCountQuery(ctx.prisma.userBan, { isActive: true }),
+        ctx.prisma.listing.count({ where: { status: ApprovalStatus.PENDING } }),
+        ctx.prisma.listing.count({ where: { status: ApprovalStatus.APPROVED } }),
+        ctx.prisma.listing.count({ where: { status: ApprovalStatus.REJECTED } }),
+        ctx.prisma.game.count({ where: { status: ApprovalStatus.PENDING } }),
+        ctx.prisma.game.count({ where: { status: ApprovalStatus.APPROVED } }),
+        ctx.prisma.game.count({ where: { status: ApprovalStatus.REJECTED } }),
+        ctx.prisma.listingReport.count({ where: { status: ReportStatus.PENDING } }),
+        ctx.prisma.listingReport.count({ where: { status: ReportStatus.RESOLVED } }),
+        ctx.prisma.user.count(),
+        ctx.prisma.userBan.count({ where: { isActive: true } }),
       ])
 
       return {
@@ -291,7 +280,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
       if (searchConditions) where.OR = searchConditions
 
       const [total, games] = await Promise.all([
-        createCountQuery(ctx.prisma.game, where),
+        ctx.prisma.game.count({ where }),
         ctx.prisma.game.findMany({
           where,
           select: {
@@ -387,7 +376,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
       const where: Prisma.ListingReportWhereInput = { ...(status && { status }) }
 
       const [total, reports] = await Promise.all([
-        createCountQuery(ctx.prisma.listingReport, where),
+        ctx.prisma.listingReport.count({ where }),
         ctx.prisma.listingReport.findMany({
           where,
           include: {
@@ -459,7 +448,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
       }
 
       const [total, bans] = await Promise.all([
-        createCountQuery(ctx.prisma.userBan, where),
+        ctx.prisma.userBan.count({ where }),
         ctx.prisma.userBan.findMany({
           where,
           include: {

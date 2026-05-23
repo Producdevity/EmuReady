@@ -23,6 +23,7 @@ import { isArray, isString } from 'remeda'
 import { z } from 'zod'
 import {
   Badge,
+  BannedUserBadge,
   Button,
   Input,
   Pagination,
@@ -324,14 +325,12 @@ function UserDetailsPage() {
                     <Badge variant={getRoleVariant(userQuery.data.role)} className="text-sm">
                       {formatUserRole(userQuery.data.role)}
                     </Badge>
-                    {canViewBannedUsers &&
-                      'userBans' in userQuery.data &&
-                      Array.isArray(userQuery.data.userBans) &&
-                      userQuery.data.userBans.length > 0 && (
-                        <Badge variant="danger" className="text-sm font-bold">
-                          BANNED USER
-                        </Badge>
-                      )}
+                    <BannedUserBadge
+                      author={userQuery.data}
+                      canView={canViewBannedUsers}
+                      size="md"
+                      className="text-sm font-bold"
+                    />
                     <TrustLevelBadge trustScore={userQuery.data.trustScore} size="sm" />
                   </div>
                   <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 justify-center lg:justify-start mb-3">

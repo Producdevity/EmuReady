@@ -1,11 +1,24 @@
 import path from 'path'
+import { fileURLToPath } from 'url'
 import { defineConfig, devices } from '@playwright/test'
 import dotenv from 'dotenv'
 
-/** Read environment variables from file. */
-dotenv.config({ path: path.resolve(__dirname, '.env.test.local') })
+const currentDir = path.dirname(fileURLToPath(import.meta.url))
+
+dotenv.config({ path: path.resolve(currentDir, '.env.test.local') })
+dotenv.config({ path: path.resolve(currentDir, '.env.test') })
 
 const isCI = !!process.env.CI
+const isGitHubActions = process.env.GITHUB_ACTIONS === 'true'
+
+function createWebServerEnv(): { [key: string]: string } {
+  const env: { [key: string]: string } = {}
+  for (const [key, value] of Object.entries(process.env)) {
+    if (typeof value === 'string') env[key] = value
+  }
+  env.NODE_ENV ||= 'test'
+  return env
+}
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -18,29 +31,24 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* 1 retry catches timing-sensitive tests without hiding consistent issues */
   retries: 1,
-  /* Conservative approach for CI stability - 1 worker ensures each test gets full resources */
-  workers: isCI ? 1 : undefined,
+  workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'list',
-  /* Test timeout */
-  timeout: isCI ? 60 * 1000 : 30 * 1000, // 60 seconds in CI, 30 locally
+  timeout: 60 * 1000,
 
-  /* Global setup - runs once before all tests */
-  globalSetup: require.resolve('./tests/global.setup.ts'),
+  expect: {
+    timeout: 10 * 1000,
+  },
 
-  /* Shared settings for all the projects below. */
+  globalSetup: path.resolve(currentDir, './tests/global.setup.ts'),
+
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: 'http://localhost:3000',
-
-    /* Collect trace when retrying the failed test. */
+    actionTimeout: 10 * 1000,
+    navigationTimeout: 30 * 1000,
     trace: 'on-first-retry',
-
-    /* Screenshot on failure */
     screenshot: 'only-on-failure',
-
-    /* Video on failure */
-    video: 'retain-on-failure',
+    video: isCI ? 'on-first-retry' : 'retain-on-failure',
   },
 
   /* Configure projects for major browsers */
@@ -50,24 +58,31 @@ export default defineConfig({
       name: 'setup',
       testMatch: /auth\.setup\.ts/,
     },
+    // Data setup - creates listings, reports, etc. that other tests depend on
+    {
+      name: 'data-setup',
+      testMatch: /data-setup\.spec\.ts/,
+      dependencies: ['setup'],
+    },
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: ['**/auth.setup.ts', '**/global.setup.ts'],
-      dependencies: ['setup'], // Ensure auth is set up before running tests
+      testIgnore: ['**/auth.setup.ts', '**/global.setup.ts', '**/data-setup.spec.ts'],
+      dependencies: ['data-setup'],
     },
   ],
 
-  /* Let Playwright handle starting the server - removed manual handling */
+  /* Let Playwright handle starting the server */
   webServer: process.env.PWTEST_SKIP_WEBSERVER
     ? undefined
     : {
         command:
           process.env.PWTEST_SERVER_COMMAND ||
-          (isCI ? 'npm run start' : 'npm run build && npm run start'),
+          (isGitHubActions ? 'pnpm start' : 'pnpm build && pnpm start'),
         url: 'http://localhost:3000',
+        env: createWebServerEnv(),
         reuseExistingServer: !isCI,
-        timeout: isCI ? 180 * 1000 : 300 * 1000, // 3 minutes in CI, 5 minutes locally (includes build)
+        timeout: isGitHubActions ? 180 * 1000 : 300 * 1000,
         stdout: 'pipe',
         stderr: 'pipe',
       },

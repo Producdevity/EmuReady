@@ -1,8 +1,6 @@
-import { NextResponse } from 'next/server'
+import { connection, NextResponse } from 'next/server'
 import { prisma } from '@/server/db'
 import type { NextRequest } from 'next/server'
-
-export const dynamic = 'force-dynamic'
 
 interface HealthResponse {
   status: 'healthy' | 'unhealthy'
@@ -111,19 +109,18 @@ interface HealthResponse {
  *                   description: Error message
  */
 export async function GET(_request: NextRequest) {
+  await connection()
+
   try {
-    // Test database connectivity
     const dbStart = Date.now()
     await prisma.$queryRaw`SELECT 1`
     const dbLatency = Date.now() - dbStart
 
-    // Get memory usage
     const memUsage = process.memoryUsage()
     const memoryUsed = memUsage.rss
     const memoryTotal = memUsage.rss + memUsage.external
     const memoryPercentage = Math.round((memoryUsed / memoryTotal) * 100)
 
-    // Check if Clerk environment variables are set
     const authAvailable = !!(
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
     )
@@ -145,8 +142,8 @@ export async function GET(_request: NextRequest) {
       },
       system: {
         memory: {
-          used: Math.round(memoryUsed / 1024 / 1024), // MB
-          total: Math.round(memoryTotal / 1024 / 1024), // MB
+          used: Math.round(memoryUsed / 1024 / 1024),
+          total: Math.round(memoryTotal / 1024 / 1024),
           percentage: memoryPercentage,
         },
         nodeVersion: process.version,

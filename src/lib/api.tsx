@@ -5,6 +5,7 @@ import { httpBatchLink } from '@trpc/client'
 import { createTRPCReact } from '@trpc/react-query'
 import { useState, type PropsWithChildren } from 'react'
 import superjson from 'superjson'
+import { shouldRetryTRPCQuery } from '@/lib/trpc-client-errors'
 import { ms } from '@/utils/time'
 import type { AppRouter } from '@/types/trpc'
 
@@ -16,12 +17,11 @@ export function TRPCProvider(props: PropsWithChildren) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Default settings for all queries
             staleTime: ms.seconds(30),
             gcTime: ms.minutes(5),
-            refetchOnWindowFocus: true,
-            refetchOnReconnect: true,
-            retry: 3,
+            refetchOnWindowFocus: false,
+            refetchOnReconnect: false,
+            retry: shouldRetryTRPCQuery,
             retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
           },
           mutations: { retry: 1 },

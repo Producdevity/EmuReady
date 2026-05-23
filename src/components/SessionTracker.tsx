@@ -21,12 +21,21 @@ function SessionTracker() {
   const { user } = useUser()
   const pathname = usePathname()
   const { analyticsAllowed } = useCookieConsent()
-  const sessionStartRef = useRef<number>(Date.now())
-  const pageLoadTimeRef = useRef<number>(Date.now())
-  const sessionIdRef = useRef<string>(generateUUID())
+  const sessionStartRef = useRef<number | null>(null)
+  const pageLoadTimeRef = useRef<number | null>(null)
+  const sessionIdRef = useRef<string | null>(null)
   const hasTrackedSessionStart = useRef<boolean>(false)
   const discoveredFeatures = useRef<Set<string>>(new Set())
   const previousUserIdRef = useRef<string | undefined>(undefined)
+
+  useEffect(() => {
+    if (sessionStartRef.current !== null) return
+
+    const now = Date.now()
+    sessionStartRef.current = now
+    pageLoadTimeRef.current = now
+    sessionIdRef.current = generateUUID()
+  }, [])
 
   // Track user sign-in when a user transitions from null/undefined to having a user
   useEffect(() => {
@@ -49,7 +58,7 @@ function SessionTracker() {
 
   // Track session start on the first load
   useEffect(() => {
-    if (!analyticsAllowed || hasTrackedSessionStart.current) return
+    if (!analyticsAllowed || hasTrackedSessionStart.current || !sessionIdRef.current) return
 
     hasTrackedSessionStart.current = true
 
@@ -63,7 +72,7 @@ function SessionTracker() {
 
   // Track page views when pathname changes
   useEffect(() => {
-    if (!analyticsAllowed) return
+    if (!analyticsAllowed || pageLoadTimeRef.current === null) return
 
     const loadTime = Date.now() - pageLoadTimeRef.current
 
@@ -79,10 +88,12 @@ function SessionTracker() {
 
     // Track feature discovery based on page visits
     const featureMap: Record<string, string> = {
+      '/pc-listings/new': 'pc-listing_creation',
       '/listings/new': 'listing_creation',
       '/profile': 'profile_management',
       '/admin': 'admin_panel',
       '/listings': 'listing_browser',
+      '/pc-listings': 'pc-listing_browser',
       '/games': 'game_browser',
     }
 
@@ -102,12 +113,13 @@ function SessionTracker() {
 
   // Track session duration on page unloading
   useEffect(() => {
-    if (!analyticsAllowed) return
+    if (!analyticsAllowed || sessionStartRef.current === null || !sessionIdRef.current) return
 
     const handleBeforeUnload = () => {
+      if (sessionStartRef.current === null || !sessionIdRef.current) return
+
       const sessionDuration = Date.now() - sessionStartRef.current
 
-      // Track session end with analytics
       analytics.session.sessionEnded({
         userId: user?.id,
         sessionId: sessionIdRef.current,

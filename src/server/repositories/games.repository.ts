@@ -4,7 +4,7 @@ import { buildShadowBanFilter } from '@/server/utils/query-builders'
 import { normalizeGameTitle } from '@/server/utils/steamGameBatcher'
 import { hasRolePermission } from '@/utils/permissions'
 import { normalizeString } from '@/utils/text'
-import { Prisma, ApprovalStatus, Role } from '@orm'
+import { Prisma, ApprovalStatus, Role } from '@orm/client'
 import { BaseRepository } from './base.repository'
 
 // Type guard for game metadata with Steam App ID

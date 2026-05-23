@@ -1,5 +1,7 @@
 import { z } from 'zod'
 import { PAGINATION, CHAR_LIMITS } from '@/data/constants'
+import { JsonValueSchema } from '@/schemas/common'
+import { REVIEW_RISK_FILTERS, ReviewRiskFilterSchema } from '@/schemas/submissionRisk'
 import { ApprovalStatus, PcOs, ReportReason, ReportStatus } from '@orm'
 
 export const CreatePcListingSchema = z.object({
@@ -16,11 +18,11 @@ export const CreatePcListingSchema = z.object({
     .array(
       z.object({
         customFieldDefinitionId: z.string().uuid(),
-        value: z.any(), // Zod .any() for Prisma.JsonValue; validation happens implicitly by structure
+        value: JsonValueSchema.optional(),
       }),
     )
     .optional(),
-  recaptchaToken: z.string().optional(), // reCAPTCHA token for bot protection
+  recaptchaToken: z.string().nullable().optional(),
 })
 
 export const GetPcListingsSchema = z.object({
@@ -73,11 +75,22 @@ export const GetPendingPcListingsSchema = z
       ])
       .optional(),
     sortDirection: z.enum(['asc', 'desc']).optional(),
+    riskFilter: ReviewRiskFilterSchema.default(REVIEW_RISK_FILTERS.ALL),
   })
   .optional()
 
 export const DeletePcListingSchema = z.object({ id: z.string().uuid() })
 
+// TODO: Wire up a PC admin processed-listings page + router procedure for
+// parity with handheld (`admin.getProcessed` + `src/app/admin/processed-listings/`).
+// When doing so, extend this schema with `sortField` / `sortDirection` using the
+// same shape as `GetProcessedSchema` in `./listing.ts`, and ideally share as much
+// of the admin router logic as possible (the two codebases are drifting — fixes
+// applied to handheld listings often miss their PC counterpart). Candidates for
+// shared code: `buildProcessedOrderBy`, the search `where` builder, the
+// approval-flow branches. See also: `src/server/api/utils/listingHelpers.ts`
+// (handheld) vs `pcListingHelpers.ts` (PC) — these helpers already exist and
+// should be the basis for a shared abstraction.
 export const GetProcessedPcSchema = z.object({
   page: z.number().default(1),
   limit: z.number().default(10),
@@ -168,7 +181,7 @@ export const UpdatePcListingAdminSchema = z.object({
     .array(
       z.object({
         customFieldDefinitionId: z.string().uuid(),
-        value: z.any(),
+        value: JsonValueSchema.optional(),
       }),
     )
     .optional(),
@@ -185,7 +198,7 @@ export const UpdatePcListingUserSchema = z.object({
     .array(
       z.object({
         customFieldDefinitionId: z.string().uuid(),
-        value: z.any(),
+        value: JsonValueSchema.optional(),
       }),
     )
     .optional(),
@@ -225,6 +238,7 @@ export const GetPcPresetsSchema = z.object({
 export const VotePcListingSchema = z.object({
   pcListingId: z.string().uuid(),
   value: z.boolean(), // true = upvote, false = downvote
+  recaptchaToken: z.string().nullable().optional(),
 })
 
 export const GetPcListingUserVoteSchema = z.object({

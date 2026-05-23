@@ -11,17 +11,13 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
     exclude: ['playwright.config.ts'],
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        singleThread: true,
-      },
-    },
+    fileParallelism: false,
     typecheck: {
       enabled: false,
     },
     testTimeout: 15000,
     hookTimeout: 10000,
-    reporters: process.env.CI ? ['basic'] : ['default'],
+    reporters: process.env.CI ? [['default', { summary: false }], 'github-actions'] : ['default'],
     silent: false,
   },
 })

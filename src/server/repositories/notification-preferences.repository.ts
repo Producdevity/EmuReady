@@ -1,5 +1,5 @@
 import { BaseRepository } from './base.repository'
-import type { NotificationType, Prisma } from '@orm'
+import type { NotificationType, Prisma } from '@orm/client'
 
 export class NotificationPreferencesRepository extends BaseRepository {
   static readonly selects = {

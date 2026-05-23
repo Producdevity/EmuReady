@@ -1,0 +1,12 @@
+allowBuilds:
+  '@clerk/shared': false
+  '@prisma/client': true
+  '@prisma/engines': true
+  '@sentry/cli': true
+  '@tailwindcss/oxide': true
+  '@vercel/speed-insights': false
+  esbuild: true
+  prisma: true
+  sharp: true
+  unrs-resolver: true
+  vue-demi: true

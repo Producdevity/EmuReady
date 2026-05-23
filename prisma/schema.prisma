@@ -1,14 +1,11 @@
 generator client {
-  provider        = "prisma-client-js"
+  provider        = "prisma-client"
   output          = "./generated/client"
-  binaryTargets   = ["native", "debian-openssl-3.0.x"]
   previewFeatures = ["typedSql"]
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DATABASE_DIRECT_URL")
+  provider = "postgresql"
 }
 
 enum Role {
@@ -505,6 +502,7 @@ model Vote {
   @@unique([userId, listingId])
   @@index([userId])
   @@index([listingId])
+  @@index([userId, nullifiedAt])
 }
 
 model Comment {
@@ -541,6 +539,7 @@ model CommentVote {
 
   @@unique([userId, commentId])
   @@index([userId])
+  @@index([userId, nullifiedAt])
 }
 
 model ListingCustomFieldValue {
@@ -735,6 +734,7 @@ enum TrustAction {
   ADMIN_ADJUSTMENT_POSITIVE
   ADMIN_ADJUSTMENT_NEGATIVE
   VOTE_NULLIFICATION_REVERSAL
+  VOTE_CHANGE_REVERSAL
 
   @@map("trust_action")
 }
@@ -1123,6 +1123,7 @@ model PcListingVote {
   @@unique([userId, pcListingId])
   @@index([pcListingId])
   @@index([userId])
+  @@index([userId, nullifiedAt])
   @@map("pc_listing_votes")
 }
 
@@ -1166,6 +1167,7 @@ model PcListingCommentVote {
   @@unique([userId, commentId])
   @@index([commentId])
   @@index([userId])
+  @@index([userId, nullifiedAt])
   @@map("pc_listing_comment_votes")
 }
 

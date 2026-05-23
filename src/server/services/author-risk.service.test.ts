@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { RISK_SIGNAL_TYPES } from '@/schemas/authorRisk'
 import { computeAuthorRiskProfiles } from './author-risk.service'
-import type { PrismaClient } from '@orm'
+import type { PrismaClient } from '@orm/client'
 
 vi.mock('@orm/sql', () => ({
   getAuthorReportStats: (authorIds: string[]) => ({ sql: 'getAuthorReportStats', authorIds }),

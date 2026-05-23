@@ -1,5 +1,5 @@
 import { ResourceError } from '@/lib/errors'
-import { Prisma, type System } from '@orm'
+import { Prisma, type System } from '@orm/client'
 import { BaseRepository } from './base.repository'
 import type { GetSystemsInput, CreateSystemInput, UpdateSystemInput } from '@/schemas/system'
 

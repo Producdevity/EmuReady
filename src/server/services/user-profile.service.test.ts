@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Role, type PrismaClient } from '@orm'
+import { Role, type PrismaClient } from '@orm/client'
 import { checkProfileAccess, PRIVATE_PROFILE_SETTINGS } from './user-profile.service'
 
 function createMockPrisma() {

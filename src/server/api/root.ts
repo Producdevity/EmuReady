@@ -8,7 +8,6 @@ import { apiKeysRouter } from './routers/apiKeys'
 import { auditLogsRouter } from './routers/auditLogs'
 import { badgesRouter } from './routers/badges'
 import { bookmarksRouter } from './routers/bookmarks'
-import { cacheRouter } from './routers/cache'
 import { cpusRouter } from './routers/cpus'
 import { customFieldCategoryRouter } from './routers/customFieldCategories'
 import { customFieldDefinitionRouter } from './routers/customFieldDefinitions'
@@ -34,7 +33,6 @@ import { rawgRouter } from './routers/rawg'
 import { releasesRouter } from './routers/releases'
 import { socialRouter } from './routers/social'
 import { socsRouter } from './routers/socs'
-import { systemRouter } from './routers/system'
 import { systemsRouter } from './routers/systems'
 import { tgdbRouter } from './routers/tgdb'
 import { trustRouter } from './routers/trust'
@@ -56,14 +54,12 @@ export const appRouter = createTRPCRouter({
   deviceBrands: deviceBrandsRouter,
   socs: socsRouter,
   games: gamesRouter,
-  system: systemRouter,
   systems: systemsRouter,
   emulators: emulatorsRouter,
   users: usersRouter,
   userPreferences: userPreferencesRouter,
   userBans: userBansRouter,
   badges: badgesRouter,
-  cache: cacheRouter,
   notifications: notificationsRouter,
   customFieldCategories: customFieldCategoryRouter,
   customFieldDefinitions: customFieldDefinitionRouter,

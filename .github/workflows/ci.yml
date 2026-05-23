@@ -2,16 +2,42 @@ name: CI
 
 on:
   pull_request:
-    branches: [master]
   push:
-    branches: [master]
+    branches: [master, staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/emuready_test"
+  DATABASE_DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/emuready_test"
+  NODE_ENV: "test"
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+  CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+  CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}
+  IGDB_CLIENT_KEY: ${{ secrets.IGDB_CLIENT_KEY }}
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+  NEXT_PUBLIC_GA_ID: ${{ secrets.NEXT_PUBLIC_GA_ID }}
+  NEXT_PUBLIC_IGDB_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_IGDB_CLIENT_ID }}
+  NEXT_PUBLIC_LOCAL_STORAGE_PREFIX: ${{ secrets.NEXT_PUBLIC_LOCAL_STORAGE_PREFIX }}
+  RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
+  THE_GAMES_DB_API_KEY: ${{ secrets.THE_GAMES_DB_API_KEY }}
+  NEXT_PUBLIC_DISABLE_COOKIE_BANNER: "true"
+  NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+  NEXT_PUBLIC_DISCORD_LINK: "https://discord.gg/test"
+  EMAIL_ENABLED: "false"
 
 jobs:
-  build-test:
+  quality:
+    name: Lint and type-check
     runs-on: ubuntu-latest
-    concurrency:
-      group: ci-${{ github.workflow }}-${{ github.ref }}
-      cancel-in-progress: true
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:15
@@ -20,63 +46,131 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_DB: emuready_test
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres -d emuready_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
         ports:
           - 5432:5432
 
-    env:
-      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/emuready_test"
-      DATABASE_DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/emuready_test"
-      NODE_ENV: "test"
-      CI: "true"
-      NEXT_TELEMETRY_DISABLED: "1"
-      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-      CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}
-      IGDB_CLIENT_KEY: ${{ secrets.IGDB_CLIENT_KEY }}
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-      NEXT_PUBLIC_GA_ID: ${{ secrets.NEXT_PUBLIC_GA_ID }}
-      NEXT_PUBLIC_IGDB_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_IGDB_CLIENT_ID }}
-      NEXT_PUBLIC_LOCAL_STORAGE_PREFIX: ${{ secrets.NEXT_PUBLIC_LOCAL_STORAGE_PREFIX }}
-      RAWG_API_KEY: ${{ secrets.RAWG_API_KEY }}
-      THE_GAMES_DB_API_KEY: ${{ secrets.THE_GAMES_DB_API_KEY }}
-      NEXT_PUBLIC_DISABLE_COOKIE_BANNER: "true"
-      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
-      NEXT_PUBLIC_DISCORD_LINK: "https://discord.gg/test"
-      EMAIL_ENABLED: "false"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run database migrations
+        run: pnpm exec prisma migrate deploy
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type-check
+        run: pnpm types
+
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: emuready_test
+        options: >-
+          --health-cmd "pg_isready -U postgres -d emuready_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 22.16.0
-          cache: npm
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
-
-      - name: Clean build cache
-        run: npm run clean
-
-      - name: Generate Prisma client
-        run: npx prisma generate
+        run: pnpm install --frozen-lockfile
 
       - name: Run database migrations
-        run: npx prisma migrate deploy
+        run: pnpm exec prisma migrate deploy
 
-      - name: Seed test database
-        run: npx prisma db seed
-
-      - name: Lint & type-check
-        run: npm run check
+      - name: Generate Prisma client
+        run: pnpm db:generate
 
       - name: Unit tests
-        run: npm run test:ci
+        run: pnpm test:ci
+
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: emuready_test
+        options: >-
+          --health-cmd "pg_isready -U postgres -d emuready_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Clean build cache
+        run: pnpm clean
+
+      - name: Run database migrations
+        run: pnpm exec prisma migrate deploy
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
 
       - name: Build
-        run: npm run build
+        run: pnpm build

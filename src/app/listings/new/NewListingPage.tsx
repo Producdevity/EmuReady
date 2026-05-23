@@ -16,6 +16,7 @@ import {
 import { useForm, Controller } from 'react-hook-form'
 import '@/shared/emulator-config/eden'
 import '@/shared/emulator-config/azahar'
+import '@/shared/emulator-config/gamenative'
 import { Button, LoadingSpinner } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
@@ -24,9 +25,11 @@ import { MarkdownEditor } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import { type RouterInput } from '@/types/trpc'
+import { type CustomFieldDefinitionWithOptions } from '@/utils/custom-field-validation'
 import { parseCustomFieldOptions, getCustomFieldDefaultValue } from '@/utils/custom-fields'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { formatCountLabel } from '@/utils/text'
+import { ms } from '@/utils/time'
 import {
   CustomFieldsFormSection,
   type DeviceOption,
@@ -40,14 +43,14 @@ import {
   ListingFormAuthGuard,
 } from '../components/shared'
 import { useGameLoader, useEmulatorLoader, usePreSelectedGame, useFormKeyDown } from '../hooks'
-import createDynamicListingSchema, {
-  type CustomFieldDefinitionWithOptions,
-} from './form-schemas/createDynamicListingSchema'
+import createDynamicListingSchema from './form-schemas/createDynamicListingSchema'
 import listingFormSchema from './form-schemas/listingFormSchema'
 import { useEmulatorConfigImporter } from './hooks/useEmulatorConfigImporter'
 import { reconcileDriverValue } from '../components/shared/custom-fields/driverVersionUtils'
 
 export type ListingFormValues = RouterInput['listings']['create']
+
+const HIGHLIGHT_DURATION_MS = 1800
 
 function AddListingPage() {
   const router = useRouter()
@@ -99,7 +102,7 @@ function AddListingPage() {
   }, [availableEmulators, selectedEmulatorId])
   // Prefetch driver versions so an imported Eden driver filename can be resolved immediately
   const driverVersionsQuery = api.listings.driverVersions.useQuery(undefined, {
-    staleTime: 30 * 60 * 1000,
+    staleTime: ms.minutes(30),
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   })
@@ -165,15 +168,14 @@ function AddListingPage() {
       }
       importHighlightTimeoutRef.current = window.setTimeout(() => {
         setHighlightedFieldIds([])
-      }, 1800)
+      }, HIGHLIGHT_DURATION_MS)
 
-      if (changedCount > 0) {
-        toast.success(
-          `Imported Eden configuration. Filled ${formatCountLabel('field', changedCount)}.`,
-        )
-      } else {
-        toast.success('Imported Eden configuration.')
-      }
+      const changedFieldsMessage =
+        changedCount > 0
+          ? `Filled ${formatCountLabel('field', changedCount)}.`
+          : 'No matching fields were filled.'
+
+      toast.success(`Imported configuration. ${changedFieldsMessage}`)
 
       if (uniqueMissing.length > 0) {
         toast.info(`Review manually: ${uniqueMissing.join(', ')}`)
@@ -202,9 +204,10 @@ function AddListingPage() {
     .trim()
     .toLowerCase()
 
-  const importerSlugMap: Record<string, 'eden' | 'azahar'> = {
+  const importerSlugMap: Record<string, 'eden' | 'azahar' | 'gamenative'> = {
     eden: 'eden',
     azahar: 'azahar',
+    gamenative: 'gamenative',
   }
 
   const selectedEmulatorSlug = importerSlugMap[normalizedEmulatorName] ?? null
@@ -412,10 +415,8 @@ function AddListingPage() {
   })
 
   useEffect(() => {
-    if (selectedEmulatorSlug !== 'eden') {
-      setImportSummary(null)
-      setHighlightedFieldIds([])
-    }
+    setImportSummary(null)
+    setHighlightedFieldIds([])
   }, [selectedEmulatorSlug])
 
   const onSubmit = async (data: ListingFormValues) => {
@@ -427,9 +428,11 @@ function AddListingPage() {
     let recaptchaToken: string | null = null
     if (isCaptchaEnabled) {
       recaptchaToken = await executeForCreateListing()
+      if (!recaptchaToken) {
+        return toast.error('CAPTCHA verification could not start. Please refresh and try again.')
+      }
     }
 
-    // Schema validation handles all validation including custom fields
     createListingMutation.mutate({
       ...data,
       ...(recaptchaToken && { recaptchaToken }),

@@ -19,7 +19,7 @@ interface Props {
 function DeviceModal(props: Props) {
   const createDevice = api.devices.create.useMutation()
   const updateDevice = api.devices.update.useMutation()
-  const deviceBrandsQuery = api.deviceBrands.get.useQuery()
+  const deviceBrandsQuery = api.deviceBrands.get.useQuery({ limit: 100 })
   const socsQuery = api.socs.get.useQuery({ limit: 1000 })
 
   const [brandId, setBrandId] = useState('')

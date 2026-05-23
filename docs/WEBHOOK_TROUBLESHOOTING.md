@@ -67,11 +67,8 @@ For local development, you need to expose your local server:
 #### Option A: Using ngrok (Recommended for testing)
 
 ```bash
-# Install ngrok if you haven't already
-npm install -g ngrok
-
 # Expose your local server (assuming port 3000)
-ngrok http 3000
+pnpm dlx ngrok http 3000
 
 # Copy the HTTPS URL (e.g., https://abc123.ngrok.io)
 # Update your Clerk webhook endpoint to:
@@ -107,11 +104,11 @@ Follow the guide in `docs/AUTHENTICATION_SETUP.md`
 1. Check your database connection:
    ```bash
    # Test database connection
-   npx prisma db pull
+   pnpm exec prisma db pull
    ```
 2. Ensure your database schema is up to date:
    ```bash
-   npx prisma db push
+   pnpm exec prisma db push
    ```
 3. Check if the `User` table exists and has the correct schema
 
@@ -155,7 +152,7 @@ This usually indicates a change in Clerk's webhook payload format. Check:
 - [ ] Webhook is configured in Clerk dashboard with correct URL
 - [ ] Webhook is subscribed to `user.created`, `user.updated`, and `user.deleted` events
 - [ ] Database connection is working
-- [ ] Prisma schema is up to date (`npx prisma db push`)
+- [ ] Prisma schema is up to date (`pnpm exec prisma db push`)
 - [ ] Server logs show webhook events being received
 - [ ] No errors in webhook processing logs
 

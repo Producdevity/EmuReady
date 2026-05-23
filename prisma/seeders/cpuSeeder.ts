@@ -1,4 +1,4 @@
-import { type PrismaClient } from '@orm'
+import { type PrismaClient } from '@orm/client'
 
 const cpuSeeder = async (prisma: PrismaClient) => {
   console.info('🌱 Seeding CPUs...')

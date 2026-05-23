@@ -1,11 +1,13 @@
 import { auth } from '@clerk/nextjs/server'
-import { type NextRequest, NextResponse } from 'next/server'
+import { connection, type NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/server/db'
 import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role } from '@orm'
 
 export async function GET(_: NextRequest, props: { params: Promise<{ id: string }> }) {
+  await connection()
+
   const { userId } = await auth()
   const params = await props.params
 

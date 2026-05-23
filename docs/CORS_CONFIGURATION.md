@@ -8,7 +8,7 @@ CORS (Cross-Origin Resource Sharing) controls which websites can access your API
 
 The following origins are **ALWAYS allowed** by default (hardcoded):
 
-### Your Domains
+### Core Domains
 - `https://emuready.com` - Main production site
 - `https://www.emuready.com` - WWW subdomain
 - `https://dev.emuready.com` - Development environment
@@ -24,41 +24,41 @@ The following origins are **ALWAYS allowed** by default (hardcoded):
 
 ## Adding Additional Origins
 
-If you need to allow additional websites to access your API, you can add them using the `ALLOWED_ORIGINS` environment variable.
+If you need to allow additional websites to access your API, add them with `NEXT_PUBLIC_ALLOWED_ORIGINS` or `ALLOWED_ORIGINS`.
 
 ### Environment Variable
 
 Add to your `.env` file:
 ```bash
 # Single origin
-ALLOWED_ORIGINS="https://custom-site.com"
+NEXT_PUBLIC_ALLOWED_ORIGINS="https://custom-site.com"
 
 # Multiple origins (comma-separated)
-ALLOWED_ORIGINS="https://custom-site.com,https://another-site.com,https://third-site.com"
+NEXT_PUBLIC_ALLOWED_ORIGINS="https://custom-site.com,https://another-site.com,https://third-site.com"
 ```
 
 ### Common Use Cases
 
 1. **Local development with tunnels (ngrok, cloudflared)**:
    ```bash
-   ALLOWED_ORIGINS="https://abc123.ngrok.io"
+   NEXT_PUBLIC_ALLOWED_ORIGINS="https://abc123.ngrok.io"
    ```
 
 2. **Adding new partner sites**:
    ```bash
-   ALLOWED_ORIGINS="https://partner-site.com,https://another-partner.com"
+   NEXT_PUBLIC_ALLOWED_ORIGINS="https://partner-site.com,https://another-partner.com"
    ```
 
 3. **Testing from different domains**:
    ```bash
-   ALLOWED_ORIGINS="https://test.emuready.com,https://beta.emuready.com"
+   NEXT_PUBLIC_ALLOWED_ORIGINS="https://test.emuready.com,https://beta.emuready.com"
    ```
 
 ## How It Works
 
 1. **Single Source of Truth**: All CORS configuration is centralized in `/src/lib/cors.ts`
 2. **Used By**:
-   - `middleware.ts` - Protects `/api/trpc/*` routes
+   - `src/middleware.ts` - Protects `/api/trpc/*` routes
    - Mobile API routes - `/api/mobile/*` endpoints
    - Other API endpoints
 
@@ -101,7 +101,7 @@ For server-to-server API calls (no browser involved), you can bypass CORS by usi
 
 This means the website trying to access your API is not in the allowed list.
 
-**Solution**: Add the origin to `ALLOWED_ORIGINS` environment variable.
+**Solution**: Add the origin to `NEXT_PUBLIC_ALLOWED_ORIGINS` or `ALLOWED_ORIGINS`.
 
 ### Mobile App Can't Connect
 
@@ -116,7 +116,7 @@ Mobile apps should work automatically as `capacitor://localhost` and `ionic://lo
 If Eden or other partner sites can't access your API:
 
 1. Check if they're in the hardcoded `PARTNER_ORIGINS` list in `/src/lib/cors.ts`
-2. If not, add them to `ALLOWED_ORIGINS` environment variable
+2. If not, add them to `NEXT_PUBLIC_ALLOWED_ORIGINS` or `ALLOWED_ORIGINS`
 3. Make sure they're using HTTPS in production
 
 ## Testing CORS
@@ -126,16 +126,9 @@ You can test CORS configuration using curl:
 ```bash
 # Test with origin header
 curl -H "Origin: https://eden-emu.dev" \
-     -I https://api.emuready.com/api/trpc/listings.getAll
+     -I http://localhost:3000/api/trpc/listings.getAll
 
 # Should see: Access-Control-Allow-Origin: https://eden-emu.dev
 ```
 
-## Environment Files
-
-Make sure to update these files when deploying:
-- `.env.local` - Local development
-- `.env.staging` - Staging environment  
-- `.env.production` - Production environment
-
-Remember: The hardcoded origins are always included, so you only need to add **additional** origins via environment variables.
+The hardcoded origins are always included, so environment variables only need additional origins.

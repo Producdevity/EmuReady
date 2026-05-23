@@ -1,7 +1,7 @@
 import { clerkClient } from '@clerk/nextjs/server'
 import { logger } from '@/lib/logger'
 import { prisma } from '@/server/db'
-import type { Role } from '@orm'
+import type { Role } from '@orm/client'
 
 /**
  * Syncs a user's role from database to Clerk publicMetadata

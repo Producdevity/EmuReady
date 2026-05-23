@@ -1,4 +1,4 @@
-import { type PrismaClient } from '@orm'
+import { type PrismaClient } from '@orm/client'
 
 export interface SpamDetectionResult {
   isSpam: boolean
@@ -43,7 +43,7 @@ const DEFAULT_CONFIG: Required<SpamDetectionConfig> = {
 }
 
 /**
- * Comprehensive spam detection service
+ * Spam detection service
  * Checks content for spam using multiple detection methods
  */
 export class SpamDetectionService {
@@ -286,7 +286,7 @@ export class SpamDetectionService {
     const classicSpamPatterns = [
       /\b(click\s*here|buy\s*now|limited\s*time|act\s*now|free\s*money|get\s*rich|work\s*from\s*home)\b/gi,
       /\b(viagra|cialis|casino|poker|lottery)\b/gi,
-      /\b(congratulations[!]?\s*you['']?ve\s*won|you\s*are\s*a\s*winner)\b/gi,
+      /\b(congratulations!?\s*you'?ve\s*won|you\s*are\s*a\s*winner)\b/gi,
       /\b(cheap\s*(meds|pills|drugs)|online\s*pharmacy)\b/gi,
       /\b(mlm|multi[-\s]level\s*marketing|pyramid\s*scheme)\b/gi,
     ]

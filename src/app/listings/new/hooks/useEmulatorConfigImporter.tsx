@@ -7,8 +7,8 @@ import {
   parseEmulatorConfig,
   type CustomFieldImportDefinition,
 } from '@/shared/emulator-config'
+import { type CustomFieldDefinitionWithOptions } from '@/utils/custom-field-validation'
 import { CustomFieldType } from '@orm'
-import type { CustomFieldDefinitionWithOptions } from '../form-schemas/createDynamicListingSchema'
 
 interface UseEmulatorConfigImporterOptions {
   emulatorSlug: string | null

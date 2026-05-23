@@ -20,6 +20,16 @@ export function SuccessRateBar(props: Props) {
   return (
     <div className={cn('flex flex-col gap-1', compact ? 'w-20' : 'w-full')}>
       <div
+        role="progressbar"
+        aria-label="Listing success rate"
+        aria-valuenow={roundedRate}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuetext={
+          voteCount > 0
+            ? `${roundedRate}% based on ${voteCount} ${voteCount === 1 ? 'vote' : 'votes'}`
+            : `${roundedRate}%`
+        }
         className={cn(
           'w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden',
           compact ? 'h-1.5' : 'h-2',

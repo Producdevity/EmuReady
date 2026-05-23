@@ -20,7 +20,7 @@ import { EmulatorsRepository } from '@/server/repositories/emulators.repository'
 import { paginate } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { hasRolePermission } from '@/utils/permissions'
-import { type Prisma, Role } from '@orm'
+import { type Prisma, Role } from '@orm/client'
 
 export const emulatorsRouter = createTRPCRouter({
   stats: viewStatisticsProcedure.query(async ({ ctx }) => {

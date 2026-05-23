@@ -1,8 +1,10 @@
 import { auth } from '@clerk/nextjs/server'
-import { NextResponse } from 'next/server'
+import { connection, NextResponse } from 'next/server'
 import { prisma } from '@/server/db'
 
 export async function GET() {
+  await connection()
+
   try {
     // Get authenticated user
     const { userId } = await auth()

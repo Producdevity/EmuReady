@@ -9,7 +9,12 @@ import { createTRPCRouter, adminProcedure } from '@/server/api/trpc'
 import { notificationService } from '@/server/notifications/service'
 import { ReleasesRepository } from '@/server/repositories/releases.repository'
 import { presignPutObject, putJson, deleteObject } from '@/server/services/r2.service'
-import { NotificationType, NotificationCategory, DeliveryChannel, EntitlementStatus } from '@orm'
+import {
+  NotificationType,
+  NotificationCategory,
+  DeliveryChannel,
+  EntitlementStatus,
+} from '@orm/client'
 
 export const adminReleasesRouter = createTRPCRouter({
   getUploadUrl: adminProcedure.input(AdminGetUploadUrlSchema).mutation(async ({ input }) => {

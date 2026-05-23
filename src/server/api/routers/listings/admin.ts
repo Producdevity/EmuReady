@@ -1,10 +1,12 @@
 import { ResourceError, AppError } from '@/lib/errors'
 import { applyTrustAction } from '@/lib/trust/service'
+import { ListingType } from '@/schemas/common'
 import {
   ApproveListingSchema,
   RejectListingSchema,
   GetProcessedSchema,
   GetPendingListingsSchema,
+  GetListingModeratorInfoSchema,
   OverrideApprovalStatusSchema,
   DeleteListingSchema,
   BulkApproveListingsSchema,
@@ -24,176 +26,104 @@ import {
   viewStatisticsProcedure,
   protectedProcedure,
 } from '@/server/api/trpc'
-import {
-  invalidateListing,
-  invalidateListPages,
-  invalidateSitemap,
-  revalidateByTag,
-} from '@/server/cache/invalidation'
+import { buildProcessedOrderBy } from '@/server/api/utils/listingHelpers'
+import { invalidateListingSeo, invalidateListingsSeo } from '@/server/cache/invalidation'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
-import { computeAuthorRiskProfiles } from '@/server/services/author-risk.service'
-import { listingStatsCache } from '@/server/utils/cache/instances'
+import { ListingsRepository } from '@/server/repositories/listings.repository'
+import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
+import {
+  attachReviewRiskProfiles,
+  computeReviewRiskProfiles,
+  getRiskOnlyReviewPage,
+} from '@/server/services/review-risk.service'
+import {
+  invalidateCatalogCompatibilityCacheForDevice,
+  invalidateCatalogCompatibilityCacheForDevices,
+  listingStatsCache,
+} from '@/server/utils/cache/instances'
 import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
 import { paginate } from '@/server/utils/pagination'
 import { hasRolePermission } from '@/utils/permissions'
-import { Prisma, ApprovalStatus, TrustAction, Role } from '@orm'
+import { Prisma, ApprovalStatus, TrustAction, Role } from '@orm/client'
 
 const LISTING_STATS_CACHE_KEY = 'listing-stats'
 
 const mode = Prisma.QueryMode.insensitive
 
 export const adminRouter = createTRPCRouter({
-  getPending: developerProcedure.input(GetPendingListingsSchema).query(async ({ ctx, input }) => {
-    const { search, page = 1, limit = 20, sortField, sortDirection } = input ?? {}
-    const skip = (page - 1) * limit
+  moderatorInfo: moderatorProcedure
+    .input(GetListingModeratorInfoSchema)
+    .query(async ({ ctx, input }) => {
+      return input.type === ListingType.enum.handheld
+        ? new ListingsRepository(ctx.prisma).getModeratorInfo(input.id)
+        : new PcListingsRepository(ctx.prisma).getModeratorInfo(input.id)
+    }),
 
-    // Build where clause for search
-    let where: Prisma.ListingWhereInput = { status: ApprovalStatus.PENDING }
+  getPending: developerProcedure.input(GetPendingListingsSchema).query(async ({ ctx, input }) => {
+    const repository = new ListingsRepository(ctx.prisma)
+    const {
+      search,
+      page = 1,
+      limit = 20,
+      sortField,
+      sortDirection,
+      riskFilter = 'all',
+    } = input ?? {}
+    const filterRiskyListings = riskFilter === 'risky'
+    let emulatorIds: string[] | undefined
 
     // For developers, only show listings for their verified emulators
     if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
-      // Get user's verified emulators
-      const verifiedEmulators = await ctx.prisma.verifiedDeveloper.findMany({
-        where: { userId: ctx.session.user.id },
-        select: { emulatorId: true },
-      })
-
-      const emulatorIds = verifiedEmulators.map((ve) => ve.emulatorId)
+      emulatorIds = await repository.listVerifiedEmulatorIdsByUserId(ctx.session.user.id)
 
       if (emulatorIds.length === 0) {
-        // Developer has no verified emulators, return empty result
         return {
           listings: [],
           pagination: paginate({ total: 0, page, limit }),
         }
       }
-
-      where.emulatorId = { in: emulatorIds }
     }
 
-    if (search && search.trim() !== '') {
-      where = {
-        ...where,
-        OR: [
-          { game: { title: { contains: search, mode } } },
-          { game: { system: { name: { contains: search, mode } } } },
-          { device: { modelName: { contains: search, mode } } },
-          { device: { brand: { name: { contains: search, mode } } } },
-          { emulator: { name: { contains: search, mode } } },
-          { author: { name: { contains: search, mode } } },
-        ],
+    if (filterRiskyListings) {
+      const riskPage = await getRiskOnlyReviewPage({
+        prisma: ctx.prisma,
+        page,
+        limit,
+        loadCandidates: () =>
+          repository.getPendingListingRiskCandidates({
+            emulatorIds,
+            search,
+            sortField,
+            sortDirection,
+          }),
+        loadItemsByIds: (listingIds) =>
+          repository.getPendingListingsByIds(listingIds, {
+            emulatorIds,
+            search,
+          }),
+      })
+
+      return {
+        listings: riskPage.items,
+        pagination: paginate({ total: riskPage.total, page, limit }),
       }
     }
 
-    // Build orderBy clause
-    let orderBy: Prisma.ListingOrderByWithRelationInput = {
-      createdAt: 'asc', // Default sorting
-    }
-
-    if (sortField && sortDirection) {
-      switch (sortField) {
-        case 'game.title':
-          orderBy = { game: { title: sortDirection } }
-          break
-        case 'game.system.name':
-          orderBy = { game: { system: { name: sortDirection } } }
-          break
-        case 'device':
-          orderBy = { device: { modelName: sortDirection } }
-          break
-        case 'emulator.name':
-          orderBy = { emulator: { name: sortDirection } }
-          break
-        case 'author.name':
-          orderBy = { author: { name: sortDirection } }
-          break
-        case 'createdAt':
-          orderBy = { createdAt: sortDirection }
-          break
-      }
-    }
-
-    const listings = await ctx.prisma.listing.findMany({
-      where,
-      include: {
-        game: { include: { system: true } },
-        device: { include: { brand: true } },
-        emulator: true,
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            userBans: {
-              where: {
-                isActive: true,
-                OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-              },
-              select: { id: true, reason: true, bannedAt: true, expiresAt: true },
-            },
-          },
-        },
-        performance: true,
-        customFieldValues: {
-          include: {
-            customFieldDefinition: {
-              select: {
-                id: true,
-                type: true,
-                label: true,
-                name: true,
-                options: true,
-                defaultValue: true,
-                rangeDecimals: true,
-                rangeUnit: true,
-                categoryId: true,
-                categoryOrder: true,
-                category: { select: { id: true, name: true, displayOrder: true } },
-              },
-            },
-          },
-        },
-      },
-      orderBy,
-      skip,
-      take: limit,
+    const result = await repository.getPendingListings({
+      emulatorIds,
+      search,
+      page,
+      limit,
+      sortField,
+      sortDirection,
     })
 
-    // Compute author risk profiles
-    const uniqueAuthorIds = [...new Set(listings.map((l) => l.authorId))]
-    const existingBansMap = new Map<string, { reason: string }[]>()
-    for (const listing of listings) {
-      if (
-        listing.author?.userBans &&
-        listing.author.userBans.length > 0 &&
-        !existingBansMap.has(listing.authorId)
-      ) {
-        existingBansMap.set(
-          listing.authorId,
-          listing.author.userBans.map((b) => ({ reason: b.reason })),
-        )
-      }
-    }
-    const riskProfiles = await computeAuthorRiskProfiles(
-      ctx.prisma,
-      uniqueAuthorIds,
-      existingBansMap,
-    )
-
-    const listingsWithRiskProfiles = listings.map((listing) => ({
-      ...listing,
-      authorRiskProfile: riskProfiles.get(listing.authorId) ?? {
-        authorId: listing.authorId,
-        signals: [],
-        highestSeverity: null,
-      },
-    }))
-
-    const totalListings = await ctx.prisma.listing.count({ where })
+    const riskProfiles = await computeReviewRiskProfiles(ctx.prisma, result.listings)
+    const paginatedListings = attachReviewRiskProfiles(result.listings, riskProfiles)
 
     return {
-      listings: listingsWithRiskProfiles,
-      pagination: paginate({ total: totalListings, page, limit: limit }),
+      listings: paginatedListings,
+      pagination: result.pagination,
     }
   }),
 
@@ -267,7 +197,7 @@ export const adminRouter = createTRPCRouter({
         },
       })
 
-      ResourceError.listing.cannotApproveBannedUser(banReason)
+      return ResourceError.listing.cannotApproveBannedUser(banReason)
     }
 
     // Update listing status
@@ -281,19 +211,13 @@ export const adminRouter = createTRPCRouter({
       },
     })
 
-    // Invalidate SEO cache
-    await invalidateListing(listingId)
-    await invalidateListPages()
-    await invalidateSitemap()
-    await revalidateByTag('listings')
-    await revalidateByTag(`listing-${listingId}`)
-    await revalidateByTag(`game-${listingToApprove.gameId}`)
-    await revalidateByTag(`device-${listingToApprove.deviceId}`)
-    await revalidateByTag(`emulator-${listingToApprove.emulatorId}`)
-
-    // Invalidate catalog compatibility cache for this device
-    const { catalogCompatibilityCache } = await import('@/server/utils/cache/instances')
-    catalogCompatibilityCache.invalidatePattern(`device:${listingToApprove.deviceId}:*`)
+    await invalidateListingSeo({
+      id: listingId,
+      gameId: listingToApprove.gameId,
+      deviceId: listingToApprove.deviceId,
+      emulatorId: listingToApprove.emulatorId,
+    })
+    invalidateCatalogCompatibilityCacheForDevice(listingToApprove.deviceId)
 
     // Apply trust action for listing approval to the author
     if (listingToApprove.authorId) {
@@ -411,9 +335,7 @@ export const adminRouter = createTRPCRouter({
     // Invalidate listing stats cache
     listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
-    // Invalidate catalog compatibility cache for this device
-    const { catalogCompatibilityCache } = await import('@/server/utils/cache/instances')
-    catalogCompatibilityCache.invalidatePattern(`device:${listingToReject.deviceId}:*`)
+    invalidateCatalogCompatibilityCacheForDevice(listingToReject.deviceId)
 
     return updatedListing
   }),
@@ -450,7 +372,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   getProcessed: superAdminProcedure.input(GetProcessedSchema).query(async ({ ctx, input }) => {
-    const { page, limit, filterStatus, search } = input
+    const { page, limit, filterStatus, search, sortField, sortDirection } = input
     const skip = (page - 1) * limit
 
     const baseWhere: Prisma.ListingWhereInput = {
@@ -474,19 +396,19 @@ export const adminRouter = createTRPCRouter({
       ...searchWhere,
     }
 
+    const orderBy = buildProcessedOrderBy(sortField, sortDirection)
+
     const listings = await ctx.prisma.listing.findMany({
       where: whereClause,
       include: {
         game: { include: { system: true } },
         device: { include: { brand: true } },
         emulator: true,
-        author: { select: { id: true, name: true, email: true } },
+        author: { select: { id: true, name: true } },
         performance: true,
-        processedByUser: { select: { id: true, name: true, email: true } }, // Admin who processed
+        processedByUser: { select: { id: true, name: true } },
       },
-      orderBy: {
-        processedAt: 'desc', // Show most recently processed first
-      },
+      orderBy,
       skip,
       take: limit,
     })
@@ -497,7 +419,7 @@ export const adminRouter = createTRPCRouter({
 
     return {
       listings,
-      pagination: paginate({ total: totalListings, page, limit: limit }),
+      pagination: paginate({ total: totalListings, page, limit }),
     }
   }),
 
@@ -666,22 +588,9 @@ export const adminRouter = createTRPCRouter({
           })
         }
 
-        // Apply trust actions for approved listings only
-        for (const listing of validListings) {
-          if (listing.authorId) {
-            await applyTrustAction({
-              userId: listing.authorId,
-              action: TrustAction.LISTING_APPROVED,
-              context: {
-                listingId: listing.id,
-                adminUserId,
-                reason: 'bulk_listing_approved',
-              },
-            })
-          }
-        }
-
-        // Return data needed for post-transaction operations
+        // Return data needed for post-transaction operations.
+        // Trust actions intentionally run AFTER the transaction commits — applyTrustAction
+        // opens its own internal transaction, so nesting would deadlock or surprise.
         return {
           validListings,
           bannedUserListings,
@@ -689,22 +598,30 @@ export const adminRouter = createTRPCRouter({
         }
       })
 
+      // Apply trust actions in parallel for approved listings (post-commit, distinct authors).
+      const approvedListingsWithAuthor = transactionResult.validListings.filter(
+        (l): l is typeof l & { authorId: string } => l.authorId !== null,
+      )
+      await Promise.all(
+        approvedListingsWithAuthor.map((listing) =>
+          applyTrustAction({
+            userId: listing.authorId,
+            action: TrustAction.LISTING_APPROVED,
+            context: {
+              listingId: listing.id,
+              adminUserId,
+              reason: 'bulk_listing_approved',
+            },
+          }),
+        ),
+      )
+
       // Emit notification events AFTER transaction completes successfully
       try {
         const { validListings } = transactionResult
         const approvedAt = new Date()
 
-        // Invalidate SEO cache for all approved listings
-        await Promise.all([
-          ...validListings.map((listing) => invalidateListing(listing.id)),
-          ...validListings.map((listing) => revalidateByTag(`listing-${listing.id}`)),
-          ...validListings.map((listing) => revalidateByTag(`game-${listing.gameId}`)),
-          ...validListings.map((listing) => revalidateByTag(`device-${listing.deviceId}`)),
-          ...validListings.map((listing) => revalidateByTag(`emulator-${listing.emulatorId}`)),
-        ])
-        await invalidateListPages()
-        await invalidateSitemap()
-        await revalidateByTag('listings')
+        await invalidateListingsSeo(validListings)
 
         // Emit notification events for each approved listing
         for (const listing of validListings) {
@@ -738,6 +655,10 @@ export const adminRouter = createTRPCRouter({
       listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
       const { validListings, bannedUserListings, notFoundOrNotPendingIds } = transactionResult
+      invalidateCatalogCompatibilityCacheForDevices([
+        ...validListings.map((listing) => listing.deviceId),
+        ...bannedUserListings.map((listing) => listing.deviceId),
+      ])
 
       let message = `Successfully approved ${validListings.length} listing(s).`
 
@@ -827,27 +748,32 @@ export const adminRouter = createTRPCRouter({
           },
         })
 
-        // Apply trust actions for all rejected listings
-        for (const listing of listingsToReject) {
-          if (listing.authorId) {
-            await applyTrustAction({
-              userId: listing.authorId,
-              action: TrustAction.LISTING_REJECTED,
-              context: {
-                listingId: listing.id,
-                adminUserId,
-                reason: notes || 'bulk_listing_rejected',
-              },
-            })
-          }
-        }
-
-        // Return data needed for post-transaction operations
+        // Return data needed for post-transaction operations.
+        // Trust actions intentionally run AFTER the transaction commits — applyTrustAction
+        // opens its own internal transaction, so nesting would deadlock or surprise.
         return {
           listingsToReject,
           notFoundOrNotPendingIds,
         }
       })
+
+      // Apply trust actions in parallel for rejected listings (post-commit, distinct authors).
+      const rejectedListingsWithAuthor = transactionResult.listingsToReject.filter(
+        (l): l is typeof l & { authorId: string } => l.authorId !== null,
+      )
+      await Promise.all(
+        rejectedListingsWithAuthor.map((listing) =>
+          applyTrustAction({
+            userId: listing.authorId,
+            action: TrustAction.LISTING_REJECTED,
+            context: {
+              listingId: listing.id,
+              adminUserId,
+              reason: notes || 'bulk_listing_rejected',
+            },
+          }),
+        ),
+      )
 
       // NOTE: Emit notification events AFTER transaction completes successfully
       try {
@@ -887,6 +813,9 @@ export const adminRouter = createTRPCRouter({
       listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
       const { listingsToReject, notFoundOrNotPendingIds } = transactionResult
+      invalidateCatalogCompatibilityCacheForDevices(
+        listingsToReject.map((listing) => listing.deviceId),
+      )
 
       const message =
         notFoundOrNotPendingIds.length > 0
@@ -990,7 +919,7 @@ export const adminRouter = createTRPCRouter({
         game: { include: { system: true } },
         device: { include: { brand: true, soc: true } },
         emulator: true,
-        author: { select: { id: true, name: true, email: true } },
+        author: { select: { id: true, name: true } },
         performance: true,
       },
       orderBy,
@@ -1027,7 +956,7 @@ export const adminRouter = createTRPCRouter({
             },
           },
         },
-        author: { select: { id: true, name: true, email: true } },
+        author: { select: { id: true, name: true } },
         performance: true,
         customFieldValues: {
           include: { customFieldDefinition: { include: { category: true } } },
@@ -1055,7 +984,7 @@ export const adminRouter = createTRPCRouter({
 
       if (!existingListing) return ResourceError.listing.notFound()
 
-      return ctx.prisma.$transaction(async (tx) => {
+      return await ctx.prisma.$transaction(async (tx) => {
         // Update the main listing fields
         const updatedListing = await tx.listing.update({
           where: { id },

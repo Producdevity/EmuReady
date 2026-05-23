@@ -7,7 +7,7 @@
  */
 
 import { GAME_SUBMISSION_LIMITS } from '@/data/constants'
-import { type PrismaClient } from '@orm'
+import { type PrismaClient } from '@orm/client'
 
 export interface SubmissionBalance {
   gamesCount: number

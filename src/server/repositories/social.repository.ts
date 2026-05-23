@@ -2,11 +2,11 @@ import { ResourceError } from '@/lib/errors'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { hasRolePermission } from '@/utils/permissions'
 import { TIME_CONSTANTS } from '@/utils/time'
-import { ApprovalStatus, RelationshipStatus, RelationshipType, Role } from '@orm'
+import { ApprovalStatus, RelationshipStatus, RelationshipType, Role } from '@orm/client'
 import { BaseRepository } from './base.repository'
 import { hiddenList, visibleList } from './types'
 import type { VisibilityContext, VisibilityGatedList } from './types'
-import type { Prisma } from '@orm'
+import type { Prisma } from '@orm/client'
 
 const socialUserSelect = {
   id: true,

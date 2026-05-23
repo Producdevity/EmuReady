@@ -1,7 +1,9 @@
 import { type Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { Suspense } from 'react'
 import { generatePageMetadata } from '@/lib/seo/metadata'
 import { getUserForSEO } from '@/server/db/seo-queries'
+import UserProfilePageSkeleton from './components/UserProfilePageSkeleton'
 import UserProfilePage from './UserProfilePage'
 
 interface Props {
@@ -25,11 +27,23 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   )
 }
 
-export default async function Page(props: Props) {
+export default function Page(props: Props) {
+  return (
+    <Suspense fallback={<UserProfilePageSkeleton />}>
+      <UserPageContent params={props.params} />
+    </Suspense>
+  )
+}
+
+async function UserPageContent(props: Props) {
   const params = await props.params
   const user = await getUserForSEO(params.id)
 
   if (!user) notFound()
 
-  return <UserProfilePage />
+  return (
+    <Suspense fallback={<UserProfilePageSkeleton />}>
+      <UserProfilePage />
+    </Suspense>
+  )
 }

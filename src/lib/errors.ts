@@ -6,7 +6,6 @@ import { toArray } from '@/utils/array'
 import { formatUserRole } from '@/utils/format'
 import { type Role } from '@orm'
 
-// Define error types as constants for better type safety
 export const ERROR_CODES = {
   BAD_REQUEST: 'BAD_REQUEST',
   CONFLICT: 'CONFLICT',
@@ -17,8 +16,6 @@ export const ERROR_CODES = {
   UNAUTHORIZED: 'UNAUTHORIZED',
 } as const
 
-// Specific error identifiers for client-side error handling
-// These are used in error.cause to identify specific error types
 export const APP_ERROR_CODES = {
   GAME_ALREADY_EXISTS: 'GAME_ALREADY_EXISTS',
   GAME_SUBMISSION_LIMIT_EXCEEDED: 'GAME_SUBMISSION_LIMIT_EXCEEDED',
@@ -28,7 +25,6 @@ export type AppErrorCode = (typeof APP_ERROR_CODES)[keyof typeof APP_ERROR_CODES
 
 export type ErrorCode = keyof typeof ERROR_CODES
 
-// Define common error scenarios with default messages
 export const ERROR_MESSAGES = {
   // Authentication & Authorization
   FORBIDDEN: 'You do not have permission to perform this action',
@@ -145,7 +141,7 @@ export class AppError {
     })
   }
 
-  static captcha(message?: string) {
+  static captcha(message?: string): never {
     throw new TRPCError({
       code: ERROR_CODES.BAD_REQUEST,
       message: message ? `CAPTCHA verification failed: ${message}` : ERROR_MESSAGES.INVALID_CAPTCHA,
@@ -553,5 +549,9 @@ export class ResourceError {
       AppError.forbidden(
         `${userName} must have the DEVELOPER role or higher to be removed as a verified developer. Current role: ${currentRole}`,
       ),
+  }
+
+  static trust = {
+    adjustmentCannotBeZero: () => AppError.badRequest('Trust adjustment cannot be zero'),
   }
 }

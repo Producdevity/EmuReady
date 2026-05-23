@@ -1,13 +1,13 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
+import type { Page } from '@playwright/test'
 
-/**
- * E2E tests for the notification system.
- *
- * Bell icon: In navbar when authenticated, shows unread count badge.
- * Dropdown: "Notifications" heading, mark all read, view all link.
- * Full page: /notifications with search, filters, bulk actions.
- * Preferences: On /profile page with per-category toggles.
- */
+function bellButton(page: Page) {
+  return page.getByRole('button', { name: /open notifications/i })
+}
+
+function notificationDropdown(page: Page) {
+  return page.getByRole('region', { name: /^Notifications$/i })
+}
 
 test.describe('Notification System', () => {
   test.describe('Notification Bell', () => {
@@ -17,51 +17,28 @@ test.describe('Notification System', () => {
       await page.goto('/')
       await page.waitForLoadState('domcontentloaded')
 
-      // Bell button is in the navbar for authenticated users
-      // The Bell icon is inside a button element
-      const bellButton = page.locator('button').filter({
-        has: page.locator('svg.lucide-bell, svg[class*="bell"]'),
-      })
-
-      // Bell button should be visible on the page
-      await expect(bellButton.first()).toBeVisible()
+      await expect(bellButton(page)).toBeVisible()
     })
 
     test('should open notification dropdown on bell click', async ({ page }) => {
       await page.goto('/')
       await page.waitForLoadState('domcontentloaded')
 
-      const bellButton = page
-        .locator('button')
-        .filter({
-          has: page.locator('svg.lucide-bell, svg[class*="bell"]'),
-        })
-        .first()
+      await bellButton(page).click()
 
-      await bellButton.click()
-
-      // Dropdown should show "Notifications" heading
-      await expect(page.getByText('Notifications').first()).toBeVisible()
+      await expect(notificationDropdown(page)).toBeVisible()
     })
 
     test('should show close button in dropdown', async ({ page }) => {
       await page.goto('/')
       await page.waitForLoadState('domcontentloaded')
 
-      const bellButton = page
-        .locator('button')
-        .filter({
-          has: page.locator('svg.lucide-bell, svg[class*="bell"]'),
-        })
-        .first()
+      await bellButton(page).click()
 
-      await bellButton.click()
-
-      // Close button with aria-label
-      const closeButton = page.getByRole('button', { name: /close notifications/i })
+      const closeButton = notificationDropdown(page).getByRole('button', {
+        name: /close notifications/i,
+      })
       await expect(closeButton).toBeVisible()
-
-      // Clicking close should hide the dropdown
       await closeButton.click()
     })
 
@@ -69,31 +46,13 @@ test.describe('Notification System', () => {
       await page.goto('/')
       await page.waitForLoadState('domcontentloaded')
 
-      const bellButton = page
-        .locator('button')
-        .filter({
-          has: page.locator('svg.lucide-bell, svg[class*="bell"]'),
-        })
-        .first()
+      await bellButton(page).click()
 
-      await bellButton.click()
+      const dropdown = notificationDropdown(page)
+      const emptyState = dropdown.getByTestId('notification-empty-state')
+      const notificationItems = dropdown.getByTestId('notification-item')
 
-      // Wait for notification content to load
-      const emptyState = page.getByText(/no notifications yet/i)
-      const notificationItems = page.locator('[class*="hover:bg-gray"]').filter({
-        has: page.locator('[class*="font-medium"]'),
-      })
-
-      // Wait for either empty state or notification items to appear
-      await emptyState
-        .or(notificationItems.first())
-        .waitFor({ state: 'visible', timeout: 10000 })
-        .catch(() => {})
-
-      const hasEmpty = await emptyState.isVisible().catch(() => false)
-      const hasItems = (await notificationItems.count()) > 0
-
-      expect(hasEmpty || hasItems).toBe(true)
+      await expect(emptyState.or(notificationItems.first())).toBeVisible()
     })
   })
 
@@ -104,10 +63,7 @@ test.describe('Notification System', () => {
       await page.goto('/notifications')
       await page.waitForLoadState('domcontentloaded')
 
-      // Page heading
       await expect(page.getByRole('heading', { name: /notifications/i })).toBeVisible()
-
-      // Search input
       await expect(page.getByPlaceholder(/search notifications/i)).toBeVisible()
     })
 
@@ -115,22 +71,18 @@ test.describe('Notification System', () => {
       await page.goto('/notifications')
       await page.waitForLoadState('domcontentloaded')
 
-      // Category cards: All, Engagement, Content, System, Moderation
-      const allCategory = page.getByText(/^all$/i)
-      const hasCategories = await allCategory.isVisible().catch(() => false)
+      const allCategoryFilter = page.getByText(/^all$/i).first()
 
-      if (hasCategories) {
-        await expect(allCategory).toBeVisible()
-      }
+      await expect(allCategoryFilter).toBeVisible()
+      await expect(page.getByText(/engagement/i).first()).toBeVisible()
+      await expect(page.getByText(/moderation/i).first()).toBeVisible()
     })
 
     test('should search notifications', async ({ page }) => {
       await page.goto('/notifications')
       await page.waitForLoadState('domcontentloaded')
 
-      const searchInput = page.getByPlaceholder(/search notifications/i)
-      await searchInput.fill('test')
-
+      await page.getByPlaceholder(/search notifications/i).fill('test')
       await page.waitForLoadState('domcontentloaded')
     })
   })
@@ -140,13 +92,7 @@ test.describe('Notification System', () => {
       await page.goto('/')
       await page.waitForLoadState('domcontentloaded')
 
-      // Bell button should not be visible for anonymous users
-      const bellButton = page.locator('button').filter({
-        has: page.locator('svg.lucide-bell, svg[class*="bell"]'),
-      })
-
-      // Anonymous users should not see the notification bell
-      await expect(bellButton).toHaveCount(0)
+      await expect(bellButton(page)).toHaveCount(0)
     })
   })
 })

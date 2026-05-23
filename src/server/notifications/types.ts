@@ -3,7 +3,7 @@ import type {
   NotificationCategory,
   DeliveryChannel,
   NotificationDeliveryStatus,
-} from '@orm'
+} from '@orm/client'
 
 export interface NotificationEvent {
   id: string

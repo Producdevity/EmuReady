@@ -1,5 +1,6 @@
 'use client'
 
+import { useUser } from '@clerk/nextjs'
 import { Clock, GamepadIcon, CpuIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -12,7 +13,7 @@ import {
 } from '@/app/listings/shared/components'
 import CommunitySupportBanner from '@/components/banners/CommunitySupportBanner'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
-import { Badge } from '@/components/ui/Badge'
+import { BannedUserBadge } from '@/components/ui/BannedUserBadge'
 import { Button } from '@/components/ui/Button'
 import { ColumnVisibilityControl } from '@/components/ui/ColumnVisibilityControl'
 import { DisplayToggleButton } from '@/components/ui/DisplayToggleButton'
@@ -60,7 +61,11 @@ const LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
+const LOOKUP_DATA_STALE_TIME = ms.minutes(30)
+const LOOKUP_DATA_GC_TIME = ms.hours(1)
+
 function ListingsPage() {
+  const { isSignedIn } = useUser()
   const router = useRouter()
   const listingsState = useListingsState()
 
@@ -82,9 +87,11 @@ function ListingsPage() {
     storageKey: storageKeys.columnVisibility.listings,
   })
 
-  const userQuery = api.users.me.useQuery()
+  const userQuery = api.users.me.useQuery(undefined, {
+    enabled: isSignedIn === true,
+  })
   const userPreferencesQuery = api.userPreferences.get.useQuery(undefined, {
-    enabled: !!userQuery.data,
+    enabled: isSignedIn === true && !!userQuery.data,
     staleTime: ms.seconds(30),
     gcTime: ms.minutes(5),
   })
@@ -99,13 +106,37 @@ function ListingsPage() {
     socIds: listingsState.socIds,
   })
 
-  const systemsQuery = api.systems.get.useQuery()
+  const systemsQuery = api.systems.get.useQuery(undefined, {
+    staleTime: LOOKUP_DATA_STALE_TIME,
+    gcTime: LOOKUP_DATA_GC_TIME,
+  })
   // TODO: find a better alternative to hardcoding 10000 for devices (AsyncMultiselect)
-  const devicesQuery = api.devices.get.useQuery({ limit: 10000 })
+  const devicesQuery = api.devices.get.useQuery(
+    { limit: 10000 },
+    {
+      staleTime: LOOKUP_DATA_STALE_TIME,
+      gcTime: LOOKUP_DATA_GC_TIME,
+    },
+  )
   // TODO: find a better alternative to hardcoding 10000 for SoCs (AsyncMultiselect)
-  const socsQuery = api.socs.get.useQuery({ limit: 10000 })
-  const emulatorsQuery = api.emulators.get.useQuery({ limit: 100 })
-  const performanceScalesQuery = api.listings.performanceScales.useQuery()
+  const socsQuery = api.socs.get.useQuery(
+    { limit: 10000 },
+    {
+      staleTime: LOOKUP_DATA_STALE_TIME,
+      gcTime: LOOKUP_DATA_GC_TIME,
+    },
+  )
+  const emulatorsQuery = api.emulators.get.useQuery(
+    { limit: 100 },
+    {
+      staleTime: LOOKUP_DATA_STALE_TIME,
+      gcTime: LOOKUP_DATA_GC_TIME,
+    },
+  )
+  const performanceScalesQuery = api.listings.performanceScales.useQuery(undefined, {
+    staleTime: LOOKUP_DATA_STALE_TIME,
+    gcTime: LOOKUP_DATA_GC_TIME,
+  })
 
   const filterParams: RouterInput['listings']['get'] = {
     page: listingsState.page,
@@ -516,20 +547,12 @@ function ListingsPage() {
                               </Tooltip>
                             )}
 
-                            {isModerator &&
-                              listing.author &&
-                              'userBans' in listing.author &&
-                              Array.isArray(listing.author.userBans) &&
-                              listing.author.userBans.length > 0 && (
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Badge className="bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800">
-                                      BANNED
-                                    </Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent>This user has been banned</TooltipContent>
-                                </Tooltip>
-                              )}
+                            <BannedUserBadge
+                              author={listing.author}
+                              canView={isModerator}
+                              label="BANNED"
+                              tooltip="This user has been banned"
+                            />
 
                             {listing.developerVerifications &&
                               listing.developerVerifications.length > 0 && (

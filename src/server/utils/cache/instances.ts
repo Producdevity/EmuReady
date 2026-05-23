@@ -1,10 +1,5 @@
-/**
- * Cache instances for different parts of the application
- * Each cache is typed for its specific use case
- */
-
+import { LRUCache } from 'lru-cache'
 import { TIME_CONSTANTS } from '@/utils/time'
-import MemoryCache from './MemoryCache'
 import type { DeviceCompatibilityResponse } from '@/schemas/mobile'
 import type { BatchBySteamAppIdsResponse } from '@/server/api/routers/mobile/games'
 import type {
@@ -21,32 +16,36 @@ import type {
   TGDBPlatformsResponse,
   GameImageOption,
 } from '@/types/tgdb'
-import type { NotificationType } from '@orm'
+import type { NotificationType } from '@orm/client'
 
-// Game statistics cache
-export const gameStatsCache = new MemoryCache<{
-  pending: number
-  approved: number
-  rejected: number
-  total: number
-}>({
+export const gameStatsCache = new LRUCache<
+  string,
+  {
+    pending: number
+    approved: number
+    rejected: number
+    total: number
+  }
+>({
   ttl: TIME_CONSTANTS.FIVE_MINUTES,
-  maxSize: 100, // Small cache for stats
+  max: 100,
 })
 
-// Listing statistics cache
-export const listingStatsCache = new MemoryCache<{
-  pending: number
-  approved: number
-  rejected: number
-  total: number
-}>({
+export const listingStatsCache = new LRUCache<
+  string,
+  {
+    pending: number
+    approved: number
+    rejected: number
+    total: number
+  }
+>({
   ttl: TIME_CONSTANTS.FIVE_MINUTES,
-  maxSize: 100, // Small cache for stats
+  max: 100,
 })
 
-// Notification analytics cache - for expensive analytics queries
-export const notificationAnalyticsCache = new MemoryCache<
+export const notificationAnalyticsCache = new LRUCache<
+  string,
   | NotificationMetrics
   | ChannelMetrics
   | TypeMetrics
@@ -59,53 +58,74 @@ export const notificationAnalyticsCache = new MemoryCache<
       clickRate: number
     }[]
 >({
-  ttl: TIME_CONSTANTS.TEN_MINUTES, // analytics can be slightly stale
-  maxSize: 200, // Analytics queries with different date ranges and params
-})
-
-// TGDB-specific caches with proper typing
-export const tgdbGamesCache = new MemoryCache<TGDBGamesByNameResponse>({
   ttl: TIME_CONSTANTS.TEN_MINUTES,
-  maxSize: 200,
+  max: 200,
 })
 
-export const tgdbImagesCache = new MemoryCache<TGDBGamesImagesResponse>({
+export const tgdbGamesCache = new LRUCache<string, TGDBGamesByNameResponse>({
   ttl: TIME_CONSTANTS.TEN_MINUTES,
-  maxSize: 200,
+  max: 200,
 })
 
-export const tgdbPlatformsCache = new MemoryCache<TGDBPlatformsResponse>({
-  ttl: TIME_CONSTANTS.TEN_MINUTES, // rarely change
-  maxSize: 10,
-})
-
-export const tgdbImageUrlsCache = new MemoryCache<{
-  boxartUrl?: string
-  bannerUrl?: string
-}>({
+export const tgdbImagesCache = new LRUCache<string, TGDBGamesImagesResponse>({
   ttl: TIME_CONSTANTS.TEN_MINUTES,
-  maxSize: 500,
+  max: 200,
 })
 
-export const tgdbGameImagesCache = new MemoryCache<Record<string, GameImageOption[]>>({
+export const tgdbPlatformsCache = new LRUCache<string, TGDBPlatformsResponse>({
   ttl: TIME_CONSTANTS.TEN_MINUTES,
-  maxSize: 100,
+  max: 10,
 })
 
-// Driver version cache to avoid hitting GitHub rate limits
-export const driverVersionsCache = new MemoryCache<DriverVersionsResponse>({
+export const tgdbImageUrlsCache = new LRUCache<
+  string,
+  {
+    boxartUrl?: string
+    bannerUrl?: string
+  }
+>({
+  ttl: TIME_CONSTANTS.TEN_MINUTES,
+  max: 500,
+})
+
+export const tgdbGameImagesCache = new LRUCache<string, Record<string, GameImageOption[]>>({
+  ttl: TIME_CONSTANTS.TEN_MINUTES,
+  max: 100,
+})
+
+export const driverVersionsCache = new LRUCache<string, DriverVersionsResponse>({
   ttl: TIME_CONSTANTS.THIRTY_MINUTES,
-  maxSize: 1,
+  max: 1,
 })
 
-// Batch Steam App ID lookup cache - for GameHub Lite integration
-export const steamBatchQueryCache = new MemoryCache<BatchBySteamAppIdsResponse>({
-  ttl: TIME_CONSTANTS.TEN_MINUTES, // listings data changes frequently
-  maxSize: 100, // Cache up to 100 different batch queries
+export const steamBatchQueryCache = new LRUCache<string, BatchBySteamAppIdsResponse>({
+  ttl: TIME_CONSTANTS.TEN_MINUTES,
+  max: 100,
 })
 
-// Catalog compatibility cache - for RetroCatalog integration
-export const catalogCompatibilityCache = new MemoryCache<DeviceCompatibilityResponse>({
-  ttl: TIME_CONSTANTS.TEN_MINUTES, // balance freshness with server load
-  maxSize: 500, // cache popular device queries
+export const catalogCompatibilityCache = new LRUCache<string, DeviceCompatibilityResponse>({
+  ttl: TIME_CONSTANTS.TEN_MINUTES,
+  max: 500,
 })
+
+export function invalidateCatalogCompatibilityCacheForDevice(deviceId: string): number {
+  const prefix = `device:${deviceId}:`
+  let deleted = 0
+
+  for (const key of catalogCompatibilityCache.keys()) {
+    if (!key.startsWith(prefix)) continue
+    if (catalogCompatibilityCache.delete(key)) deleted++
+  }
+
+  return deleted
+}
+
+export function invalidateCatalogCompatibilityCacheForDevices(deviceIds: Iterable<string>): number {
+  let deleted = 0
+
+  for (const deviceId of new Set(deviceIds)) {
+    deleted += invalidateCatalogCompatibilityCacheForDevice(deviceId)
+  }
+
+  return deleted
+}

@@ -368,7 +368,10 @@ function UserDetailsModal(props: Props) {
                     Trust Score
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
+                <p
+                  className="text-2xl font-bold text-orange-900 dark:text-orange-100"
+                  aria-label="Trust score value"
+                >
                   {userQuery.data.trustScore}
                 </p>
                 <p className="text-xs text-orange-700 dark:text-orange-300">
@@ -669,6 +672,7 @@ function UserDetailsModal(props: Props) {
                     <Input
                       type="number"
                       placeholder="±points"
+                      aria-label="Custom trust adjustment value"
                       value={customAdjustment}
                       onChange={(e) => setCustomAdjustment(e.target.value)}
                       disabled={isAdjusting}
@@ -698,6 +702,7 @@ function UserDetailsModal(props: Props) {
                   <div>
                     <Input
                       placeholder="Reason for adjustment (required)"
+                      aria-label="Reason for trust adjustment"
                       value={adjustmentReason}
                       onChange={(e) => setAdjustmentReason(e.target.value)}
                       disabled={isAdjusting}

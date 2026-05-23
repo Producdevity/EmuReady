@@ -5,6 +5,7 @@ import { lazy, Suspense } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { LoadingSpinner, Button } from '@/components/ui'
 import useMounted from '@/hooks/useMounted'
+import openApiDocument from '../../../../../public/api-docs/mobile-openapi.json'
 
 import '@scalar/api-reference-react/style.css'
 
@@ -14,8 +15,6 @@ const ApiReferenceReact = lazy(() =>
     default: mod.ApiReferenceReact,
   })),
 )
-
-const url = '/api-docs/mobile-openapi.json'
 
 export default function SwaggerUIPage() {
   const { resolvedTheme } = useTheme()
@@ -57,10 +56,11 @@ export default function SwaggerUIPage() {
         >
           <ApiReferenceReact
             configuration={{
-              url,
+              content: openApiDocument,
               theme: resolvedTheme === 'dark' ? 'purple' : 'default',
               layout: 'modern',
               hideModels: false,
+              withDefaultFonts: false,
               authentication: { preferredSecurityScheme: 'ClerkAuth' },
               servers: [
                 {

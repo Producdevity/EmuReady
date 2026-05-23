@@ -1,15 +1,14 @@
 /**
  * GameNative Container Configuration Type Definitions
  *
- * Contains all type definitions for GameNative container configuration files.
+ * Source of truth: ContainerData.kt, Container.java, DefaultVersion.java, arrays.xml
  */
 
-// Screen resolution options
 export type ScreenSize =
   | '640x480' // 4:3
   | '800x600' // 4:3
   | '854x480' // 16:9 (default)
-  | '960x544' // 16:9
+  | '960x540' // 16:9
   | '1024x768' // 4:3
   | '1280x720' // 16:9
   | '1280x800' // 16:10
@@ -20,242 +19,234 @@ export type ScreenSize =
   | '1920x1080' // 16:9
   | string // Custom format: "WIDTHxHEIGHT"
 
-// Graphics driver options
 export type GraphicsDriver =
-  | 'vortek' // Universal (default) - uses Zink backend
-  | 'turnip' // Adreno GPUs - uses Zink + Turnip Vulkan
-  | 'virgl' // Universal - uses VirGL
+  | 'vortek'
+  | 'turnip'
+  | 'virgl'
+  | 'adreno'
+  | 'sd-8-elite'
+  | 'wrapper'
+  | 'wrapper-v2'
+  | 'wrapper-leegao'
+  | 'wrapper-legacy'
 
-// Graphics driver versions by driver type
 export type GraphicsDriverVersions = {
-  turnip: '25.1.0' | '25.2.0' | '25.0.0' | '24.1.0'
+  turnip: '25.1.0' | '25.2.0' | '25.3.0' | '25.0.0' | '24.1.0'
   virgl: '23.1.9'
-  vortek: '2.0'
-  zink: '22.2.5' // Used internally by vortek/turnip
+  vortek: '2.1'
+  zink: '22.2.5'
+  adreno: '819.2' | '805'
+  sd8elite: '800.51' | '2-842.6'
 }
 
-// DirectX wrapper options
-export type DxWrapper =
-  | 'dxvk' // DXVK (default)
-  | 'vkd3d' // VKD3D
-  | 'wined3d' // WineD3D
-  | 'cnc-ddraw' // CNC DDraw
+export type DxWrapper = 'dxvk' | 'vkd3d' | 'wined3d' | 'cnc-ddraw'
 
-// DXVK version options
 export type DxvkVersion =
-  | '2.6.1-gplasync'
+  | 'async-1.10.3'
+  | '2.7.1'
   | '1.10.3'
+  | '1.10.1'
   | '1.10.9-sarek'
+  | '1.11.1-sarek'
   | '1.9.2'
   | '2.3.1'
   | '2.4-gplasync'
-  | 'async-1.10.3'
+  | '2.4.1'
+  | '2.4.1-gplasync'
+  | '2.6.1-gplasync'
+  | '2.6-arm64ec'
 
-// Audio driver options
-export type AudioDriver =
-  | 'alsa' // ALSA (default)
-  | 'pulse' // PulseAudio
+export type VKD3DVersion = '2.6' | '2.12' | '2.13' | '2.14.1' | '3.0b'
 
-// Video memory size options
+export type AudioDriver = 'alsa' | 'pulseaudio'
+
 export type VideoMemorySize =
-  | '32' // 32 MB
-  | '64' // 64 MB
-  | '128' // 128 MB
-  | '256' // 256 MB
-  | '512' // 512 MB
-  | '1024' // 1024 MB
-  | '2048' // 2048 MB (default)
-  | '4096' // 4096 MB
-  | '6144' // 6144 MB
-  | '8192' // 8192 MB
-  | '10240' // 10240 MB
-  | '12288' // 12288 MB
+  | '32'
+  | '64'
+  | '128'
+  | '256'
+  | '512'
+  | '1024'
+  | '2048'
+  | '4096'
+  | '6144'
+  | '8192'
+  | '10240'
+  | '12288'
 
-// Box86/64 performance presets
 export type Box86_64Preset =
   | 'STABILITY'
-  | 'COMPATIBILITY' // Default
+  | 'COMPATIBILITY'
   | 'INTERMEDIATE'
   | 'PERFORMANCE'
-  | string // Custom presets start with "CUSTOM-"
+  | 'DENUVO'
+  | 'UNITY'
+  | 'UNITY_MONO_BLEEDING_EDGE'
+  | 'CUSTOM'
+  | string
 
-// Box86/64 version options
 export type Box86Version = '0.3.2' | '0.3.7'
-export type Box64Version = '0.3.6' | '0.3.4'
+export type Box64Version = '0.3.2' | '0.3.4' | '0.3.6' | '0.3.7' | '0.3.8' | '0.4.0'
 
-// Startup selection modes
-export type StartupSelection =
-  | 0 // Normal (Load all services)
-  | 1 // Essential (Load only essential services) - Default
-  | 2 // Aggressive (Stop services on startup)
+export type FEXCorePreset =
+  | 'STABILITY'
+  | 'COMPATIBILITY'
+  | 'INTERMEDIATE'
+  | 'PERFORMANCE'
+  | 'EXTREME'
+  | 'DENUVO'
+  | 'CUSTOM'
+  | string
 
-// Wine desktop theme options
+export type FEXCoreVersion = '2507' | '2508' | '2511' | '2512' | '2601' | '2603'
+
+export type FEXCoreTSOMode = 'Fast' | 'Slow'
+export type FEXCoreX87Mode = 'Fast' | 'Slow'
+export type FEXCoreMultiBlock = 'Enabled' | 'Disabled'
+
+export type Emulator = 'FEXCore' | 'Box64'
+
+export type ContainerVariant = 'glibc' | 'bionic'
+
+export type SteamType = 'normal' | 'light' | 'ultralight'
+
+export type ExternalDisplayMode = 'off' | 'touchpad' | 'keyboard' | 'hybrid'
+
+export type SharpnessEffect = 'None' | 'CAS' | 'DLS'
+
+export type StartupSelection = 0 | 1 | 2
+
 export type DesktopTheme = 'LIGHT' | 'DARK'
 
-// Wine desktop background type
-export type DesktopBackgroundType =
-  | 'IMAGE' // Default
-  | 'COLOR'
+export type DesktopBackgroundType = 'IMAGE' | 'COLOR'
 
-// Off-screen rendering modes
-export type OffScreenRenderingMode =
-  | 'fbo' // FBO (default)
-  | 'backbuffer' // Backbuffer
+export type OffScreenRenderingMode = 'fbo' | 'backbuffer'
 
-// Mouse warp override options
-export type MouseWarpOverride =
-  | 'disable' // Disable (default)
-  | 'enable' // Enable
-  | 'force' // Force
+export type MouseWarpOverride = 'disable' | 'enable' | 'force'
 
-// DirectInput mapper type
-export type DinputMapperType =
-  | 0 // Standard (Old Gamepads)
-  | 1 // XInput (default)
+export type DinputMapperType = 1 | 2
 
-// Shader backend options
 export type ShaderBackend = 'glsl'
 
-// Wine component configuration
 export type WinComponents = string
-
-// Environment variables
 export type EnvVars = string
-
-// CPU list format
 export type CpuList = string
 
-/**
- * Complete container configuration interface
- */
-export interface ContainerConfig {
-  /** Container name */
-  name?: string
+export type VulkanVersion = '1.1' | '1.2' | '1.3'
+export type BcnEmulation = 'none' | 'partial' | 'full' | 'auto'
+export type BcnEmulationType = 'software' | 'compute'
+export type PresentMode = 'mailbox' | 'fifo' | 'immediate' | 'relaxed'
+export type ResourceType = 'auto' | 'dmabuf' | 'ahb' | 'opaque'
 
-  /** Screen resolution */
-  screenSize?: ScreenSize
-
-  /** Environment variables */
-  envVars?: EnvVars
-
-  /** Graphics driver */
-  graphicsDriver?: GraphicsDriver
-
-  /** Graphics driver version */
-  graphicsDriverVersion?: string
-
-  /** DirectX wrapper */
-  dxwrapper?: DxWrapper
-
-  /** DirectX wrapper configuration */
-  dxwrapperConfig?: string
-
-  /** DXVK version */
-  dxvkVersion?: DxvkVersion
-
-  /** Audio driver */
-  audioDriver?: AudioDriver
-
-  /** Windows components configuration */
-  wincomponents?: WinComponents
-
-  /** Execution arguments */
-  execArgs?: string
-
-  /** Executable path */
-  executablePath?: string
-
-  /** Show FPS overlay */
-  showFPS?: boolean
-
-  /** Launch real Steam client */
-  launchRealSteam?: boolean
-
-  /** CPU core list */
-  cpuList?: CpuList
-
-  /** CPU core list for WoW64 */
-  cpuListWoW64?: CpuList
-
-  /** Enable WoW64 mode */
-  wow64Mode?: boolean
-
-  /** Startup selection mode */
-  startupSelection?: StartupSelection
-
-  /** Box86 version */
-  box86Version?: Box86Version
-
-  /** Box64 version */
-  box64Version?: Box64Version
-
-  /** Box86 performance preset */
-  box86Preset?: Box86_64Preset
-
-  /** Box64 performance preset */
-  box64Preset?: Box86_64Preset
-
-  /**
-   * Desktop theme configuration
-   * Format: "THEME,BACKGROUND_TYPE,COLOR"
-   *
-   * Examples:
-   * - "LIGHT,IMAGE,#0277bd" (default)
-   * - "DARK,COLOR,#000000"
-   * - "LIGHT,COLOR,#ffffff"
-   */
-  desktopTheme?: string
-
-  /** Enable SDL controller API */
-  sdlControllerAPI?: boolean
-
-  /** Enable XInput support */
-  enableXInput?: boolean
-
-  /** Enable DirectInput support */
-  enableDInput?: boolean
-
-  /** DirectInput mapper type */
-  dinputMapperType?: DinputMapperType
-
-  /** Disable mouse input */
-  disableMouseInput?: boolean
-
-  /** Enable Command Stream Multithreading */
-  csmt?: boolean
-
-  /**
-   * Video PCI device ID for GPU emulation
-   * Default: 1728 (NVIDIA GeForce GTX 480)
-   */
-  videoPciDeviceID?: number
-
-  /** Off-screen rendering mode */
-  offScreenRenderingMode?: OffScreenRenderingMode
-
-  /** Enable strict shader math */
-  strictShaderMath?: boolean
-
-  /** Video memory size in MB */
-  videoMemorySize?: VideoMemorySize
-
-  /** Mouse warp override setting */
-  mouseWarpOverride?: MouseWarpOverride
-
-  /** Shader backend */
-  shaderBackend?: ShaderBackend
-
-  /** Use GLSL shaders */
-  useGLSL?: 'enabled' | 'disabled'
+export interface DxWrapperConfig {
+  version?: DxvkVersion
+  framerate?: number
+  maxDeviceMemory?: number
+  async?: '0' | '1'
+  asyncCache?: '0' | '1'
+  vkd3dVersion?: VKD3DVersion
+  vkd3dLevel?: string
+  ddrawrapper?: 'none' | string
+  csmt?: number
+  gpuName?: string
+  videoMemorySize?: string
+  strict_shader_math?: '0' | '1'
+  OffscreenRenderingMode?: OffScreenRenderingMode
+  renderer?: string
 }
 
-/**
- * Helper type for graphics driver version based on selected driver
- */
+export interface GraphicsDriverConfig {
+  vulkanVersion?: VulkanVersion
+  version?: string
+  blacklistedExtensions?: string
+  maxDeviceMemory?: number
+  presentMode?: PresentMode
+  syncFrame?: '0' | '1'
+  disablePresentWait?: '0' | '1'
+  resourceType?: ResourceType
+  bcnEmulation?: BcnEmulation
+  bcnEmulationType?: BcnEmulationType
+  bcnEmulationCache?: '0' | '1'
+  gpuName?: string
+  adrenotoolsTurnip?: '0' | '1'
+}
+
+export interface ContainerConfig {
+  name?: string
+  screenSize?: ScreenSize
+  envVars?: EnvVars
+  graphicsDriver?: GraphicsDriver
+  graphicsDriverVersion?: string
+  graphicsDriverConfig?: string
+  dxwrapper?: DxWrapper
+  dxwrapperConfig?: string
+  audioDriver?: AudioDriver
+  wincomponents?: WinComponents
+  drives?: string
+  execArgs?: string
+  executablePath?: string
+  installPath?: string
+  showFPS?: boolean
+  launchRealSteam?: boolean
+  allowSteamUpdates?: boolean
+  steamType?: SteamType
+  cpuList?: CpuList
+  cpuListWoW64?: CpuList
+  wow64Mode?: boolean
+  startupSelection?: StartupSelection
+  box86Version?: Box86Version
+  box64Version?: Box64Version
+  box86Preset?: Box86_64Preset
+  box64Preset?: Box86_64Preset
+  desktopTheme?: string
+  containerVariant?: ContainerVariant
+  wineVersion?: string
+  emulator?: Emulator
+  fexcoreVersion?: FEXCoreVersion | string
+  fexcoreTSOMode?: FEXCoreTSOMode
+  fexcoreX87Mode?: FEXCoreX87Mode
+  fexcoreMultiBlock?: FEXCoreMultiBlock
+  fexcorePreset?: FEXCorePreset
+  renderer?: string
+  csmt?: boolean
+  videoPciDeviceID?: number
+  offScreenRenderingMode?: OffScreenRenderingMode
+  strictShaderMath?: boolean
+  useDRI3?: boolean
+  videoMemorySize?: VideoMemorySize
+  mouseWarpOverride?: MouseWarpOverride
+  shaderBackend?: ShaderBackend
+  useGLSL?: 'enabled' | 'disabled'
+  sdlControllerAPI?: boolean
+  useSteamInput?: boolean
+  enableXInput?: boolean
+  enableDInput?: boolean
+  dinputMapperType?: DinputMapperType
+  disableMouseInput?: boolean
+  touchscreenMode?: boolean
+  shooterMode?: boolean
+  gestureConfig?: string
+  externalDisplayMode?: ExternalDisplayMode
+  externalDisplaySwap?: boolean
+  language?: string
+  forceDlc?: boolean
+  steamOfflineMode?: boolean
+  useLegacyDRM?: boolean
+  unpackFiles?: boolean
+  portraitMode?: boolean
+  sharpnessEffect?: SharpnessEffect
+  sharpnessLevel?: number
+  sharpnessDenoise?: number
+}
+
 export type GraphicsDriverVersionFor<T extends GraphicsDriver> = T extends 'turnip'
   ? GraphicsDriverVersions['turnip']
   : T extends 'virgl'
     ? GraphicsDriverVersions['virgl']
     : T extends 'vortek'
       ? GraphicsDriverVersions['vortek']
-      : string
+      : T extends 'adreno'
+        ? GraphicsDriverVersions['adreno']
+        : T extends 'sd-8-elite'
+          ? GraphicsDriverVersions['sd8elite']
+          : string

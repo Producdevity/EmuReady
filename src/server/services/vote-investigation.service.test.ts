@@ -4,7 +4,7 @@ import {
   getVotesOnAuthorListings,
   analyzeVotePatterns,
 } from './vote-investigation.service'
-import type { PrismaClient } from '@orm'
+import type { PrismaClient } from '@orm/client'
 
 function createMockPrisma() {
   return {

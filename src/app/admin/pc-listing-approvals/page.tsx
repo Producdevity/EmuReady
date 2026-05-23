@@ -6,22 +6,28 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import { useAdminTable } from '@/app/admin/hooks'
+import { useAdminTable, useReviewRiskFilter } from '@/app/admin/hooks'
 import { confirmBulkApproval } from '@/app/admin/utils'
 import {
+  AdminErrorState,
   AdminPageLayout,
   AdminTableContainer,
   AdminNotificationBanner,
   AdminSearchFilters,
   AdminStatsDisplay,
   AdminTableNoResults,
+  ReviewRiskFilterButton,
+  ReviewRiskIndicator,
 } from '@/components/admin'
+import {
+  CompatibilityReportReviewDecision,
+  CompatibilityReportReviewModalAdapter,
+  useCompatibilityReportReviewDecisionModal,
+} from '@/components/compatibility/review'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   ApproveButton,
-  AuthorRiskIndicator,
   BulkActions,
-  Button,
   ColumnVisibilityControl,
   DisplayToggleButton,
   LoadingSpinner,
@@ -51,8 +57,6 @@ import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import getImageUrl from '@/utils/getImageUrl'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
-import { ApprovalStatus } from '@orm'
-import ApprovalModal from './components/ApprovalModal'
 
 type PendingPcListing = RouterOutput['pcListings']['pending']['pcListings'][number]
 type PcApprovalSortField =
@@ -95,6 +99,11 @@ function PcListingApprovalsPage() {
   )
 
   const emulatorLogos = useEmulatorLogos()
+  const [selectedListingIds, setSelectedListingIds] = useState<string[]>([])
+  const reviewRiskFilter = useReviewRiskFilter({
+    clearSelection: () => setSelectedListingIds([]),
+    resetPage: () => table.setPage(1),
+  })
 
   const currentUserQuery = api.users.me.useQuery()
   const pendingPcListingsQuery = api.pcListings.pending.useQuery({
@@ -103,6 +112,7 @@ function PcListingApprovalsPage() {
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
     search: isEmpty(table.search) ? undefined : table.search,
+    riskFilter: reviewRiskFilter.riskFilter,
   })
 
   const gameStatsQuery = api.games.stats.useQuery()
@@ -110,12 +120,7 @@ function PcListingApprovalsPage() {
     refetchInterval: 30000,
   })
 
-  const [showApprovalModal, setShowApprovalModal] = useState(false)
-  const [selectedListingForApproval, setSelectedListingForApproval] =
-    useState<PendingPcListing | null>(null)
-  const [approvalNotes, setApprovalNotes] = useState('')
-  const [approvalDecision, setApprovalDecision] = useState<ApprovalStatus | null>(null)
-  const [selectedListingIds, setSelectedListingIds] = useState<string[]>([])
+  const approvalModal = useCompatibilityReportReviewDecisionModal<PendingPcListing>()
   const confirm = useConfirmDialog()
 
   const utils = api.useUtils()
@@ -137,12 +142,12 @@ function PcListingApprovalsPage() {
       analytics.admin.listingApproved({
         listingId: variables.pcListingId,
         adminId: currentUserQuery.data?.id ?? 'unknown',
-        gameId: selectedListingForApproval?.game.id,
-        systemId: selectedListingForApproval?.game.system.id,
+        gameId: approvalModal.selectedReport?.game.id,
+        systemId: approvalModal.selectedReport?.game.system.id,
       })
 
       await invalidateQueries()
-      closeApprovalModal()
+      approvalModal.close()
     },
     onError: (err) => {
       logger.error('Failed to approve PC listing:', err)
@@ -158,12 +163,12 @@ function PcListingApprovalsPage() {
         listingId: variables.pcListingId,
         adminId: currentUserQuery.data?.id ?? 'unknown',
         reason: variables.notes ?? undefined,
-        gameId: selectedListingForApproval?.game.id,
-        systemId: selectedListingForApproval?.game.system.id,
+        gameId: approvalModal.selectedReport?.game.id,
+        systemId: approvalModal.selectedReport?.game.system.id,
       })
 
       await invalidateQueries()
-      closeApprovalModal()
+      approvalModal.close()
     },
     onError: (err) => {
       logger.error('Failed to reject PC listing:', err)
@@ -216,8 +221,7 @@ function PcListingApprovalsPage() {
     if (!confirmed) return
 
     await bulkApproveMutation.mutateAsync({ pcListingIds: listingIds })
-    await invalidateQueries()
-    closeApprovalModal()
+    approvalModal.close()
   }
 
   const handleSelectAll = (selected: boolean) => {
@@ -230,47 +234,29 @@ function PcListingApprovalsPage() {
     )
   }
 
-  const openApprovalModal = (listing: PendingPcListing, decision: ApprovalStatus) => {
-    setSelectedListingForApproval(listing)
-    setApprovalDecision(decision)
-    setApprovalNotes('')
-    setShowApprovalModal(true)
-  }
-
-  const closeApprovalModal = () => {
-    setShowApprovalModal(false)
-    setSelectedListingForApproval(null)
-    setApprovalNotes('')
-    setApprovalDecision(null)
-  }
-
   const handleApprovalSubmit = () => {
-    if (!selectedListingForApproval || !approvalDecision) return
-    if (approvalDecision === ApprovalStatus.APPROVED) {
+    if (!approvalModal.selectedReport || !approvalModal.decision) return
+    if (approvalModal.decision === CompatibilityReportReviewDecision.APPROVED) {
       return approveMutation.mutate({
-        pcListingId: selectedListingForApproval.id,
+        pcListingId: approvalModal.selectedReport.id,
       } satisfies RouterInput['pcListings']['approve'])
     }
-    if (approvalDecision === ApprovalStatus.REJECTED) {
+    if (approvalModal.decision === CompatibilityReportReviewDecision.REJECTED) {
       return rejectMutation.mutate({
-        pcListingId: selectedListingForApproval.id,
-        notes: approvalNotes || undefined,
+        pcListingId: approvalModal.selectedReport.id,
+        notes: approvalModal.notes || undefined,
       } satisfies RouterInput['pcListings']['reject'])
     }
   }
 
   if (pendingPcListingsQuery.error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center py-12">
-          <p className="text-red-600 dark:text-red-400 text-lg">
-            Error loading pending PC listings: {pendingPcListingsQuery.error.message}
-          </p>
-          <Button onClick={() => pendingPcListingsQuery.refetch()} className="mt-4">
-            Try Again
-          </Button>
-        </div>
-      </div>
+      <AdminErrorState
+        message={`Error loading pending PC listings: ${pendingPcListingsQuery.error.message}`}
+        onRetry={() => {
+          void pendingPcListingsQuery.refetch()
+        }}
+      />
     )
   }
 
@@ -343,7 +329,12 @@ function PcListingApprovalsPage() {
       <AdminSearchFilters<PcApprovalSortField>
         table={table}
         searchPlaceholder="Search PC listings..."
-      />
+      >
+        <ReviewRiskFilterButton
+          isActive={reviewRiskFilter.isRiskOnly}
+          onToggle={reviewRiskFilter.toggleRiskFilter}
+        />
+      </AdminSearchFilters>
 
       {pcListings.length > 0 && (
         <BulkActions
@@ -364,7 +355,6 @@ function PcListingApprovalsPage() {
               label: 'Reject Selected',
               onAction: async (listingIds, notes) => {
                 await bulkRejectMutation.mutateAsync({ pcListingIds: listingIds, notes })
-                await invalidateQueries()
               },
             },
           }}
@@ -375,7 +365,10 @@ function PcListingApprovalsPage() {
         {pendingPcListingsQuery.isPending ? (
           <LoadingSpinner text="Loading pending PC listings..." />
         ) : pcListings.length === 0 ? (
-          <AdminTableNoResults icon={Clock} hasQuery={!!table.search} />
+          <AdminTableNoResults
+            icon={Clock}
+            hasQuery={!!table.search || reviewRiskFilter.isRiskOnly}
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -503,6 +496,7 @@ function PcListingApprovalsPage() {
                         <Link
                           href={`/pc-listings/${listing.id}`}
                           target="_blank"
+                          rel="noopener noreferrer"
                           className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
                         >
                           {listing.game.title}
@@ -560,8 +554,9 @@ function PcListingApprovalsPage() {
                               'N/A'
                             )}
                           </span>
-                          <AuthorRiskIndicator
-                            riskProfile={listing.authorRiskProfile}
+                          <ReviewRiskIndicator
+                            authorRiskProfile={listing.authorRiskProfile}
+                            submissionRiskProfile={listing.submissionRiskProfile}
                             size="sm"
                             onInvestigate={(authorId) =>
                               router.push(`/admin/users?userId=${authorId}&tab=reports`)
@@ -593,7 +588,12 @@ function PcListingApprovalsPage() {
                           ) && (
                             <ApproveButton
                               title="Approve PC Listing"
-                              onClick={() => openApprovalModal(listing, ApprovalStatus.APPROVED)}
+                              onClick={() =>
+                                approvalModal.open(
+                                  listing,
+                                  CompatibilityReportReviewDecision.APPROVED,
+                                )
+                              }
                               disabled={approveMutation.isPending}
                             />
                           )}
@@ -603,7 +603,12 @@ function PcListingApprovalsPage() {
                           ) && (
                             <RejectButton
                               title="Reject PC Listing"
-                              onClick={() => openApprovalModal(listing, ApprovalStatus.REJECTED)}
+                              onClick={() =>
+                                approvalModal.open(
+                                  listing,
+                                  CompatibilityReportReviewDecision.REJECTED,
+                                )
+                              }
                               disabled={rejectMutation.isPending}
                             />
                           )}
@@ -640,17 +645,17 @@ function PcListingApprovalsPage() {
         </div>
       )}
 
-      {showApprovalModal && selectedListingForApproval && approvalDecision && (
-        <ApprovalModal
-          showApprovalModal={showApprovalModal}
-          closeApprovalModal={closeApprovalModal}
-          selectedPcListingForApproval={selectedListingForApproval}
-          approvalDecision={approvalDecision}
-          approvalNotes={approvalNotes}
-          setApprovalNotes={setApprovalNotes}
-          handleApprovalSubmit={handleApprovalSubmit}
-          approveMutation={approveMutation}
-          rejectMutation={rejectMutation}
+      {approvalModal.isOpen && approvalModal.selectedReport && approvalModal.decision && (
+        <CompatibilityReportReviewModalAdapter
+          isOpen={approvalModal.isOpen}
+          onClose={approvalModal.close}
+          decision={approvalModal.decision}
+          reportLabel="PC Listing"
+          report={approvalModal.selectedReport}
+          rejectionNotes={approvalModal.notes}
+          onRejectionNotesChange={approvalModal.setNotes}
+          onSubmit={handleApprovalSubmit}
+          isSubmitting={approveMutation.isPending || rejectMutation.isPending}
         />
       )}
     </AdminPageLayout>

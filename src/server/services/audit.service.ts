@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { logger } from '@/lib/logger'
 import { AuditLogsRepository } from '@/server/repositories/audit-logs.repository'
-import { type AuditAction, type AuditEntityType, type Prisma, type PrismaClient } from '@orm'
+import { type AuditAction, type AuditEntityType, type Prisma, type PrismaClient } from '@orm/client'
 
 const MetadataSchema = z.record(z.string(), z.unknown()).optional()
 
@@ -35,7 +35,9 @@ type Params = {
   headers?: Headers | Record<string, string>
 }
 
-export async function logAudit(prisma: PrismaClient, params: Params): Promise<void> {
+type PrismaLike = PrismaClient | Prisma.TransactionClient
+
+export async function logAudit(prisma: PrismaLike, params: Params): Promise<void> {
   const { actorId, action, entityType, entityId, targetUserId, metadata, headers } = params
 
   const meta = extractRequestMeta(headers)

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Role, type PrismaClient } from '@orm'
+import { Role } from '@orm'
 import {
   hasPermission,
   hasAnyPermission,
@@ -13,6 +13,7 @@ import {
   canBanUser,
 } from './permission-system'
 import type { TRPCContext } from '@/server/api/trpc'
+import type { PrismaClient } from '@orm/client'
 
 describe('Permission System', () => {
   // Test data setup

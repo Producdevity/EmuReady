@@ -1,5 +1,6 @@
 import { type Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { Suspense } from 'react'
 import { PageWithMetadata } from '@/components/seo/PageWithMetadata'
 import {
   generatePageMetadata,
@@ -7,6 +8,7 @@ import {
   generateBreadcrumbStructuredData,
 } from '@/lib/seo/metadata'
 import { getGameForSEO } from '@/server/db/seo-queries'
+import { GameDetailsPageSkeleton } from './components/GameDetailsPageSkeleton'
 import GameDetailsPage from './GameDetailsPage'
 
 interface Props {
@@ -29,7 +31,15 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   )
 }
 
-export default async function Page(props: Props) {
+export default function Page(props: Props) {
+  return (
+    <Suspense fallback={<GameDetailsPageSkeleton />}>
+      <GamePageContent params={props.params} />
+    </Suspense>
+  )
+}
+
+async function GamePageContent(props: Props) {
   const params = await props.params
   const game = await getGameForSEO(params.id)
 
@@ -49,7 +59,9 @@ export default async function Page(props: Props) {
 
   return (
     <PageWithMetadata structuredData={[pageStructuredData, breadcrumbData]}>
-      <GameDetailsPage />
+      <Suspense fallback={<GameDetailsPageSkeleton />}>
+        <GameDetailsPage />
+      </Suspense>
     </PageWithMetadata>
   )
 }

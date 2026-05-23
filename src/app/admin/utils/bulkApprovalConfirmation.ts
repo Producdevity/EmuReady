@@ -1,43 +1,56 @@
-type RiskSeverity = 'low' | 'medium' | 'high'
+import { type Severity } from '@/schemas/common'
+
+const SEVERITY_ORDER: Record<Severity, number> = { low: 1, medium: 2, high: 3 }
+
+interface RiskProfileSummary {
+  highestSeverity: Severity | null
+}
 
 interface ListingWithRiskProfile {
   id: string
   author?: { name: string | null } | null
-  authorRiskProfile?: { highestSeverity: string | null } | null
+  authorRiskProfile?: RiskProfileSummary | null
+  submissionRiskProfile?: RiskProfileSummary | null
 }
 
 interface ConfirmFn {
   (opts: { title: string; description: string; confirmText: string }): Promise<boolean>
 }
 
-/**
- * Analyzes risk profiles in a selection of listings and prompts the admin
- * for confirmation before bulk approval. Returns true if the admin confirmed.
- */
+function getHighestRiskSeverity(listing: ListingWithRiskProfile): Severity | null {
+  const severities = [
+    listing.submissionRiskProfile?.highestSeverity,
+    listing.authorRiskProfile?.highestSeverity,
+  ].filter((severity): severity is Severity => Boolean(severity))
+
+  return severities.reduce<Severity | null>((highest, severity) => {
+    if (!highest) return severity
+    return SEVERITY_ORDER[severity] > SEVERITY_ORDER[highest] ? severity : highest
+  }, null)
+}
+
 export async function confirmBulkApproval<T extends ListingWithRiskProfile>(
   allListings: T[],
   selectedIds: string[],
   confirm: ConfirmFn,
   entityLabel: string,
 ): Promise<boolean> {
-  const selectedListings = allListings.filter((listing) => selectedIds.includes(listing.id))
-  const riskyListings = selectedListings.filter(
-    (listing) => listing.authorRiskProfile?.highestSeverity !== null,
-  )
+  const selectedIdSet = new Set(selectedIds)
+  const selectedListings = allListings.filter((listing) => selectedIdSet.has(listing.id))
+  const riskyListings = selectedListings.filter((listing) => getHighestRiskSeverity(listing))
 
   if (riskyListings.length > 0) {
     const riskyAuthors = [...new Set(riskyListings.map((l) => l.author?.name || 'Unknown'))]
-    const severityOrder: Record<RiskSeverity, number> = { low: 1, medium: 2, high: 3 }
-    const highestRisk = riskyListings.reduce<string | null>((max, l) => {
-      const severity = l.authorRiskProfile?.highestSeverity as RiskSeverity | null
-      if (!severity) return max
-      if (!max) return severity
-      return severityOrder[severity] > severityOrder[max as RiskSeverity] ? severity : max
+    const highestRisk = riskyListings.reduce<Severity | null>((highest, listing) => {
+      const severity = getHighestRiskSeverity(listing)
+      if (!severity) return highest
+      if (!highest) return severity
+      return SEVERITY_ORDER[severity] > SEVERITY_ORDER[highest] ? severity : highest
     }, null)
 
     return confirm({
       title: 'Bulk Approval Warning',
-      description: `You are about to approve ${selectedIds.length} ${entityLabel}, including ${riskyListings.length} from authors with risk signals (highest: ${highestRisk}).\n\nFlagged authors:\n${riskyAuthors.map((name) => `  ${name}`).join('\n')}\n\nAre you sure you want to proceed?`,
+      description: `You are about to approve ${selectedListings.length} ${entityLabel}, including ${riskyListings.length} with review risk signals (highest: ${highestRisk}).\n\nFlagged authors:\n${riskyAuthors.map((name) => `  ${name}`).join('\n')}\n\nAre you sure you want to proceed?`,
       confirmText: 'Approve Selected',
     })
   }

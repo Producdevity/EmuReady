@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { AppError, ResourceError } from '@/lib/errors'
 import { validateData } from '@/server/utils/validation'
-import { CustomFieldType, type Prisma } from '@orm'
+import { CustomFieldType, type Prisma } from '@orm/client'
 
 type PrismaTransactionClient = Omit<
   Prisma.TransactionClient,

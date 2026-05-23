@@ -1,5 +1,5 @@
 import type { PaginationResult } from '@/server/utils/pagination'
-import type { Role } from '@orm'
+import type { Role } from '@orm/client'
 
 export interface VisibilityContext {
   requestingUserId?: string

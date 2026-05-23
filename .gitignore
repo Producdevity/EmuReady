@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 /node_modules
 /.pnp
@@ -15,6 +13,7 @@
 
 # testing
 /coverage
+/output
 /tests/screenshots
 test-results.log
 
@@ -38,6 +37,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+.pnpm-store/
 
 # env files (can opt-in for committing if needed)
 .env
@@ -76,9 +76,12 @@ node_modules/
 .idea
 .claude
 .gemini
+.agents
 .github/copilot-instructions.md
 
 # Notes
+CONTEXT.md
+MEMORY.md
 CHECKS.md
 CLAUDE.md
 AGENTS.md
@@ -86,7 +89,6 @@ AGENT.md
 GEMINI.md
 NOTES.md
 notes
-docs/SEO.md
 
 
 # clerk configuration (can include secrets)

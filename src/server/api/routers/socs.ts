@@ -15,7 +15,6 @@ import {
 } from '@/server/api/trpc'
 import { SoCsRepository } from '@/server/repositories/socs.repository'
 import { paginate } from '@/server/utils/pagination'
-import { batchQueries } from '@/server/utils/query-performance'
 
 export const socsRouter = createTRPCRouter({
   get: publicProcedure.input(GetSoCsSchema).query(async ({ ctx, input }) => {
@@ -76,7 +75,7 @@ export const socsRouter = createTRPCRouter({
   }),
 
   stats: viewStatisticsProcedure.query(async ({ ctx }) => {
-    const [withDevices, withoutDevices] = await batchQueries([
+    const [withDevices, withoutDevices] = await Promise.all([
       ctx.prisma.soC.count({ where: { devices: { some: {} } } }),
       ctx.prisma.soC.count({ where: { devices: { none: {} } } }),
     ])

@@ -18,7 +18,7 @@ import {
   managePermissionsProcedure,
 } from '@/server/api/trpc'
 import { paginate } from '@/server/utils/pagination'
-import { PermissionActionType, Role } from '@orm'
+import { PermissionActionType, Role } from '@orm/client'
 
 export const permissionsRouter = createTRPCRouter({
   /**

@@ -1,4 +1,4 @@
-import { type PrismaClient } from '@orm'
+import { type PrismaClient } from '@orm/client'
 
 const gpuSeeder = async (prisma: PrismaClient) => {
   console.info('🌱 Seeding GPUs...')

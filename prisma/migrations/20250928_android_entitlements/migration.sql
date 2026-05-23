@@ -1,6 +1,6 @@
 -- Android Distribution: Entitlements & Releases
 -- NOTE: This migration was authored manually to avoid touching live DBs during planning.
--- Apply with: npm run db:migrate:deploy (after validating in staging).
+-- Apply with: pnpm db:migrate:deploy (after validating in staging).
 
 -- Enums
 DO $$ BEGIN
@@ -84,4 +84,3 @@ CREATE TABLE IF NOT EXISTS "WebhookEvent" (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS "WebhookEvent_source_eventId_key" ON "WebhookEvent" ("source", "eventId");
-

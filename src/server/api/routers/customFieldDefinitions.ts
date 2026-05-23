@@ -11,7 +11,7 @@ import { createTRPCRouter, protectedProcedure, permissionProcedure } from '@/ser
 import { prisma } from '@/server/db'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
-import { CustomFieldType, type Prisma, Role } from '@orm'
+import { CustomFieldType, type Prisma, Role } from '@orm/client'
 
 type CustomFieldOptionArray = {
   value: string

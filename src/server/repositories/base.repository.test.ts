@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { type PrismaClient } from '@orm'
+import { type PrismaClient } from '@orm/client'
 import { BaseRepository } from './base.repository'
 
-vi.mock('@orm', async () => {
-  const actual = await import('@orm')
+vi.mock('@orm/client', async () => {
+  const actual = await import('@orm/client')
   return {
     ...actual,
     Prisma: {
@@ -105,15 +105,10 @@ describe('BaseRepository', () => {
         batches.push(batch)
       }
 
-      expect(queryFn).toHaveBeenNthCalledWith(1, {
-        take: 2,
-      })
+      expect(queryFn).toHaveBeenNthCalledWith(1, { take: 2 })
+      expect(queryFn).toHaveBeenNthCalledWith(2, { take: 2, cursor: { id: 'second-id' }, skip: 1 })
 
-      expect(queryFn).toHaveBeenNthCalledWith(2, {
-        take: 2,
-        cursor: { id: 'second-id' },
-        skip: 1,
-      })
+      expect(batches.length).toEqual(2)
     })
 
     it('should stop when first batch is exactly batchSize but next is empty', async () => {

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@orm'
+import { createPrismaClient } from '@/server/prisma-client'
 import { permissionsSeederAddOnly } from './seeders/permissionsSeeder'
 
 /**
@@ -7,7 +7,7 @@ import { permissionsSeederAddOnly } from './seeders/permissionsSeeder'
  * - Safe for development and production
  */
 async function main() {
-  const prisma = new PrismaClient()
+  const prisma = createPrismaClient()
   try {
     await permissionsSeederAddOnly(prisma)
   } finally {

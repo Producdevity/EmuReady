@@ -15,7 +15,7 @@ import {
 } from '@/shared/emulator-config/azahar/transformers'
 import { AzaharDefaults } from './azahar.defaults'
 import type { AzaharConfig, AzaharConfigSection } from './azahar.types'
-import type { Prisma } from '@orm'
+import type { Prisma } from '@orm/client'
 
 export interface CustomFieldValue {
   customFieldDefinition: {

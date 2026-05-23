@@ -13,23 +13,23 @@ import {
 import CommunitySupportBanner from '@/components/banners/CommunitySupportBanner'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
-  PerformanceBadge,
-  PageSizeSelector,
-  Pagination,
-  LoadingSpinner,
-  LocalizedDate,
-  SortableHeader,
+  BannedUserBadge,
   Button,
   ColumnVisibilityControl,
-  MobileColumnVisibilityControl,
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-  EditButton,
-  ViewButton,
-  Badge,
   DisplayToggleButton,
+  EditButton,
+  LoadingSpinner,
+  LocalizedDate,
+  MobileColumnVisibilityControl,
+  PageSizeSelector,
+  Pagination,
+  PerformanceBadge,
+  SortableHeader,
   SuccessRateBar,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  ViewButton,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import {
@@ -485,20 +485,12 @@ function PcListingsPage() {
                               </Tooltip>
                             )}
 
-                            {isModerator &&
-                              listing.author &&
-                              'userBans' in listing.author &&
-                              Array.isArray(listing.author.userBans) &&
-                              listing.author.userBans.length > 0 && (
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Badge className="bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800">
-                                      BANNED
-                                    </Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent>This user has been banned</TooltipContent>
-                                </Tooltip>
-                              )}
+                            <BannedUserBadge
+                              author={listing.author}
+                              canView={isModerator}
+                              label="BANNED"
+                              tooltip="This user has been banned"
+                            />
                           </div>
                         </td>
                       )}

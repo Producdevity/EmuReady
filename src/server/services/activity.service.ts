@@ -2,7 +2,7 @@ import { subDays, subHours } from 'date-fns'
 import { type TimeRange } from '@/schemas/activity'
 import { type ListingType } from '@/schemas/common'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { Role, ReportStatus, ApprovalStatus, type PrismaClient, type Prisma } from '@orm'
+import { Role, ReportStatus, ApprovalStatus, type PrismaClient, type Prisma } from '@orm/client'
 
 // Dashboard-specific constants
 const PREVIEW_ITEMS_COUNT = 3

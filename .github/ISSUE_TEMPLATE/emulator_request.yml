@@ -1,0 +1,70 @@
+name: Emulator Request
+description: Request a new emulator for EmuReady.
+title: "[Emulator Request]: "
+labels: ["emulator-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please provide an official or reliable source so the emulator can be verified.
+
+  - type: checkboxes
+    id: existing-emulator
+    attributes:
+      label: Existing Emulator Check
+      options:
+        - label: I have confirmed this emulator is not already listed on EmuReady.
+          required: true
+
+  - type: input
+    id: emulator-name
+    attributes:
+      label: Emulator Name
+      placeholder: Emulator name
+    validations:
+      required: true
+
+  - type: input
+    id: project-link
+    attributes:
+      label: Official Website Or Project Link
+      description: Provide the official website, GitHub repository, or trusted download source.
+      placeholder: https://...
+    validations:
+      required: true
+
+  - type: textarea
+    id: supported-systems
+    attributes:
+      label: Supported Systems
+      description: List the game systems this emulator supports.
+      placeholder: Nintendo Switch, PlayStation 2
+    validations:
+      required: true
+
+  - type: textarea
+    id: supported-platforms
+    attributes:
+      label: Supported Platforms
+      description: List the operating systems or device platforms this emulator supports.
+      placeholder: Windows, Linux, macOS, Android, iOS
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-notes
+    attributes:
+      label: Additional Notes
+      description: Add open-source status, compatibility notes, or anything else we should know.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I have confirmed this emulator works on at least one target platform.
+          required: true
+        - label: I have provided an official or reliable link to the emulator.
+          required: true

@@ -65,6 +65,9 @@ export function Modal({ onClose, ...props }: Props) {
       onClick={handleBackdropClick}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={props.title}
         className={cn(
           'relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl flex flex-col max-h-[90vh] transform transition-all duration-300 ease-out animate-slide-up',
           sizeClasses[size],

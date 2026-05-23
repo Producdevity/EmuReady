@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ApprovalStatus, Role } from '@orm'
+import { ApprovalStatus, Role } from '@orm/client'
 import {
   buildShadowBanFilter,
   buildApprovalStatusFilter,
@@ -29,6 +29,23 @@ describe('query-builders', () => {
             OR: [{ expiresAt: null }, { expiresAt: { gt: expect.any(Date) } }],
           },
         },
+      })
+    })
+
+    it('should allow regular users to see their own content', () => {
+      const filter = buildShadowBanFilter(Role.USER, 'user123')
+      expect(filter).toEqual({
+        OR: [
+          { id: 'user123' },
+          {
+            userBans: {
+              none: {
+                isActive: true,
+                OR: [{ expiresAt: null }, { expiresAt: { gt: expect.any(Date) } }],
+              },
+            },
+          },
+        ],
       })
     })
 
@@ -124,6 +141,14 @@ describe('query-builders', () => {
   describe('buildNsfwFilter', () => {
     it('should return filter when showNsfw is false', () => {
       expect(buildNsfwFilter(false)).toEqual({ isErotic: false })
+    })
+
+    it('should return filter by default', () => {
+      expect(buildNsfwFilter()).toEqual({ isErotic: false })
+    })
+
+    it('should return filter when showNsfw is null', () => {
+      expect(buildNsfwFilter(null)).toEqual({ isErotic: false })
     })
 
     it('should return undefined when showNsfw is true', () => {

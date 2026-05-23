@@ -9,7 +9,6 @@
 import { logger } from '@/lib/logger'
 import { ms } from '@/utils/time'
 import { initializeNotificationService } from './notifications/init'
-import { ConnectionMonitor } from './utils/connection-monitor'
 import { initializeSwitchGameService } from './utils/switchGameInit'
 import { initializeThreeDsGameService } from './utils/threeDsGameInit'
 
@@ -177,29 +176,6 @@ export async function initializeServer(): Promise<void> {
   } else {
     logger.warn('⚠️ Some services failed to initialize. They will be retried on next access.')
   }
-
-  // Initialize connection monitoring (production only)
-  if (process.env.NODE_ENV === 'production') {
-    // Validate database configuration
-    const configValidation = ConnectionMonitor.validateConfig()
-    if (!configValidation.isValid) {
-      logger.warn('⚠️ Database configuration issues detected', {
-        warnings: configValidation.warnings,
-      })
-    }
-
-    // Start monitoring every 2 minutes in production
-    ConnectionMonitor.startMonitoring(2 * 60 * 1000)
-    logger.info('✅ Connection monitoring started')
-  } else {
-    // In development, just validate config once
-    const configValidation = ConnectionMonitor.validateConfig()
-    if (!configValidation.isValid) {
-      logger.warn('⚠️ Database configuration issues detected', {
-        warnings: configValidation.warnings,
-      })
-    }
-  }
 }
 
 /**
@@ -228,7 +204,11 @@ export function getServiceStatus() {
   }
 }
 
-// Auto-initialize on module load with singleton pattern
-if (typeof window === 'undefined' && !globalForServices.initializationPromise) {
-  globalForServices.initializationPromise = initializeServer().catch(logger.error)
+export function initializeServerOnce(): Promise<void> {
+  globalForServices.initializationPromise ??= initializeServer().catch((error: unknown) => {
+    globalForServices.initializationPromise = undefined
+    logger.error('[init] Failed to initialize server services', error)
+    throw error
+  })
+  return globalForServices.initializationPromise
 }

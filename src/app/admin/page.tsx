@@ -4,12 +4,8 @@ import { getCurrentUser } from '@/server/utils/auth'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import { AdminDashboard } from './dashboard/AdminDashboard'
-import {
-  moderatorNavItems,
-  adminNavItems,
-  superAdminNavItems,
-  getDeveloperNavItemsForUser,
-} from './data'
+import { moderatorNavItems, adminNavItems, superAdminNavItems } from './data'
+import { getDeveloperNavItemsForUser } from './data.server'
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard',
