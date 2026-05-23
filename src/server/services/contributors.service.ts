@@ -1,6 +1,6 @@
-import { getTopContributors } from '@orm/sql'
 import { startOfMonth, subDays } from 'date-fns'
 import { ApprovalStatus, type PrismaClient, type Role } from '@orm/client'
+import { getTopContributors } from '@orm/sql'
 
 export type ContributorTimeframe = 'all_time' | 'this_month' | 'this_week'
 
