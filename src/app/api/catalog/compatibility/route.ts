@@ -1,7 +1,10 @@
 import { TRPCError } from '@trpc/server'
+import { getHTTPStatusCodeFromError } from '@trpc/server/http'
 import { connection, type NextRequest, NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 import { validateAndConsumeApiKey } from '@/lib/api/validateApiKey'
+import { ERROR_CODES } from '@/lib/errors'
+import { logger } from '@/lib/logger'
 import { GetDeviceCompatibilitySchema } from '@/schemas/mobile'
 import { prisma } from '@/server/db'
 import { getDeviceCompatibility } from '@/server/services/catalog.service'
@@ -67,15 +70,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     if (error instanceof TRPCError) {
-      const statusCodeMap: Record<string, number> = {
-        BAD_REQUEST: 400,
-        UNAUTHORIZED: 401,
-        FORBIDDEN: 403,
-        NOT_FOUND: 404,
-        TOO_MANY_REQUESTS: 429,
-        INTERNAL_SERVER_ERROR: 500,
-      }
-      const statusCode = statusCodeMap[error.code] || 500
       return NextResponse.json(
         {
           error: {
@@ -83,7 +77,7 @@ export async function GET(request: NextRequest) {
             message: error.message,
           },
         },
-        { status: statusCode },
+        { status: getHTTPStatusCodeFromError(error) },
       )
     }
 
@@ -91,7 +85,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           error: {
-            code: 'BAD_REQUEST',
+            code: ERROR_CODES.BAD_REQUEST,
             message: 'Invalid query parameters',
             details: error.errors,
           },
@@ -104,7 +98,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           error: {
-            code: 'NOT_FOUND',
+            code: ERROR_CODES.NOT_FOUND,
             message: error.message,
           },
         },
@@ -112,11 +106,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.error('Catalog compatibility API error:', error)
+    logger.error('Catalog compatibility API error:', error)
     return NextResponse.json(
       {
         error: {
-          code: 'INTERNAL_SERVER_ERROR',
+          code: ERROR_CODES.INTERNAL_SERVER_ERROR,
           message: 'An unexpected error occurred',
         },
       },

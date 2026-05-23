@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch user data from database using clerkId
     const user = await prisma.user.findUnique({
       where: { clerkId: userId },
       select: { id: true, name: true, role: true, bio: true, createdAt: true },
