@@ -1,7 +1,10 @@
 'use client'
 
+import { notFound } from 'next/navigation'
+import { AdminErrorState } from '@/components/admin/AdminErrorState'
 import { LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
+import { isTRPCNotFoundError } from '@/lib/trpc-client-errors'
 import ListingEditForm from './components/ListingEditForm'
 
 interface Props {
@@ -23,14 +26,14 @@ export default function EditListingClientPage(props: Props) {
   }
 
   if (listingQuery.error) {
+    if (isTRPCNotFoundError(listingQuery.error)) return notFound()
+
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center py-12">
-          <p className="text-red-600 dark:text-red-400 text-lg">
-            Error loading listing: {listingQuery.error.message}
-          </p>
-        </div>
-      </div>
+      <AdminErrorState
+        title="Unable to load listing"
+        message="The listing data could not be loaded. Please try again."
+        onRetry={() => void listingQuery.refetch()}
+      />
     )
   }
 

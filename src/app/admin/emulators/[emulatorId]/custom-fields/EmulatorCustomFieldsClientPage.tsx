@@ -6,6 +6,7 @@ import { useState } from 'react'
 import UnauthenticatedPage from '@/components/auth/UnauthenticatedPage'
 import { Button, LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
+import { isTRPCNotFoundError } from '@/lib/trpc-client-errors'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
@@ -123,10 +124,20 @@ export default function EmulatorCustomFieldsClientPage(props: Props) {
   }
 
   if (emulatorQuery.error) {
+    if (isTRPCNotFoundError(emulatorQuery.error)) {
+      return (
+        <FeedbackCard
+          title="Emulator not found"
+          description="The emulator you are trying to manage was not found or you no longer have access to it."
+          actions={backToEmulatorsAction}
+        />
+      )
+    }
+
     return (
       <FeedbackCard
         title="Failed to load emulator"
-        description={emulatorQuery.error.message ?? 'Please try again later.'}
+        description="The emulator data could not be loaded. Please try again later."
         actions={backToEmulatorsAction}
       />
     )
@@ -136,7 +147,17 @@ export default function EmulatorCustomFieldsClientPage(props: Props) {
     return (
       <FeedbackCard
         title="Failed to load custom fields"
-        description={customFieldDefinitionsQuery.error.message ?? 'Please try again later.'}
+        description="The custom fields could not be loaded. Please try again later."
+        actions={backToEmulatorsAction}
+      />
+    )
+  }
+
+  if (categoriesQuery.error) {
+    return (
+      <FeedbackCard
+        title="Failed to load custom field categories"
+        description="The custom field categories could not be loaded. Please try again later."
         actions={backToEmulatorsAction}
       />
     )

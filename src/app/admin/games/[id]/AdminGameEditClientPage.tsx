@@ -3,8 +3,10 @@
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { AdminErrorState } from '@/components/admin/AdminErrorState'
 import { Button, PageSkeletonLoading } from '@/components/ui'
 import { api } from '@/lib/api'
+import { isTRPCNotFoundError } from '@/lib/trpc-client-errors'
 import { GameEditForm } from './components/GameEditForm'
 import { GameRelatedData } from './components/GameRelatedData'
 
@@ -17,7 +19,19 @@ export default function AdminGameEditClientPage(props: Props) {
 
   if (gameQuery.isPending) return <PageSkeletonLoading />
 
-  if (gameQuery.error || !gameQuery.data) return notFound()
+  if (gameQuery.error) {
+    if (isTRPCNotFoundError(gameQuery.error)) return notFound()
+
+    return (
+      <AdminErrorState
+        title="Unable to load game"
+        message="The game data could not be loaded. Please try again."
+        onRetry={() => void gameQuery.refetch()}
+      />
+    )
+  }
+
+  if (!gameQuery.data) return notFound()
 
   return (
     <div className="space-y-6">
