@@ -17,14 +17,13 @@ import {
 } from '@/server/api/trpc'
 import { getAuthorReportCounts } from '@/server/services/report-stats.service'
 import { paginate } from '@/server/utils/pagination'
-import { batchQueries } from '@/server/utils/query-performance'
 import { validateEnum, sanitizeInput, validatePagination } from '@/server/utils/security-validation'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus, type Prisma, ReportStatus, TrustAction, ReportReason } from '@orm/client'
 
 export const listingReportsRouter = createTRPCRouter({
   stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
-    const [pending, underReview, resolved, dismissed] = await batchQueries([
+    const [pending, underReview, resolved, dismissed] = await Promise.all([
       ctx.prisma.listingReport.count({ where: { status: ReportStatus.PENDING } }),
       ctx.prisma.listingReport.count({ where: { status: ReportStatus.UNDER_REVIEW } }),
       ctx.prisma.listingReport.count({ where: { status: ReportStatus.RESOLVED } }),
@@ -77,7 +76,7 @@ export const listingReportsRouter = createTRPCRouter({
       const orderBy: Prisma.ListingReportOrderByWithRelationInput = {}
       if (sortField && sortDirection) orderBy[sortField] = sortDirection
 
-      const [reports, total] = await batchQueries([
+      const [reports, total] = await Promise.all([
         ctx.prisma.listingReport.findMany({
           where,
           orderBy,
@@ -303,7 +302,7 @@ export const listingReportsRouter = createTRPCRouter({
         ...(status ? { status } : {}),
       }
 
-      const [handheldReports, pcReports, handheldCount, pcCount] = await batchQueries([
+      const [handheldReports, pcReports, handheldCount, pcCount] = await Promise.all([
         ctx.prisma.listingReport.findMany({
           where: handheldWhere,
           orderBy: { createdAt: 'desc' },

@@ -37,7 +37,6 @@ import {
 } from '@/server/services/user-profile.service'
 import { buildOrderBy, paginate } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
-import { createCountQuery } from '@/server/utils/query-performance'
 import { updateUserRole } from '@/server/utils/roleSync'
 import {
   hasPermissionInContext,
@@ -713,7 +712,7 @@ export const usersRouter = createTRPCRouter({
           skip,
           take: limit,
         }),
-        createCountQuery(ctx.prisma.user, where),
+        ctx.prisma.user.count({ where }),
       ])
 
       return {
@@ -752,17 +751,19 @@ export const usersRouter = createTRPCRouter({
       superAdminCount,
       bannedUsersCount,
     ] = await Promise.all([
-      createCountQuery(ctx.prisma.user, { role: Role.USER }),
-      createCountQuery(ctx.prisma.user, { role: Role.AUTHOR }),
-      createCountQuery(ctx.prisma.user, { role: Role.DEVELOPER }),
-      createCountQuery(ctx.prisma.user, { role: Role.MODERATOR }),
-      createCountQuery(ctx.prisma.user, { role: Role.ADMIN }),
-      createCountQuery(ctx.prisma.user, { role: Role.SUPER_ADMIN }),
-      createCountQuery(ctx.prisma.user, {
-        userBans: {
-          some: {
-            isActive: true,
-            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      ctx.prisma.user.count({ where: { role: Role.USER } }),
+      ctx.prisma.user.count({ where: { role: Role.AUTHOR } }),
+      ctx.prisma.user.count({ where: { role: Role.DEVELOPER } }),
+      ctx.prisma.user.count({ where: { role: Role.MODERATOR } }),
+      ctx.prisma.user.count({ where: { role: Role.ADMIN } }),
+      ctx.prisma.user.count({ where: { role: Role.SUPER_ADMIN } }),
+      ctx.prisma.user.count({
+        where: {
+          userBans: {
+            some: {
+              isActive: true,
+              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+            },
           },
         },
       }),
