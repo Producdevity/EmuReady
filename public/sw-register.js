@@ -1,13 +1,10 @@
 const CACHE_NAME = 'emuready_v0.13.1'
 
-// Service worker registration script
 if ('serviceWorker' in navigator) {
-  // Clean up outdated cache versions on load
   window.addEventListener('load', function () {
     if ('caches' in window) {
       caches.keys().then(function (names) {
         for (let name of names) {
-          // Remove cache versions prior
           if (name.startsWith('emuready') && name !== CACHE_NAME) {
             caches
               .delete(name)
@@ -30,12 +27,10 @@ if ('serviceWorker' in navigator) {
     window.location.hostname === '127.0.0.1' ||
     window.location.hostname.includes('.local') ||
     (window.location.protocol === 'http:' && !window.location.hostname.includes('emuready'))
+  const isServiceWorkerEnabled = window.__EMUREADY_SW_ENABLED__ === true
 
-  // Disable SW in development-like environments (including dev.emuready.com behind tunnels)
-  if (isDevelopment) {
-    console.log(
-      'Service Worker disabled in local development mode; unregistering any existing SW and clearing caches',
-    )
+  if (isDevelopment || !isServiceWorkerEnabled) {
+    console.log('Service Worker disabled; unregistering any existing SW and clearing caches')
     // Proactively unregister any active service workers for this origin
     if (navigator.serviceWorker.getRegistrations) {
       navigator.serviceWorker
@@ -43,7 +38,6 @@ if ('serviceWorker' in navigator) {
         .then((regs) => Promise.all(regs.map((r) => r.unregister())))
         .catch((err) => console.warn('SW unregister failed', err))
     }
-    // Clear all caches to avoid stale assets/pages in dev
     if ('caches' in window) {
       caches
         .keys()
@@ -54,7 +48,6 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', async function () {
       const swUrl = '/service-worker.js'
 
-      // Unregister any previous service workers that might be controlling the page
       if (navigator.serviceWorker.getRegistrations) {
         const registrations = await navigator.serviceWorker.getRegistrations()
         const currentSwUrl = new URL(swUrl, window.location.href).href

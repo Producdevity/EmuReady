@@ -36,13 +36,10 @@ export default function RootLayout(props: PropsWithChildren) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Service Worker Registration / Unregister in dev
-         * - In dev (not production), always load to proactively unregister any SW and clear caches
-         * - In prod, only load when explicitly enabled via NEXT_PUBLIC_ENABLE_SW
-         */}
-        {(env.ENABLE_SW || !env.IS_PROD) && (
-          <Script src="/sw-register.js" strategy="afterInteractive" />
-        )}
+        <Script id="service-worker-config" strategy="beforeInteractive">
+          {`window.__EMUREADY_SW_ENABLED__ = ${env.ENABLE_SW ? 'true' : 'false'};`}
+        </Script>
+        <Script src="/sw-register.js" strategy="afterInteractive" />
 
         {env.IS_PROD && env.GA_ID && (
           <Script id="google-analytics-dataLayer" strategy="beforeInteractive">

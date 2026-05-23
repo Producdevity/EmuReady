@@ -5,6 +5,7 @@ import { ms } from '@/utils/time'
 import type { NextRequest, NextFetchEvent } from 'next/server'
 
 // Process-local rate limiting only; counts are not shared across server instances.
+// TODO: For production abuse control, prefer provider/WAF rate limits before traffic reaches Next.
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 
 const RATE_LIMIT_REQUESTS = process.env.NODE_ENV === 'test' ? 10000 : 100
