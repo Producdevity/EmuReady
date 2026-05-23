@@ -78,16 +78,6 @@ export default function EmulatorCustomFieldsClientPage(props: Props) {
     )
   }
 
-  if (!canAccess) {
-    return (
-      <FeedbackCard
-        title="Access Denied"
-        description="You do not have permission to manage custom fields for this emulator."
-        actions={backToEmulatorsAction}
-      />
-    )
-  }
-
   const canApplyTemplates = hasRolePermission(user.role, Role.SUPER_ADMIN)
 
   function handleOpenCreateModal() {
@@ -168,6 +158,16 @@ export default function EmulatorCustomFieldsClientPage(props: Props) {
       <FeedbackCard
         title="Emulator not found"
         description="The emulator you are trying to manage was not found or you no longer have access to it."
+        actions={backToEmulatorsAction}
+      />
+    )
+  }
+
+  if (!canAccess) {
+    return (
+      <FeedbackCard
+        title="Access Denied"
+        description="You do not have permission to manage custom fields for this emulator."
         actions={backToEmulatorsAction}
       />
     )

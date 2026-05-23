@@ -1,9 +1,11 @@
 'use client'
 
 import { ArrowLeft } from 'lucide-react'
-import { notFound, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+import { AdminErrorState } from '@/components/admin/AdminErrorState'
 import { Button, PageSkeletonLoading } from '@/components/ui'
 import { api } from '@/lib/api'
+import { isTRPCNotFoundError } from '@/lib/trpc-client-errors'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import { Role } from '@orm'
 import EmulatorEditForm from './components/EmulatorEditForm'
@@ -62,20 +64,50 @@ export default function EditEmulatorClientPage(props: Props) {
 
   if (systemsQuery.isPending) return <PageSkeletonLoading />
 
-  if (emulatorsQuery.error || systemsQuery.error) {
+  if (emulatorsQuery.error) {
+    const isNotFound = isTRPCNotFoundError(emulatorsQuery.error)
     return (
-      <div className="container mx-auto p-4">
-        <p className="text-red-500">
-          Error loading data:{' '}
-          {emulatorsQuery.error?.message ??
-            systemsQuery.error?.message ??
-            'An unknown error occurred'}
-        </p>
-      </div>
+      <AdminErrorState
+        title={isNotFound ? 'Emulator not found' : 'Unable to load emulator'}
+        message={
+          isNotFound
+            ? 'The emulator you are trying to edit was not found or is no longer available.'
+            : 'The emulator data could not be loaded. Please try again.'
+        }
+        onRetry={() => void emulatorsQuery.refetch()}
+      />
     )
   }
 
-  if (!emulatorsQuery.data || !systemsQuery.data) return notFound()
+  if (systemsQuery.error) {
+    return (
+      <AdminErrorState
+        title="Unable to load systems"
+        message="The system list could not be loaded. Please try again."
+        onRetry={() => void systemsQuery.refetch()}
+      />
+    )
+  }
+
+  if (!emulatorsQuery.data) {
+    return (
+      <AdminErrorState
+        title="Emulator not found"
+        message="The emulator you are trying to edit was not found or is no longer available."
+        onRetry={() => void emulatorsQuery.refetch()}
+      />
+    )
+  }
+
+  if (!systemsQuery.data) {
+    return (
+      <AdminErrorState
+        title="Unable to load systems"
+        message="The system list could not be loaded. Please try again."
+        onRetry={() => window.location.reload()}
+      />
+    )
+  }
 
   return (
     <div className="container mx-auto p-4 md:p-8">

@@ -2,7 +2,6 @@
 
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
 import { AdminErrorState } from '@/components/admin/AdminErrorState'
 import { Button, PageSkeletonLoading } from '@/components/ui'
 import { api } from '@/lib/api'
@@ -20,18 +19,29 @@ export default function AdminGameEditClientPage(props: Props) {
   if (gameQuery.isPending) return <PageSkeletonLoading />
 
   if (gameQuery.error) {
-    if (isTRPCNotFoundError(gameQuery.error)) return notFound()
-
+    const isNotFound = isTRPCNotFoundError(gameQuery.error)
     return (
       <AdminErrorState
-        title="Unable to load game"
-        message="The game data could not be loaded. Please try again."
+        title={isNotFound ? 'Game not found' : 'Unable to load game'}
+        message={
+          isNotFound
+            ? 'The game you are trying to edit was not found or is no longer available.'
+            : 'The game data could not be loaded. Please try again.'
+        }
         onRetry={() => void gameQuery.refetch()}
       />
     )
   }
 
-  if (!gameQuery.data) return notFound()
+  if (!gameQuery.data) {
+    return (
+      <AdminErrorState
+        title="Game not found"
+        message="The game you are trying to edit was not found or is no longer available."
+        onRetry={() => window.location.reload()}
+      />
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -71,7 +81,9 @@ export default function AdminGameEditClientPage(props: Props) {
                 </Link>
               </Button>
               <Button asChild variant="outline" className="w-full justify-start">
-                <Link href={`/listings/new?gameId=${gameQuery.data.id}`}>Add New Listing</Link>
+                <Link href={`/listings/new?gameId=${gameQuery.data.id}`}>
+                  Add New Handheld Report
+                </Link>
               </Button>
             </div>
           </div>
