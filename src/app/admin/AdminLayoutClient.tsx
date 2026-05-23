@@ -11,7 +11,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
-import { hasRolePermission as hasRolePermission } from '@/utils/permissions'
+import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import AdminNavbar from './components/AdminNavbar'
 import {
