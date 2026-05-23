@@ -7,11 +7,6 @@ const LoadingFallback = () => (
   </div>
 )
 
-/**
- * Dynamic imports for components with large dependencies or admin-only usage
- */
-
-// Editor components with large dependencies
 export const MarkdownEditor = dynamic(
   () =>
     import('@/components/ui/form/MarkdownEditor').then((mod) => ({
@@ -25,7 +20,7 @@ export const MarkdownEditor = dynamic(
 
 export const TranslatableMarkdown = dynamic(
   () =>
-    import('@/components/ui/form/TranslatableMarkdown').then((mod) => ({
+    import('@/components/ui/markdown/TranslatableMarkdown').then((mod) => ({
       default: mod.TranslatableMarkdown,
     })),
   {

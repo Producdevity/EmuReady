@@ -4,9 +4,6 @@ import { useState, useEffect } from 'react'
 import { translateTextCached, shouldShowTranslation, getLanguageName } from '@/utils/translation'
 import type { TranslationResult } from '@/utils/translation.types'
 
-/**
- * Custom hook for handling translations
- */
 export function useTranslation(content: string) {
   const [showTranslated, setShowTranslated] = useState(false)
   const [translation, setTranslation] = useState<TranslationResult | null>(null)
@@ -14,11 +11,9 @@ export function useTranslation(content: string) {
   const [showTranslationOption, setShowTranslationOption] = useState(false)
 
   useEffect(() => {
-    // Check if translation should be offered
     const shouldTranslate = shouldShowTranslation(content)
     setShowTranslationOption(shouldTranslate)
 
-    // Reset state when content changes
     setShowTranslated(false)
     setTranslation(null)
   }, [content])
@@ -59,17 +54,14 @@ export function useTranslation(content: string) {
   }
 
   return {
-    // State
     displayedContent: getDisplayedContent(),
     showTranslated,
     translation,
     isTranslating,
     showTranslationOption,
 
-    // Actions
     toggleTranslation,
 
-    // UI helpers
     getButtonLabel,
     getTranslationInfo,
   }

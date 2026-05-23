@@ -230,11 +230,6 @@
     @apply bg-background text-foreground font-sans;
   }
 
-  .prose code::before,
-  .prose code::after {
-    content: none;
-  }
-
   :where(html) {
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb-solid) var(--scrollbar-track);
