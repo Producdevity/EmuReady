@@ -16,6 +16,11 @@ import {
 } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
+import {
+  isAnchorNavigationTarget,
+  openInNewTab,
+  shouldOpenInNewTab,
+} from '@/utils/navigation-events'
 import { ApprovalStatus } from '@orm'
 import type { RouterOutput } from '@/types/trpc'
 
@@ -38,6 +43,8 @@ export function ListingCard({
 }: Props) {
   const router = useRouter()
   const [isLiked, setIsLiked] = useState(false)
+  const listingHref = `/listings/${listing.id}`
+  const gameHref = `/games/${listing.game.id}`
 
   const handleLike = () => {
     setIsLiked(!isLiked)
@@ -54,7 +61,33 @@ export function ListingCard({
 
   const navigateToGame = (ev: MouseEvent) => {
     ev.stopPropagation()
-    router.push(`/games/${listing.game.id}`)
+
+    if (shouldOpenInNewTab(ev)) {
+      ev.preventDefault()
+      openInNewTab(gameHref)
+      return
+    }
+
+    router.push(gameHref)
+  }
+
+  const navigateToListing = (ev: MouseEvent) => {
+    if (isAnchorNavigationTarget(ev)) return
+
+    if (shouldOpenInNewTab(ev)) {
+      ev.preventDefault()
+      openInNewTab(listingHref)
+      return
+    }
+
+    router.push(listingHref)
+  }
+
+  const openListingFromAuxClick = (ev: MouseEvent) => {
+    if (isAnchorNavigationTarget(ev) || !shouldOpenInNewTab(ev)) return
+
+    ev.preventDefault()
+    openInNewTab(listingHref)
   }
 
   // Get game cover image or placeholder
@@ -76,7 +109,8 @@ export function ListingCard({
     <SwipeableCard
       onSwipeLeft={handleComment}
       onSwipeRight={handleLike}
-      onClick={() => router.push(`/listings/${listing.id}`)}
+      onClick={navigateToListing}
+      onAuxClick={openListingFromAuxClick}
       className={cn(
         'bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-300 group cursor-pointer',
         'hover:shadow-2xl hover:shadow-gray-200/50 dark:hover:shadow-gray-900/50',
@@ -139,6 +173,7 @@ export function ListingCard({
               variant="ghost"
               size="sm"
               onClick={navigateToGame}
+              onAuxClick={navigateToGame}
               className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 hover:bg-white text-gray-900 shadow-lg"
               aria-label={`View game: ${listing.game.title}`}
             >

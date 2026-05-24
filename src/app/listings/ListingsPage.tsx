@@ -40,6 +40,11 @@ import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { type RouterInput } from '@/types/trpc'
 import { filterNullAndEmpty } from '@/utils/filter'
+import {
+  isAnchorNavigationTarget,
+  openInNewTab,
+  shouldOpenInNewTab,
+} from '@/utils/navigation-events'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
 import { ms } from '@/utils/time'
@@ -516,149 +521,171 @@ function ListingsPage() {
                     listingsQuery.isFetching && 'opacity-50',
                   )}
                 >
-                  {listingsQuery.data?.listings.map((listing) => (
-                    <tr
-                      key={listing.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-                      onClick={() => router.push(`/listings/${listing.id}`)}
-                    >
-                      {columnVisibility.isColumnVisible('game') && (
-                        <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
-                          <div className="flex items-center gap-2">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Link
-                                  href={`/listings/${listing.id}`}
-                                  className="hover:text-blue-600 dark:hover:text-blue-400"
-                                >
-                                  {listing.game.title.substring(0, 30)}
-                                  {listing.game.title.length > 30 && '...'}
-                                </Link>
-                              </TooltipTrigger>
-                              <TooltipContent side="top">{listing.game.title}</TooltipContent>
-                            </Tooltip>
+                  {listingsQuery.data?.listings.map((listing) => {
+                    const listingHref = `/listings/${listing.id}`
 
-                            {listing.status === ApprovalStatus.PENDING && (
+                    return (
+                      <tr
+                        key={listing.id}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                        onClick={(event) => {
+                          if (isAnchorNavigationTarget(event)) return
+
+                          if (shouldOpenInNewTab(event)) {
+                            event.preventDefault()
+                            openInNewTab(listingHref)
+                            return
+                          }
+
+                          router.push(listingHref)
+                        }}
+                        onAuxClick={(event) => {
+                          if (isAnchorNavigationTarget(event) || !shouldOpenInNewTab(event)) return
+
+                          event.preventDefault()
+                          openInNewTab(listingHref)
+                        }}
+                      >
+                        {columnVisibility.isColumnVisible('game') && (
+                          <td className="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">
+                            <div className="flex items-center gap-2">
                               <Tooltip>
-                                <TooltipTrigger>
-                                  <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                <TooltipTrigger asChild>
+                                  <Link
+                                    href={`/listings/${listing.id}`}
+                                    className="hover:text-blue-600 dark:hover:text-blue-400"
+                                  >
+                                    {listing.game.title.substring(0, 30)}
+                                    {listing.game.title.length > 30 && '...'}
+                                  </Link>
                                 </TooltipTrigger>
-                                <TooltipContent>Under Review</TooltipContent>
+                                <TooltipContent side="top">{listing.game.title}</TooltipContent>
                               </Tooltip>
-                            )}
 
-                            <BannedUserBadge
-                              author={listing.author}
-                              canView={isModerator}
-                              label="BANNED"
-                              tooltip="This user has been banned"
-                            />
+                              {listing.status === ApprovalStatus.PENDING && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>Under Review</TooltipContent>
+                                </Tooltip>
+                              )}
 
-                            {listing.developerVerifications &&
-                              listing.developerVerifications.length > 0 && (
-                                <ListingVerificationBadge
-                                  verifications={listing.developerVerifications}
+                              <BannedUserBadge
+                                author={listing.author}
+                                canView={isModerator}
+                                label="BANNED"
+                                tooltip="This user has been banned"
+                              />
+
+                              {listing.developerVerifications &&
+                                listing.developerVerifications.length > 0 && (
+                                  <ListingVerificationBadge
+                                    verifications={listing.developerVerifications}
+                                    size="sm"
+                                    showTooltip={true}
+                                  />
+                                )}
+                            </div>
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('system') && (
+                          <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                            {isSystemIconsHydrated &&
+                            showSystemIcons &&
+                            listing.game.system?.key ? (
+                              <div className="flex items-center gap-2">
+                                <SystemIcon
+                                  name={listing.game.system.name}
+                                  systemKey={listing.game.system.key}
                                   size="sm"
-                                  showTooltip={true}
+                                />
+                              </div>
+                            ) : (
+                              (listing.game.system?.name ?? 'Unknown')
+                            )}
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('device') && (
+                          <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                            {listing.device
+                              ? `${listing.device.brand.name} ${listing.device.modelName}`
+                              : 'N/A'}
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('emulator') && (
+                          <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                            <div className="flex items-center gap-2">
+                              {listing.emulator ? (
+                                <EmulatorIcon
+                                  name={listing.emulator.name}
+                                  logo={listing.emulator.logo}
+                                  showLogo={isEmulatorLogosHydrated && showEmulatorLogos}
+                                  size="sm"
+                                />
+                              ) : (
+                                'N/A'
+                              )}
+                              {listing.isVerifiedDeveloper && <VerifiedDeveloperBadge size="sm" />}
+                            </div>
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('performance') && (
+                          <td className="px-4 py-2">
+                            <PerformanceBadge
+                              rank={listing.performance?.rank ?? 8}
+                              label={listing.performance?.label ?? 'N/A'}
+                              description={listing.performance?.description}
+                            />
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('successRate') && (
+                          <td className="px-4 py-2">
+                            <SuccessRateBar
+                              rate={listing.successRate * 100}
+                              voteCount={listing._count.votes}
+                            />
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('author') && (
+                          <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                            {listing.author?.id ? (
+                              <Link
+                                href={`/users/${listing.author.id}`}
+                                className="text-blue-600 dark:text-indigo-400 hover:underline"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                {listing.author.name ?? 'Anonymous'}
+                              </Link>
+                            ) : (
+                              <span>{listing.author?.name ?? 'Anonymous'}</span>
+                            )}
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('posted') && (
+                          <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+                            <LocalizedDate date={listing.createdAt} format="timeAgo" />
+                          </td>
+                        )}
+                        {columnVisibility.isColumnVisible('actions') && (
+                          <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-2">
+                              {isAdmin && (
+                                <EditButton
+                                  href={`/admin/listings/${listing.id}/edit`}
+                                  title="Edit Report"
                                 />
                               )}
-                          </div>
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('system') && (
-                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          {isSystemIconsHydrated && showSystemIcons && listing.game.system?.key ? (
-                            <div className="flex items-center gap-2">
-                              <SystemIcon
-                                name={listing.game.system.name}
-                                systemKey={listing.game.system.key}
-                                size="sm"
+                              <ViewButton
+                                href={`/listings/${listing.id}`}
+                                title="View Report Details"
                               />
                             </div>
-                          ) : (
-                            (listing.game.system?.name ?? 'Unknown')
-                          )}
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('device') && (
-                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          {listing.device
-                            ? `${listing.device.brand.name} ${listing.device.modelName}`
-                            : 'N/A'}
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('emulator') && (
-                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          <div className="flex items-center gap-2">
-                            {listing.emulator ? (
-                              <EmulatorIcon
-                                name={listing.emulator.name}
-                                logo={listing.emulator.logo}
-                                showLogo={isEmulatorLogosHydrated && showEmulatorLogos}
-                                size="sm"
-                              />
-                            ) : (
-                              'N/A'
-                            )}
-                            {listing.isVerifiedDeveloper && <VerifiedDeveloperBadge size="sm" />}
-                          </div>
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('performance') && (
-                        <td className="px-4 py-2">
-                          <PerformanceBadge
-                            rank={listing.performance?.rank ?? 8}
-                            label={listing.performance?.label ?? 'N/A'}
-                            description={listing.performance?.description}
-                          />
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('successRate') && (
-                        <td className="px-4 py-2">
-                          <SuccessRateBar
-                            rate={listing.successRate * 100}
-                            voteCount={listing._count.votes}
-                          />
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('author') && (
-                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          {listing.author?.id ? (
-                            <Link
-                              href={`/users/${listing.author.id}`}
-                              className="text-blue-600 dark:text-indigo-400 hover:underline"
-                              onClick={(event) => event.stopPropagation()}
-                            >
-                              {listing.author.name ?? 'Anonymous'}
-                            </Link>
-                          ) : (
-                            <span>{listing.author?.name ?? 'Anonymous'}</span>
-                          )}
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('posted') && (
-                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                          <LocalizedDate date={listing.createdAt} format="timeAgo" />
-                        </td>
-                      )}
-                      {columnVisibility.isColumnVisible('actions') && (
-                        <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end gap-2">
-                            {isAdmin && (
-                              <EditButton
-                                href={`/admin/listings/${listing.id}/edit`}
-                                title="Edit Report"
-                              />
-                            )}
-                            <ViewButton
-                              href={`/listings/${listing.id}`}
-                              title="View Report Details"
-                            />
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
+                          </td>
+                        )}
+                      </tr>
+                    )
+                  })}
                 </tbody>
               )}
             </table>
