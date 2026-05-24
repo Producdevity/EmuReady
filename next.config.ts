@@ -319,15 +319,9 @@ const nextConfig: NextConfig = {
         source: '/sw-register.js',
         headers: [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' }],
       },
-      // Static assets are immutable in production and uncached in dev.
       {
-        source: '/_next/static/:path*',
-        headers: isProduction
-          ? [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }]
-          : [
-              { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
-              { key: 'Pragma', value: 'no-cache' },
-            ],
+        source: '/_next/static/not-found.txt',
+        headers: [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' }],
       },
       // Images and other assets - cache with revalidation
       {
