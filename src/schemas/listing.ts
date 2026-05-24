@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { PAGINATION } from '@/data/constants'
+import { HUMAN_VERIFICATION_TOKEN_MAX_LENGTH } from '@/features/human-verification/shared/constants'
 import { JsonValueSchema, ListingType } from '@/schemas/common'
 import { REVIEW_RISK_FILTERS, ReviewRiskFilterSchema } from '@/schemas/submissionRisk'
 import { ApprovalStatus } from '@orm'
@@ -10,6 +11,7 @@ export const CreateListingSchema = z.object({
   emulatorId: z.string().uuid(),
   performanceId: z.number(),
   notes: z.string().max(5000).nullable().optional(),
+  humanVerificationToken: z.string().max(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH).optional(),
   customFieldValues: z
     .array(
       z.object({
@@ -19,7 +21,6 @@ export const CreateListingSchema = z.object({
     )
     .nullable()
     .optional(),
-  recaptchaToken: z.string().nullable().optional(), // reCAPTCHA token for bot protection
 })
 
 export const GetListingsSchema = z.object({
@@ -109,7 +110,6 @@ export const OverrideApprovalStatusSchema = z.object({
 export const CreateVoteSchema = z.object({
   listingId: z.string().uuid(),
   value: z.boolean(),
-  recaptchaToken: z.string().nullable().optional(), // reCAPTCHA token for bot protection
 })
 
 export const CreateVoteComment = z.object({
@@ -120,7 +120,7 @@ export const CreateCommentSchema = z.object({
   listingId: z.string().uuid(),
   content: z.string().min(1).max(1000),
   parentId: z.string().uuid().nullable().optional(),
-  recaptchaToken: z.string().nullable().optional(), // reCAPTCHA token for bot protection
+  humanVerificationToken: z.string().max(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH).optional(),
 })
 
 export const EditCommentSchema = z.object({

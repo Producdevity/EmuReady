@@ -17,6 +17,7 @@ function createTRPCError(code: TestTRPCErrorCode): TRPCClientError<AppRouter> {
           code,
           httpStatus,
           path: 'test.procedure',
+          appError: null,
           zodError: null,
         },
       },

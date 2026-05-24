@@ -4,6 +4,7 @@ import { useUser, SignInButton } from '@clerk/nextjs'
 import { Send, X } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui'
+import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
 import { MarkdownEditor } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
@@ -16,7 +17,6 @@ export interface CommentFormConfig {
     reply?: string
   }
   maxLength?: number
-  enableRecaptcha?: boolean
   showSignInPrompt?: boolean
   buttonStyle?: 'default' | 'compact'
 }
@@ -30,15 +30,12 @@ interface GenericCommentFormProps {
   onSubmit: (data: {
     content: string
     parentId?: string
-    recaptchaToken?: string | null
+    humanVerificationToken?: string
   }) => Promise<void>
   onUpdate?: (data: { commentId: string; content: string }) => Promise<void>
   onSuccess?: () => void
   onCancel?: () => void
 
-  getRecaptchaToken?: () => Promise<string | null>
-
-  // Loading states
   isCreating?: boolean
   isUpdating?: boolean
 }
@@ -46,6 +43,7 @@ interface GenericCommentFormProps {
 export function GenericCommentForm(props: GenericCommentFormProps) {
   const { user } = useUser()
   const [content, setContent] = useState(props.editingComment?.content ?? '')
+  const submitWithHumanVerification = useSubmitWithHumanVerification()
 
   const isLoading = props.isCreating || props.isUpdating
   const maxLength = props.config.maxLength ?? 2000
@@ -77,24 +75,18 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
 
     try {
       if (props.editingComment && props.onUpdate) {
-        // Update existing comment
         await props.onUpdate({
           commentId: props.editingComment.id,
           content: trimmedContent,
         })
         toast.success('Comment updated successfully')
       } else {
-        // Get CAPTCHA token if enabled
-        let recaptchaToken: string | null = null
-        if (props.config.enableRecaptcha && props.getRecaptchaToken) {
-          recaptchaToken = await props.getRecaptchaToken()
-        }
-
-        // Create new comment
-        await props.onSubmit({
-          content: trimmedContent,
-          parentId: props.parentId,
-          recaptchaToken,
+        await submitWithHumanVerification((humanVerificationToken) => {
+          return props.onSubmit({
+            content: trimmedContent,
+            parentId: props.parentId,
+            humanVerificationToken,
+          })
         })
         toast.success('Comment posted successfully')
       }
@@ -187,7 +179,6 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
     )
   }
 
-  // Default style
   return (
     <form onSubmit={handleSubmit} className={isReply ? 'mb-2' : 'mb-6'}>
       <MarkdownEditor

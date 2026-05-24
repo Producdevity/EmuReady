@@ -107,7 +107,6 @@
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "react-error-boundary": "^6.0.0",
-    "react-google-recaptcha-v3": "^1.11.0",
     "react-hook-form": "^7.56.4",
     "react-syntax-highlighter": "^15.6.6",
     "remeda": "^2.22.1",

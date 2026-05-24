@@ -3,7 +3,6 @@
 import VotingHelpModal from '@/app/listings/[id]/components/VotingHelpModal'
 import { VoteButtons } from '@/components/ui'
 import { api } from '@/lib/api'
-import { useRecaptchaForVote } from '@/lib/captcha/hooks'
 import { type RouterInput } from '@/types/trpc'
 
 interface Props {
@@ -20,8 +19,6 @@ interface Props {
 }
 
 function PcVoteButtons(props: Props) {
-  const { executeForVote, isCaptchaEnabled } = useRecaptchaForVote()
-
   const voteMutation = api.pcListings.vote.useMutation({
     onSuccess: () => {
       props.onVoteSuccess?.()
@@ -29,16 +26,9 @@ function PcVoteButtons(props: Props) {
   })
 
   const handleVote = async (value: boolean) => {
-    // Get CAPTCHA token if enabled
-    let recaptchaToken: string | null = null
-    if (isCaptchaEnabled) {
-      recaptchaToken = await executeForVote()
-    }
-
     voteMutation.mutate({
       pcListingId: props.pcListingId,
       value,
-      ...(recaptchaToken && { recaptchaToken }),
     } satisfies RouterInput['pcListings']['vote'])
   }
 

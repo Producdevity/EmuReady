@@ -6,6 +6,7 @@ import { type CreateNextContextOptions } from '@trpc/server/adapters/next'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
 import analytics from '@/lib/analytics'
+import { getSerializableAppError } from '@/lib/app-error-cause'
 import { AppError } from '@/lib/errors'
 import { logger } from '@/lib/logger'
 import { prisma } from '@/server/db'
@@ -254,6 +255,7 @@ const mt = initTRPC.context<typeof createMobileTRPCFetchContext>().create({
       ...ctx.shape,
       data: {
         ...ctx.shape.data,
+        appError: getSerializableAppError(ctx.error.cause),
         zodError: ctx.error.cause instanceof ZodError ? ctx.error.cause.flatten() : null,
       },
     }

@@ -2,6 +2,10 @@
  * @documentation /docs/ERROR_HANDLING.md
  */
 import { TRPCError } from '@trpc/server'
+import {
+  HUMAN_VERIFICATION_ACTION,
+  HUMAN_VERIFICATION_ERROR_CODES,
+} from '@/features/human-verification/shared/constants'
 import { toArray } from '@/utils/array'
 import { formatUserRole } from '@/utils/format'
 import { type Role } from '@orm'
@@ -19,6 +23,9 @@ export const ERROR_CODES = {
 export const APP_ERROR_CODES = {
   GAME_ALREADY_EXISTS: 'GAME_ALREADY_EXISTS',
   GAME_SUBMISSION_LIMIT_EXCEEDED: 'GAME_SUBMISSION_LIMIT_EXCEEDED',
+  HUMAN_VERIFICATION_FAILED: HUMAN_VERIFICATION_ERROR_CODES.FAILED,
+  HUMAN_VERIFICATION_REQUIRED: HUMAN_VERIFICATION_ERROR_CODES.REQUIRED,
+  HUMAN_VERIFICATION_UNAVAILABLE: HUMAN_VERIFICATION_ERROR_CODES.UNAVAILABLE,
 } as const
 
 export type AppErrorCode = (typeof APP_ERROR_CODES)[keyof typeof APP_ERROR_CODES]
@@ -39,7 +46,6 @@ export const ERROR_MESSAGES = {
   // Validation errors
   INVALID_INPUT: 'The provided input is invalid',
   MISSING_REQUIRED_FIELD: 'A required field is missing',
-  INVALID_CAPTCHA: 'CAPTCHA verification failed',
 
   // Business logic errors
   OPERATION_NOT_ALLOWED: 'This operation is not allowed',
@@ -141,13 +147,6 @@ export class AppError {
     })
   }
 
-  static captcha(message?: string): never {
-    throw new TRPCError({
-      code: ERROR_CODES.BAD_REQUEST,
-      message: message ? `CAPTCHA verification failed: ${message}` : ERROR_MESSAGES.INVALID_CAPTCHA,
-    })
-  }
-
   // Shadow ban enforcement — deliberately vague to not reveal ban status
   static shadowBanned(): never {
     throw new TRPCError({
@@ -177,6 +176,34 @@ export class AppError {
     throw new TRPCError({
       code: ERROR_CODES.TOO_MANY_REQUESTS,
       message: message ?? ERROR_MESSAGES.TOO_MANY_REQUESTS,
+    })
+  }
+
+  static humanVerificationRequired(): never {
+    throw new TRPCError({
+      code: ERROR_CODES.BAD_REQUEST,
+      message: 'Please complete human verification to continue.',
+      cause: {
+        code: APP_ERROR_CODES.HUMAN_VERIFICATION_REQUIRED,
+        provider: 'turnstile',
+        action: HUMAN_VERIFICATION_ACTION,
+      },
+    })
+  }
+
+  static humanVerificationFailed(message?: string): never {
+    throw new TRPCError({
+      code: ERROR_CODES.BAD_REQUEST,
+      message: message ?? 'Human verification failed. Please try again.',
+      cause: { code: APP_ERROR_CODES.HUMAN_VERIFICATION_FAILED },
+    })
+  }
+
+  static humanVerificationUnavailable(): never {
+    throw new TRPCError({
+      code: ERROR_CODES.INTERNAL_SERVER_ERROR,
+      message: 'Human verification is not configured.',
+      cause: { code: APP_ERROR_CODES.HUMAN_VERIFICATION_UNAVAILABLE },
     })
   }
 

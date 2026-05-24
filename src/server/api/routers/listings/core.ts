@@ -1,6 +1,4 @@
 import analytics from '@/lib/analytics'
-import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
-import { getClientIP, verifyRecaptcha } from '@/lib/captcha/verify'
 import { AppError, ResourceError } from '@/lib/errors'
 import { applyTrustAction } from '@/lib/trust/service'
 import {
@@ -32,6 +30,7 @@ import { normalizeCustomFieldValues } from '@/server/utils/custom-field-values'
 import { getDriverVersions } from '@/server/utils/driver-versions'
 import { isUserBanned } from '@/server/utils/query-builders'
 import { sanitizeInput, validatePagination } from '@/server/utils/security-validation'
+import { checkSpamContent } from '@/server/utils/spam-check'
 import { withSavepoint } from '@/server/utils/transactions'
 import { updateListingVoteCounts } from '@/server/utils/vote-counts'
 import { handleListingVoteTrustEffects } from '@/server/utils/vote-trust-effects'
@@ -155,21 +154,8 @@ export const coreRouter = createTRPCRouter({
   }),
 
   create: createListingProcedure.input(CreateListingSchema).mutation(async ({ ctx, input }) => {
-    const { recaptchaToken, ...payload } = input
+    const { humanVerificationToken, ...payload } = input
     const authorId = ctx.session.user.id
-
-    // TODO: Add spam detection via `checkSpamContent` from
-    // `@/server/utils/spam-check` (currently only applied in mobile routes).
-    // Block: UX/product sign-off needed since existing web users would start
-    // seeing spam-block errors. Mirror mobile: `{ userId, content: notes, entityType: 'listing' }`.
-    const clientIP = ctx.headers ? getClientIP(ctx.headers) : undefined
-    const captchaResult = await verifyRecaptcha({
-      token: recaptchaToken,
-      expectedAction: RECAPTCHA_CONFIG.actions.CREATE_LISTING,
-      userIP: clientIP,
-    })
-
-    if (!captchaResult.success) return AppError.captcha(captchaResult.error)
 
     const userExists = await ctx.prisma.user.findUnique({
       where: { id: authorId },
@@ -182,6 +168,16 @@ export const coreRouter = createTRPCRouter({
       })
       return ResourceError.user.notInDatabase(authorId)
     }
+
+    await checkSpamContent({
+      prisma: ctx.prisma,
+      userId: authorId,
+      content: payload.notes ?? '',
+      entityType: 'listing',
+      challengeMode: 'challenge',
+      humanVerificationToken,
+      headers: ctx.headers,
+    })
 
     const repository = new ListingsRepository(ctx.prisma)
     const newListing = await repository.create({
@@ -247,18 +243,6 @@ export const coreRouter = createTRPCRouter({
 
     if (await isUserBanned(ctx.prisma, userId)) {
       return AppError.shadowBanned()
-    }
-
-    // Verify CAPTCHA if token is provided
-    if (input.recaptchaToken) {
-      const clientIP = ctx.headers ? getClientIP(ctx.headers) : undefined
-      const captchaResult = await verifyRecaptcha({
-        token: input.recaptchaToken,
-        expectedAction: RECAPTCHA_CONFIG.actions.VOTE,
-        userIP: clientIP,
-      })
-
-      if (!captchaResult.success) return AppError.captcha(captchaResult.error)
     }
 
     const listing = await ctx.prisma.listing.findUnique({

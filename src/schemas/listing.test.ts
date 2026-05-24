@@ -20,7 +20,6 @@ describe('Listing Schemas - Null Handling', () => {
         performanceId: 5,
         notes: null,
         customFieldValues: null,
-        recaptchaToken: null,
       }
 
       const result = CreateListingSchema.safeParse(validInput)
@@ -28,7 +27,6 @@ describe('Listing Schemas - Null Handling', () => {
       if (result.success) {
         expect(result.data.notes).toBeNull()
         expect(result.data.customFieldValues).toBeNull()
-        expect(result.data.recaptchaToken).toBeNull()
       }
     })
 
@@ -45,7 +43,6 @@ describe('Listing Schemas - Null Handling', () => {
       if (result.success) {
         expect(result.data.notes).toBeUndefined()
         expect(result.data.customFieldValues).toBeUndefined()
-        expect(result.data.recaptchaToken).toBeUndefined()
       }
     })
 
@@ -248,19 +245,17 @@ describe('Listing Schemas - Null Handling', () => {
   })
 
   describe('CreateCommentSchema', () => {
-    it('should accept null for parentId and recaptchaToken', () => {
+    it('should accept null for parentId', () => {
       const validInput = {
         listingId: '123e4567-e89b-12d3-a456-426614174000',
         content: 'This is a comment',
         parentId: null,
-        recaptchaToken: null,
       }
 
       const result = CreateCommentSchema.safeParse(validInput)
       expect(result.success).toBe(true)
       if (result.success) {
         expect(result.data.parentId).toBeNull()
-        expect(result.data.recaptchaToken).toBeNull()
       }
     })
 

@@ -58,7 +58,7 @@ describe('logPcVoteError', () => {
   const PC_LISTING_ID = '00000000-0000-4000-a000-000000000011'
 
   it('passes pcListingId as extra context to logger.error', () => {
-    const error = new Error('CAPTCHA failed')
+    const error = new Error('Vote failed')
 
     logPcVoteError({ error, pcListingId: PC_LISTING_ID })
 

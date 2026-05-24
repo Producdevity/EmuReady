@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { HUMAN_VERIFICATION_TOKEN_MAX_LENGTH } from '@/features/human-verification/shared/constants'
 import { ReportReason, ReportStatus, PcOs, CustomFieldType, NotificationType } from '@orm'
 
 // Type-safe custom field value schema using discriminated union
@@ -131,6 +132,7 @@ export const CreateCommentSchema = z.object({
   listingId: z.string().uuid(),
   content: z.string().min(1),
   parentId: z.string().uuid().nullable().optional(),
+  humanVerificationToken: z.string().max(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH).optional(),
 })
 
 export const VoteListingSchema = z.object({
@@ -152,6 +154,7 @@ export const CreateListingSchema = z.object({
   emulatorId: z.string().uuid(),
   performanceId: z.number(),
   notes: z.string().optional(),
+  humanVerificationToken: z.string().max(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH).optional(),
   customFieldValues: z
     .array(z.union([CustomFieldValueSchema, SimplifiedCustomFieldValueSchema]))
     .optional(),

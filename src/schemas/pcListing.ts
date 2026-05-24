@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { PAGINATION, CHAR_LIMITS } from '@/data/constants'
+import { HUMAN_VERIFICATION_TOKEN_MAX_LENGTH } from '@/features/human-verification/shared/constants'
 import { JsonValueSchema } from '@/schemas/common'
 import { REVIEW_RISK_FILTERS, ReviewRiskFilterSchema } from '@/schemas/submissionRisk'
 import { ApprovalStatus, PcOs, ReportReason, ReportStatus } from '@orm'
@@ -14,6 +15,7 @@ export const CreatePcListingSchema = z.object({
   os: z.nativeEnum(PcOs),
   osVersion: z.string().min(1),
   notes: z.string().max(5000).optional(),
+  humanVerificationToken: z.string().max(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH).optional(),
   customFieldValues: z
     .array(
       z.object({
@@ -22,7 +24,6 @@ export const CreatePcListingSchema = z.object({
       }),
     )
     .optional(),
-  recaptchaToken: z.string().nullable().optional(),
 })
 
 export const GetPcListingsSchema = z.object({
@@ -238,7 +239,6 @@ export const GetPcPresetsSchema = z.object({
 export const VotePcListingSchema = z.object({
   pcListingId: z.string().uuid(),
   value: z.boolean(), // true = upvote, false = downvote
-  recaptchaToken: z.string().nullable().optional(),
 })
 
 export const GetPcListingUserVoteSchema = z.object({
@@ -257,6 +257,7 @@ export const CreatePcListingCommentSchema = z.object({
   pcListingId: z.string().uuid(),
   content: z.string().min(1).max(CHAR_LIMITS.COMMENT),
   parentId: z.string().uuid().optional(),
+  humanVerificationToken: z.string().max(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH).optional(),
 })
 
 export const UpdatePcListingCommentSchema = z.object({

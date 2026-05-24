@@ -22,9 +22,9 @@ import {
 } from '@/app/listings/hooks'
 import { Autocomplete, Button, Input, LoadingSpinner, SelectInput } from '@/components/ui'
 import { PC_OS_OPTIONS } from '@/data/pc-os'
+import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
-import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
 import { MarkdownEditor } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
@@ -46,6 +46,7 @@ function AddPcListingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const currentUserQuery = api.users.me.useQuery()
+  const submitWithHumanVerification = useSubmitWithHumanVerification()
 
   const gameIdFromUrl = searchParams.get('gameId')
 
@@ -64,7 +65,6 @@ function AddPcListingPage() {
   const createPcListing = api.pcListings.create.useMutation()
   const performanceScalesQuery = api.performanceScales.get.useQuery()
   const presetsQuery = api.pcListings.presets.get.useQuery({})
-  const { executeForCreateListing, isCaptchaEnabled } = useRecaptchaForCreateListing()
   const { handleKeyDown } = useFormKeyDown()
 
   const { gameSearchTerm, setGameSearchTerm, loadGameItems } = useGameLoader()
@@ -194,15 +194,12 @@ function AddPcListingPage() {
         return toast.error('You must be signed in to create a Compatibility Report.')
       }
       try {
-        const recaptchaToken = isCaptchaEnabled ? await executeForCreateListing() : null
-        if (isCaptchaEnabled && !recaptchaToken) {
-          return toast.error('CAPTCHA verification could not start. Please refresh and try again.')
-        }
-
-        const result = await createPcListing.mutateAsync({
-          ...data,
-          ...(recaptchaToken && { recaptchaToken }),
-        })
+        const result = await submitWithHumanVerification((humanVerificationToken) =>
+          createPcListing.mutateAsync({
+            ...data,
+            humanVerificationToken,
+          }),
+        )
 
         analytics.listing.created({
           listingId: result.id,
@@ -230,9 +227,8 @@ function AddPcListingPage() {
     },
     [
       currentUserQuery.data?.id,
-      executeForCreateListing,
-      isCaptchaEnabled,
       createPcListing,
+      submitWithHumanVerification,
       selectedGame?.system?.id,
       parsedCustomFields.length,
       router,

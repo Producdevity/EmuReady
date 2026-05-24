@@ -145,7 +145,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
    * Create a new listing
    */
   create: mobileProtectedProcedure.input(CreateListingSchema).mutation(async ({ ctx, input }) => {
-    const { ...payload } = input
+    const { humanVerificationToken: _humanVerificationToken, ...payload } = input
     const repository = new ListingsRepository(ctx.prisma)
 
     await checkSpamContent({

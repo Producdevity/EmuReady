@@ -2,7 +2,6 @@
 
 import { VoteButtons as SharedVoteButtons } from '@/components/ui'
 import { api } from '@/lib/api'
-import { useRecaptchaForVote } from '@/lib/captcha/hooks'
 import { type RouterInput } from '@/types/trpc'
 import VotingHelpModal from './VotingHelpModal'
 
@@ -19,8 +18,6 @@ interface Props {
 }
 
 export function VoteButtons(props: Props) {
-  const { executeForVote, isCaptchaEnabled } = useRecaptchaForVote()
-
   const voteMutation = api.listings.vote.useMutation({
     onSuccess: () => {
       props.onVoteSuccess?.()
@@ -28,14 +25,9 @@ export function VoteButtons(props: Props) {
   })
 
   const handleVote = async (value: boolean) => {
-    // Get CAPTCHA token if enabled
-    let recaptchaToken: string | null = null
-    if (isCaptchaEnabled) recaptchaToken = await executeForVote()
-
     voteMutation.mutate({
       listingId: props.listingId,
       value,
-      ...(recaptchaToken && { recaptchaToken }),
     } satisfies RouterInput['listings']['vote'])
   }
 

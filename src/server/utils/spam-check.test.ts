@@ -1,5 +1,10 @@
 import { TRPCError } from '@trpc/server'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  isTurnstileConfigured,
+  verifyTurnstileToken,
+} from '@/features/human-verification/server/providers/turnstile'
+import { HUMAN_VERIFICATION_ERROR_CODES } from '@/features/human-verification/shared/constants'
 import analytics from '@/lib/analytics'
 import { type PrismaClient } from '@orm/client'
 import { checkSpamContent } from './spam-check'
@@ -13,7 +18,22 @@ vi.mock('@/lib/analytics', () => ({
   },
 }))
 
+vi.mock('@/features/human-verification/server/providers/turnstile', () => ({
+  getRequestIp: vi.fn(() => undefined),
+  isTurnstileConfigured: vi.fn(() => true),
+  verifyTurnstileToken: vi.fn(),
+}))
+
 const mockPrisma = {} as unknown as PrismaClient
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  vi.mocked(isTurnstileConfigured).mockReturnValue(true)
+  vi.mocked(verifyTurnstileToken).mockResolvedValue({
+    success: false,
+    errorCodes: ['test-default'],
+  })
+})
 
 afterEach(() => vi.restoreAllMocks())
 
@@ -40,12 +60,12 @@ describe('checkSpamContent', () => {
     expect(analytics.contentQuality.spamDetected).not.toHaveBeenCalled()
   })
 
-  it('emits analytics and throws AppError.badRequest with reason when spam detected', async () => {
+  it('emits analytics and throws AppError.badRequest with reason when spam is detected', async () => {
     vi.spyOn(SpamDetectionService.prototype, 'detectSpam').mockResolvedValue({
       isSpam: true,
-      confidence: 0.95,
-      method: 'rate_limiting',
-      reason: 'Exceeded rate limit: 4 listings in 5 minutes',
+      confidence: 0.85,
+      method: 'pattern_matching',
+      reason: 'Spam pattern matched',
     })
 
     await expect(
@@ -55,15 +75,38 @@ describe('checkSpamContent', () => {
         content: 'Flagged content',
         entityType: 'listing',
       }),
-    ).rejects.toThrow(/Spam detected: Exceeded rate limit/)
+    ).rejects.toThrow(/Spam detected: Spam pattern matched/)
 
     expect(analytics.contentQuality.spamDetected).toHaveBeenCalledTimes(1)
     expect(analytics.contentQuality.spamDetected).toHaveBeenCalledWith({
       entityType: 'listing',
       entityId: USER_ID,
+      confidence: 0.85,
+      method: 'pattern_matching',
+    })
+  })
+
+  it('throws TOO_MANY_REQUESTS when rate limiting flags the content', async () => {
+    vi.spyOn(SpamDetectionService.prototype, 'detectSpam').mockResolvedValue({
+      isSpam: true,
       confidence: 0.95,
       method: 'rate_limiting',
+      reason: 'Too many recent reports. Please wait and try again.',
     })
+
+    try {
+      await checkSpamContent({
+        prisma: mockPrisma,
+        userId: USER_ID,
+        content: 'Flagged content',
+        entityType: 'listing',
+      })
+      throw new Error('Expected checkSpamContent to throw')
+    } catch (error) {
+      expect(error).toBeInstanceOf(TRPCError)
+      expect((error as TRPCError).code).toBe('TOO_MANY_REQUESTS')
+      expect((error as TRPCError).message).toContain('Too many recent reports')
+    }
   })
 
   it('falls back to the community-guidelines message when reason is missing', async () => {
@@ -102,6 +145,114 @@ describe('checkSpamContent', () => {
     } catch (error) {
       expect(error).toBeInstanceOf(TRPCError)
       expect((error as TRPCError).code).toBe('BAD_REQUEST')
+    }
+  })
+
+  it('requires human verification for challengeable spam when challenge mode is enabled', async () => {
+    vi.spyOn(SpamDetectionService.prototype, 'detectSpam').mockResolvedValue({
+      isSpam: true,
+      confidence: 0.85,
+      method: 'pattern_matching',
+      reason: 'Spam pattern matched',
+    })
+
+    try {
+      await checkSpamContent({
+        prisma: mockPrisma,
+        userId: USER_ID,
+        content: 'Flagged content',
+        entityType: 'comment',
+        challengeMode: 'challenge',
+      })
+      throw new Error('Expected checkSpamContent to throw')
+    } catch (error) {
+      expect(error).toBeInstanceOf(TRPCError)
+      expect((error as TRPCError).code).toBe('BAD_REQUEST')
+      expect((error as TRPCError).cause).toEqual(
+        expect.objectContaining({
+          code: HUMAN_VERIFICATION_ERROR_CODES.REQUIRED,
+          provider: 'turnstile',
+          action: 'content_submission',
+        }),
+      )
+    }
+  })
+
+  it('allows challengeable spam after a valid human verification token', async () => {
+    vi.spyOn(SpamDetectionService.prototype, 'detectSpam').mockResolvedValue({
+      isSpam: true,
+      confidence: 0.85,
+      method: 'pattern_matching',
+      reason: 'Spam pattern matched',
+    })
+    vi.mocked(verifyTurnstileToken).mockResolvedValue({ success: true, errorCodes: [] })
+
+    await expect(
+      checkSpamContent({
+        prisma: mockPrisma,
+        userId: USER_ID,
+        content: 'Flagged content',
+        entityType: 'comment',
+        challengeMode: 'challenge',
+        humanVerificationToken: 'valid-token',
+      }),
+    ).resolves.toBeUndefined()
+
+    expect(verifyTurnstileToken).toHaveBeenCalledWith({
+      token: 'valid-token',
+      remoteIp: undefined,
+    })
+  })
+
+  it('does not allow high-confidence spam with a human verification token', async () => {
+    vi.spyOn(SpamDetectionService.prototype, 'detectSpam').mockResolvedValue({
+      isSpam: true,
+      confidence: 0.99,
+      method: 'pattern_matching',
+      reason: 'Multiple spam patterns matched',
+    })
+
+    await expect(
+      checkSpamContent({
+        prisma: mockPrisma,
+        userId: USER_ID,
+        content: 'Flagged content',
+        entityType: 'comment',
+        challengeMode: 'challenge',
+        humanVerificationToken: 'valid-token',
+      }),
+    ).rejects.toThrow(/Multiple spam patterns matched/)
+
+    expect(verifyTurnstileToken).not.toHaveBeenCalled()
+  })
+
+  it('fails closed when human verification is not configured for a challenge', async () => {
+    vi.spyOn(SpamDetectionService.prototype, 'detectSpam').mockResolvedValue({
+      isSpam: true,
+      confidence: 0.85,
+      method: 'pattern_matching',
+      reason: 'Spam pattern matched',
+    })
+    vi.mocked(isTurnstileConfigured).mockReturnValue(false)
+
+    try {
+      await checkSpamContent({
+        prisma: mockPrisma,
+        userId: USER_ID,
+        content: 'Flagged content',
+        entityType: 'comment',
+        challengeMode: 'challenge',
+        humanVerificationToken: 'token',
+      })
+      throw new Error('Expected checkSpamContent to throw')
+    } catch (error) {
+      expect(error).toBeInstanceOf(TRPCError)
+      expect((error as TRPCError).code).toBe('INTERNAL_SERVER_ERROR')
+      expect((error as TRPCError).cause).toEqual(
+        expect.objectContaining({
+          code: HUMAN_VERIFICATION_ERROR_CODES.UNAVAILABLE,
+        }),
+      )
     }
   })
 })
