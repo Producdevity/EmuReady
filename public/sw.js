@@ -209,8 +209,7 @@ self.addEventListener(
               headers: headers,
             })
 
-            // Asynchronously update cache
-            cache.put(event.request, modifiedResponse).catch(() => {})
+            event.waitUntil(cache.put(event.request, modifiedResponse).catch(() => {}))
 
             return response
           })
@@ -220,7 +219,10 @@ self.addEventListener(
           })
 
         // Implement stale-while-revalidate pattern
-        if (cached) return cached
+        if (cached) {
+          event.waitUntil(fetchPromise.catch(() => {}))
+          return cached
+        }
 
         // Await network response when no cache exists
         return fetchPromise
@@ -278,7 +280,10 @@ self.addEventListener(
     event.notification.close()
     event.waitUntil(
       clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
-        const targetUrl = new URL(event.notification.data.url || '/', self.location.origin)
+        const targetUrl = new URL(
+          typeof event.notification.data?.url === 'string' ? event.notification.data.url : '/',
+          self.location.origin,
+        )
         const targetPathname = normalizePathname(targetUrl.pathname)
 
         for (const winClient of wins) {
