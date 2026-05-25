@@ -3,6 +3,8 @@ import { withSentryConfig } from '@sentry/nextjs'
 import type { NextConfig } from 'next'
 import type { Configuration as WebpackConfiguration } from 'webpack'
 
+type Header = Awaited<ReturnType<NonNullable<NextConfig['headers']>>>[number]
+
 const isVercelBuild = process.env.VERCEL === '1'
 
 const recaptchaScriptSources = [
@@ -310,17 +312,9 @@ const nextConfig: NextConfig = {
 
   async headers() {
     const isProduction = process.env.NODE_ENV === 'production'
-    const headers = [
+    const headers: Header[] = [
       {
-        source: '/service-worker.js',
-        headers: [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' }],
-      },
-      {
-        source: '/sw-register.js',
-        headers: [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' }],
-      },
-      {
-        source: '/_next/static/not-found.txt',
+        source: '/sw.js',
         headers: [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' }],
       },
       // Images and other assets - cache with revalidation
@@ -363,8 +357,8 @@ const nextConfig: NextConfig = {
     // In dev disable HTML caching to avoid stale content via proxies
     if (!isProduction) {
       headers.push({
-        // All routes except static assets and API
-        source: '/((?!_next|api|favicon|service-worker\\.js|sw-register\\.js).*)',
+        source: '/:path*',
+        has: [{ type: 'header', key: 'accept', value: '.*text/html.*' }],
         headers: [
           { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
           { key: 'Pragma', value: 'no-cache' },
