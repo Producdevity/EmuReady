@@ -47,6 +47,7 @@ describe('turnstile provider', () => {
       expect.objectContaining({
         method: 'POST',
         headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        signal: expect.any(AbortSignal),
       }),
     )
   })
@@ -78,6 +79,30 @@ describe('turnstile provider', () => {
     await expect(verifyTurnstileToken({ token: 'expired' })).resolves.toEqual({
       success: false,
       errorCodes: ['timeout-or-duplicate'],
+    })
+  })
+
+  it('fails closed when Siteverify times out', async () => {
+    vi.stubEnv('TURNSTILE_SECRET_KEY', 'secret')
+    global.fetch = vi.fn(async () => {
+      throw new DOMException('Timed out', 'TimeoutError')
+    })
+
+    await expect(verifyTurnstileToken({ token: 'token' })).resolves.toEqual({
+      success: false,
+      errorCodes: ['siteverify-timeout'],
+    })
+  })
+
+  it('fails closed when Siteverify cannot be reached', async () => {
+    vi.stubEnv('TURNSTILE_SECRET_KEY', 'secret')
+    global.fetch = vi.fn(async () => {
+      throw new Error('network unavailable')
+    })
+
+    await expect(verifyTurnstileToken({ token: 'token' })).resolves.toEqual({
+      success: false,
+      errorCodes: ['siteverify-request-failed'],
     })
   })
 })

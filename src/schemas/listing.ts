@@ -1,26 +1,13 @@
 import { z } from 'zod'
 import { PAGINATION } from '@/data/constants'
-import { HUMAN_VERIFICATION_TOKEN_MAX_LENGTH } from '@/features/human-verification/shared/constants'
+import { HumanVerificationTokenSchema } from '@/features/human-verification/shared/schema'
 import { JsonValueSchema, ListingType } from '@/schemas/common'
+import { CreateListingBaseSchema } from '@/schemas/listingCreate'
 import { REVIEW_RISK_FILTERS, ReviewRiskFilterSchema } from '@/schemas/submissionRisk'
 import { ApprovalStatus } from '@orm'
 
-export const CreateListingSchema = z.object({
-  gameId: z.string().uuid(),
-  deviceId: z.string().uuid(),
-  emulatorId: z.string().uuid(),
-  performanceId: z.number(),
-  notes: z.string().max(5000).nullable().optional(),
-  humanVerificationToken: z.string().max(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH).optional(),
-  customFieldValues: z
-    .array(
-      z.object({
-        customFieldDefinitionId: z.string().uuid(),
-        value: JsonValueSchema,
-      }),
-    )
-    .nullable()
-    .optional(),
+export const CreateListingSchema = CreateListingBaseSchema.extend({
+  humanVerificationToken: HumanVerificationTokenSchema.optional(),
 })
 
 export const GetListingsSchema = z.object({
@@ -120,7 +107,7 @@ export const CreateCommentSchema = z.object({
   listingId: z.string().uuid(),
   content: z.string().min(1).max(1000),
   parentId: z.string().uuid().nullable().optional(),
-  humanVerificationToken: z.string().max(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH).optional(),
+  humanVerificationToken: HumanVerificationTokenSchema.optional(),
 })
 
 export const EditCommentSchema = z.object({

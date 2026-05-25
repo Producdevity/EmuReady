@@ -1,12 +1,13 @@
 import { ResourceError } from '@/lib/errors'
 import { applyTrustAction } from '@/lib/trust/service'
 import {
+  CreatePcListingSchema,
   GetCpusSchema,
   GetGpusSchema,
   GetPcListingsSchema,
   UpdatePcListingSchema,
 } from '@/schemas/mobile'
-import { CreatePcListingSchema, GetPcListingByIdSchema } from '@/schemas/pcListing'
+import { GetPcListingByIdSchema } from '@/schemas/pcListing'
 import {
   createMobileTRPCRouter,
   mobileProtectedProcedure,

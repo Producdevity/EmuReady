@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { HUMAN_VERIFICATION_ACTION } from '../../shared/constants'
 
 const TURNSTILE_SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+const TURNSTILE_SITEVERIFY_TIMEOUT_MS = 5000
 
 const TurnstileResponseSchema = z
   .object({
@@ -43,13 +44,20 @@ export async function verifyTurnstileToken(params: {
 
   if (params.remoteIp) body.set('remoteip', params.remoteIp)
 
-  const response = await fetch(TURNSTILE_SITEVERIFY_URL, {
-    method: 'POST',
-    body,
-    headers: {
-      'content-type': 'application/x-www-form-urlencoded',
-    },
-  })
+  let response: Response
+  try {
+    response = await fetch(TURNSTILE_SITEVERIFY_URL, {
+      method: 'POST',
+      body,
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+      signal: AbortSignal.timeout(TURNSTILE_SITEVERIFY_TIMEOUT_MS),
+    })
+  } catch (error) {
+    if (isAbortError(error)) return { success: false, errorCodes: ['siteverify-timeout'] }
+    return { success: false, errorCodes: ['siteverify-request-failed'] }
+  }
 
   if (!response.ok) {
     return { success: false, errorCodes: [`siteverify-http-${response.status}`] }
@@ -66,4 +74,10 @@ export async function verifyTurnstileToken(params: {
     success: parsed.data.success,
     errorCodes: parsed.data['error-codes'] ?? [],
   }
+}
+
+function isAbortError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null || !('name' in error)) return false
+  const { name } = error
+  return typeof name === 'string' && (name === 'AbortError' || name === 'TimeoutError')
 }

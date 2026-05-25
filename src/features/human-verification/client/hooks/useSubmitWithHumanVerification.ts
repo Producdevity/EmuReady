@@ -1,8 +1,8 @@
 'use client'
 
 import { useCallback } from 'react'
-import { getHumanVerificationRequest } from './getHumanVerificationRequest'
-import { useHumanVerification } from './HumanVerificationProvider'
+import { useHumanVerification } from '../components/HumanVerificationProvider'
+import { getHumanVerificationRequest } from '../utils/getHumanVerificationRequest'
 
 export function useSubmitWithHumanVerification() {
   const requestVerification = useHumanVerification()

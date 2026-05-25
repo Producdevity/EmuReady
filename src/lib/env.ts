@@ -24,6 +24,7 @@ interface Env {
   ENABLE_V2_LISTINGS: boolean
   ENABLE_PATREON_VERIFICATION: boolean
   ENABLE_ANDROID_DOWNLOADS: boolean
+  TURNSTILE_SITE_KEY: string
   ANDROID_LATEST_JSON_URL: string
   ANDROID_LATEST_APK_URL: string
 }
@@ -74,6 +75,7 @@ export const env = {
   ENABLE_V2_LISTINGS: process.env.NEXT_PUBLIC_ENABLE_V2_LISTINGS === 'true',
   ENABLE_PATREON_VERIFICATION: process.env.NEXT_PUBLIC_ENABLE_PATREON_VERIFICATION === 'true',
   ENABLE_ANDROID_DOWNLOADS: process.env.NEXT_PUBLIC_ENABLE_ANDROID_DOWNLOADS === 'true',
+  TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? '',
   ANDROID_LATEST_JSON_URL:
     process.env.NEXT_PUBLIC_ANDROID_LATEST_JSON_URL ??
     'https://cdn.emuready.com/android/latest.json',

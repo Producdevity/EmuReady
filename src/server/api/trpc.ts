@@ -153,11 +153,10 @@ export const createAppRouterTRPCContext = async (opts?: FetchCreateContextFnOpti
 
   if (userId) session = await createSessionFromClerkUserId(userId)
 
-  return {
+  return createInnerTRPCContext({
     session,
-    prisma,
     headers: opts?.req.headers ?? new Headers(),
-  }
+  })
 }
 
 export type TRPCContext = ReturnType<typeof createInnerTRPCContext>

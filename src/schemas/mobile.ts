@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { HUMAN_VERIFICATION_TOKEN_MAX_LENGTH } from '@/features/human-verification/shared/constants'
+import { JsonValueSchema } from '@/schemas/common'
+import { CreateListingBaseSchema, CreatePcListingBaseSchema } from '@/schemas/listingCreate'
 import { ReportReason, ReportStatus, PcOs, CustomFieldType, NotificationType } from '@orm'
 
 // Type-safe custom field value schema using discriminated union
@@ -39,7 +40,7 @@ const CustomFieldValueSchema = z.discriminatedUnion('type', [
 // For backwards compatibility, also support simple format
 const SimplifiedCustomFieldValueSchema = z.object({
   customFieldDefinitionId: z.string().uuid(),
-  value: z.union([z.string(), z.number(), z.boolean(), z.null()]),
+  value: JsonValueSchema.optional(),
 })
 
 export const GetGameByIdSchema = z.object({
@@ -132,7 +133,6 @@ export const CreateCommentSchema = z.object({
   listingId: z.string().uuid(),
   content: z.string().min(1),
   parentId: z.string().uuid().nullable().optional(),
-  humanVerificationToken: z.string().max(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH).optional(),
 })
 
 export const VoteListingSchema = z.object({
@@ -148,17 +148,7 @@ export const GetUserListingsSchema = z.object({
   userId: z.string().uuid(),
 })
 
-export const CreateListingSchema = z.object({
-  gameId: z.string().uuid(),
-  deviceId: z.string().uuid(),
-  emulatorId: z.string().uuid(),
-  performanceId: z.number(),
-  notes: z.string().optional(),
-  humanVerificationToken: z.string().max(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH).optional(),
-  customFieldValues: z
-    .array(z.union([CustomFieldValueSchema, SimplifiedCustomFieldValueSchema]))
-    .optional(),
-})
+export const CreateListingSchema = CreateListingBaseSchema
 
 export const UpdateListingSchema = z.object({
   id: z.string().uuid(),
@@ -392,20 +382,7 @@ export const GetMyVerificationsSchema = z.object({
 })
 
 // PC Listings schemas
-export const CreatePcListingSchema = z.object({
-  gameId: z.string().uuid(),
-  cpuId: z.string().uuid(),
-  gpuId: z.string().uuid(),
-  emulatorId: z.string().uuid(),
-  performanceId: z.number(),
-  memorySize: z.number().min(1).max(256),
-  os: z.nativeEnum(PcOs),
-  osVersion: z.string().min(1),
-  notes: z.string().optional(),
-  customFieldValues: z
-    .array(z.union([CustomFieldValueSchema, SimplifiedCustomFieldValueSchema]))
-    .optional(),
-})
+export const CreatePcListingSchema = CreatePcListingBaseSchema
 
 export const UpdatePcListingSchema = z.object({
   id: z.string().uuid(),

@@ -5,6 +5,8 @@ import { TRPCError } from '@trpc/server'
 import {
   HUMAN_VERIFICATION_ACTION,
   HUMAN_VERIFICATION_ERROR_CODES,
+  type HumanVerificationErrorCode,
+  type HumanVerificationRequiredData,
 } from '@/features/human-verification/shared/constants'
 import { toArray } from '@/utils/array'
 import { formatUserRole } from '@/utils/format'
@@ -180,30 +182,40 @@ export class AppError {
   }
 
   static humanVerificationRequired(): never {
+    const cause = {
+      code: APP_ERROR_CODES.HUMAN_VERIFICATION_REQUIRED,
+      provider: 'turnstile',
+      action: HUMAN_VERIFICATION_ACTION,
+    } satisfies HumanVerificationRequiredData
+
     throw new TRPCError({
       code: ERROR_CODES.BAD_REQUEST,
       message: 'Please complete human verification to continue.',
-      cause: {
-        code: APP_ERROR_CODES.HUMAN_VERIFICATION_REQUIRED,
-        provider: 'turnstile',
-        action: HUMAN_VERIFICATION_ACTION,
-      },
+      cause,
     })
   }
 
   static humanVerificationFailed(message?: string): never {
+    const cause = {
+      code: APP_ERROR_CODES.HUMAN_VERIFICATION_FAILED,
+    } satisfies { code: HumanVerificationErrorCode }
+
     throw new TRPCError({
       code: ERROR_CODES.BAD_REQUEST,
       message: message ?? 'Human verification failed. Please try again.',
-      cause: { code: APP_ERROR_CODES.HUMAN_VERIFICATION_FAILED },
+      cause,
     })
   }
 
   static humanVerificationUnavailable(): never {
+    const cause = {
+      code: APP_ERROR_CODES.HUMAN_VERIFICATION_UNAVAILABLE,
+    } satisfies { code: HumanVerificationErrorCode }
+
     throw new TRPCError({
       code: ERROR_CODES.INTERNAL_SERVER_ERROR,
       message: 'Human verification is not configured.',
-      cause: { code: APP_ERROR_CODES.HUMAN_VERIFICATION_UNAVAILABLE },
+      cause,
     })
   }
 

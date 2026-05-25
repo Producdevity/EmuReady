@@ -1,8 +1,8 @@
 import analytics from '@/lib/analytics'
 import { AppError, ResourceError } from '@/lib/errors'
-import { CreateListingSchema } from '@/schemas/listing'
 import {
   CreateCommentSchema,
+  CreateListingSchema,
   DeleteCommentSchema,
   DeleteListingSchema,
   GetListingByIdSchema,
@@ -145,23 +145,22 @@ export const mobileListingsRouter = createMobileTRPCRouter({
    * Create a new listing
    */
   create: mobileProtectedProcedure.input(CreateListingSchema).mutation(async ({ ctx, input }) => {
-    const { humanVerificationToken: _humanVerificationToken, ...payload } = input
     const repository = new ListingsRepository(ctx.prisma)
 
     await checkSpamContent({
       prisma: ctx.prisma,
       userId: ctx.session.user.id,
-      content: payload.notes || '',
+      content: input.notes || '',
       entityType: 'listing',
     })
 
     return await repository.create({
       authorId: ctx.session.user.id,
       userRole: ctx.session.user.role,
-      ...payload,
-      notes: payload.notes ?? null,
-      customFieldValues: (payload.customFieldValues
-        ? (payload.customFieldValues as { customFieldDefinitionId: string; value: unknown }[])
+      ...input,
+      notes: input.notes ?? null,
+      customFieldValues: (input.customFieldValues
+        ? (input.customFieldValues as { customFieldDefinitionId: string; value: unknown }[])
         : null) as { customFieldDefinitionId: string; value: unknown }[] | null,
     })
   }),

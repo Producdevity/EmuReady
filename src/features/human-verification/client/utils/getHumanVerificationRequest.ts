@@ -2,7 +2,7 @@ import {
   HUMAN_VERIFICATION_ACTION,
   HUMAN_VERIFICATION_ERROR_CODES,
   type HumanVerificationRequiredData,
-} from '../shared/constants'
+} from '../../shared/constants'
 
 function getErrorPayload(error: unknown): unknown {
   if (!error || typeof error !== 'object') return null

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { getHumanVerificationRequest } from './getHumanVerificationRequest'
-import { HUMAN_VERIFICATION_ACTION, HUMAN_VERIFICATION_ERROR_CODES } from '../shared/constants'
+import { HUMAN_VERIFICATION_ACTION, HUMAN_VERIFICATION_ERROR_CODES } from '../../shared/constants'
 
 describe('getHumanVerificationRequest', () => {
   it('extracts the challenge request from tRPC app error data', () => {

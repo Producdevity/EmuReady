@@ -35,7 +35,10 @@ beforeEach(() => {
   })
 })
 
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => {
+  vi.restoreAllMocks()
+  vi.unstubAllEnvs()
+})
 
 describe('checkSpamContent', () => {
   const USER_ID = 'user-123'
@@ -107,6 +110,40 @@ describe('checkSpamContent', () => {
       expect((error as TRPCError).code).toBe('TOO_MANY_REQUESTS')
       expect((error as TRPCError).message).toContain('Too many recent reports')
     }
+  })
+
+  it('honors the test rate-limit bypass used by E2E runs', async () => {
+    vi.stubEnv('DISABLE_RATE_LIMIT', 'true')
+    const rateLimitedPrisma = {
+      listing: {
+        count: vi.fn().mockResolvedValue(5),
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      pcListing: {
+        count: vi.fn().mockResolvedValue(0),
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      comment: {
+        count: vi.fn().mockResolvedValue(0),
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      pcListingComment: {
+        count: vi.fn().mockResolvedValue(0),
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+    }
+
+    await expect(
+      checkSpamContent({
+        prisma: rateLimitedPrisma as unknown as PrismaClient,
+        userId: USER_ID,
+        content: 'Normal report notes from an end-to-end setup run.',
+        entityType: 'listing',
+      }),
+    ).resolves.toBeUndefined()
+
+    expect(rateLimitedPrisma.listing.count).not.toHaveBeenCalled()
+    expect(rateLimitedPrisma.pcListing.count).not.toHaveBeenCalled()
   })
 
   it('falls back to the community-guidelines message when reason is missing', async () => {

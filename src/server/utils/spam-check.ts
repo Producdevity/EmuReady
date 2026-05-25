@@ -22,7 +22,9 @@ interface CheckSpamContentParams {
 }
 
 export async function checkSpamContent(params: CheckSpamContentParams): Promise<void> {
-  const detector = new SpamDetectionService(params.prisma)
+  const detector = new SpamDetectionService(params.prisma, {
+    enableRateLimiting: process.env.DISABLE_RATE_LIMIT !== 'true',
+  })
   const result = await detector.detectSpam({
     userId: params.userId,
     content: params.content,
@@ -61,18 +63,18 @@ async function enforceHumanVerification(
   token: string | null | undefined,
   headers: Headers | undefined,
 ): Promise<void> {
-  if (!token) return AppError.humanVerificationRequired()
+  if (!token) AppError.humanVerificationRequired()
 
   if (token.length > HUMAN_VERIFICATION_TOKEN_MAX_LENGTH) {
-    return AppError.humanVerificationFailed()
+    AppError.humanVerificationFailed()
   }
 
-  if (!isTurnstileConfigured()) return AppError.humanVerificationUnavailable()
+  if (!isTurnstileConfigured()) AppError.humanVerificationUnavailable()
 
   const result = await verifyTurnstileToken({
     token,
     remoteIp: getRequestIp(headers),
   })
 
-  if (!result.success) return AppError.humanVerificationFailed()
+  if (!result.success) AppError.humanVerificationFailed()
 }

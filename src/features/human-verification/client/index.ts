@@ -1,4 +1,7 @@
 'use client'
 
-export { HumanVerificationProvider, useHumanVerification } from './HumanVerificationProvider'
-export { useSubmitWithHumanVerification } from './useSubmitWithHumanVerification'
+export {
+  HumanVerificationProvider,
+  useHumanVerification,
+} from './components/HumanVerificationProvider'
+export { useSubmitWithHumanVerification } from './hooks/useSubmitWithHumanVerification'

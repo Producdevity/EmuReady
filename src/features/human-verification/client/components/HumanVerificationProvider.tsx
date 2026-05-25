@@ -17,7 +17,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui'
-import { type HUMAN_VERIFICATION_ACTION } from '../shared/constants'
+import { env } from '@/lib/env'
+import { type HUMAN_VERIFICATION_ACTION } from '../../shared/constants'
 
 type TurnstileWidgetId = string
 
@@ -45,8 +46,6 @@ type ScriptStatus = 'idle' | 'ready' | 'failed'
 
 const HumanVerificationContext = createContext<RequestVerification | null>(null)
 
-const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? ''
-
 interface PendingRequest {
   action: typeof HUMAN_VERIFICATION_ACTION
   resolve: (token: string) => void
@@ -59,6 +58,7 @@ export function HumanVerificationProvider(props: PropsWithChildren) {
   const widgetContainerRef = useRef<HTMLDivElement | null>(null)
   const widgetIdRef = useRef<TurnstileWidgetId | null>(null)
   const pendingRequestRef = useRef<PendingRequest | null>(null)
+  const turnstileSiteKey = env.TURNSTILE_SITE_KEY
 
   const requestVerification = useCallback<RequestVerification>(
     (request) => {
@@ -70,13 +70,17 @@ export function HumanVerificationProvider(props: PropsWithChildren) {
         return Promise.reject(new Error('Human verification failed to load.'))
       }
 
+      if (pendingRequestRef.current) {
+        return Promise.reject(new Error('Human verification is already in progress.'))
+      }
+
       return new Promise((resolve, reject) => {
         const nextRequest = { action: request.action, resolve, reject }
         pendingRequestRef.current = nextRequest
         setPendingRequest(nextRequest)
       })
     },
-    [scriptStatus],
+    [scriptStatus, turnstileSiteKey],
   )
 
   const closeDialog = useCallback(() => {
@@ -123,7 +127,7 @@ export function HumanVerificationProvider(props: PropsWithChildren) {
     })
 
     widgetIdRef.current = widgetId ?? null
-  }, [closeDialog, pendingRequest, scriptStatus])
+  }, [closeDialog, pendingRequest, scriptStatus, turnstileSiteKey])
 
   const handleOpenChange = (open: boolean) => {
     if (open || !pendingRequest) return
