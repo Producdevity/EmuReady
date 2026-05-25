@@ -129,6 +129,17 @@ function isCacheFresh(response, maxAge) {
 }
 
 /**
+ * Normalize URL pathnames so notification clicks can focus an existing tab even
+ * if it differs by query params, hash fragments, or a trailing slash.
+ * @param {string} pathname
+ * @returns {string}
+ */
+function normalizePathname(pathname) {
+  if (pathname === '/') return pathname
+  return pathname.replace(/\/+$/, '')
+}
+
+/**
  * Fetch event handler with time-based cache expiration.
  * Implements cache policies based on resource type to prevent stale data.
  * @param {SWFetchEvent} event - The fetch event triggered by the browser.
@@ -180,31 +191,38 @@ self.addEventListener(
         }
 
         // Fetch from network
-        const fetchPromise = fetch(event.request.clone()).then((response) => {
-          // Cache only successful basic responses
-          if (!response || response.status !== 200 || response.type !== 'basic') {
+        const fetchPromise = fetch(event.request.clone())
+          .then((response) => {
+            // Cache only successful basic responses
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response
+            }
+
+            // Add timestamp header for cache expiration tracking
+            const responseToCache = response.clone()
+            const headers = new Headers(responseToCache.headers)
+            headers.set('sw-cached-at', Date.now().toString())
+
+            const modifiedResponse = new Response(responseToCache.body, {
+              status: responseToCache.status,
+              statusText: responseToCache.statusText,
+              headers: headers,
+            })
+
+            event.waitUntil(cache.put(event.request, modifiedResponse).catch(() => {}))
+
             return response
-          }
-
-          // Add timestamp header for cache expiration tracking
-          const responseToCache = response.clone()
-          const headers = new Headers(responseToCache.headers)
-          headers.set('sw-cached-at', Date.now().toString())
-
-          const modifiedResponse = new Response(responseToCache.body, {
-            status: responseToCache.status,
-            statusText: responseToCache.statusText,
-            headers: headers,
+          })
+          .catch((error) => {
+            if (cached) return cached
+            throw error
           })
 
-          // Asynchronously update cache
-          cache.put(event.request, modifiedResponse).catch(() => {})
-
-          return response
-        })
-
         // Implement stale-while-revalidate pattern
-        if (cached) return cached
+        if (cached) {
+          event.waitUntil(fetchPromise.catch(() => {}))
+          return cached
+        }
 
         // Await network response when no cache exists
         return fetchPromise
@@ -222,19 +240,32 @@ self.addEventListener(
   /** @param {SWPushEvent} event */ (event) => {
     if (!event.data) return
 
-    /** @type {{title: string, body: string, url?: string}} */
-    const data = event.data.json()
+    event.waitUntil(
+      (async () => {
+        /** @type {{title?: unknown, body?: unknown, url?: unknown}} */
+        let data
 
-    /** @type {NotificationOptions} */
-    const options = {
-      body: data.body,
-      icon: '/favicon/android-chrome-192x192.png',
-      badge: '/favicon/android-chrome-192x192.png',
-      vibrate: [100, 50, 100],
-      data: { url: data.url || '/' },
-    }
+        try {
+          data = event.data.json()
+        } catch {
+          return
+        }
 
-    event.waitUntil(self.registration.showNotification(data.title, options))
+        if (!data || typeof data !== 'object') return
+        if (typeof data.title !== 'string' || typeof data.body !== 'string') return
+
+        /** @type {NotificationOptions} */
+        const options = {
+          body: data.body,
+          icon: '/favicon/android-chrome-192x192.png',
+          badge: '/favicon/android-chrome-192x192.png',
+          vibrate: [100, 50, 100],
+          data: { url: typeof data.url === 'string' ? data.url : '/' },
+        }
+
+        await self.registration.showNotification(data.title, options)
+      })(),
+    )
   },
 )
 
@@ -249,10 +280,21 @@ self.addEventListener(
     event.notification.close()
     event.waitUntil(
       clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
+        const targetUrl = new URL(
+          typeof event.notification.data?.url === 'string' ? event.notification.data.url : '/',
+          self.location.origin,
+        )
+        const targetPathname = normalizePathname(targetUrl.pathname)
+
         for (const winClient of wins) {
-          if (winClient.url === event.notification.data.url) return winClient.focus()
+          const clientUrl = new URL(winClient.url)
+          const clientPathname = normalizePathname(clientUrl.pathname)
+
+          if (clientUrl.origin === targetUrl.origin && clientPathname === targetPathname) {
+            return winClient.focus()
+          }
         }
-        return clients.openWindow(event.notification.data.url)
+        return clients.openWindow(targetUrl.href)
       }),
     )
   },

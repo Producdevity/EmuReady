@@ -21,6 +21,7 @@ import { env } from '@/lib/env'
 import { defaultMetadata } from '@/lib/seo/metadata'
 import { cn } from '@/lib/utils'
 import Main from './Main'
+import ServiceWorkerRegistrar from './ServiceWorkerRegistrar'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -36,11 +37,6 @@ export default function RootLayout(props: PropsWithChildren) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <Script id="service-worker-config" strategy="beforeInteractive">
-          {`window.__EMUREADY_SW_ENABLED__ = ${env.ENABLE_SW ? 'true' : 'false'};`}
-        </Script>
-        <Script src="/sw-register.js" strategy="afterInteractive" />
-
         {env.IS_PROD && env.GA_ID && (
           <Script id="google-analytics-dataLayer" strategy="beforeInteractive">
             {`
@@ -52,6 +48,7 @@ export default function RootLayout(props: PropsWithChildren) {
         )}
       </head>
       <body className={cn(inter.className, 'min-h-screen bg-background font-sans antialiased')}>
+        <ServiceWorkerRegistrar enabled={env.ENABLE_SW} />
         <ClerkBoundary>
           <Providers>
             <Toaster richColors closeButton />
