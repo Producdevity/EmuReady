@@ -18,9 +18,9 @@ import '@/shared/emulator-config/eden'
 import '@/shared/emulator-config/azahar'
 import '@/shared/emulator-config/gamenative'
 import { Button, LoadingSpinner } from '@/components/ui'
+import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
-import { useRecaptchaForCreateListing } from '@/lib/captcha/hooks'
 import { MarkdownEditor } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
@@ -56,7 +56,7 @@ function AddListingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const utils = api.useUtils()
-  const { executeForCreateListing, isCaptchaEnabled } = useRecaptchaForCreateListing()
+  const submitWithHumanVerification = useSubmitWithHumanVerification()
 
   const gameIdFromUrl = searchParams.get('gameId')
 
@@ -409,9 +409,6 @@ function AddListingPage() {
       toast.success('Handheld Report successfully submitted for review!')
       router.push('/listings')
     },
-    onError: (error) => {
-      toast.error(`Error creating Handheld Report: ${getErrorMessage(error)}`)
-    },
   })
 
   useEffect(() => {
@@ -424,19 +421,16 @@ function AddListingPage() {
       return toast.error('You must be signed in to create a Compatibility Report.')
     }
 
-    // Get CAPTCHA token if enabled
-    let recaptchaToken: string | null = null
-    if (isCaptchaEnabled) {
-      recaptchaToken = await executeForCreateListing()
-      if (!recaptchaToken) {
-        return toast.error('CAPTCHA verification could not start. Please refresh and try again.')
-      }
+    try {
+      await submitWithHumanVerification((humanVerificationToken) =>
+        createListingMutation.mutateAsync({
+          ...data,
+          humanVerificationToken,
+        }),
+      )
+    } catch (error) {
+      toast.error(`Error creating Handheld Report: ${getErrorMessage(error)}`)
     }
-
-    createListingMutation.mutate({
-      ...data,
-      ...(recaptchaToken && { recaptchaToken }),
-    })
   }
 
   return (

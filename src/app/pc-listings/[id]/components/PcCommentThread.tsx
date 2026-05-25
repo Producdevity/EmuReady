@@ -104,7 +104,6 @@ function PcCommentThread(props: Props) {
       reply: 'Write your reply...',
     },
     maxLength: 2000,
-    enableRecaptcha: false,
     showSignInPrompt: false,
     buttonStyle: 'compact',
   }
@@ -113,11 +112,16 @@ function PcCommentThread(props: Props) {
     await deleteComment.mutateAsync({ commentId })
   }
 
-  const handleCreateComment = async (data: { content: string; parentId?: string }) => {
+  const handleCreateComment = async (data: {
+    content: string
+    parentId?: string
+    humanVerificationToken?: string
+  }) => {
     await createComment.mutateAsync({
       pcListingId: props.pcListingId,
       content: data.content,
       parentId: data.parentId,
+      humanVerificationToken: data.humanVerificationToken,
     })
   }
 

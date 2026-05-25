@@ -175,7 +175,7 @@ export async function createHandheldListing(page: Page): Promise<void> {
 
   const notesField = page.getByPlaceholder(/share your experience/i)
   await expect(notesField).toBeVisible()
-  await notesField.fill('E2E test handheld listing')
+  await notesField.fill(`E2E test handheld listing ${randomUUID()}`)
 
   const submitBtn = page.getByRole('button', { name: /create compatibility report/i })
   await submitBtn.click()
@@ -214,7 +214,7 @@ async function fillPcListingForm(page: Page, candidate: PcListingCandidate): Pro
 
   const notesField = page.getByPlaceholder(/share your experience/i)
   await expect(notesField).toBeVisible()
-  await notesField.fill('E2E test PC listing')
+  await notesField.fill(`E2E test PC listing ${randomUUID()}`)
 }
 
 async function createPcListingCpu(): Promise<string> {

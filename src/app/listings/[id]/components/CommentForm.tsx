@@ -3,7 +3,6 @@
 import { GenericCommentForm, type CommentFormConfig } from '@/components/comments'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
-import { useRecaptchaForComment } from '@/lib/captcha/hooks'
 import { type RouterInput } from '@/types/trpc'
 
 interface Props {
@@ -20,8 +19,6 @@ interface Props {
 }
 
 function CommentForm(props: Props) {
-  const { executeForComment, isCaptchaEnabled } = useRecaptchaForComment()
-
   const createComment = api.listings.createComment.useMutation({
     onSuccess: (data) => {
       if (data?.id) {
@@ -63,7 +60,6 @@ function CommentForm(props: Props) {
       reply: 'Write your reply...',
     },
     maxLength: 1000,
-    enableRecaptcha: isCaptchaEnabled,
     showSignInPrompt: true,
     buttonStyle: 'default',
   }
@@ -71,13 +67,13 @@ function CommentForm(props: Props) {
   const handleSubmit = async (data: {
     content: string
     parentId?: string
-    recaptchaToken?: string | null
+    humanVerificationToken?: string
   }) => {
     await createComment.mutateAsync({
       listingId: props.listingId,
       content: data.content,
       parentId: data.parentId,
-      ...(data.recaptchaToken && { recaptchaToken: data.recaptchaToken }),
+      humanVerificationToken: data.humanVerificationToken,
     } satisfies RouterInput['listings']['createComment'])
   }
 
@@ -105,7 +101,6 @@ function CommentForm(props: Props) {
       onUpdate={handleUpdate}
       onSuccess={props.onCommentSuccess}
       onCancel={props.onCancelEdit}
-      getRecaptchaToken={isCaptchaEnabled ? executeForComment : undefined}
       isCreating={createComment.isPending}
       isUpdating={editComment.isPending}
     />

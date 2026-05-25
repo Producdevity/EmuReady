@@ -8,7 +8,6 @@ import {
 } from '@/server/cache/invalidation'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus, PcOs, Role, TrustAction } from '@orm/client'
-import type * as AuthorRiskService from '@/server/services/author-risk.service'
 
 vi.unmock('@/server/api/trpc')
 vi.unmock('@/server/api/root')
@@ -43,19 +42,16 @@ vi.mock('@/server/notifications/eventEmitter', () => ({
   NOTIFICATION_EVENTS: {
     LISTING_VOTED: 'LISTING_VOTED',
     COMMENT_VOTED: 'COMMENT_VOTED',
+    LISTING_COMMENTED: 'LISTING_COMMENTED',
+    COMMENT_REPLIED: 'COMMENT_REPLIED',
     PC_LISTING_APPROVED: 'PC_LISTING_APPROVED',
     PC_LISTING_REJECTED: 'PC_LISTING_REJECTED',
   },
 }))
 
-const mockVerifyRecaptcha = vi.fn().mockResolvedValue({ success: true })
-vi.mock('@/lib/captcha/verify', () => ({
-  verifyRecaptcha: (...args: unknown[]) => mockVerifyRecaptcha(...args),
-  getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
-}))
-
-vi.mock('@/lib/captcha/config', () => ({
-  RECAPTCHA_CONFIG: { actions: { CREATE_LISTING: 'create_listing', VOTE: 'VOTE' } },
+const mockCheckSpamContent = vi.fn().mockResolvedValue(undefined)
+vi.mock('@/server/utils/spam-check', () => ({
+  checkSpamContent: (...args: unknown[]) => mockCheckSpamContent(...args),
 }))
 
 vi.mock('@/server/utils/query-builders', () => ({
@@ -74,7 +70,7 @@ vi.mock('@/server/cache/invalidation', () => ({
 
 vi.mock('@/lib/analytics', () => ({
   default: {
-    engagement: { vote: vi.fn(), commentVote: vi.fn() },
+    engagement: { comment: vi.fn(), vote: vi.fn(), commentVote: vi.fn() },
     listing: { created: vi.fn() },
   },
 }))
@@ -83,14 +79,27 @@ vi.mock('@/server/services/audit.service', () => ({
   logAudit: vi.fn().mockResolvedValue(undefined),
 }))
 
-vi.mock('@/server/services/author-risk.service', async (importOriginal) => {
-  const actual = await importOriginal<typeof AuthorRiskService>()
-
-  return {
-    computeAuthorRiskProfiles: (...args: unknown[]) => mockComputeAuthorRiskProfiles(...args),
-    createExistingAuthorBansMap: actual.createExistingAuthorBansMap,
-  }
-})
+vi.mock('@/server/services/author-risk.service', () => ({
+  computeAuthorRiskProfiles: (...args: unknown[]) => mockComputeAuthorRiskProfiles(...args),
+  createExistingAuthorBansMap: (
+    listings: {
+      authorId: string
+      author?: { userBans?: { reason: string }[] | null } | null
+    }[],
+  ) => {
+    const existingBansMap = new Map<string, { reason: string }[]>()
+    for (const listing of listings) {
+      const userBans = listing.author?.userBans
+      if (userBans && userBans.length > 0 && !existingBansMap.has(listing.authorId)) {
+        existingBansMap.set(
+          listing.authorId,
+          userBans.map((ban) => ({ reason: ban.reason })),
+        )
+      }
+    }
+    return existingBansMap
+  },
+}))
 
 vi.mock('@/server/services/submission-risk.service', () => ({
   computeSubmissionRiskProfiles: (...args: unknown[]) => mockComputeSubmissionRiskProfiles(...args),
@@ -168,6 +177,14 @@ function createMockPrisma() {
       findUnique: vi.fn().mockResolvedValue(null),
     },
     pcListingComment: {
+      create: vi.fn().mockResolvedValue({
+        id: COMMENT_ID,
+        content: 'Runs well with these settings',
+        userId: USER_ID,
+        pcListingId: LISTING_ID,
+        parentId: null,
+        user: { id: USER_ID, name: 'Test User', profileImage: null, role: Role.USER },
+      }),
       findUnique: vi.fn(),
       update: vi.fn().mockResolvedValue({ id: COMMENT_ID, score: 1 }),
     },
@@ -331,50 +348,12 @@ describe('pcListings trust integration', () => {
       expect(mockEmitNotificationEvent).not.toHaveBeenCalled()
     })
 
-    it('verifies recaptcha when token is provided', async () => {
-      const { caller, prisma } = createCaller()
-      prisma.pcListing.findUnique.mockResolvedValue({ id: LISTING_ID, authorId: AUTHOR_ID })
-
-      await caller.vote({
-        pcListingId: LISTING_ID,
-        value: true,
-        recaptchaToken: 'valid-token',
-      })
-
-      expect(mockVerifyRecaptcha).toHaveBeenCalledWith({
-        token: 'valid-token',
-        expectedAction: 'VOTE',
-        userIP: expect.any(String),
-      })
-    })
-
-    it('throws CAPTCHA error when recaptcha verification fails', async () => {
-      const { caller, prisma } = createCaller()
-      prisma.pcListing.findUnique.mockResolvedValue({ id: LISTING_ID, authorId: AUTHOR_ID })
-      mockVerifyRecaptcha.mockResolvedValueOnce({ success: false, error: 'invalid-token' })
-
-      // AppError.captcha throws a TRPCError; assert the procedure rejects.
-      await expect(
-        caller.vote({
-          pcListingId: LISTING_ID,
-          value: true,
-          recaptchaToken: 'bad-token',
-        }),
-      ).rejects.toThrow(/CAPTCHA/)
-
-      // Vote write must NOT have happened
-      expect(prisma.pcListingVote.create).not.toHaveBeenCalled()
-      expect(prisma.pcListingVote.update).not.toHaveBeenCalled()
-      expect(prisma.pcListingVote.delete).not.toHaveBeenCalled()
-    })
-
-    it('proceeds without verifying recaptcha when no token provided (optional)', async () => {
+    it('creates a vote', async () => {
       const { caller, prisma } = createCaller()
       prisma.pcListing.findUnique.mockResolvedValue({ id: LISTING_ID, authorId: AUTHOR_ID })
 
       await caller.vote({ pcListingId: LISTING_ID, value: true })
 
-      expect(mockVerifyRecaptcha).not.toHaveBeenCalled()
       expect(prisma.pcListingVote.create).toHaveBeenCalled()
     })
   })
@@ -443,6 +422,29 @@ describe('pcListings trust integration', () => {
     })
   })
 
+  describe('createComment', () => {
+    it('runs spam checks before creating a PC listing comment', async () => {
+      const { caller, prisma } = createCaller()
+      prisma.pcListing.findUnique.mockResolvedValue({ id: LISTING_ID, authorId: AUTHOR_ID })
+
+      await caller.createComment({
+        pcListingId: LISTING_ID,
+        content: 'Runs well with these settings',
+      })
+
+      expect(mockCheckSpamContent).toHaveBeenCalledWith({
+        prisma,
+        userId: USER_ID,
+        content: 'Runs well with these settings',
+        entityType: 'pcComment',
+        challengeMode: 'challenge',
+        humanVerificationToken: undefined,
+        headers: expect.any(Headers),
+      })
+      expect(prisma.pcListingComment.create).toHaveBeenCalled()
+    })
+  })
+
   describe('create', () => {
     it('calls applyTrustAction with LISTING_CREATED after creation', async () => {
       const newListingId = '00000000-0000-4000-a000-000000000099'
@@ -470,7 +472,7 @@ describe('pcListings trust integration', () => {
       })
     })
 
-    it('verifies recaptcha before creating a PC listing', async () => {
+    it('runs spam checks before creating a PC listing', async () => {
       const newListingId = '00000000-0000-4000-a000-000000000099'
       mockRepositoryCreate.mockResolvedValue({
         id: newListingId,
@@ -487,39 +489,18 @@ describe('pcListings trust integration', () => {
         memorySize: 16,
         os: PcOs.WINDOWS,
         osVersion: '11',
-        recaptchaToken: 'valid-token',
       })
 
-      expect(mockVerifyRecaptcha).toHaveBeenCalledWith({
-        token: 'valid-token',
-        expectedAction: 'create_listing',
-        userIP: expect.any(String),
+      expect(mockCheckSpamContent).toHaveBeenCalledWith({
+        prisma: expect.anything(),
+        userId: USER_ID,
+        content: '',
+        entityType: 'pcListing',
+        challengeMode: 'challenge',
+        humanVerificationToken: undefined,
+        headers: expect.any(Headers),
       })
       expect(mockRepositoryCreate).toHaveBeenCalled()
-    })
-
-    it('does not create a PC listing when recaptcha verification fails', async () => {
-      mockVerifyRecaptcha.mockResolvedValueOnce({
-        success: false,
-        error: 'Missing reCAPTCHA token',
-      })
-
-      const { caller } = createCaller({ permissions: [PERMISSIONS.CREATE_LISTING] })
-
-      await expect(
-        caller.create({
-          gameId: '00000000-0000-4000-a000-000000000030',
-          cpuId: '00000000-0000-4000-a000-000000000031',
-          emulatorId: '00000000-0000-4000-a000-000000000032',
-          performanceId: 1,
-          memorySize: 16,
-          os: PcOs.WINDOWS,
-          osVersion: '11',
-        }),
-      ).rejects.toThrow(/CAPTCHA/)
-
-      expect(mockRepositoryCreate).not.toHaveBeenCalled()
-      expect(mockApplyTrustAction).not.toHaveBeenCalled()
     })
   })
 

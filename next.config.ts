@@ -7,18 +7,6 @@ type Header = Awaited<ReturnType<NonNullable<NextConfig['headers']>>>[number]
 
 const isVercelBuild = process.env.VERCEL === '1'
 
-const recaptchaScriptSources = [
-  'https://www.google.com/recaptcha/',
-  'https://www.gstatic.com/recaptcha/',
-]
-
-const recaptchaConnectSources = ['https://www.google.com/recaptcha/']
-
-const recaptchaFrameSources = [
-  'https://www.google.com/recaptcha/',
-  'https://recaptcha.google.com/recaptcha/',
-]
-
 const contentSecurityPolicyDirectives = [
   {
     name: 'default-src',
@@ -42,7 +30,6 @@ const contentSecurityPolicyDirectives = [
       'https://storage.ko-fi.com',
       'https://ko-fi.com',
       'https://unpkg.com',
-      ...recaptchaScriptSources,
     ],
   },
   {
@@ -119,7 +106,6 @@ const contentSecurityPolicyDirectives = [
       'https://*.r2.cloudflarestorage.com',
       'https://cdn.emuready.com',
       'https://retrocatalog.com',
-      ...recaptchaConnectSources,
     ],
   },
   {
@@ -134,7 +120,6 @@ const contentSecurityPolicyDirectives = [
       'https://vercel.live',
       'https://*.vercel.live',
       'https://ko-fi.com',
-      ...recaptchaFrameSources,
     ],
   },
   {

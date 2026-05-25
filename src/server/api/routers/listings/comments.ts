@@ -1,6 +1,4 @@
 import analytics from '@/lib/analytics'
-import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
-import { getClientIP, verifyRecaptcha } from '@/lib/captcha/verify'
 import { AppError, ResourceError } from '@/lib/errors'
 import {
   CreateCommentSchema,
@@ -19,6 +17,7 @@ import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifica
 import { CommentsRepository } from '@/server/repositories/comments.repository'
 import { logAudit } from '@/server/services/audit.service'
 import { isUserBanned } from '@/server/utils/query-builders'
+import { checkSpamContent } from '@/server/utils/spam-check'
 import { handleCommentVoteTrustEffects } from '@/server/utils/vote-trust-effects'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { canDeleteComment, canEditComment } from '@/utils/permissions'
@@ -27,22 +26,8 @@ import { AuditAction, AuditEntityType, Role } from '@orm/client'
 export const commentsRouter = createTRPCRouter({
   // TODO: This should use a repository, too much logic in here.
   create: protectedProcedure.input(CreateCommentSchema).mutation(async ({ ctx, input }) => {
-    const { listingId, content, parentId, recaptchaToken } = input
+    const { listingId, content, parentId, humanVerificationToken } = input
     const userId = ctx.session.user.id
-
-    // TODO: Add spam detection via `checkSpamContent` from
-    // `@/server/utils/spam-check` (currently only applied in mobile routes).
-    // Verify CAPTCHA if token is provided
-    if (recaptchaToken) {
-      const clientIP = ctx.headers ? getClientIP(ctx.headers) : undefined
-      const captchaResult = await verifyRecaptcha({
-        token: recaptchaToken,
-        expectedAction: RECAPTCHA_CONFIG.actions.COMMENT,
-        userIP: clientIP,
-      })
-
-      if (!captchaResult.success) return AppError.captcha(captchaResult.error)
-    }
 
     const listing = await ctx.prisma.listing.findUnique({
       where: { id: listingId },
@@ -63,6 +48,16 @@ export const commentsRouter = createTRPCRouter({
     })
 
     if (!userExists) return ResourceError.user.notInDatabase(userId)
+
+    await checkSpamContent({
+      prisma: ctx.prisma,
+      userId,
+      content,
+      entityType: 'comment',
+      challengeMode: 'challenge',
+      humanVerificationToken,
+      headers: ctx.headers,
+    })
 
     const repository = new CommentsRepository(ctx.prisma)
     const comment = await repository.create({

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { HUMAN_VERIFICATION_TOKEN_MAX_LENGTH } from '@/features/human-verification/shared/constants'
 import { ApprovalStatus } from '@orm'
 import {
   CreateListingSchema,
@@ -20,7 +21,6 @@ describe('Listing Schemas - Null Handling', () => {
         performanceId: 5,
         notes: null,
         customFieldValues: null,
-        recaptchaToken: null,
       }
 
       const result = CreateListingSchema.safeParse(validInput)
@@ -28,7 +28,6 @@ describe('Listing Schemas - Null Handling', () => {
       if (result.success) {
         expect(result.data.notes).toBeNull()
         expect(result.data.customFieldValues).toBeNull()
-        expect(result.data.recaptchaToken).toBeNull()
       }
     })
 
@@ -45,7 +44,6 @@ describe('Listing Schemas - Null Handling', () => {
       if (result.success) {
         expect(result.data.notes).toBeUndefined()
         expect(result.data.customFieldValues).toBeUndefined()
-        expect(result.data.recaptchaToken).toBeUndefined()
       }
     })
 
@@ -72,6 +70,25 @@ describe('Listing Schemas - Null Handling', () => {
 
       const result = CreateListingSchema.safeParse(invalidInput)
       expect(result.success).toBe(false)
+    })
+
+    it('should enforce max length on human verification tokens', () => {
+      const validInput = {
+        gameId: '123e4567-e89b-12d3-a456-426614174000',
+        deviceId: '123e4567-e89b-12d3-a456-426614174001',
+        emulatorId: '123e4567-e89b-12d3-a456-426614174002',
+        performanceId: 5,
+        humanVerificationToken: 'a'.repeat(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH),
+      }
+
+      expect(CreateListingSchema.safeParse(validInput).success).toBe(true)
+
+      const invalidInput = {
+        ...validInput,
+        humanVerificationToken: 'a'.repeat(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH + 1),
+      }
+
+      expect(CreateListingSchema.safeParse(invalidInput).success).toBe(false)
     })
   })
 
@@ -248,19 +265,17 @@ describe('Listing Schemas - Null Handling', () => {
   })
 
   describe('CreateCommentSchema', () => {
-    it('should accept null for parentId and recaptchaToken', () => {
+    it('should accept null for parentId', () => {
       const validInput = {
         listingId: '123e4567-e89b-12d3-a456-426614174000',
         content: 'This is a comment',
         parentId: null,
-        recaptchaToken: null,
       }
 
       const result = CreateCommentSchema.safeParse(validInput)
       expect(result.success).toBe(true)
       if (result.success) {
         expect(result.data.parentId).toBeNull()
-        expect(result.data.recaptchaToken).toBeNull()
       }
     })
 
@@ -280,6 +295,23 @@ describe('Listing Schemas - Null Handling', () => {
 
       const result2 = CreateCommentSchema.safeParse(tooLongInput)
       expect(result2.success).toBe(false)
+    })
+
+    it('should enforce max length on human verification tokens', () => {
+      const validInput = {
+        listingId: '123e4567-e89b-12d3-a456-426614174000',
+        content: 'This is a comment',
+        humanVerificationToken: 'a'.repeat(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH),
+      }
+
+      expect(CreateCommentSchema.safeParse(validInput).success).toBe(true)
+
+      const invalidInput = {
+        ...validInput,
+        humanVerificationToken: 'a'.repeat(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH + 1),
+      }
+
+      expect(CreateCommentSchema.safeParse(invalidInput).success).toBe(false)
     })
   })
 

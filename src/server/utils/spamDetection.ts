@@ -7,13 +7,23 @@ export interface SpamDetectionResult {
   reason?: string
 }
 
+export type SpamEntityType = 'listing' | 'pcListing' | 'comment' | 'pcComment'
+
+type SpamEntityCategory = 'report' | 'comment'
+
+interface RateLimitRule {
+  windowMinutes: number
+  maxItems: number
+}
+
 export interface SpamDetectionConfig {
   enableRateLimiting?: boolean
   enableContentAnalysis?: boolean
   enableDuplicateDetection?: boolean
   enablePatternMatching?: boolean
-  rateLimitWindow?: number // minutes
-  rateLimitMax?: number // max items per window
+  rateLimitWindow?: number
+  rateLimitMax?: number
+  rateLimits?: Partial<Record<SpamEntityCategory, Partial<RateLimitRule>>>
 }
 
 const SPAM_DETECTION_THRESHOLDS = {
@@ -33,35 +43,74 @@ const SPAM_DETECTION_THRESHOLDS = {
   MAX_RECENT_ITEMS_TO_CHECK: 100,
 } as const
 
-const DEFAULT_CONFIG: Required<SpamDetectionConfig> = {
+const DEFAULT_RATE_LIMITS: Record<SpamEntityCategory, RateLimitRule> = {
+  report: {
+    windowMinutes: 15,
+    maxItems: 5,
+  },
+  comment: {
+    windowMinutes: 5,
+    maxItems: 10,
+  },
+}
+
+interface NormalizedSpamDetectionConfig {
+  enableRateLimiting: boolean
+  enableContentAnalysis: boolean
+  enableDuplicateDetection: boolean
+  enablePatternMatching: boolean
+  rateLimitWindow?: number
+  rateLimitMax?: number
+  rateLimits: Record<SpamEntityCategory, RateLimitRule>
+}
+
+const DEFAULT_CONFIG: NormalizedSpamDetectionConfig = {
   enableRateLimiting: true,
   enableContentAnalysis: true,
   enableDuplicateDetection: true,
   enablePatternMatching: true,
-  rateLimitWindow: 5,
-  rateLimitMax: 3,
+  rateLimits: DEFAULT_RATE_LIMITS,
 }
 
-/**
- * Spam detection service
- * Checks content for spam using multiple detection methods
- */
+function getEntityCategory(entityType: SpamEntityType): SpamEntityCategory {
+  return entityType === 'listing' || entityType === 'pcListing' ? 'report' : 'comment'
+}
+
+function formatEntityCategory(category: SpamEntityCategory): string {
+  return category === 'report' ? 'reports' : 'comments'
+}
+
+function isNonEmptyString(value: string | null | undefined): value is string {
+  return typeof value === 'string' && value.trim().length > 0
+}
+
 export class SpamDetectionService {
+  private readonly config: NormalizedSpamDetectionConfig
+
   constructor(
     private prisma: PrismaClient,
-    private config: SpamDetectionConfig = DEFAULT_CONFIG,
+    config: SpamDetectionConfig = {},
   ) {
-    this.config = { ...DEFAULT_CONFIG, ...config }
+    this.config = {
+      ...DEFAULT_CONFIG,
+      ...config,
+      rateLimits: {
+        report: {
+          ...DEFAULT_CONFIG.rateLimits.report,
+          ...config.rateLimits?.report,
+        },
+        comment: {
+          ...DEFAULT_CONFIG.rateLimits.comment,
+          ...config.rateLimits?.comment,
+        },
+      },
+    }
   }
 
-  /**
-   * Check if content is spam using all enabled detection methods
-   * Gracefully degrades on database errors by falling back to content analysis
-   */
   async detectSpam(params: {
     userId: string
     content: string
-    entityType: 'listing' | 'comment'
+    entityType: SpamEntityType
   }): Promise<SpamDetectionResult> {
     const { userId, entityType } = params
     let { content } = params
@@ -109,60 +158,117 @@ export class SpamDetectionService {
     return { isSpam: false, confidence: 0, method: 'content_analysis' }
   }
 
-  /**
-   * Check if user is posting too frequently
-   */
   private async checkRateLimit(
     userId: string,
-    entityType: 'listing' | 'comment',
+    entityType: SpamEntityType,
   ): Promise<SpamDetectionResult> {
-    const windowStart = new Date(Date.now() - this.config.rateLimitWindow! * 60 * 1000)
+    const category = getEntityCategory(entityType)
+    const rule = this.getRateLimitRule(category)
+    const windowStart = new Date(Date.now() - rule.windowMinutes * 60 * 1000)
 
-    let count: number
-    if (entityType === 'listing') {
-      count = await this.prisma.listing.count({
-        where: {
-          authorId: userId,
-          createdAt: { gte: windowStart },
-        },
-      })
-    } else {
-      count = await this.prisma.comment.count({
-        where: {
-          userId,
-          createdAt: { gte: windowStart },
-        },
-      })
-    }
+    const count =
+      category === 'report'
+        ? await this.countRecentReports(userId, windowStart)
+        : await this.countRecentComments(userId, windowStart)
 
-    if (count >= this.config.rateLimitMax!) {
+    if (count >= rule.maxItems) {
       return {
         isSpam: true,
         confidence: 0.95,
         method: 'rate_limiting',
-        reason: `Exceeded rate limit: ${count} ${entityType}s in ${this.config.rateLimitWindow} minutes`,
+        reason: `Too many recent ${formatEntityCategory(category)}. Please wait and try again.`,
       }
     }
 
     return { isSpam: false, confidence: 0, method: 'rate_limiting' }
   }
 
-  /**
-   * Check for duplicate or very similar content
-   */
+  private getRateLimitRule(category: SpamEntityCategory): RateLimitRule {
+    const configured = this.config.rateLimits[category]
+    return {
+      windowMinutes: this.config.rateLimitWindow ?? configured.windowMinutes,
+      maxItems: this.config.rateLimitMax ?? configured.maxItems,
+    }
+  }
+
+  private async countRecentReports(userId: string, windowStart: Date): Promise<number> {
+    const [handheldCount, pcCount] = await Promise.all([
+      this.prisma.listing.count({
+        where: {
+          authorId: userId,
+          createdAt: { gte: windowStart },
+        },
+      }),
+      this.prisma.pcListing.count({
+        where: {
+          authorId: userId,
+          createdAt: { gte: windowStart },
+        },
+      }),
+    ])
+
+    return handheldCount + pcCount
+  }
+
+  private async countRecentComments(userId: string, windowStart: Date): Promise<number> {
+    const [handheldCount, pcCount] = await Promise.all([
+      this.prisma.comment.count({
+        where: {
+          userId,
+          createdAt: { gte: windowStart },
+        },
+      }),
+      this.prisma.pcListingComment.count({
+        where: {
+          userId,
+          createdAt: { gte: windowStart },
+        },
+      }),
+    ])
+
+    return handheldCount + pcCount
+  }
+
   private async checkDuplicateContent(
     userId: string,
     content: string,
-    entityType: 'listing' | 'comment',
+    entityType: SpamEntityType,
   ): Promise<SpamDetectionResult> {
     const recentTimeWindow = new Date(
       Date.now() - SPAM_DETECTION_THRESHOLDS.DUPLICATE_TIME_WINDOW_HOURS * 60 * 60 * 1000,
     )
     const normalizedContent = this.normalizeContent(content)
+    if (!normalizedContent) return { isSpam: false, confidence: 0, method: 'duplicate_detection' }
 
-    let duplicates: number
-    if (entityType === 'listing') {
-      const recentListings = await this.prisma.listing.findMany({
+    const category = getEntityCategory(entityType)
+    const recentContent =
+      category === 'report'
+        ? await this.getRecentReportContent(userId, recentTimeWindow)
+        : await this.getRecentCommentContent(userId, recentTimeWindow)
+
+    const duplicates = recentContent.filter((recent) => {
+      const normalized = this.normalizeContent(recent)
+      return (
+        this.calculateSimilarity(normalizedContent, normalized) >
+        SPAM_DETECTION_THRESHOLDS.DUPLICATE_SIMILARITY_THRESHOLD
+      )
+    }).length
+
+    if (duplicates >= SPAM_DETECTION_THRESHOLDS.DUPLICATE_MIN_COUNT) {
+      return {
+        isSpam: true,
+        confidence: 0.9,
+        method: 'duplicate_detection',
+        reason: `Found ${duplicates} very similar ${formatEntityCategory(category)} in the last ${SPAM_DETECTION_THRESHOLDS.DUPLICATE_TIME_WINDOW_HOURS} hours`,
+      }
+    }
+
+    return { isSpam: false, confidence: 0, method: 'duplicate_detection' }
+  }
+
+  private async getRecentReportContent(userId: string, recentTimeWindow: Date): Promise<string[]> {
+    const [recentListings, recentPcListings] = await Promise.all([
+      this.prisma.listing.findMany({
         where: {
           authorId: userId,
           createdAt: { gte: recentTimeWindow },
@@ -171,18 +277,27 @@ export class SpamDetectionService {
         select: { notes: true },
         take: SPAM_DETECTION_THRESHOLDS.MAX_RECENT_ITEMS_TO_CHECK,
         orderBy: { createdAt: 'desc' },
-      })
+      }),
+      this.prisma.pcListing.findMany({
+        where: {
+          authorId: userId,
+          createdAt: { gte: recentTimeWindow },
+          notes: { not: null },
+        },
+        select: { notes: true },
+        take: SPAM_DETECTION_THRESHOLDS.MAX_RECENT_ITEMS_TO_CHECK,
+        orderBy: { createdAt: 'desc' },
+      }),
+    ])
 
-      duplicates = recentListings.filter((listing) => {
-        if (!listing.notes) return false
-        const normalized = this.normalizeContent(listing.notes)
-        return (
-          this.calculateSimilarity(normalizedContent, normalized) >
-          SPAM_DETECTION_THRESHOLDS.DUPLICATE_SIMILARITY_THRESHOLD
-        )
-      }).length
-    } else {
-      const recentComments = await this.prisma.comment.findMany({
+    return [...recentListings, ...recentPcListings]
+      .map((entry) => entry.notes)
+      .filter(isNonEmptyString)
+  }
+
+  private async getRecentCommentContent(userId: string, recentTimeWindow: Date): Promise<string[]> {
+    const [recentComments, recentPcComments] = await Promise.all([
+      this.prisma.comment.findMany({
         where: {
           userId,
           createdAt: { gte: recentTimeWindow },
@@ -190,32 +305,23 @@ export class SpamDetectionService {
         select: { content: true },
         take: SPAM_DETECTION_THRESHOLDS.MAX_RECENT_ITEMS_TO_CHECK,
         orderBy: { createdAt: 'desc' },
-      })
+      }),
+      this.prisma.pcListingComment.findMany({
+        where: {
+          userId,
+          createdAt: { gte: recentTimeWindow },
+        },
+        select: { content: true },
+        take: SPAM_DETECTION_THRESHOLDS.MAX_RECENT_ITEMS_TO_CHECK,
+        orderBy: { createdAt: 'desc' },
+      }),
+    ])
 
-      duplicates = recentComments.filter((comment) => {
-        const normalized = this.normalizeContent(comment.content)
-        return (
-          this.calculateSimilarity(normalizedContent, normalized) >
-          SPAM_DETECTION_THRESHOLDS.DUPLICATE_SIMILARITY_THRESHOLD
-        )
-      }).length
-    }
-
-    if (duplicates >= SPAM_DETECTION_THRESHOLDS.DUPLICATE_MIN_COUNT) {
-      return {
-        isSpam: true,
-        confidence: 0.9,
-        method: 'duplicate_detection',
-        reason: `Found ${duplicates} very similar ${entityType}s in the last ${SPAM_DETECTION_THRESHOLDS.DUPLICATE_TIME_WINDOW_HOURS} hours`,
-      }
-    }
-
-    return { isSpam: false, confidence: 0, method: 'duplicate_detection' }
+    return [...recentComments, ...recentPcComments]
+      .map((entry) => entry.content)
+      .filter(isNonEmptyString)
   }
 
-  /**
-   * Analyze content for spam characteristics
-   */
   private analyzeContent(content: string): SpamDetectionResult {
     let spamScore = 0
     const reasons: string[] = []
@@ -274,10 +380,6 @@ export class SpamDetectionService {
     return { isSpam: false, confidence: 0, method: 'content_analysis' }
   }
 
-  /**
-   * Check for known spam patterns using advanced detection techniques
-   * Based on 2024-2025 spam research including crypto scams, unicode obfuscation, and modern tactics
-   */
   private checkSpamPatterns(content: string): SpamDetectionResult {
     const normalizedContent = content.toLowerCase()
     let spamScore = 0
@@ -285,7 +387,8 @@ export class SpamDetectionService {
 
     const classicSpamPatterns = [
       /\b(click\s*here|buy\s*now|limited\s*time|act\s*now|free\s*money|get\s*rich|work\s*from\s*home)\b/gi,
-      /\b(viagra|cialis|casino|poker|lottery)\b/gi,
+      /\b(viagra|cialis)\b/gi,
+      /\b((online\s*)?(casino|poker|lottery).*(bonus|jackpot|bet|wager|win\s+money|real\s+money)|(bonus|jackpot|bet|wager|win\s+money|real\s+money).*(casino|poker|lottery))\b/gi,
       /\b(congratulations!?\s*you'?ve\s*won|you\s*are\s*a\s*winner)\b/gi,
       /\b(cheap\s*(meds|pills|drugs)|online\s*pharmacy)\b/gi,
       /\b(mlm|multi[-\s]level\s*marketing|pyramid\s*scheme)\b/gi,
@@ -374,10 +477,6 @@ export class SpamDetectionService {
     return { isSpam: false, confidence: 0, method: 'pattern_matching' }
   }
 
-  /**
-   * Detect leetspeak and character substitution obfuscation
-   * Common substitutions: a->@/4, e->3, i->1/!, o->0, s->$, t->7
-   */
   private detectLeetspeakObfuscation(content: string): number {
     const leetspeakPatterns = [
       /\b[a-z]*[@4][a-z]*3[a-z]*[1!][a-z]*0[a-z]*\b/i,
@@ -410,10 +509,6 @@ export class SpamDetectionService {
     return score
   }
 
-  /**
-   * Detect unicode homoglyphs and obfuscation attempts
-   * Checks for mixed scripts and suspicious unicode ranges
-   */
   private detectUnicodeObfuscation(content: string): number {
     let score = 0
 
@@ -439,10 +534,6 @@ export class SpamDetectionService {
     return score
   }
 
-  /**
-   * Normalize content for comparison
-   * Exposed publicly for testing
-   */
   normalizeContent(content: string): string {
     return content
       .toLowerCase()
@@ -451,11 +542,6 @@ export class SpamDetectionService {
       .trim()
   }
 
-  /**
-   * Calculate similarity between two strings using frequency-aware Jaccard similarity
-   * Accounts for word frequency to prevent "spam spam spam" = "spam"
-   * Exposed publicly for testing
-   */
   calculateSimilarity(str1: string, str2: string): number {
     const words1 = str1.split(' ').filter((w) => w.length > 0)
     const words2 = str2.split(' ').filter((w) => w.length > 0)

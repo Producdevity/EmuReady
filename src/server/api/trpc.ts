@@ -1,9 +1,11 @@
 import { auth } from '@clerk/nextjs/server'
 import { initTRPC } from '@trpc/server'
+import { type FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch'
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
 import analytics from '@/lib/analytics'
+import { getSerializableAppError } from '@/lib/app-error-cause'
 import { AppError } from '@/lib/errors'
 import { prisma } from '@/server/db'
 import { hasDeveloperAccessToEmulator } from '@/server/utils/permissions'
@@ -144,18 +146,17 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
 /**
  * App Router version of context creation (for /api/trpc/[trpc]/route.ts)
  */
-export const createAppRouterTRPCContext = async () => {
+export const createAppRouterTRPCContext = async (opts?: FetchCreateContextFnOptions) => {
   const { userId } = await auth()
 
   let session: Nullable<Session> = null
 
   if (userId) session = await createSessionFromClerkUserId(userId)
 
-  return {
+  return createInnerTRPCContext({
     session,
-    prisma,
-    headers: new Headers(),
-  }
+    headers: opts?.req.headers ?? new Headers(),
+  })
 }
 
 export type TRPCContext = ReturnType<typeof createInnerTRPCContext>
@@ -176,6 +177,7 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
       ...ctx.shape,
       data: {
         ...ctx.shape.data,
+        appError: getSerializableAppError(ctx.error.cause),
         zodError: ctx.error.cause instanceof ZodError ? ctx.error.cause.flatten() : null,
       },
     }

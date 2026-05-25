@@ -1,8 +1,23 @@
+import { existsSync, readdirSync } from 'node:fs'
+
 import typescriptEslint from '@typescript-eslint/eslint-plugin'
 import typescriptParser from '@typescript-eslint/parser'
 import eslintConfigPrettier from 'eslint-config-prettier'
 import nextCoreWebVitals from 'eslint-config-next/core-web-vitals'
 import nextTypeScript from 'eslint-config-next/typescript'
+
+const featureNames = existsSync('./src/features')
+  ? readdirSync('./src/features', { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+  : []
+
+const featureBoundaryZones = featureNames.map((featureName) => ({
+  target: `./src/features/${featureName}`,
+  from: './src/features',
+  except: [`./${featureName}`],
+  message: 'Features must not import from other features. Compose features at the route layer.',
+}))
 
 const eslintConfig = [
   {
@@ -137,6 +152,7 @@ const eslintConfig = [
           tsx: 'never',
         },
       ],
+      'import/no-restricted-paths': ['error', { zones: featureBoundaryZones }],
     },
   }, // UI component import cycle override
   {

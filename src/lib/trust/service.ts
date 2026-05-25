@@ -196,6 +196,7 @@ export async function applyMonthlyActiveBonus(): Promise<{
   const eligibleUserIds = await getUsersEligibleForMonthlyBonus()
   const errors: string[] = []
   let processedUsers = 0
+  // TODO: this should only be applied to active users, we should check for recent activity (month timeframe), like votes, comments, listings, pc-listings, or last time signed in
 
   for (const userId of eligibleUserIds) {
     try {

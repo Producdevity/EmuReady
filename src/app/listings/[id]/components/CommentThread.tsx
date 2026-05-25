@@ -11,7 +11,6 @@ import {
 import useVerifiedDeveloper from '@/hooks/useVerifiedDeveloper'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
-import { useRecaptchaForComment } from '@/lib/captcha/hooks'
 import { type RouterInput } from '@/types/trpc'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
@@ -28,7 +27,6 @@ interface Props {
 function CommentThread(props: Props) {
   const { user } = useUser()
   const [sortBy, setSortBy] = useState(props.initialSortBy ?? 'newest')
-  const { executeForComment, isCaptchaEnabled } = useRecaptchaForComment()
 
   const listingsQuery = api.listings.getSortedComments.useQuery(
     { listingId: props.listingId, sortBy },
@@ -120,7 +118,6 @@ function CommentThread(props: Props) {
     entityIdField: 'listingId',
     entityType: 'listing',
     enableVoting: true,
-    enableRecaptcha: true,
     enableAnalytics: true,
     sortOptions: [
       { value: 'newest', label: 'Newest' },
@@ -141,7 +138,6 @@ function CommentThread(props: Props) {
       reply: 'Write your reply...',
     },
     maxLength: 1000,
-    enableRecaptcha: isCaptchaEnabled,
     showSignInPrompt: true,
     buttonStyle: 'default',
   }
@@ -162,13 +158,13 @@ function CommentThread(props: Props) {
   const handleCreateComment = async (data: {
     content: string
     parentId?: string
-    recaptchaToken?: string | null
+    humanVerificationToken?: string
   }) => {
     const mutation = createComment.mutateAsync({
       listingId: props.listingId,
       content: data.content,
       parentId: data.parentId,
-      ...(data.recaptchaToken && { recaptchaToken: data.recaptchaToken }),
+      humanVerificationToken: data.humanVerificationToken,
     } satisfies RouterInput['listings']['createComment'])
 
     // Track analytics for replies
@@ -234,7 +230,6 @@ function CommentThread(props: Props) {
             onUpdate={handleEditComment}
             onSuccess={onSuccess}
             onCancel={onCancel}
-            getRecaptchaToken={isCaptchaEnabled ? executeForComment : undefined}
             isCreating={createComment.isPending}
             isUpdating={editComment.isPending}
           />
