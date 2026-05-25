@@ -15,11 +15,13 @@ import { type Prisma, Role } from '@orm/client'
 
 export const trustRouter = createTRPCRouter({
   // Get trust logs for admin dashboard (SUPER_ADMIN only)
+  // TODO: use procedure to restrict access. (check ui to ensure it matches)
   getTrustLogs: protectedProcedure.input(GetTrustLogsSchema).query(async ({ ctx, input }) => {
     if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
       return AppError.insufficientRole(Role.SUPER_ADMIN)
     }
 
+    // TODO: abstract into repository or service
     const { page, limit, sortField, sortDirection, search, action } = input
     const actualOffset = (page - 1) * limit
 
@@ -77,6 +79,7 @@ export const trustRouter = createTRPCRouter({
   }),
 
   // Get trust system statistics (SUPER_ADMIN only)
+  // TODO: use procedure to restrict access. (check ui to ensure it matches)
   getTrustStats: protectedProcedure.input(GetTrustStatsSchema).query(async ({ ctx }) => {
     if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
       return AppError.insufficientRole(Role.SUPER_ADMIN)
@@ -87,12 +90,8 @@ export const trustRouter = createTRPCRouter({
       prisma.user.count(),
       prisma.user.groupBy({
         by: ['trustScore'],
-        _count: {
-          id: true,
-        },
-        orderBy: {
-          trustScore: 'asc',
-        },
+        _count: { id: true },
+        orderBy: { trustScore: 'asc' },
       }),
     ])
 
@@ -123,6 +122,7 @@ export const trustRouter = createTRPCRouter({
   }),
 
   // Run monthly active bonus (SUPER_ADMIN only)
+  // TODO: use procedure to restrict access. (check ui to ensure it matches)
   runMonthlyActiveBonus: protectedProcedure
     .input(RunMonthlyActiveBonusSchema)
     .mutation(async ({ ctx }) => {
@@ -134,6 +134,7 @@ export const trustRouter = createTRPCRouter({
     }),
 
   // Manual trust score adjustment (SUPER_ADMIN only)
+  // TODO: use procedure to restrict access. (check ui to esnure it matches)
   adjustTrustScore: protectedProcedure
     .input(ManualTrustAdjustmentSchema)
     .mutation(async ({ ctx, input }) => {
@@ -152,7 +153,5 @@ export const trustRouter = createTRPCRouter({
     }),
 
   // Trust level configuration
-  getTrustLevels: protectedProcedure.query(() => {
-    return TRUST_LEVELS
-  }),
+  getTrustLevels: protectedProcedure.query(() => TRUST_LEVELS),
 })
