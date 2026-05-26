@@ -1,17 +1,14 @@
 import { Role, ApprovalStatus, type PrismaClient } from '@orm/client'
 
-// Helper function to get random element from array
 function getRandomElement<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)]
 }
 
-// Helper function to get random elements from array (without duplicates)
-function getRandomElements<T>(array: T[], count: number): T[] {
+function getRandomUniqueElements<T>(array: T[], count: number): T[] {
   const shuffled = [...array].sort(() => 0.5 - Math.random())
   return shuffled.slice(0, Math.min(count, array.length))
 }
 
-// Sample notes for different performance levels
 const sampleNotes = {
   Perfect: [
     'Runs flawlessly at full speed with no issues.',
@@ -71,7 +68,6 @@ const sampleNotes = {
   ],
 }
 
-// Sample comment content
 const sampleComments = [
   'Thanks for this report! Very helpful.',
   'I can confirm this works on my device too.',
@@ -97,7 +93,7 @@ async function createVotesAndComments(
 ) {
   // Add some random votes (60% upvotes, 40% downvotes)
   const votersCount = Math.floor(Math.random() * 8) + 2 // 2-9 voters
-  const voters = getRandomElements(users, votersCount)
+  const voters = getRandomUniqueElements(users, votersCount)
 
   for (const voter of voters) {
     const isUpvote = Math.random() > 0.4 // 60% chance of upvote
@@ -114,7 +110,7 @@ async function createVotesAndComments(
   // Add some random comments (30% chance per listing)
   if (Math.random() < 0.3) {
     const commenterCount = Math.floor(Math.random() * 3) + 1 // 1-3 comments
-    const commenters = getRandomElements(users, commenterCount)
+    const commenters = getRandomUniqueElements(users, commenterCount)
 
     for (const commenter of commenters) {
       const content = getRandomElement(sampleComments)
@@ -184,7 +180,7 @@ async function listingsSeeder(prisma: PrismaClient) {
     }
 
     // Pick 2 different games for this device
-    const selectedGames = getRandomElements(compatibleGames, 2)
+    const selectedGames = getRandomUniqueElements(compatibleGames, 2)
 
     for (let i = 0; i < selectedGames.length; i++) {
       const game = selectedGames[i]
