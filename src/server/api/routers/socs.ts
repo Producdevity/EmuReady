@@ -18,6 +18,7 @@ import { paginate } from '@/server/utils/pagination'
 
 export const socsRouter = createTRPCRouter({
   get: publicProcedure.input(GetSoCsSchema).query(async ({ ctx, input }) => {
+    // TODO: use paginate helpers
     const repository = new SoCsRepository(ctx.prisma)
     const { limit = 20, offset = 0, page } = input ?? {}
 
