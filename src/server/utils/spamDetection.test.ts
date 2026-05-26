@@ -7,24 +7,44 @@ const mockPrisma = {
     count: vi.fn(),
     findMany: vi.fn(),
   },
+  pcListing: {
+    count: vi.fn(),
+    findMany: vi.fn(),
+  },
   comment: {
     count: vi.fn(),
     findMany: vi.fn(),
   },
-} as unknown as PrismaClient
+  pcListingComment: {
+    count: vi.fn(),
+    findMany: vi.fn(),
+  },
+}
+
+function mockCleanRecentActivity() {
+  mockPrisma.listing.count.mockResolvedValue(0)
+  mockPrisma.pcListing.count.mockResolvedValue(0)
+  mockPrisma.comment.count.mockResolvedValue(0)
+  mockPrisma.pcListingComment.count.mockResolvedValue(0)
+  mockPrisma.listing.findMany.mockResolvedValue([])
+  mockPrisma.pcListing.findMany.mockResolvedValue([])
+  mockPrisma.comment.findMany.mockResolvedValue([])
+  mockPrisma.pcListingComment.findMany.mockResolvedValue([])
+}
 
 describe('SpamDetectionService', () => {
   let service: SpamDetectionService
 
   beforeEach(() => {
     vi.clearAllMocks()
-    service = new SpamDetectionService(mockPrisma)
+    mockCleanRecentActivity()
+    service = new SpamDetectionService(mockPrisma as unknown as PrismaClient)
   })
 
   describe('Rate Limiting Detection', () => {
     it('should detect spam when rate limit is exceeded for listings', async () => {
-      // Mock: User has created 4 listings in the last 5 minutes (exceeds default max of 3)
       vi.mocked(mockPrisma.listing.count).mockResolvedValue(4)
+      vi.mocked(mockPrisma.pcListing.count).mockResolvedValue(1)
 
       const result = await service.detectSpam({
         userId: 'user-123',
@@ -35,13 +55,11 @@ describe('SpamDetectionService', () => {
       expect(result.isSpam).toBe(true)
       expect(result.confidence).toBe(0.95)
       expect(result.method).toBe('rate_limiting')
-      expect(result.reason).toContain('Exceeded rate limit')
+      expect(result.reason).toContain('Too many recent reports')
     })
 
     it('should NOT detect spam when within rate limit', async () => {
-      // Mock: User has created 2 listings in the last 5 minutes (within limit)
       vi.mocked(mockPrisma.listing.count).mockResolvedValue(2)
-      vi.mocked(mockPrisma.listing.findMany).mockResolvedValue([])
 
       const result = await service.detectSpam({
         userId: 'user-123',
@@ -53,8 +71,8 @@ describe('SpamDetectionService', () => {
     })
 
     it('should detect spam when rate limit is exceeded for comments', async () => {
-      // Mock: User has created 5 comments in the last 5 minutes
-      vi.mocked(mockPrisma.comment.count).mockResolvedValue(5)
+      vi.mocked(mockPrisma.comment.count).mockResolvedValue(9)
+      vi.mocked(mockPrisma.pcListingComment.count).mockResolvedValue(1)
 
       const result = await service.detectSpam({
         userId: 'user-123',
@@ -65,20 +83,31 @@ describe('SpamDetectionService', () => {
       expect(result.isSpam).toBe(true)
       expect(result.confidence).toBe(0.95)
       expect(result.method).toBe('rate_limiting')
+      expect(result.reason).toContain('Too many recent comments')
+    })
+
+    it('combines handheld and PC report activity for the rate limit', async () => {
+      vi.mocked(mockPrisma.listing.count).mockResolvedValue(3)
+      vi.mocked(mockPrisma.pcListing.count).mockResolvedValue(2)
+
+      const result = await service.detectSpam({
+        userId: 'user-123',
+        content: 'Normal content',
+        entityType: 'pcListing',
+      })
+
+      expect(result.isSpam).toBe(true)
+      expect(result.method).toBe('rate_limiting')
     })
   })
 
   describe('Duplicate Content Detection', () => {
     it('should detect spam when duplicate listings are found', async () => {
-      // Mock: Rate limit passes
-      vi.mocked(mockPrisma.listing.count).mockResolvedValue(1)
-
-      // Mock: User has 3 similar listings in the last 24 hours
       vi.mocked(mockPrisma.listing.findMany).mockResolvedValue([
         { notes: 'This is spam content' },
         { notes: 'This is spam content' },
         { notes: 'This is spam content' },
-      ] as any)
+      ])
 
       const result = await service.detectSpam({
         userId: 'user-123',
@@ -93,15 +122,11 @@ describe('SpamDetectionService', () => {
     })
 
     it('should detect spam when duplicate comments are found', async () => {
-      // Mock: Rate limit passes
-      vi.mocked(mockPrisma.comment.count).mockResolvedValue(1)
-
-      // Mock: User has 3 similar comments
       vi.mocked(mockPrisma.comment.findMany).mockResolvedValue([
         { content: 'Spam comment here' },
         { content: 'Spam comment here' },
         { content: 'Spam comment here' },
-      ] as any)
+      ])
 
       const result = await service.detectSpam({
         userId: 'user-123',
@@ -114,15 +139,45 @@ describe('SpamDetectionService', () => {
       expect(result.method).toBe('duplicate_detection')
     })
 
-    it('should NOT detect spam for slightly different content', async () => {
-      // Mock: Rate limit passes
-      vi.mocked(mockPrisma.listing.count).mockResolvedValue(1)
+    it('combines handheld and PC report content for duplicate detection', async () => {
+      vi.mocked(mockPrisma.listing.findMany).mockResolvedValue([
+        { notes: 'Same report notes' },
+        { notes: 'Same report notes' },
+      ])
+      vi.mocked(mockPrisma.pcListing.findMany).mockResolvedValue([{ notes: 'Same report notes' }])
 
-      // Mock: User has listings with different content
+      const result = await service.detectSpam({
+        userId: 'user-123',
+        content: 'Same report notes',
+        entityType: 'pcListing',
+      })
+
+      expect(result.isSpam).toBe(true)
+      expect(result.method).toBe('duplicate_detection')
+    })
+
+    it('combines handheld and PC comment content for duplicate detection', async () => {
+      vi.mocked(mockPrisma.comment.findMany).mockResolvedValue([{ content: 'Same comment' }])
+      vi.mocked(mockPrisma.pcListingComment.findMany).mockResolvedValue([
+        { content: 'Same comment' },
+        { content: 'Same comment' },
+      ])
+
+      const result = await service.detectSpam({
+        userId: 'user-123',
+        content: 'Same comment',
+        entityType: 'comment',
+      })
+
+      expect(result.isSpam).toBe(true)
+      expect(result.method).toBe('duplicate_detection')
+    })
+
+    it('should NOT detect spam for slightly different content', async () => {
       vi.mocked(mockPrisma.listing.findMany).mockResolvedValue([
         { notes: 'Game runs great on my device' },
         { notes: 'Performance is excellent with these settings' },
-      ] as any)
+      ])
 
       const result = await service.detectSpam({
         userId: 'user-123',
@@ -135,14 +190,6 @@ describe('SpamDetectionService', () => {
   })
 
   describe('Content Analysis', () => {
-    beforeEach(() => {
-      // Mock: Rate limit and duplicate checks pass
-      vi.mocked(mockPrisma.listing.count).mockResolvedValue(1)
-      vi.mocked(mockPrisma.comment.count).mockResolvedValue(1)
-      vi.mocked(mockPrisma.listing.findMany).mockResolvedValue([])
-      vi.mocked(mockPrisma.comment.findMany).mockResolvedValue([])
-    })
-
     it('should detect spam with excessive capitalization', async () => {
       const result = await service.detectSpam({
         userId: 'user-123',
@@ -228,14 +275,6 @@ describe('SpamDetectionService', () => {
   })
 
   describe('Pattern Matching', () => {
-    beforeEach(() => {
-      // Mock: All other checks pass
-      vi.mocked(mockPrisma.listing.count).mockResolvedValue(1)
-      vi.mocked(mockPrisma.comment.count).mockResolvedValue(1)
-      vi.mocked(mockPrisma.listing.findMany).mockResolvedValue([])
-      vi.mocked(mockPrisma.comment.findMany).mockResolvedValue([])
-    })
-
     it('should detect spam with "click here" pattern', async () => {
       const result = await service.detectSpam({
         userId: 'user-123',
@@ -271,15 +310,25 @@ describe('SpamDetectionService', () => {
       expect(result.method).toBe('pattern_matching')
     })
 
-    it('should detect spam with casino keywords', async () => {
+    it('should detect gambling spam when gaming terms appear with money signals', async () => {
       const result = await service.detectSpam({
         userId: 'user-123',
-        content: 'Visit our casino and play poker',
+        content: 'Visit our casino bonus site and bet real money',
         entityType: 'comment',
       })
 
       expect(result.isSpam).toBe(true)
       expect(result.method).toBe('pattern_matching')
+    })
+
+    it('should not flag casino or poker when used as normal game discussion', async () => {
+      const result = await service.detectSpam({
+        userId: 'user-123',
+        content: 'Poker Night runs well, but the casino area dips under 60fps.',
+        entityType: 'listing',
+      })
+
+      expect(result.isSpam).toBe(false)
     })
 
     it('should detect spam with MLM keywords', async () => {
@@ -306,14 +355,12 @@ describe('SpamDetectionService', () => {
 
   describe('Configuration', () => {
     it('should respect custom rate limit configuration', async () => {
-      const customService = new SpamDetectionService(mockPrisma, {
+      const customService = new SpamDetectionService(mockPrisma as unknown as PrismaClient, {
         rateLimitMax: 10,
         rateLimitWindow: 10,
       })
 
-      // Mock: User has 9 listings (below custom limit of 10)
       vi.mocked(mockPrisma.listing.count).mockResolvedValue(9)
-      vi.mocked(mockPrisma.listing.findMany).mockResolvedValue([])
 
       const result = await customService.detectSpam({
         userId: 'user-123',
@@ -325,13 +372,10 @@ describe('SpamDetectionService', () => {
     })
 
     it('should allow disabling specific detection methods', async () => {
-      const customService = new SpamDetectionService(mockPrisma, {
+      const customService = new SpamDetectionService(mockPrisma as unknown as PrismaClient, {
         enableContentAnalysis: false,
         enablePatternMatching: false,
       })
-
-      vi.mocked(mockPrisma.listing.count).mockResolvedValue(1)
-      vi.mocked(mockPrisma.listing.findMany).mockResolvedValue([])
 
       const result = await customService.detectSpam({
         userId: 'user-123',
@@ -339,19 +383,11 @@ describe('SpamDetectionService', () => {
         entityType: 'listing',
       })
 
-      // Should pass since content analysis and pattern matching are disabled
       expect(result.isSpam).toBe(false)
     })
   })
 
   describe('Edge Cases', () => {
-    beforeEach(() => {
-      vi.mocked(mockPrisma.listing.count).mockResolvedValue(1)
-      vi.mocked(mockPrisma.comment.count).mockResolvedValue(1)
-      vi.mocked(mockPrisma.listing.findMany).mockResolvedValue([])
-      vi.mocked(mockPrisma.comment.findMany).mockResolvedValue([])
-    })
-
     it('should handle empty content', async () => {
       const result = await service.detectSpam({
         userId: 'user-123',
@@ -386,7 +422,7 @@ describe('SpamDetectionService', () => {
       vi.mocked(mockPrisma.listing.findMany).mockResolvedValue([
         { notes: null },
         { notes: 'Some content' },
-      ] as any)
+      ])
 
       const result = await service.detectSpam({
         userId: 'user-123',
@@ -394,19 +430,11 @@ describe('SpamDetectionService', () => {
         entityType: 'listing',
       })
 
-      // Should not throw error
       expect(result).toBeDefined()
     })
   })
 
   describe('Real-world Scenarios', () => {
-    beforeEach(() => {
-      vi.mocked(mockPrisma.listing.count).mockResolvedValue(1)
-      vi.mocked(mockPrisma.comment.count).mockResolvedValue(1)
-      vi.mocked(mockPrisma.listing.findMany).mockResolvedValue([])
-      vi.mocked(mockPrisma.comment.findMany).mockResolvedValue([])
-    })
-
     it('should allow legitimate technical content', async () => {
       const result = await service.detectSpam({
         userId: 'user-123',
@@ -426,7 +454,6 @@ describe('SpamDetectionService', () => {
         entityType: 'comment',
       })
 
-      // Some enthusiasm is ok, shouldn't be flagged as spam
       expect(result.isSpam).toBe(false)
     })
 
@@ -559,13 +586,6 @@ describe('SpamDetectionService', () => {
     })
 
     describe('Content Analysis Patterns', () => {
-      beforeEach(() => {
-        vi.mocked(mockPrisma.listing.count).mockResolvedValue(1)
-        vi.mocked(mockPrisma.comment.count).mockResolvedValue(1)
-        vi.mocked(mockPrisma.listing.findMany).mockResolvedValue([])
-        vi.mocked(mockPrisma.comment.findMany).mockResolvedValue([])
-      })
-
       it('should correctly detect capitalization ratio', async () => {
         const highCaps = 'THIS IS MOSTLY CAPS TEXT'
         const lowCaps = 'This is mostly lowercase text'
@@ -628,13 +648,6 @@ describe('SpamDetectionService', () => {
     })
 
     describe('Advanced Pattern Detection', () => {
-      beforeEach(() => {
-        vi.mocked(mockPrisma.listing.count).mockResolvedValue(1)
-        vi.mocked(mockPrisma.comment.count).mockResolvedValue(1)
-        vi.mocked(mockPrisma.listing.findMany).mockResolvedValue([])
-        vi.mocked(mockPrisma.comment.findMany).mockResolvedValue([])
-      })
-
       it('should detect modern crypto scam patterns', async () => {
         const cryptoScams = [
           'Free NFT airdrop! Claim your tokens now',

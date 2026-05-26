@@ -1,6 +1,4 @@
 import analytics from '@/lib/analytics'
-import { RECAPTCHA_CONFIG } from '@/lib/captcha/config'
-import { getClientIP, verifyRecaptcha } from '@/lib/captcha/verify'
 import { AppError, ResourceError } from '@/lib/errors'
 import { applyTrustAction, TrustService } from '@/lib/trust/service'
 import {
@@ -76,6 +74,7 @@ import { normalizeCustomFieldValues } from '@/server/utils/custom-field-values'
 import { paginate } from '@/server/utils/pagination'
 import { isUserBanned } from '@/server/utils/query-builders'
 import { validatePagination } from '@/server/utils/security-validation'
+import { checkSpamContent } from '@/server/utils/spam-check'
 import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
 import {
   handleCommentVoteTrustEffects,
@@ -300,20 +299,18 @@ export const pcListingsRouter = createTRPCRouter({
     }),
 
   create: createListingProcedure.input(CreatePcListingSchema).mutation(async ({ ctx, input }) => {
-    // TODO: Add spam detection via `checkSpamContent` from
-    // `@/server/utils/spam-check` (currently only applied in mobile routes).
-    // Block: UX/product sign-off needed since existing web users would start
-    // seeing spam-block errors. Mirror mobile: `{ userId, content: notes, entityType: 'listing' }`.
-    const { recaptchaToken, ...payload } = input
+    const { humanVerificationToken, ...payload } = input
     const authorId = ctx.session.user.id
-    const clientIP = ctx.headers ? getClientIP(ctx.headers) : undefined
-    const captchaResult = await verifyRecaptcha({
-      token: recaptchaToken,
-      expectedAction: RECAPTCHA_CONFIG.actions.CREATE_LISTING,
-      userIP: clientIP,
-    })
 
-    if (!captchaResult.success) return AppError.captcha(captchaResult.error)
+    await checkSpamContent({
+      prisma: ctx.prisma,
+      userId: authorId,
+      content: payload.notes ?? '',
+      entityType: 'pcListing',
+      challengeMode: 'challenge',
+      humanVerificationToken,
+      headers: ctx.headers,
+    })
 
     const repository = new PcListingsRepository(ctx.prisma)
     const newListing = await repository.create({
@@ -1079,17 +1076,6 @@ export const pcListingsRouter = createTRPCRouter({
       return AppError.shadowBanned()
     }
 
-    if (input.recaptchaToken) {
-      const clientIP = ctx.headers ? getClientIP(ctx.headers) : undefined
-      const captchaResult = await verifyRecaptcha({
-        token: input.recaptchaToken,
-        expectedAction: RECAPTCHA_CONFIG.actions.VOTE,
-        userIP: clientIP,
-      })
-
-      if (!captchaResult.success) return AppError.captcha(captchaResult.error)
-    }
-
     const pcListing = await ctx.prisma.pcListing.findUnique({
       where: { id: pcListingId },
     })
@@ -1286,11 +1272,7 @@ export const pcListingsRouter = createTRPCRouter({
   createComment: protectedProcedure
     .input(CreatePcListingCommentSchema)
     .mutation(async ({ ctx, input }) => {
-      // TODO: Add spam detection via `checkSpamContent` from
-      // `@/server/utils/spam-check` (currently only applied in mobile routes).
-      // Block: UX/product sign-off needed since existing web users would start
-      // seeing spam-block errors. Mirror mobile: `{ userId, content, entityType: 'comment' }`.
-      const { pcListingId, content, parentId } = input
+      const { pcListingId, content, parentId, humanVerificationToken } = input
       const userId = ctx.session.user.id
 
       // Check if PC listing exists
@@ -1308,6 +1290,16 @@ export const pcListingsRouter = createTRPCRouter({
 
         if (!parentComment) return ResourceError.comment.parentNotFound()
       }
+
+      await checkSpamContent({
+        prisma: ctx.prisma,
+        userId,
+        content,
+        entityType: 'pcComment',
+        challengeMode: 'challenge',
+        humanVerificationToken,
+        headers: ctx.headers,
+      })
 
       const comment = await ctx.prisma.pcListingComment.create({
         data: { content, userId, pcListingId, parentId },

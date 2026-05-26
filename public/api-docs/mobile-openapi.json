@@ -481,9 +481,16 @@
             "not": {}
           },
           {
-            "type": "object",
-            "properties": {},
-            "additionalProperties": false
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         ]
       },
@@ -714,150 +721,21 @@
             "type": "number"
           },
           "notes": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "customFieldValues": {
-            "type": "array",
-            "items": {
-              "anyOf": [
-                {
-                  "anyOf": [
-                    {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "const": "TEXT"
-                        },
-                        "customFieldDefinitionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "value": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "customFieldDefinitionId",
-                        "value"
-                      ],
-                      "additionalProperties": false
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "const": "TEXTAREA"
-                        },
-                        "customFieldDefinitionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "value": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "customFieldDefinitionId",
-                        "value"
-                      ],
-                      "additionalProperties": false
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "const": "URL"
-                        },
-                        "customFieldDefinitionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "value": {
-                          "type": "string",
-                          "format": "uri"
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "customFieldDefinitionId",
-                        "value"
-                      ],
-                      "additionalProperties": false
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "const": "BOOLEAN"
-                        },
-                        "customFieldDefinitionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "value": {
-                          "type": "boolean"
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "customFieldDefinitionId",
-                        "value"
-                      ],
-                      "additionalProperties": false
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "const": "SELECT"
-                        },
-                        "customFieldDefinitionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "value": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "customFieldDefinitionId",
-                        "value"
-                      ],
-                      "additionalProperties": false
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "const": "RANGE"
-                        },
-                        "customFieldDefinitionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "value": {
-                          "type": "number"
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "customFieldDefinitionId",
-                        "value"
-                      ],
-                      "additionalProperties": false
-                    }
-                  ]
-                },
-                {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
                   "type": "object",
                   "properties": {
                     "customFieldDefinitionId": {
@@ -865,11 +743,31 @@
                       "format": "uuid"
                     },
                     "value": {
-                      "type": [
-                        "string",
-                        "number",
-                        "boolean",
-                        "null"
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/definitions/CreateListingSchema/properties/customFieldValues/anyOf/0/items/properties/value"
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": {
+                            "$ref": "#/definitions/CreateListingSchema/properties/customFieldValues/anyOf/0/items/properties/value"
+                          }
+                        }
                       ]
                     }
                   },
@@ -879,8 +777,11 @@
                   ],
                   "additionalProperties": false
                 }
-              ]
-            }
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -1065,17 +966,36 @@
                       "format": "uuid"
                     },
                     "value": {
-                      "type": [
-                        "string",
-                        "number",
-                        "boolean",
-                        "null"
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/definitions/UpdateListingSchema/properties/customFieldValues/items/anyOf/1/properties/value"
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": {
+                            "$ref": "#/definitions/UpdateListingSchema/properties/customFieldValues/items/anyOf/1/properties/value"
+                          }
+                        }
                       ]
                     }
                   },
                   "required": [
-                    "customFieldDefinitionId",
-                    "value"
+                    "customFieldDefinitionId"
                   ],
                   "additionalProperties": false
                 }
@@ -1441,7 +1361,8 @@
             "type": "number"
           },
           "memorySize": {
-            "type": "number",
+            "type": "integer",
+            "exclusiveMinimum": 0,
             "minimum": 1,
             "maximum": 256
           },
@@ -1460,179 +1381,57 @@
             "minLength": 1
           },
           "notes": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 5000
           },
           "customFieldValues": {
             "type": "array",
             "items": {
-              "anyOf": [
-                {
+              "type": "object",
+              "properties": {
+                "customFieldDefinitionId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "value": {
                   "anyOf": [
                     {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "const": "TEXT"
-                        },
-                        "customFieldDefinitionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "value": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "customFieldDefinitionId",
-                        "value"
-                      ],
-                      "additionalProperties": false
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/CreatePcListingSchema/properties/customFieldValues/items/properties/value"
+                      }
                     },
                     {
                       "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "const": "TEXTAREA"
-                        },
-                        "customFieldDefinitionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "value": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "customFieldDefinitionId",
-                        "value"
-                      ],
-                      "additionalProperties": false
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "const": "URL"
-                        },
-                        "customFieldDefinitionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "value": {
-                          "type": "string",
-                          "format": "uri"
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "customFieldDefinitionId",
-                        "value"
-                      ],
-                      "additionalProperties": false
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "const": "BOOLEAN"
-                        },
-                        "customFieldDefinitionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "value": {
-                          "type": "boolean"
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "customFieldDefinitionId",
-                        "value"
-                      ],
-                      "additionalProperties": false
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "const": "SELECT"
-                        },
-                        "customFieldDefinitionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "value": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "customFieldDefinitionId",
-                        "value"
-                      ],
-                      "additionalProperties": false
-                    },
-                    {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "type": "string",
-                          "const": "RANGE"
-                        },
-                        "customFieldDefinitionId": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "value": {
-                          "type": "number"
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "customFieldDefinitionId",
-                        "value"
-                      ],
-                      "additionalProperties": false
+                      "additionalProperties": {
+                        "$ref": "#/definitions/CreatePcListingSchema/properties/customFieldValues/items/properties/value"
+                      }
                     }
                   ]
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "customFieldDefinitionId": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "value": {
-                      "type": [
-                        "string",
-                        "number",
-                        "boolean",
-                        "null"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "customFieldDefinitionId",
-                    "value"
-                  ],
-                  "additionalProperties": false
                 }
-              ]
+              },
+              "required": [
+                "customFieldDefinitionId"
+              ],
+              "additionalProperties": false
             }
           }
         },
         "required": [
           "gameId",
           "cpuId",
-          "gpuId",
           "emulatorId",
           "performanceId",
           "memorySize",
@@ -1838,17 +1637,36 @@
                       "format": "uuid"
                     },
                     "value": {
-                      "type": [
-                        "string",
-                        "number",
-                        "boolean",
-                        "null"
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/definitions/UpdatePcListingSchema/properties/customFieldValues/items/anyOf/1/properties/value"
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": {
+                            "$ref": "#/definitions/UpdatePcListingSchema/properties/customFieldValues/items/anyOf/1/properties/value"
+                          }
+                        }
                       ]
                     }
                   },
                   "required": [
-                    "customFieldDefinitionId",
-                    "value"
+                    "customFieldDefinitionId"
                   ],
                   "additionalProperties": false
                 }
@@ -11349,7 +11167,6 @@
               "example": {
                 "gameId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
                 "cpuId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                "gpuId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
                 "emulatorId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
                 "performanceId": 1,
                 "memorySize": 1,
@@ -12496,8 +12313,7 @@
     },
     "/preferences.get": {
       "get": {
-        "summary": "Get user preferences",
-        "description": "Get user preferences",
+        "summary": "get - preferences",
         "tags": [
           "preferences"
         ],
@@ -12628,8 +12444,7 @@
     },
     "/preferences.update": {
       "post": {
-        "summary": "Update user preferences",
-        "description": "Update user preferences",
+        "summary": "update - preferences",
         "tags": [
           "preferences"
         ],
@@ -12772,8 +12587,7 @@
     },
     "/preferences.addDevice": {
       "post": {
-        "summary": "Add device preference",
-        "description": "Add device preference",
+        "summary": "addDevice - preferences",
         "tags": [
           "preferences"
         ],
@@ -12918,8 +12732,7 @@
     },
     "/preferences.removeDevice": {
       "post": {
-        "summary": "Remove device preference",
-        "description": "Remove device preference",
+        "summary": "removeDevice - preferences",
         "tags": [
           "preferences"
         ],
@@ -13064,8 +12877,7 @@
     },
     "/preferences.bulkUpdateDevices": {
       "post": {
-        "summary": "Bulk update device preferences",
-        "description": "Bulk update device preferences",
+        "summary": "bulkUpdateDevices - preferences",
         "tags": [
           "preferences"
         ],
@@ -13213,8 +13025,7 @@
     },
     "/preferences.bulkUpdateSocs": {
       "post": {
-        "summary": "Bulk update SOC preferences",
-        "description": "Bulk update SOC preferences",
+        "summary": "bulkUpdateSocs - preferences",
         "tags": [
           "preferences"
         ],
@@ -13362,8 +13173,7 @@
     },
     "/preferences.currentProfile": {
       "get": {
-        "summary": "Get current user's profile",
-        "description": "Get current user's profile",
+        "summary": "currentProfile - preferences",
         "tags": [
           "preferences"
         ],
@@ -13494,8 +13304,7 @@
     },
     "/preferences.profile": {
       "get": {
-        "summary": "Get user profile by ID",
-        "description": "Get user profile by ID",
+        "summary": "profile - preferences",
         "tags": [
           "preferences"
         ],
@@ -13637,8 +13446,7 @@
     },
     "/preferences.updateProfile": {
       "post": {
-        "summary": "Update profile",
-        "description": "Update profile",
+        "summary": "updateProfile - preferences",
         "tags": [
           "preferences"
         ],

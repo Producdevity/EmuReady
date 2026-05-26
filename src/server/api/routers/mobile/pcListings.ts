@@ -1,12 +1,13 @@
 import { ResourceError } from '@/lib/errors'
 import { applyTrustAction } from '@/lib/trust/service'
 import {
+  CreatePcListingSchema,
   GetCpusSchema,
   GetGpusSchema,
   GetPcListingsSchema,
   UpdatePcListingSchema,
 } from '@/schemas/mobile'
-import { CreatePcListingSchema, GetPcListingByIdSchema } from '@/schemas/pcListing'
+import { GetPcListingByIdSchema } from '@/schemas/pcListing'
 import {
   createMobileTRPCRouter,
   mobileProtectedProcedure,
@@ -20,6 +21,7 @@ import {
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
 import { listingStatsCache } from '@/server/utils/cache'
 import { paginate } from '@/server/utils/pagination'
+import { checkSpamContent } from '@/server/utils/spam-check'
 import { isModerator } from '@/utils/permissions'
 import { Prisma, ApprovalStatus, TrustAction } from '@orm/client'
 
@@ -153,6 +155,13 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
    * Create a new PC listing
    */
   create: mobileProtectedProcedure.input(CreatePcListingSchema).mutation(async ({ ctx, input }) => {
+    await checkSpamContent({
+      prisma: ctx.prisma,
+      userId: ctx.session.user.id,
+      content: input.notes ?? '',
+      entityType: 'pcListing',
+    })
+
     const repository = new PcListingsRepository(ctx.prisma)
     const created = await repository.create({
       authorId: ctx.session.user.id,

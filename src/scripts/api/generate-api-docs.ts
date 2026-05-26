@@ -1170,7 +1170,7 @@ async function main() {
 
   const mobileRoutersDir = join(process.cwd(), 'src/server/api/routers/mobile')
   const routerFiles = readdirSync(mobileRoutersDir)
-    .filter((file) => file.endsWith('.ts'))
+    .filter((file) => file.endsWith('.ts') && !file.endsWith('.test.ts'))
     .map((file) => join(mobileRoutersDir, file))
 
   console.log(`Found ${routerFiles.length} router files:`)
@@ -1242,9 +1242,7 @@ async function main() {
   })
 }
 
-if (require.main === module) {
-  main().catch((err) => {
-    console.error('Script failed:', err)
-    process.exit(1)
-  })
-}
+main().catch((err) => {
+  console.error('Script failed:', err)
+  process.exit(1)
+})

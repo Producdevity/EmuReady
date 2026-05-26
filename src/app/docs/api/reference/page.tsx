@@ -2,7 +2,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { type Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { MarkdownRenderer } from '@/components/ui/form/MarkdownRenderer'
+import { MarkdownRenderer } from '@/components/ui/markdown/MarkdownRenderer'
 import { logger } from '@/lib/logger'
 import { generatePageMetadata } from '@/lib/seo/metadata'
 

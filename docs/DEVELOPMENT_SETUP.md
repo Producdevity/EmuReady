@@ -36,7 +36,7 @@ CLERK_SECRET_KEY=...
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-External provider keys such as `RAWG_API_KEY`, `THE_GAMES_DB_API_KEY`, and reCAPTCHA keys are only needed for the features that call those services.
+External provider keys such as `RAWG_API_KEY`, `THE_GAMES_DB_API_KEY`, and Cloudflare Turnstile keys are only needed for the features that call those services.
 
 ## Troubleshooting
 

@@ -1,28 +1,13 @@
 import { z } from 'zod'
 import { PAGINATION, CHAR_LIMITS } from '@/data/constants'
+import { HumanVerificationTokenSchema } from '@/features/human-verification/shared/schema'
 import { JsonValueSchema } from '@/schemas/common'
+import { CreatePcListingBaseSchema } from '@/schemas/listingCreate'
 import { REVIEW_RISK_FILTERS, ReviewRiskFilterSchema } from '@/schemas/submissionRisk'
 import { ApprovalStatus, PcOs, ReportReason, ReportStatus } from '@orm'
 
-export const CreatePcListingSchema = z.object({
-  gameId: z.string().uuid(),
-  cpuId: z.string().uuid(),
-  gpuId: z.string().uuid().optional(), // Optional for integrated graphics
-  emulatorId: z.string().uuid(),
-  performanceId: z.number(),
-  memorySize: z.number().int().positive().min(1).max(256), // 1GB to 256GB
-  os: z.nativeEnum(PcOs),
-  osVersion: z.string().min(1),
-  notes: z.string().max(5000).optional(),
-  customFieldValues: z
-    .array(
-      z.object({
-        customFieldDefinitionId: z.string().uuid(),
-        value: JsonValueSchema.optional(),
-      }),
-    )
-    .optional(),
-  recaptchaToken: z.string().nullable().optional(),
+export const CreatePcListingSchema = CreatePcListingBaseSchema.extend({
+  humanVerificationToken: HumanVerificationTokenSchema.optional(),
 })
 
 export const GetPcListingsSchema = z.object({
@@ -238,7 +223,6 @@ export const GetPcPresetsSchema = z.object({
 export const VotePcListingSchema = z.object({
   pcListingId: z.string().uuid(),
   value: z.boolean(), // true = upvote, false = downvote
-  recaptchaToken: z.string().nullable().optional(),
 })
 
 export const GetPcListingUserVoteSchema = z.object({
@@ -257,6 +241,7 @@ export const CreatePcListingCommentSchema = z.object({
   pcListingId: z.string().uuid(),
   content: z.string().min(1).max(CHAR_LIMITS.COMMENT),
   parentId: z.string().uuid().optional(),
+  humanVerificationToken: HumanVerificationTokenSchema.optional(),
 })
 
 export const UpdatePcListingCommentSchema = z.object({

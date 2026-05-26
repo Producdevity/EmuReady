@@ -65,7 +65,6 @@ export interface CommentThreadConfig {
 
   // Feature flags
   enableVoting: boolean
-  enableRecaptcha?: boolean
   enableAnalytics?: boolean
 
   // Sort options

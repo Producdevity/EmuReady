@@ -6,6 +6,7 @@ vi.unmock('@/server/api/root')
 
 const mockHandleCommentVoteTrustEffects = vi.fn().mockResolvedValue(undefined)
 const mockEmitNotificationEvent = vi.fn()
+const mockCheckSpamContent = vi.fn().mockResolvedValue(undefined)
 
 vi.mock('@/server/utils/vote-trust-effects', () => ({
   handleCommentVoteTrustEffects: (...args: unknown[]) => mockHandleCommentVoteTrustEffects(...args),
@@ -26,9 +27,14 @@ vi.mock('@/server/utils/query-builders', () => ({
   isUserBanned: vi.fn().mockResolvedValue(false),
 }))
 
+vi.mock('@/server/utils/spam-check', () => ({
+  checkSpamContent: (...args: unknown[]) => mockCheckSpamContent(...args),
+}))
+
 vi.mock('@/lib/analytics', () => ({
   default: {
-    engagement: { commentVote: vi.fn() },
+    engagement: { comment: vi.fn(), commentVote: vi.fn() },
+    userJourney: { firstTimeAction: vi.fn() },
   },
 }))
 
@@ -48,8 +54,23 @@ function createMockPrisma() {
       findUnique: vi.fn().mockResolvedValue(null),
     },
     comment: {
+      count: vi.fn().mockResolvedValue(1),
+      create: vi.fn().mockResolvedValue({
+        id: COMMENT_ID,
+        content: 'Runs well with these settings',
+        userId: USER_ID,
+        listingId: LISTING_ID,
+        parentId: null,
+        user: { id: USER_ID, name: 'Test User', profileImage: null },
+      }),
       findUnique: vi.fn(),
       update: vi.fn().mockResolvedValue({ id: COMMENT_ID, score: 1 }),
+    },
+    listing: {
+      findUnique: vi.fn().mockResolvedValue({ id: LISTING_ID }),
+    },
+    user: {
+      findUnique: vi.fn().mockResolvedValue({ id: USER_ID }),
     },
   }
 
@@ -195,5 +216,31 @@ describe('handheld comments router — voteComment', () => {
     expect(txCall).toBeDefined()
     expect(findUniqueCall).toBeDefined()
     expect(findUniqueCall).toBeGreaterThan(txCall as number)
+  })
+})
+
+describe('handheld comments router — create', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('runs spam checks before creating a handheld comment', async () => {
+    const { caller, prisma } = createCaller()
+
+    await caller.create({
+      listingId: LISTING_ID,
+      content: 'Runs well with these settings',
+    })
+
+    expect(mockCheckSpamContent).toHaveBeenCalledWith({
+      prisma,
+      userId: USER_ID,
+      content: 'Runs well with these settings',
+      entityType: 'comment',
+      challengeMode: 'challenge',
+      humanVerificationToken: undefined,
+      headers: expect.any(Headers),
+    })
+    expect(prisma.comment.create).toHaveBeenCalled()
   })
 })

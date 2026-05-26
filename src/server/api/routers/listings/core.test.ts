@@ -10,7 +10,7 @@ const mockHandleListingVoteTrustEffects = vi.fn().mockResolvedValue(undefined)
 const mockHandleCommentVoteTrustEffects = vi.fn().mockResolvedValue(undefined)
 const mockLogAction = vi.fn().mockResolvedValue(undefined)
 const mockReverseLogAction = vi.fn().mockResolvedValue(undefined)
-const mockVerifyRecaptcha = vi.fn().mockResolvedValue({ success: true })
+const mockCheckSpamContent = vi.fn().mockResolvedValue(undefined)
 const mockRepositoryCreate = vi.fn()
 const mockRepositoryByIdWithAccess = vi.fn()
 const mockAttachReviewRiskProfileForViewer = vi.fn(
@@ -63,9 +63,8 @@ vi.mock('@/server/utils/query-builders', () => ({
   listingWhereClause: vi.fn(() => ({})),
 }))
 
-vi.mock('@/lib/captcha/verify', () => ({
-  verifyRecaptcha: (...args: unknown[]) => mockVerifyRecaptcha(...args),
-  getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
+vi.mock('@/server/utils/spam-check', () => ({
+  checkSpamContent: (...args: unknown[]) => mockCheckSpamContent(...args),
 }))
 
 vi.mock('@/lib/analytics', () => ({
@@ -168,7 +167,7 @@ describe('handheld listings trust integration (core.ts)', () => {
   })
 
   describe('create', () => {
-    it('verifies recaptcha before creating a handheld listing', async () => {
+    it('runs spam checks before creating a handheld listing', async () => {
       mockRepositoryCreate.mockResolvedValue({
         id: LISTING_ID,
         status: ApprovalStatus.PENDING,
@@ -181,36 +180,18 @@ describe('handheld listings trust integration (core.ts)', () => {
         deviceId: '00000000-0000-4000-a000-000000000031',
         emulatorId: '00000000-0000-4000-a000-000000000032',
         performanceId: 1,
-        recaptchaToken: 'valid-token',
       })
 
-      expect(mockVerifyRecaptcha).toHaveBeenCalledWith({
-        token: 'valid-token',
-        expectedAction: 'create_listing',
-        userIP: expect.any(String),
+      expect(mockCheckSpamContent).toHaveBeenCalledWith({
+        prisma: expect.anything(),
+        userId: USER_ID,
+        content: '',
+        entityType: 'listing',
+        challengeMode: 'challenge',
+        humanVerificationToken: undefined,
+        headers: expect.any(Headers),
       })
       expect(mockRepositoryCreate).toHaveBeenCalled()
-    })
-
-    it('does not create a handheld listing when recaptcha verification fails', async () => {
-      mockVerifyRecaptcha.mockResolvedValueOnce({
-        success: false,
-        error: 'Missing reCAPTCHA token',
-      })
-
-      const { caller } = createCaller({ permissions: [PERMISSIONS.CREATE_LISTING] })
-
-      await expect(
-        caller.create({
-          gameId: '00000000-0000-4000-a000-000000000030',
-          deviceId: '00000000-0000-4000-a000-000000000031',
-          emulatorId: '00000000-0000-4000-a000-000000000032',
-          performanceId: 1,
-        }),
-      ).rejects.toThrow(/CAPTCHA/)
-
-      expect(mockRepositoryCreate).not.toHaveBeenCalled()
-      expect(mockApplyTrustAction).not.toHaveBeenCalled()
     })
   })
 

@@ -3,19 +3,9 @@ import { withSentryConfig } from '@sentry/nextjs'
 import type { NextConfig } from 'next'
 import type { Configuration as WebpackConfiguration } from 'webpack'
 
+type Header = Awaited<ReturnType<NonNullable<NextConfig['headers']>>>[number]
+
 const isVercelBuild = process.env.VERCEL === '1'
-
-const recaptchaScriptSources = [
-  'https://www.google.com/recaptcha/',
-  'https://www.gstatic.com/recaptcha/',
-]
-
-const recaptchaConnectSources = ['https://www.google.com/recaptcha/']
-
-const recaptchaFrameSources = [
-  'https://www.google.com/recaptcha/',
-  'https://recaptcha.google.com/recaptcha/',
-]
 
 const contentSecurityPolicyDirectives = [
   {
@@ -40,7 +30,6 @@ const contentSecurityPolicyDirectives = [
       'https://storage.ko-fi.com',
       'https://ko-fi.com',
       'https://unpkg.com',
-      ...recaptchaScriptSources,
     ],
   },
   {
@@ -117,7 +106,6 @@ const contentSecurityPolicyDirectives = [
       'https://*.r2.cloudflarestorage.com',
       'https://cdn.emuready.com',
       'https://retrocatalog.com',
-      ...recaptchaConnectSources,
     ],
   },
   {
@@ -132,7 +120,6 @@ const contentSecurityPolicyDirectives = [
       'https://vercel.live',
       'https://*.vercel.live',
       'https://ko-fi.com',
-      ...recaptchaFrameSources,
     ],
   },
   {
@@ -310,24 +297,10 @@ const nextConfig: NextConfig = {
 
   async headers() {
     const isProduction = process.env.NODE_ENV === 'production'
-    const headers = [
+    const headers: Header[] = [
       {
-        source: '/service-worker.js',
+        source: '/sw.js',
         headers: [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' }],
-      },
-      {
-        source: '/sw-register.js',
-        headers: [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' }],
-      },
-      // Static assets are immutable in production and uncached in dev.
-      {
-        source: '/_next/static/:path*',
-        headers: isProduction
-          ? [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }]
-          : [
-              { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
-              { key: 'Pragma', value: 'no-cache' },
-            ],
       },
       // Images and other assets - cache with revalidation
       {
@@ -369,8 +342,8 @@ const nextConfig: NextConfig = {
     // In dev disable HTML caching to avoid stale content via proxies
     if (!isProduction) {
       headers.push({
-        // All routes except static assets and API
-        source: '/((?!_next|api|favicon|service-worker\\.js|sw-register\\.js).*)',
+        source: '/:path*',
+        has: [{ type: 'header', key: 'accept', value: '.*text/html.*' }],
         headers: [
           { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
           { key: 'Pragma', value: 'no-cache' },
