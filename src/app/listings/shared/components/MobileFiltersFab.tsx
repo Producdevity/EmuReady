@@ -1,8 +1,6 @@
 'use client'
 
 import { FunnelIcon } from 'lucide-react'
-import { env } from '@/lib/env'
-import { cn } from '@/lib/utils'
 
 interface Props {
   ariaLabel: string
@@ -12,7 +10,7 @@ interface Props {
 
 export function MobileFiltersFab(props: Props) {
   return (
-    <div className={cn('lg:hidden fixed right-6 z-40', env.IS_BETA ? 'bottom-14' : 'bottom-10')}>
+    <div className="lg:hidden fixed right-6 z-40 bottom-10">
       <button
         type="button"
         onClick={props.onClick}
