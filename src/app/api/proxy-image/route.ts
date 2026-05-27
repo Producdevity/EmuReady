@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const upstream = await fetch(url.toString(), {
-      cache: env.IS_PROD ? 'force-cache' : 'no-store',
+      cache: env.IS_PRODUCTION_BUILD ? 'force-cache' : 'no-store',
       redirect: 'follow',
       headers: {
         'User-Agent': 'EmuReadyImageProxy/1.0 (+https://www.emuready.com)',
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     }
 
     const contentType = upstream.headers.get('content-type') || 'application/octet-stream'
-    const cacheControl = env.IS_PROD
+    const cacheControl = env.IS_PRODUCTION_BUILD
       ? 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=600'
       : 'no-store, no-cache, must-revalidate'
 

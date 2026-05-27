@@ -1,7 +1,15 @@
 'use client'
 
 import { ChevronDown, X } from 'lucide-react'
-import { useState, useRef, useEffect, useMemo, type KeyboardEvent, type ReactNode } from 'react'
+import {
+  type KeyboardEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { searchItems } from '@/utils/simpleSearch'
@@ -38,6 +46,12 @@ const badgeColors = {
   red: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border-red-200 dark:border-red-800 hover:bg-red-200 dark:hover:bg-red-900/50',
 }
 
+const MOBILE_LIST_MAX_HEIGHT_PX = 192
+const DESKTOP_LIST_MAX_HEIGHT_PX = 320
+const SEARCH_HEADER_HEIGHT_PX = 64
+const FOOTER_HEIGHT_PX = 48
+const OPTION_ROW_HEIGHT_ESTIMATE_PX = 40
+
 export function MultiSelect(props: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -70,45 +84,63 @@ export function MultiSelect(props: Props) {
   const maxDisplayed = props.maxDisplayed ?? 2
   const showSelectedBadges = props.showSelectedBadges ?? true
 
-  // Calculate dropdown position based on available space
+  const closeDropdown = useCallback((restoreFocus: boolean) => {
+    setIsOpen(false)
+    setSearchQuery('')
+    if (restoreFocus) buttonRef.current?.focus()
+  }, [])
+
   useEffect(() => {
-    if (isOpen && buttonRef.current) {
+    if (!isOpen) return
+
+    function updateDropdownPosition() {
+      if (!buttonRef.current) return
+
+      const visualViewport = window.visualViewport
+      const visibleTop = visualViewport?.offsetTop ?? 0
+      const visibleHeight = visualViewport?.height ?? window.innerHeight
+      const visibleBottom = visibleTop + visibleHeight
       const buttonRect = buttonRef.current.getBoundingClientRect()
-      const viewportHeight = window.innerHeight
-      const spaceBelow = viewportHeight - buttonRect.bottom
-      const spaceAbove = buttonRect.top
+      const listMaxHeight = window.matchMedia('(min-width: 640px)').matches
+        ? DESKTOP_LIST_MAX_HEIGHT_PX
+        : MOBILE_LIST_MAX_HEIGHT_PX
+      const footerHeight = selectedOptions.length > 0 ? FOOTER_HEIGHT_PX : 0
+      const estimatedPanelHeight =
+        Math.min(listMaxHeight, sortedFilteredOptions.length * OPTION_ROW_HEIGHT_ESTIMATE_PX) +
+        SEARCH_HEADER_HEIGHT_PX +
+        footerHeight
+      const spaceBelow = visibleBottom - buttonRect.bottom
+      const spaceAbove = buttonRect.top - visibleTop
 
-      // Estimate dropdown height (max-height is 320px + padding)
-      const estimatedDropdownHeight = Math.min(360, filteredOptions.length * 40 + 100)
-
-      // Position upward if there's not enough space below but enough space above
-      if (spaceBelow < estimatedDropdownHeight && spaceAbove > estimatedDropdownHeight) {
-        setDropdownPosition('top')
-      } else {
-        setDropdownPosition('bottom')
-      }
+      setDropdownPosition(
+        spaceBelow < estimatedPanelHeight && spaceAbove > spaceBelow ? 'top' : 'bottom',
+      )
     }
-  }, [isOpen, filteredOptions.length])
+
+    updateDropdownPosition()
+    window.addEventListener('resize', updateDropdownPosition)
+    window.visualViewport?.addEventListener('resize', updateDropdownPosition)
+    window.visualViewport?.addEventListener('scroll', updateDropdownPosition)
+
+    return () => {
+      window.removeEventListener('resize', updateDropdownPosition)
+      window.visualViewport?.removeEventListener('resize', updateDropdownPosition)
+      window.visualViewport?.removeEventListener('scroll', updateDropdownPosition)
+    }
+  }, [isOpen, selectedOptions.length, sortedFilteredOptions.length])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-        setSearchQuery('')
+        closeDropdown(false)
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('click', handleClickOutside)
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('click', handleClickOutside)
     }
-  }, [])
-
-  const closeDropdown = () => {
-    setIsOpen(false)
-    setSearchQuery('')
-    buttonRef.current?.focus()
-  }
+  }, [closeDropdown])
 
   const handleToggle = (optionId: string) => {
     const newValue = props.value.includes(optionId)
@@ -131,7 +163,7 @@ export function MultiSelect(props: Props) {
 
     ev.preventDefault()
     ev.stopPropagation()
-    closeDropdown()
+    closeDropdown(true)
   }
 
   const handleClearSearch = () => {
@@ -228,11 +260,12 @@ export function MultiSelect(props: Props) {
 
         {isOpen && (
           <div
-            className={`absolute z-[9999] w-full bg-white dark:bg-gray-800
+            className={cn(
+              `absolute left-0 z-[9999] w-full bg-white dark:bg-gray-800
               border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg
-              animate-in fade-in-0 zoom-in-95 duration-200 ${
-                dropdownPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
-              }`}
+              animate-in fade-in-0 zoom-in-95 duration-200`,
+              dropdownPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1',
+            )}
           >
             <div className="p-2 border-b border-gray-200 dark:border-gray-700">
               <div className="relative">
@@ -264,7 +297,10 @@ export function MultiSelect(props: Props) {
               </div>
             </div>
 
-            <div className="max-h-80 overflow-y-auto p-1">
+            <div
+              className="scrollbar-native-thin max-h-48 overflow-y-auto overflow-x-hidden overscroll-contain p-1 sm:max-h-80"
+              data-testid="multi-select-options"
+            >
               {sortedFilteredOptions.length === 0 ? (
                 <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
                   No options found
@@ -277,11 +313,10 @@ export function MultiSelect(props: Props) {
                   return (
                     <label
                       key={option.id}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer
+                      className={`flex min-w-0 items-center gap-3 px-3 py-2 rounded-md cursor-pointer
                         transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700
                         ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''}
-                        ${isTopSelected ? 'animate-in slide-in-from-top-1 duration-300' : ''}
-                        hover:scale-[1.02] hover:shadow-sm`}
+                        ${isTopSelected ? 'animate-in slide-in-from-top-1 duration-300' : ''}`}
                       style={{
                         animationDelay: isTopSelected ? `${index * 50}ms` : '0ms',
                       }}
@@ -297,7 +332,7 @@ export function MultiSelect(props: Props) {
                       />
                       <span
                         className={cn(
-                          'text-sm select-none flex-1 transition-all duration-200',
+                          'min-w-0 flex-1 break-words text-sm select-none transition-all duration-200',
                           isSelected
                             ? 'text-blue-700 dark:text-blue-300 font-medium'
                             : 'text-gray-700 dark:text-gray-300',

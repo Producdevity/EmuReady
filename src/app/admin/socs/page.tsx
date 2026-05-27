@@ -75,6 +75,12 @@ function AdminSoCsPage() {
   const socs = socsQuery.data?.socs ?? []
   const pagination = socsQuery.data?.pagination
 
+  const invalidateSocQueries = () => {
+    utils.socs.get.invalidate().catch(console.error)
+    utils.socs.options.invalidate().catch(console.error)
+    utils.socs.stats.invalidate().catch(console.error)
+  }
+
   const openModal = (soc?: SocData) => {
     setEditId(soc?.id ?? null)
     setSocData(soc ?? null)
@@ -98,9 +104,7 @@ function AdminSoCsPage() {
   }
 
   const handleModalSuccess = () => {
-    // Invalidate queries to refetch fresh data
-    utils.socs.get.invalidate().catch(console.error)
-    utils.socs.stats.invalidate().catch(console.error)
+    invalidateSocQueries()
     closeModal()
   }
 
@@ -116,8 +120,7 @@ function AdminSoCsPage() {
       await deleteSoc.mutateAsync({
         id,
       } satisfies RouterInput['socs']['delete'])
-      utils.socs.get.invalidate().catch(console.error)
-      utils.socs.stats.invalidate().catch(console.error)
+      invalidateSocQueries()
       toast.success('SoC deleted successfully!')
     } catch (err) {
       toast.error(`Failed to delete SoC: ${getErrorMessage(err)}`)

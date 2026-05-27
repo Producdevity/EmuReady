@@ -83,6 +83,12 @@ function AdminCpusPage() {
     ['intel', 'amd', 'apple'].includes(brand.name.toLowerCase()),
   )
 
+  const invalidateCpuQueries = () => {
+    utils.cpus.get.invalidate().catch(console.error)
+    utils.cpus.options.invalidate().catch(console.error)
+    utils.cpus.stats.invalidate().catch(console.error)
+  }
+
   const openModal = (cpu?: CpuData) => {
     setEditId(cpu?.id ?? null)
     setCpuData(cpu ?? null)
@@ -106,8 +112,7 @@ function AdminCpusPage() {
   }
 
   const handleModalSuccess = () => {
-    utils.cpus.get.invalidate().catch(console.error)
-    utils.cpus.stats.invalidate().catch(console.error)
+    invalidateCpuQueries()
     closeModal()
   }
 
@@ -123,8 +128,7 @@ function AdminCpusPage() {
       await deleteCpu.mutateAsync({
         id,
       } satisfies RouterInput['cpus']['delete'])
-      utils.cpus.get.invalidate().catch(console.error)
-      utils.cpus.stats.invalidate().catch(console.error)
+      invalidateCpuQueries()
       toast.success('CPU deleted successfully!')
     } catch (err) {
       toast.error(`Failed to delete CPU: ${getErrorMessage(err)}`)

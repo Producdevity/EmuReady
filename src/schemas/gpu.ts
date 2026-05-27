@@ -15,6 +15,15 @@ export const GetGpusSchema = z
   })
   .optional()
 
+export const GetGpuOptionsSchema = z
+  .object({
+    search: z.string().optional(),
+    brandId: z.string().uuid().optional(),
+    limit: z.number().int().min(1).max(10000).default(50),
+    offset: z.number().int().min(0).default(0),
+  })
+  .optional()
+
 export const GetGpuByIdSchema = z.object({ id: z.string().uuid() })
 export const GetGpusByIdsSchema = z.object({ ids: z.array(z.string().uuid()).min(1).max(100) })
 
@@ -36,6 +45,7 @@ export const DeleteGpuSchema = z.object({ id: z.string().uuid() })
 // Use z.output for types after defaults are applied (what you get out)
 // TODO: figure out why we use z.infer
 export type GetGpusInput = z.input<typeof GetGpusSchema>
+export type GetGpuOptionsInput = z.input<typeof GetGpuOptionsSchema>
 export type CreateGpuInput = z.infer<typeof CreateGpuSchema>
 export type UpdateGpuInput = z.infer<typeof UpdateGpuSchema>
 export type GetGpusByIdsInput = z.infer<typeof GetGpusByIdsSchema>

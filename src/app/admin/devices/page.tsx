@@ -76,6 +76,12 @@ function AdminDevicesPage() {
   const userQuery = api.users.me.useQuery()
   const canManageDevices = hasPermission(userQuery.data?.permissions, PERMISSIONS.MANAGE_DEVICES)
 
+  const invalidateDeviceQueries = () => {
+    utils.devices.get.invalidate().catch(console.error)
+    utils.devices.options.invalidate().catch(console.error)
+    utils.devices.stats.invalidate().catch(console.error)
+  }
+
   const openModal = (device?: DeviceData) => {
     setEditId(device?.id ?? null)
     setDeviceData(device ?? null)
@@ -99,9 +105,7 @@ function AdminDevicesPage() {
   }
 
   const handleModalSuccess = () => {
-    // Invalidate queries to refetch fresh data
-    utils.devices.get.invalidate().catch(console.error)
-    utils.devices.stats.invalidate().catch(console.error)
+    invalidateDeviceQueries()
     closeModal()
   }
 
@@ -117,8 +121,7 @@ function AdminDevicesPage() {
       await deleteDevice.mutateAsync({
         id,
       } satisfies RouterInput['devices']['delete'])
-      utils.devices.get.invalidate().catch(console.error)
-      utils.devices.stats.invalidate().catch(console.error)
+      invalidateDeviceQueries()
       toast.success('Device deleted successfully!')
     } catch (err) {
       toast.error(`Failed to delete device: ${getErrorMessage(err)}`)

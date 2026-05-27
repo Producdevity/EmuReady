@@ -1,4 +1,8 @@
 import { Role, ApprovalStatus, type PrismaClient } from '@orm/client'
+import {
+  createCustomFieldDefinitionCache,
+  seedListingCustomFieldValues,
+} from './customFieldValueSeederUtils'
 
 function getRandomElement<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)]
@@ -86,11 +90,36 @@ const sampleComments = [
   'Anyone tried this with different emulator versions?',
 ]
 
-async function createVotesAndComments(
-  prisma: PrismaClient,
-  listingId: string,
-  users: { id: string; role: Role }[],
-) {
+const customFieldListingFixtures = [
+  {
+    emulatorName: 'Azahar',
+    systemName: 'Nintendo 3DS',
+    notes: 'Azahar fixture with custom graphics and CPU field values.',
+  },
+  {
+    emulatorName: 'Eden',
+    systemName: 'Nintendo Switch',
+    notes: 'Eden fixture with categorized graphics, CPU, and Eden Veil values.',
+  },
+  {
+    emulatorName: 'GameNative',
+    systemName: 'Microsoft Windows',
+    notes: 'GameNative fixture with runtime and graphics compatibility values.',
+  },
+] as const
+
+type SeedUser = { id: string; role: Role }
+type SeedDevice = { id: string; brand: { name: string }; modelName: string }
+type SeedGame = {
+  id: string
+  title: string
+  systemId: string
+  system: { id: string; name: string }
+}
+type SeedEmulator = { id: string; name: string; systems: { id: string }[] }
+type SeedPerformanceScale = { id: number; label: string }
+
+async function createVotesAndComments(prisma: PrismaClient, listingId: string, users: SeedUser[]) {
   // Add some random votes (60% upvotes, 40% downvotes)
   const votersCount = Math.floor(Math.random() * 8) + 2 // 2-9 voters
   const voters = getRandomUniqueElements(users, votersCount)
@@ -154,6 +183,7 @@ async function listingsSeeder(prisma: PrismaClient) {
   })
 
   const performanceScales = await prisma.performanceScale.findMany()
+  const customFieldDefinitionCache = createCustomFieldDefinitionCache()
 
   console.info(
     `📊 Found ${devices.length} devices, ${games.length} games, ${emulators.length} emulators`,
@@ -162,6 +192,7 @@ async function listingsSeeder(prisma: PrismaClient) {
   let totalListingsCreated = 0
   let totalVotesCreated = 0
   let totalCommentsCreated = 0
+  let totalCustomFieldValuesSynced = 0
 
   // Create 2 listings per device
   for (const device of devices) {
@@ -236,6 +267,13 @@ async function listingsSeeder(prisma: PrismaClient) {
         })
 
         totalListingsCreated++
+        totalCustomFieldValuesSynced += await seedListingCustomFieldValues(
+          prisma,
+          customFieldDefinitionCache,
+          listing.id,
+          selectedEmulator.id,
+          totalListingsCreated,
+        )
 
         // Add votes and comments to this listing
         const votesBefore = await prisma.vote.count()
@@ -261,12 +299,91 @@ async function listingsSeeder(prisma: PrismaClient) {
     }
   }
 
+  const fixtureResult = await createCustomFieldListingFixtures({
+    prisma,
+    users,
+    adminUsers,
+    devices,
+    games,
+    emulators,
+    performanceScales,
+    customFieldDefinitionCache,
+    seedIndexStart: totalListingsCreated,
+  })
+  totalListingsCreated += fixtureResult.listingsCreated
+  totalCustomFieldValuesSynced += fixtureResult.customFieldValuesSynced
+
   console.info('✅ Listings seeding completed!')
   console.info(`📈 Statistics:`)
   console.info(`   📝 ${totalListingsCreated} listings created`)
+  console.info(`   ⚙️ ${totalCustomFieldValuesSynced} custom field values synced`)
   console.info(`   👍 ${totalVotesCreated} votes added`)
   console.info(`   💬 ${totalCommentsCreated} comments added`)
   console.info(`   ✅ ~50% of listings are auto-approved for testing`)
+}
+
+interface CustomFieldListingFixtureInput {
+  prisma: PrismaClient
+  users: SeedUser[]
+  adminUsers: SeedUser[]
+  devices: SeedDevice[]
+  games: SeedGame[]
+  emulators: SeedEmulator[]
+  performanceScales: SeedPerformanceScale[]
+  customFieldDefinitionCache: ReturnType<typeof createCustomFieldDefinitionCache>
+  seedIndexStart: number
+}
+
+async function createCustomFieldListingFixtures(input: CustomFieldListingFixtureInput) {
+  let listingsCreated = 0
+  let customFieldValuesSynced = 0
+
+  const approvedPerformance =
+    input.performanceScales.find((scale) => scale.label === 'Great') ?? input.performanceScales[0]
+  const processor = input.adminUsers[0]
+  const author = input.users[0]
+  const device = input.devices[0]
+
+  if (!approvedPerformance || !processor || !author || !device) {
+    console.warn('Missing fixture dependencies, skipping custom field listing fixtures')
+    return { listingsCreated, customFieldValuesSynced }
+  }
+
+  for (const fixture of customFieldListingFixtures) {
+    const emulator = input.emulators.find((candidate) => candidate.name === fixture.emulatorName)
+    const game = input.games.find((candidate) => candidate.system.name === fixture.systemName)
+
+    if (!emulator || !game) {
+      console.warn(`Skipping ${fixture.emulatorName} fixture, missing emulator or game data`)
+      continue
+    }
+
+    const listing = await input.prisma.listing.create({
+      data: {
+        gameId: game.id,
+        deviceId: device.id,
+        emulatorId: emulator.id,
+        performanceId: approvedPerformance.id,
+        notes: fixture.notes,
+        authorId: author.id,
+        status: ApprovalStatus.APPROVED,
+        processedAt: new Date(),
+        processedNotes: 'Seeded custom field fixture.',
+        processedByUserId: processor.id,
+      },
+    })
+
+    listingsCreated += 1
+    customFieldValuesSynced += await seedListingCustomFieldValues(
+      input.prisma,
+      input.customFieldDefinitionCache,
+      listing.id,
+      emulator.id,
+      input.seedIndexStart + listingsCreated,
+    )
+  }
+
+  return { listingsCreated, customFieldValuesSynced }
 }
 
 export default listingsSeeder

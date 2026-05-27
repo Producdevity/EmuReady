@@ -84,6 +84,12 @@ function AdminGpusPage() {
     ['intel', 'amd', 'nvidia'].includes(brand.name.toLowerCase()),
   )
 
+  const invalidateGpuQueries = () => {
+    utils.gpus.get.invalidate().catch(console.error)
+    utils.gpus.options.invalidate().catch(console.error)
+    utils.gpus.stats.invalidate().catch(console.error)
+  }
+
   const openModal = (gpu?: GpuData) => {
     setEditId(gpu?.id ?? null)
     setGpuData(gpu ?? null)
@@ -107,9 +113,7 @@ function AdminGpusPage() {
   }
 
   const handleModalSuccess = () => {
-    // Invalidate queries to refetch fresh data
-    utils.gpus.get.invalidate().catch(console.error)
-    utils.gpus.stats.invalidate().catch(console.error)
+    invalidateGpuQueries()
     closeModal()
   }
 
@@ -125,8 +129,7 @@ function AdminGpusPage() {
       await deleteGpu.mutateAsync({
         id,
       } satisfies RouterInput['gpus']['delete'])
-      utils.gpus.get.invalidate().catch(console.error)
-      utils.gpus.stats.invalidate().catch(console.error)
+      invalidateGpuQueries()
       toast.success('GPU deleted successfully!')
     } catch (err) {
       toast.error(`Failed to delete GPU: ${getErrorMessage(err)}`)

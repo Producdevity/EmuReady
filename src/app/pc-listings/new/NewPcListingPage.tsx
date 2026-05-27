@@ -31,16 +31,21 @@ import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import { type CustomFieldDefinitionWithOptions } from '@/utils/custom-field-validation'
 import { parseCustomFieldOptions, getCustomFieldDefaultValue } from '@/utils/custom-fields'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { ms } from '@/utils/time'
 import { PcOs } from '@orm'
 import createDynamicPcListingSchema from './form-schemas/createDynamicPcListingSchema'
 
 export type PcListingFormValues = RouterInput['pcListings']['create']
 
-type CpuOption = RouterOutput['cpus']['get']['cpus'][number]
-type GpuOption = RouterOutput['gpus']['get']['gpus'][number]
+type CpuOption = RouterOutput['cpus']['options']['cpus'][number]
+type GpuOption = RouterOutput['gpus']['options']['gpus'][number]
 type PcPresetOption = RouterOutput['pcListings']['presets']['get'][number]
 
 const OS_OPTIONS = PC_OS_OPTIONS
+const LOOKUP_DATA_QUERY_OPTIONS = {
+  staleTime: ms.hours(6),
+  gcTime: ms.hours(12),
+}
 
 function AddPcListingPage() {
   const router = useRouter()
@@ -63,7 +68,10 @@ function AddPcListingPage() {
 
   const utils = api.useUtils()
   const createPcListing = api.pcListings.create.useMutation()
-  const performanceScalesQuery = api.performanceScales.get.useQuery()
+  const performanceScalesQuery = api.performanceScales.get.useQuery(
+    undefined,
+    LOOKUP_DATA_QUERY_OPTIONS,
+  )
   const presetsQuery = api.pcListings.presets.get.useQuery({})
   const { handleKeyDown } = useFormKeyDown()
 
@@ -75,28 +83,28 @@ function AddPcListingPage() {
     async (query: string): Promise<CpuOption[]> => {
       if (query.length < 2) return Promise.resolve([])
       try {
-        const result = await utils.cpus.get.fetch({ search: query, limit: 20 })
+        const result = await utils.cpus.options.fetch({ search: query, limit: 20 })
         return result.cpus ?? []
       } catch (error) {
         console.error('Error fetching CPUs:', error)
         return []
       }
     },
-    [utils.cpus.get],
+    [utils.cpus.options],
   )
 
   const loadGpuItems = useCallback(
     async (query: string): Promise<GpuOption[]> => {
       if (query.length < 2) return Promise.resolve([])
       try {
-        const result = await utils.gpus.get.fetch({ search: query, limit: 20 })
+        const result = await utils.gpus.options.fetch({ search: query, limit: 20 })
         return result.gpus ?? []
       } catch (error) {
         console.error('Error fetching GPUs:', error)
         return []
       }
     },
-    [utils.gpus.get],
+    [utils.gpus.options],
   )
 
   const form = useForm<PcListingFormValues>({

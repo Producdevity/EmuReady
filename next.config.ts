@@ -6,6 +6,7 @@ import type { Configuration as WebpackConfiguration } from 'webpack'
 type Header = Awaited<ReturnType<NonNullable<NextConfig['headers']>>>[number]
 
 const isVercelBuild = process.env.VERCEL === '1'
+const isSentryEnabled = process.env.NEXT_PUBLIC_ENABLE_SENTRY === 'true'
 
 const contentSecurityPolicyDirectives = [
   {
@@ -359,7 +360,9 @@ const withBundleAnalyzer = NextBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 })
 
-export default withSentryConfig(withBundleAnalyzer(nextConfig), {
+const analyzedConfig = withBundleAnalyzer(nextConfig)
+
+const sentryBuildOptions = {
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/build/
 
@@ -385,4 +388,10 @@ export default withSentryConfig(withBundleAnalyzer(nextConfig), {
   bundleSizeOptimizations: {
     excludeDebugStatements: true,
   },
-})
+
+  telemetry: false,
+}
+
+export default isSentryEnabled
+  ? withSentryConfig(analyzedConfig, sentryBuildOptions)
+  : analyzedConfig

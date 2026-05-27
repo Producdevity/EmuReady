@@ -47,8 +47,8 @@ export function sendAnalyticsEvent(params: AnalyticsEventData) {
     })
   }
 
-  // Log in development, send it to external service in production
-  if (process.env.NODE_ENV === 'development') {
+  // Log in development, send it to external services only when explicitly enabled.
+  if (env.IS_DEVELOPMENT_BUILD) {
     const context = typeof window !== 'undefined' ? 'CLIENT' : 'SERVER'
     return logger.log(`📊 Analytics Event [${context}]:`, {
       category: params.category,
@@ -57,12 +57,13 @@ export function sendAnalyticsEvent(params: AnalyticsEventData) {
     })
   }
 
-  // Only send to analytics services in production and on client-side
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+  if (typeof window !== 'undefined' && env.ENABLE_ANALYTICS) {
     if (env.VERCEL_ANALYTICS_ENABLED) track(params.action, eventData)
-    sendGAEvent('event', params.action, {
-      event_category: params.category,
-      ...eventData,
-    })
+    if (env.GA_ID) {
+      sendGAEvent('event', params.action, {
+        event_category: params.category,
+        ...eventData,
+      })
+    }
   }
 }

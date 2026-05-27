@@ -29,6 +29,8 @@ interface ApplyTrustActionParams {
   context?: TrustActionContext
 }
 
+type PrismaClientOrTransaction = PrismaClient | Prisma.TransactionClient
+
 export async function applyTrustAction(params: ApplyTrustActionParams): Promise<void> {
   const { userId, action, context = {} } = params
 
@@ -160,8 +162,11 @@ export async function reverseTrustAction(params: {
   })
 }
 
-export async function canUserAutoApprove(userId: string): Promise<boolean> {
-  const user = await prisma.user.findUnique({
+export async function canUserAutoApprove(
+  userId: string,
+  prismaClient: PrismaClientOrTransaction = prisma,
+): Promise<boolean> {
+  const user = await prismaClient.user.findUnique({
     where: { id: userId },
     select: { trustScore: true },
   })

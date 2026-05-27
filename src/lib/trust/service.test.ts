@@ -26,6 +26,35 @@ function createMockPrismaCtx() {
 
 type MockPrismaCtx = ReturnType<typeof createMockPrismaCtx>
 
+describe('canUserAutoApprove', () => {
+  let prismaCtx: MockPrismaCtx
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    prismaCtx = createMockPrismaCtx()
+  })
+
+  it('uses the provided prisma client when checking trust score', async () => {
+    prismaCtx.user.findUnique.mockResolvedValue({ trustScore: 250 })
+    const { canUserAutoApprove } = await import('./service')
+
+    const result = await canUserAutoApprove('user-1', prismaCtx as never)
+
+    expect(result).toBe(true)
+    expect(prismaCtx.user.findUnique).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      select: { trustScore: true },
+    })
+  })
+
+  it('returns false when the user does not exist', async () => {
+    prismaCtx.user.findUnique.mockResolvedValue(null)
+    const { canUserAutoApprove } = await import('./service')
+
+    await expect(canUserAutoApprove('missing-user', prismaCtx as never)).resolves.toBe(false)
+  })
+})
+
 describe('TrustService.applyBulkManualAdjustments', () => {
   let prismaCtx: MockPrismaCtx
 

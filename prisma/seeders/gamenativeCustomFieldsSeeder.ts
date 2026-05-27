@@ -1,4 +1,5 @@
 import { CustomFieldType, Prisma, type PrismaClient } from '@orm/client'
+import { syncCustomFieldCategories, type CustomFieldCategorySeed } from './customFieldCategoryUtils'
 
 interface SelectOption {
   value: string
@@ -17,6 +18,50 @@ interface GameNativeCustomFieldSeed {
 }
 
 const GAMENATIVE_EMULATOR_NAME = 'GameNative'
+
+const GAMENATIVE_CUSTOM_FIELD_CATEGORIES: CustomFieldCategorySeed[] = [
+  { name: 'General', displayOrder: 0 },
+  { name: 'Graphics', displayOrder: 1 },
+  { name: 'Runtime', displayOrder: 2 },
+  { name: 'Input', displayOrder: 3 },
+  { name: 'Media', displayOrder: 4 },
+]
+
+const GAMENATIVE_FIELD_CATEGORY_CONFIG: Record<
+  string,
+  { categoryName: string; categoryOrder: number }
+> = {
+  emulator_version: { categoryName: 'General', categoryOrder: 0 },
+  game_version: { categoryName: 'General', categoryOrder: 1 },
+  average_fps: { categoryName: 'General', categoryOrder: 2 },
+  resolution: { categoryName: 'General', categoryOrder: 3 },
+  audio_driver: { categoryName: 'General', categoryOrder: 4 },
+  graphics_driver: { categoryName: 'Graphics', categoryOrder: 0 },
+  dynamic_driver_version: { categoryName: 'Graphics', categoryOrder: 1 },
+  dx_wrapper: { categoryName: 'Graphics', categoryOrder: 2 },
+  dxvk_version: { categoryName: 'Graphics', categoryOrder: 3 },
+  dx_wrapper_config: { categoryName: 'Graphics', categoryOrder: 4 },
+  max_device_memory: { categoryName: 'Graphics', categoryOrder: 5 },
+  use_adrenotools_turnip: { categoryName: 'Graphics', categoryOrder: 6 },
+  env_variables: { categoryName: 'Runtime', categoryOrder: 0 },
+  box64_version: { categoryName: 'Runtime', categoryOrder: 1 },
+  box64_preset: { categoryName: 'Runtime', categoryOrder: 2 },
+  startup_selection: { categoryName: 'Runtime', categoryOrder: 3 },
+  container_variant: { categoryName: 'Runtime', categoryOrder: 4 },
+  wine_version: { categoryName: 'Runtime', categoryOrder: 5 },
+  steam_type: { categoryName: 'Runtime', categoryOrder: 6 },
+  fex_core_version: { categoryName: 'Runtime', categoryOrder: 7 },
+  '32_bit_emulator': { categoryName: 'Runtime', categoryOrder: 8 },
+  '64_bit_emulator': { categoryName: 'Runtime', categoryOrder: 9 },
+  fex_core_preset: { categoryName: 'Runtime', categoryOrder: 10 },
+  exec_arguments: { categoryName: 'Runtime', categoryOrder: 11 },
+  use_steam_input: { categoryName: 'Input', categoryOrder: 0 },
+  enable_x_input_api: { categoryName: 'Input', categoryOrder: 1 },
+  enable_direct_input_api: { categoryName: 'Input', categoryOrder: 2 },
+  direct_input_mapper_type: { categoryName: 'Input', categoryOrder: 3 },
+  youtube: { categoryName: 'Media', categoryOrder: 0 },
+  media_url: { categoryName: 'Media', categoryOrder: 1 },
+}
 
 const GAMENATIVE_CUSTOM_FIELDS: GameNativeCustomFieldSeed[] = [
   {
@@ -391,6 +436,11 @@ export default async function gamenativeCustomFieldsSeeder(prisma: PrismaClient)
   }
 
   const fieldNames = GAMENATIVE_CUSTOM_FIELDS.map((field) => field.name)
+  const categoryIdByName = await syncCustomFieldCategories(
+    prisma,
+    gamenative.id,
+    GAMENATIVE_CUSTOM_FIELD_CATEGORIES,
+  )
 
   for (const field of GAMENATIVE_CUSTOM_FIELDS) {
     await prisma.customFieldDefinition.upsert({
@@ -400,8 +450,8 @@ export default async function gamenativeCustomFieldsSeeder(prisma: PrismaClient)
           name: field.name,
         },
       },
-      create: buildDefinitionCreate(gamenative.id, field),
-      update: buildDefinitionUpdate(field),
+      create: buildDefinitionCreate(gamenative.id, field, categoryIdByName),
+      update: buildDefinitionUpdate(field, categoryIdByName),
     })
   }
 
@@ -441,11 +491,17 @@ export default async function gamenativeCustomFieldsSeeder(prisma: PrismaClient)
   )
 }
 
-function buildDefinitionCreate(emulatorId: string, field: GameNativeCustomFieldSeed) {
+function buildDefinitionCreate(
+  emulatorId: string,
+  field: GameNativeCustomFieldSeed,
+  categoryIdByName: ReadonlyMap<string, string>,
+) {
   const { options, defaultValue, placeholder, ...base } = field
+  const categoryConfig = GAMENATIVE_FIELD_CATEGORY_CONFIG[field.name]
 
   return {
     emulatorId,
+    categoryId: resolveCategoryId(field.name, categoryConfig?.categoryName, categoryIdByName),
     name: base.name,
     label: base.label,
     type: base.type,
@@ -458,13 +514,19 @@ function buildDefinitionCreate(emulatorId: string, field: GameNativeCustomFieldS
     rangeUnit: null,
     isRequired: base.required,
     displayOrder: base.displayOrder,
+    categoryOrder: categoryConfig?.categoryOrder ?? 0,
   }
 }
 
-function buildDefinitionUpdate(field: GameNativeCustomFieldSeed) {
+function buildDefinitionUpdate(
+  field: GameNativeCustomFieldSeed,
+  categoryIdByName: ReadonlyMap<string, string>,
+) {
   const { options, defaultValue, placeholder, ...base } = field
+  const categoryConfig = GAMENATIVE_FIELD_CATEGORY_CONFIG[field.name]
 
   return {
+    categoryId: resolveCategoryId(field.name, categoryConfig?.categoryName, categoryIdByName),
     label: base.label,
     type: base.type,
     options: normalizeJsonInput(options),
@@ -476,7 +538,23 @@ function buildDefinitionUpdate(field: GameNativeCustomFieldSeed) {
     rangeUnit: null,
     isRequired: base.required,
     displayOrder: base.displayOrder,
+    categoryOrder: categoryConfig?.categoryOrder ?? 0,
   }
+}
+
+function resolveCategoryId(
+  fieldName: string,
+  categoryName: string | undefined,
+  categoryIdByName: ReadonlyMap<string, string>,
+) {
+  if (!categoryName) return null
+
+  const categoryId = categoryIdByName.get(categoryName)
+  if (!categoryId) {
+    throw new Error(`Missing GameNative custom field category "${categoryName}" for ${fieldName}`)
+  }
+
+  return categoryId
 }
 
 function normalizeJsonInput(

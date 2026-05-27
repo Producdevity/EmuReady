@@ -3,6 +3,7 @@ import {
   CreateCpuSchema,
   DeleteCpuSchema,
   GetCpuByIdSchema,
+  GetCpuOptionsSchema,
   GetCpusByIdsSchema,
   GetCpusSchema,
   UpdateCpuSchema,
@@ -19,6 +20,11 @@ export const cpusRouter = createTRPCRouter({
   get: publicProcedure.input(GetCpusSchema).query(async ({ ctx, input }) => {
     const repository = new CpusRepository(ctx.prisma)
     return repository.list(input ?? {})
+  }),
+
+  options: publicProcedure.input(GetCpuOptionsSchema).query(async ({ ctx, input }) => {
+    const repository = new CpusRepository(ctx.prisma)
+    return repository.options(input ?? {})
   }),
 
   byId: publicProcedure.input(GetCpuByIdSchema).query(async ({ ctx, input }) => {

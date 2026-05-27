@@ -3,6 +3,7 @@ import {
   CreateSoCSchema,
   DeleteSoCSchema,
   GetSoCByIdSchema,
+  GetSoCOptionsSchema,
   GetSoCsSchema,
   UpdateSoCSchema,
   GetSoCsByIdsSchema,
@@ -33,13 +34,18 @@ export const socsRouter = createTRPCRouter({
     const pagination = paginate({
       total: total,
       page: page ?? Math.floor(actualOffset / limit) + 1,
-      limit: limit,
+      limit,
     })
 
     return {
       socs,
       pagination,
     }
+  }),
+
+  options: publicProcedure.input(GetSoCOptionsSchema).query(async ({ ctx, input }) => {
+    const repository = new SoCsRepository(ctx.prisma)
+    return repository.options(input ?? {})
   }),
 
   byId: publicProcedure.input(GetSoCByIdSchema).query(async ({ ctx, input }) => {

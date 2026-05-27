@@ -9,6 +9,7 @@ import { HOME_PAGE_LIMITS } from '@/data/constants'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { ms } from '@/utils/time'
 import { TimeRangeTabs, type TimeRangeId } from './TimeRangeTabs'
 
 const TIME_RANGE_LABELS: Record<TimeRangeId, string> = {
@@ -18,9 +19,15 @@ const TIME_RANGE_LABELS: Record<TimeRangeId, string> = {
 }
 
 export function HomeTrendingDevices() {
-  const trendingDevicesQuery = api.devices.trendingSummary.useQuery({
-    limit: HOME_PAGE_LIMITS.TRENDING_DEVICES,
-  })
+  const trendingDevicesQuery = api.devices.trendingSummary.useQuery(
+    {
+      limit: HOME_PAGE_LIMITS.TRENDING_DEVICES,
+    },
+    {
+      staleTime: ms.hours(6),
+      gcTime: ms.hours(12),
+    },
+  )
 
   const [activeTimeRange, setActiveTimeRange] = useState<TimeRangeId>('thisMonth')
 

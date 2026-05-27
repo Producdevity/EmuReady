@@ -3,7 +3,14 @@ import { ResourceError } from '@/lib/errors'
 import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
 import { Prisma } from '@orm/client'
 import { BaseRepository } from './base.repository'
-import type { GetCpusInput, CreateCpuInput, UpdateCpuInput } from '@/schemas/cpu'
+import type {
+  GetCpusInput,
+  GetCpuOptionsInput,
+  CreateCpuInput,
+  UpdateCpuInput,
+} from '@/schemas/cpu'
+
+type CpuOptionFilters = NonNullable<GetCpuOptionsInput>
 
 /**
  * Repository for CPU data access
@@ -28,6 +35,14 @@ export class CpusRepository extends BaseRepository {
       brand: { select: { id: true, name: true } },
       _count: { select: { pcListings: true } },
     } satisfies Prisma.CpuInclude,
+  } as const
+
+  static readonly selects = {
+    option: {
+      id: true,
+      modelName: true,
+      brand: { select: { id: true, name: true } },
+    } satisfies Prisma.CpuSelect,
   } as const
 
   async byId(
@@ -84,11 +99,9 @@ export class CpusRepository extends BaseRepository {
     id: string,
     data: Partial<UpdateCpuInput>,
   ): Promise<Prisma.CpuGetPayload<{ include: typeof CpusRepository.includes.default }>> {
-    // Check if CPU exists
     const cpu = await this.byId(id)
     if (!cpu) throw ResourceError.cpu.notFound()
 
-    // Validate brand exists if being updated
     if (data.brandId) {
       const brand = await this.prisma.deviceBrand.findUnique({
         where: { id: data.brandId },
@@ -96,7 +109,6 @@ export class CpusRepository extends BaseRepository {
       if (!brand) throw ResourceError.deviceBrand.notFound()
     }
 
-    // Check for duplicate model name if being updated
     if (data.modelName) {
       const exists = await this.existsByModelName(data.modelName, id)
       if (exists) throw ResourceError.cpu.alreadyExists(data.modelName)
@@ -170,6 +182,26 @@ export class CpusRepository extends BaseRepository {
       where: { id: { in: ids } },
       include: CpusRepository.includes.limited,
     })
+  }
+
+  async options(filters: CpuOptionFilters = {}): Promise<{
+    cpus: Prisma.CpuGetPayload<{ select: typeof CpusRepository.selects.option }>[]
+    hasMore: boolean
+  }> {
+    const limit = filters.limit ?? 50
+    const offset = filters.offset ?? 0
+    const cpus = await this.prisma.cpu.findMany({
+      where: this.buildWhereClause(filters.search, filters.brandId),
+      select: CpusRepository.selects.option,
+      orderBy: [{ brand: { name: this.sortOrder } }, { modelName: this.sortOrder }],
+      take: limit + 1,
+      skip: offset,
+    })
+
+    return {
+      cpus: cpus.slice(0, limit),
+      hasMore: cpus.length > limit,
+    }
   }
 
   /**

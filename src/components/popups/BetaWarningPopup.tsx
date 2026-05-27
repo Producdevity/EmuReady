@@ -4,6 +4,7 @@ import { AlertTriangle, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Modal } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
+import { env } from '@/lib/env'
 
 const discordUrl = process.env.NEXT_PUBLIC_DISCORD_LINK
 
@@ -11,8 +12,7 @@ export function BetaWarningPopup() {
   const [isOpen, setIsOpen] = useState(false)
 
   useEffect(() => {
-    // Only show in production
-    if (process.env.NODE_ENV !== 'production') return
+    if (!env.IS_PUBLIC_PRODUCTION) return
 
     // Don't show on admin pages
     if (window.location.pathname.startsWith('/admin')) return
@@ -34,7 +34,7 @@ export function BetaWarningPopup() {
     setIsOpen(false)
   }
 
-  if (process.env.NODE_ENV !== 'production' || !isOpen) return null
+  if (!env.IS_PUBLIC_PRODUCTION || !isOpen) return null
 
   return (
     <Modal isOpen={isOpen} onClose={handleDismiss} hideCloseButton={true} className="max-w-lg">

@@ -1,12 +1,10 @@
 'use client'
 
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Joystick, MonitorSmartphone, Cpu, Gamepad, Rocket } from 'lucide-react'
 import { ActiveFiltersSummary, ListingsSearchBar } from '@/app/listings/shared/components'
 import { buildActiveFilterItems } from '@/app/listings/shared/utils/buildActiveFilterItems'
 import { MultiSelect } from '@/components/ui'
-import AsyncDeviceMultiSelect from '@/components/ui/form/AsyncDeviceMultiSelect'
-import AsyncSocMultiSelect from '@/components/ui/form/AsyncSocMultiSelect'
 import {
   performanceOptions,
   deviceOptions,
@@ -14,6 +12,8 @@ import {
   systemOptions,
   emulatorOptions,
 } from '@/utils/options'
+import AsyncDeviceFilterSelect from './filters/AsyncDeviceFilterSelect'
+import AsyncSocFilterSelect from './filters/AsyncSocFilterSelect'
 
 interface Props {
   systemIds: string[]
@@ -77,7 +77,7 @@ export default function ListingsFiltersContent(props: Props) {
       />
 
       {ENABLE_ASYNC_LISTINGS ? (
-        <AsyncDeviceMultiSelect
+        <AsyncDeviceFilterSelect
           label="Devices"
           leftIcon={<MonitorSmartphone className="w-5 h-5" />}
           value={props.deviceIds}
@@ -99,7 +99,7 @@ export default function ListingsFiltersContent(props: Props) {
       )}
 
       {ENABLE_ASYNC_LISTINGS ? (
-        <AsyncSocMultiSelect
+        <AsyncSocFilterSelect
           label="SoCs"
           leftIcon={<Cpu className="w-5 h-5" />}
           value={props.socIds}
@@ -142,23 +142,19 @@ export default function ListingsFiltersContent(props: Props) {
         maxDisplayed={1}
       />
 
-      {props.showActiveFilters && props.onClearAll && (
-        <AnimatePresence>
-          {hasActiveFilters && (
-            <ActiveFiltersSummary
-              showClearAll
-              onClearAll={props.onClearAll}
-              items={buildActiveFilterItems({
-                searchTerm: props.searchTerm,
-                systemIds: props.systemIds,
-                deviceIds: props.deviceIds,
-                socIds: props.socIds,
-                emulatorIds: props.emulatorIds,
-                performanceIds: props.performanceIds,
-              })}
-            />
-          )}
-        </AnimatePresence>
+      {props.showActiveFilters && props.onClearAll && hasActiveFilters && (
+        <ActiveFiltersSummary
+          showClearAll
+          onClearAll={props.onClearAll}
+          items={buildActiveFilterItems({
+            searchTerm: props.searchTerm,
+            systemIds: props.systemIds,
+            deviceIds: props.deviceIds,
+            socIds: props.socIds,
+            emulatorIds: props.emulatorIds,
+            performanceIds: props.performanceIds,
+          })}
+        />
       )}
     </motion.div>
   )
