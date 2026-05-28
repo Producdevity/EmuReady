@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, type FormEvent } from 'react'
+import { useState, useEffect, type SubmitEvent } from 'react'
 import { Button, Input, Modal, Autocomplete } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
@@ -39,7 +39,7 @@ function CpuModal(props: Props) {
     setSuccess('')
   }, [props.cpuData, props.isOpen])
 
-  const handleSubmit = async (ev: FormEvent) => {
+  const handleSubmit = async (ev: SubmitEvent) => {
     ev.preventDefault()
     setError('')
     setSuccess('')

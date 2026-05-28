@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, type FormEvent, type ChangeEvent } from 'react'
+import { useState, useEffect, type SubmitEvent, type ChangeEvent } from 'react'
 import { Button, Input, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type ReportStatusType } from '@/schemas/listingReport'
@@ -49,8 +49,8 @@ function ReportStatusModal(props: Props) {
     }
   }, [props.isOpen, props.report])
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (ev: SubmitEvent) => {
+    ev.preventDefault()
     if (!props.report) return
 
     setError('')

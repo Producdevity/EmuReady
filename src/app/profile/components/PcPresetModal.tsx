@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState, useEffect, type FormEvent } from 'react'
+import { useCallback, useState, useEffect, type SubmitEvent } from 'react'
 import { Button, Input, Modal, Autocomplete, SelectInput } from '@/components/ui'
 import { PC_OS_OPTIONS } from '@/data/pc-os'
 import { api } from '@/lib/api'
@@ -101,7 +101,7 @@ function PcPresetModal(props: Props) {
     setSuccess('')
   }, [props.preset, props.isOpen])
 
-  const handleSubmit = async (ev: FormEvent) => {
+  const handleSubmit = async (ev: SubmitEvent) => {
     ev.preventDefault()
     setError('')
     setSuccess('')
