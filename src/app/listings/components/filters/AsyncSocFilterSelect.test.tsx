@@ -18,6 +18,20 @@ vi.mock('@/lib/api', () => ({
 
 let AsyncSocFilterSelect: typeof AsyncSocFilterSelectComponent
 
+const OPTION_SOC = {
+  id: 'soc-1',
+  name: 'Snapdragon 8 Gen 2',
+  manufacturer: 'Qualcomm',
+} as const
+const SELECTED_SOC = {
+  id: 'soc-selected',
+  name: 'Dimensity 1100',
+  manufacturer: 'MediaTek',
+} as const
+const SOC_LABEL = 'SoCs'
+const OPTION_SOC_LABEL = `${OPTION_SOC.manufacturer} ${OPTION_SOC.name}`
+const SELECTED_SOC_LABEL = `${SELECTED_SOC.manufacturer} ${SELECTED_SOC.name}`
+
 interface IdsInput {
   ids: string[]
 }
@@ -49,7 +63,7 @@ function setupApiMocks() {
 
       return descriptors.map(() => ({
         data: {
-          socs: [{ id: 'soc-1', name: 'Snapdragon 8 Gen 2', manufacturer: 'Qualcomm' }],
+          socs: [OPTION_SOC],
           hasMore: false,
         },
         isFetching: false,
@@ -59,8 +73,8 @@ function setupApiMocks() {
   apiMocks.socsGetByIdsUseQuery.mockImplementation((input: IdsInput) => ({
     data: input.ids.map((id) => ({
       id,
-      name: 'Dimensity 1100',
-      manufacturer: 'MediaTek',
+      name: SELECTED_SOC.name,
+      manufacturer: SELECTED_SOC.manufacturer,
     })),
   }))
 }
@@ -76,10 +90,10 @@ describe('AsyncSocFilterSelect', () => {
   })
 
   it('maps SoC option and selected labels', () => {
-    render(<AsyncSocFilterSelect label="SoCs" value={['soc-selected']} onChange={vi.fn()} />)
+    render(<AsyncSocFilterSelect label={SOC_LABEL} value={[SELECTED_SOC.id]} onChange={vi.fn()} />)
 
-    expect(screen.getByText('MediaTek Dimensity 1100')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'SoCs multi-select' }))
-    expect(screen.getByText('Qualcomm Snapdragon 8 Gen 2')).toBeInTheDocument()
+    expect(screen.getByText(SELECTED_SOC_LABEL)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: `${SOC_LABEL} multi-select` }))
+    expect(screen.getByText(OPTION_SOC_LABEL)).toBeInTheDocument()
   })
 })
