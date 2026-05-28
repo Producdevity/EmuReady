@@ -587,7 +587,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
             !showMinCharsMessage &&
             suggestions.map((item, idx) => {
               const itemValue = optionToValue(item)
-              const safeId = `option-${String(itemValue).replace(/[^A-Za-z0-9_-]/g, '_')}`
+              const safeId = `option-${idx}-${String(itemValue).replace(/[^A-Za-z0-9_-]/g, '_')}`
               const isHighlighted = idx === highlightedIndex
               return (
                 <li
