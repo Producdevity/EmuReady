@@ -3,7 +3,8 @@ import analytics from '@/lib/analytics'
 import { ResourceError } from '@/lib/errors'
 import { prisma } from '@/server/db'
 import { validateData } from '@/server/utils/validation'
-import { TrustAction, type Prisma } from '@orm/client'
+import { TrustAction } from '@orm'
+import { type Prisma } from '@orm/client'
 import { TRUST_ACTIONS, TRUST_CONFIG, getTrustLevel, hasTrustLevel } from './config'
 
 const UNKNOWN_TRUST_LEVEL_NAME = 'Unranked'
@@ -94,7 +95,6 @@ export async function applyTrustAction(params: ApplyTrustActionParams): Promise<
 /**
  * Reverses the trust impact of a previously applied trust action.
  * Applies the negative of the original action's weight.
- * TODO: figure out if we should use this
  */
 export async function reverseTrustAction(params: {
   userId: string

@@ -1,6 +1,5 @@
 'use client'
 
-import { useUser } from '@clerk/nextjs'
 import { Flag } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui'
@@ -9,18 +8,15 @@ import ReportListingModal from './ReportListingModal'
 interface Props {
   listingId: string
   authorId: string
+  currentUserId?: string | null
   onSuccess?: () => void
 }
 
 function ReportListingButton(props: Props) {
-  const { user } = useUser()
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Don't show report button if user is not logged in
-  if (!user?.id) return null
-
-  // Don't show report button if the user is the author
-  if (user.id === props.authorId) return null
+  if (!props.currentUserId) return null
+  if (props.currentUserId === props.authorId) return null
 
   const handleSuccess = () => {
     setIsModalOpen(false)
