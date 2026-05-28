@@ -24,7 +24,6 @@ const eslintConfig = [
     ignores: [
       '*.log',
       '*.tsbuildinfo',
-      '.claude/**',
       '.clerk/**',
       '.husky/**',
       '.idea/**',
@@ -36,7 +35,6 @@ const eslintConfig = [
       'next-env.d.ts',
       'next-env.d.ts',
       'node_modules/**',
-      'notes/**',
       'notes/**',
       'out/**',
       'prisma/generated/**',
@@ -112,6 +110,7 @@ const eslintConfig = [
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     settings: {
+      'import/internal-regex': '^(@/|~/|@orm(?:/.*)?$)',
       'import/resolver': {
         typescript: { project: './tsconfig.json' },
         node: { extensions: ['.js', '.jsx', '.ts', '.tsx'] },
@@ -128,6 +127,8 @@ const eslintConfig = [
           pathGroups: [
             { pattern: '@/**', group: 'internal', position: 'before' },
             { pattern: '~/**', group: 'internal', position: 'before' },
+            { pattern: '@orm', group: 'internal', position: 'after' },
+            { pattern: '@orm/**', group: 'internal', position: 'after' },
             { pattern: './**.module.css', group: 'sibling', position: 'after' },
             { pattern: './**.css', group: 'sibling', position: 'after' },
           ],
