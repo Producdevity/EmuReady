@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { TrustAction } from '@orm'
+import type { TrustPrismaTransaction } from './service'
 
 vi.mock('@/lib/analytics', () => ({
   default: {
@@ -38,7 +39,7 @@ describe('canUserAutoApprove', () => {
     prismaCtx.user.findUnique.mockResolvedValue({ trustScore: 250 })
     const { canUserAutoApprove } = await import('./service')
 
-    const result = await canUserAutoApprove('user-1', prismaCtx as never)
+    const result = await canUserAutoApprove('user-1', prismaCtx)
 
     expect(result).toBe(true)
     expect(prismaCtx.user.findUnique).toHaveBeenCalledWith({
@@ -51,7 +52,7 @@ describe('canUserAutoApprove', () => {
     prismaCtx.user.findUnique.mockResolvedValue(null)
     const { canUserAutoApprove } = await import('./service')
 
-    await expect(canUserAutoApprove('missing-user', prismaCtx as never)).resolves.toBe(false)
+    await expect(canUserAutoApprove('missing-user', prismaCtx)).resolves.toBe(false)
   })
 })
 
@@ -65,7 +66,7 @@ describe('TrustService.applyBulkManualAdjustments', () => {
 
   async function createService() {
     const { TrustService } = await import('./service')
-    return new TrustService(prismaCtx as never)
+    return new TrustService(prismaCtx)
   }
 
   it('returns 0 and makes no DB calls for an empty map', async () => {
@@ -275,9 +276,11 @@ describe('TrustService.applyBulkManualAdjustments', () => {
   })
 
   it('wraps in $transaction when prisma has it', async () => {
-    const mockTransaction = vi.fn(async (fn: (ctx: MockPrismaCtx) => Promise<number>) =>
-      fn(prismaCtx),
-    )
+    let transactionCallCount = 0
+    const mockTransaction = async <T>(fn: (ctx: TrustPrismaTransaction) => Promise<T>) => {
+      transactionCallCount++
+      return fn(prismaCtx)
+    }
     const prismaWithTx = {
       ...prismaCtx,
       $transaction: mockTransaction,
@@ -287,7 +290,7 @@ describe('TrustService.applyBulkManualAdjustments', () => {
     prismaCtx.user.findUnique.mockResolvedValue({ name: 'Admin', email: 'admin@test.com' })
 
     const { TrustService } = await import('./service')
-    const service = new TrustService(prismaWithTx as never)
+    const service = new TrustService(prismaWithTx)
 
     await service.applyBulkManualAdjustments({
       adjustments: new Map([['user-1', 5]]),
@@ -295,7 +298,7 @@ describe('TrustService.applyBulkManualAdjustments', () => {
       adminUserId: 'admin-1',
     })
 
-    expect(mockTransaction).toHaveBeenCalledTimes(1)
+    expect(transactionCallCount).toBe(1)
   })
 
   it('calls execute directly when prisma is a transaction client (no $transaction)', async () => {
@@ -379,7 +382,7 @@ describe('TrustService.applyManualAdjustment', () => {
 
   async function createService() {
     const { TrustService } = await import('./service')
-    return new TrustService(prismaCtx as never)
+    return new TrustService(prismaCtx)
   }
 
   it('throws when adjustment is zero', async () => {
@@ -468,7 +471,7 @@ describe('TrustService.reverseLogAction', () => {
 
   async function createService() {
     const { TrustService } = await import('./service')
-    return new TrustService(prismaCtx as never)
+    return new TrustService(prismaCtx)
   }
 
   it('negates positive action weight (LISTING_RECEIVED_UPVOTE: +2 → -2)', async () => {
@@ -570,14 +573,16 @@ describe('TrustService.reverseLogAction', () => {
   })
 
   it('wraps in $transaction when prisma has it', async () => {
-    const mockTransaction = vi.fn(async (fn: (ctx: MockPrismaCtx) => Promise<void>) =>
-      fn(prismaCtx),
-    )
+    let transactionCallCount = 0
+    const mockTransaction = async <T>(fn: (ctx: TrustPrismaTransaction) => Promise<T>) => {
+      transactionCallCount++
+      return fn(prismaCtx)
+    }
     const prismaWithTx = { ...prismaCtx, $transaction: mockTransaction }
     prismaCtx.user.findUnique.mockResolvedValue({ trustScore: 10 })
 
     const { TrustService } = await import('./service')
-    const service = new TrustService(prismaWithTx as never)
+    const service = new TrustService(prismaWithTx)
 
     await service.reverseLogAction({
       userId: 'user-1',
@@ -585,7 +590,7 @@ describe('TrustService.reverseLogAction', () => {
       metadata: {},
     })
 
-    expect(mockTransaction).toHaveBeenCalledTimes(1)
+    expect(transactionCallCount).toBe(1)
   })
 
   it('calls execute directly when prisma is a transaction client (no $transaction)', async () => {

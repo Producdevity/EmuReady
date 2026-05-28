@@ -3,7 +3,7 @@ import analytics from '@/lib/analytics'
 import { ResourceError } from '@/lib/errors'
 import { prisma } from '@/server/db'
 import { validateData } from '@/server/utils/validation'
-import { TrustAction, type Prisma, type PrismaClient } from '@orm/client'
+import { TrustAction, type Prisma } from '@orm/client'
 import { TRUST_ACTIONS, TRUST_CONFIG, getTrustLevel, hasTrustLevel } from './config'
 
 const UNKNOWN_TRUST_LEVEL_NAME = 'Unranked'
@@ -29,7 +29,9 @@ interface ApplyTrustActionParams {
   context?: TrustActionContext
 }
 
-type PrismaClientOrTransaction = PrismaClient | Prisma.TransactionClient
+interface AutoApprovalPrismaClient {
+  user: Pick<Prisma.TransactionClient['user'], 'findUnique'>
+}
 
 export async function applyTrustAction(params: ApplyTrustActionParams): Promise<void> {
   const { userId, action, context = {} } = params
@@ -92,6 +94,7 @@ export async function applyTrustAction(params: ApplyTrustActionParams): Promise<
 /**
  * Reverses the trust impact of a previously applied trust action.
  * Applies the negative of the original action's weight.
+ * TODO: figure out if we should use this
  */
 export async function reverseTrustAction(params: {
   userId: string
@@ -164,7 +167,7 @@ export async function reverseTrustAction(params: {
 
 export async function canUserAutoApprove(
   userId: string,
-  prismaClient: PrismaClientOrTransaction = prisma,
+  prismaClient: AutoApprovalPrismaClient = prisma,
 ): Promise<boolean> {
   const user = await prismaClient.user.findUnique({
     where: { id: userId },
@@ -236,10 +239,14 @@ export async function applyMonthlyActiveBonus(): Promise<{
   return { processedUsers, errors }
 }
 
-type PrismaTransaction = Omit<
-  PrismaClient,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->
+export interface TrustPrismaTransaction {
+  user: Pick<Prisma.TransactionClient['user'], 'findUnique' | 'findMany' | 'update'>
+  trustActionLog: Pick<Prisma.TransactionClient['trustActionLog'], 'create' | 'createMany'>
+}
+
+export type TrustPrismaClient = TrustPrismaTransaction & {
+  $transaction?<T>(fn: (tx: TrustPrismaTransaction) => Promise<T>): Promise<T>
+}
 
 /**
  * TrustService class for managing trust actions.
@@ -247,7 +254,7 @@ type PrismaTransaction = Omit<
  * TransactionClient (participates in an outer transaction).
  */
 export class TrustService {
-  constructor(private readonly prisma: PrismaClient | PrismaTransaction) {}
+  constructor(private readonly prisma: TrustPrismaClient) {}
 
   async logAction(params: {
     userId: string
@@ -263,7 +270,7 @@ export class TrustService {
 
     const weight = TRUST_ACTIONS[action].weight
 
-    const executeInTransaction = async (prismaCtx: PrismaTransaction) => {
+    const executeInTransaction = async (prismaCtx: TrustPrismaTransaction) => {
       const currentUser = await prismaCtx.user.findUnique({
         where: { id: userId },
         select: { trustScore: true },
@@ -311,7 +318,7 @@ export class TrustService {
       }
     }
 
-    if ('$transaction' in this.prisma) {
+    if (this.prisma.$transaction) {
       await this.prisma.$transaction(executeInTransaction)
     } else {
       await executeInTransaction(this.prisma)
@@ -333,7 +340,7 @@ export class TrustService {
     const reversalWeight = -TRUST_ACTIONS[originalAction].weight
     if (reversalWeight === 0) return
 
-    const executeInTransaction = async (prismaCtx: PrismaTransaction) => {
+    const executeInTransaction = async (prismaCtx: TrustPrismaTransaction) => {
       const currentUser = await prismaCtx.user.findUnique({
         where: { id: userId },
         select: { trustScore: true },
@@ -381,7 +388,7 @@ export class TrustService {
       }
     }
 
-    if ('$transaction' in this.prisma) {
+    if (this.prisma.$transaction) {
       await this.prisma.$transaction(executeInTransaction)
     } else {
       await executeInTransaction(this.prisma)
@@ -400,7 +407,7 @@ export class TrustService {
       throw ResourceError.trust.adjustmentCannotBeZero()
     }
 
-    const executeAdjustment = async (prismaCtx: PrismaTransaction) => {
+    const executeAdjustment = async (prismaCtx: TrustPrismaTransaction) => {
       const currentUser = await prismaCtx.user.findUnique({
         where: { id: userId },
         select: { trustScore: true, name: true, email: true },
@@ -464,7 +471,7 @@ export class TrustService {
       }
     }
 
-    if ('$transaction' in this.prisma) {
+    if (this.prisma.$transaction) {
       await this.prisma.$transaction(executeAdjustment)
     } else {
       await executeAdjustment(this.prisma)
@@ -483,7 +490,7 @@ export class TrustService {
 
     const userIds = nonZeroEntries.map(([id]) => id)
 
-    const executeBulk = async (prismaCtx: PrismaTransaction) => {
+    const executeBulk = async (prismaCtx: TrustPrismaTransaction) => {
       const users = await prismaCtx.user.findMany({
         where: { id: { in: userIds } },
         select: { id: true, trustScore: true },
@@ -571,7 +578,7 @@ export class TrustService {
       return foundEntries.length
     }
 
-    if ('$transaction' in this.prisma) {
+    if (this.prisma.$transaction) {
       return this.prisma.$transaction(executeBulk)
     }
     return executeBulk(this.prisma)
