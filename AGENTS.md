@@ -15,7 +15,9 @@ This file is the source of working guidance for AI coding agents in this reposit
   - `pnpm prisma validate` validates the schema.
   - Database-backed Prisma commands must use the project scripts that wrap `scripts/db-cmd.sh` when available.
 - Do not run `pnpm dev`, `pnpm build`, `pnpm start`, `pnpm run deploy`, migrations, seeds, or data scripts unless the user explicitly asks.
-- Never deploy, commit, or push unless the user explicitly asks.
+- Never deploy, commit, or push unless the user explicitly asks for that exact
+  action. Requests to fix a PR, update a PR, address review comments, check CI,
+  or prepare changes do not imply permission to commit or push.
 - Use the current git user as commit author; never add Codex/AI authorship or AI-themed branch names.
 
 ## Domain Rules
@@ -60,6 +62,8 @@ This file is the source of working guidance for AI coding agents in this reposit
 - Use generated Prisma types where appropriate.
 - Do not add unused functions, exports, or speculative helpers.
 - Remove dead code when refactoring.
+- Do not remove or rewrite existing TODO comments unless the user explicitly
+  asks, or unless the TODO is directly made obsolete by the code change.
 - Prefer function declarations for top-level functions/components.
 - Component props interfaces should be named `Props`.
 - Do not destructure component props in function parameters; use `props.foo`.
