@@ -292,4 +292,33 @@ describe('checkSpamContent', () => {
       )
     }
   })
+
+  it('does not issue an impossible challenge when human verification is not configured', async () => {
+    vi.spyOn(SpamDetectionService.prototype, 'detectSpam').mockResolvedValue({
+      isSpam: true,
+      confidence: 0.85,
+      method: 'pattern_matching',
+      reason: 'Spam pattern matched',
+    })
+    vi.mocked(isTurnstileConfigured).mockReturnValue(false)
+
+    try {
+      await checkSpamContent({
+        prisma: mockPrisma,
+        userId: USER_ID,
+        content: 'Flagged content',
+        entityType: 'comment',
+        challengeMode: 'challenge',
+      })
+      throw new Error('Expected checkSpamContent to throw')
+    } catch (error) {
+      expect(error).toBeInstanceOf(TRPCError)
+      expect((error as TRPCError).code).toBe('INTERNAL_SERVER_ERROR')
+      expect((error as TRPCError).cause).toEqual(
+        expect.objectContaining({
+          code: HUMAN_VERIFICATION_ERROR_CODES.UNAVAILABLE,
+        }),
+      )
+    }
+  })
 })
