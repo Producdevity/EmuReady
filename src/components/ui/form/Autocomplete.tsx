@@ -490,6 +490,9 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
   const dropdownVisible =
     isOpen && (suggestions.length > 0 || showNoResults || showMinCharsMessage || isLoading)
 
+  const createSafeId = (itemValue: string, idx: number) =>
+    `option-${idx}-${String(itemValue).replace(/[^A-Za-z0-9_-]/g, '_')}`
+
   return (
     <div className={cn('relative', className)}>
       {label && (
@@ -531,10 +534,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
           aria-controls={isOpen ? 'autocomplete-list' : undefined}
           aria-activedescendant={
             highlightedIndex >= 0 && suggestions[highlightedIndex]
-              ? `option-${String(optionToValue(suggestions[highlightedIndex])).replace(
-                  /[^A-Za-z0-9_-]/g,
-                  '_',
-                )}`
+              ? createSafeId(optionToValue(suggestions[highlightedIndex]), highlightedIndex)
               : undefined
           }
         />
@@ -587,7 +587,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
             !showMinCharsMessage &&
             suggestions.map((item, idx) => {
               const itemValue = optionToValue(item)
-              const safeId = `option-${idx}-${String(itemValue).replace(/[^A-Za-z0-9_-]/g, '_')}`
+              const safeId = createSafeId(itemValue, idx)
               const isHighlighted = idx === highlightedIndex
               return (
                 <li
