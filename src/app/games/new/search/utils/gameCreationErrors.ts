@@ -1,5 +1,6 @@
 import { toast } from 'sonner'
 import { APP_ERROR_CODES, type AppErrorCode } from '@/lib/errors'
+import { getAppErrorData } from '@/lib/trpc-client-errors'
 import getErrorMessage from '@/utils/getErrorMessage'
 
 export type GameCreationErrorResult =
@@ -14,13 +15,19 @@ interface ErrorCause {
   reportsNeeded?: number
 }
 
-/**
- * Extracts the error cause from a tRPC error.
- * tRPC wraps errors, so we need to check both direct and nested cause.
- */
+function isAppErrorCode(value: unknown): value is AppErrorCode {
+  return typeof value === 'string' && Object.values(APP_ERROR_CODES).some((code) => code === value)
+}
+
 function getErrorCause(error: unknown): ErrorCause | undefined {
-  const err = error as { cause?: ErrorCause; data?: { cause?: ErrorCause } }
-  return err?.cause ?? err?.data?.cause
+  const payload = getAppErrorData(error)
+  if (!payload) return undefined
+
+  return {
+    code: isAppErrorCode(payload.code) ? payload.code : undefined,
+    existingGameId: typeof payload.existingGameId === 'string' ? payload.existingGameId : undefined,
+    reportsNeeded: typeof payload.reportsNeeded === 'number' ? payload.reportsNeeded : undefined,
+  }
 }
 
 /**

@@ -329,3 +329,23 @@ All error methods throw `TRPCError` instances with the appropriate HTTP status c
 - `INTERNAL_SERVER_ERROR` → 500
 
 The errors are automatically handled by TRPC and sent to the client with proper HTTP status codes and error messages.
+
+## Structured Error Data on the Client
+
+Pass a plain object as the error `cause` to send machine-readable data alongside the message, and read it on the client with `getAppErrorData` (`@/lib/trpc-client-errors`):
+
+```typescript
+// Server
+AppError.conflict('Game already exists', {
+  code: APP_ERROR_CODES.GAME_ALREADY_EXISTS,
+  existingGameId,
+})
+
+// Client
+const appError = getAppErrorData(error)
+if (appError?.code === APP_ERROR_CODES.GAME_ALREADY_EXISTS) {
+  // ...use appError.existingGameId
+}
+```
+
+`cause` fields must be plain JSON values (no nested `Error` instances).
