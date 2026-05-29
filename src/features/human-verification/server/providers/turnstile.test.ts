@@ -12,6 +12,14 @@ afterEach(() => {
 describe('turnstile provider', () => {
   it('reports whether Turnstile is configured', () => {
     vi.stubEnv('TURNSTILE_SECRET_KEY', '')
+    vi.stubEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY', '')
+    expect(isTurnstileConfigured()).toBe(false)
+
+    vi.stubEnv('TURNSTILE_SECRET_KEY', 'secret')
+    expect(isTurnstileConfigured()).toBe(false)
+
+    vi.stubEnv('TURNSTILE_SECRET_KEY', '')
+    vi.stubEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY', 'site-key')
     expect(isTurnstileConfigured()).toBe(false)
 
     vi.stubEnv('TURNSTILE_SECRET_KEY', 'secret')

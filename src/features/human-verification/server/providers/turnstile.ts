@@ -21,7 +21,9 @@ export interface TurnstileVerificationResult {
 }
 
 export function isTurnstileConfigured(): boolean {
-  return Boolean(process.env.TURNSTILE_SECRET_KEY?.trim())
+  return Boolean(
+    process.env.TURNSTILE_SECRET_KEY?.trim() && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim(),
+  )
 }
 
 export function getRequestIp(headers?: Headers): string | undefined {
