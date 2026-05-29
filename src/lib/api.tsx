@@ -24,7 +24,7 @@ export function TRPCProvider(props: PropsWithChildren) {
             retry: shouldRetryTRPCQuery,
             retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
           },
-          mutations: { retry: 1 },
+          mutations: { retry: false },
         },
       }),
   )
