@@ -34,6 +34,7 @@ interface TurnstileApi {
 declare global {
   interface Window {
     turnstile?: TurnstileApi
+    onloadTurnstileCallback?: () => void
   }
 }
 
@@ -54,8 +55,10 @@ interface PendingRequest {
 
 export function HumanVerificationProvider(props: PropsWithChildren) {
   const [pendingRequest, setPendingRequest] = useState<PendingRequest | null>(null)
-  const [scriptStatus, setScriptStatus] = useState<ScriptStatus>('idle')
-  const widgetContainerRef = useRef<HTMLDivElement | null>(null)
+  const [scriptStatus, setScriptStatus] = useState<ScriptStatus>(() =>
+    typeof window !== 'undefined' && window.turnstile ? 'ready' : 'idle',
+  )
+  const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null)
   const widgetIdRef = useRef<TurnstileWidgetId | null>(null)
   const pendingRequestRef = useRef<PendingRequest | null>(null)
   const turnstileSiteKey = env.TURNSTILE_SITE_KEY
@@ -84,30 +87,23 @@ export function HumanVerificationProvider(props: PropsWithChildren) {
   )
 
   const closeDialog = useCallback(() => {
-    if (widgetIdRef.current && window.turnstile) {
-      window.turnstile.remove(widgetIdRef.current)
-      widgetIdRef.current = null
-    }
     pendingRequestRef.current = null
     setPendingRequest(null)
   }, [])
 
   useEffect(() => {
-    if (
-      !pendingRequest ||
-      scriptStatus !== 'ready' ||
-      !widgetContainerRef.current ||
-      !window.turnstile
-    ) {
-      return
+    if (window.turnstile) return
+    window.onloadTurnstileCallback = () => setScriptStatus('ready')
+    return () => {
+      delete window.onloadTurnstileCallback
     }
+  }, [])
 
-    if (widgetIdRef.current) {
-      window.turnstile.remove(widgetIdRef.current)
-      widgetIdRef.current = null
-    }
+  useEffect(() => {
+    const turnstile = window.turnstile
+    if (!pendingRequest || scriptStatus !== 'ready' || !widgetContainer || !turnstile) return
 
-    const widgetId = window.turnstile.render(widgetContainerRef.current, {
+    const widgetId = turnstile.render(widgetContainer, {
       sitekey: turnstileSiteKey,
       action: pendingRequest.action,
       theme: 'auto',
@@ -127,7 +123,14 @@ export function HumanVerificationProvider(props: PropsWithChildren) {
     })
 
     widgetIdRef.current = widgetId ?? null
-  }, [closeDialog, pendingRequest, scriptStatus, turnstileSiteKey])
+
+    return () => {
+      if (widgetIdRef.current && window.turnstile) {
+        window.turnstile.remove(widgetIdRef.current)
+        widgetIdRef.current = null
+      }
+    }
+  }, [closeDialog, pendingRequest, scriptStatus, turnstileSiteKey, widgetContainer])
 
   const handleOpenChange = (open: boolean) => {
     if (open || !pendingRequest) return
@@ -139,9 +142,8 @@ export function HumanVerificationProvider(props: PropsWithChildren) {
     <HumanVerificationContext.Provider value={requestVerification}>
       {turnstileSiteKey && (
         <Script
-          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onloadTurnstileCallback"
           strategy="afterInteractive"
-          onReady={() => setScriptStatus('ready')}
           onError={() => {
             setScriptStatus('failed')
             pendingRequestRef.current?.reject(new Error('Human verification failed to load.'))
@@ -151,7 +153,7 @@ export function HumanVerificationProvider(props: PropsWithChildren) {
       )}
       {props.children}
       <Dialog open={!!pendingRequest} onOpenChange={handleOpenChange}>
-        <DialogContent title="Human verification" className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Human verification</DialogTitle>
             <DialogDescription>
@@ -162,7 +164,7 @@ export function HumanVerificationProvider(props: PropsWithChildren) {
             {scriptStatus !== 'ready' && (
               <p className="text-sm text-gray-500 dark:text-gray-400">Loading verification...</p>
             )}
-            <div ref={widgetContainerRef} />
+            <div ref={setWidgetContainer} />
           </div>
         </DialogContent>
       </Dialog>
