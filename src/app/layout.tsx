@@ -6,7 +6,6 @@ import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { type Metadata, type Viewport } from 'next'
 import { Inter } from 'next/font/google'
-import Script from 'next/script'
 import { connection } from 'next/server'
 import { Suspense, type PropsWithChildren } from 'react'
 import { Toaster } from 'sonner'
@@ -37,15 +36,6 @@ export default function RootLayout(props: PropsWithChildren) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn(inter.className, 'min-h-screen bg-background font-sans antialiased')}>
-        {env.ENABLE_ANALYTICS && env.GA_ID && (
-          <Script id="google-analytics-dataLayer" strategy="beforeInteractive">
-            {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-              `}
-          </Script>
-        )}
         <ServiceWorkerRegistrar enabled={env.ENABLE_SW} />
         <ClerkBoundary>
           <Providers>
