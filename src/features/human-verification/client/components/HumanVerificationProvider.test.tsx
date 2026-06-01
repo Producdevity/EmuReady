@@ -1,7 +1,15 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { HumanVerificationProvider, useHumanVerification } from './HumanVerificationProvider'
 import { HUMAN_VERIFICATION_ACTION } from '../../shared/constants'
+
+interface ScriptProps {
+  src: string
+  onReady?: () => void
+  onError?: () => void
+}
+
+const scriptProps: ScriptProps[] = []
 
 vi.mock('@/lib/env', () => ({
   env: {
@@ -10,7 +18,8 @@ vi.mock('@/lib/env', () => ({
 }))
 
 vi.mock('next/script', () => ({
-  default: function Script() {
+  default: function Script(props: ScriptProps) {
+    scriptProps.push(props)
     return null
   },
 }))
@@ -35,9 +44,9 @@ function CaptureButton(props: CaptureButtonProps) {
 }
 
 function createTurnstileStub() {
-  const renderWidget = vi.fn<(container: HTMLElement, options: Record<string, unknown>) => string>(
-    () => 'widget-id',
-  )
+  const renderWidget = vi.fn<
+    (container: HTMLElement, options: Record<string, unknown>) => string | undefined
+  >(() => 'widget-id')
   const ready = vi.fn(() => {
     throw new Error('turnstile.ready() must not be called when api.js is loaded async/defer')
   })
@@ -55,9 +64,12 @@ function createTurnstileStub() {
 }
 
 describe('HumanVerificationProvider', () => {
+  beforeEach(() => {
+    scriptProps.length = 0
+  })
+
   afterEach(() => {
     delete window.turnstile
-    delete window.onloadTurnstileCallback
     vi.unstubAllEnvs()
   })
 
@@ -66,7 +78,12 @@ describe('HumanVerificationProvider', () => {
 
     render(
       <HumanVerificationProvider>
-        <CaptureButton onRequest={(promise) => requests.push(promise)} />
+        <CaptureButton
+          onRequest={(promise) => {
+            requests.push(promise)
+            void promise.catch(() => {})
+          }}
+        />
       </HumanVerificationProvider>,
     )
 
@@ -78,20 +95,26 @@ describe('HumanVerificationProvider', () => {
     await expect(requests[1]).rejects.toThrow(/already in progress/i)
   })
 
-  it('becomes ready via onloadTurnstileCallback, renders the widget directly, then resolves with the token', async () => {
+  it('becomes ready from the script onReady callback, renders the widget, then resolves with the token', async () => {
     const stub = createTurnstileStub()
     const requests: Promise<string>[] = []
 
     render(
       <HumanVerificationProvider>
-        <CaptureButton onRequest={(promise) => requests.push(promise)} />
+        <CaptureButton
+          onRequest={(promise) => {
+            requests.push(promise)
+            void promise.catch(() => {})
+          }}
+        />
       </HumanVerificationProvider>,
     )
 
-    expect(typeof window.onloadTurnstileCallback).toBe('function')
-
     window.turnstile = stub.api
-    act(() => window.onloadTurnstileCallback?.())
+    expect(scriptProps[0].src).toBe(
+      'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit',
+    )
+    act(() => scriptProps[0].onReady?.())
 
     fireEvent.click(screen.getByRole('button', { name: /request verification/i }))
 
@@ -101,6 +124,8 @@ describe('HumanVerificationProvider', () => {
     const options = stub.renderWidget.mock.calls[0][1]
     expect(options.sitekey).toBe('site-key')
     expect(options.action).toBe(HUMAN_VERIFICATION_ACTION)
+    expect(options.size).toBe('flexible')
+    expect(options.appearance).toBe('always')
 
     const onToken = options.callback
     if (typeof onToken !== 'function') throw new Error('callback option is not a function')
@@ -119,11 +144,65 @@ describe('HumanVerificationProvider', () => {
       </HumanVerificationProvider>,
     )
 
-    expect(window.onloadTurnstileCallback).toBeUndefined()
-
     fireEvent.click(screen.getByRole('button', { name: /request verification/i }))
 
     expect(stub.renderWidget).toHaveBeenCalledTimes(1)
     expect(stub.ready).not.toHaveBeenCalled()
+  })
+
+  it('rejects when Turnstile cannot render a widget id', async () => {
+    const stub = createTurnstileStub()
+    stub.renderWidget.mockReturnValueOnce(undefined)
+    const requests: Promise<string>[] = []
+
+    render(
+      <HumanVerificationProvider>
+        <CaptureButton
+          onRequest={(promise) => {
+            requests.push(promise)
+            void promise.catch(() => {})
+          }}
+        />
+      </HumanVerificationProvider>,
+    )
+
+    window.turnstile = stub.api
+    act(() => scriptProps[0].onReady?.())
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /request verification/i }))
+      await Promise.resolve()
+    })
+
+    await expect(requests[0]).rejects.toThrow(/failed to render/i)
+  })
+
+  it('rejects when Turnstile render throws', async () => {
+    const stub = createTurnstileStub()
+    stub.renderWidget.mockImplementationOnce(() => {
+      throw new Error('render failed')
+    })
+    const requests: Promise<string>[] = []
+
+    render(
+      <HumanVerificationProvider>
+        <CaptureButton
+          onRequest={(promise) => {
+            requests.push(promise)
+            void promise.catch(() => {})
+          }}
+        />
+      </HumanVerificationProvider>,
+    )
+
+    window.turnstile = stub.api
+    act(() => scriptProps[0].onReady?.())
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /request verification/i }))
+      await Promise.resolve()
+    })
+
+    await expect(requests[0]).rejects.toThrow(/failed to render/i)
   })
 })

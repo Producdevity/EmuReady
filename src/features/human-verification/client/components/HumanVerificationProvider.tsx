@@ -34,7 +34,6 @@ interface TurnstileApi {
 declare global {
   interface Window {
     turnstile?: TurnstileApi
-    onloadTurnstileCallback?: () => void
   }
 }
 
@@ -44,6 +43,8 @@ interface VerificationRequest {
 
 type RequestVerification = (request: VerificationRequest) => Promise<string>
 type ScriptStatus = 'idle' | 'ready' | 'failed'
+
+const VERIFICATION_SCRIPT_LOAD_TIMEOUT_MS = 20_000
 
 const HumanVerificationContext = createContext<RequestVerification | null>(null)
 
@@ -92,37 +93,64 @@ export function HumanVerificationProvider(props: PropsWithChildren) {
   }, [])
 
   useEffect(() => {
-    if (window.turnstile) return
-    window.onloadTurnstileCallback = () => setScriptStatus('ready')
-    return () => {
-      delete window.onloadTurnstileCallback
-    }
-  }, [])
+    if (!pendingRequest || scriptStatus !== 'idle') return
+
+    const timeoutId = window.setTimeout(() => {
+      setScriptStatus('failed')
+      pendingRequest.reject(new Error('Human verification failed to load. Please try again.'))
+      closeDialog()
+    }, VERIFICATION_SCRIPT_LOAD_TIMEOUT_MS)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [closeDialog, pendingRequest, scriptStatus])
 
   useEffect(() => {
     const turnstile = window.turnstile
     if (!pendingRequest || scriptStatus !== 'ready' || !widgetContainer || !turnstile) return
 
-    const widgetId = turnstile.render(widgetContainer, {
-      sitekey: turnstileSiteKey,
-      action: pendingRequest.action,
-      theme: 'auto',
-      callback: (token: string) => {
-        pendingRequest.resolve(token)
-        closeDialog()
-      },
-      'error-callback': () => {
-        pendingRequest.reject(new Error('Human verification failed. Please try again.'))
-        closeDialog()
-      },
-      'expired-callback': () => {
-        if (widgetIdRef.current && window.turnstile) {
-          window.turnstile.reset(widgetIdRef.current)
-        }
-      },
-    })
+    let widgetId: TurnstileWidgetId | undefined
+    try {
+      widgetId = turnstile.render(widgetContainer, {
+        sitekey: turnstileSiteKey,
+        action: pendingRequest.action,
+        theme: 'auto',
+        size: 'flexible',
+        appearance: 'always',
+        callback: (token: string) => {
+          pendingRequest.resolve(token)
+          closeDialog()
+        },
+        'error-callback': () => {
+          pendingRequest.reject(new Error('Human verification failed. Please try again.'))
+          closeDialog()
+        },
+        'expired-callback': () => {
+          if (widgetIdRef.current && window.turnstile) {
+            window.turnstile.reset(widgetIdRef.current)
+          }
+        },
+        'timeout-callback': () => {
+          pendingRequest.reject(new Error('Human verification timed out. Please try again.'))
+          closeDialog()
+        },
+        'unsupported-callback': () => {
+          pendingRequest.reject(new Error('Human verification is not supported in this browser.'))
+          closeDialog()
+        },
+      })
+    } catch {
+      pendingRequest.reject(new Error('Human verification failed to render. Please try again.'))
+      queueMicrotask(closeDialog)
+      return
+    }
 
-    widgetIdRef.current = widgetId ?? null
+    if (!widgetId) {
+      pendingRequest.reject(new Error('Human verification failed to render. Please try again.'))
+      queueMicrotask(closeDialog)
+      return
+    }
+
+    widgetIdRef.current = widgetId
 
     return () => {
       if (widgetIdRef.current && window.turnstile) {
@@ -142,8 +170,9 @@ export function HumanVerificationProvider(props: PropsWithChildren) {
     <HumanVerificationContext.Provider value={requestVerification}>
       {turnstileSiteKey && (
         <Script
-          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onloadTurnstileCallback"
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
           strategy="afterInteractive"
+          onReady={() => setScriptStatus('ready')}
           onError={() => {
             setScriptStatus('failed')
             pendingRequestRef.current?.reject(new Error('Human verification failed to load.'))
@@ -164,7 +193,7 @@ export function HumanVerificationProvider(props: PropsWithChildren) {
             {scriptStatus !== 'ready' && (
               <p className="text-sm text-gray-500 dark:text-gray-400">Loading verification...</p>
             )}
-            <div ref={setWidgetContainer} />
+            <div ref={setWidgetContainer} className="min-h-16 w-full" />
           </div>
         </DialogContent>
       </Dialog>
