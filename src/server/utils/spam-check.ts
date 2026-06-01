@@ -17,13 +17,16 @@ interface CheckSpamContentParams {
   content: string
   entityType: SpamEntityType
   challengeMode?: 'block' | 'challenge'
+  enableRateLimiting?: boolean
+  enableDuplicateDetection?: boolean
   humanVerificationToken?: string | null
   headers?: Headers
 }
 
 export async function checkSpamContent(params: CheckSpamContentParams): Promise<void> {
   const detector = new SpamDetectionService(params.prisma, {
-    enableRateLimiting: process.env.DISABLE_RATE_LIMIT !== 'true',
+    enableRateLimiting: params.enableRateLimiting ?? process.env.DISABLE_RATE_LIMIT !== 'true',
+    enableDuplicateDetection: params.enableDuplicateDetection ?? true,
   })
   const result = await detector.detectSpam({
     userId: params.userId,

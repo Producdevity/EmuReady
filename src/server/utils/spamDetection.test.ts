@@ -1,8 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { type PrismaClient } from '@orm/client'
+import { Role, type PrismaClient } from '@orm/client'
 import { SpamDetectionService } from './spamDetection'
 
 const mockPrisma = {
+  user: {
+    findUnique: vi.fn(),
+  },
   listing: {
     count: vi.fn(),
     findMany: vi.fn(),
@@ -19,17 +22,28 @@ const mockPrisma = {
     count: vi.fn(),
     findMany: vi.fn(),
   },
+  game: {
+    count: vi.fn(),
+    findMany: vi.fn(),
+  },
 }
 
 function mockCleanRecentActivity() {
+  mockPrisma.user.findUnique.mockResolvedValue({
+    createdAt: new Date(),
+    role: Role.USER,
+    trustScore: 0,
+  })
   mockPrisma.listing.count.mockResolvedValue(0)
   mockPrisma.pcListing.count.mockResolvedValue(0)
   mockPrisma.comment.count.mockResolvedValue(0)
   mockPrisma.pcListingComment.count.mockResolvedValue(0)
+  mockPrisma.game.count.mockResolvedValue(0)
   mockPrisma.listing.findMany.mockResolvedValue([])
   mockPrisma.pcListing.findMany.mockResolvedValue([])
   mockPrisma.comment.findMany.mockResolvedValue([])
   mockPrisma.pcListingComment.findMany.mockResolvedValue([])
+  mockPrisma.game.findMany.mockResolvedValue([])
 }
 
 describe('SpamDetectionService', () => {
@@ -98,6 +112,57 @@ describe('SpamDetectionService', () => {
 
       expect(result.isSpam).toBe(true)
       expect(result.method).toBe('rate_limiting')
+    })
+
+    it('raises the report limit for established accounts', async () => {
+      vi.mocked(mockPrisma.user.findUnique).mockResolvedValue({
+        createdAt: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000),
+        role: Role.USER,
+        trustScore: 0,
+      })
+      vi.mocked(mockPrisma.listing.count).mockResolvedValue(5)
+
+      const result = await service.detectSpam({
+        userId: 'user-123',
+        content: 'Normal content',
+        entityType: 'listing',
+      })
+
+      expect(result.isSpam).toBe(false)
+    })
+
+    it('raises the report limit for trusted accounts while keeping a cap', async () => {
+      vi.mocked(mockPrisma.user.findUnique).mockResolvedValue({
+        createdAt: new Date(),
+        role: Role.USER,
+        trustScore: 250,
+      })
+      vi.mocked(mockPrisma.listing.count).mockResolvedValue(40)
+
+      const result = await service.detectSpam({
+        userId: 'user-123',
+        content: 'Normal content',
+        entityType: 'listing',
+      })
+
+      expect(result.isSpam).toBe(true)
+      expect(result.method).toBe('rate_limiting')
+    })
+
+    it('uses a dedicated rate limit bucket for games', async () => {
+      vi.mocked(mockPrisma.game.count).mockResolvedValue(10)
+
+      const result = await service.detectSpam({
+        userId: 'user-123',
+        content: 'Normal game title',
+        entityType: 'game',
+      })
+
+      expect(result.isSpam).toBe(true)
+      expect(result.method).toBe('rate_limiting')
+      expect(result.reason).toContain('Too many recent games')
+      expect(mockPrisma.comment.count).not.toHaveBeenCalled()
+      expect(mockPrisma.pcListingComment.count).not.toHaveBeenCalled()
     })
   })
 
@@ -171,6 +236,25 @@ describe('SpamDetectionService', () => {
 
       expect(result.isSpam).toBe(true)
       expect(result.method).toBe('duplicate_detection')
+    })
+
+    it('uses game titles for duplicate game detection', async () => {
+      vi.mocked(mockPrisma.game.findMany).mockResolvedValue([
+        { title: 'Duplicate Game' },
+        { title: 'Duplicate Game' },
+        { title: 'Duplicate Game' },
+      ])
+
+      const result = await service.detectSpam({
+        userId: 'user-123',
+        content: 'Duplicate Game',
+        entityType: 'game',
+      })
+
+      expect(result.isSpam).toBe(true)
+      expect(result.method).toBe('duplicate_detection')
+      expect(mockPrisma.comment.findMany).not.toHaveBeenCalled()
+      expect(mockPrisma.pcListingComment.findMany).not.toHaveBeenCalled()
     })
 
     it('should NOT detect spam for slightly different content', async () => {

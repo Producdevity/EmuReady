@@ -13,6 +13,7 @@ import {
   Autocomplete,
   type AutocompleteOptionBase,
 } from '@/components/ui'
+import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -39,6 +40,7 @@ function AddGamePage() {
   const utils = api.useUtils()
   const systemsQuery = api.systems.get.useQuery()
   const createGame = api.games.create.useMutation()
+  const submitWithHumanVerification = useSubmitWithHumanVerification()
 
   const userQuery = api.users.me.useQuery(undefined, { enabled: !!user })
 
@@ -81,12 +83,15 @@ function AddGamePage() {
     if (!title || !systemId) return setError('Please fill in all required fields.')
 
     try {
-      const result = await createGame.mutateAsync({
-        title,
-        systemId,
-        imageUrl: imageUrl || undefined,
-        isErotic,
-      })
+      const result = await submitWithHumanVerification((humanVerificationToken) =>
+        createGame.mutateAsync({
+          title,
+          systemId,
+          imageUrl: imageUrl || undefined,
+          isErotic,
+          humanVerificationToken,
+        }),
+      )
 
       await utils.games.get.invalidate()
       await utils.games.checkExistingByTgdbIds.invalidate()

@@ -50,6 +50,7 @@ import {
   sanitizeInput,
   validateNonEmptyArray,
 } from '@/server/utils/security-validation'
+import { checkSpamContent } from '@/server/utils/spam-check'
 import { getSubmissionBalance } from '@/server/utils/submission-balance'
 import {
   findTitleIdForGameName,
@@ -292,8 +293,19 @@ export const gamesRouter = createTRPCRouter({
     }),
 
   create: protectedProcedure.input(CreateGameSchema).mutation(async ({ ctx, input }) => {
+    const gameInput = {
+      title: input.title,
+      systemId: input.systemId,
+      imageUrl: input.imageUrl,
+      boxartUrl: input.boxartUrl,
+      bannerUrl: input.bannerUrl,
+      tgdbGameId: input.tgdbGameId,
+      igdbGameId: input.igdbGameId,
+      isErotic: input.isErotic,
+    }
+
     const system = await ctx.prisma.system.findUnique({
-      where: { id: input.systemId },
+      where: { id: gameInput.systemId },
     })
 
     if (!system) return ResourceError.system.notFound()
@@ -314,15 +326,27 @@ export const gamesRouter = createTRPCRouter({
 
     // Check if game with same title already exists for this system
     const existingGame = await ctx.prisma.game.findFirst({
-      where: { title: input.title, systemId: input.systemId },
+      where: { title: gameInput.title, systemId: gameInput.systemId },
     })
 
     if (existingGame) {
-      return ResourceError.game.alreadyExists(input.title, system.name, existingGame.id)
+      return ResourceError.game.alreadyExists(gameInput.title, system.name, existingGame.id)
     }
 
+    await checkSpamContent({
+      prisma: ctx.prisma,
+      userId: ctx.session.user.id,
+      content: gameInput.title,
+      entityType: 'game',
+      challengeMode: 'challenge',
+      enableRateLimiting: false,
+      enableDuplicateDetection: false,
+      humanVerificationToken: input.humanVerificationToken,
+      headers: ctx.headers,
+    })
+
     try {
-      const { igdbGameId, ...gameData } = input
+      const { igdbGameId, ...gameData } = gameInput
 
       // Build metadata object for external provider IDs
       const metadata = createGameMetadata({
@@ -357,7 +381,7 @@ export const gamesRouter = createTRPCRouter({
           invalidateListPages(),
           invalidateSitemap(),
           revalidateByTag('games'),
-          revalidateByTag(`system-${input.systemId}`),
+          revalidateByTag(`system-${gameInput.systemId}`),
         ]).catch((error) => {
           logger.error('[Games Router] Cache invalidation failed:', error)
         })
@@ -366,7 +390,7 @@ export const gamesRouter = createTRPCRouter({
       return result
     } catch (error) {
       if (isPrismaError(error, PRISMA_ERROR_CODES.UNIQUE_CONSTRAINT_VIOLATION)) {
-        return ResourceError.game.alreadyExists(input.title, system.name)
+        return ResourceError.game.alreadyExists(gameInput.title, system.name)
       }
       throw error
     }

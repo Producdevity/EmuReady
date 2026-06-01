@@ -12,7 +12,9 @@ import {
   type BaseGameResult,
 } from '@/components/game-search'
 import { LoadingSpinner, useConfirmDialog } from '@/components/ui'
+import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
 import { api } from '@/lib/api'
+import { logger } from '@/lib/logger'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasRolePermission } from '@/utils/permissions'
 import { getIGDBPlatformId } from '@/utils/system-platform-mapping'
@@ -56,6 +58,7 @@ function IGDBSearchContent() {
     enabled: !!user,
   })
   const createGame = api.games.create.useMutation()
+  const submitWithHumanVerification = useSubmitWithHumanVerification()
   const systemsQuery = api.systems.get.useQuery()
   const confirm = useConfirmDialog()
 
@@ -66,7 +69,6 @@ function IGDBSearchContent() {
 
   const handleSearch = useCallback(
     async (query: string, platformId: number | null, systemId: string | null) => {
-      // Require system selection for game creation
       if (!systemId) {
         toast.warning('Please select a system before searching for games')
         return
@@ -82,7 +84,6 @@ function IGDBSearchContent() {
           platformId,
           limit: 20,
         })
-        // Map the results to ensure consistent types
         setSearchResults({
           games: results.games.map((game) => ({
             ...game,
@@ -91,7 +92,7 @@ function IGDBSearchContent() {
           count: results.count,
         })
       } catch (error) {
-        console.error('Search error:', error)
+        logger.error('Search error:', error)
         toast.error(getErrorMessage(error, 'Failed to search games'))
       } finally {
         setIsSearching(false)
@@ -144,15 +145,18 @@ function IGDBSearchContent() {
 
       setIsSelecting(true)
       try {
-        const newGame = await createGame.mutateAsync({
-          title: selectedGame.name,
-          systemId,
-          imageUrl: selectedGame.imageUrl ?? null,
-          boxartUrl: selectedGame.boxartUrl ?? null,
-          bannerUrl: selectedGame.bannerUrl ?? null,
-          isErotic: selectedGame.isErotic ?? false,
-          igdbGameId: Number(selectedGame.id),
-        })
+        const newGame = await submitWithHumanVerification((humanVerificationToken) =>
+          createGame.mutateAsync({
+            title: selectedGame.name,
+            systemId,
+            imageUrl: selectedGame.imageUrl ?? null,
+            boxartUrl: selectedGame.boxartUrl ?? null,
+            bannerUrl: selectedGame.bannerUrl ?? null,
+            isErotic: selectedGame.isErotic ?? false,
+            igdbGameId: Number(selectedGame.id),
+            humanVerificationToken,
+          }),
+        )
 
         await utils.games.checkExistingByNamesAndSystems.invalidate()
 
@@ -167,7 +171,14 @@ function IGDBSearchContent() {
         setIsSelecting(false)
       }
     },
-    [selectedGame, user, createGame, utils, showGameCreatedConfirmation],
+    [
+      selectedGame,
+      user,
+      submitWithHumanVerification,
+      createGame,
+      utils,
+      showGameCreatedConfirmation,
+    ],
   )
 
   const isModeratorOrHigher = hasRolePermission(userQuery?.data?.role, Role.MODERATOR)
