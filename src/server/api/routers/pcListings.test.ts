@@ -443,6 +443,28 @@ describe('pcListings trust integration', () => {
       })
       expect(prisma.pcListingComment.create).toHaveBeenCalled()
     })
+
+    it('passes a human verification token to the spam check when retrying comment creation', async () => {
+      const { caller, prisma } = createCaller()
+      prisma.pcListing.findUnique.mockResolvedValue({ id: LISTING_ID, authorId: AUTHOR_ID })
+
+      await caller.createComment({
+        pcListingId: LISTING_ID,
+        content: 'Amazing!! This runs perfectly!!',
+        humanVerificationToken: 'verification-token',
+      })
+
+      expect(mockCheckSpamContent).toHaveBeenCalledWith({
+        prisma,
+        userId: USER_ID,
+        content: 'Amazing!! This runs perfectly!!',
+        entityType: 'pcComment',
+        challengeMode: 'challenge',
+        humanVerificationToken: 'verification-token',
+        headers: expect.any(Headers),
+      })
+      expect(prisma.pcListingComment.create).toHaveBeenCalled()
+    })
   })
 
   describe('create', () => {
@@ -498,6 +520,39 @@ describe('pcListings trust integration', () => {
         entityType: 'pcListing',
         challengeMode: 'challenge',
         humanVerificationToken: undefined,
+        headers: expect.any(Headers),
+      })
+      expect(mockRepositoryCreate).toHaveBeenCalled()
+    })
+
+    it('passes a human verification token to the spam check when retrying creation', async () => {
+      const newListingId = '00000000-0000-4000-a000-000000000099'
+      mockRepositoryCreate.mockResolvedValue({
+        id: newListingId,
+        status: ApprovalStatus.PENDING,
+      })
+
+      const { caller } = createCaller({ permissions: [PERMISSIONS.CREATE_LISTING] })
+
+      await caller.create({
+        gameId: '00000000-0000-4000-a000-000000000030',
+        cpuId: '00000000-0000-4000-a000-000000000031',
+        emulatorId: '00000000-0000-4000-a000-000000000032',
+        performanceId: 1,
+        memorySize: 16,
+        os: PcOs.WINDOWS,
+        osVersion: '11',
+        notes: 'Amazing!! This runs perfectly!!',
+        humanVerificationToken: 'verification-token',
+      })
+
+      expect(mockCheckSpamContent).toHaveBeenCalledWith({
+        prisma: expect.anything(),
+        userId: USER_ID,
+        content: 'Amazing!! This runs perfectly!!',
+        entityType: 'pcListing',
+        challengeMode: 'challenge',
+        humanVerificationToken: 'verification-token',
         headers: expect.any(Headers),
       })
       expect(mockRepositoryCreate).toHaveBeenCalled()

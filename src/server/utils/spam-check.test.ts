@@ -4,7 +4,10 @@ import {
   isTurnstileConfigured,
   verifyTurnstileToken,
 } from '@/features/human-verification/server/providers/turnstile'
-import { HUMAN_VERIFICATION_ERROR_CODES } from '@/features/human-verification/shared/constants'
+import {
+  HUMAN_VERIFICATION_ERROR_CODES,
+  HUMAN_VERIFICATION_TOKEN_MAX_LENGTH,
+} from '@/features/human-verification/shared/constants'
 import analytics from '@/lib/analytics'
 import { type PrismaClient } from '@orm/client'
 import { checkSpamContent } from './spam-check'
@@ -239,6 +242,36 @@ describe('checkSpamContent', () => {
       token: 'valid-token',
       remoteIp: undefined,
     })
+  })
+
+  it('rejects oversized human verification tokens before calling the provider', async () => {
+    vi.spyOn(SpamDetectionService.prototype, 'detectSpam').mockResolvedValue({
+      isSpam: true,
+      confidence: 0.85,
+      method: 'pattern_matching',
+      reason: 'Spam pattern matched',
+    })
+
+    try {
+      await checkSpamContent({
+        prisma: mockPrisma,
+        userId: USER_ID,
+        content: 'Flagged content',
+        entityType: 'comment',
+        challengeMode: 'challenge',
+        humanVerificationToken: 'a'.repeat(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH + 1),
+      })
+      throw new Error('Expected checkSpamContent to throw')
+    } catch (error) {
+      expect(error).toBeInstanceOf(TRPCError)
+      expect((error as TRPCError).cause).toEqual(
+        expect.objectContaining({
+          code: HUMAN_VERIFICATION_ERROR_CODES.FAILED,
+        }),
+      )
+    }
+
+    expect(verifyTurnstileToken).not.toHaveBeenCalled()
   })
 
   it('does not allow high-confidence spam with a human verification token', async () => {

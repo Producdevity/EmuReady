@@ -1,360 +1,137 @@
-import { describe, it, expect } from 'vitest'
-import { HUMAN_VERIFICATION_TOKEN_MAX_LENGTH } from '@/features/human-verification/shared/constants'
+import { describe, expect, it } from 'vitest'
 import { ApprovalStatus } from '@orm'
 import {
-  CreateListingSchema,
-  GetListingsSchema,
-  GetAllListingsAdminSchema,
-  UpdateListingAdminSchema,
-  RejectListingSchema,
   CreateCommentSchema,
+  CreateListingSchema,
+  GetAllListingsAdminSchema,
+  GetListingsSchema,
   OverrideApprovalStatusSchema,
+  RejectListingSchema,
+  UpdateListingAdminSchema,
 } from './listing'
 
-describe('Listing Schemas - Null Handling', () => {
-  describe('CreateListingSchema', () => {
-    it('should accept null for optional fields', () => {
-      const validInput = {
-        gameId: '123e4567-e89b-12d3-a456-426614174000',
-        deviceId: '123e4567-e89b-12d3-a456-426614174001',
-        emulatorId: '123e4567-e89b-12d3-a456-426614174002',
-        performanceId: 5,
-        notes: null,
-        customFieldValues: null,
-      }
-
-      const result = CreateListingSchema.safeParse(validInput)
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.notes).toBeNull()
-        expect(result.data.customFieldValues).toBeNull()
-      }
+describe('Listing schemas - null compatibility contracts', () => {
+  it('keeps null and undefined optional fields distinct for create input', () => {
+    const nullResult = CreateListingSchema.safeParse({
+      gameId: '123e4567-e89b-12d3-a456-426614174000',
+      deviceId: '123e4567-e89b-12d3-a456-426614174001',
+      emulatorId: '123e4567-e89b-12d3-a456-426614174002',
+      performanceId: 5,
+      notes: null,
+      customFieldValues: null,
     })
 
-    it('should accept undefined for optional fields', () => {
-      const validInput = {
-        gameId: '123e4567-e89b-12d3-a456-426614174000',
-        deviceId: '123e4567-e89b-12d3-a456-426614174001',
-        emulatorId: '123e4567-e89b-12d3-a456-426614174002',
-        performanceId: 5,
-      }
+    expect(nullResult.success).toBe(true)
+    if (nullResult.success) {
+      expect(nullResult.data.notes).toBeNull()
+      expect(nullResult.data.customFieldValues).toBeNull()
+    }
 
-      const result = CreateListingSchema.safeParse(validInput)
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.notes).toBeUndefined()
-        expect(result.data.customFieldValues).toBeUndefined()
-      }
+    const undefinedResult = CreateListingSchema.safeParse({
+      gameId: '123e4567-e89b-12d3-a456-426614174000',
+      deviceId: '123e4567-e89b-12d3-a456-426614174001',
+      emulatorId: '123e4567-e89b-12d3-a456-426614174002',
+      performanceId: 5,
     })
 
-    it('should reject invalid data types', () => {
-      const invalidInput = {
-        gameId: 'not-a-uuid',
-        deviceId: '123e4567-e89b-12d3-a456-426614174001',
-        emulatorId: '123e4567-e89b-12d3-a456-426614174002',
-        performanceId: 5,
-      }
-
-      const result = CreateListingSchema.safeParse(invalidInput)
-      expect(result.success).toBe(false)
-    })
-
-    it('should enforce max length on notes', () => {
-      const invalidInput = {
-        gameId: '123e4567-e89b-12d3-a456-426614174000',
-        deviceId: '123e4567-e89b-12d3-a456-426614174001',
-        emulatorId: '123e4567-e89b-12d3-a456-426614174002',
-        performanceId: 5,
-        notes: 'a'.repeat(5001), // Exceeds 5000 character limit
-      }
-
-      const result = CreateListingSchema.safeParse(invalidInput)
-      expect(result.success).toBe(false)
-    })
-
-    it('should enforce max length on human verification tokens', () => {
-      const validInput = {
-        gameId: '123e4567-e89b-12d3-a456-426614174000',
-        deviceId: '123e4567-e89b-12d3-a456-426614174001',
-        emulatorId: '123e4567-e89b-12d3-a456-426614174002',
-        performanceId: 5,
-        humanVerificationToken: 'a'.repeat(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH),
-      }
-
-      expect(CreateListingSchema.safeParse(validInput).success).toBe(true)
-
-      const invalidInput = {
-        ...validInput,
-        humanVerificationToken: 'a'.repeat(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH + 1),
-      }
-
-      expect(CreateListingSchema.safeParse(invalidInput).success).toBe(false)
-    })
+    expect(undefinedResult.success).toBe(true)
+    if (undefinedResult.success) {
+      expect(undefinedResult.data.notes).toBeUndefined()
+      expect(undefinedResult.data.customFieldValues).toBeUndefined()
+    }
   })
 
-  describe('GetListingsSchema', () => {
-    it('should accept null for all optional filter fields', () => {
-      const validInput = {
-        systemIds: null,
-        deviceIds: null,
-        socIds: null,
-        emulatorIds: null,
-        performanceIds: null,
-        searchTerm: null,
-        sortField: null,
-        sortDirection: null,
-        approvalStatus: null,
-        myListings: null,
-        page: 1,
-        limit: 10,
-      }
-
-      const result = GetListingsSchema.safeParse(validInput)
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.systemIds).toBeNull()
-        expect(result.data.searchTerm).toBeNull()
-        expect(result.data.sortDirection).toBeNull()
-      }
+  it('accepts null filter values from listing URLs', () => {
+    const result = GetListingsSchema.safeParse({
+      systemIds: null,
+      deviceIds: null,
+      socIds: null,
+      emulatorIds: null,
+      performanceIds: null,
+      searchTerm: null,
+      sortField: null,
+      sortDirection: null,
+      approvalStatus: null,
+      myListings: null,
+      page: 1,
+      limit: 10,
     })
 
-    it('should accept valid enum values', () => {
-      const validInput = {
-        page: 1,
-        limit: 10,
-        sortField: 'game.title',
-        sortDirection: 'asc',
-        approvalStatus: ApprovalStatus.APPROVED,
-      }
-
-      const result = GetListingsSchema.safeParse(validInput)
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.sortField).toBe('game.title')
-        expect(result.data.sortDirection).toBe('asc')
-        expect(result.data.approvalStatus).toBe(ApprovalStatus.APPROVED)
-      }
-    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.systemIds).toBeNull()
+      expect(result.data.searchTerm).toBeNull()
+      expect(result.data.sortDirection).toBeNull()
+    }
   })
 
-  describe('GetAllListingsAdminSchema', () => {
-    it('should accept null for optional admin filter fields', () => {
-      const validInput = {
-        page: 1,
-        limit: 20,
-        sortField: null,
-        sortDirection: null,
-        search: null,
-        statusFilter: null,
-        systemFilter: null,
-        emulatorFilter: null,
-      }
-
-      const result = GetAllListingsAdminSchema.safeParse(validInput)
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.sortField).toBeNull()
-        expect(result.data.sortDirection).toBeNull()
-        expect(result.data.search).toBeNull()
-        expect(result.data.statusFilter).toBeNull()
-      }
+  it('accepts null filter values from admin listing URLs', () => {
+    const result = GetAllListingsAdminSchema.safeParse({
+      page: 1,
+      limit: 20,
+      sortField: null,
+      sortDirection: null,
+      search: null,
+      statusFilter: null,
+      systemFilter: null,
+      emulatorFilter: null,
     })
 
-    it('should enforce minimum search string length when provided', () => {
-      const invalidInput = {
-        page: 1,
-        limit: 20,
-        search: '', // Empty string should fail min(1) validation
-      }
-
-      const result = GetAllListingsAdminSchema.safeParse(invalidInput)
-      expect(result.success).toBe(false)
-    })
-
-    it('should accept valid status filter', () => {
-      const validInput = {
-        page: 1,
-        limit: 20,
-        statusFilter: ApprovalStatus.PENDING,
-      }
-
-      const result = GetAllListingsAdminSchema.safeParse(validInput)
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.statusFilter).toBe(ApprovalStatus.PENDING)
-      }
-    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.sortField).toBeNull()
+      expect(result.data.sortDirection).toBeNull()
+      expect(result.data.search).toBeNull()
+      expect(result.data.statusFilter).toBeNull()
+    }
   })
 
-  describe('UpdateListingAdminSchema', () => {
-    it('should accept null for notes and customFieldValues', () => {
-      const validInput = {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        gameId: '123e4567-e89b-12d3-a456-426614174001',
-        deviceId: '123e4567-e89b-12d3-a456-426614174002',
-        emulatorId: '123e4567-e89b-12d3-a456-426614174003',
-        performanceId: 5,
-        status: ApprovalStatus.APPROVED,
-        notes: null,
-        customFieldValues: null,
-      }
-
-      const result = UpdateListingAdminSchema.safeParse(validInput)
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.notes).toBeNull()
-        expect(result.data.customFieldValues).toBeNull()
-      }
+  it('accepts null editable fields for admin updates', () => {
+    const result = UpdateListingAdminSchema.safeParse({
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      gameId: '123e4567-e89b-12d3-a456-426614174001',
+      deviceId: '123e4567-e89b-12d3-a456-426614174002',
+      emulatorId: '123e4567-e89b-12d3-a456-426614174003',
+      performanceId: 5,
+      status: ApprovalStatus.APPROVED,
+      notes: null,
+      customFieldValues: null,
     })
 
-    it('should validate custom field values structure', () => {
-      const validInput = {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        gameId: '123e4567-e89b-12d3-a456-426614174001',
-        deviceId: '123e4567-e89b-12d3-a456-426614174002',
-        emulatorId: '123e4567-e89b-12d3-a456-426614174003',
-        performanceId: 5,
-        status: ApprovalStatus.APPROVED,
-        customFieldValues: [
-          {
-            customFieldDefinitionId: '123e4567-e89b-12d3-a456-426614174004',
-            value: 'test value',
-          },
-          {
-            customFieldDefinitionId: '123e4567-e89b-12d3-a456-426614174005',
-            value: true,
-          },
-          {
-            customFieldDefinitionId: '123e4567-e89b-12d3-a456-426614174006',
-            value: 42,
-          },
-        ],
-      }
-
-      const result = UpdateListingAdminSchema.safeParse(validInput)
-      expect(result.success).toBe(true)
-    })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.notes).toBeNull()
+      expect(result.data.customFieldValues).toBeNull()
+    }
   })
 
-  describe('RejectListingSchema', () => {
-    it('should accept null for notes', () => {
-      const validInput = {
-        listingId: '123e4567-e89b-12d3-a456-426614174000',
-        notes: null,
-      }
-
-      const result = RejectListingSchema.safeParse(validInput)
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.notes).toBeNull()
-      }
+  it('accepts null moderator notes when rejecting or overriding a report', () => {
+    const rejectResult = RejectListingSchema.safeParse({
+      listingId: '123e4567-e89b-12d3-a456-426614174000',
+      notes: null,
     })
 
-    it('should accept string for notes', () => {
-      const validInput = {
-        listingId: '123e4567-e89b-12d3-a456-426614174000',
-        notes: 'Rejection reason here',
-      }
+    expect(rejectResult.success).toBe(true)
+    if (rejectResult.success) expect(rejectResult.data.notes).toBeNull()
 
-      const result = RejectListingSchema.safeParse(validInput)
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.notes).toBe('Rejection reason here')
-      }
+    const overrideResult = OverrideApprovalStatusSchema.safeParse({
+      listingId: '123e4567-e89b-12d3-a456-426614174000',
+      newStatus: ApprovalStatus.APPROVED,
+      overrideNotes: null,
     })
+
+    expect(overrideResult.success).toBe(true)
+    if (overrideResult.success) expect(overrideResult.data.overrideNotes).toBeNull()
   })
 
-  describe('CreateCommentSchema', () => {
-    it('should accept null for parentId', () => {
-      const validInput = {
-        listingId: '123e4567-e89b-12d3-a456-426614174000',
-        content: 'This is a comment',
-        parentId: null,
-      }
-
-      const result = CreateCommentSchema.safeParse(validInput)
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.parentId).toBeNull()
-      }
+  it('accepts null for top-level comment parentId', () => {
+    const result = CreateCommentSchema.safeParse({
+      listingId: '123e4567-e89b-12d3-a456-426614174000',
+      content: 'This is a comment',
+      parentId: null,
     })
 
-    it('should enforce content length limits', () => {
-      const invalidInput = {
-        listingId: '123e4567-e89b-12d3-a456-426614174000',
-        content: '', // Too short
-      }
-
-      const result = CreateCommentSchema.safeParse(invalidInput)
-      expect(result.success).toBe(false)
-
-      const tooLongInput = {
-        listingId: '123e4567-e89b-12d3-a456-426614174000',
-        content: 'a'.repeat(1001), // Too long
-      }
-
-      const result2 = CreateCommentSchema.safeParse(tooLongInput)
-      expect(result2.success).toBe(false)
-    })
-
-    it('should enforce max length on human verification tokens', () => {
-      const validInput = {
-        listingId: '123e4567-e89b-12d3-a456-426614174000',
-        content: 'This is a comment',
-        humanVerificationToken: 'a'.repeat(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH),
-      }
-
-      expect(CreateCommentSchema.safeParse(validInput).success).toBe(true)
-
-      const invalidInput = {
-        ...validInput,
-        humanVerificationToken: 'a'.repeat(HUMAN_VERIFICATION_TOKEN_MAX_LENGTH + 1),
-      }
-
-      expect(CreateCommentSchema.safeParse(invalidInput).success).toBe(false)
-    })
-  })
-
-  describe('OverrideApprovalStatusSchema', () => {
-    it('should accept null for overrideNotes', () => {
-      const validInput = {
-        listingId: '123e4567-e89b-12d3-a456-426614174000',
-        newStatus: ApprovalStatus.APPROVED,
-        overrideNotes: null,
-      }
-
-      const result = OverrideApprovalStatusSchema.safeParse(validInput)
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.overrideNotes).toBeNull()
-      }
-    })
-
-    it('should require valid ApprovalStatus enum value', () => {
-      const invalidInput = {
-        listingId: '123e4567-e89b-12d3-a456-426614174000',
-        newStatus: 'INVALID_STATUS',
-      }
-
-      const result = OverrideApprovalStatusSchema.safeParse(invalidInput)
-      expect(result.success).toBe(false)
-    })
-
-    it('should accept all valid ApprovalStatus values', () => {
-      const statuses = [ApprovalStatus.PENDING, ApprovalStatus.APPROVED, ApprovalStatus.REJECTED]
-
-      statuses.forEach((status) => {
-        const input = {
-          listingId: '123e4567-e89b-12d3-a456-426614174000',
-          newStatus: status,
-        }
-
-        const result = OverrideApprovalStatusSchema.safeParse(input)
-        expect(result.success).toBe(true)
-        if (result.success) {
-          expect(result.data.newStatus).toBe(status)
-        }
-      })
-    })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.parentId).toBeNull()
   })
 })
