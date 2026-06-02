@@ -24,6 +24,12 @@ type SortField = NonNullable<RouterInput['listings']['get']['sortField']>
 
 type ListingType = RouterOutput['listings']['get']['listings'][number]
 
+const LOOKUP_DATA_QUERY_OPTIONS = {
+  staleTime: ms.hours(6),
+  gcTime: ms.hours(12),
+}
+const USE_ASYNC_LISTING_FILTERS = process.env.NEXT_PUBLIC_ENABLE_ASYNC_LISTINGS_FILTERS === 'true'
+
 function V2ListingsPage() {
   const listingsState = useListingsState()
 
@@ -39,7 +45,10 @@ function V2ListingsPage() {
   const [allListings, setAllListings] = useState<ListingType[]>([])
   const [myListingsOnly, setMyListingsOnly] = useState(false)
 
-  const performanceScalesQuery = api.listings.performanceScales.useQuery()
+  const performanceScalesQuery = api.listings.performanceScales.useQuery(
+    undefined,
+    LOOKUP_DATA_QUERY_OPTIONS,
+  )
 
   // User preferences and device filtering
   const userQuery = api.users.me.useQuery()
@@ -287,11 +296,19 @@ function V2ListingsPage() {
     listingsState.setSortDirection(direction || null)
   }
 
-  // Preload filter data with 500 item limits
-  const systemsQuery = api.systems.get.useQuery()
-  const devicesQuery = api.devices.get.useQuery({ limit: 500, offset: 0 })
-  const emulatorsQuery = api.emulators.get.useQuery({ limit: 500, offset: 0 })
-  const socsQuery = api.socs.get.useQuery({ limit: 500, offset: 0 })
+  const systemsQuery = api.systems.get.useQuery(undefined, LOOKUP_DATA_QUERY_OPTIONS)
+  const devicesQuery = api.devices.options.useQuery(
+    { limit: 500, offset: 0 },
+    { ...LOOKUP_DATA_QUERY_OPTIONS, enabled: !USE_ASYNC_LISTING_FILTERS },
+  )
+  const emulatorsQuery = api.emulators.get.useQuery(
+    { limit: 500, offset: 0 },
+    LOOKUP_DATA_QUERY_OPTIONS,
+  )
+  const socsQuery = api.socs.options.useQuery(
+    { limit: 500, offset: 0 },
+    { ...LOOKUP_DATA_QUERY_OPTIONS, enabled: !USE_ASYNC_LISTING_FILTERS },
+  )
 
   // Transform preloaded data into options format
   const systemOpts = useMemo(
@@ -404,6 +421,7 @@ function V2ListingsPage() {
             performanceIds={listingsState.performanceIds.map(String)}
             handlePerformanceChange={(values) => handlePerformanceChange(values.map(Number))}
             performanceScales={performanceScalesQuery.data}
+            useAsyncHardwareFilters={USE_ASYNC_LISTING_FILTERS}
             deviceIds={listingsState.deviceIds}
             handleDeviceChange={handleDeviceChange}
             deviceOptions={deviceOpts}

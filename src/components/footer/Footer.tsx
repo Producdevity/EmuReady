@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { FooterAppLinks } from '@/components/footer/components/FooterAppLinks'
-import { FooterBetaBadge } from '@/components/footer/components/FooterBetaBadge'
 import { FooterKofiButton } from '@/components/footer/components/FooterKofiButton'
 import { FooterLink } from '@/components/footer/components/FooterLink'
 import { FooterPatreonButton } from '@/components/footer/components/FooterPatreonButton'
@@ -196,8 +195,6 @@ function Footer() {
           </div>
         </div>
       </div>
-
-      {env.IS_BETA && <FooterBetaBadge />}
     </footer>
   )
 }

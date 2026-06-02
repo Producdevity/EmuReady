@@ -1,3 +1,6 @@
+const APP_ENV_VALUES = ['local', 'test', 'preview', 'staging', 'production'] as const
+type AppEnv = (typeof APP_ENV_VALUES)[number]
+
 interface Env {
   EMUREADY_LITE_GITHUB_URL: string
   EMUREADY_BETA_URL: string
@@ -17,10 +20,14 @@ interface Env {
   ENABLE_SW: boolean
   VERCEL_ANALYTICS_ENABLED: boolean
   DISABLE_COOKIE_BANNER: boolean
-  IS_BETA: boolean
-  IS_PROD: boolean
-  IS_DEV: boolean
-  IS_TEST: boolean
+  APP_ENV: AppEnv
+  IS_PUBLIC_PRODUCTION: boolean
+  IS_PRODUCTION_BUILD: boolean
+  IS_DEVELOPMENT_BUILD: boolean
+  IS_TEST_BUILD: boolean
+  ENABLE_ANALYTICS: boolean
+  ENABLE_KOFI_WIDGET: boolean
+  ENABLE_SENTRY: boolean
   ENABLE_V2_LISTINGS: boolean
   ENABLE_PATREON_VERIFICATION: boolean
   ENABLE_ANDROID_DOWNLOADS: boolean
@@ -29,6 +36,15 @@ interface Env {
   ANDROID_LATEST_APK_URL: string
 }
 
+function resolveAppEnv(): AppEnv {
+  const appEnv = process.env.NEXT_PUBLIC_APP_ENV
+  if (APP_ENV_VALUES.includes(appEnv as AppEnv)) return appEnv as AppEnv
+  if (process.env.NODE_ENV === 'test') return 'test'
+  if (process.env.NODE_ENV === 'development') return 'local'
+  return 'local'
+}
+
+const APP_ENV = resolveAppEnv()
 const GITHUB_URL = process.env.NEXT_PUBLIC_GITHUB_URL ?? 'https://github.com/Producdevity/EmuReady'
 export const env = {
   EMUREADY_LITE_GITHUB_URL:
@@ -67,10 +83,14 @@ export const env = {
 
   DISABLE_COOKIE_BANNER: process.env.NEXT_PUBLIC_DISABLE_COOKIE_BANNER === 'true',
 
-  IS_BETA: process.env.NEXT_PUBLIC_IS_BETA === 'true',
-  IS_PROD: process.env.NODE_ENV === 'production',
-  IS_DEV: process.env.NODE_ENV === 'development',
-  IS_TEST: process.env.NODE_ENV === 'test',
+  APP_ENV,
+  IS_PUBLIC_PRODUCTION: APP_ENV === 'production',
+  IS_PRODUCTION_BUILD: process.env.NODE_ENV === 'production',
+  IS_DEVELOPMENT_BUILD: process.env.NODE_ENV === 'development',
+  IS_TEST_BUILD: process.env.NODE_ENV === 'test',
+  ENABLE_ANALYTICS: process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true',
+  ENABLE_KOFI_WIDGET: process.env.NEXT_PUBLIC_ENABLE_KOFI_WIDGET === 'true',
+  ENABLE_SENTRY: process.env.NEXT_PUBLIC_ENABLE_SENTRY === 'true',
 
   ENABLE_V2_LISTINGS: process.env.NEXT_PUBLIC_ENABLE_V2_LISTINGS === 'true',
   ENABLE_PATREON_VERIFICATION: process.env.NEXT_PUBLIC_ENABLE_PATREON_VERIFICATION === 'true',

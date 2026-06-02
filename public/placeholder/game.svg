@@ -1,8 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400">
   <rect width="100%" height="100%" fill="#CBD5E1" />
+
+  <g transform="translate(97.06 77.06) scale(0.35294)">
+    <path
+      d="
+        M136 65
+        H164
+        Q177 65 177 78
+        V116
+        Q177 123 184 123
+        H222
+        Q235 123 235 136
+        V164
+        Q235 177 222 177
+        H184
+        Q177 177 177 184
+        V222
+        Q177 235 164 235
+        H136
+        Q123 235 123 222
+        V184
+        Q123 177 116 177
+        H78
+        Q65 177 65 164
+        V136
+        Q65 123 78 123
+        H116
+        Q123 123 123 116
+        V78
+        Q123 65 136 65
+        Z
+      "
+      fill="#64748B"
+    />
+
+    <path
+      d="M150 100 V200 M100 150 H200"
+      stroke="#536176"
+      stroke-width="12"
+      stroke-linecap="round"
+    />
+  </g>
+
   <text
     x="150"
-    y="200"
+    y="220"
     font-family="Arial, sans-serif"
     font-size="24"
     text-anchor="middle"
@@ -10,10 +52,7 @@
   >
     Game Cover
   </text>
-  <path
-    d="M140,160 L120,140 L120,120 L140,120 L140,100 L160,100 L160,120 L180,120 L180,140 L160,140 L160,160 Z"
-    fill="#64748B"
-  />
+
   <rect x="120" y="240" width="60" height="20" rx="5" fill="#64748B" />
   <rect x="120" y="270" width="40" height="10" rx="5" fill="#64748B" />
   <rect x="120" y="290" width="30" height="10" rx="5" fill="#64748B" />

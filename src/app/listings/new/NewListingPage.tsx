@@ -51,6 +51,10 @@ import { reconcileDriverValue } from '../components/shared/custom-fields/driverV
 export type ListingFormValues = RouterInput['listings']['create']
 
 const HIGHLIGHT_DURATION_MS = 1800
+const LOOKUP_DATA_QUERY_OPTIONS = {
+  staleTime: ms.hours(6),
+  gcTime: ms.hours(12),
+}
 
 function AddListingPage() {
   const router = useRouter()
@@ -186,7 +190,10 @@ function AddListingPage() {
     [form, parsedCustomFields, driverVersionsQuery.data?.releases],
   )
 
-  const performanceScalesQuery = api.listings.performanceScales.useQuery()
+  const performanceScalesQuery = api.listings.performanceScales.useQuery(
+    undefined,
+    LOOKUP_DATA_QUERY_OPTIONS,
+  )
   const customFieldDefinitionsQuery = api.customFieldDefinitions.getByEmulator.useQuery(
     { emulatorId: selectedEmulatorId },
     {
@@ -266,7 +273,7 @@ function AddListingPage() {
       setDeviceSearchTerm(query)
       if (query.length < 2) return Promise.resolve([])
       try {
-        const result = await utils.devices.get.fetch({
+        const result = await utils.devices.options.fetch({
           search: query,
           limit: 50,
         })
@@ -291,7 +298,7 @@ function AddListingPage() {
         return []
       }
     },
-    [utils.devices.get],
+    [utils.devices.options],
   )
 
   useEffect(() => {

@@ -6,7 +6,6 @@ import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { type Metadata, type Viewport } from 'next'
 import { Inter } from 'next/font/google'
-import Script from 'next/script'
 import { connection } from 'next/server'
 import { Suspense, type PropsWithChildren } from 'react'
 import { Toaster } from 'sonner'
@@ -36,23 +35,12 @@ export const metadata: Metadata = defaultMetadata
 export default function RootLayout(props: PropsWithChildren) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        {env.IS_PROD && env.GA_ID && (
-          <Script id="google-analytics-dataLayer" strategy="beforeInteractive">
-            {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-              `}
-          </Script>
-        )}
-      </head>
       <body className={cn(inter.className, 'min-h-screen bg-background font-sans antialiased')}>
         <ServiceWorkerRegistrar enabled={env.ENABLE_SW} />
         <ClerkBoundary>
           <Providers>
             <Toaster richColors closeButton />
-            {env.IS_PROD && !env.DISABLE_COOKIE_BANNER && <CookieConsent />}
+            {env.ENABLE_ANALYTICS && !env.DISABLE_COOKIE_BANNER && <CookieConsent />}
             <div className="flex flex-col min-h-screen bg-background text-foreground">
               <Suspense fallback={null}>
                 <Navbar />
@@ -61,16 +49,20 @@ export default function RootLayout(props: PropsWithChildren) {
               <Footer />
             </div>
           </Providers>
-          {env.IS_PROD && (
+          {(env.ENABLE_ANALYTICS || env.ENABLE_KOFI_WIDGET) && (
             <Suspense fallback={null}>
-              <SessionTracker />
-              <PageViewTracker />
-              <SpeedInsights />
-              <KofiWidget />
-              <GoogleAnalytics gaId={env.GA_ID} />
+              {env.ENABLE_ANALYTICS && (
+                <>
+                  <SessionTracker />
+                  <PageViewTracker />
+                  <SpeedInsights />
+                  {env.GA_ID && <GoogleAnalytics gaId={env.GA_ID} />}
+                </>
+              )}
+              {env.ENABLE_KOFI_WIDGET && <KofiWidget />}
             </Suspense>
           )}
-          {env.VERCEL_ANALYTICS_ENABLED && (
+          {env.ENABLE_ANALYTICS && env.VERCEL_ANALYTICS_ENABLED && (
             <Suspense fallback={null}>
               <Analytics />
             </Suspense>

@@ -1,10 +1,24 @@
 'use client'
 
 import { ChevronDown, X } from 'lucide-react'
-import { type ReactNode, type UIEvent, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  type KeyboardEvent,
+  type ReactNode,
+  type UIEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { cn } from '@/lib/utils'
 
 export type Option = { id: string; name: string; badgeName?: string }
+
+const MOBILE_LIST_MAX_HEIGHT_PX = 192
+const DESKTOP_LIST_MAX_HEIGHT_PX = 320
+const SEARCH_HEADER_HEIGHT_PX = 64
+const FOOTER_HEIGHT_PX = 48
 
 interface Props {
   label: string
@@ -34,26 +48,81 @@ export default function AsyncMultiSelect(props: Props) {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const hasMountedRef = useRef(false)
+  const loadMoreRequestedRef = useRef(false)
+
+  const closeDropdown = useCallback((restoreFocus: boolean) => {
+    setIsOpen(false)
+    setQuery('')
+    if (restoreFocus) buttonRef.current?.focus()
+  }, [])
 
   // Debounce query -> notify wrapper
   const { onQueryChange, debounceMs } = props
   useEffect(() => {
     if (!onQueryChange) return
+
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true
+      return
+    }
+
     const id = setTimeout(() => onQueryChange?.(query), debounceMs ?? 300)
     return () => clearTimeout(id)
   }, [query, debounceMs, onQueryChange])
 
-  // Dropdown position
   useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect()
-      const vh = window.innerHeight
-      const below = vh - rect.bottom
-      const above = rect.top
-      const est = 360
-      setDropdownPosition(below < est && above > est ? 'top' : 'bottom')
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        closeDropdown(false)
+      }
     }
-  }, [isOpen])
+
+    document.addEventListener('click', handleClickOutside)
+    return () => {
+      document.removeEventListener('click', handleClickOutside)
+    }
+  }, [closeDropdown])
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    function updateDropdownPosition() {
+      if (!buttonRef.current) return
+
+      const visualViewport = window.visualViewport
+      const visibleTop = visualViewport?.offsetTop ?? 0
+      const visibleHeight = visualViewport?.height ?? window.innerHeight
+      const visibleBottom = visibleTop + visibleHeight
+      const buttonRect = buttonRef.current.getBoundingClientRect()
+      const listMaxHeight = window.matchMedia('(min-width: 640px)').matches
+        ? DESKTOP_LIST_MAX_HEIGHT_PX
+        : MOBILE_LIST_MAX_HEIGHT_PX
+      const footerHeight = props.value.length > 0 ? FOOTER_HEIGHT_PX : 0
+      const estimatedPanelHeight = listMaxHeight + SEARCH_HEADER_HEIGHT_PX + footerHeight
+      const spaceBelow = visibleBottom - buttonRect.bottom
+      const spaceAbove = buttonRect.top - visibleTop
+
+      setDropdownPosition(
+        spaceBelow < estimatedPanelHeight && spaceAbove > spaceBelow ? 'top' : 'bottom',
+      )
+    }
+
+    updateDropdownPosition()
+    window.addEventListener('resize', updateDropdownPosition)
+    window.visualViewport?.addEventListener('resize', updateDropdownPosition)
+    window.visualViewport?.addEventListener('scroll', updateDropdownPosition)
+
+    return () => {
+      window.removeEventListener('resize', updateDropdownPosition)
+      window.visualViewport?.removeEventListener('resize', updateDropdownPosition)
+      window.visualViewport?.removeEventListener('scroll', updateDropdownPosition)
+    }
+  }, [isOpen, props.value.length])
+
+  useEffect(() => {
+    loadMoreRequestedRef.current = false
+  }, [props.hasMore, props.isFetching, props.options.length, query])
 
   // Selected options: merge page options + byIds; ordered by value
   const selectedOptions = useMemo(() => {
@@ -90,14 +159,24 @@ export default function AsyncMultiSelect(props: Props) {
   const handleClearAll = () => props.onChange([])
   const handleRemoveOption = (id: string) => props.onChange(props.value.filter((v) => v !== id))
 
+  const handleDropdownKeyDown = (ev: KeyboardEvent<HTMLDivElement>) => {
+    if (ev.key !== 'Escape' || !isOpen) return
+
+    ev.preventDefault()
+    ev.stopPropagation()
+    closeDropdown(true)
+  }
+
   const onScrollList = (e: UIEvent<HTMLDivElement>) => {
     if (!props.onLoadMore) return
     const el = e.currentTarget
     if (
       props.hasMore &&
       !props.isFetching &&
+      !loadMoreRequestedRef.current &&
       el.scrollTop + el.clientHeight >= el.scrollHeight - 40
     ) {
+      loadMoreRequestedRef.current = true
       props.onLoadMore()
     }
   }
@@ -108,7 +187,7 @@ export default function AsyncMultiSelect(props: Props) {
         {props.label}
       </label>
 
-      <div ref={dropdownRef} className="relative">
+      <div ref={dropdownRef} className="relative" onKeyDown={handleDropdownKeyDown}>
         <button
           type="button"
           onClick={() => setIsOpen((v) => !v)}
@@ -149,11 +228,12 @@ export default function AsyncMultiSelect(props: Props) {
 
         {isOpen && (
           <div
-            className={`absolute z-[9999] w-full bg-white dark:bg-gray-800
+            className={cn(
+              `absolute left-0 z-[9999] w-full bg-white dark:bg-gray-800
               border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg
-              animate-in fade-in-0 zoom-in-95 duration-200 ${
-                dropdownPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
-              }`}
+              animate-in fade-in-0 zoom-in-95 duration-200`,
+              dropdownPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1',
+            )}
           >
             <div className="p-2 border-b border-gray-200 dark:border-gray-700">
               <div className="relative">
@@ -185,7 +265,11 @@ export default function AsyncMultiSelect(props: Props) {
               </div>
             </div>
 
-            <div className="max-h-80 overflow-y-auto p-1" onScroll={onScrollList}>
+            <div
+              className="scrollbar-native-thin max-h-48 overflow-y-auto overflow-x-hidden overscroll-contain p-1 sm:max-h-80"
+              data-testid="async-multi-select-options"
+              onScroll={onScrollList}
+            >
               {props.options.length === 0 && !props.isFetching ? (
                 <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
                   No options found
@@ -197,24 +281,26 @@ export default function AsyncMultiSelect(props: Props) {
                   return (
                     <label
                       key={option.id}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer
+                      className={`flex min-w-0 items-center gap-3 px-3 py-2 rounded-md cursor-pointer
                         transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700
                         ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''}
-                        ${isTopSelected ? 'animate-in slide-in-from-top-1 duration-300' : ''}
-                        hover:scale-[1.02] hover:shadow-sm`}
+                        ${isTopSelected ? 'animate-in slide-in-from-top-1 duration-300' : ''}`}
                       style={{ animationDelay: isTopSelected ? `${index * 50}ms` : '0ms' }}
                     >
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => toggleId(option.id)}
+                        onChange={(event) => {
+                          event.stopPropagation()
+                          toggleId(option.id)
+                        }}
                         className="rounded border-gray-300 dark:border-gray-600
                           text-blue-600 focus:ring-blue-500 focus:ring-2
                           transition-all duration-200 hover:scale-110
                           dark:bg-gray-700 dark:focus:ring-blue-600"
                       />
                       <span
-                        className={`text-sm select-none flex-1 transition-all duration-200
+                        className={`min-w-0 flex-1 break-words text-sm select-none transition-all duration-200
                           ${
                             isSelected
                               ? 'text-blue-700 dark:text-blue-300 font-medium'

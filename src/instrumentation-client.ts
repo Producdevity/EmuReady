@@ -3,8 +3,9 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from '@sentry/nextjs'
+import { env } from '@/lib/env'
 
-if (process.env.NODE_ENV === 'production') {
+if (env.ENABLE_SENTRY) {
   Sentry.init({
     dsn: 'https://85ca585e45005d8786e361c3456518bf@o74828.ingest.us.sentry.io/4509717207318529',
 
@@ -19,8 +20,6 @@ if (process.env.NODE_ENV === 'production') {
     debug: false,
 
     beforeSend(event, hint) {
-      if (typeof window !== 'undefined' && window.location.hostname === 'localhost') return null
-
       const error = hint?.originalException
       const errorMessage = error?.toString() || event.exception?.values?.[0]?.value || ''
       const errorUrl = event.request?.url || ''

@@ -1,4 +1,5 @@
 import { toArray } from '@/utils/array'
+import type { SortDirection } from '@/types/api'
 
 export interface PaginationInput {
   limit?: number
@@ -46,18 +47,17 @@ interface PaginateParams {
  * @returns Complete pagination metadata with calculated offset
  */
 export function paginate(params: PaginateParams): PaginationResult {
-  const { total, page, limit } = params
-  const offset = (page - 1) * limit
-  const pages = Math.ceil(total / limit)
+  const offset = (params.page - 1) * params.limit
+  const pages = Math.ceil(params.total / params.limit)
 
   return {
-    total,
-    page,
-    limit,
+    total: params.total,
+    page: params.page,
+    limit: params.limit,
     pages,
     offset,
-    hasNextPage: page < pages,
-    hasPreviousPage: page > 1,
+    hasNextPage: params.page < pages,
+    hasPreviousPage: params.page > 1,
   }
 }
 
@@ -115,8 +115,7 @@ export async function paginatedQuery<T>(
     }),
   ])
 
-  const { page } = paginationInput
-  const actualPage = page ?? Math.floor(actualOffset / limit) + 1
+  const actualPage = paginationInput.page ?? Math.floor(actualOffset / limit) + 1
   const pagination = paginate({ total, page: actualPage, limit })
 
   return {
@@ -124,41 +123,6 @@ export async function paginatedQuery<T>(
     pagination,
   }
 }
-
-/**
- * Type-safe wrapper for paginated queries with Prisma
- * Ensures proper typing for the model and return type
- */
-export function createPaginatedQueryWrapper<
-  Model extends {
-    count: (args?: { where?: unknown }) => Promise<number>
-    findMany: (args?: unknown) => Promise<unknown[]>
-  },
->() {
-  return async function <T>(
-    model: Model,
-    args: Parameters<Model['findMany']>[0],
-    paginationInput: PaginationInput,
-    defaultLimit = 20,
-  ): Promise<PaginatedResponse<T>> {
-    return paginatedQuery<T>(
-      model as {
-        count: (args?: { where?: unknown }) => Promise<number>
-        findMany: (args?: unknown) => Promise<T[]>
-      },
-      args as {
-        where?: unknown
-        orderBy?: unknown
-        include?: unknown
-        select?: unknown
-      },
-      paginationInput,
-      defaultLimit,
-    )
-  }
-}
-
-export type SortDirection = 'asc' | 'desc'
 
 /**
  * Build orderBy clause from sort field and direction

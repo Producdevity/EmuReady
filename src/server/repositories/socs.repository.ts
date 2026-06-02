@@ -2,7 +2,14 @@ import { PAGINATION } from '@/data/constants'
 import { ResourceError } from '@/lib/errors'
 import { Prisma, type SoC } from '@orm/client'
 import { BaseRepository } from './base.repository'
-import type { GetSoCsInput, CreateSoCInput, UpdateSoCInput } from '@/schemas/soc'
+import type {
+  GetSoCsInput,
+  GetSoCOptionsInput,
+  CreateSoCInput,
+  UpdateSoCInput,
+} from '@/schemas/soc'
+
+type SoCOptionFilters = NonNullable<GetSoCOptionsInput>
 
 /**
  * Repository for SoC (System on Chip) data access
@@ -50,6 +57,35 @@ export class SoCsRepository extends BaseRepository {
       take: limit,
       skip: offset,
     })
+  }
+
+  async options(filters: SoCOptionFilters = {}): Promise<{
+    socs: Pick<SoC, 'id' | 'name' | 'manufacturer'>[]
+    hasMore: boolean
+  }> {
+    const limit = filters.limit ?? 50
+    const offset = filters.offset ?? 0
+    const where: Prisma.SoCWhereInput = {
+      ...(filters.search && {
+        OR: [
+          { name: { contains: filters.search, mode: this.mode } },
+          { manufacturer: { contains: filters.search, mode: this.mode } },
+        ],
+      }),
+    }
+
+    const socs = await this.prisma.soC.findMany({
+      where,
+      select: { id: true, name: true, manufacturer: true },
+      orderBy: [{ manufacturer: this.sortOrder }, { name: this.sortOrder }],
+      take: limit + 1,
+      skip: offset,
+    })
+
+    return {
+      socs: socs.slice(0, limit),
+      hasMore: socs.length > limit,
+    }
   }
 
   /**

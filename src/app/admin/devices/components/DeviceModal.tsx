@@ -20,7 +20,8 @@ function DeviceModal(props: Props) {
   const createDevice = api.devices.create.useMutation()
   const updateDevice = api.devices.update.useMutation()
   const deviceBrandsQuery = api.deviceBrands.get.useQuery({ limit: 100 })
-  const socsQuery = api.socs.get.useQuery({ limit: 1000 })
+  // TODO: Make this selector async instead of preloading 1000 options.
+  const socsQuery = api.socs.options.useQuery({ limit: 1000 })
 
   const [brandId, setBrandId] = useState('')
   const [modelName, setModelName] = useState('')

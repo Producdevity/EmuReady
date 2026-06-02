@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { getAllowedOrigins, getOriginFromUrl, isAllowedRequestOrigin } from '@/lib/cors'
+import { env } from '@/lib/env'
 import { ms } from '@/utils/time'
 import type { NextRequest, NextFetchEvent } from 'next/server'
 
@@ -8,7 +9,10 @@ import type { NextRequest, NextFetchEvent } from 'next/server'
 // TODO: For production abuse control, prefer provider/WAF rate limits before traffic reaches Next.
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 
-const RATE_LIMIT_REQUESTS = process.env.NODE_ENV === 'test' ? 10000 : 100
+const IS_AUTOMATED_TEST_ENVIRONMENT =
+  env.APP_ENV === 'test' || env.IS_TEST_BUILD || process.env.PLAYWRIGHT_TEST === 'true'
+const IS_LOCAL_DEVELOPMENT_ENVIRONMENT = env.APP_ENV === 'local' || env.IS_DEVELOPMENT_BUILD
+const RATE_LIMIT_REQUESTS = IS_AUTOMATED_TEST_ENVIRONMENT ? 10000 : 100
 const RATE_LIMIT_WINDOW = ms.minutes(3)
 const RATE_LIMIT_CLEANUP_SAMPLE_RATE = 0.01
 const DEV_NO_STORE_HOSTS = new Set(['dev.emuready.com'])
@@ -42,7 +46,7 @@ function getClientIdentifier(req: NextRequest): string {
 function shouldBypassRateLimit(identifier: string): boolean {
   if (process.env.DISABLE_RATE_LIMIT === 'true') return true
 
-  if (process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'development') return false
+  if (!IS_AUTOMATED_TEST_ENVIRONMENT && !IS_LOCAL_DEVELOPMENT_ENVIRONMENT) return false
 
   return LOCAL_RATE_LIMIT_BYPASS_IDENTIFIERS.has(identifier)
 }
@@ -142,7 +146,7 @@ function protectTRPCAPI(req: NextRequest): NextResponse | null {
     )
   }
 
-  if (process.env.NODE_ENV !== 'test' && !isValidOrigin(req)) {
+  if (!IS_AUTOMATED_TEST_ENVIRONMENT && !isValidOrigin(req)) {
     console.warn(
       `Invalid origin for client: ${clientId}, origin: ${req.headers.get('origin')}, referer: ${req.headers.get('referer')}, path: ${pathname}`,
     )

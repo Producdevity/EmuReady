@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { MultiSelect } from './MultiSelect'
 
 const mockOptions = [
@@ -10,6 +10,11 @@ const mockOptions = [
 ]
 
 describe('MultiSelect', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
   it('renders with label and placeholder', () => {
     const onChange = vi.fn()
     render(
@@ -189,7 +194,7 @@ describe('MultiSelect', () => {
       expect(screen.getByPlaceholderText('Search test select...')).toBeInTheDocument()
     })
 
-    fireEvent.mouseDown(screen.getByTestId('outside'))
+    fireEvent.click(screen.getByTestId('outside'))
 
     await waitFor(() => {
       expect(screen.queryByPlaceholderText('Search test select...')).not.toBeInTheDocument()
@@ -311,6 +316,56 @@ describe('MultiSelect', () => {
 
     const searchInput = screen.getByPlaceholderText('Search test select...')
     expect(searchInput).toHaveValue('')
+  })
+
+  it('opens below the trigger when there is enough visible space', async () => {
+    const onChange = vi.fn()
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      bottom: 150,
+      height: 40,
+      left: 0,
+      right: 320,
+      top: 110,
+      width: 320,
+      x: 0,
+      y: 110,
+      toJSON: () => ({}),
+    })
+
+    render(<MultiSelect label="Test Select" value={[]} onChange={onChange} options={mockOptions} />)
+
+    fireEvent.click(screen.getByRole('button', { expanded: false }))
+
+    const optionList = await screen.findByTestId('multi-select-options')
+    expect(optionList.parentElement).toHaveClass('top-full')
+  })
+
+  it('opens above the trigger when the visual viewport is constrained below it', async () => {
+    const onChange = vi.fn()
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      bottom: 350,
+      height: 40,
+      left: 0,
+      right: 320,
+      top: 310,
+      width: 320,
+      x: 0,
+      y: 310,
+      toJSON: () => ({}),
+    })
+    vi.stubGlobal('visualViewport', {
+      addEventListener: vi.fn(),
+      height: 360,
+      offsetTop: 0,
+      removeEventListener: vi.fn(),
+    })
+
+    render(<MultiSelect label="Test Select" value={[]} onChange={onChange} options={mockOptions} />)
+
+    fireEvent.click(screen.getByRole('button', { expanded: false }))
+
+    const optionList = await screen.findByTestId('multi-select-options')
+    expect(optionList.parentElement).toHaveClass('bottom-full')
   })
 
   it('displays selected badges by default', () => {

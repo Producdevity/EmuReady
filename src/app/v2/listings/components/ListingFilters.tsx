@@ -13,6 +13,8 @@ import {
   Search,
 } from 'lucide-react'
 import { useState, useEffect, type ReactNode } from 'react'
+import AsyncDeviceFilterSelect from '@/app/listings/components/filters/AsyncDeviceFilterSelect'
+import AsyncSocFilterSelect from '@/app/listings/components/filters/AsyncSocFilterSelect'
 import { MultiSelect, Button, Input, Badge } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { cn } from '@/lib/utils'
@@ -45,6 +47,7 @@ interface Props {
   handlePerformanceChange: (values: string[]) => void
   performanceScales: PerformanceScale[] | undefined
   // Device filters
+  useAsyncHardwareFilters: boolean
   deviceIds: string[]
   handleDeviceChange: (values: string[]) => void
   deviceOptions: { id: string; name: string }[] | undefined
@@ -345,17 +348,30 @@ export function ListingFilters(props: Props) {
                               />
                             )}
 
-                            {section.id === 'devices' && props.deviceOptions && (
-                              <MultiSelect
+                            {section.id === 'devices' && props.useAsyncHardwareFilters && (
+                              <AsyncDeviceFilterSelect
                                 label="Devices"
                                 value={props.deviceIds}
                                 onChange={props.handleDeviceChange}
                                 placeholder="Select devices..."
-                                options={props.deviceOptions}
                                 maxDisplayed={3}
                                 className="mobile-optimized"
                               />
                             )}
+
+                            {section.id === 'devices' &&
+                              !props.useAsyncHardwareFilters &&
+                              props.deviceOptions && (
+                                <MultiSelect
+                                  label="Devices"
+                                  value={props.deviceIds}
+                                  onChange={props.handleDeviceChange}
+                                  placeholder="Select devices..."
+                                  options={props.deviceOptions}
+                                  maxDisplayed={3}
+                                  className="mobile-optimized"
+                                />
+                              )}
 
                             {section.id === 'emulators' && props.emulatorOptions && (
                               <MultiSelect
@@ -369,17 +385,30 @@ export function ListingFilters(props: Props) {
                               />
                             )}
 
-                            {section.id === 'socs' && props.socOptions && (
-                              <MultiSelect
+                            {section.id === 'socs' && props.useAsyncHardwareFilters && (
+                              <AsyncSocFilterSelect
                                 label="SoCs"
                                 value={props.socIds}
                                 onChange={props.handleSocChange}
                                 placeholder="Select system on chips..."
-                                options={props.socOptions}
                                 maxDisplayed={3}
                                 className="mobile-optimized"
                               />
                             )}
+
+                            {section.id === 'socs' &&
+                              !props.useAsyncHardwareFilters &&
+                              props.socOptions && (
+                                <MultiSelect
+                                  label="SoCs"
+                                  value={props.socIds}
+                                  onChange={props.handleSocChange}
+                                  placeholder="Select system on chips..."
+                                  options={props.socOptions}
+                                  maxDisplayed={3}
+                                  className="mobile-optimized"
+                                />
+                              )}
                           </motion.div>
                         )}
                       </AnimatePresence>

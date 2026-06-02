@@ -1,12 +1,12 @@
 'use client'
 
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { motionPresets } from '@/lib/motionPresets'
 
 interface SummaryItem {
   key: string
   content: string
-  colorClass: string // e.g., 'bg-yellow-500'
+  colorClass: string
   delay?: number
 }
 
@@ -41,18 +41,16 @@ export function ActiveFiltersSummary(props: Props) {
         )}
       </div>
       <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-        <AnimatePresence>
-          {props.items.map((item, index) => (
-            <motion.div
-              key={item.key}
-              {...motionPresets.fadeInLeft(item.delay ?? 0.1 + index * 0.05)}
-              className="flex items-center gap-2"
-            >
-              <span className={`w-2 h-2 ${item.colorClass} rounded-full`} />
-              {item.content}
-            </motion.div>
-          ))}
-        </AnimatePresence>
+        {props.items.map((item, index) => (
+          <motion.div
+            key={item.key}
+            {...motionPresets.fadeInLeft(item.delay ?? 0.1 + index * 0.05)}
+            className="flex items-center gap-2"
+          >
+            <span className={`w-2 h-2 ${item.colorClass} rounded-full`} />
+            {item.content}
+          </motion.div>
+        ))}
       </div>
     </motion.div>
   )

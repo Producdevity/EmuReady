@@ -11,7 +11,9 @@ import {
   type BaseGameResult,
 } from '@/components/game-search'
 import { LoadingSpinner } from '@/components/ui'
+import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
 import { api } from '@/lib/api'
+import { logger } from '@/lib/logger'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
@@ -22,7 +24,6 @@ import { handleGameCreationError } from './utils/gameCreationErrors'
 import NotSignedInMessage from '../components/NotSignedInMessage'
 import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
 
-// Extended TGDB game result that extends BaseGameResult
 interface TGDBGameResult extends BaseGameResult {
   id: string
   overview?: string
@@ -64,7 +65,6 @@ function TGDBSearchContent() {
   const searchParams = useSearchParams()
   const { user, isLoaded } = useUser()
 
-  // Get values directly from URL
   const urlQuery = searchParams.get('q') ?? ''
   const urlSystemId = searchParams.get('system') ?? ''
 
@@ -83,6 +83,7 @@ function TGDBSearchContent() {
     enabled: !!user,
   })
   const createGame = api.games.create.useMutation()
+  const submitWithHumanVerification = useSubmitWithHumanVerification()
   const systemsQuery = api.systems.get.useQuery()
 
   const { existingGames, updateSearchParams } = useGameSearch({
@@ -94,10 +95,8 @@ function TGDBSearchContent() {
     async (query: string, _platformId: number | null, systemId: string | null) => {
       setIsSearching(true)
 
-      // Update URL with search parameters
       updateSearchParams(query, systemId)
 
-      // Get system key from systemId
       const selectedSystem = systemId ? systemsQuery.data?.find((s) => s.id === systemId) : null
 
       try {
@@ -111,7 +110,6 @@ function TGDBSearchContent() {
         // Map TGDB games to our unified format
         const gameData = results.data?.games ?? []
         const mappedGames = gameData.map((game) => {
-          // Extract boxart URL from the search response
           const boxartUrl = extractBoxartUrl(game, results)
 
           const enrichedGame: TGDBGameWithBoxart = {
@@ -132,7 +130,7 @@ function TGDBSearchContent() {
           count: results.data?.count ?? 0,
         })
       } catch (error) {
-        console.error('Search error:', error)
+        logger.error('Search error:', error)
         toast.error(getErrorMessage(error, 'Failed to search games'))
       } finally {
         setIsSearching(false)
@@ -184,15 +182,18 @@ function TGDBSearchContent() {
 
       setIsSelecting(true)
       try {
-        const newGame = await createGame.mutateAsync({
-          title: game.game_title,
-          systemId,
-          imageUrl: game.boxart ?? null,
-          boxartUrl: game.boxart ?? null,
-          bannerUrl: null,
-          isErotic: false,
-          tgdbGameId: game.id,
-        })
+        const newGame = await submitWithHumanVerification((humanVerificationToken) =>
+          createGame.mutateAsync({
+            title: game.game_title,
+            systemId,
+            imageUrl: game.boxart ?? null,
+            boxartUrl: game.boxart ?? null,
+            bannerUrl: null,
+            isErotic: false,
+            tgdbGameId: game.id,
+            humanVerificationToken,
+          }),
+        )
 
         // Invalidate the existing games cache to ensure the new game is reflected
         await utils.games.checkExistingByNamesAndSystems.invalidate()
@@ -208,7 +209,7 @@ function TGDBSearchContent() {
         setIsSelecting(false)
       }
     },
-    [user, createGame, router, utils],
+    [user, submitWithHumanVerification, createGame, router, utils],
   )
 
   const isModeratorOrHigher = useMemo(() => {

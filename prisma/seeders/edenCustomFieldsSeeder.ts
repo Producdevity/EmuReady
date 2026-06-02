@@ -1,4 +1,5 @@
 import { CustomFieldType, type Prisma, type PrismaClient } from '@orm/client'
+import { syncCustomFieldCategories, type CustomFieldCategorySeed } from './customFieldCategoryUtils'
 
 interface SelectOption {
   value: string
@@ -18,6 +19,8 @@ interface EdenCustomFieldSeed {
   type: CustomFieldType
   required: boolean
   displayOrder: number
+  categoryName?: string | null
+  categoryOrder?: number
   defaultValue?: string | number | boolean | null
   placeholder?: string | null
   options?: SelectOption[]
@@ -25,6 +28,14 @@ interface EdenCustomFieldSeed {
 }
 
 const EDEN_EMULATOR_NAME = 'Eden'
+
+const EDEN_CUSTOM_FIELD_CATEGORIES: CustomFieldCategorySeed[] = [
+  { name: 'General', displayOrder: 0 },
+  { name: 'Graphics', displayOrder: 1 },
+  { name: 'Debug', displayOrder: 2 },
+  { name: 'CPU', displayOrder: 3 },
+  { name: 'Eden Veil', displayOrder: 4 },
+]
 
 const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
   {
@@ -35,6 +46,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
     defaultValue: null,
     placeholder: '0.0.2-pre-alpha',
     displayOrder: 0,
+    categoryName: 'Graphics',
+    categoryOrder: 4,
   },
   {
     name: 'dynamic_driver_version',
@@ -44,6 +57,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
     defaultValue: null,
     placeholder: 'Select first options for non-Android devices',
     displayOrder: 1,
+    categoryName: 'Eden Veil',
+    categoryOrder: 5,
   },
   {
     name: 'accuracy_level',
@@ -57,6 +72,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
       { value: 'Extreme (Slow)', label: 'Extreme (Slow)' },
     ],
     displayOrder: 2,
+    categoryName: 'CPU',
+    categoryOrder: 2,
   },
   {
     name: 'resolution',
@@ -65,6 +82,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
     required: true,
     defaultValue: null,
     displayOrder: 3,
+    categoryName: 'General',
+    categoryOrder: 0,
   },
   {
     name: 'vsync_mode',
@@ -80,6 +99,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
       { value: 'N/A', label: 'N/A' },
     ],
     displayOrder: 4,
+    categoryName: 'Graphics',
+    categoryOrder: 5,
   },
   {
     name: 'window_adapting_filter',
@@ -98,6 +119,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
       { value: 'Other', label: 'Other' },
     ],
     displayOrder: 5,
+    categoryName: 'Graphics',
+    categoryOrder: 3,
   },
   {
     name: 'anti_aliasing_method',
@@ -112,6 +135,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
       { value: 'Other', label: 'Other' },
     ],
     displayOrder: 6,
+    categoryName: 'General',
+    categoryOrder: 0,
   },
   {
     name: 'anisotropic_filtering',
@@ -128,6 +153,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
       { value: '16x', label: '16x' },
     ],
     displayOrder: 7,
+    categoryName: 'Graphics',
+    categoryOrder: 8,
   },
   {
     name: 'disk_shader_cache',
@@ -136,6 +163,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
     required: true,
     defaultValue: null,
     displayOrder: 8,
+    categoryName: 'Eden Veil',
+    categoryOrder: 3,
   },
   {
     name: 'use_async_shaders',
@@ -144,6 +173,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
     required: true,
     defaultValue: null,
     displayOrder: 9,
+    categoryName: 'Eden Veil',
+    categoryOrder: 4,
   },
   {
     name: 'use_reactive_flushing',
@@ -152,6 +183,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
     required: true,
     defaultValue: null,
     displayOrder: 10,
+    categoryName: 'Graphics',
+    categoryOrder: 6,
   },
   {
     name: 'docked_mode',
@@ -160,6 +193,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
     required: true,
     defaultValue: null,
     displayOrder: 11,
+    categoryName: 'Eden Veil',
+    categoryOrder: 6,
   },
   {
     name: 'audio_output_engine',
@@ -174,6 +209,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
       { value: 'Null', label: 'Null' },
     ],
     displayOrder: 12,
+    categoryName: 'Graphics',
+    categoryOrder: 7,
   },
   {
     name: 'gpu_api',
@@ -187,6 +224,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
       { value: 'Other', label: 'Other' },
     ],
     displayOrder: 13,
+    categoryName: 'General',
+    categoryOrder: 1,
   },
   {
     name: 'cpu_accuracy',
@@ -201,6 +240,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
       { value: 'Paranoid (Slow)', label: 'Paranoid (Slow)' },
     ],
     displayOrder: 14,
+    categoryName: 'General',
+    categoryOrder: 2,
   },
   {
     name: 'cpu_backend',
@@ -213,6 +254,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
       { value: 'Native code execution (NCE)', label: 'Native code execution (NCE)' },
     ],
     displayOrder: 15,
+    categoryName: 'CPU',
+    categoryOrder: 0,
   },
   {
     name: 'extended_dynamic_state',
@@ -222,6 +265,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
     defaultValue: 0,
     range: { min: 0, max: 3, unit: '', decimals: 0 },
     displayOrder: 16,
+    categoryName: 'CPU',
+    categoryOrder: 1,
   },
   {
     name: 'provoking_vertex',
@@ -230,6 +275,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
     required: true,
     defaultValue: false,
     displayOrder: 17,
+    categoryName: 'Eden Veil',
+    categoryOrder: 7,
   },
   {
     name: 'descriptor_indexing',
@@ -238,6 +285,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
     required: true,
     defaultValue: false,
     displayOrder: 18,
+    categoryName: 'Eden Veil',
+    categoryOrder: 8,
   },
   {
     name: 'enhanced_frame_pacing',
@@ -246,6 +295,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
     required: true,
     defaultValue: true,
     displayOrder: 19,
+    categoryName: 'Eden Veil',
+    categoryOrder: 9,
   },
   {
     name: 'use_fast_gpu_time',
@@ -254,6 +305,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
     required: true,
     defaultValue: false,
     displayOrder: 20,
+    categoryName: 'General',
+    categoryOrder: 2,
   },
   {
     name: 'nvdec_emulation',
@@ -267,6 +320,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
       { value: 'GPU', label: 'GPU' },
     ],
     displayOrder: 21,
+    categoryName: 'Debug',
+    categoryOrder: 0,
   },
   {
     name: 'astc_recompression_method',
@@ -280,6 +335,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
       { value: 'BC3 (Medium Quality)', label: 'BC3 (Medium Quality)' },
     ],
     displayOrder: 22,
+    categoryName: 'CPU',
+    categoryOrder: 3,
   },
   {
     name: 'vram_usage_mode',
@@ -292,6 +349,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
       { value: 'Aggressive', label: 'Aggressive' },
     ],
     displayOrder: 23,
+    categoryName: 'General',
+    categoryOrder: 3,
   },
   {
     name: 'optimize_spirv_output',
@@ -305,6 +364,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
       { value: 'Always', label: 'Always' },
     ],
     displayOrder: 24,
+    categoryName: 'Eden Veil',
+    categoryOrder: 10,
   },
   {
     name: 'fast_cpu_time',
@@ -313,6 +374,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
     required: true,
     defaultValue: false,
     displayOrder: 25,
+    categoryName: 'CPU',
+    categoryOrder: 4,
   },
   {
     name: 'enable_lru_cache',
@@ -321,6 +384,8 @@ const EDEN_CUSTOM_FIELDS: EdenCustomFieldSeed[] = [
     required: true,
     defaultValue: false,
     displayOrder: 26,
+    categoryName: 'Debug',
+    categoryOrder: 1,
   },
   {
     name: 'synchronize_core_speed',
@@ -378,6 +443,11 @@ export default async function edenCustomFieldsSeeder(prisma: PrismaClient) {
   }
 
   const fieldNames = EDEN_CUSTOM_FIELDS.map((field) => field.name)
+  const categoryIdByName = await syncCustomFieldCategories(
+    prisma,
+    eden.id,
+    EDEN_CUSTOM_FIELD_CATEGORIES,
+  )
 
   for (const field of EDEN_CUSTOM_FIELDS) {
     await prisma.customFieldDefinition.upsert({
@@ -387,8 +457,8 @@ export default async function edenCustomFieldsSeeder(prisma: PrismaClient) {
           name: field.name,
         },
       },
-      create: buildDefinitionCreate(eden.id, field),
-      update: buildDefinitionUpdate(field),
+      create: buildDefinitionCreate(eden.id, field, categoryIdByName),
+      update: buildDefinitionUpdate(field, categoryIdByName),
     })
   }
 
@@ -404,11 +474,16 @@ export default async function edenCustomFieldsSeeder(prisma: PrismaClient) {
   )
 }
 
-function buildDefinitionCreate(emulatorId: string, field: EdenCustomFieldSeed) {
-  const { options, range, defaultValue, placeholder, ...base } = field
+function buildDefinitionCreate(
+  emulatorId: string,
+  field: EdenCustomFieldSeed,
+  categoryIdByName: ReadonlyMap<string, string>,
+) {
+  const { options, range, defaultValue, placeholder, categoryOrder, ...base } = field
 
   return {
     emulatorId,
+    categoryId: resolveCategoryId(field, categoryIdByName),
     name: base.name,
     label: base.label,
     type: base.type,
@@ -421,13 +496,18 @@ function buildDefinitionCreate(emulatorId: string, field: EdenCustomFieldSeed) {
     rangeUnit: range?.unit ?? null,
     isRequired: base.required,
     displayOrder: base.displayOrder,
+    categoryOrder: categoryOrder ?? 0,
   }
 }
 
-function buildDefinitionUpdate(field: EdenCustomFieldSeed) {
-  const { options, range, defaultValue, placeholder, ...base } = field
+function buildDefinitionUpdate(
+  field: EdenCustomFieldSeed,
+  categoryIdByName: ReadonlyMap<string, string>,
+) {
+  const { options, range, defaultValue, placeholder, categoryOrder, ...base } = field
 
   return {
+    categoryId: resolveCategoryId(field, categoryIdByName),
     label: base.label,
     type: base.type,
     options: normalizeJsonInput(options),
@@ -439,7 +519,22 @@ function buildDefinitionUpdate(field: EdenCustomFieldSeed) {
     rangeUnit: range?.unit ?? null,
     isRequired: base.required,
     displayOrder: base.displayOrder,
+    categoryOrder: categoryOrder ?? 0,
   }
+}
+
+function resolveCategoryId(
+  field: EdenCustomFieldSeed,
+  categoryIdByName: ReadonlyMap<string, string>,
+) {
+  if (!field.categoryName) return null
+
+  const categoryId = categoryIdByName.get(field.categoryName)
+  if (!categoryId) {
+    throw new Error(`Missing Eden custom field category "${field.categoryName}" for ${field.name}`)
+  }
+
+  return categoryId
 }
 
 function normalizeJsonInput(

@@ -266,6 +266,11 @@
     display: none;
   }
 
+  .scrollbar-native-thin {
+    scrollbar-width: thin;
+    scrollbar-color: auto;
+  }
+
   .animate-fade-in-up {
     animation: var(--animate-fade-in-up);
     opacity: 0;

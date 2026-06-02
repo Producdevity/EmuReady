@@ -704,7 +704,7 @@ export class PcListingsRepository extends BaseRepository {
     if (!isSystemCompatible)
       return AppError.badRequest("The selected emulator does not support this game's system")
 
-    const canAutoApprove = await canUserAutoApprove(authorId)
+    const canAutoApprove = await canUserAutoApprove(authorId, this.prisma)
     const isAuthorOrHigher = roleIncludesRole(userRole, Role.AUTHOR)
     const status: ApprovalStatus =
       canAutoApprove || isAuthorOrHigher ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING

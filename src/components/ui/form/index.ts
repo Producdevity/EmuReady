@@ -1,5 +1,4 @@
 export * from './AnimatedToggle'
-export * from './AsyncMultiSelect'
 export * from './Autocomplete'
 export * from './Input'
 export * from './InputPlaceholder'

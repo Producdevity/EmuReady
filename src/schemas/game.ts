@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { HumanVerificationTokenSchema } from '@/features/human-verification/shared/schema'
 import { ApprovalStatus } from '@orm'
 
 export const GameSortField = z.enum([
@@ -72,6 +73,7 @@ export const CheckExistingByNamesAndSystemsSchema = z.object({
 export const CreateGameSchema = z.object({
   title: z.string().min(1),
   systemId: z.string().uuid(),
+  humanVerificationToken: HumanVerificationTokenSchema.optional(),
   imageUrl: z.string().nullable().optional(),
   boxartUrl: z.string().nullable().optional(),
   bannerUrl: z.string().nullable().optional(),

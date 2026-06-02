@@ -8,6 +8,7 @@ import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { searchItems, getDeviceSearchText } from '@/utils/simpleSearch'
+import { ms } from '@/utils/time'
 
 interface Device {
   id: string
@@ -29,16 +30,24 @@ interface Props {
   className?: string
 }
 
+const LOOKUP_DATA_QUERY_OPTIONS = {
+  staleTime: ms.hours(6),
+  gcTime: ms.hours(12),
+}
+
+const EMPTY_DEVICES: Device[] = []
+
 function DeviceSelector(props: Props) {
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
-  const devicesQuery = api.devices.get.useQuery({ limit: 1000 })
+  // TODO: Make this selector async instead of preloading 1000 options.
+  const devicesQuery = api.devices.options.useQuery({ limit: 1000 }, LOOKUP_DATA_QUERY_OPTIONS)
+  const devices = devicesQuery.data?.devices ?? EMPTY_DEVICES
 
   const filteredDevices = useMemo(() => {
-    if (!devicesQuery.data?.devices) return []
-    return searchItems(devicesQuery.data.devices, searchQuery, getDeviceSearchText)
-  }, [devicesQuery.data?.devices, searchQuery])
+    return searchItems(devices, searchQuery, getDeviceSearchText)
+  }, [devices, searchQuery])
 
   // Group devices by brand for better organization
   const devicesByBrand = useMemo(() => {

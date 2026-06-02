@@ -61,7 +61,6 @@ function CommunitySupportBanner(props: Props) {
               isHome ? 'md:gap-x-4' : '',
             )}
           >
-            {/* Icon */}
             <div
               className={cn(
                 'flex-shrink-0 rounded-lg bg-gradient-to-br from-pink-100 to-rose-100 dark:from-pink-950/30 dark:to-rose-950/30',
@@ -74,7 +73,6 @@ function CommunitySupportBanner(props: Props) {
               />
             </div>
 
-            {/* Text — min-width ensures icon + text + dismiss fill the first row, forcing CTA to wrap */}
             <p
               className={cn(
                 'flex-1 text-gray-700 dark:text-gray-200 leading-snug',
@@ -86,7 +84,6 @@ function CommunitySupportBanner(props: Props) {
               keeping it online isn&apos;t. Patreon supporters help with hosting and bandwidth.
             </p>
 
-            {/* CTA — wraps to second line on mobile via order-1, inline on desktop */}
             <a
               href={env.PATREON_URL}
               target="_blank"
@@ -106,7 +103,6 @@ function CommunitySupportBanner(props: Props) {
               Support Us
             </a>
 
-            {/* Dismiss — stays in first row (default order 0, same as icon + text) */}
             <button
               type="button"
               onClick={dismiss}

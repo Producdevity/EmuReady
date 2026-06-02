@@ -6,6 +6,33 @@ const transparentPng = Buffer.from(
 )
 
 export async function registerExternalServiceMocks(page: Page) {
+  await page.route('**/_vercel/speed-insights/script.js*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/javascript',
+      body: '',
+    })
+  })
+
+  await page.route(
+    'https://storage.ko-fi.com/cdn/scripts/floating-chat-wrapper.css*',
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/css',
+        body: '',
+      })
+    },
+  )
+
+  await page.route('https://storage.ko-fi.com/cdn/scripts/overlay-widget.js*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/javascript',
+      body: 'window.kofiWidgetOverlay={draw:function(){}};',
+    })
+  })
+
   await page.route(/\/api\/proxy-image(?:\?.*)?$/u, async (route) => {
     await route.fulfill({
       status: 200,

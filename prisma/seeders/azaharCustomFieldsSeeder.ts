@@ -1,4 +1,5 @@
 import { CustomFieldType, Prisma, type PrismaClient } from '@orm/client'
+import { syncCustomFieldCategories, type CustomFieldCategorySeed } from './customFieldCategoryUtils'
 
 interface SelectOption {
   value: string
@@ -25,6 +26,41 @@ interface AzaharCustomFieldSeed {
 }
 
 const AZAHAR_EMULATOR_NAME = 'Azahar'
+
+const AZAHAR_CUSTOM_FIELD_CATEGORIES: CustomFieldCategorySeed[] = [
+  { name: 'General', displayOrder: 0 },
+  { name: 'Graphics', displayOrder: 1 },
+  { name: 'CPU', displayOrder: 2 },
+  { name: 'Advanced', displayOrder: 3 },
+  { name: 'Media', displayOrder: 4 },
+]
+
+const AZAHAR_FIELD_CATEGORY_CONFIG: Record<
+  string,
+  { categoryName: string; categoryOrder: number }
+> = {
+  emulator_version: { categoryName: 'General', categoryOrder: 0 },
+  game_version: { categoryName: 'General', categoryOrder: 1 },
+  average_fps: { categoryName: 'General', categoryOrder: 2 },
+  dynamic_driver_version: { categoryName: 'Graphics', categoryOrder: 0 },
+  graphics_api: { categoryName: 'Graphics', categoryOrder: 1 },
+  enable_spiri_v_shader_generation: { categoryName: 'Graphics', categoryOrder: 2 },
+  disable_spir_v_optimizer: { categoryName: 'Graphics', categoryOrder: 3 },
+  enable_async_shader_complication: { categoryName: 'Graphics', categoryOrder: 4 },
+  internal_resolution: { categoryName: 'Graphics', categoryOrder: 5 },
+  linear_filtering: { categoryName: 'Graphics', categoryOrder: 6 },
+  accurate_multiplication: { categoryName: 'Graphics', categoryOrder: 7 },
+  disk_shader_cache: { categoryName: 'Graphics', categoryOrder: 8 },
+  texture_filter: { categoryName: 'Graphics', categoryOrder: 9 },
+  stereoscopic_3d_mode: { categoryName: 'Graphics', categoryOrder: 10 },
+  enable_hardware_shader: { categoryName: 'Graphics', categoryOrder: 11 },
+  enable_vsync: { categoryName: 'Graphics', categoryOrder: 12 },
+  cpu_jit: { categoryName: 'CPU', categoryOrder: 0 },
+  delay_game_render_thread: { categoryName: 'Advanced', categoryOrder: 0 },
+  delay_start_with_lle_modules: { categoryName: 'Advanced', categoryOrder: 1 },
+  media_url: { categoryName: 'Media', categoryOrder: 0 },
+  youtube: { categoryName: 'Media', categoryOrder: 1 },
+}
 
 const AZAHAR_CUSTOM_FIELDS: AzaharCustomFieldSeed[] = [
   {
@@ -252,6 +288,11 @@ export default async function azaharCustomFieldsSeeder(prisma: PrismaClient) {
   }
 
   const fieldNames = AZAHAR_CUSTOM_FIELDS.map((field) => field.name)
+  const categoryIdByName = await syncCustomFieldCategories(
+    prisma,
+    azahar.id,
+    AZAHAR_CUSTOM_FIELD_CATEGORIES,
+  )
 
   for (const field of AZAHAR_CUSTOM_FIELDS) {
     await prisma.customFieldDefinition.upsert({
@@ -261,8 +302,8 @@ export default async function azaharCustomFieldsSeeder(prisma: PrismaClient) {
           name: field.name,
         },
       },
-      create: buildDefinitionCreate(azahar.id, field),
-      update: buildDefinitionUpdate(field),
+      create: buildDefinitionCreate(azahar.id, field, categoryIdByName),
+      update: buildDefinitionUpdate(field, categoryIdByName),
     })
   }
 
@@ -278,11 +319,17 @@ export default async function azaharCustomFieldsSeeder(prisma: PrismaClient) {
   )
 }
 
-function buildDefinitionCreate(emulatorId: string, field: AzaharCustomFieldSeed) {
+function buildDefinitionCreate(
+  emulatorId: string,
+  field: AzaharCustomFieldSeed,
+  categoryIdByName: ReadonlyMap<string, string>,
+) {
   const { options, range, defaultValue, placeholder, ...base } = field
+  const categoryConfig = AZAHAR_FIELD_CATEGORY_CONFIG[field.name]
 
   return {
     emulatorId,
+    categoryId: resolveCategoryId(field.name, categoryConfig?.categoryName, categoryIdByName),
     name: base.name,
     label: base.label,
     type: base.type,
@@ -295,13 +342,19 @@ function buildDefinitionCreate(emulatorId: string, field: AzaharCustomFieldSeed)
     rangeUnit: range?.unit ?? null,
     isRequired: base.required,
     displayOrder: base.displayOrder,
+    categoryOrder: categoryConfig?.categoryOrder ?? 0,
   }
 }
 
-function buildDefinitionUpdate(field: AzaharCustomFieldSeed) {
+function buildDefinitionUpdate(
+  field: AzaharCustomFieldSeed,
+  categoryIdByName: ReadonlyMap<string, string>,
+) {
   const { options, range, defaultValue, placeholder, ...base } = field
+  const categoryConfig = AZAHAR_FIELD_CATEGORY_CONFIG[field.name]
 
   return {
+    categoryId: resolveCategoryId(field.name, categoryConfig?.categoryName, categoryIdByName),
     label: base.label,
     type: base.type,
     options: normalizeJsonInput(options),
@@ -313,7 +366,23 @@ function buildDefinitionUpdate(field: AzaharCustomFieldSeed) {
     rangeUnit: range?.unit ?? null,
     isRequired: base.required,
     displayOrder: base.displayOrder,
+    categoryOrder: categoryConfig?.categoryOrder ?? 0,
   }
+}
+
+function resolveCategoryId(
+  fieldName: string,
+  categoryName: string | undefined,
+  categoryIdByName: ReadonlyMap<string, string>,
+) {
+  if (!categoryName) return null
+
+  const categoryId = categoryIdByName.get(categoryName)
+  if (!categoryId) {
+    throw new Error(`Missing Azahar custom field category "${categoryName}" for ${fieldName}`)
+  }
+
+  return categoryId
 }
 
 function normalizeJsonInput(

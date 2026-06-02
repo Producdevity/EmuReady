@@ -69,8 +69,12 @@ export class ListingsPage extends BasePage {
   async clickFirstListing() {
     const firstRow = this.listingItems.first()
     await expect(firstRow).toBeVisible()
-    const link = firstRow.locator('a[href*="/listings/"]').first()
-    await link.click()
+    const link = firstRow.locator('td').first().getByRole('link').first()
+    await expect(link).toBeVisible()
+    const href = await link.getAttribute('href')
+    if (!href) throw new Error('Expected first listing link to have an href')
+    expect(href).toMatch(/^\/listings\/[^/]+$/)
+    await this.page.goto(href)
     await expect(this.page).toHaveURL(/\/listings\/[^/]+/)
   }
 
