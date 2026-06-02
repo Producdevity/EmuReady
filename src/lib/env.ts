@@ -65,9 +65,9 @@ export const env = {
 
   GITHUB_URL,
   GITHUB_README_URL: `${GITHUB_URL}/blob/master/README.md`,
-  GITHUB_SUPPORT_URL: `${GITHUB_URL}/issues/new?template=question.md`,
+  GITHUB_SUPPORT_URL: `${GITHUB_URL}/issues/new?template=question.yml`,
   GITHUB_CONTRIBUTING_URL: `${GITHUB_URL}/blob/master/CONTRIBUTING.md`,
-  GITHUB_REQUEST_EMULATOR_URL: `${GITHUB_URL}/issues/new?template=emulator_request.md`,
+  GITHUB_REQUEST_EMULATOR_URL: `${GITHUB_URL}/issues/new?template=emulator_request.yml`,
 
   GITHUB_ISSUES_URL: `${GITHUB_URL}/issues`,
 
