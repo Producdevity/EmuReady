@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { RISK_SIGNAL_TYPES } from '@/schemas/authorRisk'
 import { SUBMISSION_RISK_SIGNAL_TYPES } from '@/schemas/submissionRisk'
-import { Role } from '@orm/client'
+import { ApprovalStatus, Role } from '@orm/client'
 import type * as AuthorRiskService from '@/server/services/author-risk.service'
 
 vi.unmock('@/server/api/trpc')
@@ -276,7 +276,7 @@ describe('listing admin auto risk rejection', () => {
     const tx = {
       listing: {
         findMany: vi.fn(),
-        update: vi.fn().mockResolvedValue({}),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
     }
     const prismaMock = prisma as unknown as {
@@ -412,24 +412,24 @@ describe('listing admin auto risk rejection', () => {
     expect(tx.listing.findMany).toHaveBeenCalledWith({
       where: {
         id: { in: [LISTING_ID_C, LISTING_ID_D] },
-        status: 'PENDING',
+        status: ApprovalStatus.PENDING,
       },
-      include: { author: { select: { id: true } } },
+      select: { id: true, authorId: true, deviceId: true },
     })
-    expect(tx.listing.update).toHaveBeenCalledTimes(2)
-    expect(tx.listing.update).toHaveBeenCalledWith({
-      where: { id: LISTING_ID_C },
+    expect(tx.listing.updateMany).toHaveBeenCalledTimes(2)
+    expect(tx.listing.updateMany).toHaveBeenCalledWith({
+      where: { id: LISTING_ID_C, status: ApprovalStatus.PENDING },
       data: expect.objectContaining({
-        status: 'REJECTED',
+        status: ApprovalStatus.REJECTED,
         processedByUserId: ADMIN_ID,
         processedNotes:
           'Automatically rejected by review risk bulk action: submission risk high severity; author risk low severity (1 signal).',
       }),
     })
-    expect(tx.listing.update).toHaveBeenCalledWith({
-      where: { id: LISTING_ID_D },
+    expect(tx.listing.updateMany).toHaveBeenCalledWith({
+      where: { id: LISTING_ID_D, status: ApprovalStatus.PENDING },
       data: expect.objectContaining({
-        status: 'REJECTED',
+        status: ApprovalStatus.REJECTED,
         processedByUserId: ADMIN_ID,
         processedNotes:
           'Automatically rejected by review risk bulk action: author risk high severity (1 signal).',
@@ -460,6 +460,59 @@ describe('listing admin auto risk rejection', () => {
       rejectedCount: 2,
       skippedCount: 0,
     })
+  })
+
+  it('keeps handheld auto-rejection successful when trust action emission fails', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const { tx } = setupPrisma()
+
+    mockGetPendingListingRiskCandidates.mockResolvedValueOnce([
+      {
+        id: LISTING_ID_D,
+        authorId: HIGH_RISK_AUTHOR_ID,
+        author: { userBans: [] },
+        customFieldValues: [],
+      },
+    ])
+    mockComputeAuthorRiskProfiles.mockResolvedValue(
+      new Map([
+        [
+          HIGH_RISK_AUTHOR_ID,
+          {
+            authorId: HIGH_RISK_AUTHOR_ID,
+            highestSeverity: 'high',
+            signals: [
+              {
+                type: RISK_SIGNAL_TYPES.ACTIVE_BAN,
+                severity: 'high',
+                label: 'Active Ban',
+                description: 'Banned for spam',
+              },
+            ],
+          },
+        ],
+      ]),
+    )
+    tx.listing.findMany.mockResolvedValueOnce([
+      { id: LISTING_ID_D, authorId: HIGH_RISK_AUTHOR_ID, deviceId: 'device-4' },
+    ])
+    mockApplyTrustAction.mockRejectedValueOnce(new Error('trust failed'))
+
+    const { caller } = createCaller({ role: Role.ADMIN })
+
+    await expect(caller.autoRejectRisky()).resolves.toMatchObject({
+      success: true,
+      rejectedCount: 1,
+      skippedCount: 0,
+    })
+    expect(consoleError).toHaveBeenCalledWith(
+      'Some trust actions failed during review-risk handheld auto-rejection:',
+      expect.arrayContaining([
+        expect.objectContaining({ status: 'rejected', reason: expect.any(Error) }),
+      ]),
+    )
+
+    consoleError.mockRestore()
   })
 
   it('returns the admin-only auto-reject preview count', async () => {

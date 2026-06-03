@@ -32,11 +32,11 @@ import { invalidateListingSeo, invalidateListingsSeo } from '@/server/cache/inva
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
+import { autoRejectRiskyHandheldReports } from '@/server/services/review-risk-auto-reject.service'
 import {
   attachReviewRiskProfiles,
   computeReviewRiskProfiles,
   getAutoRejectableReviewRiskPreviewForCandidates,
-  getAutoRejectableReviewRiskItemsForCandidates,
   getRiskOnlyReviewPage,
 } from '@/server/services/review-risk.service'
 import {
@@ -843,7 +843,6 @@ export const adminRouter = createTRPCRouter({
   }),
 
   autoRejectRisky: adminProcedure.mutation(async ({ ctx }) => {
-    const repository = new ListingsRepository(ctx.prisma)
     const adminUserId = ctx.session.user.id
 
     const adminUserExists = await ctx.prisma.user.findUnique({
@@ -852,118 +851,10 @@ export const adminRouter = createTRPCRouter({
     })
     if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
 
-    const autoRejectItems = await getAutoRejectableReviewRiskItemsForCandidates({
+    return autoRejectRiskyHandheldReports({
       prisma: ctx.prisma,
-      loadCandidates: () => repository.getPendingListingRiskCandidates({}),
+      adminUserId,
     })
-
-    if (autoRejectItems.length === 0) {
-      return {
-        success: true,
-        rejectedCount: 0,
-        skippedCount: 0,
-        message: 'No auto-rejectable review-risk handheld reports found.',
-      }
-    }
-
-    const processedNotesById = new Map(
-      autoRejectItems.map((item) => [item.id, item.processedNotes]),
-    )
-    const listingIds = autoRejectItems.map((item) => item.id)
-
-    const transactionResult = await ctx.prisma.$transaction(async (tx) => {
-      const listingsToReject = await tx.listing.findMany({
-        where: {
-          id: { in: listingIds },
-          status: ApprovalStatus.PENDING,
-        },
-        include: { author: { select: { id: true } } },
-      })
-
-      for (const listing of listingsToReject) {
-        await tx.listing.update({
-          where: { id: listing.id },
-          data: {
-            status: ApprovalStatus.REJECTED,
-            processedByUserId: adminUserId,
-            processedAt: new Date(),
-            processedNotes:
-              processedNotesById.get(listing.id) ?? 'Automatically rejected by review risk.',
-          },
-        })
-      }
-
-      return {
-        listingsToReject,
-        skippedCount: listingIds.length - listingsToReject.length,
-      }
-    })
-
-    const rejectedListingsWithAuthor = transactionResult.listingsToReject.filter(
-      (l): l is typeof l & { authorId: string } => l.authorId !== null,
-    )
-    await Promise.all(
-      rejectedListingsWithAuthor.map((listing) => {
-        const processedNotes =
-          processedNotesById.get(listing.id) ?? 'Automatically rejected by review risk.'
-
-        return applyTrustAction({
-          userId: listing.authorId,
-          action: TrustAction.LISTING_REJECTED,
-          context: {
-            listingId: listing.id,
-            adminUserId,
-            reason: processedNotes,
-          },
-        })
-      }),
-    )
-
-    try {
-      const rejectedAt = new Date()
-
-      for (const listing of transactionResult.listingsToReject) {
-        const processedNotes =
-          processedNotesById.get(listing.id) ?? 'Automatically rejected by review risk.'
-
-        try {
-          notificationEventEmitter.emitNotificationEvent({
-            eventType: NOTIFICATION_EVENTS.LISTING_REJECTED,
-            entityType: 'listing',
-            entityId: listing.id,
-            triggeredBy: adminUserId,
-            payload: {
-              listingId: listing.id,
-              rejectedBy: adminUserId,
-              rejectedAt,
-              rejectionReason: processedNotes,
-              bulk: true,
-            },
-          })
-        } catch (notificationError) {
-          console.error(`Failed to emit notification for listing ${listing.id}:`, notificationError)
-        }
-      }
-    } catch (error) {
-      console.error('Error emitting review-risk auto-rejection notifications:', error)
-    }
-
-    listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
-    invalidateCatalogCompatibilityCacheForDevices(
-      transactionResult.listingsToReject.map((listing) => listing.deviceId),
-    )
-
-    const message =
-      transactionResult.skippedCount > 0
-        ? `Automatically rejected ${transactionResult.listingsToReject.length} review-risk handheld report(s). ${transactionResult.skippedCount} handheld report(s) were skipped because they were already processed.`
-        : `Automatically rejected ${transactionResult.listingsToReject.length} review-risk handheld report(s).`
-
-    return {
-      success: true,
-      rejectedCount: transactionResult.listingsToReject.length,
-      skippedCount: transactionResult.skippedCount,
-      message,
-    }
   }),
 
   stats: viewStatisticsProcedure.query(async ({ ctx }) => {

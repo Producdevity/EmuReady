@@ -1082,7 +1082,7 @@ describe('pcListings trust integration', () => {
         { id: LISTING_ID_C, authorId: AUTHOR_ID },
         { id: LISTING_ID_D, authorId: HIGH_RISK_AUTHOR_ID },
       ])
-      prisma.pcListing.update.mockResolvedValue({})
+      prisma.pcListing.updateMany.mockResolvedValue({ count: 1 })
 
       const result = await caller.autoRejectRisky()
 
@@ -1090,24 +1090,24 @@ describe('pcListings trust integration', () => {
       expect(prisma.pcListing.findMany).toHaveBeenCalledWith({
         where: {
           id: { in: [LISTING_ID_C, LISTING_ID_D] },
-          status: 'PENDING',
+          status: ApprovalStatus.PENDING,
         },
         select: { id: true, authorId: true },
       })
-      expect(prisma.pcListing.update).toHaveBeenCalledTimes(2)
-      expect(prisma.pcListing.update).toHaveBeenCalledWith({
-        where: { id: LISTING_ID_C },
+      expect(prisma.pcListing.updateMany).toHaveBeenCalledTimes(2)
+      expect(prisma.pcListing.updateMany).toHaveBeenCalledWith({
+        where: { id: LISTING_ID_C, status: ApprovalStatus.PENDING },
         data: expect.objectContaining({
-          status: 'REJECTED',
+          status: ApprovalStatus.REJECTED,
           processedByUserId: ADMIN_ID,
           processedNotes:
             'Automatically rejected by review risk bulk action: submission risk high severity; author risk low severity (1 signal).',
         }),
       })
-      expect(prisma.pcListing.update).toHaveBeenCalledWith({
-        where: { id: LISTING_ID_D },
+      expect(prisma.pcListing.updateMany).toHaveBeenCalledWith({
+        where: { id: LISTING_ID_D, status: ApprovalStatus.PENDING },
         data: expect.objectContaining({
-          status: 'REJECTED',
+          status: ApprovalStatus.REJECTED,
           processedByUserId: ADMIN_ID,
           processedNotes:
             'Automatically rejected by review risk bulk action: author risk high severity (1 signal).',
@@ -1136,6 +1136,109 @@ describe('pcListings trust integration', () => {
         rejectedCount: 2,
         skippedCount: 0,
       })
+    })
+
+    it('skips automatic PC risk rejection if a report is no longer pending at update time', async () => {
+      mockRepositoryGetPendingListingRiskCandidates.mockResolvedValueOnce([
+        {
+          id: LISTING_ID_D,
+          authorId: HIGH_RISK_AUTHOR_ID,
+          author: { userBans: [] },
+          customFieldValues: [],
+        },
+      ])
+      mockComputeAuthorRiskProfiles.mockResolvedValue(
+        new Map([
+          [
+            HIGH_RISK_AUTHOR_ID,
+            {
+              authorId: HIGH_RISK_AUTHOR_ID,
+              highestSeverity: 'high',
+              signals: [
+                {
+                  type: RISK_SIGNAL_TYPES.ACTIVE_BAN,
+                  severity: 'high',
+                  label: 'Active Ban',
+                  description: 'Banned for spam',
+                },
+              ],
+            },
+          ],
+        ]),
+      )
+
+      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.ADMIN })
+      prisma.pcListing.findMany.mockResolvedValueOnce([
+        { id: LISTING_ID_D, authorId: HIGH_RISK_AUTHOR_ID },
+      ])
+      prisma.pcListing.updateMany.mockResolvedValueOnce({ count: 0 })
+
+      await expect(caller.autoRejectRisky()).resolves.toMatchObject({
+        success: true,
+        rejectedCount: 0,
+        skippedCount: 1,
+      })
+      expect(prisma.pcListing.updateMany).toHaveBeenCalledWith({
+        where: { id: LISTING_ID_D, status: ApprovalStatus.PENDING },
+        data: expect.objectContaining({
+          status: ApprovalStatus.REJECTED,
+          processedByUserId: ADMIN_ID,
+        }),
+      })
+      expect(mockApplyTrustAction).not.toHaveBeenCalled()
+      expect(mockEmitNotificationEvent).not.toHaveBeenCalled()
+    })
+
+    it('keeps automatic PC risk rejection successful when trust action emission fails', async () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+      mockRepositoryGetPendingListingRiskCandidates.mockResolvedValueOnce([
+        {
+          id: LISTING_ID_D,
+          authorId: HIGH_RISK_AUTHOR_ID,
+          author: { userBans: [] },
+          customFieldValues: [],
+        },
+      ])
+      mockComputeAuthorRiskProfiles.mockResolvedValue(
+        new Map([
+          [
+            HIGH_RISK_AUTHOR_ID,
+            {
+              authorId: HIGH_RISK_AUTHOR_ID,
+              highestSeverity: 'high',
+              signals: [
+                {
+                  type: RISK_SIGNAL_TYPES.ACTIVE_BAN,
+                  severity: 'high',
+                  label: 'Active Ban',
+                  description: 'Banned for spam',
+                },
+              ],
+            },
+          ],
+        ]),
+      )
+      mockApplyTrustAction.mockRejectedValueOnce(new Error('trust failed'))
+
+      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.ADMIN })
+      prisma.pcListing.findMany.mockResolvedValueOnce([
+        { id: LISTING_ID_D, authorId: HIGH_RISK_AUTHOR_ID },
+      ])
+      prisma.pcListing.updateMany.mockResolvedValue({ count: 1 })
+
+      await expect(caller.autoRejectRisky()).resolves.toMatchObject({
+        success: true,
+        rejectedCount: 1,
+        skippedCount: 0,
+      })
+      expect(consoleError).toHaveBeenCalledWith(
+        'Some trust actions failed during review-risk PC auto-rejection:',
+        expect.arrayContaining([
+          expect.objectContaining({ status: 'rejected', reason: expect.any(Error) }),
+        ]),
+      )
+
+      consoleError.mockRestore()
     })
 
     it('returns the admin-only PC auto-reject preview count', async () => {
@@ -1270,7 +1373,7 @@ describe('pcListings trust integration', () => {
       prisma.pcListing.findMany.mockResolvedValueOnce([
         { id: LISTING_ID_D, authorId: HIGH_RISK_AUTHOR_ID },
       ])
-      prisma.pcListing.update.mockResolvedValue({})
+      prisma.pcListing.updateMany.mockResolvedValue({ count: 1 })
 
       await expect(caller.autoRejectRisky()).resolves.toMatchObject({
         success: true,

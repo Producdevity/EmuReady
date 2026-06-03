@@ -64,12 +64,12 @@ import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifica
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
 import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
 import { logAudit } from '@/server/services/audit.service'
+import { autoRejectRiskyPcReports } from '@/server/services/review-risk-auto-reject.service'
 import {
   attachReviewRiskProfiles,
   attachReviewRiskProfileForViewer,
   computeReviewRiskProfiles,
   getAutoRejectableReviewRiskPreviewForCandidates,
-  getAutoRejectableReviewRiskItemsForCandidates,
   getRiskOnlyReviewPage,
 } from '@/server/services/review-risk.service'
 import { listingStatsCache } from '@/server/utils/cache'
@@ -891,120 +891,10 @@ export const pcListingsRouter = createTRPCRouter({
   }),
 
   autoRejectRisky: adminProcedure.mutation(async ({ ctx }) => {
-    const repository = new PcListingsRepository(ctx.prisma)
-
-    const autoRejectItems = await getAutoRejectableReviewRiskItemsForCandidates({
+    return autoRejectRiskyPcReports({
       prisma: ctx.prisma,
-      loadCandidates: () => repository.getPendingListingRiskCandidates({}),
+      adminUserId: ctx.session.user.id,
     })
-
-    if (autoRejectItems.length === 0) {
-      return {
-        success: true,
-        rejectedCount: 0,
-        skippedCount: 0,
-        message: 'No auto-rejectable review-risk PC reports found.',
-      }
-    }
-
-    const processedNotesById = new Map(
-      autoRejectItems.map((item) => [item.id, item.processedNotes]),
-    )
-    const pcListingIds = autoRejectItems.map((item) => item.id)
-
-    const transactionResult = await ctx.prisma.$transaction(async (tx) => {
-      const pendingListings = await tx.pcListing.findMany({
-        where: {
-          id: { in: pcListingIds },
-          status: ApprovalStatus.PENDING,
-        },
-        select: { id: true, authorId: true },
-      })
-
-      for (const listing of pendingListings) {
-        await tx.pcListing.update({
-          where: { id: listing.id },
-          data: {
-            status: ApprovalStatus.REJECTED,
-            processedAt: new Date(),
-            processedByUserId: ctx.session.user.id,
-            processedNotes:
-              processedNotesById.get(listing.id) ?? 'Automatically rejected by review risk.',
-          },
-        })
-      }
-
-      return {
-        pendingListings,
-        skippedCount: pcListingIds.length - pendingListings.length,
-      }
-    })
-
-    const listingsWithAuthor = transactionResult.pendingListings.filter(
-      (l): l is typeof l & { authorId: string } => l.authorId !== null,
-    )
-    await Promise.all(
-      listingsWithAuthor.map((listing) => {
-        const processedNotes =
-          processedNotesById.get(listing.id) ?? 'Automatically rejected by review risk.'
-
-        return applyTrustAction({
-          userId: listing.authorId,
-          action: TrustAction.LISTING_REJECTED,
-          context: {
-            pcListingId: listing.id,
-            adminUserId: ctx.session.user.id,
-            reason: processedNotes,
-          },
-        })
-      }),
-    )
-
-    listingStatsCache.delete('pc-listing-stats')
-
-    try {
-      const rejectedAt = new Date()
-
-      for (const listing of transactionResult.pendingListings) {
-        const processedNotes =
-          processedNotesById.get(listing.id) ?? 'Automatically rejected by review risk.'
-
-        try {
-          notificationEventEmitter.emitNotificationEvent({
-            eventType: NOTIFICATION_EVENTS.PC_LISTING_REJECTED,
-            entityType: 'pcListing',
-            entityId: listing.id,
-            triggeredBy: ctx.session.user.id,
-            payload: {
-              pcListingId: listing.id,
-              rejectedBy: ctx.session.user.id,
-              rejectedAt,
-              rejectionReason: processedNotes,
-              bulk: true,
-            },
-          })
-        } catch (notificationError) {
-          console.error(
-            `Failed to emit notification for PC listing ${listing.id}:`,
-            notificationError,
-          )
-        }
-      }
-    } catch (error) {
-      console.error('Error emitting review-risk PC auto-rejection notifications:', error)
-    }
-
-    const message =
-      transactionResult.skippedCount > 0
-        ? `Automatically rejected ${transactionResult.pendingListings.length} review-risk PC report(s). ${transactionResult.skippedCount} PC report(s) were skipped because they were already processed.`
-        : `Automatically rejected ${transactionResult.pendingListings.length} review-risk PC report(s).`
-
-    return {
-      success: true,
-      rejectedCount: transactionResult.pendingListings.length,
-      skippedCount: transactionResult.skippedCount,
-      message,
-    }
   }),
 
   getAll: permissionProcedure(PERMISSIONS.APPROVE_LISTINGS)
