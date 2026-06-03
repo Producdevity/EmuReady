@@ -35,6 +35,7 @@ import { PcListingsRepository } from '@/server/repositories/pc-listings.reposito
 import {
   attachReviewRiskProfiles,
   computeReviewRiskProfiles,
+  getAutoRejectableReviewRiskPreviewForCandidates,
   getAutoRejectableReviewRiskItemsForCandidates,
   getRiskOnlyReviewPage,
 } from '@/server/services/review-risk.service'
@@ -831,6 +832,15 @@ export const adminRouter = createTRPCRouter({
         message,
       }
     }),
+
+  autoRejectRiskyPreview: adminProcedure.query(async ({ ctx }) => {
+    const repository = new ListingsRepository(ctx.prisma)
+
+    return getAutoRejectableReviewRiskPreviewForCandidates({
+      prisma: ctx.prisma,
+      loadCandidates: () => repository.getPendingListingRiskCandidates({}),
+    })
+  }),
 
   autoRejectRisky: adminProcedure.mutation(async ({ ctx }) => {
     const repository = new ListingsRepository(ctx.prisma)

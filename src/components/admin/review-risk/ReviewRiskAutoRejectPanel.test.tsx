@@ -11,6 +11,10 @@ describe('ReviewRiskAutoRejectPanel', () => {
     render(
       <ReviewRiskAutoRejectPanel
         reportLabel="PC"
+        eligibleCount={3}
+        reviewRiskQueueCount={8}
+        isCountLoading={false}
+        hasCountError={false}
         isSubmitting={false}
         onAutoReject={onAutoReject}
       />,
@@ -19,19 +23,48 @@ describe('ReviewRiskAutoRejectPanel', () => {
     expect(screen.getByText('Auto-reject matching review-risk reports')).toBeInTheDocument()
     expect(
       screen.getByText(
-        'Applies to all pending PC reports with high submission risk or any author risk signal.',
+        'Scans all pending PC reports and matches high author risk, or high submission risk plus at least one author risk signal.',
       ),
     ).toBeInTheDocument()
+    expect(screen.getByText('Eligible: 3 PC reports')).toBeInTheDocument()
+    expect(screen.getByText('All pending review-risk queue: 8 PC reports')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: /reject matching reports/i }))
+    await user.click(screen.getByRole('button', { name: /reject 3 reports/i }))
 
     expect(onAutoReject).toHaveBeenCalledTimes(1)
   })
 
   it('disables the action while submitting', () => {
-    render(<ReviewRiskAutoRejectPanel reportLabel="handheld" isSubmitting onAutoReject={vi.fn()} />)
+    render(
+      <ReviewRiskAutoRejectPanel
+        reportLabel="handheld"
+        eligibleCount={2}
+        reviewRiskQueueCount={4}
+        isCountLoading={false}
+        hasCountError={false}
+        isSubmitting
+        onAutoReject={vi.fn()}
+      />,
+    )
 
     expect(screen.getByRole('button')).toBeDisabled()
     expect(screen.getByText(/pending handheld reports/i)).toBeInTheDocument()
+  })
+
+  it('disables the action when no reports match the auto-reject rule', () => {
+    render(
+      <ReviewRiskAutoRejectPanel
+        reportLabel="handheld"
+        eligibleCount={0}
+        reviewRiskQueueCount={5}
+        isCountLoading={false}
+        hasCountError={false}
+        isSubmitting={false}
+        onAutoReject={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('Eligible: 0 handheld reports')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /no matching reports/i })).toBeDisabled()
   })
 })

@@ -68,6 +68,7 @@ import {
   attachReviewRiskProfiles,
   attachReviewRiskProfileForViewer,
   computeReviewRiskProfiles,
+  getAutoRejectableReviewRiskPreviewForCandidates,
   getAutoRejectableReviewRiskItemsForCandidates,
   getRiskOnlyReviewPage,
 } from '@/server/services/review-risk.service'
@@ -880,6 +881,15 @@ export const pcListingsRouter = createTRPCRouter({
       return { count: result.count }
     }),
 
+  autoRejectRiskyPreview: adminProcedure.query(async ({ ctx }) => {
+    const repository = new PcListingsRepository(ctx.prisma)
+
+    return getAutoRejectableReviewRiskPreviewForCandidates({
+      prisma: ctx.prisma,
+      loadCandidates: () => repository.getPendingListingRiskCandidates({}),
+    })
+  }),
+
   autoRejectRisky: adminProcedure.mutation(async ({ ctx }) => {
     const repository = new PcListingsRepository(ctx.prisma)
 
@@ -952,23 +962,36 @@ export const pcListingsRouter = createTRPCRouter({
 
     listingStatsCache.delete('pc-listing-stats')
 
-    for (const listing of transactionResult.pendingListings) {
-      const processedNotes =
-        processedNotesById.get(listing.id) ?? 'Automatically rejected by review risk.'
+    try {
+      const rejectedAt = new Date()
 
-      notificationEventEmitter.emitNotificationEvent({
-        eventType: NOTIFICATION_EVENTS.PC_LISTING_REJECTED,
-        entityType: 'pcListing',
-        entityId: listing.id,
-        triggeredBy: ctx.session.user.id,
-        payload: {
-          pcListingId: listing.id,
-          rejectedBy: ctx.session.user.id,
-          rejectedAt: new Date(),
-          rejectionReason: processedNotes,
-          bulk: true,
-        },
-      })
+      for (const listing of transactionResult.pendingListings) {
+        const processedNotes =
+          processedNotesById.get(listing.id) ?? 'Automatically rejected by review risk.'
+
+        try {
+          notificationEventEmitter.emitNotificationEvent({
+            eventType: NOTIFICATION_EVENTS.PC_LISTING_REJECTED,
+            entityType: 'pcListing',
+            entityId: listing.id,
+            triggeredBy: ctx.session.user.id,
+            payload: {
+              pcListingId: listing.id,
+              rejectedBy: ctx.session.user.id,
+              rejectedAt,
+              rejectionReason: processedNotes,
+              bulk: true,
+            },
+          })
+        } catch (notificationError) {
+          console.error(
+            `Failed to emit notification for PC listing ${listing.id}:`,
+            notificationError,
+          )
+        }
+      }
+    } catch (error) {
+      console.error('Error emitting review-risk PC auto-rejection notifications:', error)
     }
 
     const message =

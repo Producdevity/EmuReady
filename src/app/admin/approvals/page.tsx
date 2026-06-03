@@ -57,6 +57,7 @@ import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
+import { formatCountLabel } from '@/utils/text'
 import { Role } from '@orm'
 
 type PendingListing = RouterOutput['listings']['getPending']['listings'][number]
@@ -77,6 +78,14 @@ const APPROVALS_COLUMNS: ColumnDefinition[] = [
   { key: 'submittedAt', label: 'Submitted', defaultVisible: false },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
+
+function formatOptionalCountLabel(word: string, count: number | undefined): string {
+  return count === undefined ? 'Loading...' : formatCountLabel(word, count)
+}
+
+function getRejectButtonLabel(count: number): string {
+  return `Reject ${count.toLocaleString()} Report${count === 1 ? '' : 's'}`
+}
 
 function AdminApprovalsPage() {
   const router = useRouter()
@@ -104,6 +113,7 @@ function AdminApprovalsPage() {
   })
 
   const currentUserQuery = api.users.me.useQuery()
+  const canAutoRejectRiskyReports = hasRolePermission(currentUserQuery.data?.role, Role.ADMIN)
   const pendingListingsQuery = api.listings.getPending.useQuery({
     page: table.page,
     limit: table.limit,
@@ -112,6 +122,12 @@ function AdminApprovalsPage() {
     search: isEmpty(table.search) ? null : table.search,
     riskFilter: reviewRiskFilter.riskFilter,
   })
+  const autoRejectRiskyPreviewQuery = api.listings.autoRejectRiskyListingsPreview.useQuery(
+    undefined,
+    {
+      enabled: canAutoRejectRiskyReports && reviewRiskFilter.isRiskOnly,
+    },
+  )
 
   const gameStatsQuery = api.games.stats.useQuery()
   const listingStatsQuery = api.listings.stats.useQuery()
@@ -128,6 +144,7 @@ function AdminApprovalsPage() {
       utils.listings.getProcessed.invalidate(),
       utils.listings.get.invalidate(),
       utils.listings.stats.invalidate(),
+      utils.listings.autoRejectRiskyListingsPreview.invalidate(),
       utils.games.stats.invalidate(),
       // Force refetch the stats
       utils.listings.stats.refetch(),
@@ -247,12 +264,34 @@ function AdminApprovalsPage() {
   }
 
   const handleAutoRejectRiskyReports = async () => {
+    if (autoRejectRiskyPreviewQuery.isError) {
+      toast.error('Failed to load the auto-reject count. Please refresh and try again.')
+      return
+    }
+
+    const eligibleCount = autoRejectRiskyPreviewQuery.data?.eligibleCount ?? 0
+    if (eligibleCount === 0) {
+      toast.warning('No handheld reports currently match the auto-reject rule.')
+      return
+    }
+
+    const eligibleReportCount = formatCountLabel('handheld report', eligibleCount)
+    const reviewRiskQueueCount = autoRejectRiskyPreviewQuery.data?.reviewRiskQueueCount
     const confirmed = await confirm({
-      title: 'Reject review-risk reports?',
-      description:
-        'This will reject every pending handheld report you can review when submission risk is high or author risk has any signal. Rejection notes will be generated automatically.',
-      confirmText: 'Reject Reports',
+      title: `Reject ${eligibleReportCount}?`,
+      description: `This scans all pending handheld reports and rejects ${eligibleReportCount} with high author risk, or with high submission risk and at least one author risk signal. Rejection notes will be generated automatically.`,
+      details: [
+        { label: 'Will reject', value: eligibleReportCount, tone: 'danger' },
+        { label: 'Scope', value: 'All pending handheld reports' },
+        {
+          label: 'All pending review-risk queue',
+          value: formatOptionalCountLabel('handheld report', reviewRiskQueueCount),
+        },
+        { label: 'Rule', value: 'High author risk, or high submission risk + author risk signal' },
+      ],
+      confirmText: getRejectButtonLabel(eligibleCount),
       cancelText: 'Cancel',
+      confirmVariant: 'danger',
     })
     if (!confirmed) return
 
@@ -297,7 +336,6 @@ function AdminApprovalsPage() {
 
   const listings = pendingListingsQuery.data?.listings ?? []
   const pagination = pendingListingsQuery.data?.pagination
-  const canAutoRejectRiskyReports = hasRolePermission(currentUserQuery.data?.role, Role.ADMIN)
 
   return (
     <AdminPageLayout
@@ -372,6 +410,10 @@ function AdminApprovalsPage() {
       {canAutoRejectRiskyReports && reviewRiskFilter.isRiskOnly && (
         <ReviewRiskAutoRejectPanel
           reportLabel="handheld"
+          eligibleCount={autoRejectRiskyPreviewQuery.data?.eligibleCount}
+          reviewRiskQueueCount={autoRejectRiskyPreviewQuery.data?.reviewRiskQueueCount}
+          isCountLoading={autoRejectRiskyPreviewQuery.isPending}
+          hasCountError={autoRejectRiskyPreviewQuery.isError}
           isSubmitting={autoRejectRiskyMutation.isPending}
           onAutoReject={() => {
             void handleAutoRejectRiskyReports()

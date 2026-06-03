@@ -44,6 +44,11 @@ export interface AutoRejectReviewRiskItem {
   processedNotes: string
 }
 
+export interface AutoRejectReviewRiskPreview {
+  eligibleCount: number
+  reviewRiskQueueCount: number
+}
+
 interface ActiveAuthorBansPrismaClient {
   userBan: {
     findMany: (args: {
@@ -84,12 +89,28 @@ function hasRiskSignals(candidate: ReviewRiskCandidate, profiles: ReviewRiskProf
   return Boolean(submissionRiskProfile && submissionRiskProfile.signals.length > 0)
 }
 
-function hasAutoRejectableAuthorRisk(profile: AuthorRiskProfile | undefined): boolean {
+function hasAuthorRiskSignals(profile: AuthorRiskProfile | undefined): boolean {
   return Boolean(profile && profile.signals.length > 0)
 }
 
-function hasAutoRejectableSubmissionRisk(profile: SubmissionRiskProfile | undefined): boolean {
+function hasHighAuthorRisk(profile: AuthorRiskProfile | undefined): boolean {
+  return Boolean(profile && profile.highestSeverity === 'high' && profile.signals.length > 0)
+}
+
+function hasHighSubmissionRisk(profile: SubmissionRiskProfile | undefined): boolean {
   return profile?.highestSeverity === 'high'
+}
+
+function isAutoRejectableReviewRisk(params: {
+  authorRiskProfile: AuthorRiskProfile | undefined
+  submissionRiskProfile: SubmissionRiskProfile | undefined
+}): boolean {
+  if (hasHighAuthorRisk(params.authorRiskProfile)) return true
+
+  return (
+    hasHighSubmissionRisk(params.submissionRiskProfile) &&
+    hasAuthorRiskSignals(params.authorRiskProfile)
+  )
 }
 
 function formatSignalCount(signalCount: number): string {
@@ -102,7 +123,7 @@ function buildAutoRejectProcessedNotes(params: {
 }): string {
   const reasons: string[] = []
 
-  if (hasAutoRejectableSubmissionRisk(params.submissionRiskProfile)) {
+  if (hasHighSubmissionRisk(params.submissionRiskProfile)) {
     reasons.push('submission risk high severity')
   }
 
@@ -153,8 +174,10 @@ export function getAutoRejectableReviewRiskItems<TCandidate extends ReviewRiskCa
     const submissionRiskProfile = profiles.submissionRiskProfiles.get(candidate.id)
 
     if (
-      !hasAutoRejectableAuthorRisk(authorRiskProfile) &&
-      !hasAutoRejectableSubmissionRisk(submissionRiskProfile)
+      !isAutoRejectableReviewRisk({
+        authorRiskProfile,
+        submissionRiskProfile,
+      })
     ) {
       return []
     }
@@ -171,6 +194,16 @@ export function getAutoRejectableReviewRiskItems<TCandidate extends ReviewRiskCa
   })
 }
 
+export function getAutoRejectableReviewRiskPreview<TCandidate extends ReviewRiskCandidate>(
+  candidates: readonly TCandidate[],
+  profiles: ReviewRiskProfiles,
+): AutoRejectReviewRiskPreview {
+  return {
+    eligibleCount: getAutoRejectableReviewRiskItems(candidates, profiles).length,
+    reviewRiskQueueCount: getRiskyReviewItemIds(candidates, profiles).length,
+  }
+}
+
 export async function getAutoRejectableReviewRiskItemsForCandidates<
   TCandidate extends ReviewRiskCandidate,
 >(params: {
@@ -181,6 +214,18 @@ export async function getAutoRejectableReviewRiskItemsForCandidates<
   const profiles = await computeReviewRiskProfiles(params.prisma, candidates)
 
   return getAutoRejectableReviewRiskItems(candidates, profiles)
+}
+
+export async function getAutoRejectableReviewRiskPreviewForCandidates<
+  TCandidate extends ReviewRiskCandidate,
+>(params: {
+  prisma: RiskPrismaClient
+  loadCandidates: () => Promise<readonly TCandidate[]>
+}): Promise<AutoRejectReviewRiskPreview> {
+  const candidates = await params.loadCandidates()
+  const profiles = await computeReviewRiskProfiles(params.prisma, candidates)
+
+  return getAutoRejectableReviewRiskPreview(candidates, profiles)
 }
 
 export function attachReviewRiskProfiles<TListing extends { id: string; authorId: string }>(
