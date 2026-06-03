@@ -22,6 +22,7 @@ import {
   deleteAnyListingProcedure,
   moderatorProcedure,
   superAdminProcedure,
+  adminProcedure,
   developerProcedure,
   viewStatisticsProcedure,
   protectedProcedure,
@@ -31,9 +32,11 @@ import { invalidateListingSeo, invalidateListingsSeo } from '@/server/cache/inva
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
+import { autoRejectRiskyHandheldReports } from '@/server/services/review-risk-auto-reject.service'
 import {
   attachReviewRiskProfiles,
   computeReviewRiskProfiles,
+  getAutoRejectableReviewRiskPreviewForCandidates,
   getRiskOnlyReviewPage,
 } from '@/server/services/review-risk.service'
 import {
@@ -829,6 +832,30 @@ export const adminRouter = createTRPCRouter({
         message,
       }
     }),
+
+  autoRejectRiskyPreview: adminProcedure.query(async ({ ctx }) => {
+    const repository = new ListingsRepository(ctx.prisma)
+
+    return getAutoRejectableReviewRiskPreviewForCandidates({
+      prisma: ctx.prisma,
+      loadCandidates: () => repository.getPendingListingRiskCandidates({}),
+    })
+  }),
+
+  autoRejectRisky: adminProcedure.mutation(async ({ ctx }) => {
+    const adminUserId = ctx.session.user.id
+
+    const adminUserExists = await ctx.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { id: true },
+    })
+    if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
+
+    return autoRejectRiskyHandheldReports({
+      prisma: ctx.prisma,
+      adminUserId,
+    })
+  }),
 
   stats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const [pending, approved, rejected] = await Promise.all([

@@ -157,9 +157,11 @@ const USER_ID = '00000000-0000-4000-a000-000000000001'
 const AUTHOR_ID = '00000000-0000-4000-a000-000000000002'
 const ADMIN_ID = '00000000-0000-4000-a000-000000000003'
 const CLEAN_AUTHOR_ID = '00000000-0000-4000-a000-000000000004'
+const HIGH_RISK_AUTHOR_ID = '00000000-0000-4000-a000-000000000005'
 const LISTING_ID = '00000000-0000-4000-a000-000000000010'
 const LISTING_ID_B = '00000000-0000-4000-a000-000000000011'
 const LISTING_ID_C = '00000000-0000-4000-a000-000000000012'
+const LISTING_ID_D = '00000000-0000-4000-a000-000000000013'
 const COMMENT_ID = '00000000-0000-4000-a000-000000000020'
 
 function createMockPrisma() {
@@ -193,6 +195,9 @@ function createMockPrisma() {
       findMany: vi.fn().mockResolvedValue([]),
       update: vi.fn(),
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
+    user: {
+      findUnique: vi.fn().mockResolvedValue({ id: ADMIN_ID }),
     },
     userBan: {
       findMany: vi.fn().mockResolvedValue([]),
@@ -968,6 +973,441 @@ describe('pcListings trust integration', () => {
           reason: 'Spam',
         }),
       })
+    })
+  })
+
+  describe('autoRejectRisky', () => {
+    it('rejects pending PC reports with high author risk or high submission risk with author risk', async () => {
+      const highSubmissionOnlyListing = {
+        id: LISTING_ID,
+        authorId: CLEAN_AUTHOR_ID,
+        author: { userBans: [] },
+        customFieldValues: [],
+      }
+      const authorRiskOnlyListing = {
+        id: LISTING_ID_B,
+        authorId: AUTHOR_ID,
+        author: { userBans: [] },
+        customFieldValues: [],
+      }
+      const matchingListing = {
+        id: LISTING_ID_C,
+        authorId: AUTHOR_ID,
+        author: { userBans: [] },
+        customFieldValues: [],
+      }
+      const highAuthorRiskOnlyListing = {
+        id: LISTING_ID_D,
+        authorId: HIGH_RISK_AUTHOR_ID,
+        author: { userBans: [] },
+        customFieldValues: [],
+      }
+
+      mockRepositoryGetPendingListingRiskCandidates.mockResolvedValueOnce([
+        highSubmissionOnlyListing,
+        authorRiskOnlyListing,
+        matchingListing,
+        highAuthorRiskOnlyListing,
+      ])
+      mockComputeAuthorRiskProfiles.mockResolvedValue(
+        new Map([
+          [CLEAN_AUTHOR_ID, { authorId: CLEAN_AUTHOR_ID, signals: [], highestSeverity: null }],
+          [
+            AUTHOR_ID,
+            {
+              authorId: AUTHOR_ID,
+              highestSeverity: 'low',
+              signals: [
+                {
+                  type: RISK_SIGNAL_TYPES.NEW_AUTHOR,
+                  severity: 'low',
+                  label: 'New Author',
+                  description: 'No previously approved listings',
+                },
+              ],
+            },
+          ],
+          [
+            HIGH_RISK_AUTHOR_ID,
+            {
+              authorId: HIGH_RISK_AUTHOR_ID,
+              highestSeverity: 'high',
+              signals: [
+                {
+                  type: RISK_SIGNAL_TYPES.ACTIVE_BAN,
+                  severity: 'high',
+                  label: 'Active Ban',
+                  description: 'Banned for spam',
+                },
+              ],
+            },
+          ],
+        ]),
+      )
+      mockComputeSubmissionRiskProfiles.mockResolvedValue(
+        new Map([
+          [
+            LISTING_ID,
+            {
+              listingId: LISTING_ID,
+              highestSeverity: 'high',
+              signals: [
+                {
+                  type: SUBMISSION_RISK_SIGNAL_TYPES.PLACEHOLDER_EMULATOR_VERSION,
+                  severity: 'high',
+                  label: 'Placeholder Emulator Version',
+                  description: 'Submitted emulator version resembles placeholder text.',
+                },
+              ],
+            },
+          ],
+          [LISTING_ID_B, { listingId: LISTING_ID_B, signals: [], highestSeverity: null }],
+          [
+            LISTING_ID_C,
+            {
+              listingId: LISTING_ID_C,
+              highestSeverity: 'high',
+              signals: [
+                {
+                  type: SUBMISSION_RISK_SIGNAL_TYPES.PLACEHOLDER_EMULATOR_VERSION,
+                  severity: 'high',
+                  label: 'Placeholder Emulator Version',
+                  description: 'Submitted emulator version resembles placeholder text.',
+                },
+              ],
+            },
+          ],
+        ]),
+      )
+
+      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.ADMIN })
+      prisma.pcListing.findMany.mockResolvedValueOnce([
+        { id: LISTING_ID_C, authorId: AUTHOR_ID },
+        { id: LISTING_ID_D, authorId: HIGH_RISK_AUTHOR_ID },
+      ])
+      prisma.pcListing.updateMany.mockResolvedValue({ count: 1 })
+
+      const result = await caller.autoRejectRisky()
+
+      expect(mockRepositoryGetPendingListingRiskCandidates).toHaveBeenCalledWith({})
+      expect(prisma.pcListing.findMany).toHaveBeenCalledWith({
+        where: {
+          id: { in: [LISTING_ID_C, LISTING_ID_D] },
+          status: ApprovalStatus.PENDING,
+        },
+        select: { id: true, authorId: true },
+      })
+      expect(prisma.pcListing.updateMany).toHaveBeenCalledTimes(2)
+      expect(prisma.pcListing.updateMany).toHaveBeenCalledWith({
+        where: { id: LISTING_ID_C, status: ApprovalStatus.PENDING },
+        data: expect.objectContaining({
+          status: ApprovalStatus.REJECTED,
+          processedByUserId: ADMIN_ID,
+          processedNotes:
+            'Automatically rejected by review risk bulk action: submission risk high severity; author risk low severity (1 signal).',
+        }),
+      })
+      expect(prisma.pcListing.updateMany).toHaveBeenCalledWith({
+        where: { id: LISTING_ID_D, status: ApprovalStatus.PENDING },
+        data: expect.objectContaining({
+          status: ApprovalStatus.REJECTED,
+          processedByUserId: ADMIN_ID,
+          processedNotes:
+            'Automatically rejected by review risk bulk action: author risk high severity (1 signal).',
+        }),
+      })
+      expect(mockApplyTrustAction).toHaveBeenCalledWith({
+        userId: AUTHOR_ID,
+        action: TrustAction.LISTING_REJECTED,
+        context: expect.objectContaining({
+          pcListingId: LISTING_ID_C,
+          reason:
+            'Automatically rejected by review risk bulk action: submission risk high severity; author risk low severity (1 signal).',
+        }),
+      })
+      expect(mockApplyTrustAction).toHaveBeenCalledWith({
+        userId: HIGH_RISK_AUTHOR_ID,
+        action: TrustAction.LISTING_REJECTED,
+        context: expect.objectContaining({
+          pcListingId: LISTING_ID_D,
+          reason:
+            'Automatically rejected by review risk bulk action: author risk high severity (1 signal).',
+        }),
+      })
+      expect(result).toMatchObject({
+        success: true,
+        rejectedCount: 2,
+        skippedCount: 0,
+      })
+    })
+
+    it('skips automatic PC risk rejection if a report is no longer pending at update time', async () => {
+      mockRepositoryGetPendingListingRiskCandidates.mockResolvedValueOnce([
+        {
+          id: LISTING_ID_D,
+          authorId: HIGH_RISK_AUTHOR_ID,
+          author: { userBans: [] },
+          customFieldValues: [],
+        },
+      ])
+      mockComputeAuthorRiskProfiles.mockResolvedValue(
+        new Map([
+          [
+            HIGH_RISK_AUTHOR_ID,
+            {
+              authorId: HIGH_RISK_AUTHOR_ID,
+              highestSeverity: 'high',
+              signals: [
+                {
+                  type: RISK_SIGNAL_TYPES.ACTIVE_BAN,
+                  severity: 'high',
+                  label: 'Active Ban',
+                  description: 'Banned for spam',
+                },
+              ],
+            },
+          ],
+        ]),
+      )
+
+      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.ADMIN })
+      prisma.pcListing.findMany.mockResolvedValueOnce([
+        { id: LISTING_ID_D, authorId: HIGH_RISK_AUTHOR_ID },
+      ])
+      prisma.pcListing.updateMany.mockResolvedValueOnce({ count: 0 })
+
+      await expect(caller.autoRejectRisky()).resolves.toMatchObject({
+        success: true,
+        rejectedCount: 0,
+        skippedCount: 1,
+      })
+      expect(prisma.pcListing.updateMany).toHaveBeenCalledWith({
+        where: { id: LISTING_ID_D, status: ApprovalStatus.PENDING },
+        data: expect.objectContaining({
+          status: ApprovalStatus.REJECTED,
+          processedByUserId: ADMIN_ID,
+        }),
+      })
+      expect(mockApplyTrustAction).not.toHaveBeenCalled()
+      expect(mockEmitNotificationEvent).not.toHaveBeenCalled()
+    })
+
+    it('keeps automatic PC risk rejection successful when trust action emission fails', async () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+      mockRepositoryGetPendingListingRiskCandidates.mockResolvedValueOnce([
+        {
+          id: LISTING_ID_D,
+          authorId: HIGH_RISK_AUTHOR_ID,
+          author: { userBans: [] },
+          customFieldValues: [],
+        },
+      ])
+      mockComputeAuthorRiskProfiles.mockResolvedValue(
+        new Map([
+          [
+            HIGH_RISK_AUTHOR_ID,
+            {
+              authorId: HIGH_RISK_AUTHOR_ID,
+              highestSeverity: 'high',
+              signals: [
+                {
+                  type: RISK_SIGNAL_TYPES.ACTIVE_BAN,
+                  severity: 'high',
+                  label: 'Active Ban',
+                  description: 'Banned for spam',
+                },
+              ],
+            },
+          ],
+        ]),
+      )
+      mockApplyTrustAction.mockRejectedValueOnce(new Error('trust failed'))
+
+      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.ADMIN })
+      prisma.pcListing.findMany.mockResolvedValueOnce([
+        { id: LISTING_ID_D, authorId: HIGH_RISK_AUTHOR_ID },
+      ])
+      prisma.pcListing.updateMany.mockResolvedValue({ count: 1 })
+
+      await expect(caller.autoRejectRisky()).resolves.toMatchObject({
+        success: true,
+        rejectedCount: 1,
+        skippedCount: 0,
+      })
+      expect(consoleError).toHaveBeenCalledWith(
+        'Some trust actions failed during review-risk PC auto-rejection:',
+        expect.arrayContaining([
+          expect.objectContaining({ status: 'rejected', reason: expect.any(Error) }),
+        ]),
+      )
+
+      consoleError.mockRestore()
+    })
+
+    it('fails automatic PC risk rejection when the admin user is missing from the database', async () => {
+      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.ADMIN })
+      prisma.user.findUnique.mockResolvedValueOnce(null)
+
+      await expect(caller.autoRejectRisky()).rejects.toThrow(
+        `User with ID ${ADMIN_ID} not found in database`,
+      )
+      expect(mockRepositoryGetPendingListingRiskCandidates).not.toHaveBeenCalled()
+    })
+
+    it('returns the admin-only PC auto-reject preview count', async () => {
+      mockRepositoryGetPendingListingRiskCandidates.mockResolvedValueOnce([
+        { id: LISTING_ID, authorId: AUTHOR_ID, author: { userBans: [] }, customFieldValues: [] },
+        {
+          id: LISTING_ID_B,
+          authorId: CLEAN_AUTHOR_ID,
+          author: { userBans: [] },
+          customFieldValues: [],
+        },
+        {
+          id: LISTING_ID_D,
+          authorId: HIGH_RISK_AUTHOR_ID,
+          author: { userBans: [] },
+          customFieldValues: [],
+        },
+      ])
+      mockComputeAuthorRiskProfiles.mockResolvedValue(
+        new Map([
+          [
+            AUTHOR_ID,
+            {
+              authorId: AUTHOR_ID,
+              highestSeverity: 'low',
+              signals: [
+                {
+                  type: RISK_SIGNAL_TYPES.NEW_AUTHOR,
+                  severity: 'low',
+                  label: 'New Author',
+                  description: 'No previously approved listings',
+                },
+              ],
+            },
+          ],
+          [CLEAN_AUTHOR_ID, { authorId: CLEAN_AUTHOR_ID, signals: [], highestSeverity: null }],
+          [
+            HIGH_RISK_AUTHOR_ID,
+            {
+              authorId: HIGH_RISK_AUTHOR_ID,
+              highestSeverity: 'high',
+              signals: [
+                {
+                  type: RISK_SIGNAL_TYPES.ACTIVE_BAN,
+                  severity: 'high',
+                  label: 'Active Ban',
+                  description: 'Banned for spam',
+                },
+              ],
+            },
+          ],
+        ]),
+      )
+      mockComputeSubmissionRiskProfiles.mockResolvedValue(
+        new Map([
+          [
+            LISTING_ID,
+            {
+              listingId: LISTING_ID,
+              highestSeverity: 'high',
+              signals: [
+                {
+                  type: SUBMISSION_RISK_SIGNAL_TYPES.PLACEHOLDER_EMULATOR_VERSION,
+                  severity: 'high',
+                  label: 'Placeholder Emulator Version',
+                  description: 'Submitted emulator version resembles placeholder text.',
+                },
+              ],
+            },
+          ],
+          [
+            LISTING_ID_B,
+            {
+              listingId: LISTING_ID_B,
+              highestSeverity: 'high',
+              signals: [
+                {
+                  type: SUBMISSION_RISK_SIGNAL_TYPES.PLACEHOLDER_EMULATOR_VERSION,
+                  severity: 'high',
+                  label: 'Placeholder Emulator Version',
+                  description: 'Submitted emulator version resembles placeholder text.',
+                },
+              ],
+            },
+          ],
+        ]),
+      )
+
+      const { caller } = createCaller({ userId: ADMIN_ID, role: Role.ADMIN })
+
+      await expect(caller.autoRejectRiskyPreview()).resolves.toEqual({
+        eligibleCount: 2,
+        reviewRiskQueueCount: 3,
+      })
+    })
+
+    it('keeps automatic PC risk rejection successful when notification emission fails', async () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+      mockRepositoryGetPendingListingRiskCandidates.mockResolvedValueOnce([
+        {
+          id: LISTING_ID_D,
+          authorId: HIGH_RISK_AUTHOR_ID,
+          author: { userBans: [] },
+          customFieldValues: [],
+        },
+      ])
+      mockComputeAuthorRiskProfiles.mockResolvedValue(
+        new Map([
+          [
+            HIGH_RISK_AUTHOR_ID,
+            {
+              authorId: HIGH_RISK_AUTHOR_ID,
+              highestSeverity: 'high',
+              signals: [
+                {
+                  type: RISK_SIGNAL_TYPES.ACTIVE_BAN,
+                  severity: 'high',
+                  label: 'Active Ban',
+                  description: 'Banned for spam',
+                },
+              ],
+            },
+          ],
+        ]),
+      )
+      mockComputeSubmissionRiskProfiles.mockResolvedValue(new Map())
+      mockEmitNotificationEvent.mockImplementationOnce(() => {
+        throw new Error('notification failed')
+      })
+
+      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.ADMIN })
+      prisma.pcListing.findMany.mockResolvedValueOnce([
+        { id: LISTING_ID_D, authorId: HIGH_RISK_AUTHOR_ID },
+      ])
+      prisma.pcListing.updateMany.mockResolvedValue({ count: 1 })
+
+      await expect(caller.autoRejectRisky()).resolves.toMatchObject({
+        success: true,
+        rejectedCount: 1,
+        skippedCount: 0,
+      })
+      expect(consoleError).toHaveBeenCalledWith(
+        `Failed to emit notification for PC listing ${LISTING_ID_D}:`,
+        expect.any(Error),
+      )
+
+      consoleError.mockRestore()
+    })
+
+    it('requires admin role for automatic PC risk rejection', async () => {
+      const { caller } = createCaller({ userId: ADMIN_ID, role: Role.MODERATOR })
+
+      await expect(caller.autoRejectRiskyPreview()).rejects.toThrow(/admin|insufficient/i)
+      await expect(caller.autoRejectRisky()).rejects.toThrow(/admin|insufficient/i)
+
+      expect(mockRepositoryGetPendingListingRiskCandidates).not.toHaveBeenCalled()
     })
   })
 

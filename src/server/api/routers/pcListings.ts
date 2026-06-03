@@ -40,6 +40,7 @@ import {
 import {
   createListingProcedure,
   createTRPCRouter,
+  adminProcedure,
   moderatorProcedure,
   permissionProcedure,
   protectedProcedure,
@@ -63,10 +64,12 @@ import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifica
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
 import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
 import { logAudit } from '@/server/services/audit.service'
+import { autoRejectRiskyPcReports } from '@/server/services/review-risk-auto-reject.service'
 import {
   attachReviewRiskProfiles,
   attachReviewRiskProfileForViewer,
   computeReviewRiskProfiles,
+  getAutoRejectableReviewRiskPreviewForCandidates,
   getRiskOnlyReviewPage,
 } from '@/server/services/review-risk.service'
 import { listingStatsCache } from '@/server/utils/cache'
@@ -877,6 +880,30 @@ export const pcListingsRouter = createTRPCRouter({
 
       return { count: result.count }
     }),
+
+  autoRejectRiskyPreview: adminProcedure.query(async ({ ctx }) => {
+    const repository = new PcListingsRepository(ctx.prisma)
+
+    return getAutoRejectableReviewRiskPreviewForCandidates({
+      prisma: ctx.prisma,
+      loadCandidates: () => repository.getPendingListingRiskCandidates({}),
+    })
+  }),
+
+  autoRejectRisky: adminProcedure.mutation(async ({ ctx }) => {
+    const adminUserId = ctx.session.user.id
+
+    const adminUserExists = await ctx.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { id: true },
+    })
+    if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
+
+    return autoRejectRiskyPcReports({
+      prisma: ctx.prisma,
+      adminUserId,
+    })
+  }),
 
   getAll: permissionProcedure(PERMISSIONS.APPROVE_LISTINGS)
     .input(GetAllPcListingsAdminSchema)

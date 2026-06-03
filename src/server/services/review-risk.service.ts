@@ -39,6 +39,16 @@ interface RiskOnlyReviewPage<TListing extends { id: string; authorId: string }> 
   total: number
 }
 
+export interface AutoRejectReviewRiskItem {
+  id: string
+  processedNotes: string
+}
+
+export interface AutoRejectReviewRiskPreview {
+  eligibleCount: number
+  reviewRiskQueueCount: number
+}
+
 interface ActiveAuthorBansPrismaClient {
   userBan: {
     findMany: (args: {
@@ -79,6 +89,54 @@ function hasRiskSignals(candidate: ReviewRiskCandidate, profiles: ReviewRiskProf
   return Boolean(submissionRiskProfile && submissionRiskProfile.signals.length > 0)
 }
 
+function hasAuthorRiskSignals(profile: AuthorRiskProfile | undefined): boolean {
+  return Boolean(profile && profile.signals.length > 0)
+}
+
+function hasHighAuthorRisk(profile: AuthorRiskProfile | undefined): boolean {
+  return Boolean(profile && profile.highestSeverity === 'high' && profile.signals.length > 0)
+}
+
+function hasHighSubmissionRisk(profile: SubmissionRiskProfile | undefined): boolean {
+  return Boolean(profile && profile.highestSeverity === 'high' && profile.signals.length > 0)
+}
+
+function isAutoRejectableReviewRisk(params: {
+  authorRiskProfile: AuthorRiskProfile | undefined
+  submissionRiskProfile: SubmissionRiskProfile | undefined
+}): boolean {
+  if (hasHighAuthorRisk(params.authorRiskProfile)) return true
+
+  return (
+    hasHighSubmissionRisk(params.submissionRiskProfile) &&
+    hasAuthorRiskSignals(params.authorRiskProfile)
+  )
+}
+
+function formatSignalCount(signalCount: number): string {
+  return `${signalCount} signal${signalCount === 1 ? '' : 's'}`
+}
+
+function buildAutoRejectProcessedNotes(params: {
+  authorRiskProfile: AuthorRiskProfile | undefined
+  submissionRiskProfile: SubmissionRiskProfile | undefined
+}): string {
+  const reasons: string[] = []
+
+  if (hasHighSubmissionRisk(params.submissionRiskProfile)) {
+    reasons.push('submission risk high severity')
+  }
+
+  const authorRiskProfile = params.authorRiskProfile
+  if (authorRiskProfile && authorRiskProfile.signals.length > 0) {
+    const signalCount = authorRiskProfile.signals.length
+    const severity = authorRiskProfile.highestSeverity ?? 'unknown'
+    reasons.push(`author risk ${severity} severity (${formatSignalCount(signalCount)})`)
+  }
+
+  return `Automatically rejected by review risk bulk action: ${reasons.join('; ')}.`
+}
+
 export async function computeReviewRiskProfiles<TCandidate extends ReviewRiskCandidate>(
   prisma: RiskPrismaClient,
   candidates: readonly TCandidate[],
@@ -105,6 +163,69 @@ export function getRiskyReviewItemIds<TCandidate extends ReviewRiskCandidate>(
   return candidates
     .filter((candidate) => hasRiskSignals(candidate, profiles))
     .map((candidate) => candidate.id)
+}
+
+export function getAutoRejectableReviewRiskItems<TCandidate extends ReviewRiskCandidate>(
+  candidates: readonly TCandidate[],
+  profiles: ReviewRiskProfiles,
+): AutoRejectReviewRiskItem[] {
+  return candidates.flatMap((candidate) => {
+    const authorRiskProfile = profiles.authorRiskProfiles.get(candidate.authorId)
+    const submissionRiskProfile = profiles.submissionRiskProfiles.get(candidate.id)
+
+    if (
+      !isAutoRejectableReviewRisk({
+        authorRiskProfile,
+        submissionRiskProfile,
+      })
+    ) {
+      return []
+    }
+
+    return [
+      {
+        id: candidate.id,
+        processedNotes: buildAutoRejectProcessedNotes({
+          authorRiskProfile,
+          submissionRiskProfile,
+        }),
+      },
+    ]
+  })
+}
+
+export function getAutoRejectableReviewRiskPreview<TCandidate extends ReviewRiskCandidate>(
+  candidates: readonly TCandidate[],
+  profiles: ReviewRiskProfiles,
+): AutoRejectReviewRiskPreview {
+  return {
+    eligibleCount: getAutoRejectableReviewRiskItems(candidates, profiles).length,
+    reviewRiskQueueCount: getRiskyReviewItemIds(candidates, profiles).length,
+  }
+}
+
+export async function getAutoRejectableReviewRiskItemsForCandidates<
+  TCandidate extends ReviewRiskCandidate,
+>(params: {
+  prisma: RiskPrismaClient
+  loadCandidates: () => Promise<readonly TCandidate[]>
+}): Promise<AutoRejectReviewRiskItem[]> {
+  const candidates = await params.loadCandidates()
+  const profiles = await computeReviewRiskProfiles(params.prisma, candidates)
+
+  return getAutoRejectableReviewRiskItems(candidates, profiles)
+}
+
+export async function getAutoRejectableReviewRiskPreviewForCandidates<
+  TCandidate extends ReviewRiskCandidate,
+>(params: {
+  prisma: RiskPrismaClient
+  loadCandidates: () => Promise<readonly TCandidate[]>
+}): Promise<AutoRejectReviewRiskPreview> {
+  const candidates = await params.loadCandidates()
+  const profiles = await computeReviewRiskProfiles(params.prisma, candidates)
+
+  return getAutoRejectableReviewRiskPreview(candidates, profiles)
 }
 
 export function attachReviewRiskProfiles<TListing extends { id: string; authorId: string }>(
