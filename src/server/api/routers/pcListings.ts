@@ -891,9 +891,17 @@ export const pcListingsRouter = createTRPCRouter({
   }),
 
   autoRejectRisky: adminProcedure.mutation(async ({ ctx }) => {
+    const adminUserId = ctx.session.user.id
+
+    const adminUserExists = await ctx.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { id: true },
+    })
+    if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
+
     return autoRejectRiskyPcReports({
       prisma: ctx.prisma,
-      adminUserId: ctx.session.user.id,
+      adminUserId,
     })
   }),
 

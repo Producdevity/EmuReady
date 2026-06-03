@@ -98,7 +98,7 @@ function hasHighAuthorRisk(profile: AuthorRiskProfile | undefined): boolean {
 }
 
 function hasHighSubmissionRisk(profile: SubmissionRiskProfile | undefined): boolean {
-  return profile?.highestSeverity === 'high'
+  return Boolean(profile && profile.highestSeverity === 'high' && profile.signals.length > 0)
 }
 
 function isAutoRejectableReviewRisk(params: {

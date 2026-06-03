@@ -225,6 +225,43 @@ describe('review risk helpers', () => {
     expect(autoRejectItems).toEqual([])
   })
 
+  it('excludes malformed high submission risk profiles without signals', () => {
+    const autoRejectItems = getAutoRejectableReviewRiskItems(
+      [{ id: LISTING_ID, authorId: AUTHOR_ID, customFieldValues: [] }],
+      {
+        authorRiskProfiles: new Map([
+          [
+            AUTHOR_ID,
+            {
+              authorId: AUTHOR_ID,
+              highestSeverity: 'low',
+              signals: [
+                {
+                  type: RISK_SIGNAL_TYPES.NEW_AUTHOR,
+                  severity: 'low',
+                  label: 'New Author',
+                  description: 'No previously approved listings',
+                },
+              ],
+            },
+          ],
+        ]),
+        submissionRiskProfiles: new Map([
+          [
+            LISTING_ID,
+            {
+              listingId: LISTING_ID,
+              highestSeverity: 'high',
+              signals: [],
+            },
+          ],
+        ]),
+      },
+    )
+
+    expect(autoRejectItems).toEqual([])
+  })
+
   it('returns the auto-reject preview count from the shared predicate', () => {
     const preview = getAutoRejectableReviewRiskPreview(
       [

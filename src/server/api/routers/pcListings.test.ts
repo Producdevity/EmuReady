@@ -196,6 +196,9 @@ function createMockPrisma() {
       update: vi.fn(),
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
+    user: {
+      findUnique: vi.fn().mockResolvedValue({ id: ADMIN_ID }),
+    },
     userBan: {
       findMany: vi.fn().mockResolvedValue([]),
     },
@@ -1239,6 +1242,16 @@ describe('pcListings trust integration', () => {
       )
 
       consoleError.mockRestore()
+    })
+
+    it('fails automatic PC risk rejection when the admin user is missing from the database', async () => {
+      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.ADMIN })
+      prisma.user.findUnique.mockResolvedValueOnce(null)
+
+      await expect(caller.autoRejectRisky()).rejects.toThrow(
+        `User with ID ${ADMIN_ID} not found in database`,
+      )
+      expect(mockRepositoryGetPendingListingRiskCandidates).not.toHaveBeenCalled()
     })
 
     it('returns the admin-only PC auto-reject preview count', async () => {
