@@ -16,6 +16,7 @@ import {
   AdminSearchFilters,
   AdminStatsDisplay,
   AdminTableNoResults,
+  ReviewRiskAutoRejectPanel,
   ReviewRiskFilterButton,
   ReviewRiskIndicator,
 } from '@/components/admin'
@@ -57,6 +58,8 @@ import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import getImageUrl from '@/utils/getImageUrl'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
+import { hasRolePermission } from '@/utils/permissions'
+import { Role } from '@orm'
 
 type PendingPcListing = RouterOutput['pcListings']['pending']['pcListings'][number]
 type PcApprovalSortField =
@@ -216,12 +219,47 @@ function PcListingApprovalsPage() {
     },
   })
 
+  const autoRejectRiskyMutation = api.pcListings.autoRejectRisky.useMutation({
+    onSuccess: async (result) => {
+      toast.success(result.message)
+
+      if (result.rejectedCount > 0) {
+        analytics.admin.bulkOperation({
+          operation: 'reject',
+          entityType: 'listing',
+          count: result.rejectedCount,
+          adminId: currentUserQuery.data?.id ?? 'unknown',
+        })
+      }
+
+      await invalidateQueries()
+      setSelectedListingIds([])
+    },
+    onError: (err) => {
+      logger.error('Failed to auto-reject review-risk PC reports:', err)
+      toast.error(`Failed to auto-reject review-risk PC reports: ${getErrorMessage(err)}`)
+    },
+  })
+
   const handleBulkApprovalWithConfirmation = async (listingIds: string[]) => {
     const confirmed = await confirmBulkApproval(pcListings, listingIds, confirm, 'PC listings')
     if (!confirmed) return
 
     await bulkApproveMutation.mutateAsync({ pcListingIds: listingIds })
     approvalModal.close()
+  }
+
+  const handleAutoRejectRiskyReports = async () => {
+    const confirmed = await confirm({
+      title: 'Reject review-risk PC reports?',
+      description:
+        'This will reject every pending PC report you can review when submission risk is high or author risk has any signal. Rejection notes will be generated automatically.',
+      confirmText: 'Reject PC Reports',
+      cancelText: 'Cancel',
+    })
+    if (!confirmed) return
+
+    await autoRejectRiskyMutation.mutateAsync()
   }
 
   const handleSelectAll = (selected: boolean) => {
@@ -262,6 +300,7 @@ function PcListingApprovalsPage() {
 
   const pcListings = pendingPcListingsQuery.data?.pcListings ?? []
   const pagination = pendingPcListingsQuery.data?.pagination
+  const canAutoRejectRiskyReports = hasRolePermission(currentUserQuery.data?.role, Role.ADMIN)
 
   return (
     <AdminPageLayout
@@ -335,6 +374,16 @@ function PcListingApprovalsPage() {
           onToggle={reviewRiskFilter.toggleRiskFilter}
         />
       </AdminSearchFilters>
+
+      {canAutoRejectRiskyReports && reviewRiskFilter.isRiskOnly && (
+        <ReviewRiskAutoRejectPanel
+          reportLabel="PC"
+          isSubmitting={autoRejectRiskyMutation.isPending}
+          onAutoReject={() => {
+            void handleAutoRejectRiskyReports()
+          }}
+        />
+      )}
 
       {pcListings.length > 0 && (
         <BulkActions

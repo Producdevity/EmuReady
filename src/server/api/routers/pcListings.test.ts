@@ -916,7 +916,7 @@ describe('pcListings trust integration', () => {
         authorId: '00000000-0000-4000-a000-000000000050',
       }
 
-      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.MODERATOR })
+      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.ADMIN })
       prisma.pcListing.findMany.mockResolvedValue([listing1, listing2])
       prisma.pcListing.updateMany.mockResolvedValue({ count: 2 })
 
@@ -945,7 +945,7 @@ describe('pcListings trust integration', () => {
         authorId: '00000000-0000-4000-a000-000000000050',
       }
 
-      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.MODERATOR })
+      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.ADMIN })
       prisma.pcListing.findMany.mockResolvedValue([listing1, listing2])
       prisma.pcListing.updateMany.mockResolvedValue({ count: 2 })
 
@@ -968,6 +968,134 @@ describe('pcListings trust integration', () => {
           reason: 'Spam',
         }),
       })
+    })
+  })
+
+  describe('autoRejectRisky', () => {
+    it('rejects pending PC reports matched by high submission risk or any author risk', async () => {
+      const highSubmissionListing = {
+        id: LISTING_ID,
+        authorId: CLEAN_AUTHOR_ID,
+        author: { userBans: [] },
+        customFieldValues: [],
+      }
+      const authorRiskListing = {
+        id: LISTING_ID_B,
+        authorId: AUTHOR_ID,
+        author: { userBans: [] },
+        customFieldValues: [],
+      }
+      const cleanListing = {
+        id: LISTING_ID_C,
+        authorId: CLEAN_AUTHOR_ID,
+        author: { userBans: [] },
+        customFieldValues: [],
+      }
+
+      mockRepositoryGetPendingListingRiskCandidates.mockResolvedValueOnce([
+        highSubmissionListing,
+        authorRiskListing,
+        cleanListing,
+      ])
+      mockComputeAuthorRiskProfiles.mockResolvedValue(
+        new Map([
+          [CLEAN_AUTHOR_ID, { authorId: CLEAN_AUTHOR_ID, signals: [], highestSeverity: null }],
+          [
+            AUTHOR_ID,
+            {
+              authorId: AUTHOR_ID,
+              highestSeverity: 'low',
+              signals: [
+                {
+                  type: RISK_SIGNAL_TYPES.NEW_AUTHOR,
+                  severity: 'low',
+                  label: 'New Author',
+                  description: 'No previously approved listings',
+                },
+              ],
+            },
+          ],
+        ]),
+      )
+      mockComputeSubmissionRiskProfiles.mockResolvedValue(
+        new Map([
+          [
+            LISTING_ID,
+            {
+              listingId: LISTING_ID,
+              highestSeverity: 'high',
+              signals: [
+                {
+                  type: SUBMISSION_RISK_SIGNAL_TYPES.PLACEHOLDER_EMULATOR_VERSION,
+                  severity: 'high',
+                  label: 'Placeholder Emulator Version',
+                  description: 'Submitted emulator version resembles placeholder text.',
+                },
+              ],
+            },
+          ],
+          [LISTING_ID_B, { listingId: LISTING_ID_B, signals: [], highestSeverity: null }],
+          [LISTING_ID_C, { listingId: LISTING_ID_C, signals: [], highestSeverity: null }],
+        ]),
+      )
+
+      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.ADMIN })
+      prisma.pcListing.findMany.mockResolvedValueOnce([
+        { id: LISTING_ID, authorId: CLEAN_AUTHOR_ID },
+        { id: LISTING_ID_B, authorId: AUTHOR_ID },
+      ])
+      prisma.pcListing.update.mockResolvedValue({})
+
+      const result = await caller.autoRejectRisky()
+
+      expect(mockRepositoryGetPendingListingRiskCandidates).toHaveBeenCalledWith({})
+      expect(prisma.pcListing.findMany).toHaveBeenCalledWith({
+        where: {
+          id: { in: [LISTING_ID, LISTING_ID_B] },
+          status: 'PENDING',
+        },
+        select: { id: true, authorId: true },
+      })
+      expect(prisma.pcListing.update).toHaveBeenCalledWith({
+        where: { id: LISTING_ID },
+        data: expect.objectContaining({
+          status: 'REJECTED',
+          processedByUserId: ADMIN_ID,
+          processedNotes:
+            'Automatically rejected by review risk bulk action: submission risk high severity.',
+        }),
+      })
+      expect(prisma.pcListing.update).toHaveBeenCalledWith({
+        where: { id: LISTING_ID_B },
+        data: expect.objectContaining({
+          status: 'REJECTED',
+          processedByUserId: ADMIN_ID,
+          processedNotes:
+            'Automatically rejected by review risk bulk action: author risk low severity (1 signal).',
+        }),
+      })
+      expect(mockApplyTrustAction).toHaveBeenCalledWith({
+        userId: AUTHOR_ID,
+        action: TrustAction.LISTING_REJECTED,
+        context: expect.objectContaining({
+          pcListingId: LISTING_ID_B,
+          reason:
+            'Automatically rejected by review risk bulk action: author risk low severity (1 signal).',
+        }),
+      })
+      expect(result).toMatchObject({
+        success: true,
+        rejectedCount: 2,
+        skippedCount: 0,
+      })
+    })
+
+    it('requires admin role for automatic PC risk rejection', async () => {
+      const { caller } = createCaller({ userId: ADMIN_ID, role: Role.MODERATOR })
+
+      await expect(caller.autoRejectRisky()).rejects.toThrow(/admin|insufficient/i)
+
+      expect(mockRepositoryGetPendingListingRiskCandidates).not.toHaveBeenCalled()
     })
   })
 

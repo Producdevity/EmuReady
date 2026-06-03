@@ -15,6 +15,7 @@ import {
   AdminStatsDisplay,
   AdminSearchFilters,
   AdminTableNoResults,
+  ReviewRiskAutoRejectPanel,
   ReviewRiskFilterButton,
   ReviewRiskIndicator,
 } from '@/components/admin'
@@ -55,6 +56,8 @@ import toast from '@/lib/toast'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
+import { hasRolePermission } from '@/utils/permissions'
+import { Role } from '@orm'
 
 type PendingListing = RouterOutput['listings']['getPending']['listings'][number]
 type ApprovalSortField =
@@ -213,12 +216,47 @@ function AdminApprovalsPage() {
     },
   })
 
+  const autoRejectRiskyMutation = api.listings.autoRejectRiskyListings.useMutation({
+    onSuccess: async (result) => {
+      toast.success(result.message)
+
+      if (result.rejectedCount > 0) {
+        analytics.admin.bulkOperation({
+          operation: 'reject',
+          entityType: 'listing',
+          count: result.rejectedCount,
+          adminId: currentUserQuery.data?.id ?? 'unknown',
+        })
+      }
+
+      await invalidateQueries()
+      setSelectedListingIds([])
+    },
+    onError: (err) => {
+      logger.error('Failed to auto-reject review-risk handheld reports:', err)
+      toast.error(`Failed to auto-reject review-risk reports: ${getErrorMessage(err)}`)
+    },
+  })
+
   const handleBulkApprovalWithConfirmation = async (listingIds: string[]) => {
     const confirmed = await confirmBulkApproval(listings, listingIds, confirm, 'listings')
     if (!confirmed) return
 
     await bulkApproveMutation.mutateAsync({ listingIds })
     approvalModal.close()
+  }
+
+  const handleAutoRejectRiskyReports = async () => {
+    const confirmed = await confirm({
+      title: 'Reject review-risk reports?',
+      description:
+        'This will reject every pending handheld report you can review when submission risk is high or author risk has any signal. Rejection notes will be generated automatically.',
+      confirmText: 'Reject Reports',
+      cancelText: 'Cancel',
+    })
+    if (!confirmed) return
+
+    await autoRejectRiskyMutation.mutateAsync()
   }
 
   const handleSelectAll = (selected: boolean) => {
@@ -259,6 +297,7 @@ function AdminApprovalsPage() {
 
   const listings = pendingListingsQuery.data?.listings ?? []
   const pagination = pendingListingsQuery.data?.pagination
+  const canAutoRejectRiskyReports = hasRolePermission(currentUserQuery.data?.role, Role.ADMIN)
 
   return (
     <AdminPageLayout
@@ -329,6 +368,16 @@ function AdminApprovalsPage() {
           onToggle={reviewRiskFilter.toggleRiskFilter}
         />
       </AdminSearchFilters>
+
+      {canAutoRejectRiskyReports && reviewRiskFilter.isRiskOnly && (
+        <ReviewRiskAutoRejectPanel
+          reportLabel="handheld"
+          isSubmitting={autoRejectRiskyMutation.isPending}
+          onAutoReject={() => {
+            void handleAutoRejectRiskyReports()
+          }}
+        />
+      )}
 
       {/* Bulk Actions */}
       {listings.length > 0 && (

@@ -25,6 +25,7 @@ export const listingsRouter = createTRPCRouter({
   resetToPending: adminRouter.resetToPending,
   bulkApproveListing: adminRouter.bulkApprove,
   bulkRejectListing: adminRouter.bulkReject,
+  autoRejectRiskyListings: adminRouter.autoRejectRisky,
   getProcessed: adminRouter.getProcessed,
   overrideApprovalStatus: adminRouter.overrideStatus,
   delete: adminRouter.delete,
