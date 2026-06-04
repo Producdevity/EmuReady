@@ -2,8 +2,11 @@ import { ms } from '@/utils/time'
 
 // Polling intervals in milliseconds
 export const POLLING_INTERVALS = {
+  SHORT: ms.seconds(30),
+  MEDIUM: ms.minutes(1),
   NOTIFICATIONS: ms.minutes(3),
-  DEFAULT: ms.seconds(30),
+  LONG: ms.minutes(5),
+  EXTRA_LONG: ms.minutes(10),
 } as const
 
 // Batch sizes for cursor-based iteration

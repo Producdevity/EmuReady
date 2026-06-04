@@ -4,6 +4,7 @@ import { useUser } from '@clerk/nextjs'
 import { Edit3, Clock } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui'
+import { POLLING_INTERVALS } from '@/data/constants'
 import { api } from '@/lib/api'
 import EditListingModal from './EditListingModal'
 
@@ -20,7 +21,7 @@ function EditListingButton(props: Props) {
     { id: props.listingId },
     {
       enabled: !!user?.id,
-      refetchInterval: 60000, // Refetch every minute to update time remaining
+      refetchInterval: POLLING_INTERVALS.MEDIUM,
     },
   )
 

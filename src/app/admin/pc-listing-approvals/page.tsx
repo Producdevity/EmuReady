@@ -43,6 +43,7 @@ import {
   useConfirmDialog,
   ViewUserButton,
 } from '@/components/ui'
+import { POLLING_INTERVALS } from '@/data/constants'
 import storageKeys from '@/data/storageKeys'
 import {
   useEmulatorLogos,
@@ -133,7 +134,7 @@ function PcListingApprovalsPage() {
 
   const gameStatsQuery = api.games.stats.useQuery()
   const pcListingsStatsQuery = api.pcListings.stats.useQuery(undefined, {
-    refetchInterval: 30000,
+    refetchInterval: POLLING_INTERVALS.SHORT,
   })
 
   const approvalModal = useCompatibilityReportReviewDecisionModal<PendingPcListing>()
