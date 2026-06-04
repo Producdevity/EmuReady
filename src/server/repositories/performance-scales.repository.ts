@@ -1,4 +1,4 @@
-import { ResourceError } from '@/lib/errors'
+import { AppError, ResourceError } from '@/lib/errors'
 import { Prisma, type PerformanceScale } from '@orm/client'
 import { BaseRepository } from './base.repository'
 import type {
@@ -113,6 +113,10 @@ export class PerformanceScalesRepository extends BaseRepository {
 
   // Numeric ID version for internal use
   async deleteByNumericId(id: number): Promise<void> {
+    await this.deleteByNumericIdWithReplacement(id)
+  }
+
+  async deleteByNumericIdWithReplacement(id: number, replacementId?: number): Promise<void> {
     // Check if scale exists and has listings
     const scale = await this.prisma.performanceScale.findUnique({
       where: { id },
@@ -121,13 +125,40 @@ export class PerformanceScalesRepository extends BaseRepository {
 
     if (!scale) throw ResourceError.performanceScale.notFound()
 
+    if (replacementId === id) {
+      AppError.badRequest('Replacement performance scale must be different from the deleted scale')
+    }
+
+    if (replacementId !== undefined) {
+      const replacementScale = await this.prisma.performanceScale.findUnique({
+        where: { id: replacementId },
+        select: { id: true },
+      })
+
+      if (!replacementScale) throw ResourceError.performanceScale.notFound()
+    }
+
     const totalListings = scale._count.listings + scale._count.pcListings
-    if (totalListings > 0) {
+    if (totalListings > 0 && replacementId === undefined) {
       throw ResourceError.performanceScale.inUse(totalListings)
     }
 
     await this.handleDatabaseOperation(
-      () => this.prisma.performanceScale.delete({ where: { id } }),
+      () =>
+        this.prisma.$transaction(async (tx) => {
+          if (replacementId !== undefined) {
+            await tx.listing.updateMany({
+              where: { performanceId: id },
+              data: { performanceId: replacementId },
+            })
+            await tx.pcListing.updateMany({
+              where: { performanceId: id },
+              data: { performanceId: replacementId },
+            })
+          }
+
+          await tx.performanceScale.delete({ where: { id } })
+        }),
       'PerformanceScale',
     )
   }
@@ -176,14 +207,31 @@ export class PerformanceScalesRepository extends BaseRepository {
   /**
    * Get performance scales with listing counts
    */
-  async listWithCounts(): Promise<
+  async listWithCounts(filters: GetPerformanceScalesInput = {}): Promise<
     Prisma.PerformanceScaleGetPayload<{
       include: typeof PerformanceScalesRepository.includes.withCounts
     }>[]
   > {
+    const { search, sortField = 'rank', sortDirection } = filters
+
+    const where: Prisma.PerformanceScaleWhereInput = {
+      ...(search && {
+        OR: [
+          { label: { contains: search, mode: this.mode } },
+          { description: { contains: search, mode: this.mode } },
+        ],
+      }),
+    }
+
+    const orderBy: Prisma.PerformanceScaleOrderByWithRelationInput =
+      sortField === 'label'
+        ? { label: sortDirection || this.sortOrder }
+        : { rank: sortDirection || this.sortOrder }
+
     return this.prisma.performanceScale.findMany({
+      where,
       include: PerformanceScalesRepository.includes.withCounts,
-      orderBy: { rank: this.sortOrder },
+      orderBy,
     })
   }
 

@@ -203,9 +203,9 @@ async function main() {
     await permissionsSeeder(prisma) // Seed permissions first
     await performanceScalesSeeder(prisma)
     await systemsSeeder(prisma)
+    await emulatorsSeeder(prisma)
     await usersSeeder(prisma)
     await userModerationFixturesSeeder(prisma)
-    await emulatorsSeeder(prisma)
     await azaharCustomFieldsSeeder(prisma)
     await edenCustomFieldsSeeder(prisma)
     await gamenativeCustomFieldsSeeder(prisma)

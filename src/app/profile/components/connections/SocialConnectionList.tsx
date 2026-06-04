@@ -2,7 +2,7 @@
 
 import { Users } from 'lucide-react'
 import { type ReactNode } from 'react'
-import { LoadingSpinner, Pagination } from '@/components/ui'
+import { Pagination, Skeleton } from '@/components/ui'
 import { ConnectionUserRow } from './ConnectionUserRow'
 import type { RouterOutput } from '@/types/trpc'
 
@@ -29,8 +29,28 @@ interface Props {
   header?: ReactNode
 }
 
+function SocialConnectionListSkeleton() {
+  return (
+    <div className="space-y-1" aria-label="Loading social connections">
+      {[1, 2, 3].map((item) => (
+        <div key={item} className="flex items-center gap-4 py-3 px-2 rounded-lg">
+          <Skeleton className="h-10 w-10 flex-shrink-0 rounded-full" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-20 rounded-full" />
+              <Skeleton className="h-5 w-24 rounded-full" />
+            </div>
+          </div>
+          <Skeleton className="h-9 w-24 flex-shrink-0 rounded-md" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function SocialConnectionList(props: Props) {
-  if (props.isPending) return <LoadingSpinner /> // TODO: use a custom Skeleton
+  if (props.isPending) return <SocialConnectionListSkeleton />
 
   return (
     <div className="space-y-4">

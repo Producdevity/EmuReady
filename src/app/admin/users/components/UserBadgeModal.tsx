@@ -36,7 +36,6 @@ export default function UserBadgeModal(props: Props) {
 
   // Fetch all active badges
   const badgesQuery = api.badges.get.useQuery(
-    // TODO: Implement pagination if needed, probably not needed for badges
     { isActive: true, limit: 100 },
     { enabled: props.isOpen },
   )

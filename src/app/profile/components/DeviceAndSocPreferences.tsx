@@ -1,5 +1,6 @@
 'use client'
 
+import { type UseQueryResult } from '@tanstack/react-query'
 import { Smartphone, Cpu, Settings } from 'lucide-react'
 import { useCallback, useRef, useEffect } from 'react'
 import { AnimatedToggle } from '@/components/ui'
@@ -14,12 +15,7 @@ import SocSelector from './SocSelector'
 type UserPreferencesData = RouterOutput['userPreferences']['get']
 
 interface Props {
-  // TODO: see if we can use UseQueryResult from @tanstack/react-query instead
-  preferencesQuery: {
-    data?: UserPreferencesData
-    isPending: boolean
-    error?: unknown
-  }
+  preferencesQuery: UseQueryResult<UserPreferencesData, unknown>
 }
 
 function DeviceAndSocPreferences(props: Props) {

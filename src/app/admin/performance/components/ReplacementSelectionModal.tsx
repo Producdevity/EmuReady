@@ -33,15 +33,14 @@ function ReplacementSelectionModal(props: Props) {
   )
 
   const handleDelete = async () => {
-    if (!props.scaleToDelete || !selectedReplacementId) return
+    if (!props.scaleToDelete || selectedReplacementId === null) return
 
     setError('')
 
     try {
-      // For now, we'll use the regular delete since the replacement functionality
-      // isn't implemented in the backend yet. This is marked as TODO.
       await deletePerformanceScale.mutateAsync({
         id: props.scaleToDelete.id,
+        replacementId: selectedReplacementId,
       } satisfies RouterInput['performanceScales']['delete'])
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to delete performance scale.'))
@@ -96,8 +95,10 @@ function ReplacementSelectionModal(props: Props) {
           </label>
           <select
             id="replacement"
-            value={selectedReplacementId || ''}
-            onChange={(e) => setSelectedReplacementId(Number(e.target.value))}
+            value={selectedReplacementId ?? ''}
+            onChange={(e) =>
+              setSelectedReplacementId(e.target.value ? Number(e.target.value) : null)
+            }
             className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             required
           >
@@ -123,7 +124,7 @@ function ReplacementSelectionModal(props: Props) {
           <Button
             onClick={handleDelete}
             variant="destructive"
-            disabled={!selectedReplacementId || deletePerformanceScale.isPending}
+            disabled={selectedReplacementId === null || deletePerformanceScale.isPending}
             isLoading={deletePerformanceScale.isPending}
           >
             Delete and Replace
