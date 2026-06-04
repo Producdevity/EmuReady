@@ -3,12 +3,12 @@
 import { Settings } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui'
+import { CACHE_DURATIONS } from '@/data/constants'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type EmulatorConfigType } from '@/server/utils/emulator-config/constants'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { ms } from '@/utils/time'
 import { Role } from '@orm'
 import ViewConfigModal from './ViewConfigModal'
 
@@ -41,7 +41,7 @@ function ViewConfigButton(props: Props) {
     { emulatorId: props.emulatorId },
     {
       enabled: !!currentUserQuery.data?.id && isDeveloper && !isAdmin,
-      staleTime: ms.minutes(5),
+      staleTime: CACHE_DURATIONS.MEDIUM,
     },
   )
 

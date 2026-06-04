@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
 import {
+  AdminPageLayout,
   AdminTableContainer,
   AdminSearchFilters,
   AdminStatsDisplay,
@@ -106,22 +107,17 @@ function AdminBrandsPage() {
     }
   }
 
-  // TODO: use AdminPageLayout like all the other admin pages
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Device Brands</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage all device brands in the system
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
+    <AdminPageLayout
+      title="Device Brands"
+      description="Manage all device brands in the system"
+      headerActions={
+        <>
           <ColumnVisibilityControl columns={BRANDS_COLUMNS} columnVisibility={columnVisibility} />
           {canManageDevices && <Button onClick={() => openModal()}>Add Brand</Button>}
-        </div>
-      </div>
-
+        </>
+      }
+    >
       {brandsStatsQuery.data && (
         <AdminStatsDisplay
           stats={[
@@ -239,7 +235,7 @@ function AdminBrandsPage() {
         brandName={brandName}
         onSuccess={handleModalSuccess}
       />
-    </div>
+    </AdminPageLayout>
   )
 }
 export default AdminBrandsPage

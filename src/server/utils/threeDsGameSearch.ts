@@ -1,6 +1,6 @@
 import Fuse from 'fuse.js'
 import { LRUCache } from 'lru-cache'
-import { ms } from '@/utils/time'
+import { CACHE_DURATIONS } from '@/data/constants'
 import type { IFuseOptions } from 'fuse.js'
 
 interface RawThreeDsTitleEntry {
@@ -79,12 +79,12 @@ const THREEDS_TITLES_URL = 'https://dantheman827.github.io/nus-info/titles.json'
 const THREEDS_TITLE_NAMES_URL = 'https://dantheman827.github.io/nus-info/title-names.json'
 
 const threeDsGamesDataCache = new LRUCache<string, CachedData<ThreeDsGameEntry[]>>({
-  ttl: ms.days(1),
+  ttl: CACHE_DURATIONS.STATIC,
   max: 1,
 })
 
 const threeDsGamesFuseCache = new LRUCache<string, Fuse<ThreeDsGameEntry>>({
-  ttl: ms.days(1),
+  ttl: CACHE_DURATIONS.STATIC,
   max: 1,
 })
 

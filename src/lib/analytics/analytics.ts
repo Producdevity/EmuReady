@@ -385,24 +385,6 @@ const analytics = {
       })
     },
 
-    stopKillingGamesDismissed: (params: { timeOnPage: number }) => {
-      sendAnalyticsEvent({
-        category: ANALYTICS_CATEGORIES.ENGAGEMENT,
-        action: ENGAGEMENT_ACTIONS.STOP_KILLING_GAMES_DISMISSED,
-        entityType: 'popup',
-        metadata: { timeOnPage: params.timeOnPage },
-      })
-    },
-
-    stopKillingGamesCTA: (params: { timeOnPage: number }) => {
-      sendAnalyticsEvent({
-        category: ANALYTICS_CATEGORIES.ENGAGEMENT,
-        action: ENGAGEMENT_ACTIONS.STOP_KILLING_GAMES_CTA,
-        entityType: 'popup',
-        metadata: { timeOnPage: params.timeOnPage },
-      })
-    },
-
     supportBannerShown: (params: { variant: string; page: string }) => {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.ENGAGEMENT,

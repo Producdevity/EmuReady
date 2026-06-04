@@ -1,9 +1,8 @@
 import { startOfMonth, subDays } from 'date-fns'
 import { LRUCache } from 'lru-cache'
-import { HOME_PAGE_LIMITS } from '@/data/constants'
+import { CACHE_DURATIONS, HOME_PAGE_LIMITS } from '@/data/constants'
 import { ResourceError } from '@/lib/errors'
 import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
-import { TIME_CONSTANTS } from '@/utils/time'
 import { Prisma, ApprovalStatus } from '@orm/client'
 import { getTrendingDevices } from '@orm/sql'
 import { BaseRepository } from './base.repository'
@@ -31,7 +30,7 @@ export interface TrendingDevicesSummary {
 }
 
 const trendingDevicesSummaryCache = new LRUCache<string, TrendingDevicesSummary>({
-  ttl: TIME_CONSTANTS.SIX_HOURS,
+  ttl: CACHE_DURATIONS.LOOKUP,
   max: 20,
 })
 

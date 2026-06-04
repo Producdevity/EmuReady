@@ -2,8 +2,10 @@ import { ms } from '@/utils/time'
 
 // Polling intervals in milliseconds
 export const POLLING_INTERVALS = {
+  SHORT: ms.minutes(1),
   NOTIFICATIONS: ms.minutes(3),
-  DEFAULT: ms.seconds(30),
+  LONG: ms.minutes(5),
+  EXTRA_LONG: ms.minutes(10),
 } as const
 
 // Batch sizes for cursor-based iteration
@@ -32,12 +34,17 @@ export const PAGINATION = {
 export const PAGE_SIZE_OPTIONS = [10, 25, 50] as const
 export type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number]
 
-// Cache durations in milliseconds TODO: use wherever possible
+// Cache durations in milliseconds
 export const CACHE_DURATIONS = {
+  VERY_SHORT: ms.seconds(10),
   SHORT: ms.minutes(1),
   MEDIUM: ms.minutes(5),
   LONG: ms.minutes(15),
   EXTRA_LONG: ms.hours(1),
+  LOOKUP: ms.hours(6),
+  LOOKUP_GC: ms.hours(12),
+  STATIC: ms.days(1),
+  STATIC_GC: ms.days(2),
 } as const
 
 // Rate limiting

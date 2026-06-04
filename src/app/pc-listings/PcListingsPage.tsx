@@ -31,6 +31,7 @@ import {
   TooltipTrigger,
   ViewButton,
 } from '@/components/ui'
+import { CACHE_DURATIONS } from '@/data/constants'
 import storageKeys from '@/data/storageKeys'
 import {
   useEmulatorLogos,
@@ -49,7 +50,6 @@ import {
 } from '@/utils/navigation-events'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
-import { ms } from '@/utils/time'
 import { Role, ApprovalStatus } from '@orm'
 import PcFiltersContent from './components/PcFiltersContent'
 import PcFiltersSidebar from './components/PcFiltersSidebar'
@@ -71,8 +71,8 @@ const PC_LISTINGS_COLUMNS: ColumnDefinition[] = [
 ]
 
 const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: ms.hours(6),
-  gcTime: ms.hours(12),
+  staleTime: CACHE_DURATIONS.LOOKUP,
+  gcTime: CACHE_DURATIONS.LOOKUP_GC,
 }
 const USE_ASYNC_LISTING_FILTERS = process.env.NEXT_PUBLIC_ENABLE_ASYNC_LISTINGS_FILTERS === 'true'
 

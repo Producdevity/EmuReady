@@ -2,8 +2,8 @@
 
 import { type ReactNode, useCallback, useMemo, useState } from 'react'
 import AsyncMultiSelect from '@/components/ui/form/async-multi-select/AsyncMultiSelect'
+import { CACHE_DURATIONS } from '@/data/constants'
 import { api } from '@/lib/api'
-import { ms } from '@/utils/time'
 
 interface Props {
   label: string
@@ -17,8 +17,8 @@ interface Props {
 
 const PAGE_SIZE = 50
 const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: ms.hours(6),
-  gcTime: ms.hours(12),
+  staleTime: CACHE_DURATIONS.LOOKUP,
+  gcTime: CACHE_DURATIONS.LOOKUP_GC,
 }
 
 export default function AsyncGpuFilterSelect(props: Props) {

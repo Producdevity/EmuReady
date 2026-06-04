@@ -3,6 +3,7 @@
 import { Search, Eye, Image as ImageIcon, Sparkles } from 'lucide-react'
 import { useState, useEffect, type KeyboardEvent } from 'react'
 import { Button, LoadingSpinner, Modal, Input, Badge, OptimizedImage } from '@/components/ui'
+import { CACHE_DURATIONS } from '@/data/constants'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -65,7 +66,7 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
     { query: debouncedSearchTerm, limit: 10 },
     {
       enabled: debouncedSearchTerm.length >= 2 && !selectedGameId,
-      staleTime: 5 * 60 * 1000,
+      staleTime: CACHE_DURATIONS.MEDIUM,
     },
   )
 
@@ -74,7 +75,7 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
     { gameId: selectedGameId! },
     {
       enabled: !!selectedGameId,
-      staleTime: 5 * 60 * 1000,
+      staleTime: CACHE_DURATIONS.MEDIUM,
     },
   )
 
