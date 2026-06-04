@@ -73,7 +73,7 @@ export const tgdbImagesCache = new LRUCache<string, TGDBGamesImagesResponse>({
 })
 
 export const tgdbPlatformsCache = new LRUCache<string, TGDBPlatformsResponse>({
-  ttl: CACHE_DURATIONS.LONG,
+  ttl: CACHE_DURATIONS.EXTRA_LONG,
   max: 10,
 })
 
