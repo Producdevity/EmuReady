@@ -14,6 +14,14 @@ export const GetSoCsSchema = z
   })
   .optional()
 
+export const GetSoCOptionsSchema = z
+  .object({
+    search: z.string().optional(),
+    limit: z.number().int().min(1).max(10000).default(50),
+    offset: z.number().int().min(0).default(0),
+  })
+  .optional()
+
 export const GetSoCByIdSchema = z.object({
   id: z.string().uuid(),
 })
@@ -37,5 +45,6 @@ export const GetSoCsByIdsSchema = z.object({ ids: z.array(z.string().uuid()).min
 
 // Type exports for repository use
 export type GetSoCsInput = z.input<typeof GetSoCsSchema>
+export type GetSoCOptionsInput = z.input<typeof GetSoCOptionsSchema>
 export type CreateSoCInput = z.infer<typeof CreateSoCSchema>
 export type UpdateSoCInput = z.infer<typeof UpdateSoCSchema>

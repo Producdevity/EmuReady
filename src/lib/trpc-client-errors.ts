@@ -11,3 +11,8 @@ export function isTRPCNotFoundError(error: unknown): boolean {
 export function shouldRetryTRPCQuery(failureCount: number, error: Error): boolean {
   return !isTRPCNotFoundError(error) && failureCount < MAX_QUERY_RETRIES
 }
+
+export function getAppErrorData(error: unknown): Record<string, unknown> | null {
+  if (!isTRPCClientError<AppRouter>(error)) return null
+  return error.data?.appError ?? null
+}

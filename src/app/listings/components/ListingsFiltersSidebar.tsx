@@ -1,7 +1,7 @@
 'use client'
 
 import { type inferRouterOutputs } from '@trpc/server'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
   Joystick,
   MonitorSmartphone,
@@ -46,9 +46,8 @@ interface FiltersProps {
   systems: { id: string; name: string }[]
   devices: {
     id: string
-    brandId: string
     modelName: string
-    brand: { id: string; name: string; createdAt: Date }
+    brand: { id: string; name: string }
   }[]
   socs: { id: string; name: string; manufacturer: string }[]
   emulators: { id: string; name: string }[]
@@ -388,22 +387,20 @@ function ListingsFiltersSidebar(props: FiltersProps) {
         {/* Fields rendered above in ListingsFiltersContent */}
       </motion.div>
 
-      <AnimatePresence>
-        {hasActiveFilters && (
-          <ActiveFiltersSummary
-            showClearAll
-            onClearAll={handleClearAll}
-            items={buildActiveFilterItems({
-              searchTerm: props.searchTerm,
-              systemIds: props.systemIds,
-              deviceIds: props.deviceIds,
-              socIds: props.socIds,
-              emulatorIds: props.emulatorIds,
-              performanceIds: props.performanceIds,
-            })}
-          />
-        )}
-      </AnimatePresence>
+      {hasActiveFilters && (
+        <ActiveFiltersSummary
+          showClearAll
+          onClearAll={handleClearAll}
+          items={buildActiveFilterItems({
+            searchTerm: props.searchTerm,
+            systemIds: props.systemIds,
+            deviceIds: props.deviceIds,
+            socIds: props.socIds,
+            emulatorIds: props.emulatorIds,
+            performanceIds: props.performanceIds,
+          })}
+        />
+      )}
     </>
   )
 

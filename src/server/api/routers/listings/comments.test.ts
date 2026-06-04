@@ -243,4 +243,25 @@ describe('handheld comments router — create', () => {
     })
     expect(prisma.comment.create).toHaveBeenCalled()
   })
+
+  it('passes a human verification token to the spam check when retrying creation', async () => {
+    const { caller, prisma } = createCaller()
+
+    await caller.create({
+      listingId: LISTING_ID,
+      content: 'Amazing!! This runs perfectly!!',
+      humanVerificationToken: 'verification-token',
+    })
+
+    expect(mockCheckSpamContent).toHaveBeenCalledWith({
+      prisma,
+      userId: USER_ID,
+      content: 'Amazing!! This runs perfectly!!',
+      entityType: 'comment',
+      challengeMode: 'challenge',
+      humanVerificationToken: 'verification-token',
+      headers: expect.any(Headers),
+    })
+    expect(prisma.comment.create).toHaveBeenCalled()
+  })
 })

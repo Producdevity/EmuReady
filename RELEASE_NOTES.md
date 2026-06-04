@@ -1,3 +1,50 @@
+# 🚀 EmuReady Release Notes – 4 June 2026 (v0.14.0)
+
+This update is smaller than the v0.13.0 catch-up release, but it touches some important day-to-day workflows. The main themes are safer moderation, better spam protection, faster report browsing, and fewer stale-cache issues. Routine cleanup, small dependency churn, and test-only refactors are omitted unless they affect users, moderators, or maintenance.
+
+## Users
+
+- Human verification now uses Cloudflare Turnstile instead of reCAPTCHA for game, report, and comment submissions, with challenge-on-demand behavior when spam or rate-limit checks need more confidence.
+- Game submission now has stronger duplicate and rate-limit handling, clearer duplicate/submission-limit error handling, and safer defaults for signed-out users.
+- Compatibility report tables now respect modifier-click and middle-click behavior, so rows can be opened in new tabs without fighting the table click handler.
+- Handheld and PC browsing now use lighter async lookup filters for large device, SoC, CPU, and GPU lists where enabled, with longer-lived lookup caches to reduce repeated loading.
+- Markdown inline code/backticks no longer get generated incorrectly, and game placeholder artwork was refreshed.
+- The service worker was reworked to avoid stale static assets and old registration scripts, reducing cases where users could keep seeing outdated pages after a deploy.
+- PC report visibility was tightened to better match handheld report behavior for shadow-banned or rejected submissions.
+- Seeded hardware data now includes additional Xiaomi, POCO, and Black Shark devices, plus Snapdragon 6 Gen 3 and Snapdragon 8 Elite Gen 5 SoCs.
+- Notification counts and several page-level error states were made more reliable when returning to the site or when a data load fails.
+
+## Moderators and admins
+
+- Pending handheld and PC approval queues now have a review-risk filter that combines author-risk and submission-risk signals.
+- Review queues now use a shared compatibility report review modal for handheld and PC reports, showing the game, hardware, emulator, performance, notes, custom fields, author link, risk warnings, and rejection presets in one place.
+- Admins can now auto-reject matching review-risk reports from the risk-only approval queues. The action previews how many reports qualify, confirms the exact scope, and generates rejection notes from the detected risk signals.
+- The auto-reject rule rejects reports with high author risk, and reports with high submission risk only when the author also has at least one author-risk signal.
+- Bulk and single-report review flows now handle author/submission risk warnings more consistently, including safer messaging when selected reports include risky submissions.
+- Auto-rejection now guards against status races before updating reports and keeps trust/notification side-effect failures from making an already-applied rejection look like a failed request.
+- Admin queue and edit links were cleaned up with safer new-tab behavior, direct user links, shared error states, and more consistent handheld/PC approval behavior.
+- Admin editing pages for games, emulators, emulator custom fields, and reports were reorganized around client/server boundaries and shared loading behavior.
+- Experimental cache monitoring and cache-warming admin routes were removed after the SEO/cache implementation moved toward Next cache primitives.
+
+## Developers and contributors
+
+- Upgraded the core stack to Next 16.2, React 19.2, Prisma 7.8, the Prisma PG adapter, and updated Next/React type packages.
+- Prisma generation is now part of type-check and Vercel build scripts, Prisma config owns datasource/migration paths, and app imports distinguish browser-safe `@orm` from server `@orm/client`.
+- Added composite database indexes for common handheld and PC report listing queries by status, created date, hardware, game, emulator, and author.
+- Listing and PC listing repositories were reworked to reduce query churn, support risk-filtered pending queues, expose async filter option endpoints, and better share status/visibility logic.
+- SEO and cache invalidation were refactored around Next cache components/cache lifetimes and explicit invalidation helpers; older custom SEO cache metrics and warming utilities were removed.
+- Service-worker registration moved into the app with `/sw.js`, stricter no-cache headers for the worker, and cleanup for old service-worker registrations.
+- Sentry and server initialization now avoid production-build side effects, only enable Sentry wrapping when configured, and upload source maps only in the intended build environment.
+- Error handling gained safer tRPC app-error extraction, serialized error causes, clearer route errors, and more consistent HTTP/API logging.
+- Mobile API docs and OpenAPI output were refreshed for the latest auth, nullable input, and custom-field value shapes.
+- Spam detection now supports separate limits for reports, comments, and game submissions, role/trust-aware report limits, duplicate detection controls, and Turnstile challenge escalation.
+- Custom field validation and seeding were expanded, including categorized seeded fields for Eden, Azahar, and GameNative and generated custom field values for seeded handheld and PC reports.
+- Tests were expanded for review-risk services, auto-rejection, review modals, confirmation dialogs, human verification, custom field validation, service-worker registration, SEO invalidation, repository queries, and app-error serialization.
+- E2E setup now uses deterministic local storage prefixes, external-service mocks, duplicate-report spam prevention, and more stable auth/test path handling.
+- Git hooks, docs, and contribution guidance were aligned with pnpm, and the PR template links were corrected.
+
+---
+
 # 🚀 EmuReady Release Notes – 13 May 2026 (v0.13.0) Changes since v0.10.0
 
 Apologies for not sharing proper release notes for some time. A lot has changes and we will do an attempt at listing the biggest changes.

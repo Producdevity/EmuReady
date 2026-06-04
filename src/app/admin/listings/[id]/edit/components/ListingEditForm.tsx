@@ -109,7 +109,7 @@ function ListingEditForm(props: Props) {
   const loadDeviceItems = useCallback(
     async (query: string): Promise<DeviceOption[]> => {
       try {
-        const result = await utils.client.devices.get.query({
+        const result = await utils.client.devices.options.query({
           search: query || undefined, // Pass undefined instead of empty string
           limit: 50,
         })

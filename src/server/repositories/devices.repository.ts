@@ -1,12 +1,19 @@
 import { startOfMonth, subDays } from 'date-fns'
+import { LRUCache } from 'lru-cache'
 import { HOME_PAGE_LIMITS } from '@/data/constants'
 import { ResourceError } from '@/lib/errors'
 import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
+import { TIME_CONSTANTS } from '@/utils/time'
 import { Prisma, ApprovalStatus } from '@orm/client'
 import { getTrendingDevices } from '@orm/sql'
 import { BaseRepository } from './base.repository'
 import type { TimeRangeId } from '@/app/home/components/TimeRangeTabs'
-import type { GetDevicesInput, CreateDeviceInput, UpdateDeviceInput } from '@/schemas/device'
+import type {
+  GetDevicesInput,
+  GetDeviceOptionsInput,
+  CreateDeviceInput,
+  UpdateDeviceInput,
+} from '@/schemas/device'
 
 export interface TrendingDevice {
   id: string
@@ -22,6 +29,14 @@ export interface TrendingDevicesSummary {
   thisMonth: TrendingDevice[]
   thisWeek: TrendingDevice[]
 }
+
+const trendingDevicesSummaryCache = new LRUCache<string, TrendingDevicesSummary>({
+  ttl: TIME_CONSTANTS.SIX_HOURS,
+  max: 20,
+})
+
+type DeviceFilters = NonNullable<GetDevicesInput>
+type DeviceOptionFilters = NonNullable<GetDeviceOptionsInput>
 
 /**
  * Repository for Device data access
@@ -57,6 +72,13 @@ export class DevicesRepository extends BaseRepository {
       brand: { select: { id: true, name: true } },
       soc: { select: { id: true, name: true, manufacturer: true } },
     } satisfies Prisma.DeviceSelect,
+
+    option: {
+      id: true,
+      modelName: true,
+      brand: { select: { id: true, name: true } },
+      soc: { select: { id: true, name: true, manufacturer: true } },
+    } satisfies Prisma.DeviceSelect,
   } as const
 
   async byId(id: string): Promise<Prisma.DeviceGetPayload<{
@@ -81,7 +103,7 @@ export class DevicesRepository extends BaseRepository {
 
   async create(data: CreateDeviceInput): Promise<
     Prisma.DeviceGetPayload<{
-      include: typeof DevicesRepository.includes.default
+      include: typeof DevicesRepository.includes.withCounts
     }>
   > {
     // Check for duplicate
@@ -102,7 +124,7 @@ export class DevicesRepository extends BaseRepository {
       () =>
         this.prisma.device.create({
           data: { ...data, socId: data.socId ?? null },
-          include: DevicesRepository.includes.default,
+          include: DevicesRepository.includes.withCounts,
         }),
       'Device',
     )
@@ -113,7 +135,7 @@ export class DevicesRepository extends BaseRepository {
     data: Partial<UpdateDeviceInput>,
   ): Promise<
     Prisma.DeviceGetPayload<{
-      include: typeof DevicesRepository.includes.default
+      include: typeof DevicesRepository.includes.withCounts
     }>
   > {
     // Check if device exists
@@ -145,17 +167,21 @@ export class DevicesRepository extends BaseRepository {
         this.prisma.device.update({
           where: { id },
           data: { ...data, socId: data.socId ?? undefined },
-          include: DevicesRepository.includes.default,
+          include: DevicesRepository.includes.withCounts,
         }),
       'Device',
     )
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: string): Promise<
+    Prisma.DeviceGetPayload<{
+      include: typeof DevicesRepository.includes.withCounts
+    }>
+  > {
     // Check if device exists and has listings
     const device = await this.prisma.device.findUnique({
       where: { id },
-      include: { _count: { select: { listings: true } } },
+      include: DevicesRepository.includes.withCounts,
     })
 
     if (!device) throw ResourceError.device.notFound()
@@ -164,36 +190,63 @@ export class DevicesRepository extends BaseRepository {
     }
 
     await this.handleDatabaseOperation(() => this.prisma.device.delete({ where: { id } }), 'Device')
+    return device
   }
 
-  async list(input: GetDevicesInput = {}): Promise<{
+  private buildWhere(input: DeviceFilters | DeviceOptionFilters = {}): Prisma.DeviceWhereInput {
+    const where: Prisma.DeviceWhereInput = {}
+
+    if (input.brandId) where.brandId = input.brandId
+    if (input.socId) where.socId = input.socId
+    if (input.search) {
+      const searchWords = input.search.trim().split(/\s+/).filter(Boolean)
+
+      if (searchWords.length > 0) {
+        // Each word must appear in either brand or model name
+        where.AND = searchWords.map((word) => ({
+          OR: [
+            { modelName: { contains: word, mode: this.mode } },
+            { brand: { name: { contains: word, mode: this.mode } } },
+          ],
+        }))
+      }
+    }
+
+    return where
+  }
+
+  private buildOrderBy(input: DeviceFilters = {}): Prisma.DeviceOrderByWithRelationInput[] {
+    const direction = input.sortDirection ?? this.sortOrder
+
+    switch (input.sortField) {
+      case 'modelName':
+        return [{ modelName: direction }]
+      case 'soc':
+        return [{ soc: { name: direction } }, { brand: { name: this.sortOrder } }]
+      case 'listings':
+        return [{ listings: { _count: direction } }, { brand: { name: this.sortOrder } }]
+      case 'brand':
+      default:
+        return [{ brand: { name: direction } }, { modelName: this.sortOrder }]
+    }
+  }
+
+  async list(input: DeviceFilters = {}): Promise<{
     devices: Prisma.DeviceGetPayload<{ include: typeof DevicesRepository.includes.withCounts }>[]
     pagination: PaginationResult
   }> {
     const limit = input.limit ?? 20
     const actualOffset = calculateOffset({ page: input.page, offset: input.offset }, limit)
 
-    const where: Prisma.DeviceWhereInput = {}
-
-    if (input.brandId) where.brandId = input.brandId
-    if (input.search) {
-      const searchWords = input.search.trim().split(/\s+/)
-
-      // Each word must appear in either brand or model name
-      where.AND = searchWords.map((word) => ({
-        OR: [
-          { modelName: { contains: word, mode: this.mode } },
-          { brand: { name: { contains: word, mode: this.mode } } },
-        ],
-      }))
-    }
+    const where = this.buildWhere(input)
+    const orderBy = this.buildOrderBy(input)
 
     const [total, devices] = await Promise.all([
       this.prisma.device.count({ where }),
       this.prisma.device.findMany({
         where,
         include: DevicesRepository.includes.withCounts,
-        orderBy: [{ brand: { name: this.sortOrder } }, { modelName: this.sortOrder }],
+        orderBy,
         skip: actualOffset,
         take: limit,
       }),
@@ -206,6 +259,26 @@ export class DevicesRepository extends BaseRepository {
     })
 
     return { devices, pagination }
+  }
+
+  async options(input: DeviceOptionFilters = {}): Promise<{
+    devices: Prisma.DeviceGetPayload<{ select: typeof DevicesRepository.selects.option }>[]
+    hasMore: boolean
+  }> {
+    const limit = input.limit ?? 50
+    const offset = input.offset ?? 0
+    const devices = await this.prisma.device.findMany({
+      where: this.buildWhere(input),
+      select: DevicesRepository.selects.option,
+      orderBy: [{ brand: { name: this.sortOrder } }, { modelName: this.sortOrder }],
+      skip: offset,
+      take: limit + 1,
+    })
+
+    return {
+      devices: devices.slice(0, limit),
+      hasMore: devices.length > limit,
+    }
   }
 
   async existsByModelAndBrand(modelName: string, brandId: string): Promise<boolean | string> {
@@ -256,7 +329,7 @@ export class DevicesRepository extends BaseRepository {
     })
   }
 
-  async listMobile(filters: GetDevicesInput = {}): Promise<{
+  async listMobile(filters: DeviceFilters = {}): Promise<{
     devices: {
       id: string
       modelName: string
@@ -270,19 +343,7 @@ export class DevicesRepository extends BaseRepository {
     const page = filters.page ?? 1
     const actualOffset = calculateOffset({ page }, limit)
 
-    const where: Prisma.DeviceWhereInput = {}
-
-    if (filters.brandId) where.brandId = filters.brandId
-    if (filters.search) {
-      const searchWords = filters.search.trim().split(/\s+/)
-
-      where.AND = searchWords.map((word) => ({
-        OR: [
-          { modelName: { contains: word, mode: this.mode } },
-          { brand: { name: { contains: word, mode: this.mode } } },
-        ],
-      }))
-    }
+    const where = this.buildWhere(filters)
 
     const [devices, total] = await Promise.all([
       this.prisma.device.findMany({
@@ -389,6 +450,10 @@ export class DevicesRepository extends BaseRepository {
   async getTrendingDevicesSummary(
     limit: number = HOME_PAGE_LIMITS.TRENDING_DEVICES,
   ): Promise<TrendingDevicesSummary> {
+    const cacheKey = `limit:${limit}`
+    const cached = trendingDevicesSummaryCache.get(cacheKey)
+    if (cached) return cached
+
     const timeRanges: TimeRangeId[] = ['allTime', 'thisMonth', 'thisWeek']
 
     const results = await Promise.all(
@@ -396,6 +461,8 @@ export class DevicesRepository extends BaseRepository {
     )
     const [allTime, thisMonth, thisWeek] = results
 
-    return { allTime, thisMonth, thisWeek }
+    const summary = { allTime, thisMonth, thisWeek }
+    trendingDevicesSummaryCache.set(cacheKey, summary)
+    return summary
   }
 }

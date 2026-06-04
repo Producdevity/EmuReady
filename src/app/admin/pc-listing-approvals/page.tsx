@@ -16,6 +16,7 @@ import {
   AdminSearchFilters,
   AdminStatsDisplay,
   AdminTableNoResults,
+  ReviewRiskAutoRejectPanel,
   ReviewRiskFilterButton,
   ReviewRiskIndicator,
 } from '@/components/admin'
@@ -57,6 +58,9 @@ import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import getImageUrl from '@/utils/getImageUrl'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
+import { hasRolePermission } from '@/utils/permissions'
+import { formatCountLabel } from '@/utils/text'
+import { Role } from '@orm'
 
 type PendingPcListing = RouterOutput['pcListings']['pending']['pcListings'][number]
 type PcApprovalSortField =
@@ -79,6 +83,14 @@ const PC_APPROVALS_COLUMNS: ColumnDefinition[] = [
   { key: 'createdAt', label: 'Submitted', defaultVisible: false },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
+
+function formatOptionalCountLabel(word: string, count: number | undefined): string {
+  return count === undefined ? 'Loading...' : formatCountLabel(word, count)
+}
+
+function getRejectButtonLabel(count: number): string {
+  return `Reject ${count.toLocaleString()} Report${count === 1 ? '' : 's'}`
+}
 
 function PcListingApprovalsPage() {
   const router = useRouter()
@@ -106,6 +118,7 @@ function PcListingApprovalsPage() {
   })
 
   const currentUserQuery = api.users.me.useQuery()
+  const canAutoRejectRiskyReports = hasRolePermission(currentUserQuery.data?.role, Role.ADMIN)
   const pendingPcListingsQuery = api.pcListings.pending.useQuery({
     page: table.page,
     limit: table.limit,
@@ -113,6 +126,9 @@ function PcListingApprovalsPage() {
     sortDirection: table.sortDirection ?? undefined,
     search: isEmpty(table.search) ? undefined : table.search,
     riskFilter: reviewRiskFilter.riskFilter,
+  })
+  const autoRejectRiskyPreviewQuery = api.pcListings.autoRejectRiskyPreview.useQuery(undefined, {
+    enabled: canAutoRejectRiskyReports && reviewRiskFilter.isRiskOnly,
   })
 
   const gameStatsQuery = api.games.stats.useQuery()
@@ -129,6 +145,7 @@ function PcListingApprovalsPage() {
     await Promise.all([
       pendingPcListingsQuery.refetch(),
       utils.pcListings.stats.invalidate(),
+      utils.pcListings.autoRejectRiskyPreview.invalidate(),
       utils.games.stats.invalidate(),
       utils.pcListings.stats.refetch(),
       utils.games.stats.refetch(),
@@ -216,12 +233,69 @@ function PcListingApprovalsPage() {
     },
   })
 
+  const autoRejectRiskyMutation = api.pcListings.autoRejectRisky.useMutation({
+    onSuccess: async (result) => {
+      toast.success(result.message)
+
+      if (result.rejectedCount > 0) {
+        analytics.admin.bulkOperation({
+          operation: 'reject',
+          entityType: 'listing',
+          count: result.rejectedCount,
+          adminId: currentUserQuery.data?.id ?? 'unknown',
+        })
+      }
+
+      await invalidateQueries()
+      setSelectedListingIds([])
+    },
+    onError: (err) => {
+      logger.error('Failed to auto-reject review-risk PC reports:', err)
+      toast.error(`Failed to auto-reject review-risk PC reports: ${getErrorMessage(err)}`)
+    },
+  })
+
   const handleBulkApprovalWithConfirmation = async (listingIds: string[]) => {
     const confirmed = await confirmBulkApproval(pcListings, listingIds, confirm, 'PC listings')
     if (!confirmed) return
 
     await bulkApproveMutation.mutateAsync({ pcListingIds: listingIds })
     approvalModal.close()
+  }
+
+  const handleAutoRejectRiskyReports = async () => {
+    if (autoRejectRiskyPreviewQuery.isError) {
+      toast.error('Failed to load the auto-reject count. Please refresh and try again.')
+      return
+    }
+
+    const eligibleCount = autoRejectRiskyPreviewQuery.data?.eligibleCount ?? 0
+    if (eligibleCount === 0) {
+      toast.warning('No PC reports currently match the auto-reject rule.')
+      return
+    }
+
+    const eligibleReportCount = formatCountLabel('PC report', eligibleCount)
+    const reviewRiskQueueCount = autoRejectRiskyPreviewQuery.data?.reviewRiskQueueCount
+    const confirmed = await confirm({
+      title: `Reject ${eligibleReportCount}?`,
+      description: `This scans all pending PC reports and rejects ${eligibleReportCount} with high author risk, or with high submission risk and at least one author risk signal. Rejection notes will be generated automatically.`,
+      details: [
+        { label: 'Will reject', value: eligibleReportCount, tone: 'danger' },
+        { label: 'Scope', value: 'All pending PC reports' },
+        {
+          label: 'All pending review-risk queue',
+          value: formatOptionalCountLabel('PC report', reviewRiskQueueCount),
+        },
+        { label: 'Rule', value: 'High author risk, or high submission risk + author risk signal' },
+      ],
+      confirmText: getRejectButtonLabel(eligibleCount),
+      cancelText: 'Cancel',
+      confirmVariant: 'danger',
+    })
+    if (!confirmed) return
+
+    await autoRejectRiskyMutation.mutateAsync()
   }
 
   const handleSelectAll = (selected: boolean) => {
@@ -335,6 +409,20 @@ function PcListingApprovalsPage() {
           onToggle={reviewRiskFilter.toggleRiskFilter}
         />
       </AdminSearchFilters>
+
+      {canAutoRejectRiskyReports && reviewRiskFilter.isRiskOnly && (
+        <ReviewRiskAutoRejectPanel
+          reportLabel="PC"
+          eligibleCount={autoRejectRiskyPreviewQuery.data?.eligibleCount}
+          reviewRiskQueueCount={autoRejectRiskyPreviewQuery.data?.reviewRiskQueueCount}
+          isCountLoading={autoRejectRiskyPreviewQuery.isPending}
+          hasCountError={autoRejectRiskyPreviewQuery.isError}
+          isSubmitting={autoRejectRiskyMutation.isPending}
+          onAutoReject={() => {
+            void handleAutoRejectRiskyReports()
+          }}
+        />
+      )}
 
       {pcListings.length > 0 && (
         <BulkActions

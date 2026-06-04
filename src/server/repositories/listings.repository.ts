@@ -791,7 +791,7 @@ export class ListingsRepository extends BaseRepository {
         throw AppError.badRequest("The selected emulator does not support this game's system")
 
       // Determine approval
-      const canAutoApprove = await canUserAutoApprove(authorId)
+      const canAutoApprove = await canUserAutoApprove(authorId, tx)
       const isAuthorOrHigher = roleIncludesRole(userRole, Role.AUTHOR)
       const status: ApprovalStatus =
         canAutoApprove || isAuthorOrHigher ? ApprovalStatus.APPROVED : ApprovalStatus.PENDING

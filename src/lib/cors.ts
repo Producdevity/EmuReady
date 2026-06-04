@@ -1,4 +1,5 @@
 import { type NextRequest } from 'next/server'
+import { env } from '@/lib/env'
 
 /**
  * Hardcoded allowed origins for production
@@ -33,6 +34,16 @@ function addMissingOrigins(origins: string[], additionalOrigins: string[]) {
   }
 }
 
+function isLocalAppEnvironment() {
+  return (
+    env.APP_ENV === 'local' ||
+    env.APP_ENV === 'test' ||
+    env.IS_DEVELOPMENT_BUILD ||
+    env.IS_TEST_BUILD ||
+    process.env.PLAYWRIGHT_TEST === 'true'
+  )
+}
+
 /**
  * Get allowed CORS origins from environment variables
  * This is the single source of truth for allowed origins
@@ -45,20 +56,17 @@ export function getAllowedOrigins(): string[] {
   if (envOrigins) {
     // Use environment variable origins if provided
     origins = envOrigins.split(',').map((origin) => origin.trim())
-  } else if (process.env.NODE_ENV === 'development') {
-    // Default to localhost for development
+  } else if (isLocalAppEnvironment()) {
     origins = [...LOCAL_TEST_ORIGINS]
   } else {
-    // In production without env vars, use hardcoded production origins
     origins = [...PRODUCTION_ORIGINS]
   }
 
-  if (process.env.CI === 'true' && process.env.NODE_ENV !== 'production') {
+  if (process.env.CI === 'true' || isLocalAppEnvironment()) {
     addMissingOrigins(origins, LOCAL_TEST_ORIGINS)
   }
 
-  // Always include production origins if we're in production
-  if (process.env.NODE_ENV === 'production') {
+  if (!isLocalAppEnvironment()) {
     addMissingOrigins(origins, PRODUCTION_ORIGINS)
   }
 
@@ -104,8 +112,7 @@ export function getCORSHeaders(request?: NextRequest): Record<string, string> {
   const allowedOrigins = getAllowedOrigins()
   const origin = request?.headers.get('origin') || ''
 
-  // In production, require explicit origin configuration
-  if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
+  if (env.IS_PUBLIC_PRODUCTION && allowedOrigins.length === 0) {
     console.error('CORS Error: No allowed origins configured in production')
     return {
       'Access-Control-Allow-Origin': 'null',

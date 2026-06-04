@@ -17,6 +17,16 @@ export const GetDevicesSchema = z
   })
   .optional()
 
+export const GetDeviceOptionsSchema = z
+  .object({
+    search: z.string().nullable().optional(),
+    brandId: z.string().uuid().nullable().optional(),
+    socId: z.string().uuid().nullable().optional(),
+    limit: z.number().int().min(1).max(10000).default(50),
+    offset: z.number().int().min(0).default(0),
+  })
+  .optional()
+
 export const GetDeviceByIdSchema = z.object({ id: z.string().uuid() })
 export const GetDevicesByIdsSchema = z.object({ ids: z.array(z.string().uuid()).min(1).max(100) })
 
@@ -41,6 +51,7 @@ export const GetTrendingDevicesSummarySchema = z.object({
 
 // Type exports for repository use
 export type GetDevicesInput = z.input<typeof GetDevicesSchema>
+export type GetDeviceOptionsInput = z.input<typeof GetDeviceOptionsSchema>
 export type CreateDeviceInput = z.infer<typeof CreateDeviceSchema>
 export type UpdateDeviceInput = z.infer<typeof UpdateDeviceSchema>
 export type GetDevicesByIdsInput = z.infer<typeof GetDevicesByIdsSchema>

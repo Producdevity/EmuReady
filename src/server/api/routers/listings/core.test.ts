@@ -193,6 +193,35 @@ describe('handheld listings trust integration (core.ts)', () => {
       })
       expect(mockRepositoryCreate).toHaveBeenCalled()
     })
+
+    it('passes a human verification token to the spam check when retrying creation', async () => {
+      mockRepositoryCreate.mockResolvedValue({
+        id: LISTING_ID,
+        status: ApprovalStatus.PENDING,
+      })
+
+      const { caller } = createCaller({ permissions: [PERMISSIONS.CREATE_LISTING] })
+
+      await caller.create({
+        gameId: '00000000-0000-4000-a000-000000000030',
+        deviceId: '00000000-0000-4000-a000-000000000031',
+        emulatorId: '00000000-0000-4000-a000-000000000032',
+        performanceId: 1,
+        notes: 'Amazing!! This runs perfectly!!',
+        humanVerificationToken: 'verification-token',
+      })
+
+      expect(mockCheckSpamContent).toHaveBeenCalledWith({
+        prisma: expect.anything(),
+        userId: USER_ID,
+        content: 'Amazing!! This runs perfectly!!',
+        entityType: 'listing',
+        challengeMode: 'challenge',
+        humanVerificationToken: 'verification-token',
+        headers: expect.any(Headers),
+      })
+      expect(mockRepositoryCreate).toHaveBeenCalled()
+    })
   })
 
   describe('byId', () => {

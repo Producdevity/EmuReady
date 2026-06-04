@@ -215,6 +215,7 @@ function PcListingDetailsClient(props: Props) {
                 <PcReportListingButton
                   pcListingId={props.pcListing.id}
                   authorId={props.pcListing.authorId}
+                  currentUserId={currentUserQuery.data?.id}
                   onSuccess={refreshData}
                 />
                 <VerifyPcListingButton

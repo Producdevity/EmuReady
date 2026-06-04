@@ -66,8 +66,9 @@ const LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
-const LOOKUP_DATA_STALE_TIME = ms.minutes(30)
-const LOOKUP_DATA_GC_TIME = ms.hours(1)
+const LOOKUP_DATA_STALE_TIME = ms.hours(6)
+const LOOKUP_DATA_GC_TIME = ms.hours(12)
+const USE_ASYNC_LISTING_FILTERS = process.env.NEXT_PUBLIC_ENABLE_ASYNC_LISTINGS_FILTERS === 'true'
 
 function ListingsPage() {
   const { isSignedIn } = useUser()
@@ -115,18 +116,20 @@ function ListingsPage() {
     staleTime: LOOKUP_DATA_STALE_TIME,
     gcTime: LOOKUP_DATA_GC_TIME,
   })
-  // TODO: find a better alternative to hardcoding 10000 for devices (AsyncMultiselect)
-  const devicesQuery = api.devices.get.useQuery(
+  // TODO: Remove this legacy fallback once async filters no longer need an opt-out.
+  const devicesQuery = api.devices.options.useQuery(
     { limit: 10000 },
     {
+      enabled: !USE_ASYNC_LISTING_FILTERS,
       staleTime: LOOKUP_DATA_STALE_TIME,
       gcTime: LOOKUP_DATA_GC_TIME,
     },
   )
-  // TODO: find a better alternative to hardcoding 10000 for SoCs (AsyncMultiselect)
-  const socsQuery = api.socs.get.useQuery(
+  // TODO: Remove this legacy fallback once async filters no longer need an opt-out.
+  const socsQuery = api.socs.options.useQuery(
     { limit: 10000 },
     {
+      enabled: !USE_ASYNC_LISTING_FILTERS,
       staleTime: LOOKUP_DATA_STALE_TIME,
       gcTime: LOOKUP_DATA_GC_TIME,
     },
@@ -251,6 +254,9 @@ function ListingsPage() {
     return <div className="p-8 text-center text-red-500">Failed to load listings.</div>
   }
 
+  const devicesForFilters = devicesQuery.data?.devices ?? []
+  const socsForFilters = socsQuery.data?.socs ?? []
+
   return (
     <main className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="lg:flex">
@@ -264,8 +270,8 @@ function ListingsPage() {
             performanceIds={listingsState.performanceIds}
             searchTerm={listingsState.searchInput}
             systems={systemsQuery.data ?? []}
-            devices={devicesQuery.data?.devices ?? []}
-            socs={socsQuery.data?.socs ?? []}
+            devices={devicesForFilters}
+            socs={socsForFilters}
             emulators={emulatorsQuery.data?.emulators ?? []}
             performanceScales={performanceScalesQuery.data ?? []}
             onSystemChange={handleSystemChange}
@@ -300,8 +306,8 @@ function ListingsPage() {
               performanceIds={listingsState.performanceIds}
               searchTerm={listingsState.searchInput}
               systems={systemsQuery.data ?? []}
-              devices={devicesQuery.data?.devices ?? []}
-              socs={socsQuery.data?.socs ?? []}
+              devices={devicesForFilters}
+              socs={socsForFilters}
               emulators={emulatorsQuery.data?.emulators ?? []}
               performanceScales={performanceScalesQuery.data ?? []}
               onSystemChange={handleSystemChange}

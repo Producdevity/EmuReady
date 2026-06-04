@@ -3,6 +3,7 @@ import {
   CreateGpuSchema,
   DeleteGpuSchema,
   GetGpuByIdSchema,
+  GetGpuOptionsSchema,
   GetGpusByIdsSchema,
   GetGpusSchema,
   UpdateGpuSchema,
@@ -19,6 +20,11 @@ export const gpusRouter = createTRPCRouter({
   get: publicProcedure.input(GetGpusSchema).query(async ({ ctx, input }) => {
     const repository = new GpusRepository(ctx.prisma)
     return repository.list(input ?? {})
+  }),
+
+  options: publicProcedure.input(GetGpuOptionsSchema).query(async ({ ctx, input }) => {
+    const repository = new GpusRepository(ctx.prisma)
+    return repository.options(input ?? {})
   }),
 
   byId: publicProcedure.input(GetGpuByIdSchema).query(async ({ ctx, input }) => {

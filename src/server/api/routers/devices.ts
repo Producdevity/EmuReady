@@ -3,6 +3,7 @@ import {
   CreateDeviceSchema,
   DeleteDeviceSchema,
   GetDeviceByIdSchema,
+  GetDeviceOptionsSchema,
   GetDevicesByIdsSchema,
   GetDevicesSchema,
   GetTrendingDevicesSummarySchema,
@@ -22,6 +23,11 @@ export const devicesRouter = createTRPCRouter({
     return repository.list(input ?? {})
   }),
 
+  options: publicProcedure.input(GetDeviceOptionsSchema).query(async ({ ctx, input }) => {
+    const repository = new DevicesRepository(ctx.prisma)
+    return repository.options(input ?? {})
+  }),
+
   byId: publicProcedure.input(GetDeviceByIdSchema).query(async ({ ctx, input }) => {
     const repository = new DevicesRepository(ctx.prisma)
     const device = await repository.byIdWithCounts(input.id)
@@ -37,8 +43,7 @@ export const devicesRouter = createTRPCRouter({
     const repository = new DevicesRepository(ctx.prisma)
 
     // Repository handles all validation (brand exists, SoC exists, no duplicates)
-    const created = await repository.create(input)
-    return repository.byIdWithCounts(created.id)
+    return repository.create(input)
   }),
 
   update: manageDevicesProcedure.input(UpdateDeviceSchema).mutation(async ({ ctx, input }) => {
@@ -46,20 +51,14 @@ export const devicesRouter = createTRPCRouter({
     const { id, ...data } = input
 
     // Repository handles all validation (device exists, brand exists, SoC exists, no duplicates)
-    const updated = await repository.update(id, data)
-    return repository.byIdWithCounts(updated.id)
+    return repository.update(id, data)
   }),
 
   delete: manageDevicesProcedure.input(DeleteDeviceSchema).mutation(async ({ ctx, input }) => {
     const repository = new DevicesRepository(ctx.prisma)
 
-    // Get device before deletion to return it
-    const existingDevice = await repository.byIdWithCounts(input.id)
-    if (!existingDevice) return ResourceError.device.notFound()
-
     // Repository handles validation (device exists, not in use)
-    await repository.delete(input.id)
-    return existingDevice
+    return repository.delete(input.id)
   }),
 
   stats: viewStatisticsProcedure.query(async ({ ctx }) => {

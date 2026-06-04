@@ -15,7 +15,9 @@ This file is the source of working guidance for AI coding agents in this reposit
   - `pnpm prisma validate` validates the schema.
   - Database-backed Prisma commands must use the project scripts that wrap `scripts/db-cmd.sh` when available.
 - Do not run `pnpm dev`, `pnpm build`, `pnpm start`, `pnpm run deploy`, migrations, seeds, or data scripts unless the user explicitly asks.
-- Never deploy, commit, or push unless the user explicitly asks.
+- Never deploy, commit, or push unless the user explicitly asks for that exact
+  action. Requests to fix a PR, update a PR, address review comments, check CI,
+  or prepare changes do not imply permission to commit or push.
 - Use the current git user as commit author; never add Codex/AI authorship or AI-themed branch names.
 
 ## Domain Rules
@@ -60,6 +62,8 @@ This file is the source of working guidance for AI coding agents in this reposit
 - Use generated Prisma types where appropriate.
 - Do not add unused functions, exports, or speculative helpers.
 - Remove dead code when refactoring.
+- Do not remove or rewrite existing TODO comments unless the user explicitly
+  asks, or unless the TODO is directly made obsolete by the code change.
 - Prefer function declarations for top-level functions/components.
 - Component props interfaces should be named `Props`.
 - Do not destructure component props in function parameters; use `props.foo`.
@@ -81,21 +85,14 @@ This file is the source of working guidance for AI coding agents in this reposit
 - Never use `window.confirm()`. Use `useConfirmDialog` from `@/components/ui`.
 - Keep admin pages consistent: table controls, search/filtering, pagination, statistics, and bulk actions should follow existing admin patterns.
 
-## Filters
+## Filters And Selects
 
-- Controllers own filter behavior: interactions, analytics, collapsed badges, active summaries, and calls into presentational content.
-- Content components should only render fields and call handlers passed by controllers.
-- URL/state hooks own URL sync and local UI state; they must not emit per-filter analytics.
-- Filter analytics should be emitted once from controllers, using `filterAnalytics` and `selectedLabels`.
-- Call `onChange` before emitting analytics.
-- Use shared filter UI pieces: `FilterSidebarShell`, `CollapsedBadges`, `ActiveFiltersSummary`, and `MobileFilterSheet`.
-- Use shared option mappers from `src/utils/options.ts`.
-
-## Async Multi-Selects
-
-- Use `src/components/ui/form/async-multi-select/AsyncMultiSelect.tsx` as the base.
-- Entity wrappers such as CPU, GPU, Device, and SoC selects should stay thin: call TRPC, map to `Option[]`, manage pagination state, and pass data to the base component.
-- Selected chips must persist by deriving them from `options` plus `selectedByIds`.
+- Filter controllers own behavior and analytics: interaction handlers, collapsed badges, active summaries, and calls into presentational content.
+- Filter content components should stay presentational. URL/state hooks own URL sync and local UI state, and must not emit per-filter analytics.
+- Emit filter analytics once from controllers after calling `onChange`, using `filterAnalytics` and `selectedLabels`.
+- Reuse shared filter primitives (`FilterSidebarShell`, `CollapsedBadges`, `ActiveFiltersSummary`, `MobileFilterSheet`) and option mappers from `src/utils/options.ts`.
+- Async entity filters must wrap `src/components/ui/form/async-multi-select/AsyncMultiSelect.tsx`. CPU, GPU, Device, and SoC wrappers should only query, map options, manage pagination, and pass data to the base component.
+- Selected async chips must derive from `options` plus `selectedByIds` so URL-loaded selections survive when their option is not on the current page.
 
 ## Security
 

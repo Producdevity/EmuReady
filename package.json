@@ -1,9 +1,9 @@
 {
   "name": "emuready",
-  "version": "0.13.2",
+  "version": "0.14.0",
   "type": "module",
   "private": false,
-  "packageManager": "pnpm@11.1.0",
+  "packageManager": "pnpm@11.5.1",
   "license": "GPL-3.0-or-later",
   "author": "Producdevity",
   "scripts": {
@@ -174,11 +174,5 @@
   "overrides": {
     "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3"
-  },
-  "pnpm": {
-    "overrides": {
-      "@types/react": "19.2.15",
-      "@types/react-dom": "19.2.3"
-    }
   }
 }

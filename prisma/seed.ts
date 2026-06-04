@@ -10,6 +10,7 @@ import gamenativeCustomFieldsSeeder from './seeders/gamenativeCustomFieldsSeeder
 import gamesSeeder from './seeders/gamesSeeder'
 import gpuSeeder from './seeders/gpuSeeder'
 import listingsSeeder from './seeders/listingsSeeder'
+import pcListingsSeeder from './seeders/pcListingsSeeder'
 import performanceScalesSeeder from './seeders/performanceScalesSeeder'
 import permissionsSeeder from './seeders/permissionsSeeder'
 import socSeeder from './seeders/socSeeder'
@@ -66,6 +67,7 @@ async function main() {
   const seedDevicesOnly = args.includes('--devices-only')
   const seedEmulatorsOnly = args.includes('--emulators-only')
   const seedCustomFieldsOnly = args.includes('--custom-fields-only')
+  const seedPcListingsOnly = args.includes('--pc-listings-only')
   const seedCpusOnly = args.includes('--cpus-only')
   const seedGpusOnly = args.includes('--gpus-only')
 
@@ -156,6 +158,20 @@ async function main() {
     return
   }
 
+  if (seedPcListingsOnly) {
+    console.info('🌱 Seeding PC listings only...')
+    try {
+      await pcListingsSeeder(prisma)
+      console.info('✅ PC listings seeded successfully!')
+    } catch (error) {
+      console.error('❌ Error seeding PC listings:', error)
+      throw error
+    } finally {
+      await prisma.$disconnect()
+    }
+    return
+  }
+
   if (seedGpusOnly) {
     console.info('🌱 Seeding GPUs only...')
     try {
@@ -200,6 +216,7 @@ async function main() {
     await devicesSeeder(prisma)
     await gamesSeeder(prisma)
     await listingsSeeder(prisma)
+    await pcListingsSeeder(prisma)
 
     console.info('✅ Database seeded successfully!')
   } catch (error) {

@@ -11,7 +11,7 @@ const lintStagedConfig = {
   'package.json': () => [
     'pnpm install --lockfile-only',
     'node scripts/sync-version.js',
-    'git add public/service-worker.js public/sw-register.js pnpm-lock.yaml',
+    'git add public/sw.js pnpm-lock.yaml',
   ],
   '*.{json,css,md,js,jsx,ts,tsx}': ['prettier --write'],
   '*.{js,jsx,ts,tsx}': [buildEslintCommand],

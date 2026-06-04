@@ -17,13 +17,16 @@ interface CheckSpamContentParams {
   content: string
   entityType: SpamEntityType
   challengeMode?: 'block' | 'challenge'
+  enableRateLimiting?: boolean
+  enableDuplicateDetection?: boolean
   humanVerificationToken?: string | null
   headers?: Headers
 }
 
 export async function checkSpamContent(params: CheckSpamContentParams): Promise<void> {
   const detector = new SpamDetectionService(params.prisma, {
-    enableRateLimiting: process.env.DISABLE_RATE_LIMIT !== 'true',
+    enableRateLimiting: params.enableRateLimiting ?? process.env.DISABLE_RATE_LIMIT !== 'true',
+    enableDuplicateDetection: params.enableDuplicateDetection ?? true,
   })
   const result = await detector.detectSpam({
     userId: params.userId,
@@ -63,13 +66,13 @@ async function enforceHumanVerification(
   token: string | null | undefined,
   headers: Headers | undefined,
 ): Promise<void> {
+  if (!isTurnstileConfigured()) AppError.humanVerificationUnavailable()
+
   if (!token) AppError.humanVerificationRequired()
 
   if (token.length > HUMAN_VERIFICATION_TOKEN_MAX_LENGTH) {
     AppError.humanVerificationFailed()
   }
-
-  if (!isTurnstileConfigured()) AppError.humanVerificationUnavailable()
 
   const result = await verifyTurnstileToken({
     token,

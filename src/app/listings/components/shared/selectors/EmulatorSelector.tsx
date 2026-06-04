@@ -10,6 +10,7 @@ import {
 } from 'react-hook-form'
 import { GitHubIcon, EmulatorIcon } from '@/components/icons'
 import { Autocomplete } from '@/components/ui'
+import { env } from '@/lib/env'
 import { cn } from '@/lib/utils'
 import { type Nullable } from '@/types/utils'
 import { SelectedItemCard } from '../SelectedItemCard'
@@ -137,7 +138,7 @@ export function EmulatorSelector<TFieldValues extends FieldValues = FieldValues>
                         <strong>{props.selectedGame.system.name}</strong>. Try a different search
                         term, or request to add your emulator by opening a GitHub issue.
                         <a
-                          href="https://github.com/Producdevity/EmuReady/issues/new?template=emulator_request.md"
+                          href={env.GITHUB_REQUEST_EMULATOR_URL}
                           target="_blank"
                           rel="noopener noreferrer"
                           aria-label="Request Emulator on GitHub"

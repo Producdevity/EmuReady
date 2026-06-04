@@ -1,4 +1,4 @@
-import { type PrismaClient } from '@orm/client'
+import { Role, type PrismaClient } from '@orm/client'
 
 export interface SpamDetectionResult {
   isSpam: boolean
@@ -7,13 +7,19 @@ export interface SpamDetectionResult {
   reason?: string
 }
 
-export type SpamEntityType = 'listing' | 'pcListing' | 'comment' | 'pcComment'
+export type SpamEntityType = 'listing' | 'pcListing' | 'comment' | 'pcComment' | 'game'
 
-type SpamEntityCategory = 'report' | 'comment'
+type SpamEntityCategory = 'report' | 'comment' | 'game'
 
 interface RateLimitRule {
   windowMinutes: number
   maxItems: number
+}
+
+interface UserRateLimitProfile {
+  createdAt: Date
+  role: Role
+  trustScore: number
 }
 
 export interface SpamDetectionConfig {
@@ -52,7 +58,22 @@ const DEFAULT_RATE_LIMITS: Record<SpamEntityCategory, RateLimitRule> = {
     windowMinutes: 5,
     maxItems: 10,
   },
+  game: {
+    windowMinutes: 15,
+    maxItems: 10,
+  },
 }
+
+const REPORT_RATE_LIMIT_TIERS = {
+  ESTABLISHED_ACCOUNT_DAYS: 30,
+  CONTRIBUTOR_TRUST_SCORE: 100,
+  TRUSTED_TRUST_SCORE: 250,
+  ESTABLISHED_MAX_ITEMS: 20,
+  TRUSTED_MAX_ITEMS: 40,
+  STAFF_MAX_ITEMS: 100,
+} as const
+
+const STAFF_ROLES = new Set<Role>([Role.MODERATOR, Role.ADMIN, Role.SUPER_ADMIN])
 
 interface NormalizedSpamDetectionConfig {
   enableRateLimiting: boolean
@@ -73,15 +94,38 @@ const DEFAULT_CONFIG: NormalizedSpamDetectionConfig = {
 }
 
 function getEntityCategory(entityType: SpamEntityType): SpamEntityCategory {
-  return entityType === 'listing' || entityType === 'pcListing' ? 'report' : 'comment'
+  if (entityType === 'listing' || entityType === 'pcListing') return 'report'
+  if (entityType === 'game') return 'game'
+  return 'comment'
 }
 
 function formatEntityCategory(category: SpamEntityCategory): string {
-  return category === 'report' ? 'reports' : 'comments'
+  if (category === 'report') return 'reports'
+  if (category === 'game') return 'games'
+  return 'comments'
 }
 
 function isNonEmptyString(value: string | null | undefined): value is string {
   return typeof value === 'string' && value.trim().length > 0
+}
+
+function getAccountAgeDays(createdAt: Date): number {
+  return (Date.now() - createdAt.getTime()) / (24 * 60 * 60 * 1000)
+}
+
+function getReportRateLimitMax(profile: UserRateLimitProfile): number {
+  if (STAFF_ROLES.has(profile.role)) return REPORT_RATE_LIMIT_TIERS.STAFF_MAX_ITEMS
+  if (profile.trustScore >= REPORT_RATE_LIMIT_TIERS.TRUSTED_TRUST_SCORE) {
+    return REPORT_RATE_LIMIT_TIERS.TRUSTED_MAX_ITEMS
+  }
+  if (
+    profile.trustScore >= REPORT_RATE_LIMIT_TIERS.CONTRIBUTOR_TRUST_SCORE ||
+    getAccountAgeDays(profile.createdAt) >= REPORT_RATE_LIMIT_TIERS.ESTABLISHED_ACCOUNT_DAYS
+  ) {
+    return REPORT_RATE_LIMIT_TIERS.ESTABLISHED_MAX_ITEMS
+  }
+
+  return DEFAULT_RATE_LIMITS.report.maxItems
 }
 
 export class SpamDetectionService {
@@ -102,6 +146,10 @@ export class SpamDetectionService {
         comment: {
           ...DEFAULT_CONFIG.rateLimits.comment,
           ...config.rateLimits?.comment,
+        },
+        game: {
+          ...DEFAULT_CONFIG.rateLimits.game,
+          ...config.rateLimits?.game,
         },
       },
     }
@@ -163,13 +211,10 @@ export class SpamDetectionService {
     entityType: SpamEntityType,
   ): Promise<SpamDetectionResult> {
     const category = getEntityCategory(entityType)
-    const rule = this.getRateLimitRule(category)
+    const rule = await this.getRateLimitRule(category, userId)
     const windowStart = new Date(Date.now() - rule.windowMinutes * 60 * 1000)
 
-    const count =
-      category === 'report'
-        ? await this.countRecentReports(userId, windowStart)
-        : await this.countRecentComments(userId, windowStart)
+    const count = await this.countRecentContent(category, userId, windowStart)
 
     if (count >= rule.maxItems) {
       return {
@@ -183,12 +228,42 @@ export class SpamDetectionService {
     return { isSpam: false, confidence: 0, method: 'rate_limiting' }
   }
 
-  private getRateLimitRule(category: SpamEntityCategory): RateLimitRule {
+  private async getRateLimitRule(
+    category: SpamEntityCategory,
+    userId: string,
+  ): Promise<RateLimitRule> {
     const configured = this.config.rateLimits[category]
-    return {
+    const baseRule = {
       windowMinutes: this.config.rateLimitWindow ?? configured.windowMinutes,
       maxItems: this.config.rateLimitMax ?? configured.maxItems,
     }
+
+    if (category !== 'report' || this.config.rateLimitMax !== undefined) return baseRule
+
+    const profile = await this.getUserRateLimitProfile(userId)
+    if (!profile) return baseRule
+
+    return {
+      ...baseRule,
+      maxItems: Math.max(baseRule.maxItems, getReportRateLimitMax(profile)),
+    }
+  }
+
+  private async getUserRateLimitProfile(userId: string): Promise<UserRateLimitProfile | null> {
+    return await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { createdAt: true, role: true, trustScore: true },
+    })
+  }
+
+  private async countRecentContent(
+    category: SpamEntityCategory,
+    userId: string,
+    windowStart: Date,
+  ): Promise<number> {
+    if (category === 'report') return await this.countRecentReports(userId, windowStart)
+    if (category === 'game') return await this.countRecentGames(userId, windowStart)
+    return await this.countRecentComments(userId, windowStart)
   }
 
   private async countRecentReports(userId: string, windowStart: Date): Promise<number> {
@@ -208,6 +283,15 @@ export class SpamDetectionService {
     ])
 
     return handheldCount + pcCount
+  }
+
+  private async countRecentGames(userId: string, windowStart: Date): Promise<number> {
+    return await this.prisma.game.count({
+      where: {
+        submittedBy: userId,
+        submittedAt: { gte: windowStart },
+      },
+    })
   }
 
   private async countRecentComments(userId: string, windowStart: Date): Promise<number> {
@@ -241,10 +325,7 @@ export class SpamDetectionService {
     if (!normalizedContent) return { isSpam: false, confidence: 0, method: 'duplicate_detection' }
 
     const category = getEntityCategory(entityType)
-    const recentContent =
-      category === 'report'
-        ? await this.getRecentReportContent(userId, recentTimeWindow)
-        : await this.getRecentCommentContent(userId, recentTimeWindow)
+    const recentContent = await this.getRecentContent(category, userId, recentTimeWindow)
 
     const duplicates = recentContent.filter((recent) => {
       const normalized = this.normalizeContent(recent)
@@ -264,6 +345,16 @@ export class SpamDetectionService {
     }
 
     return { isSpam: false, confidence: 0, method: 'duplicate_detection' }
+  }
+
+  private async getRecentContent(
+    category: SpamEntityCategory,
+    userId: string,
+    recentTimeWindow: Date,
+  ): Promise<string[]> {
+    if (category === 'report') return await this.getRecentReportContent(userId, recentTimeWindow)
+    if (category === 'game') return await this.getRecentGameContent(userId, recentTimeWindow)
+    return await this.getRecentCommentContent(userId, recentTimeWindow)
   }
 
   private async getRecentReportContent(userId: string, recentTimeWindow: Date): Promise<string[]> {
@@ -293,6 +384,20 @@ export class SpamDetectionService {
     return [...recentListings, ...recentPcListings]
       .map((entry) => entry.notes)
       .filter(isNonEmptyString)
+  }
+
+  private async getRecentGameContent(userId: string, recentTimeWindow: Date): Promise<string[]> {
+    const recentGames = await this.prisma.game.findMany({
+      where: {
+        submittedBy: userId,
+        submittedAt: { gte: recentTimeWindow },
+      },
+      select: { title: true },
+      take: SPAM_DETECTION_THRESHOLDS.MAX_RECENT_ITEMS_TO_CHECK,
+      orderBy: { submittedAt: 'desc' },
+    })
+
+    return recentGames.map((entry) => entry.title).filter(isNonEmptyString)
   }
 
   private async getRecentCommentContent(userId: string, recentTimeWindow: Date): Promise<string[]> {

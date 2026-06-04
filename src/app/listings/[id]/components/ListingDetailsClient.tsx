@@ -150,6 +150,7 @@ function ListingDetailsClient(props: Props) {
                 <ReportListingButton
                   listingId={props.listing.id}
                   authorId={props.listing.authorId}
+                  currentUserId={currentUserQuery.data?.id}
                   onSuccess={refreshData}
                 />
                 <VerifyListingButton

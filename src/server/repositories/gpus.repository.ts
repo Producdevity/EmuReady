@@ -3,7 +3,14 @@ import { ResourceError } from '@/lib/errors'
 import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
 import { Prisma } from '@orm/client'
 import { BaseRepository } from './base.repository'
-import type { GetGpusInput, CreateGpuInput, UpdateGpuInput } from '@/schemas/gpu'
+import type {
+  GetGpusInput,
+  GetGpuOptionsInput,
+  CreateGpuInput,
+  UpdateGpuInput,
+} from '@/schemas/gpu'
+
+type GpuOptionFilters = NonNullable<GetGpuOptionsInput>
 
 /**
  * Repository for GPU data access
@@ -32,6 +39,14 @@ export class GpusRepository extends BaseRepository {
       brand: { select: { id: true, name: true } },
       _count: { select: { pcListings: true } },
     } satisfies Prisma.GpuInclude,
+  } as const
+
+  static readonly selects = {
+    option: {
+      id: true,
+      modelName: true,
+      brand: { select: { id: true, name: true } },
+    } satisfies Prisma.GpuSelect,
   } as const
 
   async byId(
@@ -165,6 +180,26 @@ export class GpusRepository extends BaseRepository {
       where: { id: { in: ids } },
       include: GpusRepository.includes.limited,
     })
+  }
+
+  async options(filters: GpuOptionFilters = {}): Promise<{
+    gpus: Prisma.GpuGetPayload<{ select: typeof GpusRepository.selects.option }>[]
+    hasMore: boolean
+  }> {
+    const limit = filters.limit ?? 50
+    const offset = filters.offset ?? 0
+    const gpus = await this.prisma.gpu.findMany({
+      where: this.buildWhereClause(filters.search, filters.brandId),
+      select: GpusRepository.selects.option,
+      orderBy: [{ brand: { name: this.sortOrder } }, { modelName: this.sortOrder }],
+      take: limit + 1,
+      skip: offset,
+    })
+
+    return {
+      gpus: gpus.slice(0, limit),
+      hasMore: gpus.length > limit,
+    }
   }
 
   /**

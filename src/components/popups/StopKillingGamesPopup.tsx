@@ -5,9 +5,11 @@ import { useState, useEffect, useRef } from 'react'
 import { Modal } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import analytics from '@/lib/analytics'
+import { env } from '@/lib/env'
 
 const signPetitionUrl = 'https://eci.ec.europa.eu/045/public/#/screen/home'
 
+// TODO: check if we still need this for something
 export function StopKillingGamesPopup() {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -20,8 +22,7 @@ export function StopKillingGamesPopup() {
   }
 
   useEffect(() => {
-    // Only show in production
-    if (process.env.NODE_ENV !== 'production') return
+    if (!env.IS_PUBLIC_PRODUCTION) return
 
     // Don't show on admin pages
     if (window.location.pathname.startsWith('/admin')) return
@@ -52,7 +53,7 @@ export function StopKillingGamesPopup() {
     window.open(signPetitionUrl, '_blank', 'noopener,noreferrer')
   }
 
-  if (process.env.NODE_ENV !== 'production' || !isOpen) return null
+  if (!env.IS_PUBLIC_PRODUCTION || !isOpen) return null
 
   return (
     <Modal isOpen={isOpen} onClose={handleDismiss} hideCloseButton={true} className="max-w-lg">

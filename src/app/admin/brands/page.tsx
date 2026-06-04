@@ -67,9 +67,19 @@ function AdminBrandsPage() {
 
   const utils = api.useUtils()
 
-  const handleModalSuccess = () => {
+  const invalidateBrandQueries = () => {
     utils.deviceBrands.get.invalidate().catch(console.error)
     utils.deviceBrands.stats.invalidate().catch(console.error)
+    utils.devices.get.invalidate().catch(console.error)
+    utils.devices.options.invalidate().catch(console.error)
+    utils.cpus.get.invalidate().catch(console.error)
+    utils.cpus.options.invalidate().catch(console.error)
+    utils.gpus.get.invalidate().catch(console.error)
+    utils.gpus.options.invalidate().catch(console.error)
+  }
+
+  const handleModalSuccess = () => {
+    invalidateBrandQueries()
     closeModal()
   }
 
@@ -85,8 +95,7 @@ function AdminBrandsPage() {
       await deleteBrand.mutateAsync({
         id,
       } satisfies RouterInput['deviceBrands']['delete'])
-      utils.deviceBrands.get.invalidate().catch(console.error)
-      utils.deviceBrands.stats.invalidate().catch(console.error)
+      invalidateBrandQueries()
     } catch (err) {
       toast.error(`Failed to delete brand: ${getErrorMessage(err)}`)
     }

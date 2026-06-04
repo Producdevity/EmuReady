@@ -1,17 +1,20 @@
 'use client'
 
-import { useState, useEffect, type FormEvent } from 'react'
+import { useCallback, useState, useEffect, type SubmitEvent } from 'react'
 import { Button, Input, Modal, Autocomplete, SelectInput } from '@/components/ui'
 import { PC_OS_OPTIONS } from '@/data/pc-os'
 import { api } from '@/lib/api'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { ms } from '@/utils/time'
 import { PcOs } from '@orm'
 
 type PcPreset = RouterOutput['pcListings']['presets']['get'][number]
 type PcPresetMutationResult =
   | RouterOutput['pcListings']['presets']['create']
   | RouterOutput['pcListings']['presets']['update']
+type CpuOption = RouterOutput['cpus']['options']['cpus'][number]
+type GpuOption = RouterOutput['gpus']['options']['gpus'][number]
 
 interface Props {
   isOpen: boolean
@@ -21,12 +24,15 @@ interface Props {
 }
 
 const OS_OPTIONS = PC_OS_OPTIONS
+const LOOKUP_DATA_QUERY_OPTIONS = {
+  staleTime: ms.hours(6),
+  gcTime: ms.hours(12),
+}
 
 function PcPresetModal(props: Props) {
+  const utils = api.useUtils()
   const createPreset = api.pcListings.presets.create.useMutation()
   const updatePreset = api.pcListings.presets.update.useMutation()
-  const cpusQuery = api.cpus.get.useQuery({ limit: 500 }) // TODO: make this async
-  const gpusQuery = api.gpus.get.useQuery({ limit: 500 }) // TODO: make this async
 
   const [name, setName] = useState('')
   const [cpuId, setCpuId] = useState('')
@@ -36,6 +42,43 @@ function PcPresetModal(props: Props) {
   const [osVersion, setOsVersion] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  const selectedCpuQuery = api.cpus.getByIds.useQuery(
+    { ids: cpuId ? [cpuId] : [] },
+    { ...LOOKUP_DATA_QUERY_OPTIONS, enabled: cpuId !== '' },
+  )
+  const selectedGpuQuery = api.gpus.getByIds.useQuery(
+    { ids: gpuId ? [gpuId] : [] },
+    { ...LOOKUP_DATA_QUERY_OPTIONS, enabled: gpuId !== '' },
+  )
+
+  const loadCpuItems = useCallback(
+    async (query: string): Promise<CpuOption[]> => {
+      if (query.length < 2) return []
+      try {
+        const result = await utils.cpus.options.fetch({ search: query, limit: 20 })
+        return result.cpus
+      } catch (err) {
+        console.error('Error fetching CPUs:', err)
+        return []
+      }
+    },
+    [utils.cpus.options],
+  )
+
+  const loadGpuItems = useCallback(
+    async (query: string): Promise<GpuOption[]> => {
+      if (query.length < 2) return []
+      try {
+        const result = await utils.gpus.options.fetch({ search: query, limit: 20 })
+        return result.gpus
+      } catch (err) {
+        console.error('Error fetching GPUs:', err)
+        return []
+      }
+    },
+    [utils.gpus.options],
+  )
 
   // Update form fields when preset changes
   useEffect(() => {
@@ -58,7 +101,7 @@ function PcPresetModal(props: Props) {
     setSuccess('')
   }, [props.preset, props.isOpen])
 
-  const handleSubmit = async (ev: FormEvent) => {
+  const handleSubmit = async (ev: SubmitEvent) => {
     ev.preventDefault()
     setError('')
     setSuccess('')
@@ -106,9 +149,9 @@ function PcPresetModal(props: Props) {
     }
   }
 
-  const formatCpuLabel = (cpu: RouterOutput['cpus']['get']['cpus'][number]) =>
+  const formatCpuLabel = (cpu: { brand: { name: string }; modelName: string }) =>
     `${cpu.brand.name} ${cpu.modelName}`
-  const formatGpuLabel = (gpu: RouterOutput['gpus']['get']['gpus'][number]) =>
+  const formatGpuLabel = (gpu: { brand: { name: string }; modelName: string }) =>
     `${gpu.brand.name} ${gpu.modelName}`
 
   return (
@@ -141,14 +184,15 @@ function PcPresetModal(props: Props) {
             CPU
           </label>
           <Autocomplete
-            value={cpuId}
+            value={cpuId || null}
             onChange={(value) => setCpuId(value ?? '')}
-            items={cpusQuery.data?.cpus ?? []}
+            items={selectedCpuQuery.data ?? []}
+            loadItems={loadCpuItems}
             optionToValue={(cpu) => cpu.id}
             optionToLabel={formatCpuLabel}
             placeholder="Select a CPU..."
             className="w-full"
-            filterKeys={['modelName']}
+            minCharsToTrigger={2}
           />
         </div>
 
@@ -157,14 +201,15 @@ function PcPresetModal(props: Props) {
             GPU
           </label>
           <Autocomplete
-            value={gpuId}
+            value={gpuId || null}
             onChange={(value) => setGpuId(value ?? '')}
-            items={gpusQuery.data?.gpus ?? []}
+            items={selectedGpuQuery.data ?? []}
+            loadItems={loadGpuItems}
             optionToValue={(gpu) => gpu.id}
             optionToLabel={formatGpuLabel}
             placeholder="Select a GPU..."
             className="w-full"
-            filterKeys={['modelName']}
+            minCharsToTrigger={2}
           />
         </div>
 

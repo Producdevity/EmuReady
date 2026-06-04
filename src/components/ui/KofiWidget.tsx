@@ -6,17 +6,18 @@ import useMounted from '@/hooks/useMounted'
 function KofiWidget() {
   const mounted = useMounted()
 
-  if (!mounted) return
+  if (!mounted) return null
 
   const isMobile =
     window.innerWidth <= 768 ||
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 
-  if (isMobile) return
+  if (isMobile) return null
 
   return (
     <Script
       src="https://storage.ko-fi.com/cdn/scripts/overlay-widget.js"
+      strategy="lazyOnload"
       onLoad={() => {
         if (window.kofiWidgetOverlay) {
           window.kofiWidgetOverlay.draw('producdevity', {

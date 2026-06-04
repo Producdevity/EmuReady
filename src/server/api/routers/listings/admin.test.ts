@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { RISK_SIGNAL_TYPES } from '@/schemas/authorRisk'
 import { SUBMISSION_RISK_SIGNAL_TYPES } from '@/schemas/submissionRisk'
-import { Role } from '@orm/client'
+import { ApprovalStatus, Role } from '@orm/client'
 import type * as AuthorRiskService from '@/server/services/author-risk.service'
 
 vi.unmock('@/server/api/trpc')
@@ -16,6 +16,7 @@ const mockListVerifiedEmulatorIdsByUserId = vi.fn()
 const mockGetPendingListingRiskCandidates = vi.fn()
 const mockGetPendingListingsByIds = vi.fn()
 const mockGetPendingListings = vi.fn()
+const mockApplyTrustAction = vi.fn().mockResolvedValue(undefined)
 
 vi.mock('@/server/services/author-risk.service', async (importOriginal) => {
   const actual = await importOriginal<typeof AuthorRiskService>()
@@ -31,7 +32,7 @@ vi.mock('@/server/services/submission-risk.service', () => ({
 }))
 
 vi.mock('@/lib/trust/service', () => ({
-  applyTrustAction: vi.fn().mockResolvedValue(undefined),
+  applyTrustAction: (...args: unknown[]) => mockApplyTrustAction(...args),
 }))
 
 vi.mock('@/server/notifications/eventEmitter', () => ({
@@ -81,19 +82,21 @@ const { adminRouter } = await import('./admin')
 const ADMIN_ID = '00000000-0000-4000-a000-000000000001'
 const AUTHOR_ID = '00000000-0000-4000-a000-000000000002'
 const CLEAN_AUTHOR_ID = '00000000-0000-4000-a000-000000000003'
+const HIGH_RISK_AUTHOR_ID = '00000000-0000-4000-a000-000000000004'
 const LISTING_ID = '00000000-0000-4000-a000-000000000010'
 const LISTING_ID_B = '00000000-0000-4000-a000-000000000011'
 const LISTING_ID_C = '00000000-0000-4000-a000-000000000012'
+const LISTING_ID_D = '00000000-0000-4000-a000-000000000013'
 
-function createCaller() {
+function createCaller(overrides: { userId?: string; role?: Role } = {}) {
   return {
     caller: adminRouter.createCaller({
       session: {
         user: {
-          id: ADMIN_ID,
+          id: overrides.userId ?? ADMIN_ID,
           email: 'admin@test.com',
           name: 'Admin User',
-          role: Role.MODERATOR,
+          role: overrides.role ?? Role.MODERATOR,
           permissions: [],
           showNsfw: false,
         },
@@ -257,5 +260,363 @@ describe('listing admin pending approvals', () => {
     expect(mockGetPendingListingsByIds).not.toHaveBeenCalled()
     expect(result.listings).toHaveLength(0)
     expect(result.pagination.total).toBe(0)
+  })
+})
+
+describe('listing admin auto risk rejection', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockComputeAuthorRiskProfiles.mockResolvedValue(new Map())
+    mockComputeSubmissionRiskProfiles.mockResolvedValue(new Map())
+    mockListVerifiedEmulatorIdsByUserId.mockResolvedValue([])
+    mockGetPendingListingRiskCandidates.mockResolvedValue([])
+  })
+
+  function setupPrisma() {
+    const tx = {
+      listing: {
+        findMany: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+    }
+    const prismaMock = prisma as unknown as {
+      user: { findUnique: ReturnType<typeof vi.fn> }
+      listing: typeof tx.listing
+      $transaction: ReturnType<typeof vi.fn>
+    }
+
+    prismaMock.user = {
+      findUnique: vi.fn().mockResolvedValue({ id: ADMIN_ID }),
+    }
+    prismaMock.listing = tx.listing
+    prismaMock.$transaction = vi.fn(
+      async (callback: (transaction: typeof tx) => Promise<unknown>) => callback(tx),
+    )
+
+    return { tx, prismaMock }
+  }
+
+  it('rejects pending handheld reports with high author risk or high submission risk with author risk', async () => {
+    const { tx } = setupPrisma()
+    const highSubmissionOnlyListing = {
+      id: LISTING_ID,
+      authorId: CLEAN_AUTHOR_ID,
+      author: { userBans: [] },
+      customFieldValues: [],
+    }
+    const authorRiskOnlyListing = {
+      id: LISTING_ID_B,
+      authorId: AUTHOR_ID,
+      author: { userBans: [] },
+      customFieldValues: [],
+    }
+    const matchingListing = {
+      id: LISTING_ID_C,
+      authorId: AUTHOR_ID,
+      author: { userBans: [] },
+      customFieldValues: [],
+    }
+    const highAuthorRiskOnlyListing = {
+      id: LISTING_ID_D,
+      authorId: HIGH_RISK_AUTHOR_ID,
+      author: { userBans: [] },
+      customFieldValues: [],
+    }
+
+    mockGetPendingListingRiskCandidates.mockResolvedValueOnce([
+      highSubmissionOnlyListing,
+      authorRiskOnlyListing,
+      matchingListing,
+      highAuthorRiskOnlyListing,
+    ])
+    mockComputeAuthorRiskProfiles.mockResolvedValue(
+      new Map([
+        [CLEAN_AUTHOR_ID, { authorId: CLEAN_AUTHOR_ID, signals: [], highestSeverity: null }],
+        [
+          AUTHOR_ID,
+          {
+            authorId: AUTHOR_ID,
+            highestSeverity: 'low',
+            signals: [
+              {
+                type: RISK_SIGNAL_TYPES.NEW_AUTHOR,
+                severity: 'low',
+                label: 'New Author',
+                description: 'No previously approved listings',
+              },
+            ],
+          },
+        ],
+        [
+          HIGH_RISK_AUTHOR_ID,
+          {
+            authorId: HIGH_RISK_AUTHOR_ID,
+            highestSeverity: 'high',
+            signals: [
+              {
+                type: RISK_SIGNAL_TYPES.ACTIVE_BAN,
+                severity: 'high',
+                label: 'Active Ban',
+                description: 'Banned for spam',
+              },
+            ],
+          },
+        ],
+      ]),
+    )
+    mockComputeSubmissionRiskProfiles.mockResolvedValue(
+      new Map([
+        [
+          LISTING_ID,
+          {
+            listingId: LISTING_ID,
+            highestSeverity: 'high',
+            signals: [
+              {
+                type: SUBMISSION_RISK_SIGNAL_TYPES.PLACEHOLDER_EMULATOR_VERSION,
+                severity: 'high',
+                label: 'Placeholder Emulator Version',
+                description: 'Submitted emulator version resembles placeholder text.',
+              },
+            ],
+          },
+        ],
+        [LISTING_ID_B, { listingId: LISTING_ID_B, signals: [], highestSeverity: null }],
+        [
+          LISTING_ID_C,
+          {
+            listingId: LISTING_ID_C,
+            highestSeverity: 'high',
+            signals: [
+              {
+                type: SUBMISSION_RISK_SIGNAL_TYPES.PLACEHOLDER_EMULATOR_VERSION,
+                severity: 'high',
+                label: 'Placeholder Emulator Version',
+                description: 'Submitted emulator version resembles placeholder text.',
+              },
+            ],
+          },
+        ],
+      ]),
+    )
+    tx.listing.findMany.mockResolvedValueOnce([
+      { id: LISTING_ID_C, authorId: AUTHOR_ID, deviceId: 'device-3' },
+      { id: LISTING_ID_D, authorId: HIGH_RISK_AUTHOR_ID, deviceId: 'device-4' },
+    ])
+
+    const { caller } = createCaller({ role: Role.ADMIN })
+
+    const result = await caller.autoRejectRisky()
+
+    expect(mockGetPendingListingRiskCandidates).toHaveBeenCalledWith({})
+    expect(tx.listing.findMany).toHaveBeenCalledWith({
+      where: {
+        id: { in: [LISTING_ID_C, LISTING_ID_D] },
+        status: ApprovalStatus.PENDING,
+      },
+      select: { id: true, authorId: true, deviceId: true },
+    })
+    expect(tx.listing.updateMany).toHaveBeenCalledTimes(2)
+    expect(tx.listing.updateMany).toHaveBeenCalledWith({
+      where: { id: LISTING_ID_C, status: ApprovalStatus.PENDING },
+      data: expect.objectContaining({
+        status: ApprovalStatus.REJECTED,
+        processedByUserId: ADMIN_ID,
+        processedNotes:
+          'Automatically rejected by review risk bulk action: submission risk high severity; author risk low severity (1 signal).',
+      }),
+    })
+    expect(tx.listing.updateMany).toHaveBeenCalledWith({
+      where: { id: LISTING_ID_D, status: ApprovalStatus.PENDING },
+      data: expect.objectContaining({
+        status: ApprovalStatus.REJECTED,
+        processedByUserId: ADMIN_ID,
+        processedNotes:
+          'Automatically rejected by review risk bulk action: author risk high severity (1 signal).',
+      }),
+    })
+    expect(mockApplyTrustAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: AUTHOR_ID,
+        context: expect.objectContaining({
+          listingId: LISTING_ID_C,
+          reason:
+            'Automatically rejected by review risk bulk action: submission risk high severity; author risk low severity (1 signal).',
+        }),
+      }),
+    )
+    expect(mockApplyTrustAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: HIGH_RISK_AUTHOR_ID,
+        context: expect.objectContaining({
+          listingId: LISTING_ID_D,
+          reason:
+            'Automatically rejected by review risk bulk action: author risk high severity (1 signal).',
+        }),
+      }),
+    )
+    expect(result).toMatchObject({
+      success: true,
+      rejectedCount: 2,
+      skippedCount: 0,
+    })
+  })
+
+  it('keeps handheld auto-rejection successful when trust action emission fails', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const { tx } = setupPrisma()
+
+    mockGetPendingListingRiskCandidates.mockResolvedValueOnce([
+      {
+        id: LISTING_ID_D,
+        authorId: HIGH_RISK_AUTHOR_ID,
+        author: { userBans: [] },
+        customFieldValues: [],
+      },
+    ])
+    mockComputeAuthorRiskProfiles.mockResolvedValue(
+      new Map([
+        [
+          HIGH_RISK_AUTHOR_ID,
+          {
+            authorId: HIGH_RISK_AUTHOR_ID,
+            highestSeverity: 'high',
+            signals: [
+              {
+                type: RISK_SIGNAL_TYPES.ACTIVE_BAN,
+                severity: 'high',
+                label: 'Active Ban',
+                description: 'Banned for spam',
+              },
+            ],
+          },
+        ],
+      ]),
+    )
+    tx.listing.findMany.mockResolvedValueOnce([
+      { id: LISTING_ID_D, authorId: HIGH_RISK_AUTHOR_ID, deviceId: 'device-4' },
+    ])
+    mockApplyTrustAction.mockRejectedValueOnce(new Error('trust failed'))
+
+    const { caller } = createCaller({ role: Role.ADMIN })
+
+    await expect(caller.autoRejectRisky()).resolves.toMatchObject({
+      success: true,
+      rejectedCount: 1,
+      skippedCount: 0,
+    })
+    expect(consoleError).toHaveBeenCalledWith(
+      'Some trust actions failed during review-risk handheld auto-rejection:',
+      expect.arrayContaining([
+        expect.objectContaining({ status: 'rejected', reason: expect.any(Error) }),
+      ]),
+    )
+
+    consoleError.mockRestore()
+  })
+
+  it('returns the admin-only auto-reject preview count', async () => {
+    mockGetPendingListingRiskCandidates.mockResolvedValueOnce([
+      { id: LISTING_ID, authorId: AUTHOR_ID, author: { userBans: [] }, customFieldValues: [] },
+      {
+        id: LISTING_ID_B,
+        authorId: CLEAN_AUTHOR_ID,
+        author: { userBans: [] },
+        customFieldValues: [],
+      },
+      {
+        id: LISTING_ID_D,
+        authorId: HIGH_RISK_AUTHOR_ID,
+        author: { userBans: [] },
+        customFieldValues: [],
+      },
+    ])
+    mockComputeAuthorRiskProfiles.mockResolvedValue(
+      new Map([
+        [
+          AUTHOR_ID,
+          {
+            authorId: AUTHOR_ID,
+            highestSeverity: 'low',
+            signals: [
+              {
+                type: RISK_SIGNAL_TYPES.NEW_AUTHOR,
+                severity: 'low',
+                label: 'New Author',
+                description: 'No previously approved listings',
+              },
+            ],
+          },
+        ],
+        [
+          HIGH_RISK_AUTHOR_ID,
+          {
+            authorId: HIGH_RISK_AUTHOR_ID,
+            highestSeverity: 'high',
+            signals: [
+              {
+                type: RISK_SIGNAL_TYPES.ACTIVE_BAN,
+                severity: 'high',
+                label: 'Active Ban',
+                description: 'Banned for spam',
+              },
+            ],
+          },
+        ],
+        [CLEAN_AUTHOR_ID, { authorId: CLEAN_AUTHOR_ID, signals: [], highestSeverity: null }],
+      ]),
+    )
+    mockComputeSubmissionRiskProfiles.mockResolvedValue(
+      new Map([
+        [
+          LISTING_ID,
+          {
+            listingId: LISTING_ID,
+            highestSeverity: 'high',
+            signals: [
+              {
+                type: SUBMISSION_RISK_SIGNAL_TYPES.PLACEHOLDER_EMULATOR_VERSION,
+                severity: 'high',
+                label: 'Placeholder Emulator Version',
+                description: 'Submitted emulator version resembles placeholder text.',
+              },
+            ],
+          },
+        ],
+        [
+          LISTING_ID_B,
+          {
+            listingId: LISTING_ID_B,
+            highestSeverity: 'high',
+            signals: [
+              {
+                type: SUBMISSION_RISK_SIGNAL_TYPES.PLACEHOLDER_EMULATOR_VERSION,
+                severity: 'high',
+                label: 'Placeholder Emulator Version',
+                description: 'Submitted emulator version resembles placeholder text.',
+              },
+            ],
+          },
+        ],
+      ]),
+    )
+
+    const { caller } = createCaller({ role: Role.ADMIN })
+
+    await expect(caller.autoRejectRiskyPreview()).resolves.toEqual({
+      eligibleCount: 2,
+      reviewRiskQueueCount: 3,
+    })
+  })
+
+  it('requires admin role for automatic risk rejection', async () => {
+    setupPrisma()
+
+    const { caller } = createCaller({ role: Role.MODERATOR })
+
+    await expect(caller.autoRejectRiskyPreview()).rejects.toThrow(/admin|insufficient/i)
+    await expect(caller.autoRejectRisky()).rejects.toThrow(/admin|insufficient/i)
+
+    expect(mockGetPendingListingRiskCandidates).not.toHaveBeenCalled()
   })
 })
