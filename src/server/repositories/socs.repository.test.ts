@@ -1,3 +1,4 @@
+import { PrismaPg } from '@prisma/adapter-pg'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PrismaClient } from '@orm/client'
 import { SoCsRepository } from './socs.repository'
@@ -35,7 +36,9 @@ const mockSoc = {
 }
 
 function createMockPrisma() {
-  const prisma = new PrismaClient()
+  const prisma = new PrismaClient({
+    adapter: new PrismaPg({ connectionString: 'postgresql://test:test@localhost:5432/test' }),
+  })
   vi.mocked(prisma.soC.count).mockResolvedValue(42)
   vi.mocked(prisma.soC.findMany).mockResolvedValue([mockSoc] as never)
   return prisma
