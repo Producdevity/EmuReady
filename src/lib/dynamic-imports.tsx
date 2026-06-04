@@ -34,8 +34,3 @@ export const RolePermissionMatrix = dynamic(
   () => import('@/app/admin/permissions/components/RolePermissionMatrix'),
   { loading: LoadingFallback },
 )
-
-export const TrustStatsOverview = dynamic(
-  () => import('@/app/admin/trust-logs/components/TrustStatsOverview'),
-  { loading: LoadingFallback },
-)
