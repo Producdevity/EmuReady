@@ -34,19 +34,15 @@ export type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number]
 
 // Cache durations in milliseconds
 export const CACHE_DURATIONS = {
-  TEN_SECONDS: ms.seconds(10),
-  THIRTY_SECONDS: ms.seconds(30),
-  SHORT: ms.minutes(1),
-  TWO_MINUTES: ms.minutes(2),
+  VERY_SHORT: ms.seconds(10),
+  SHORT: ms.seconds(30),
   MEDIUM: ms.minutes(5),
-  TEN_MINUTES: ms.minutes(10),
   LONG: ms.minutes(15),
-  THIRTY_MINUTES: ms.minutes(30),
   EXTRA_LONG: ms.hours(1),
-  SIX_HOURS: ms.hours(6),
-  TWELVE_HOURS: ms.hours(12),
-  ONE_DAY: ms.days(1),
-  TWO_DAYS: ms.days(2),
+  LOOKUP: ms.hours(6),
+  LOOKUP_GC: ms.hours(12),
+  STATIC: ms.days(1),
+  STATIC_GC: ms.days(2),
 } as const
 
 // Rate limiting

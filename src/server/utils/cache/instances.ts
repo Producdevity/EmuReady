@@ -58,22 +58,22 @@ export const notificationAnalyticsCache = new LRUCache<
       clickRate: number
     }[]
 >({
-  ttl: CACHE_DURATIONS.TEN_MINUTES,
+  ttl: CACHE_DURATIONS.LONG,
   max: 200,
 })
 
 export const tgdbGamesCache = new LRUCache<string, TGDBGamesByNameResponse>({
-  ttl: CACHE_DURATIONS.TEN_MINUTES,
+  ttl: CACHE_DURATIONS.LONG,
   max: 200,
 })
 
 export const tgdbImagesCache = new LRUCache<string, TGDBGamesImagesResponse>({
-  ttl: CACHE_DURATIONS.TEN_MINUTES,
+  ttl: CACHE_DURATIONS.LONG,
   max: 200,
 })
 
 export const tgdbPlatformsCache = new LRUCache<string, TGDBPlatformsResponse>({
-  ttl: CACHE_DURATIONS.TEN_MINUTES,
+  ttl: CACHE_DURATIONS.LONG,
   max: 10,
 })
 
@@ -84,27 +84,27 @@ export const tgdbImageUrlsCache = new LRUCache<
     bannerUrl?: string
   }
 >({
-  ttl: CACHE_DURATIONS.TEN_MINUTES,
+  ttl: CACHE_DURATIONS.LONG,
   max: 500,
 })
 
 export const tgdbGameImagesCache = new LRUCache<string, Record<string, GameImageOption[]>>({
-  ttl: CACHE_DURATIONS.TEN_MINUTES,
+  ttl: CACHE_DURATIONS.LONG,
   max: 100,
 })
 
 export const driverVersionsCache = new LRUCache<string, DriverVersionsResponse>({
-  ttl: CACHE_DURATIONS.THIRTY_MINUTES,
+  ttl: CACHE_DURATIONS.EXTRA_LONG,
   max: 1,
 })
 
 export const steamBatchQueryCache = new LRUCache<string, BatchBySteamAppIdsResponse>({
-  ttl: CACHE_DURATIONS.TEN_MINUTES,
+  ttl: CACHE_DURATIONS.LONG,
   max: 100,
 })
 
 export const catalogCompatibilityCache = new LRUCache<string, DeviceCompatibilityResponse>({
-  ttl: CACHE_DURATIONS.TEN_MINUTES,
+  ttl: CACHE_DURATIONS.LONG,
   max: 500,
 })
 

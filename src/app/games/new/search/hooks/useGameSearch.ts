@@ -26,7 +26,7 @@ export function useGameSearch<TGame extends { name: string }>(
     { games: gameNamesAndSystems },
     {
       enabled: gameNamesAndSystems.length > 0,
-      staleTime: CACHE_DURATIONS.THIRTY_SECONDS,
+      staleTime: CACHE_DURATIONS.SHORT,
       refetchOnWindowFocus: true,
     },
   )

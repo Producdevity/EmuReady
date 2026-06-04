@@ -144,7 +144,7 @@ export async function getDriverVersions(): Promise<DriverVersionsResponse> {
       releases,
       rateLimited: false,
     }
-    driverVersionsCache.set(CACHE_KEY, payload, { ttl: CACHE_DURATIONS.THIRTY_MINUTES })
+    driverVersionsCache.set(CACHE_KEY, payload, { ttl: CACHE_DURATIONS.EXTRA_LONG })
     return payload
   } catch (error) {
     if (isRateLimitError(error)) {
@@ -164,7 +164,7 @@ export async function getDriverVersions(): Promise<DriverVersionsResponse> {
       rateLimited: false,
       errorMessage: 'Failed to fetch driver versions. Please try again later.',
     }
-    driverVersionsCache.set(CACHE_KEY, payload, { ttl: CACHE_DURATIONS.TWO_MINUTES })
+    driverVersionsCache.set(CACHE_KEY, payload, { ttl: CACHE_DURATIONS.MEDIUM })
     return payload
   }
 }

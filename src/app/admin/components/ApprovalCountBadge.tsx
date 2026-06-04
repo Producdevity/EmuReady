@@ -31,7 +31,7 @@ export default function ApprovalCountBadge(props: Props) {
   const gameStatsQuery = api.games.stats.useQuery(undefined, {
     enabled: canViewStats && props.href === '/admin/games/approvals',
     refetchInterval: 30000,
-    staleTime: CACHE_DURATIONS.TEN_SECONDS,
+    staleTime: CACHE_DURATIONS.VERY_SHORT,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   })
@@ -39,7 +39,7 @@ export default function ApprovalCountBadge(props: Props) {
   const listingStatsQuery = api.listings.stats.useQuery(undefined, {
     enabled: canViewStats && props.href === '/admin/approvals',
     refetchInterval: 30000,
-    staleTime: CACHE_DURATIONS.TEN_SECONDS,
+    staleTime: CACHE_DURATIONS.VERY_SHORT,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   })
@@ -47,7 +47,7 @@ export default function ApprovalCountBadge(props: Props) {
   const pcListingStatsQuery = api.pcListings.stats.useQuery(undefined, {
     enabled: canViewStats && props.href === '/admin/pc-listing-approvals',
     refetchInterval: 30000,
-    staleTime: CACHE_DURATIONS.TEN_SECONDS,
+    staleTime: CACHE_DURATIONS.VERY_SHORT,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   })

@@ -21,12 +21,12 @@ interface CachedData<T> {
 }
 
 const switchGamesDataCache = new LRUCache<string, CachedData<SwitchGameEntry[]>>({
-  ttl: CACHE_DURATIONS.ONE_DAY,
+  ttl: CACHE_DURATIONS.STATIC,
   max: 1,
 })
 
 const switchGamesFuseCache = new LRUCache<string, Fuse<SwitchGameEntry>>({
-  ttl: CACHE_DURATIONS.ONE_DAY,
+  ttl: CACHE_DURATIONS.STATIC,
   max: 1,
 })
 

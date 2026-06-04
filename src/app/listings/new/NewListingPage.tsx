@@ -52,8 +52,8 @@ export type ListingFormValues = RouterInput['listings']['create']
 
 const HIGHLIGHT_DURATION_MS = 1800
 const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: CACHE_DURATIONS.SIX_HOURS,
-  gcTime: CACHE_DURATIONS.TWELVE_HOURS,
+  staleTime: CACHE_DURATIONS.LOOKUP,
+  gcTime: CACHE_DURATIONS.LOOKUP_GC,
 }
 
 function AddListingPage() {
@@ -106,7 +106,7 @@ function AddListingPage() {
   }, [availableEmulators, selectedEmulatorId])
   // Prefetch driver versions so an imported Eden driver filename can be resolved immediately
   const driverVersionsQuery = api.listings.driverVersions.useQuery(undefined, {
-    staleTime: CACHE_DURATIONS.THIRTY_MINUTES,
+    staleTime: CACHE_DURATIONS.EXTRA_LONG,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   })

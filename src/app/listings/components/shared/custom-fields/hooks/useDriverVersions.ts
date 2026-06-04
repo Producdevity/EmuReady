@@ -7,7 +7,7 @@ export type DriverRelease = DriverVersionsResponse['releases'][number]
 
 export function useDriverVersions() {
   const query = api.listings.driverVersions.useQuery(undefined, {
-    staleTime: CACHE_DURATIONS.THIRTY_MINUTES,
+    staleTime: CACHE_DURATIONS.EXTRA_LONG,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   })

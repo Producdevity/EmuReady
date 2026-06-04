@@ -25,8 +25,8 @@ type SortField = NonNullable<RouterInput['listings']['get']['sortField']>
 type ListingType = RouterOutput['listings']['get']['listings'][number]
 
 const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: CACHE_DURATIONS.SIX_HOURS,
-  gcTime: CACHE_DURATIONS.TWELVE_HOURS,
+  staleTime: CACHE_DURATIONS.LOOKUP,
+  gcTime: CACHE_DURATIONS.LOOKUP_GC,
 }
 const USE_ASYNC_LISTING_FILTERS = process.env.NEXT_PUBLIC_ENABLE_ASYNC_LISTINGS_FILTERS === 'true'
 
@@ -54,7 +54,7 @@ function V2ListingsPage() {
   const userQuery = api.users.me.useQuery()
   const userPreferencesQuery = api.userPreferences.get.useQuery(undefined, {
     enabled: !!userQuery.data,
-    staleTime: CACHE_DURATIONS.THIRTY_SECONDS,
+    staleTime: CACHE_DURATIONS.SHORT,
     gcTime: CACHE_DURATIONS.MEDIUM,
   })
 

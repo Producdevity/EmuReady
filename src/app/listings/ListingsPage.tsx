@@ -66,8 +66,8 @@ const LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
-const LOOKUP_DATA_STALE_TIME = CACHE_DURATIONS.SIX_HOURS
-const LOOKUP_DATA_GC_TIME = CACHE_DURATIONS.TWELVE_HOURS
+const LOOKUP_DATA_STALE_TIME = CACHE_DURATIONS.LOOKUP
+const LOOKUP_DATA_GC_TIME = CACHE_DURATIONS.LOOKUP_GC
 const USE_ASYNC_LISTING_FILTERS = process.env.NEXT_PUBLIC_ENABLE_ASYNC_LISTINGS_FILTERS === 'true'
 
 function ListingsPage() {
@@ -98,7 +98,7 @@ function ListingsPage() {
   })
   const userPreferencesQuery = api.userPreferences.get.useQuery(undefined, {
     enabled: isSignedIn === true && !!userQuery.data,
-    staleTime: CACHE_DURATIONS.THIRTY_SECONDS,
+    staleTime: CACHE_DURATIONS.SHORT,
     gcTime: CACHE_DURATIONS.MEDIUM,
   })
 

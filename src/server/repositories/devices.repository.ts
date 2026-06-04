@@ -30,7 +30,7 @@ export interface TrendingDevicesSummary {
 }
 
 const trendingDevicesSummaryCache = new LRUCache<string, TrendingDevicesSummary>({
-  ttl: CACHE_DURATIONS.SIX_HOURS,
+  ttl: CACHE_DURATIONS.LOOKUP,
   max: 20,
 })
 

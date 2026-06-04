@@ -17,7 +17,7 @@ export function TRPCProvider(props: PropsWithChildren) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: CACHE_DURATIONS.THIRTY_SECONDS,
+            staleTime: CACHE_DURATIONS.SHORT,
             gcTime: CACHE_DURATIONS.MEDIUM,
             refetchOnWindowFocus: false,
             refetchOnReconnect: false,

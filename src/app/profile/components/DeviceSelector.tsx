@@ -31,8 +31,8 @@ interface Props {
 }
 
 const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: CACHE_DURATIONS.SIX_HOURS,
-  gcTime: CACHE_DURATIONS.TWELVE_HOURS,
+  staleTime: CACHE_DURATIONS.LOOKUP,
+  gcTime: CACHE_DURATIONS.LOOKUP_GC,
 }
 
 const EMPTY_DEVICES: Device[] = []

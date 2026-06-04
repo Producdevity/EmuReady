@@ -41,7 +41,7 @@ export default function AdminLayoutClient(props: PropsWithChildren) {
     enabled:
       !!userQuery.data && hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
     refetchInterval: 30000,
-    staleTime: CACHE_DURATIONS.TEN_SECONDS,
+    staleTime: CACHE_DURATIONS.VERY_SHORT,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   })
@@ -50,7 +50,7 @@ export default function AdminLayoutClient(props: PropsWithChildren) {
     enabled:
       !!userQuery.data && hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
     refetchInterval: 30000,
-    staleTime: CACHE_DURATIONS.TEN_SECONDS,
+    staleTime: CACHE_DURATIONS.VERY_SHORT,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   })
@@ -59,7 +59,7 @@ export default function AdminLayoutClient(props: PropsWithChildren) {
     enabled:
       !!userQuery.data && hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
     refetchInterval: 30000,
-    staleTime: CACHE_DURATIONS.TEN_SECONDS,
+    staleTime: CACHE_DURATIONS.VERY_SHORT,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   })
@@ -69,7 +69,7 @@ export default function AdminLayoutClient(props: PropsWithChildren) {
   const reportsStatsQuery = api.listingReports.stats.useQuery(undefined, {
     enabled: !!userQuery.data && isSuperAdmin,
     refetchInterval: 30000,
-    staleTime: CACHE_DURATIONS.TEN_SECONDS,
+    staleTime: CACHE_DURATIONS.VERY_SHORT,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   })
