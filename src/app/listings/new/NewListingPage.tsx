@@ -18,6 +18,7 @@ import '@/shared/emulator-config/eden'
 import '@/shared/emulator-config/azahar'
 import '@/shared/emulator-config/gamenative'
 import { Button, LoadingSpinner } from '@/components/ui'
+import { CACHE_DURATIONS } from '@/data/constants'
 import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
@@ -29,7 +30,6 @@ import { type CustomFieldDefinitionWithOptions } from '@/utils/custom-field-vali
 import { parseCustomFieldOptions, getCustomFieldDefaultValue } from '@/utils/custom-fields'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { formatCountLabel } from '@/utils/text'
-import { ms } from '@/utils/time'
 import {
   CustomFieldsFormSection,
   type DeviceOption,
@@ -52,8 +52,8 @@ export type ListingFormValues = RouterInput['listings']['create']
 
 const HIGHLIGHT_DURATION_MS = 1800
 const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: ms.hours(6),
-  gcTime: ms.hours(12),
+  staleTime: CACHE_DURATIONS.SIX_HOURS,
+  gcTime: CACHE_DURATIONS.TWELVE_HOURS,
 }
 
 function AddListingPage() {
@@ -106,7 +106,7 @@ function AddListingPage() {
   }, [availableEmulators, selectedEmulatorId])
   // Prefetch driver versions so an imported Eden driver filename can be resolved immediately
   const driverVersionsQuery = api.listings.driverVersions.useQuery(undefined, {
-    staleTime: ms.minutes(30),
+    staleTime: CACHE_DURATIONS.THIRTY_MINUTES,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   })

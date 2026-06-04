@@ -6,12 +6,12 @@ import { Suspense, useState, useEffect, useMemo, useCallback } from 'react'
 import useListingsState from '@/app/listings/hooks/useListingsState'
 import { usePreferredHardwareFilters } from '@/app/listings/shared/hooks/usePreferredHardwareFilters'
 import { LoadingSpinner, PullToRefresh, Button } from '@/components/ui'
+import { CACHE_DURATIONS } from '@/data/constants'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { filterNullAndEmpty } from '@/utils/filter'
 import { systemOptions, deviceOptions, emulatorOptions, socOptionsParens } from '@/utils/options'
-import { ms } from '@/utils/time'
 import { ListingFilters } from './components/ListingFilters'
 import { ListingsContent } from './components/ListingsContent'
 import { ListingsHeader } from './components/ListingsHeader'
@@ -25,8 +25,8 @@ type SortField = NonNullable<RouterInput['listings']['get']['sortField']>
 type ListingType = RouterOutput['listings']['get']['listings'][number]
 
 const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: ms.hours(6),
-  gcTime: ms.hours(12),
+  staleTime: CACHE_DURATIONS.SIX_HOURS,
+  gcTime: CACHE_DURATIONS.TWELVE_HOURS,
 }
 const USE_ASYNC_LISTING_FILTERS = process.env.NEXT_PUBLIC_ENABLE_ASYNC_LISTINGS_FILTERS === 'true'
 
@@ -54,8 +54,8 @@ function V2ListingsPage() {
   const userQuery = api.users.me.useQuery()
   const userPreferencesQuery = api.userPreferences.get.useQuery(undefined, {
     enabled: !!userQuery.data,
-    staleTime: ms.seconds(30),
-    gcTime: ms.minutes(5),
+    staleTime: CACHE_DURATIONS.THIRTY_SECONDS,
+    gcTime: CACHE_DURATIONS.MEDIUM,
   })
 
   const preferred = usePreferredHardwareFilters({

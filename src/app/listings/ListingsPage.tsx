@@ -29,6 +29,7 @@ import { SuccessRateBar } from '@/components/ui/SuccessRateBar'
 import { EditButton, ViewButton } from '@/components/ui/table-buttons'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/Tooltip'
 import { VerifiedDeveloperBadge } from '@/components/ui/VerifiedDeveloperBadge'
+import { CACHE_DURATIONS } from '@/data/constants'
 import storageKeys from '@/data/storageKeys'
 import {
   useEmulatorLogos,
@@ -47,7 +48,6 @@ import {
 } from '@/utils/navigation-events'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
-import { ms } from '@/utils/time'
 import { Role, ApprovalStatus } from '@orm'
 import ListingsFiltersContent from './components/ListingsFiltersContent'
 import ListingsFiltersSidebar from './components/ListingsFiltersSidebar'
@@ -66,8 +66,8 @@ const LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
-const LOOKUP_DATA_STALE_TIME = ms.hours(6)
-const LOOKUP_DATA_GC_TIME = ms.hours(12)
+const LOOKUP_DATA_STALE_TIME = CACHE_DURATIONS.SIX_HOURS
+const LOOKUP_DATA_GC_TIME = CACHE_DURATIONS.TWELVE_HOURS
 const USE_ASYNC_LISTING_FILTERS = process.env.NEXT_PUBLIC_ENABLE_ASYNC_LISTINGS_FILTERS === 'true'
 
 function ListingsPage() {
@@ -98,8 +98,8 @@ function ListingsPage() {
   })
   const userPreferencesQuery = api.userPreferences.get.useQuery(undefined, {
     enabled: isSignedIn === true && !!userQuery.data,
-    staleTime: ms.seconds(30),
-    gcTime: ms.minutes(5),
+    staleTime: CACHE_DURATIONS.THIRTY_SECONDS,
+    gcTime: CACHE_DURATIONS.MEDIUM,
   })
 
   const userRole = userQuery?.data?.role

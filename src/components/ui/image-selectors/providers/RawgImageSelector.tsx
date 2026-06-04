@@ -3,6 +3,7 @@
 import { Search, Eye, Camera, Link as LinkIcon } from 'lucide-react'
 import { useState, useEffect, type KeyboardEvent, type MouseEvent } from 'react'
 import { Button, LoadingSpinner, OptimizedImage, Modal, Input, Toggle } from '@/components/ui'
+import { CACHE_DURATIONS } from '@/data/constants'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { api } from '@/lib/api'
 import { getImageDisplayName } from '@/lib/rawg-utils'
@@ -55,7 +56,7 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
     },
     {
       enabled: !useCustomUrl && debouncedSearchTerm.length >= 2,
-      staleTime: 5 * 60 * 1000,
+      staleTime: CACHE_DURATIONS.MEDIUM,
     },
   )
 

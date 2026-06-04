@@ -2,11 +2,11 @@
 
 import { useCallback, useState, useEffect, type SubmitEvent } from 'react'
 import { Button, Input, Modal, Autocomplete, SelectInput } from '@/components/ui'
+import { CACHE_DURATIONS } from '@/data/constants'
 import { PC_OS_OPTIONS } from '@/data/pc-os'
 import { api } from '@/lib/api'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { ms } from '@/utils/time'
 import { PcOs } from '@orm'
 
 type PcPreset = RouterOutput['pcListings']['presets']['get'][number]
@@ -25,8 +25,8 @@ interface Props {
 
 const OS_OPTIONS = PC_OS_OPTIONS
 const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: ms.hours(6),
-  gcTime: ms.hours(12),
+  staleTime: CACHE_DURATIONS.SIX_HOURS,
+  gcTime: CACHE_DURATIONS.TWELVE_HOURS,
 }
 
 function PcPresetModal(props: Props) {

@@ -8,6 +8,7 @@ import { useEffect, useState, type PropsWithChildren } from 'react'
 import { isNumber } from 'remeda'
 import { ADMIN_ROUTES } from '@/app/admin/config/routes'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { CACHE_DURATIONS } from '@/data/constants'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
@@ -40,7 +41,7 @@ export default function AdminLayoutClient(props: PropsWithChildren) {
     enabled:
       !!userQuery.data && hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
     refetchInterval: 30000,
-    staleTime: 10000,
+    staleTime: CACHE_DURATIONS.TEN_SECONDS,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   })
@@ -49,7 +50,7 @@ export default function AdminLayoutClient(props: PropsWithChildren) {
     enabled:
       !!userQuery.data && hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
     refetchInterval: 30000,
-    staleTime: 10000,
+    staleTime: CACHE_DURATIONS.TEN_SECONDS,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   })
@@ -58,7 +59,7 @@ export default function AdminLayoutClient(props: PropsWithChildren) {
     enabled:
       !!userQuery.data && hasPermission(userQuery.data.permissions, PERMISSIONS.VIEW_STATISTICS),
     refetchInterval: 30000,
-    staleTime: 10000,
+    staleTime: CACHE_DURATIONS.TEN_SECONDS,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   })
@@ -68,7 +69,7 @@ export default function AdminLayoutClient(props: PropsWithChildren) {
   const reportsStatsQuery = api.listingReports.stats.useQuery(undefined, {
     enabled: !!userQuery.data && isSuperAdmin,
     refetchInterval: 30000,
-    staleTime: 10000,
+    staleTime: CACHE_DURATIONS.TEN_SECONDS,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   })

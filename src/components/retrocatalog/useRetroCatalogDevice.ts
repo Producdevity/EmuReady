@@ -1,8 +1,8 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
+import { CACHE_DURATIONS } from '@/data/constants'
 import http from '@/rest/http'
-import { ms } from '@/utils/time'
 
 const RETROCATALOG_REFERRER = '?referrer=emuready'
 
@@ -58,8 +58,8 @@ export function useRetroCatalogDevice(
     queryKey: ['retrocatalog', options.brandName, options.modelName],
     queryFn: () => fetchRetroCatalogDevice(options.brandName, options.modelName),
     enabled: enabled && Boolean(options.brandName) && Boolean(options.modelName),
-    staleTime: ms.hours(24),
-    gcTime: ms.hours(48),
+    staleTime: CACHE_DURATIONS.ONE_DAY,
+    gcTime: CACHE_DURATIONS.TWO_DAYS,
     retry: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,

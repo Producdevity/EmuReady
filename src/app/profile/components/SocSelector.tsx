@@ -4,10 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Check, Cpu, ChevronDown } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Input } from '@/components/ui'
+import { CACHE_DURATIONS } from '@/data/constants'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { ms } from '@/utils/time'
 
 interface Soc {
   id: string
@@ -21,8 +21,8 @@ interface Props {
 }
 
 const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: ms.hours(6),
-  gcTime: ms.hours(12),
+  staleTime: CACHE_DURATIONS.SIX_HOURS,
+  gcTime: CACHE_DURATIONS.TWELVE_HOURS,
 }
 
 function SocSelector(props: Props) {

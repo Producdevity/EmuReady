@@ -1,6 +1,6 @@
 import Fuse from 'fuse.js'
 import { LRUCache } from 'lru-cache'
-import { ms } from '@/utils/time'
+import { CACHE_DURATIONS } from '@/data/constants'
 
 interface SteamAppEntry {
   appid: number
@@ -28,12 +28,12 @@ interface CachedData<T> {
 }
 
 const steamGamesDataCache = new LRUCache<string, CachedData<SteamAppEntry[]>>({
-  ttl: ms.days(1),
+  ttl: CACHE_DURATIONS.ONE_DAY,
   max: 1,
 })
 
 const steamGamesFuseCache = new LRUCache<string, Fuse<SteamAppEntry>>({
-  ttl: ms.days(1),
+  ttl: CACHE_DURATIONS.ONE_DAY,
   max: 1,
 })
 

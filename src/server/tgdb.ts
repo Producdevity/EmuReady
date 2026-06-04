@@ -1,5 +1,5 @@
 import axios, { type AxiosResponse } from 'axios'
-import { PLATFORM_MAPPINGS, type PlatformKey } from '@/data/constants'
+import { CACHE_DURATIONS, PLATFORM_MAPPINGS, type PlatformKey } from '@/data/constants'
 import { isValidImageUrl } from '@/lib/tgdb-utils'
 import {
   tgdbGamesCache,
@@ -163,7 +163,7 @@ export async function getPlatforms(): Promise<TGDBPlatformsResponse> {
 
   const response = await makeRequest<TGDBPlatformsResponse>('/v1/Platforms')
 
-  tgdbPlatformsCache.set(cacheKey, response, { ttl: 60 * 60 * 1000 })
+  tgdbPlatformsCache.set(cacheKey, response, { ttl: CACHE_DURATIONS.EXTRA_LONG })
 
   return response
 }

@@ -4,11 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Smartphone, Search, Loader2, ChevronDown, Check } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Input } from '@/components/ui'
+import { CACHE_DURATIONS } from '@/data/constants'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { searchItems, getDeviceSearchText } from '@/utils/simpleSearch'
-import { ms } from '@/utils/time'
 
 interface Device {
   id: string
@@ -31,8 +31,8 @@ interface Props {
 }
 
 const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: ms.hours(6),
-  gcTime: ms.hours(12),
+  staleTime: CACHE_DURATIONS.SIX_HOURS,
+  gcTime: CACHE_DURATIONS.TWELVE_HOURS,
 }
 
 const EMPTY_DEVICES: Device[] = []

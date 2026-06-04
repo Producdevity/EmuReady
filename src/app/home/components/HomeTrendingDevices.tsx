@@ -5,11 +5,10 @@ import { TrendingUp, ChevronRight, Smartphone, Cpu } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useMemo } from 'react'
 import { RetroCatalogIndicator } from '@/components/retrocatalog'
-import { HOME_PAGE_LIMITS } from '@/data/constants'
+import { CACHE_DURATIONS, HOME_PAGE_LIMITS } from '@/data/constants'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import { ms } from '@/utils/time'
 import { TimeRangeTabs, type TimeRangeId } from './TimeRangeTabs'
 
 const TIME_RANGE_LABELS: Record<TimeRangeId, string> = {
@@ -24,8 +23,8 @@ export function HomeTrendingDevices() {
       limit: HOME_PAGE_LIMITS.TRENDING_DEVICES,
     },
     {
-      staleTime: ms.hours(6),
-      gcTime: ms.hours(12),
+      staleTime: CACHE_DURATIONS.SIX_HOURS,
+      gcTime: CACHE_DURATIONS.TWELVE_HOURS,
     },
   )
 
