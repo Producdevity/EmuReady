@@ -93,4 +93,23 @@ describe('GenericCommentForm', () => {
 
     expect(onSubmit).not.toHaveBeenCalled()
   })
+
+  it('uses the normal validation flow when the shortcut is pressed with empty content', async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined)
+
+    render(
+      <GenericCommentForm
+        entityId="listing-1"
+        config={{ entityType: 'listing' }}
+        onSubmit={onSubmit}
+      />,
+    )
+
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter', metaKey: true })
+
+    await waitFor(() => {
+      expect(testMocks.toastError).toHaveBeenCalledWith('Please enter a comment')
+    })
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
 })

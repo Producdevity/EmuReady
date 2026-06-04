@@ -108,7 +108,7 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
     if (ev.key !== 'Enter' || (!ev.metaKey && !ev.ctrlKey)) return
 
     ev.preventDefault()
-    if (isLoading || !content.trim() || content.length > maxLength) return
+    if (isLoading) return
 
     ev.currentTarget.form?.requestSubmit()
   }
