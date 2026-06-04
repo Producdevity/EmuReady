@@ -21,6 +21,7 @@ import {
   useFormKeyDown,
 } from '@/app/listings/hooks'
 import { Autocomplete, Button, Input, LoadingSpinner, SelectInput } from '@/components/ui'
+import { CACHE_DURATIONS } from '@/data/constants'
 import { PC_OS_OPTIONS } from '@/data/pc-os'
 import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
 import analytics from '@/lib/analytics'
@@ -31,7 +32,6 @@ import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import { type CustomFieldDefinitionWithOptions } from '@/utils/custom-field-validation'
 import { parseCustomFieldOptions, getCustomFieldDefaultValue } from '@/utils/custom-fields'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { ms } from '@/utils/time'
 import { PcOs } from '@orm'
 import createDynamicPcListingSchema from './form-schemas/createDynamicPcListingSchema'
 
@@ -43,8 +43,8 @@ type PcPresetOption = RouterOutput['pcListings']['presets']['get'][number]
 
 const OS_OPTIONS = PC_OS_OPTIONS
 const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: ms.hours(6),
-  gcTime: ms.hours(12),
+  staleTime: CACHE_DURATIONS.LOOKUP,
+  gcTime: CACHE_DURATIONS.LOOKUP_GC,
 }
 
 function AddPcListingPage() {

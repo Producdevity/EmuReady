@@ -10,7 +10,7 @@ import {
   LoadingSpinner,
   useConfirmDialog,
 } from '@/components/ui'
-import { API_KEY_LIMITS } from '@/data/constants'
+import { API_KEY_LIMITS, POLLING_INTERVALS } from '@/data/constants'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility } from '@/hooks'
 import { type ColumnDefinition } from '@/hooks/useColumnVisibility'
@@ -19,7 +19,6 @@ import toast from '@/lib/toast'
 import { type ApiKeySortField } from '@/schemas/apiAccess'
 import { formatters, getLocale } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { ms } from '@/utils/time'
 import { ApiUsagePeriod } from '@orm'
 import { DeveloperKeyTable } from './DeveloperKeyTable'
 import { KeySecretBanner } from './KeySecretBanner'
@@ -75,7 +74,7 @@ export function DeveloperApiAccessPanel(props: Props) {
     },
   )
   const statsQuery = api.apiKeys.myStats.useQuery(undefined, {
-    refetchInterval: ms.minutes(5),
+    refetchInterval: POLLING_INTERVALS.LONG,
   })
 
   const keys = listQuery.data?.keys ?? EMPTY_KEY_ROWS

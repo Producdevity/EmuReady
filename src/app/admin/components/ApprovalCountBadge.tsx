@@ -1,6 +1,7 @@
 'use client'
 
 import { Badge } from '@/components/ui'
+import { CACHE_DURATIONS, POLLING_INTERVALS } from '@/data/constants'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
@@ -29,24 +30,24 @@ export default function ApprovalCountBadge(props: Props) {
 
   const gameStatsQuery = api.games.stats.useQuery(undefined, {
     enabled: canViewStats && props.href === '/admin/games/approvals',
-    refetchInterval: 30000,
-    staleTime: 10000,
+    refetchInterval: POLLING_INTERVALS.SHORT,
+    staleTime: CACHE_DURATIONS.VERY_SHORT,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   })
 
   const listingStatsQuery = api.listings.stats.useQuery(undefined, {
     enabled: canViewStats && props.href === '/admin/approvals',
-    refetchInterval: 30000,
-    staleTime: 10000,
+    refetchInterval: POLLING_INTERVALS.SHORT,
+    staleTime: CACHE_DURATIONS.VERY_SHORT,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   })
 
   const pcListingStatsQuery = api.pcListings.stats.useQuery(undefined, {
     enabled: canViewStats && props.href === '/admin/pc-listing-approvals',
-    refetchInterval: 30000,
-    staleTime: 10000,
+    refetchInterval: POLLING_INTERVALS.SHORT,
+    staleTime: CACHE_DURATIONS.VERY_SHORT,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   })

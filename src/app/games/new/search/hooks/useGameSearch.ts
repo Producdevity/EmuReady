@@ -1,7 +1,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useCallback, useMemo } from 'react'
+import { CACHE_DURATIONS } from '@/data/constants'
 import { api } from '@/lib/api'
-import { ms } from '@/utils/time'
 
 interface UseGameSearchOptions<TGame extends { name: string }> {
   searchResults: { games: TGame[] } | null
@@ -26,7 +26,7 @@ export function useGameSearch<TGame extends { name: string }>(
     { games: gameNamesAndSystems },
     {
       enabled: gameNamesAndSystems.length > 0,
-      staleTime: ms.seconds(30),
+      staleTime: CACHE_DURATIONS.SHORT,
       refetchOnWindowFocus: true,
     },
   )

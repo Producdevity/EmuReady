@@ -1,5 +1,5 @@
 import { LRUCache } from 'lru-cache'
-import { ms } from '@/utils/time'
+import { CACHE_DURATIONS } from '@/data/constants'
 import { getSteamGamesData } from './steamGameSearch'
 
 const MAX_STEAM_APP_ID = 10000000
@@ -17,7 +17,7 @@ interface GameMatchResult {
 }
 
 const steamAppNameCache = new LRUCache<string, string>({
-  ttl: ms.hours(1),
+  ttl: CACHE_DURATIONS.EXTRA_LONG,
   max: 10000,
 })
 
