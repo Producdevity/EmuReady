@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { type PrismaClient } from '@orm/client'
+import { PrismaClient } from '@orm/client'
 import { SoCsRepository } from './socs.repository'
+import type * as OrmClient from '@orm/client'
 
 vi.mock('@orm/client', async () => {
-  const actual = await import('@orm/client')
+  const actual = await vi.importActual<typeof OrmClient>('@orm/client')
   return {
     ...actual,
     Prisma: {
@@ -11,6 +12,14 @@ vi.mock('@orm/client', async () => {
       QueryMode: { insensitive: 'insensitive' },
       SortOrder: { asc: 'asc', desc: 'desc' },
     },
+    PrismaClient: vi.fn().mockImplementation(function MockPrismaClient() {
+      return {
+        soC: {
+          count: vi.fn(),
+          findMany: vi.fn(),
+        },
+      }
+    }),
   }
 })
 
@@ -26,19 +35,13 @@ const mockSoc = {
 }
 
 function createMockPrisma() {
-  return {
-    soC: {
-      count: vi.fn().mockResolvedValue(42),
-      findMany: vi.fn().mockResolvedValue([mockSoc]),
-    },
-  }
+  const prisma = new PrismaClient()
+  vi.mocked(prisma.soC.count).mockResolvedValue(42)
+  vi.mocked(prisma.soC.findMany).mockResolvedValue([mockSoc] as never)
+  return prisma
 }
 
 type MockPrisma = ReturnType<typeof createMockPrisma>
-
-function createRepository(prisma: MockPrisma) {
-  return new SoCsRepository(prisma as unknown as PrismaClient)
-}
 
 describe('SoCsRepository', () => {
   let prisma: MockPrisma
@@ -46,7 +49,7 @@ describe('SoCsRepository', () => {
 
   beforeEach(() => {
     prisma = createMockPrisma()
-    repository = createRepository(prisma)
+    repository = new SoCsRepository(prisma)
   })
 
   describe('list', () => {
