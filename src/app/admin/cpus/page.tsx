@@ -272,18 +272,6 @@ function AdminCpusPage() {
                   )}
                 </tr>
               ))}
-              {!cpusQuery.isPending && cpusQuery.data?.cpus.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                  >
-                    {table.search || table.additionalParams.brandId
-                      ? 'No CPUs found matching your search.'
-                      : 'No CPUs found. Add your first CPU.'}
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         )}

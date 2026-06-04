@@ -6,6 +6,7 @@ import { type FormEvent, useState, useMemo } from 'react'
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter'
 import json from 'react-syntax-highlighter/dist/esm/languages/prism/json'
 import { solarizedDarkAtom, solarizedlight } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { AdminTableNoResults } from '@/components/admin'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/form/Input'
@@ -293,13 +294,11 @@ export function BatchSteamLookup() {
             <LoadingSpinner size="lg" />
           </div>
         ) : results.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400">
-              {batchLookupQuery.data
-                ? 'No results to display.'
-                : 'Enter Steam App IDs and click lookup to see results.'}
-            </p>
-          </div>
+          <AdminTableNoResults
+            hasQuery={!!batchLookupQuery.data}
+            queryTitle="No results to display."
+            title="Enter Steam App IDs and click lookup to see results."
+          />
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between">

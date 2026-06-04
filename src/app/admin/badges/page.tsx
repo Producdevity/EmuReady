@@ -8,6 +8,7 @@ import {
   AdminTableContainer,
   AdminStatsDisplay,
   AdminSearchFilters,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   Button,
@@ -240,11 +241,11 @@ export default function AdminBadgesPage() {
         {badgesQuery.isPending ? (
           <LoadingSpinner text="Loading badges…" />
         ) : badges.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search ? 'No badges found matching your search.' : 'No badges created yet.'}
-            </p>
-          </div>
+          <AdminTableNoResults
+            hasQuery={!!table.search || statusFilter !== 'all'}
+            queryTitle="No badges found matching your search."
+            title="No badges created yet."
+          />
         ) : (
           <>
             <div className="overflow-x-auto">

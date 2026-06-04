@@ -8,6 +8,7 @@ import {
   AdminStatsDisplay,
   AdminSearchFilters,
   AdminTableContainer,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   ColumnVisibilityControl,
@@ -262,13 +263,11 @@ function AdminReportsPage() {
 
       <AdminTableContainer>
         {reports.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search || selectedReason || selectedStatus
-                ? 'No reports found matching your criteria.'
-                : 'No reports found.'}
-            </p>
-          </div>
+          <AdminTableNoResults
+            hasQuery={!!table.search || !!selectedReason || !!selectedStatus}
+            queryTitle="No reports found matching your criteria."
+            title="No reports found."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">

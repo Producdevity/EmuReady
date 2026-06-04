@@ -10,6 +10,7 @@ import {
   AdminStatsDisplay,
   AdminSearchFilters,
   AdminTableContainer,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   ColumnVisibilityControl,
@@ -229,13 +230,13 @@ function AdminAuditLogsPage() {
 
       <AdminTableContainer>
         {logs.length === 0 ? (
-          <div className="py-12 text-center">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search || selectedAction || selectedEntity || dateFrom || dateTo
-                ? 'No audit logs found matching your criteria.'
-                : 'No audit logs found.'}
-            </p>
-          </div>
+          <AdminTableNoResults
+            hasQuery={
+              !!table.search || !!selectedAction || !!selectedEntity || !!dateFrom || !!dateTo
+            }
+            queryTitle="No audit logs found matching your criteria."
+            title="No audit logs found."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">

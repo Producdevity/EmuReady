@@ -14,6 +14,7 @@ import {
   AdminStatsDisplay,
   AdminTableContainer,
   AdminSearchFilters,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   ApprovalStatusBadge,
@@ -277,13 +278,11 @@ function AdminGamesPage() {
             <LoadingSpinner text="Loading games..." />
           </div>
         ) : gamesQuery.data?.games.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search || filters.systemId || filters.status
-                ? 'No games found matching your criteria.'
-                : 'No games found.'}
-            </p>
-          </div>
+          <AdminTableNoResults
+            hasQuery={!!table.search || !!filters.systemId || !!filters.status}
+            queryTitle="No games found matching your criteria."
+            title="No games found."
+          />
         ) : (
           <>
             <div className="overflow-x-auto">

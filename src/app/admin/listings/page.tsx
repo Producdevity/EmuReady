@@ -11,6 +11,7 @@ import {
   AdminTableContainer,
   AdminStatsDisplay,
   AdminSearchFilters,
+  AdminTableNoResults,
 } from '@/components/admin'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
@@ -366,14 +367,17 @@ function AdminListingsPage() {
                 </tr>
               ) : listings.length === 0 ? (
                 <tr>
-                  <td colSpan={visibleColumnCount} className="py-12">
-                    <div className="text-center">
-                      <p className="text-gray-600 dark:text-gray-400 text-lg">
-                        {table.search || filters.status || filters.systemId || filters.emulatorId
-                          ? 'No compatibility reports found matching your filters.'
-                          : 'No compatibility reports found.'}
-                      </p>
-                    </div>
+                  <td colSpan={visibleColumnCount}>
+                    <AdminTableNoResults
+                      hasQuery={
+                        !!table.search ||
+                        !!filters.status ||
+                        !!filters.systemId ||
+                        !!filters.emulatorId
+                      }
+                      queryTitle="No compatibility reports found matching your filters."
+                      title="No compatibility reports found."
+                    />
                   </td>
                 </tr>
               ) : (

@@ -7,6 +7,7 @@ import {
   AdminStatsDisplay,
   AdminSearchFilters,
   AdminTableContainer,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   Button,
@@ -146,13 +147,11 @@ function AdminPerformancePage() {
 
       <AdminTableContainer>
         {performanceScales.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search
-                ? 'No performance scales found matching your search.'
-                : 'No performance scales found.'}
-            </p>
-          </div>
+          <AdminTableNoResults
+            hasQuery={!!table.search}
+            queryTitle="No performance scales found matching your search."
+            title="No performance scales found."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">
