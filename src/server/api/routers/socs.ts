@@ -15,25 +15,24 @@ import {
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import { SoCsRepository } from '@/server/repositories/socs.repository'
-import { paginate } from '@/server/utils/pagination'
+import { calculateOffset, paginate } from '@/server/utils/pagination'
 
 export const socsRouter = createTRPCRouter({
   get: publicProcedure.input(GetSoCsSchema).query(async ({ ctx, input }) => {
-    // TODO: use paginate helpers
     const repository = new SoCsRepository(ctx.prisma)
-    const { limit = 20, offset = 0, page } = input ?? {}
-
-    // Calculate actual offset based on page or use provided offset
-    const actualOffset = page ? (page - 1) * limit : (offset ?? 0)
+    const paginationInput = input ?? {}
+    const limit = paginationInput.limit ?? 20
+    const actualOffset = calculateOffset(paginationInput, limit)
+    const page = paginationInput.page ?? Math.floor(actualOffset / limit) + 1
 
     const [total, socs] = await Promise.all([
-      repository.count(input ?? {}),
-      repository.list({ ...input, limit, offset: actualOffset }),
+      repository.count(paginationInput),
+      repository.list({ ...paginationInput, limit, offset: actualOffset }),
     ])
 
     const pagination = paginate({
-      total: total,
-      page: page ?? Math.floor(actualOffset / limit) + 1,
+      total,
+      page,
       limit,
     })
 
