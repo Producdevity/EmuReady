@@ -21,7 +21,7 @@ function EditListingButton(props: Props) {
     { id: props.listingId },
     {
       enabled: !!user?.id,
-      refetchInterval: POLLING_INTERVALS.MEDIUM,
+      refetchInterval: POLLING_INTERVALS.SHORT,
     },
   )
 

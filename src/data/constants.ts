@@ -2,8 +2,7 @@ import { ms } from '@/utils/time'
 
 // Polling intervals in milliseconds
 export const POLLING_INTERVALS = {
-  SHORT: ms.seconds(30),
-  MEDIUM: ms.minutes(1),
+  SHORT: ms.minutes(1),
   NOTIFICATIONS: ms.minutes(3),
   LONG: ms.minutes(5),
   EXTRA_LONG: ms.minutes(10),
@@ -38,7 +37,7 @@ export type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number]
 // Cache durations in milliseconds
 export const CACHE_DURATIONS = {
   VERY_SHORT: ms.seconds(10),
-  SHORT: ms.seconds(30),
+  SHORT: ms.minutes(1),
   MEDIUM: ms.minutes(5),
   LONG: ms.minutes(15),
   EXTRA_LONG: ms.hours(1),

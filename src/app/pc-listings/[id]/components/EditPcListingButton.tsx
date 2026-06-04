@@ -21,7 +21,7 @@ function EditPcListingButton(props: Props) {
     { id: props.pcListingId },
     {
       enabled: !!user?.id,
-      refetchInterval: POLLING_INTERVALS.MEDIUM,
+      refetchInterval: POLLING_INTERVALS.SHORT,
     },
   )
 
