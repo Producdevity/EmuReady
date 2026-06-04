@@ -44,7 +44,7 @@ export function GameImage(props: Props) {
     return (
       <div
         className={cn(
-          'relative bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 flex items-center justify-center',
+          'relative flex w-full min-w-0 max-w-full items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900',
           aspectRatioClass,
           props.className,
         )}
@@ -60,7 +60,13 @@ export function GameImage(props: Props) {
   }
 
   return (
-    <div className={cn('relative overflow-hidden', aspectRatioClass, props.className)}>
+    <div
+      className={cn(
+        'relative w-full min-w-0 max-w-full overflow-hidden',
+        aspectRatioClass,
+        props.className,
+      )}
+    >
       <Image
         src={imageUrl}
         alt={props.game.title}
