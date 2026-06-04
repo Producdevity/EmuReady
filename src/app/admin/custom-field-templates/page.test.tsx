@@ -122,6 +122,17 @@ describe('CustomFieldTemplatesPage', () => {
     expect(screen.queryByText('Controls Template')).not.toBeInTheDocument()
   })
 
+  it('filters templates by field names', () => {
+    render(<CustomFieldTemplatesPage />)
+
+    fireEvent.change(screen.getByPlaceholderText('Search templates...'), {
+      target: { value: 'controllerlayout' },
+    })
+
+    expect(screen.getByText('Controls Template')).toBeInTheDocument()
+    expect(screen.queryByText('Performance Template')).not.toBeInTheDocument()
+  })
+
   it('shows a search-specific empty state when no templates match', () => {
     render(<CustomFieldTemplatesPage />)
 
