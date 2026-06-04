@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
 import {
+  AdminPageLayout,
   AdminTableContainer,
   AdminSearchFilters,
   AdminStatsDisplay,
@@ -135,22 +136,17 @@ function AdminCpusPage() {
     }
   }
 
-  // TODO: use AdminPageLayout like all the other admin pages
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">CPUs</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage all CPU models for PC compatibility listings
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
+    <AdminPageLayout
+      title="CPUs"
+      description="Manage all CPU models for PC compatibility listings"
+      headerActions={
+        <>
           <ColumnVisibilityControl columns={CPUS_COLUMNS} columnVisibility={columnVisibility} />
           {canManageDevices && <Button onClick={() => openModal()}>Add CPU</Button>}
-        </div>
-      </div>
-
+        </>
+      }
+    >
       <AdminStatsDisplay
         stats={[
           {
@@ -312,7 +308,7 @@ function AdminCpusPage() {
       />
 
       <CpuViewModal isOpen={viewModalOpen} onClose={closeViewModal} cpuData={cpuData} />
-    </div>
+    </AdminPageLayout>
   )
 }
 

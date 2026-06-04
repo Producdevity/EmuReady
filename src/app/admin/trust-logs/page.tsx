@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
-import { AdminTableContainer, AdminTableNoResults } from '@/components/admin'
+import { AdminPageLayout, AdminTableContainer, AdminTableNoResults } from '@/components/admin'
 import {
   Button,
   Input,
@@ -87,7 +87,10 @@ function AdminTrustLogsPage() {
 
   if (trustLogsQuery.error) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <AdminPageLayout
+        title="Trust System Logs"
+        description="Monitor and audit all trust score changes"
+      >
         <div className="text-center py-12">
           <p className="text-red-600 dark:text-red-400 text-lg">
             Error loading trust logs: {trustLogsQuery.error.message}
@@ -96,7 +99,7 @@ function AdminTrustLogsPage() {
             Try Again
           </Button>
         </div>
-      </div>
+      </AdminPageLayout>
     )
   }
 
@@ -111,17 +114,12 @@ function AdminTrustLogsPage() {
         : '-'
   }
 
-  // TODO: use AdminPageLayout like all the other admin pages
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Trust System Logs</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Monitor and audit all trust score changes
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
+    <AdminPageLayout
+      title="Trust System Logs"
+      description="Monitor and audit all trust score changes"
+      headerActions={
+        <>
           <Button
             variant="outline"
             icon={Calendar}
@@ -135,9 +133,9 @@ function AdminTrustLogsPage() {
             columns={TRUST_LOGS_COLUMNS}
             columnVisibility={columnVisibility}
           />
-        </div>
-      </div>
-
+        </>
+      }
+    >
       {/*TODO: check if we can use AdminStatsDisplay */}
       {trustStatsQuery.data && <TrustStatsOverview trustStatsData={trustStatsQuery.data} />}
 
@@ -314,7 +312,7 @@ function AdminTrustLogsPage() {
           onPageChange={(newPage) => table.setPage(newPage)}
         />
       )}
-    </div>
+    </AdminPageLayout>
   )
 }
 
