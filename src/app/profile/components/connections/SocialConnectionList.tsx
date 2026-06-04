@@ -27,22 +27,33 @@ interface Props {
   emptyMessage: string
   renderAction: (user: SocialUser) => ReactNode
   header?: ReactNode
+  showActionSkeleton?: boolean
+  actionSkeletonClassName?: string
+  skeletonRows?: number
 }
 
-function SocialConnectionListSkeleton() {
+function SocialConnectionListSkeleton(props: {
+  actionClassName: string
+  showAction: boolean
+  rows: number
+}) {
   return (
     <div className="space-y-1" aria-label="Loading social connections">
-      {[1, 2, 3].map((item) => (
-        <div key={item} className="flex items-center gap-4 py-3 px-2 rounded-lg">
-          <Skeleton className="h-10 w-10 flex-shrink-0 rounded-full" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-5 w-20 rounded-full" />
-              <Skeleton className="h-5 w-24 rounded-full" />
+      {Array.from({ length: props.rows }, (_, index) => (
+        <div key={index} className="flex items-center gap-4 py-3 px-2 rounded-lg">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <Skeleton className="h-10 w-10 flex-shrink-0 rounded-full" />
+            <div className="min-w-0 flex-1">
+              <Skeleton className="h-6 w-32" />
+              <div className="flex items-center gap-2 mt-0.5">
+                <Skeleton className="h-5 w-20 rounded-full" />
+                <Skeleton className="h-6 w-24 rounded-full" />
+              </div>
             </div>
           </div>
-          <Skeleton className="h-9 w-24 flex-shrink-0 rounded-md" />
+          {props.showAction && (
+            <Skeleton className={`${props.actionClassName} h-8 flex-shrink-0 rounded-md`} />
+          )}
         </div>
       ))}
     </div>
@@ -50,7 +61,18 @@ function SocialConnectionListSkeleton() {
 }
 
 export function SocialConnectionList(props: Props) {
-  if (props.isPending) return <SocialConnectionListSkeleton />
+  if (props.isPending) {
+    return (
+      <div className="space-y-4">
+        {props.header}
+        <SocialConnectionListSkeleton
+          actionClassName={props.actionSkeletonClassName ?? 'w-24'}
+          rows={props.skeletonRows ?? 3}
+          showAction={props.showActionSkeleton ?? true}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">

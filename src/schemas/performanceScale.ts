@@ -36,7 +36,6 @@ export const DeletePerformanceScaleSchema = z
     path: ['replacementId'],
   })
 
-// Type exports for repository use
 export type GetPerformanceScalesInput = z.input<typeof GetPerformanceScalesSchema>
 export type CreatePerformanceScaleInput = z.infer<typeof CreatePerformanceScaleSchema>
 export type UpdatePerformanceScaleInput = z.infer<typeof UpdatePerformanceScaleSchema>

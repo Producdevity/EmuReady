@@ -22,11 +22,13 @@ const CONFIG = {
     successMessage: 'Follower removed',
     emptyMessage: 'No followers yet',
     buttonLabel: 'Remove',
+    actionSkeletonClassName: 'w-20',
   },
   following: {
     successMessage: 'Unfollowed successfully',
     emptyMessage: 'Not following anyone',
     buttonLabel: 'Unfollow',
+    actionSkeletonClassName: 'w-24',
   },
 } as const
 
@@ -88,6 +90,8 @@ function FollowConnectionList(props: Props) {
       pagination={data?.visibility === 'visible' ? data.pagination : undefined}
       onPageChange={props.onPageChange}
       emptyMessage={config.emptyMessage}
+      actionSkeletonClassName={config.actionSkeletonClassName}
+      skeletonRows={props.limit}
       renderAction={(user) => (
         <Button
           variant="outline"

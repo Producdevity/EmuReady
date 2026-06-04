@@ -34,19 +34,16 @@ export default function UserBadgeModal(props: Props) {
   const [selectedBadgeId, setSelectedBadgeId] = useState<string | null>(null)
   const [selectedColor, setSelectedColor] = useState<TailwindColor>('blue')
 
-  // Fetch all active badges
   const badgesQuery = api.badges.get.useQuery(
     { isActive: true, limit: 100 },
     { enabled: props.isOpen },
   )
 
-  // Fetch user's current badges
   const userBadgesQuery = api.users.getUserById.useQuery(
     { userId: props.user?.id ?? '' },
     { enabled: props.isOpen && Boolean(props.user?.id) },
   )
 
-  // Badge assignment mutations
   const assignBadgeMutation = api.badges.assignToUser.useMutation({
     onSuccess: () => {
       toast.success('Badge assigned successfully')
@@ -106,7 +103,6 @@ export default function UserBadgeModal(props: Props) {
         </DialogHeader>
 
         <div className="space-y-6 overflow-y-auto">
-          {/* Current Badges */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
               Current Badges ({userBadges.length})
@@ -158,7 +154,6 @@ export default function UserBadgeModal(props: Props) {
             )}
           </div>
 
-          {/* Assign New Badge */}
           {availableBadges.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">

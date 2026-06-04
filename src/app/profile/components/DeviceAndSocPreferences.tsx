@@ -72,9 +72,6 @@ function DeviceAndSocPreferences(props: Props) {
     },
   })
 
-  /**
-   * Invalidate all user preferences related queries.
-   */
   const invalidatePreferences = () => {
     Promise.all([
       utils.userPreferences.get.invalidate(),
@@ -90,11 +87,9 @@ function DeviceAndSocPreferences(props: Props) {
     updatePreferences.mutate({ [key]: value })
   }
 
-  // Debounce refs to prevent excessive API calls
   const deviceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const socTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (deviceTimeoutRef.current) {
@@ -117,15 +112,13 @@ function DeviceAndSocPreferences(props: Props) {
     ) => {
       const deviceIds = devices.map((device) => device.id)
 
-      // Clear existing timeout
       if (deviceTimeoutRef.current) {
         clearTimeout(deviceTimeoutRef.current)
       }
 
-      // Set new timeout for debounced update
       deviceTimeoutRef.current = setTimeout(() => {
         bulkUpdateDevices.mutate({ deviceIds })
-      }, 500) // 500ms debounce
+      }, 500)
     },
     [bulkUpdateDevices],
   )
@@ -134,15 +127,13 @@ function DeviceAndSocPreferences(props: Props) {
     (socs: typeof selectedSocs) => {
       const socIds = socs.map((soc) => soc.id)
 
-      // Clear existing timeout
       if (socTimeoutRef.current) {
         clearTimeout(socTimeoutRef.current)
       }
 
-      // Set new timeout for debounced update
       socTimeoutRef.current = setTimeout(() => {
         bulkUpdateSocs.mutate({ socIds })
-      }, 500) // 500ms debounce
+      }, 500)
     },
     [bulkUpdateSocs],
   )
@@ -177,13 +168,11 @@ function DeviceAndSocPreferences(props: Props) {
 
   const { data: preferences } = props.preferencesQuery
 
-  // Map the data structure to what the selectors expect
   const selectedDevices = preferences.devicePreferences?.map((pref) => pref.device) || []
   const selectedSocs = preferences.socPreferences?.map((pref) => pref.soc) || []
 
   return (
     <div className="space-y-8">
-      {/* Listing Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <div className="flex items-center gap-3 mb-6">
           <Settings className="h-6 w-6 text-blue-600 dark:text-blue-400" />
@@ -245,7 +234,6 @@ function DeviceAndSocPreferences(props: Props) {
         </div>
       </div>
 
-      {/* Device Preferences */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <div className="flex items-center gap-3 mb-6">
           <Smartphone className="h-6 w-6 text-green-600 dark:text-green-400" />
@@ -262,7 +250,6 @@ function DeviceAndSocPreferences(props: Props) {
         <DeviceSelector selectedDevices={selectedDevices} onDevicesChange={handleDevicesChange} />
       </div>
 
-      {/* SOC Preferences */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <div className="flex items-center gap-3 mb-6">
           <Cpu className="h-6 w-6 text-purple-600 dark:text-purple-400" />

@@ -190,7 +190,6 @@ async function main() {
     console.warn('🗑️ Clearing database...')
     console.warn('I hope you know what you are doing 😅')
 
-    // Clear all data in the correct order (children before parents)
     await clearDb()
 
     console.info('✅ Database cleared!')
@@ -199,8 +198,7 @@ async function main() {
   console.info('🌱 Starting database seed...')
 
   try {
-    // Seed in order of dependencies
-    await permissionsSeeder(prisma) // Seed permissions first
+    await permissionsSeeder(prisma)
     await performanceScalesSeeder(prisma)
     await systemsSeeder(prisma)
     await emulatorsSeeder(prisma)
