@@ -7,6 +7,7 @@ import {
   GetSoCsSchema,
   UpdateSoCSchema,
   GetSoCsByIdsSchema,
+  type GetSoCsInput,
 } from '@/schemas/soc'
 import {
   createTRPCRouter,
@@ -20,7 +21,7 @@ import { calculateOffset, paginate } from '@/server/utils/pagination'
 export const socsRouter = createTRPCRouter({
   get: publicProcedure.input(GetSoCsSchema).query(async ({ ctx, input }) => {
     const repository = new SoCsRepository(ctx.prisma)
-    const paginationInput = input ?? {}
+    const paginationInput: NonNullable<GetSoCsInput> = input ?? {}
     const limit = paginationInput.limit ?? 20
     const actualOffset = calculateOffset(paginationInput, limit)
     const page = paginationInput.page ?? Math.floor(actualOffset / limit) + 1
