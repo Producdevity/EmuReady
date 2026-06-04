@@ -70,10 +70,15 @@ let francMinModulePromise: Promise<FrancMinModule> | null = null
 const detectionCache = new Map<string, Promise<LanguageDetectionResult>>()
 
 function loadFrancMin(): Promise<FrancMinModule> {
-  francMinModulePromise ??= import('franc-min').then((module) => ({
-    franc: module.franc,
-    francAll: module.francAll,
-  }))
+  francMinModulePromise ??= import('franc-min')
+    .then((module) => ({
+      franc: module.franc,
+      francAll: module.francAll,
+    }))
+    .catch((error: unknown) => {
+      francMinModulePromise = null
+      throw error
+    })
   return francMinModulePromise
 }
 

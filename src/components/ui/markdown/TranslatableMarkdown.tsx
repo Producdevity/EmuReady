@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { Languages, Earth, Globe } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui'
 import { useTranslation } from '@/hooks/useTranslation'
 import { MarkdownRenderer } from './MarkdownRenderer'
@@ -14,16 +14,20 @@ interface Props {
 }
 
 export function TranslatableMarkdown(props: Props) {
-  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [containerElement, setContainerElement] = useState<HTMLDivElement | null>(null)
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
-    const element = containerRef.current
-    if (!element) return
+    if (!containerElement || isVisible) return
 
     if (typeof IntersectionObserver === 'undefined') {
-      queueMicrotask(() => setIsVisible(true))
-      return
+      let didCancel = false
+      queueMicrotask(() => {
+        if (!didCancel) setIsVisible(true)
+      })
+      return () => {
+        didCancel = true
+      }
     }
 
     const observer = new IntersectionObserver(
@@ -35,9 +39,9 @@ export function TranslatableMarkdown(props: Props) {
       { rootMargin: '200px' },
     )
 
-    observer.observe(element)
+    observer.observe(containerElement)
     return () => observer.disconnect()
-  }, [])
+  }, [containerElement, isVisible])
 
   const {
     displayedContent,
@@ -54,7 +58,7 @@ export function TranslatableMarkdown(props: Props) {
   if (!props.content?.trim()) return null
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={setContainerElement} className="relative">
       <AnimatePresence mode="wait">
         <motion.div
           key={showTranslated ? 'translated' : 'original'}
