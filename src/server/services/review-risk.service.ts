@@ -11,6 +11,7 @@ import {
   type SubmissionForRisk,
 } from '@/server/services/submission-risk.service'
 import { roleIncludesRole } from '@/utils/permission-system'
+import { formatCountLabel } from '@/utils/text'
 import { Role } from '@orm/client'
 
 type RiskPrismaClient = Parameters<typeof computeAuthorRiskProfiles>[0]
@@ -113,10 +114,6 @@ function isAutoRejectableReviewRisk(params: {
   )
 }
 
-function formatSignalCount(signalCount: number): string {
-  return `${signalCount} signal${signalCount === 1 ? '' : 's'}`
-}
-
 function buildAutoRejectProcessedNotes(params: {
   authorRiskProfile: AuthorRiskProfile | undefined
   submissionRiskProfile: SubmissionRiskProfile | undefined
@@ -131,7 +128,7 @@ function buildAutoRejectProcessedNotes(params: {
   if (authorRiskProfile && authorRiskProfile.signals.length > 0) {
     const signalCount = authorRiskProfile.signals.length
     const severity = authorRiskProfile.highestSeverity ?? 'unknown'
-    reasons.push(`author risk ${severity} severity (${formatSignalCount(signalCount)})`)
+    reasons.push(`author risk ${severity} severity (${formatCountLabel('signal', signalCount)})`)
   }
 
   return `Automatically rejected by review risk bulk action: ${reasons.join('; ')}.`
