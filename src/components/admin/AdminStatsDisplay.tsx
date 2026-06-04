@@ -69,7 +69,7 @@ export function AdminStatsDisplay(props: Props) {
                 className={cn('text-2xl font-bold', colorClasses[stat.color] || colorClasses.gray)}
                 title={stat.description}
               >
-                {stat.value != null ? stat.value.toLocaleString() : '...'}
+                {stat.value?.toLocaleString() || '...'}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</div>
             </Card>
