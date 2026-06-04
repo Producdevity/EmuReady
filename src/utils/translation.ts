@@ -1,10 +1,15 @@
-import { franc, francAll } from 'franc'
 import http from '@/rest/http'
 import type {
   MyMemoryTranslationResponse,
   LanguageDetectionResult,
   TranslationResult,
 } from '@/utils/translation.types'
+import type { Options as FrancOptions, TrigramTuple } from 'franc-min'
+
+interface FrancMinModule {
+  franc: (value?: string, options?: FrancOptions) => string
+  francAll: (value?: string, options?: FrancOptions) => TrigramTuple[]
+}
 
 // Language data: franc ISO 639-3 codes mapped to MyMemory-supported ISO 639-1 codes with names
 // Only includes languages that MyMemory API actually supports for translation
@@ -58,6 +63,19 @@ const URL_REGEX = /(https?:\/\/|www\.)[^\s)]+/gi
 const MARKDOWN_LINK_REGEX = /\[([^\]]+)\]\((https?:\/\/|www\.)[^)]+\)/gi
 const MIN_ENGLISH_CONFIDENCE = 0.8
 const NON_ENGLISH_SCORE_MARGIN = 0.05
+const FRANC_MIN_LENGTH = 10
+const MIN_ALTERNATIVE_CONFIDENCE = 0.4
+
+let francMinModulePromise: Promise<FrancMinModule> | null = null
+const detectionCache = new Map<string, Promise<LanguageDetectionResult>>()
+
+function loadFrancMin(): Promise<FrancMinModule> {
+  francMinModulePromise ??= import('franc-min').then((module) => ({
+    franc: module.franc,
+    francAll: module.francAll,
+  }))
+  return francMinModulePromise
+}
 
 function sanitizeForDetection(value: string): string {
   const withoutMarkdownLinks = value.replace(MARKDOWN_LINK_REGEX, '$1')
@@ -77,6 +95,10 @@ function normalizeForComparison(value: string): string {
 
 function isMeaningfullyDifferent(original: string, translated: string): boolean {
   return normalizeForComparison(original) !== normalizeForComparison(translated)
+}
+
+function getFallbackDetection(confidence = 0): LanguageDetectionResult {
+  return { isEnglish: true, detectedLanguage: 'en', confidence }
 }
 
 async function requestTranslation({ text, source, target }: TranslationRequest) {
@@ -128,7 +150,7 @@ async function translateBySegments({
       continue
     }
 
-    const detection = detectLanguage(trimmed)
+    const detection = await detectLanguage(trimmed)
     if (detection.isEnglish || detection.detectedLanguage === target) {
       translatedSegments.push(segment)
       continue
@@ -165,81 +187,93 @@ export function getUserLocale(): string {
 /**
  * Detect the language of the text.
  * @param text - The text to detect the language of.
- * @return {LanguageDetectionResult} The language detection result.
+ * @return A promise resolving to the language detection result.
  */
-const FRANC_MIN_LENGTH = 10
-const MIN_ALTERNATIVE_CONFIDENCE = 0.4
+async function detectSanitizedLanguage(sanitized: string): Promise<LanguageDetectionResult> {
+  try {
+    const { franc, francAll } = await loadFrancMin()
+    const francOptions = { minLength: FRANC_MIN_LENGTH }
+    const francCode = franc(sanitized, francOptions)
+    const candidates = francAll(sanitized, francOptions)
 
-export function detectLanguage(text: string): LanguageDetectionResult {
+    const languageData = SUPPORTED_LANGUAGES[francCode]
+    const iso = languageData?.code ?? 'und'
+    const detectedConfidence = 1
+
+    if (languageData && iso !== 'en') {
+      return { isEnglish: false, detectedLanguage: iso, confidence: detectedConfidence }
+    }
+
+    const englishCandidateScore =
+      languageData?.code === 'en'
+        ? detectedConfidence
+        : (() => {
+            const candidate = candidates.find(([code, score]) => {
+              const data = SUPPORTED_LANGUAGES[code]
+              if (!data) return false
+              return data.code === 'en' && score >= MIN_ENGLISH_CONFIDENCE
+            })
+            return candidate ? candidate[1] : 0
+          })()
+
+    const bestNonEnglishCandidate = candidates.reduce<{ code: string; score: number } | null>(
+      (current, [code, score]) => {
+        const data = SUPPORTED_LANGUAGES[code]
+        if (!data) return current
+        if (data.code === 'en') return current
+        if (score < MIN_ALTERNATIVE_CONFIDENCE) return current
+        if (!current || score > current.score) {
+          return { code: data.code, score }
+        }
+        return current
+      },
+      null,
+    )
+
+    if (
+      bestNonEnglishCandidate &&
+      (englishCandidateScore === 0 ||
+        englishCandidateScore - bestNonEnglishCandidate.score <= NON_ENGLISH_SCORE_MARGIN)
+    ) {
+      return {
+        isEnglish: false,
+        detectedLanguage: bestNonEnglishCandidate.code,
+        confidence: Math.max(0.9, bestNonEnglishCandidate.score),
+      }
+    }
+
+    if (languageData?.code === 'en') {
+      return { isEnglish: true, detectedLanguage: 'en', confidence: detectedConfidence }
+    }
+
+    if (englishCandidateScore >= MIN_ENGLISH_CONFIDENCE) {
+      return { isEnglish: true, detectedLanguage: 'en', confidence: englishCandidateScore }
+    }
+
+    if (iso === 'und') {
+      return getFallbackDetection(0.1)
+    }
+
+    return getFallbackDetection(1)
+  } catch (error) {
+    console.error('Language detection failed:', error)
+    return getFallbackDetection()
+  }
+}
+
+export function detectLanguage(text: string): Promise<LanguageDetectionResult> {
   const sanitized = sanitizeForDetection(text)
 
-  if (sanitized.length < 10) {
-    return { isEnglish: true, detectedLanguage: 'en', confidence: 0 }
+  if (sanitized.length < FRANC_MIN_LENGTH) {
+    return Promise.resolve(getFallbackDetection())
   }
 
-  const francOptions = { minLength: FRANC_MIN_LENGTH }
-  const francCode = franc(sanitized, francOptions)
-  const candidates = francAll(sanitized, francOptions)
+  const cachedDetection = detectionCache.get(sanitized)
+  if (cachedDetection) return cachedDetection
 
-  const languageData = SUPPORTED_LANGUAGES[francCode]
-  const iso = languageData?.code ?? 'und'
-  const detectedConfidence = 1
-
-  if (languageData && iso !== 'en') {
-    return { isEnglish: false, detectedLanguage: iso, confidence: detectedConfidence }
-  }
-
-  const englishCandidateScore =
-    languageData?.code === 'en'
-      ? detectedConfidence
-      : (() => {
-          const candidate = candidates.find(([code, score]) => {
-            const data = SUPPORTED_LANGUAGES[code]
-            if (!data) return false
-            return data.code === 'en' && score >= MIN_ENGLISH_CONFIDENCE
-          })
-          return candidate ? candidate[1] : 0
-        })()
-
-  const bestNonEnglishCandidate = candidates.reduce<{ code: string; score: number } | null>(
-    (current, [code, score]) => {
-      const data = SUPPORTED_LANGUAGES[code]
-      if (!data) return current
-      if (data.code === 'en') return current
-      if (score < MIN_ALTERNATIVE_CONFIDENCE) return current
-      if (!current || score > current.score) {
-        return { code: data.code, score }
-      }
-      return current
-    },
-    null,
-  )
-
-  if (
-    bestNonEnglishCandidate &&
-    (englishCandidateScore === 0 ||
-      englishCandidateScore - bestNonEnglishCandidate.score <= NON_ENGLISH_SCORE_MARGIN)
-  ) {
-    return {
-      isEnglish: false,
-      detectedLanguage: bestNonEnglishCandidate.code,
-      confidence: Math.max(0.9, bestNonEnglishCandidate.score),
-    }
-  }
-
-  if (languageData?.code === 'en') {
-    return { isEnglish: true, detectedLanguage: 'en', confidence: detectedConfidence }
-  }
-
-  if (englishCandidateScore >= MIN_ENGLISH_CONFIDENCE) {
-    return { isEnglish: true, detectedLanguage: 'en', confidence: englishCandidateScore }
-  }
-
-  if (iso === 'und') {
-    return { isEnglish: true, detectedLanguage: 'en', confidence: 0.1 }
-  }
-
-  return { isEnglish: true, detectedLanguage: 'en', confidence: 1 }
+  const detectionPromise = detectSanitizedLanguage(sanitized)
+  detectionCache.set(sanitized, detectionPromise)
+  return detectionPromise
 }
 
 /**
@@ -255,7 +289,7 @@ export async function translateText(
   toLang?: string,
 ): Promise<TranslationResult> {
   const target = toLang ?? getUserLocale()
-  const source = fromLang ?? detectLanguage(text).detectedLanguage
+  const source = fromLang ?? (await detectLanguage(text)).detectedLanguage
 
   // No need to request if languages already match
   if (source === target) {
@@ -332,12 +366,12 @@ export async function translateTextCached(
 /**
  * Check if translation should be shown based on text length and language detection.
  * @param text - The text to check.
- * @return {boolean} True if translation should be shown, false otherwise.
+ * @return A promise resolving to true if translation should be shown.
  */
-export function shouldShowTranslation(text: string): boolean {
-  if (!text || text.trim().length < 10) return false
+export async function shouldShowTranslation(text: string): Promise<boolean> {
+  if (!text || text.trim().length < FRANC_MIN_LENGTH) return false
 
-  const detection = detectLanguage(text)
+  const detection = await detectLanguage(text)
   const userLocale = getUserLocale()
 
   // Only show translation for high-confidence non-English detection

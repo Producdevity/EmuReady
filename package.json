@@ -90,7 +90,6 @@
     "date-fns": "^4.1.0",
     "dompurify": "3.4.2",
     "framer-motion": "^12.11.0",
-    "franc": "^6.2.0",
     "franc-min": "^6.2.0",
     "fuse.js": "^7.1.0",
     "html-escaper": "^3.0.3",

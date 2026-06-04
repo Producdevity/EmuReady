@@ -126,9 +126,6 @@ importers:
       framer-motion:
         specifier: ^12.11.0
         version: 12.19.2(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      franc:
-        specifier: ^6.2.0
-        version: 6.2.0
       franc-min:
         specifier: ^6.2.0
         version: 6.2.0
@@ -5266,9 +5263,6 @@ packages:
 
   franc-min@6.2.0:
     resolution: {integrity: sha512-1uDIEUSlUZgvJa2AKYR/dmJC66v/PvGQ9mWfI9nOr/kPpMFyvswK0gPXOwpYJYiYD008PpHLkGfG58SPjQJFxw==}
-
-  franc@6.2.0:
-    resolution: {integrity: sha512-rcAewP7PSHvjq7Kgd7dhj82zE071kX5B4W1M4ewYMf/P+i6YsDQmj62Xz3VQm9zyUzUXwhIde/wHLGCMrM+yGg==}
 
   fs.realpath@1.0.0:
     resolution: {integrity: sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==}
@@ -13851,10 +13845,6 @@ snapshots:
       react-dom: 19.2.6(react@19.2.6)
 
   franc-min@6.2.0:
-    dependencies:
-      trigram-utils: 2.0.1
-
-  franc@6.2.0:
     dependencies:
       trigram-utils: 2.0.1
 

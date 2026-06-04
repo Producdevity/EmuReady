@@ -14,6 +14,18 @@ vi.mock('framer-motion', () => ({
   AnimatePresence: (props: PropsWithChildren) => props.children,
 }))
 
+vi.mock('@/hooks/useTranslation', () => ({
+  useTranslation: (content: string) => ({
+    displayedContent: content,
+    showTranslated: false,
+    isTranslating: false,
+    showTranslationOption: false,
+    toggleTranslation: vi.fn(),
+    getButtonLabel: () => 'Translate (BETA)',
+    getTranslationInfo: () => 'Translation available',
+  }),
+}))
+
 function getRenderedElement(element: Element | null): HTMLElement {
   if (element instanceof HTMLElement) return element
 

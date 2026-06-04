@@ -4,31 +4,60 @@ import { useState, useEffect } from 'react'
 import { translateTextCached, shouldShowTranslation, getLanguageName } from '@/utils/translation'
 import type { TranslationResult } from '@/utils/translation.types'
 
-export function useTranslation(content: string) {
-  const [showTranslated, setShowTranslated] = useState(false)
-  const [translation, setTranslation] = useState<TranslationResult | null>(null)
+interface CachedTranslation {
+  content: string
+  result: TranslationResult
+}
+
+interface CachedTranslationOption {
+  content: string
+  show: boolean
+}
+
+interface Options {
+  enabled?: boolean
+}
+
+export function useTranslation(content: string, options: Options = {}) {
+  const enabled = options.enabled ?? true
+  const [translatedContentKey, setTranslatedContentKey] = useState<string | null>(null)
+  const [translationState, setTranslationState] = useState<CachedTranslation | null>(null)
   const [isTranslating, setIsTranslating] = useState(false)
-  const [showTranslationOption, setShowTranslationOption] = useState(false)
+  const [translationOption, setTranslationOption] = useState<CachedTranslationOption | null>(null)
+
+  const translation = translationState?.content === content ? translationState.result : null
+  const showTranslated = translatedContentKey === content && Boolean(translation)
+  const showTranslationOption =
+    enabled && translationOption?.content === content ? translationOption.show : false
 
   useEffect(() => {
-    const shouldTranslate = shouldShowTranslation(content)
-    setShowTranslationOption(shouldTranslate)
+    if (!enabled || !content.trim()) return
 
-    setShowTranslated(false)
-    setTranslation(null)
-  }, [content])
+    let cancelled = false
+
+    async function updateTranslationOption() {
+      const shouldTranslate = await shouldShowTranslation(content)
+      if (!cancelled) setTranslationOption({ content, show: shouldTranslate })
+    }
+
+    void updateTranslationOption()
+
+    return () => {
+      cancelled = true
+    }
+  }, [content, enabled])
 
   const toggleTranslation = async () => {
     if (translation) {
-      setShowTranslated(!showTranslated)
+      setTranslatedContentKey(showTranslated ? null : content)
       return
     }
 
     setIsTranslating(true)
     try {
       const result = await translateTextCached(content)
-      setTranslation(result)
-      setShowTranslated(true)
+      setTranslationState({ content, result })
+      setTranslatedContentKey(content)
     } catch (error) {
       console.error('Translation failed:', error)
     } finally {
