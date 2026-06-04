@@ -139,7 +139,7 @@ function AdminCpusPage() {
   return (
     <AdminPageLayout
       title="CPUs"
-      description="Manage all CPU models for PC compatibility listings"
+      description="Manage all CPU models for the PC Compatibility Report"
       headerActions={
         <>
           <ColumnVisibilityControl columns={CPUS_COLUMNS} columnVisibility={columnVisibility} />
