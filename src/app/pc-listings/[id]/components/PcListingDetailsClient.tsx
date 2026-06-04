@@ -138,15 +138,15 @@ function PcListingDetailsClient(props: Props) {
         <CommunitySupportBanner variant="detail" page="pc-listing-detail" />
 
         <Card className="w-full p-4 lg:p-8 shadow-2xl rounded-2xl lg:rounded-3xl border-0 bg-white dark:bg-gray-900 overflow-hidden">
-          <div className="flex w-full flex-col items-start gap-6 lg:gap-8 md:flex-row">
+          <div className="flex w-full min-w-0 flex-col items-start gap-6 lg:gap-8 md:flex-row">
             {/* Game Info */}
-            <div className="flex-1 md:pr-8 sm:border-r-0 md:border-r md:border-gray-200 md:dark:border-gray-700">
+            <div className="w-full min-w-0 flex-1 md:pr-8 sm:border-r-0 md:border-r md:border-gray-200 md:dark:border-gray-700">
               {/* Game Image */}
-              <div className="mb-6">
+              <div className="mb-6 w-full max-w-full overflow-hidden">
                 <GameImage
                   prioritizeBanner={true}
                   game={props.pcListing.game}
-                  className="w-full aspect-video rounded-lg shadow-md"
+                  className="w-full max-w-full aspect-video rounded-lg shadow-md"
                   aspectRatio="video"
                   showFallback={true}
                   priority={true}
@@ -192,7 +192,7 @@ function PcListingDetailsClient(props: Props) {
               />
             </div>
 
-            <div className="flex w-full flex-col items-center gap-4 md:w-auto md:min-w-[180px] md:items-start">
+            <div className="flex w-full flex-col items-center gap-4 md:w-auto md:min-w-[180px] md:shrink-0 md:items-start">
               <div className="flex items-start justify-between w-full gap-2">
                 <AuthorPanel
                   profileImage={props.pcListing.author?.profileImage}
