@@ -1,23 +1,48 @@
 'use client'
 
 import { PlusCircle } from 'lucide-react'
-import { useState } from 'react'
-import {
-  AdminPageLayout,
-  // AdminSearchFilters,
-  AdminStatsDisplay,
-} from '@/components/admin'
+import { useMemo, useState } from 'react'
+import { useAdminTable } from '@/app/admin/hooks'
+import { AdminPageLayout, AdminSearchFilters, AdminStatsDisplay } from '@/components/admin'
 import { Button, LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
+import { type RouterOutput } from '@/types/trpc'
 import CustomFieldTemplateFormModal from './components/CustomFieldTemplateFormModal'
 import CustomFieldTemplateList from './components/CustomFieldTemplateList'
 
+type CustomFieldTemplate = RouterOutput['customFieldTemplates']['get'][number]
+type CustomFieldTemplateSortField = 'name'
+
+const EMPTY_TEMPLATES: CustomFieldTemplate[] = []
+
+function customFieldTemplateMatchesSearch(template: CustomFieldTemplate, searchTerm: string) {
+  if (!searchTerm) return true
+
+  const searchableValues = [
+    template.name,
+    template.description ?? '',
+    ...template.fields.flatMap((field) => [field.name, field.label]),
+  ]
+
+  return searchableValues.some((value) => value.toLowerCase().includes(searchTerm))
+}
+
 function CustomFieldTemplatesPage() {
-  const [searchQuery, _setSearchQuery] = useState('')
+  const table = useAdminTable<CustomFieldTemplateSortField>()
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null)
 
   const customFieldTemplatesQuery = api.customFieldTemplates.get.useQuery()
+  const templates = customFieldTemplatesQuery.data ?? EMPTY_TEMPLATES
+  const totalTemplates = templates.length
+  const templatesWithFields = templates.filter((t) => t.fields.length > 0).length
+  const templatesWithoutFields = totalTemplates - templatesWithFields
+  const searchTerm = table.search.trim().toLowerCase()
+  const filteredTemplates = useMemo(
+    () => templates.filter((template) => customFieldTemplateMatchesSearch(template, searchTerm)),
+    [templates, searchTerm],
+  )
+  const hasActiveSearch = searchTerm.length > 0
 
   function handleOpenCreateModal() {
     setEditingTemplateId(null)
@@ -53,11 +78,6 @@ function CustomFieldTemplatesPage() {
     )
   }
 
-  const templates = customFieldTemplatesQuery.data ?? []
-  const totalTemplates = templates.length
-  const templatesWithFields = templates.filter((t) => t.fields.length > 0).length
-  const templatesWithoutFields = totalTemplates - templatesWithFields
-
   return (
     <AdminPageLayout
       title="Custom Field Templates"
@@ -81,22 +101,26 @@ function CustomFieldTemplatesPage() {
         isLoading={customFieldTemplatesQuery.isPending}
       />
 
-      {/*TODO: fix this, AdminSearchFilters requires a table property, we need to convert this component to work like the other admin pages*/}
-      {/*<AdminSearchFilters*/}
-      {/*  searchValue={searchQuery}*/}
-      {/*  onSearchChange={setSearchQuery}*/}
-      {/*  searchPlaceholder="Search templates..."*/}
-      {/*  onClear={() => setSearchQuery('')}*/}
-      {/*/>*/}
+      <AdminSearchFilters<CustomFieldTemplateSortField>
+        table={table}
+        searchPlaceholder="Search templates..."
+      />
 
-      {templates.length > 0 ? (
+      {filteredTemplates.length > 0 ? (
         <CustomFieldTemplateList
-          templates={templates.filter((template) =>
-            template.name.toLowerCase().includes(searchQuery.trim().toLowerCase()),
-          )}
+          templates={filteredTemplates}
           onEdit={handleOpenEditModal}
           onDeleteSuccess={customFieldTemplatesQuery.refetch}
         />
+      ) : hasActiveSearch ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500 dark:text-gray-400 text-lg">
+            No custom field templates match your search.
+          </p>
+          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
+            Try a different template name, description, or field label.
+          </p>
+        </div>
       ) : (
         <div className="text-center py-12">
           <p className="text-gray-500 dark:text-gray-400 text-lg">
