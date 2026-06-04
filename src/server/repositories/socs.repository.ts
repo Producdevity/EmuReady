@@ -1,5 +1,6 @@
 import { PAGINATION } from '@/data/constants'
 import { ResourceError } from '@/lib/errors'
+import { calculateOffset, paginate, type PaginationResult } from '@/server/utils/pagination'
 import { Prisma, type SoC } from '@orm/client'
 import { BaseRepository } from './base.repository'
 import type {
@@ -9,6 +10,7 @@ import type {
   UpdateSoCInput,
 } from '@/schemas/soc'
 
+type SoCFilters = NonNullable<GetSoCsInput>
 type SoCOptionFilters = NonNullable<GetSoCOptionsInput>
 
 /**
@@ -24,23 +26,15 @@ export class SoCsRepository extends BaseRepository {
     } satisfies Prisma.SoCInclude,
   } as const
 
-  async list(
-    filters: GetSoCsInput = {},
-  ): Promise<Prisma.SoCGetPayload<{ include: typeof SoCsRepository.includes.withCounts }>[]> {
+  async list(filters: SoCFilters = {}): Promise<{
+    socs: Prisma.SoCGetPayload<{ include: typeof SoCsRepository.includes.withCounts }>[]
+    pagination: PaginationResult
+  }> {
     const sortDirection = filters.sortDirection ?? this.sortOrder
     const sortField = filters.sortField ?? 'name'
-    const { limit = PAGINATION.DEFAULT_LIMIT, offset = 0 } = filters
-
-    const where: Prisma.SoCWhereInput = {
-      ...(filters.search && {
-        OR: [
-          { name: { contains: filters.search, mode: this.mode } },
-          { manufacturer: { contains: filters.search, mode: this.mode } },
-          { architecture: { contains: filters.search, mode: this.mode } },
-          { gpuModel: { contains: filters.search, mode: this.mode } },
-        ],
-      }),
-    }
+    const { limit = PAGINATION.DEFAULT_LIMIT, offset = 0, page } = filters
+    const actualOffset = calculateOffset({ page, offset }, limit)
+    const where = this.buildWhere(filters)
 
     // Map schema sort fields to Prisma orderBy
     const orderBy: Prisma.SoCOrderByWithRelationInput =
@@ -50,13 +44,24 @@ export class SoCsRepository extends BaseRepository {
           ? { devices: { _count: sortDirection } }
           : { name: sortDirection }
 
-    return this.prisma.soC.findMany({
-      where,
-      include: SoCsRepository.includes.withCounts,
-      orderBy,
-      take: limit,
-      skip: offset,
+    const [total, socs] = await Promise.all([
+      this.prisma.soC.count({ where }),
+      this.prisma.soC.findMany({
+        where,
+        include: SoCsRepository.includes.withCounts,
+        orderBy,
+        take: limit,
+        skip: actualOffset,
+      }),
+    ])
+
+    const pagination = paginate({
+      total,
+      page: page ?? Math.floor(actualOffset / limit) + 1,
+      limit,
     })
+
+    return { socs, pagination }
   }
 
   async options(filters: SoCOptionFilters = {}): Promise<{
@@ -166,21 +171,21 @@ export class SoCsRepository extends BaseRepository {
   /**
    * Get total count with filters
    */
-  async count(filters: GetSoCsInput = {}): Promise<number> {
-    const { search } = filters
+  async count(filters: SoCFilters = {}): Promise<number> {
+    return this.prisma.soC.count({ where: this.buildWhere(filters) })
+  }
 
-    const where: Prisma.SoCWhereInput = {
-      ...(search && {
+  private buildWhere(filters: SoCFilters): Prisma.SoCWhereInput {
+    return {
+      ...(filters.search && {
         OR: [
-          { name: { contains: search, mode: this.mode } },
-          { manufacturer: { contains: search, mode: this.mode } },
-          { architecture: { contains: search, mode: this.mode } },
-          { gpuModel: { contains: search, mode: this.mode } },
+          { name: { contains: filters.search, mode: this.mode } },
+          { manufacturer: { contains: filters.search, mode: this.mode } },
+          { architecture: { contains: filters.search, mode: this.mode } },
+          { gpuModel: { contains: filters.search, mode: this.mode } },
         ],
       }),
     }
-
-    return this.prisma.soC.count({ where })
   }
 
   /**
