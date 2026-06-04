@@ -3,7 +3,12 @@
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
-import { AdminTableContainer, AdminSearchFilters, AdminStatsDisplay } from '@/components/admin'
+import {
+  AdminTableContainer,
+  AdminSearchFilters,
+  AdminStatsDisplay,
+  AdminTableNoResults,
+} from '@/components/admin'
 import {
   Button,
   ColumnVisibilityControl,
@@ -214,13 +219,12 @@ function AdminBrandsPage() {
               ))}
               {!brandsQuery.isPending && brandsQuery.data?.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={3}
-                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                  >
-                    {table.search
-                      ? 'No brands found matching your search.'
-                      : 'No brands found. Add your first brand.'}
+                  <td colSpan={3}>
+                    <AdminTableNoResults
+                      hasQuery={!!table.search}
+                      queryTitle="No brands found matching your search."
+                      title="No brands found. Add your first brand."
+                    />
                   </td>
                 </tr>
               )}

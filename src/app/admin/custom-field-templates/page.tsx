@@ -3,7 +3,12 @@
 import { PlusCircle } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useAdminTable } from '@/app/admin/hooks'
-import { AdminPageLayout, AdminSearchFilters, AdminStatsDisplay } from '@/components/admin'
+import {
+  AdminPageLayout,
+  AdminSearchFilters,
+  AdminStatsDisplay,
+  AdminTableNoResults,
+} from '@/components/admin'
 import { Button, LoadingSpinner } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
@@ -112,27 +117,21 @@ function CustomFieldTemplatesPage() {
           onEdit={handleOpenEditModal}
           onDeleteSuccess={customFieldTemplatesQuery.refetch}
         />
-      ) : hasActiveSearch ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400 text-lg">
-            No custom field templates match your search.
-          </p>
-          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
-            Try a different template name, description, or field label.
-          </p>
-        </div>
       ) : (
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400 text-lg">
-            No custom field templates created yet.
-          </p>
-          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
-            Create your first template to get started.
-          </p>
-          <Button icon={PlusCircle} onClick={handleOpenCreateModal} className="mt-4">
-            Create Your First Template
-          </Button>
-        </div>
+        <AdminTableNoResults
+          hasQuery={hasActiveSearch}
+          queryTitle="No custom field templates match your search."
+          queryDescription="Try a different template name, description, or field label."
+          title="No custom field templates created yet."
+          description="Create your first template to get started."
+          action={
+            !hasActiveSearch ? (
+              <Button icon={PlusCircle} onClick={handleOpenCreateModal}>
+                Create Your First Template
+              </Button>
+            ) : undefined
+          }
+        />
       )}
 
       <CustomFieldTemplateFormModal

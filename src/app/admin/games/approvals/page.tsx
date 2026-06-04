@@ -11,6 +11,7 @@ import {
   AdminTableContainer,
   AdminStatsDisplay,
   AdminSearchFilters,
+  AdminTableNoResults,
 } from '@/components/admin'
 import { SystemIcon } from '@/components/icons'
 import {
@@ -331,13 +332,11 @@ function GameApprovalsPage() {
         {pendingGamesQuery.isPending ? (
           <LoadingSpinner text="Loading pending games..." />
         ) : filteredGames.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search
-                ? 'No games found matching your search.'
-                : 'No pending games to review.'}
-            </p>
-          </div>
+          <AdminTableNoResults
+            hasQuery={!!table.search}
+            queryTitle="No games found matching your search."
+            title="No pending games to review."
+          />
         ) : (
           <>
             <div className="overflow-x-auto">

@@ -9,6 +9,7 @@ import {
   AdminStatsDisplay,
   AdminSearchFilters,
   AdminTableContainer,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   Button,
@@ -245,13 +246,11 @@ function AdminUserBansPage() {
 
       <AdminTableContainer>
         {bans.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search || selectedStatus !== ''
-                ? 'No bans found matching your criteria.'
-                : 'No bans found.'}
-            </p>
-          </div>
+          <AdminTableNoResults
+            hasQuery={!!table.search || selectedStatus !== ''}
+            queryTitle="No bans found matching your criteria."
+            title="No bans found."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">

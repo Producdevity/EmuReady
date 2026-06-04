@@ -1,6 +1,7 @@
 'use client'
 
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { AdminTableNoResults } from '@/components/admin'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Dropdown } from '@/components/ui/Dropdown'
@@ -227,13 +228,11 @@ function TitleIdTool() {
             <LoadingSpinner size="lg" />
           </div>
         ) : latestResults.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400">
-              {searchMutation.data
-                ? 'No matching titles were found for the provided query.'
-                : 'Run a search to see title IDs and scoring details.'}
-            </p>
-          </div>
+          <AdminTableNoResults
+            hasQuery={!!searchMutation.data}
+            queryTitle="No matching titles were found for the provided query."
+            title="Run a search to see title IDs and scoring details."
+          />
         ) : (
           <div className="space-y-4">
             {bestMatch && <TitleIdBestMatch titleIdResult={bestMatch} />}
