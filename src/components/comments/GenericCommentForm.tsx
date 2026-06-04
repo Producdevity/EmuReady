@@ -2,7 +2,7 @@
 
 import { useUser, SignInButton } from '@clerk/nextjs'
 import { Send, X } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type KeyboardEvent } from 'react'
 import { Button } from '@/components/ui'
 import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
 import { MarkdownEditor } from '@/lib/dynamic-imports'
@@ -104,6 +104,15 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
     props.onCancel?.()
   }
 
+  const handleEditorKeyDown = (ev: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (ev.key !== 'Enter' || (!ev.metaKey && !ev.ctrlKey)) return
+
+    ev.preventDefault()
+    if (isLoading) return
+
+    ev.currentTarget.form?.requestSubmit()
+  }
+
   if (!user && props.config.showSignInPrompt !== false) {
     return (
       <div className="mb-2 text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
@@ -146,6 +155,7 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
           maxLength={maxLength}
           disabled={isLoading}
           className={cn(isReply && 'text-sm')}
+          onKeyDown={handleEditorKeyDown}
         />
 
         <div className="flex items-center justify-end">
@@ -163,7 +173,6 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
               </Button>
             )}
 
-            {/*TODO: allow Cmd+Enter or Ctrl+Enter to submit*/}
             <Button
               type="submit"
               size="sm"
@@ -188,6 +197,7 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
         rows={rows}
         maxLength={maxLength}
         className={cn(isReply && 'text-sm')}
+        onKeyDown={handleEditorKeyDown}
       />
       <div className="flex justify-end gap-2 mt-2 mb-8">
         {(!!props.editingComment || isReply) && props.onCancel && (
@@ -195,7 +205,6 @@ export function GenericCommentForm(props: GenericCommentFormProps) {
             Cancel
           </Button>
         )}
-        {/*TODO: allow Cmd+Enter or Ctrl+Enter to submit*/}
         <Button
           type="submit"
           variant="primary"
