@@ -5,7 +5,12 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import { useAdminTable } from '@/app/admin/hooks'
-import { AdminPageLayout, AdminTableContainer, AdminTableNoResults } from '@/components/admin'
+import {
+  AdminErrorState,
+  AdminPageLayout,
+  AdminTableContainer,
+  AdminTableNoResults,
+} from '@/components/admin'
 import {
   Button,
   Input,
@@ -87,19 +92,13 @@ function AdminTrustLogsPage() {
 
   if (trustLogsQuery.error) {
     return (
-      <AdminPageLayout
-        title="Trust System Logs"
-        description="Monitor and audit all trust score changes"
-      >
-        <div className="text-center py-12">
-          <p className="text-red-600 dark:text-red-400 text-lg">
-            Error loading trust logs: {trustLogsQuery.error.message}
-          </p>
-          <Button onClick={() => trustLogsQuery.refetch()} className="mt-4">
-            Try Again
-          </Button>
-        </div>
-      </AdminPageLayout>
+      <AdminErrorState
+        title="Failed to load trust logs"
+        message={trustLogsQuery.error.message}
+        onRetry={() => {
+          void trustLogsQuery.refetch()
+        }}
+      />
     )
   }
 
