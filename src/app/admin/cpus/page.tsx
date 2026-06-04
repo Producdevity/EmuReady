@@ -272,17 +272,6 @@ function AdminCpusPage() {
                   )}
                 </tr>
               ))}
-              {!cpusQuery.isPending && cpusQuery.data?.cpus.length === 0 && (
-                <tr>
-                  <td colSpan={4}>
-                    <AdminTableNoResults
-                      hasQuery={!!table.search || !!table.additionalParams.brandId}
-                      queryTitle="No CPUs found matching your search."
-                      title="No CPUs found. Add your first CPU."
-                    />
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         )}

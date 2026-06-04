@@ -242,7 +242,7 @@ export default function AdminBadgesPage() {
           <LoadingSpinner text="Loading badges…" />
         ) : badges.length === 0 ? (
           <AdminTableNoResults
-            hasQuery={!!table.search}
+            hasQuery={!!table.search || statusFilter !== 'all'}
             queryTitle="No badges found matching your search."
             title="No badges created yet."
           />
