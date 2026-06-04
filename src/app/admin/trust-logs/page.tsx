@@ -8,6 +8,7 @@ import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminErrorState,
   AdminPageLayout,
+  AdminStatsDisplay,
   AdminTableContainer,
   AdminTableNoResults,
 } from '@/components/admin'
@@ -25,7 +26,6 @@ import {
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { api } from '@/lib/api'
-import { TrustStatsOverview } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { TRUST_ACTIONS } from '@/lib/trust/config'
 import { type RouterOutput } from '@/types/trpc'
@@ -67,6 +67,11 @@ function AdminTrustLogsPage() {
   })
 
   const trustStatsQuery = api.trust.getTrustStats.useQuery({})
+  const trustedPlusUsers = trustStatsQuery.data
+    ? (trustStatsQuery.data.levelDistribution
+        ?.filter((level) => level.minScore >= 250)
+        .reduce((sum, level) => sum + level.count, 0) ?? 0)
+    : undefined
 
   const runMonthlyBonusMutation = api.trust.runMonthlyActiveBonus.useMutation({
     onSuccess: (result) => {
@@ -135,8 +140,26 @@ function AdminTrustLogsPage() {
         </>
       }
     >
-      {/*TODO: check if we can use AdminStatsDisplay */}
-      {trustStatsQuery.data && <TrustStatsOverview trustStatsData={trustStatsQuery.data} />}
+      <AdminStatsDisplay
+        stats={[
+          {
+            label: 'Total Actions',
+            value: trustStatsQuery.data?.totalActions,
+            color: 'blue',
+          },
+          {
+            label: 'Total Users',
+            value: trustStatsQuery.data?.totalUsers,
+            color: 'green',
+          },
+          {
+            label: 'Trusted+ Users',
+            value: trustedPlusUsers,
+            color: 'purple',
+          },
+        ]}
+        isLoading={trustStatsQuery.isPending}
+      />
 
       {/* Search and Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow mt-2 mb-6 p-4">
