@@ -9,7 +9,6 @@ const storageKeys = {
     lastUsedDevice: `${PREFIX}new_listing_last_used_device`,
   },
   popups: {
-    stopKillingGamesDismissed: `${PREFIX}stop_killing_games_dismissed`,
     voteReminderDismissed: `${PREFIX}vote_reminder_dismissed`,
     betaWarningDismissed: `${PREFIX}beta_warning_dismissed_v2`,
     supportBannerDismissed: `${PREFIX}support_banner_dismissed`,
