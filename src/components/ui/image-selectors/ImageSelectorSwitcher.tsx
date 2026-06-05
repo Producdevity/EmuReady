@@ -18,22 +18,19 @@ interface Props {
   className?: string
 }
 
-type ImageService = 'rawg' | 'tgdb' | 'igdb'
-
-const imageServiceMap: Record<ImageService, ImageService> = {
-  rawg: 'rawg',
-  tgdb: 'tgdb',
-  igdb: 'igdb',
-}
-
-const imageServiceDirection: Record<ImageService, number> = {
-  rawg: -1,
-  tgdb: 0,
-  igdb: 1,
-}
+const serviceOrder = ['rawg', 'tgdb', 'igdb'] as const
+type ImageService = (typeof serviceOrder)[number]
 
 export function ImageSelectorSwitcher(props: Props) {
-  const [selectedService, setSelectedService] = useState<ImageService>(imageServiceMap.tgdb)
+  const [selectedService, setSelectedService] = useState<ImageService>('tgdb')
+  const [direction, setDirection] = useState(0)
+
+  const handleServiceChange = (service: ImageService) => {
+    if (service === selectedService) return
+
+    setDirection(serviceOrder.indexOf(service) - serviceOrder.indexOf(selectedService))
+    setSelectedService(service)
+  }
 
   const slideVariants = {
     initial: (direction: number) => ({
@@ -59,10 +56,10 @@ export function ImageSelectorSwitcher(props: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <button
               type="button"
-              onClick={() => setSelectedService(imageServiceMap.rawg)}
+              onClick={() => handleServiceChange('rawg')}
               className={cn(
                 'p-3 rounded-lg border-2 transition-all',
-                selectedService === imageServiceMap.rawg
+                selectedService === 'rawg'
                   ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
               )}
@@ -71,7 +68,7 @@ export function ImageSelectorSwitcher(props: Props) {
               <div
                 className={cn(
                   'text-sm font-medium mt-1',
-                  selectedService === imageServiceMap.rawg
+                  selectedService === 'rawg'
                     ? 'text-orange-600 dark:text-orange-400'
                     : 'text-gray-700 dark:text-gray-300',
                 )}
@@ -82,10 +79,10 @@ export function ImageSelectorSwitcher(props: Props) {
 
             <button
               type="button"
-              onClick={() => setSelectedService(imageServiceMap.tgdb)}
+              onClick={() => handleServiceChange('tgdb')}
               className={cn(
                 'p-3 rounded-lg border-2 transition-all',
-                selectedService === imageServiceMap.tgdb
+                selectedService === 'tgdb'
                   ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
               )}
@@ -94,7 +91,7 @@ export function ImageSelectorSwitcher(props: Props) {
               <div
                 className={cn(
                   'text-sm font-medium mt-1',
-                  selectedService === imageServiceMap.tgdb
+                  selectedService === 'tgdb'
                     ? 'text-blue-600 dark:text-blue-400'
                     : 'text-gray-700 dark:text-gray-300',
                 )}
@@ -108,10 +105,10 @@ export function ImageSelectorSwitcher(props: Props) {
 
             <button
               type="button"
-              onClick={() => setSelectedService(imageServiceMap.igdb)}
+              onClick={() => handleServiceChange('igdb')}
               className={cn(
                 'p-3 rounded-lg border-2 transition-all relative',
-                selectedService === imageServiceMap.igdb
+                selectedService === 'igdb'
                   ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
               )}
@@ -120,7 +117,7 @@ export function ImageSelectorSwitcher(props: Props) {
               <div
                 className={cn(
                   'text-sm font-medium mt-1',
-                  selectedService === imageServiceMap.igdb
+                  selectedService === 'igdb'
                     ? 'text-purple-600 dark:text-purple-400'
                     : 'text-gray-700 dark:text-gray-300',
                 )}
@@ -134,30 +131,30 @@ export function ImageSelectorSwitcher(props: Props) {
           </div>
 
           <div className="text-sm text-gray-600 dark:text-gray-400 text-center">
-            {selectedService === imageServiceMap.rawg
+            {selectedService === 'rawg'
               ? 'Using RAWG.io for game images'
-              : selectedService === imageServiceMap.tgdb
+              : selectedService === 'tgdb'
                 ? 'Using TheGamesDB for game images'
                 : 'Using IGDB for comprehensive game media'}
           </div>
 
           <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-            {selectedService === imageServiceMap.rawg &&
+            {selectedService === 'rawg' &&
               'RAWG.io provides comprehensive game data with screenshots and backgrounds'}
-            {selectedService === imageServiceMap.tgdb &&
+            {selectedService === 'tgdb' &&
               'TheGamesDB offers high-quality boxart and game media from the community'}
-            {selectedService === imageServiceMap.igdb &&
+            {selectedService === 'igdb' &&
               'IGDB provides rich media including covers, artworks, and screenshots with detailed metadata'}
           </div>
         </div>
       </div>
 
       <div className="relative overflow-hidden">
-        <AnimatePresence mode="wait" custom={imageServiceDirection[selectedService]}>
-          {selectedService === imageServiceMap.rawg ? (
+        <AnimatePresence mode="wait" custom={direction}>
+          {selectedService === 'rawg' ? (
             <motion.div
               key="rawg"
-              custom={imageServiceDirection.rawg}
+              custom={direction}
               variants={slideVariants}
               initial="initial"
               animate="animate"
@@ -171,10 +168,10 @@ export function ImageSelectorSwitcher(props: Props) {
                 onError={props.onError}
               />
             </motion.div>
-          ) : selectedService === imageServiceMap.igdb ? (
+          ) : selectedService === 'igdb' ? (
             <motion.div
               key="igdb"
-              custom={imageServiceDirection.igdb}
+              custom={direction}
               variants={slideVariants}
               initial="initial"
               animate="animate"
@@ -190,7 +187,7 @@ export function ImageSelectorSwitcher(props: Props) {
           ) : (
             <motion.div
               key="tgdb"
-              custom={imageServiceDirection.tgdb}
+              custom={direction}
               variants={slideVariants}
               initial="initial"
               animate="animate"

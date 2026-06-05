@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { SortDirection } from '@/schemas/soc'
+import { SortDirectionSchema } from '@/schemas/common'
 
 export const CpuSortField = z.enum(['brand', 'modelName', 'pcListings'])
 
@@ -11,7 +11,7 @@ export const GetCpusSchema = z
     offset: z.number().default(0),
     page: z.number().optional(),
     sortField: CpuSortField.optional(),
-    sortDirection: SortDirection.optional(),
+    sortDirection: SortDirectionSchema.optional(),
   })
   .optional()
 
@@ -40,7 +40,6 @@ export const UpdateCpuSchema = z.object({
 
 export const DeleteCpuSchema = z.object({ id: z.string().uuid() })
 
-// Type exports for repository use
 export type GetCpusInput = z.input<typeof GetCpusSchema>
 export type GetCpuOptionsInput = z.input<typeof GetCpuOptionsSchema>
 export type CreateCpuInput = z.infer<typeof CreateCpuSchema>

@@ -1,15 +1,16 @@
 import { z } from 'zod'
-import { SortDirection } from '@/schemas/common'
+import { SortDirectionSchema } from '@/schemas/common'
 
 export const DeviceBrandSortField = z.enum(['name', 'devicesCount'])
-export { SortDirection }
+export const DeviceBrandCategory = z.enum(['cpu', 'gpu'])
 
 export const GetDeviceBrandsSchema = z
   .object({
     search: z.string().optional(),
+    category: DeviceBrandCategory.optional(),
     limit: z.number().default(50),
     sortField: DeviceBrandSortField.optional(),
-    sortDirection: SortDirection.optional(),
+    sortDirection: SortDirectionSchema.optional(),
   })
   .optional()
 
@@ -26,7 +27,6 @@ export const UpdateDeviceBrandSchema = z.object({
 
 export const DeleteDeviceBrandSchema = z.object({ id: z.string().uuid() })
 
-// Type exports for repository use
 export type GetDeviceBrandsInput = z.input<typeof GetDeviceBrandsSchema>
 export type CreateDeviceBrandInput = z.infer<typeof CreateDeviceBrandSchema>
 export type UpdateDeviceBrandInput = z.infer<typeof UpdateDeviceBrandSchema>

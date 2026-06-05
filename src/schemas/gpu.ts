@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { SortDirection } from '@/schemas/soc'
+import { SortDirectionSchema } from '@/schemas/common'
 
 export const GpuSortField = z.enum(['brand', 'modelName', 'pcListings'])
 
@@ -11,7 +11,7 @@ export const GetGpusSchema = z
     offset: z.number().default(0),
     page: z.number().optional(),
     sortField: GpuSortField.optional(),
-    sortDirection: SortDirection.optional(),
+    sortDirection: SortDirectionSchema.optional(),
   })
   .optional()
 
@@ -40,10 +40,6 @@ export const UpdateGpuSchema = z.object({
 
 export const DeleteGpuSchema = z.object({ id: z.string().uuid() })
 
-// Type exports for repository use
-// Use z.input for types that include defaults (what you pass in)
-// Use z.output for types after defaults are applied (what you get out)
-// The remaining schemas do not apply defaults or transforms, so z.infer matches their parsed shape.
 export type GetGpusInput = z.input<typeof GetGpusSchema>
 export type GetGpuOptionsInput = z.input<typeof GetGpuOptionsSchema>
 export type CreateGpuInput = z.infer<typeof CreateGpuSchema>

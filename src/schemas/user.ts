@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { PAGINATION, CHAR_LIMITS } from '@/data/constants'
-import { SortDirection } from '@/schemas/common'
+import { SortDirectionSchema } from '@/schemas/common'
 import { Role } from '@orm'
 
 export const UserSortField = z.enum([
@@ -15,13 +15,11 @@ export const UserSortField = z.enum([
   'followersCount',
   'followingCount',
 ])
-export { SortDirection }
-
 export const GetAllUsersSchema = z
   .object({
     search: z.string().nullable().optional(),
     sortField: UserSortField.nullable().optional(),
-    sortDirection: SortDirection.nullable().optional(),
+    sortDirection: SortDirectionSchema.nullable().optional(),
     page: z.number().int().min(1).default(1),
     limit: z.number().int().min(1).max(PAGINATION.MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
   })

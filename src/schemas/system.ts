@@ -1,14 +1,13 @@
 import { z } from 'zod'
-import { SortDirection } from '@/schemas/common'
+import { SortDirectionSchema } from '@/schemas/common'
 
 export const SystemSortField = z.enum(['name', 'key', 'gamesCount'])
-export { SortDirection }
 
 export const GetSystemsSchema = z
   .object({
     search: z.string().nullable().optional(),
     sortField: SystemSortField.nullable().optional(),
-    sortDirection: SortDirection.nullable().optional(),
+    sortDirection: SortDirectionSchema.nullable().optional(),
   })
   .optional()
 
@@ -27,7 +26,6 @@ export const UpdateSystemSchema = z.object({
 
 export const DeleteSystemSchema = z.object({ id: z.string().uuid() })
 
-// Type exports for repository use
 export type GetSystemsInput = z.input<typeof GetSystemsSchema>
 export type CreateSystemInput = z.infer<typeof CreateSystemSchema>
 export type UpdateSystemInput = z.infer<typeof UpdateSystemSchema>

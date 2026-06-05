@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { SortDirection } from '@/schemas/soc'
+import { SortDirectionSchema } from '@/schemas/common'
 import { ReportReason, ReportStatus } from '@orm'
 
 export const ReportReasonSchema = z.nativeEnum(ReportReason)
@@ -25,7 +25,7 @@ export const GetListingReportsSchema = z
     status: ReportStatusSchema.optional(),
     reason: ReportReasonSchema.optional(),
     sortField: ListingReportSortField.optional(),
-    sortDirection: SortDirection.optional(),
+    sortDirection: SortDirectionSchema.optional(),
     page: z.number().min(1).default(1),
     limit: z.number().min(1).max(100).default(20),
   })
