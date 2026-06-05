@@ -419,6 +419,7 @@ export function GameEditForm(props: Props) {
                 selectedImageUrl={getCurrentImageUrl()}
                 onImageSelect={handleImageSelect}
                 onError={setError}
+                allowProviderSwitching={isModerator}
               />
             </div>
           </div>

@@ -15,6 +15,7 @@ interface Props {
   selectedImageUrl?: string
   onImageSelect: (imageUrl: string) => void
   onError?: (error: string) => void
+  allowProviderSwitching?: boolean
   className?: string
 }
 
@@ -24,12 +25,27 @@ type ImageService = (typeof serviceOrder)[number]
 export function ImageSelectorSwitcher(props: Props) {
   const [selectedService, setSelectedService] = useState<ImageService>('tgdb')
   const [direction, setDirection] = useState(0)
+  const allowProviderSwitching = props.allowProviderSwitching === true
 
   const handleServiceChange = (service: ImageService) => {
     if (service === selectedService) return
 
     setDirection(serviceOrder.indexOf(service) - serviceOrder.indexOf(selectedService))
     setSelectedService(service)
+  }
+
+  if (!allowProviderSwitching) {
+    return (
+      <div className={props.className}>
+        <TGDBImageSelector
+          gameTitle={props.gameTitle}
+          tgdbPlatformId={props.tgdbPlatformId}
+          selectedImageUrl={props.selectedImageUrl}
+          onImageSelect={props.onImageSelect}
+          onError={props.onError}
+        />
+      </div>
+    )
   }
 
   const slideVariants = {
