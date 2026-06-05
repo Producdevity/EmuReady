@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { DeliveryChannel, NotificationCategory, NotificationType } from '@orm/client'
+import {
+  DeliveryChannel,
+  NotificationCategory,
+  NotificationDeliveryStatus,
+  NotificationType,
+} from '@orm/client'
 import { NOTIFICATION_EVENTS } from './eventEmitter'
 import type { NotificationEventData } from './eventEmitter'
 import type { NotificationService } from './service'
@@ -107,7 +112,7 @@ vi.mock('@/server/notifications/rateLimitService', () => ({
 
 vi.mock('@/server/notifications/emailService', () => ({
   createEmailService: vi.fn().mockReturnValue({
-    sendNotificationEmail: vi.fn().mockResolvedValue({ success: true }),
+    sendNotificationEmail: mockSendNotificationEmail,
   }),
 }))
 
@@ -115,12 +120,16 @@ vi.mock('@/lib/logger', () => ({
   logger: { log: vi.fn(), error: vi.fn() },
 }))
 
-const { mockIterateFollowerUserIds, mockScheduleNotification } = vi.hoisted(() => ({
-  mockIterateFollowerUserIds: vi.fn(),
-  mockScheduleNotification: vi
-    .fn<(data: NotificationData, scheduledFor?: Date, maxAttempts?: number) => string>()
-    .mockReturnValue('batch-id-1'),
-}))
+const { mockIterateFollowerUserIds, mockScheduleNotification, mockSendNotificationEmail } =
+  vi.hoisted(() => ({
+    mockIterateFollowerUserIds: vi.fn(),
+    mockScheduleNotification: vi
+      .fn<(data: NotificationData, scheduledFor?: Date, maxAttempts?: number) => string>()
+      .mockReturnValue('batch-id-1'),
+    mockSendNotificationEmail: vi
+      .fn<(email: string, data: NotificationData) => Promise<{ success: boolean }>>()
+      .mockResolvedValue({ success: true }),
+  }))
 vi.mock('@/server/repositories/game-follow.repository', () => {
   class MockGameFollowRepository {
     iterateFollowerUserIds = mockIterateFollowerUserIds
@@ -147,6 +156,8 @@ function resetMocks() {
   }
   mockIterateFollowerUserIds.mockReset()
   mockScheduleNotification.mockClear()
+  mockSendNotificationEmail.mockReset()
+  mockSendNotificationEmail.mockResolvedValue({ success: true })
   mockPrisma.userBan.findMany.mockResolvedValue([])
   mockPrisma.userRelationship.findMany.mockResolvedValue([])
   mockPrisma.notification.findFirst.mockResolvedValue(null)
@@ -560,6 +571,41 @@ describe('NotificationService', () => {
       expect(context.listingTitle).toBe('Zelda')
       expect(context.deviceName).toBe('Retroid RP4')
       expect(context.emulatorName).toBe('AetherSX2')
+    })
+  })
+
+  describe('createNotification', () => {
+    it('sends email for immediate BOTH delivery', async () => {
+      const { NotificationService } = await import('./service')
+      service = new NotificationService({ enableEmailDelivery: true })
+      mockPrisma.notification.create.mockResolvedValue({ id: 'notification-1' })
+      mockPrisma.notification.update.mockResolvedValue({ id: 'notification-1' })
+      mockPrisma.user.findUnique.mockResolvedValue({ email: 'user@example.com' })
+
+      const result = await service.createNotification(
+        {
+          userId: 'user-1',
+          type: NotificationType.FEATURE_ANNOUNCEMENT,
+          category: NotificationCategory.SYSTEM,
+          title: 'Release available',
+          message: 'A new release is ready.',
+          deliveryChannel: DeliveryChannel.BOTH,
+        },
+        { immediate: true },
+      )
+
+      expect(result).toBe('notification-1')
+      expect(mockSendNotificationEmail).toHaveBeenCalledWith(
+        'user@example.com',
+        expect.objectContaining({
+          userId: 'user-1',
+          deliveryChannel: DeliveryChannel.BOTH,
+        }),
+      )
+      expect(mockPrisma.notification.update).toHaveBeenCalledWith({
+        where: { id: 'notification-1' },
+        data: { deliveryStatus: NotificationDeliveryStatus.SENT },
+      })
     })
   })
 

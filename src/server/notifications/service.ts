@@ -96,10 +96,7 @@ export class NotificationService {
       return notification.id
     }
 
-    const batchId = notificationBatchingService.scheduleNotification(data, scheduledFor)
-
-    console.log(`Notification scheduled for batch processing: ${batchId}`)
-    return batchId
+    return notificationBatchingService.scheduleNotification(data, scheduledFor)
   }
 
   async createNotificationFromEvent(
@@ -167,7 +164,8 @@ export class NotificationService {
     if (
       this.config.enableEmailDelivery &&
       this.emailService &&
-      data.deliveryChannel === DeliveryChannel.EMAIL
+      (data.deliveryChannel === DeliveryChannel.EMAIL ||
+        data.deliveryChannel === DeliveryChannel.BOTH)
     ) {
       const user = await prisma.user.findUnique({
         where: { id: data.userId },
@@ -1067,22 +1065,6 @@ export class NotificationService {
     }
 
     return context
-  }
-
-  async scheduleNotification(
-    data: NotificationData,
-    scheduledFor: Date,
-    maxAttempts?: number,
-  ): Promise<string> {
-    return notificationBatchingService.scheduleNotification(data, scheduledFor, maxAttempts)
-  }
-
-  scheduleWeeklyDigest(userId: string): void {
-    notificationBatchingService.scheduleWeeklyDigest(userId)
-  }
-
-  scheduleMaintenanceNotification(scheduledFor: Date, title: string, message: string): void {
-    notificationBatchingService.scheduleMaintenanceNotification(scheduledFor, title, message)
   }
 
   getBatchingQueueStatus() {

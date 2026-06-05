@@ -1,15 +1,10 @@
 import { prisma } from '@/server/db'
 import { notificationAnalyticsService } from '@/server/notifications/analyticsService'
-import {
-  NotificationDeliveryStatus,
-  DeliveryChannel,
-  NotificationCategory,
-  NotificationType,
-} from '@orm/client'
+import { NotificationDeliveryStatus, DeliveryChannel } from '@orm/client'
 import { createEmailService } from './emailService'
 import type { NotificationData } from './types'
 
-export interface BatchedNotification {
+interface BatchedNotification {
   id: string
   userId: string
   data: NotificationData
@@ -18,14 +13,14 @@ export interface BatchedNotification {
   maxAttempts: number
 }
 
-export interface BatchConfig {
+interface BatchConfig {
   batchSize: number
   batchIntervalMs: number
   maxRetries: number
   retryDelayMs: number
 }
 
-export class NotificationBatchingService {
+class NotificationBatchingService {
   private queue: BatchedNotification[] = []
   private processing = false
   private batchTimer: NodeJS.Timeout | null = null
@@ -68,55 +63,6 @@ export class NotificationBatchingService {
     }
 
     return id
-  }
-
-  scheduleWeeklyDigest(userId: string): void {
-    const nextWeek = new Date()
-    nextWeek.setDate(nextWeek.getDate() + 7)
-    nextWeek.setHours(9, 0, 0, 0)
-
-    this.scheduleNotification(
-      {
-        userId,
-        type: NotificationType.WEEKLY_DIGEST,
-        category: NotificationCategory.SYSTEM,
-        title: 'Weekly EmuReady Digest',
-        message: "Here's what happened this week in your gaming community.",
-        deliveryChannel: DeliveryChannel.EMAIL,
-      },
-      nextWeek,
-    )
-  }
-
-  scheduleMaintenanceNotification(scheduledFor: Date, title: string, message: string): void {
-    prisma.user
-      .findMany({
-        where: {
-          notificationPreferences: {
-            some: {
-              type: NotificationType.MAINTENANCE_NOTICE,
-              inAppEnabled: true,
-            },
-          },
-        },
-        select: { id: true },
-      })
-      .then((users) => {
-        for (const user of users) {
-          this.scheduleNotification(
-            {
-              userId: user.id,
-              type: NotificationType.MAINTENANCE_NOTICE,
-              category: NotificationCategory.SYSTEM,
-              title,
-              message,
-              deliveryChannel: DeliveryChannel.BOTH,
-            },
-            scheduledFor,
-          )
-        }
-      })
-      .catch(console.error)
   }
 
   private async processBatch(): Promise<void> {
@@ -273,12 +219,6 @@ export class NotificationBatchingService {
       processing: this.processing,
       nextScheduled,
     }
-  }
-
-  destroy() {
-    if (!this.batchTimer) return
-    clearInterval(this.batchTimer)
-    this.batchTimer = null
   }
 }
 
