@@ -15,7 +15,7 @@ interface Props {
   selectedImageUrl?: string
   onImageSelect: (imageUrl: string) => void
   onError?: (error: string) => void
-  allowProviderSwitching?: boolean
+  allowIgdbProvider?: boolean
   className?: string
 }
 
@@ -25,27 +25,13 @@ type ImageService = (typeof serviceOrder)[number]
 export function ImageSelectorSwitcher(props: Props) {
   const [selectedService, setSelectedService] = useState<ImageService>('tgdb')
   const [direction, setDirection] = useState(0)
-  const allowProviderSwitching = props.allowProviderSwitching === true
+  const allowIgdbProvider = props.allowIgdbProvider === true
 
   const handleServiceChange = (service: ImageService) => {
     if (service === selectedService) return
 
     setDirection(serviceOrder.indexOf(service) - serviceOrder.indexOf(selectedService))
     setSelectedService(service)
-  }
-
-  if (!allowProviderSwitching) {
-    return (
-      <div className={props.className}>
-        <TGDBImageSelector
-          gameTitle={props.gameTitle}
-          tgdbPlatformId={props.tgdbPlatformId}
-          selectedImageUrl={props.selectedImageUrl}
-          onImageSelect={props.onImageSelect}
-          onError={props.onError}
-        />
-      </div>
-    )
   }
 
   const slideVariants = {
@@ -69,10 +55,16 @@ export function ImageSelectorSwitcher(props: Props) {
     <div className={props.className}>
       <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div
+            className={cn(
+              'grid grid-cols-1 gap-2',
+              allowIgdbProvider ? 'sm:grid-cols-3' : 'sm:grid-cols-2',
+            )}
+          >
             <button
               type="button"
               onClick={() => handleServiceChange('rawg')}
+              aria-pressed={selectedService === 'rawg'}
               className={cn(
                 'p-3 rounded-lg border-2 transition-all',
                 selectedService === 'rawg'
@@ -96,6 +88,7 @@ export function ImageSelectorSwitcher(props: Props) {
             <button
               type="button"
               onClick={() => handleServiceChange('tgdb')}
+              aria-pressed={selectedService === 'tgdb'}
               className={cn(
                 'p-3 rounded-lg border-2 transition-all',
                 selectedService === 'tgdb'
@@ -119,31 +112,34 @@ export function ImageSelectorSwitcher(props: Props) {
               </span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => handleServiceChange('igdb')}
-              className={cn(
-                'p-3 rounded-lg border-2 transition-all relative',
-                selectedService === 'igdb'
-                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
-              )}
-            >
-              <Sparkles className="h-5 w-5 mx-auto mb-1 text-purple-500" />
-              <div
+            {allowIgdbProvider && (
+              <button
+                type="button"
+                onClick={() => handleServiceChange('igdb')}
+                aria-pressed={selectedService === 'igdb'}
                 className={cn(
-                  'text-sm font-medium mt-1',
+                  'p-3 rounded-lg border-2 transition-all relative',
                   selectedService === 'igdb'
-                    ? 'text-purple-600 dark:text-purple-400'
-                    : 'text-gray-700 dark:text-gray-300',
+                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
                 )}
               >
-                IGDB
-              </div>
-              <span className="absolute -top-1 -right-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-1 rounded text-[10px]">
-                NEW
-              </span>
-            </button>
+                <Sparkles className="h-5 w-5 mx-auto mb-1 text-purple-500" />
+                <div
+                  className={cn(
+                    'text-sm font-medium mt-1',
+                    selectedService === 'igdb'
+                      ? 'text-purple-600 dark:text-purple-400'
+                      : 'text-gray-700 dark:text-gray-300',
+                  )}
+                >
+                  IGDB
+                </div>
+                <span className="absolute -top-1 -right-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-1 rounded text-[10px]">
+                  NEW
+                </span>
+              </button>
+            )}
           </div>
 
           <div className="text-sm text-gray-600 dark:text-gray-400 text-center">
