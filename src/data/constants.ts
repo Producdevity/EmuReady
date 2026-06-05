@@ -3,7 +3,6 @@ import { ms } from '@/utils/time'
 // Polling intervals in milliseconds
 export const POLLING_INTERVALS = {
   SHORT: ms.minutes(1),
-  NOTIFICATIONS: ms.minutes(3),
   LONG: ms.minutes(5),
   EXTRA_LONG: ms.minutes(10),
 } as const
