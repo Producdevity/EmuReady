@@ -43,9 +43,24 @@ vi.mock('@/lib/analytics', () => ({
 
 describe('SessionTracker', () => {
   beforeEach(() => {
+    vi.clearAllMocks()
     testState.analyticsAllowed = true
     testState.pathname = '/'
     testState.user = null
+  })
+
+  it('does not track session activity when analytics are disabled', async () => {
+    testState.analyticsAllowed = false
+
+    render(<SessionTracker />)
+
+    fireEvent.click(document.body)
+    window.dispatchEvent(new Event('beforeunload'))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(testState.analytics.session.sessionStarted).not.toHaveBeenCalled()
+    expect(testState.analytics.session.pageView).not.toHaveBeenCalled()
+    expect(testState.analytics.session.sessionEnded).not.toHaveBeenCalled()
   })
 
   it('tracks real page view and interaction counts when the session ends', async () => {
@@ -117,6 +132,27 @@ describe('SessionTracker', () => {
       expect(testState.analytics.user.signedIn).toHaveBeenCalledWith({
         method: 'email',
         userId: 'user-2',
+      })
+    })
+  })
+
+  it('falls back to clerk sign-in when the user has no OAuth provider or email', async () => {
+    const view = render(<SessionTracker />)
+
+    await waitFor(() => {
+      expect(testState.analytics.session.sessionStarted).toHaveBeenCalledOnce()
+    })
+
+    testState.user = {
+      id: 'user-3',
+      primaryEmailAddress: null,
+    }
+    view.rerender(<SessionTracker />)
+
+    await waitFor(() => {
+      expect(testState.analytics.user.signedIn).toHaveBeenCalledWith({
+        method: 'clerk',
+        userId: 'user-3',
       })
     })
   })
