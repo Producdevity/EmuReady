@@ -10,11 +10,18 @@ type SignInMethod = NonNullable<Parameters<typeof analytics.user.signedIn>[0]['m
 type ClerkUser = NonNullable<ReturnType<typeof useUser>['user']>
 
 const INTERACTION_EVENTS: (keyof DocumentEventMap)[] = ['click', 'keydown', 'change', 'submit']
+const FEATURE_BY_PATHNAME: Partial<Record<string, string>> = {
+  '/pc-listings/new': 'pc-listing_creation',
+  '/listings/new': 'listing_creation',
+  '/profile': 'profile_management',
+  '/admin': 'admin_panel',
+  '/listings': 'listing_browser',
+  '/pc-listings': 'pc-listing_browser',
+  '/games': 'game_browser',
+}
 
-// Generate a UUID compatible with older browsers
 function generateUUID() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
-  // Fallback for browsers that don't support crypto.randomUUID
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = (Math.random() * 16) | 0
     const v = c === 'x' ? r : (r & 0x3) | 0x8
@@ -52,7 +59,7 @@ function SessionTracker() {
   const userId = user?.id
   const signInMethod = getSignInMethod(user)
   const sessionStartRef = useRef<number | null>(null)
-  const pageLoadTimeRef = useRef<number | null>(null)
+  const initialPageViewStartedAtRef = useRef<number | null>(null)
   const sessionIdRef = useRef<string | null>(null)
   const hasTrackedSessionStart = useRef<boolean>(false)
   const hasTrackedPageViewRef = useRef(false)
@@ -67,7 +74,7 @@ function SessionTracker() {
 
     const now = Date.now()
     sessionStartRef.current = now
-    pageLoadTimeRef.current = now
+    initialPageViewStartedAtRef.current = now
     sessionIdRef.current = generateUUID()
   }, [])
 
@@ -75,13 +82,11 @@ function SessionTracker() {
     currentUserIdRef.current = userId
   }, [userId])
 
-  // Track user sign-in when a user transitions from null/undefined to having a user
   useEffect(() => {
     if (!analyticsAllowed) return
 
     const previousUserId = previousUserIdRef.current
 
-    // If we now have a user but didn't before, and it's not the first load, track sign-in
     if (userId && !previousUserId && hasTrackedSessionStart.current) {
       analytics.user.signedIn({
         userId,
@@ -89,11 +94,9 @@ function SessionTracker() {
       })
     }
 
-    // Update the previous user ID for next comparison
     previousUserIdRef.current = userId
   }, [analyticsAllowed, signInMethod, userId])
 
-  // Track session start on the first load
   useEffect(() => {
     if (!analyticsAllowed || hasTrackedSessionStart.current || !sessionIdRef.current) return
 
@@ -107,54 +110,43 @@ function SessionTracker() {
     })
   }, [analyticsAllowed, userId])
 
-  // Track page views when pathname changes
   useEffect(() => {
-    if (!analyticsAllowed || pageLoadTimeRef.current === null) return
+    if (!analyticsAllowed || initialPageViewStartedAtRef.current === null) return
 
-    const loadTime = hasTrackedPageViewRef.current ? undefined : Date.now() - pageLoadTimeRef.current
+    const initialLoadTime = hasTrackedPageViewRef.current
+      ? undefined
+      : Date.now() - initialPageViewStartedAtRef.current
     const currentUserId = currentUserIdRef.current
     const pageViewEvent: Parameters<typeof analytics.session.pageView>[0] = {
       pathname,
       userId: currentUserId,
     }
-    if (loadTime !== undefined) pageViewEvent.loadTime = loadTime
+    if (initialLoadTime !== undefined) pageViewEvent.loadTime = initialLoadTime
 
     hasTrackedPageViewRef.current = true
     pageViewCountRef.current += 1
 
     if (process.env.NODE_ENV === 'development') {
-      return console.log('📊 Page View:', {
+      return console.log('Page View:', {
         pathname,
-        loadTime,
+        loadTime: initialLoadTime,
         userSession: currentUserId ? 'authenticated' : 'anonymous',
       })
     }
 
     analytics.session.pageView(pageViewEvent)
 
-    // Track feature discovery based on page visits
-    const featureMap: Record<string, string> = {
-      '/pc-listings/new': 'pc-listing_creation',
-      '/listings/new': 'listing_creation',
-      '/profile': 'profile_management',
-      '/admin': 'admin_panel',
-      '/listings': 'listing_browser',
-      '/pc-listings': 'pc-listing_browser',
-      '/games': 'game_browser',
-    }
-
-    const feature = featureMap[pathname]
+    const feature = FEATURE_BY_PATHNAME[pathname]
     if (feature && !discoveredFeatures.current.has(feature)) {
       discoveredFeatures.current.add(feature)
       analytics.session.featureDiscovered({
         userId: currentUserId,
-        feature: feature,
+        feature,
         context: pathname,
       })
     }
   }, [analyticsAllowed, pathname])
 
-  // Count basic user interactions for the session summary
   useEffect(() => {
     if (!analyticsAllowed) return
 
@@ -173,7 +165,6 @@ function SessionTracker() {
     }
   }, [analyticsAllowed])
 
-  // Track session duration on page unloading
   useEffect(() => {
     if (!analyticsAllowed || sessionStartRef.current === null || !sessionIdRef.current) return
 

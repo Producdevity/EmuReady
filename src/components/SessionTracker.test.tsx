@@ -49,14 +49,13 @@ describe('SessionTracker', () => {
     testState.user = null
   })
 
-  it('does not track session activity when analytics are disabled', async () => {
+  it('does not track session activity when analytics are disabled', () => {
     testState.analyticsAllowed = false
 
     render(<SessionTracker />)
 
     fireEvent.click(document.body)
     window.dispatchEvent(new Event('beforeunload'))
-    await new Promise((resolve) => setTimeout(resolve, 0))
 
     expect(testState.analytics.session.sessionStarted).not.toHaveBeenCalled()
     expect(testState.analytics.session.pageView).not.toHaveBeenCalled()
@@ -70,7 +69,8 @@ describe('SessionTracker', () => {
       expect(testState.analytics.session.sessionStarted).toHaveBeenCalledOnce()
       expect(testState.analytics.session.pageView).toHaveBeenCalledOnce()
     })
-    expect(testState.analytics.session.pageView.mock.calls[0]?.[0]).toEqual(
+    expect(testState.analytics.session.pageView).toHaveBeenNthCalledWith(
+      1,
       expect.objectContaining({
         loadTime: expect.any(Number),
         pathname: '/',
