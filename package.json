@@ -3,7 +3,7 @@
   "version": "0.14.0",
   "type": "module",
   "private": false,
-  "packageManager": "pnpm@11.5.1",
+  "packageManager": "pnpm@11.5.2",
   "license": "GPL-3.0-or-later",
   "author": "Producdevity",
   "scripts": {

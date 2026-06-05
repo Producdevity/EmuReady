@@ -65,6 +65,9 @@ This file is the source of working guidance for AI coding agents in this reposit
 - Do not remove or rewrite existing TODO comments unless the user explicitly
   asks, or unless the TODO is directly made obsolete by the code change.
 - Prefer function declarations for top-level functions/components.
+- Avoid object destructuring when values are used only once or when it makes
+  ownership less clear. Prefer `object.property` access unless destructuring
+  materially improves readability.
 - Component props interfaces should be named `Props`.
 - Do not destructure component props in function parameters; use `props.foo`.
 - Keep `useEffect` dependencies correct.
