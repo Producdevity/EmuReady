@@ -107,7 +107,9 @@ export class PerformanceScalesRepository extends BaseRepository {
     if (!scale) throw ResourceError.performanceScale.notFound()
 
     if (replacementId === id) {
-      AppError.badRequest('Replacement performance scale must be different from the deleted scale')
+      throw AppError.badRequest(
+        'Replacement performance scale must be different from the deleted scale',
+      )
     }
 
     if (replacementId !== undefined) {
