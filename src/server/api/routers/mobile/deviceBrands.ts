@@ -1,45 +1,15 @@
 import { ResourceError } from '@/lib/errors'
 import { GetDeviceBrandsSchema, GetDeviceBrandByIdSchema } from '@/schemas/deviceBrand'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
-import type { Prisma } from '@orm/client'
+import { DeviceBrandsRepository } from '@/server/repositories/device-brands.repository'
 
 export const mobileDeviceBrandsRouter = createMobileTRPCRouter({
   /**
    * Get device brands with search and sorting
    */
   get: mobilePublicProcedure.input(GetDeviceBrandsSchema).query(async ({ ctx, input }) => {
-    const { search, category, limit, sortField, sortDirection } = input ?? {}
-
-    const where: Prisma.DeviceBrandWhereInput = {
-      ...(search && { name: { contains: search, mode: 'insensitive' } }),
-      ...(category === 'cpu' && { cpus: { some: {} } }),
-      ...(category === 'gpu' && { gpus: { some: {} } }),
-    }
-
-    const orderBy: Prisma.DeviceBrandOrderByWithRelationInput[] = []
-
-    if (sortField && sortDirection) {
-      switch (sortField) {
-        case 'name':
-          orderBy.push({ name: sortDirection })
-          break
-        case 'devicesCount':
-          orderBy.push({ devices: { _count: sortDirection } })
-          break
-      }
-    }
-
-    // Default ordering if no sort specified
-    if (!orderBy.length) {
-      orderBy.push({ name: 'asc' })
-    }
-
-    return ctx.prisma.deviceBrand.findMany({
-      where,
-      include: { _count: { select: { devices: true } } },
-      orderBy,
-      take: limit,
-    })
+    const repository = new DeviceBrandsRepository(ctx.prisma)
+    return repository.list(input ?? {}, { defaultLimit: undefined })
   }),
 
   /**

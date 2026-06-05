@@ -58,6 +58,26 @@ describe('DeviceBrandsRepository', () => {
     )
   })
 
+  it('uses the default limit when no limit is provided', async () => {
+    await repository.list()
+
+    expect(prisma.deviceBrand.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        take: 50,
+      }),
+    )
+  })
+
+  it('allows callers to disable the default limit', async () => {
+    await repository.list({}, { defaultLimit: undefined })
+
+    expect(prisma.deviceBrand.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        take: undefined,
+      }),
+    )
+  })
+
   it('uses the same category filter when counting brands', async () => {
     await repository.count({ category: 'cpu' })
 
