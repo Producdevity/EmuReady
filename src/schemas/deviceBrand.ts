@@ -1,11 +1,13 @@
 import { z } from 'zod'
 
 export const DeviceBrandSortField = z.enum(['name', 'devicesCount'])
+export const DeviceBrandCategory = z.enum(['cpu', 'gpu'])
 export const SortDirection = z.enum(['asc', 'desc'])
 
 export const GetDeviceBrandsSchema = z
   .object({
     search: z.string().optional(),
+    category: DeviceBrandCategory.optional(),
     limit: z.number().default(50),
     sortField: DeviceBrandSortField.optional(),
     sortDirection: SortDirection.optional(),
