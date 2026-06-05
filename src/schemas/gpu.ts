@@ -43,7 +43,7 @@ export const DeleteGpuSchema = z.object({ id: z.string().uuid() })
 // Type exports for repository use
 // Use z.input for types that include defaults (what you pass in)
 // Use z.output for types after defaults are applied (what you get out)
-// TODO: figure out why we use z.infer
+// The remaining schemas do not apply defaults or transforms, so z.infer matches their parsed shape.
 export type GetGpusInput = z.input<typeof GetGpusSchema>
 export type GetGpuOptionsInput = z.input<typeof GetGpuOptionsSchema>
 export type CreateGpuInput = z.infer<typeof CreateGpuSchema>

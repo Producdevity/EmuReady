@@ -2,7 +2,7 @@
 
 import { Joystick, Search, Filter, Eye, EyeOff, List } from 'lucide-react'
 import { type ChangeEvent } from 'react'
-import { Input, Autocomplete, ThreeWayToggle, type ThreeWayToggleOption } from '@/components/ui'
+import { Input, Autocomplete, SegmentedControl, type SegmentedControlOption } from '@/components/ui'
 import { api } from '@/lib/api'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
@@ -32,9 +32,9 @@ function GameFilters(props: Props) {
   const isModerator = hasRolePermission(userQuery.data?.role, Role.MODERATOR)
 
   const listingFilterOptions: [
-    ThreeWayToggleOption<ListingFilterValue>,
-    ThreeWayToggleOption<ListingFilterValue>,
-    ThreeWayToggleOption<ListingFilterValue>,
+    SegmentedControlOption<ListingFilterValue>,
+    SegmentedControlOption<ListingFilterValue>,
+    SegmentedControlOption<ListingFilterValue>,
   ] = [
     { value: 'all', label: 'All', icon: <List className="w-4 h-4" /> },
     {
@@ -84,7 +84,7 @@ function GameFilters(props: Props) {
       </div>
 
       {isModerator && props.onListingFilterChange ? (
-        <ThreeWayToggle
+        <SegmentedControl
           options={listingFilterOptions}
           value={currentFilter}
           onChange={props.onListingFilterChange}

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { PAGINATION, CHAR_LIMITS } from '@/data/constants'
+import { SortDirection } from '@/schemas/common'
 import { Role } from '@orm'
 
 export const UserSortField = z.enum([
@@ -14,7 +15,7 @@ export const UserSortField = z.enum([
   'followersCount',
   'followingCount',
 ])
-export const SortDirection = z.enum(['asc', 'desc'])
+export { SortDirection }
 
 export const GetAllUsersSchema = z
   .object({

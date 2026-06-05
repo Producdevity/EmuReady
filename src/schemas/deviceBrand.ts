@@ -1,7 +1,8 @@
 import { z } from 'zod'
+import { SortDirection } from '@/schemas/common'
 
 export const DeviceBrandSortField = z.enum(['name', 'devicesCount'])
-export const SortDirection = z.enum(['asc', 'desc'])
+export { SortDirection }
 
 export const GetDeviceBrandsSchema = z
   .object({

@@ -1,7 +1,8 @@
 import { z } from 'zod'
+import { SortDirection } from '@/schemas/common'
 import { AuditAction, AuditEntityType } from '@orm'
 
-export const SortDirection = z.enum(['asc', 'desc'])
+export { SortDirection }
 
 export const AuditLogSortField = z.enum([
   'createdAt',

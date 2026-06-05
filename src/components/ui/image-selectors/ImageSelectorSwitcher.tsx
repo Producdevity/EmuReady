@@ -1,9 +1,10 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { Database, Zap } from 'lucide-react'
+import { Database, Sparkles, Zap } from 'lucide-react'
 import { useState } from 'react'
-import { Toggle } from '@/components/ui'
+import { cn } from '@/lib/utils'
+import { IGDBImageSelector } from './providers/IGDBImageSelector'
 import { RawgImageSelector } from './providers/RawgImageSelector'
 import { TGDBImageSelector } from './providers/TGDBImageSelector'
 
@@ -17,12 +18,18 @@ interface Props {
   className?: string
 }
 
-type ImageService = 'rawg' | 'tgdb'
+type ImageService = 'rawg' | 'tgdb' | 'igdb'
 
 const imageServiceMap: Record<ImageService, ImageService> = {
   rawg: 'rawg',
   tgdb: 'tgdb',
-  // TODO: consider adding IGDB
+  igdb: 'igdb',
+}
+
+const imageServiceDirection: Record<ImageService, number> = {
+  rawg: -1,
+  tgdb: 0,
+  igdb: 1,
 }
 
 export function ImageSelectorSwitcher(props: Props) {
@@ -47,51 +54,110 @@ export function ImageSelectorSwitcher(props: Props) {
 
   return (
     <div className={props.className}>
-      {/* Service Selector */}
       <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-        <div className="flex flex-col items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-orange-500" />
-              <span className="font-medium text-gray-700 dark:text-gray-300">RAWG.io</span>
-            </div>
-            <Toggle
-              checked={selectedService === imageServiceMap.tgdb}
-              onChange={(checked) =>
-                setSelectedService(checked ? imageServiceMap.tgdb : imageServiceMap.rawg)
-              }
-              size="md"
-            />
-            <div className="flex items-center gap-2">
-              <Database className="h-5 w-5 text-blue-500" />
-              <span className="font-medium text-gray-700 dark:text-gray-300">TheGamesDB</span>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedService(imageServiceMap.rawg)}
+              className={cn(
+                'p-3 rounded-lg border-2 transition-all',
+                selectedService === imageServiceMap.rawg
+                  ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
+              )}
+            >
+              <Zap className="h-5 w-5 mx-auto mb-1 text-orange-500" />
+              <div
+                className={cn(
+                  'text-sm font-medium mt-1',
+                  selectedService === imageServiceMap.rawg
+                    ? 'text-orange-600 dark:text-orange-400'
+                    : 'text-gray-700 dark:text-gray-300',
+                )}
+              >
+                RAWG.io
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedService(imageServiceMap.tgdb)}
+              className={cn(
+                'p-3 rounded-lg border-2 transition-all',
+                selectedService === imageServiceMap.tgdb
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
+              )}
+            >
+              <Database className="h-5 w-5 mx-auto mb-1 text-blue-500" />
+              <div
+                className={cn(
+                  'text-sm font-medium mt-1',
+                  selectedService === imageServiceMap.tgdb
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : 'text-gray-700 dark:text-gray-300',
+                )}
+              >
+                TheGamesDB
+              </div>
               <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
                 Experimental
               </span>
-            </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedService(imageServiceMap.igdb)}
+              className={cn(
+                'p-3 rounded-lg border-2 transition-all relative',
+                selectedService === imageServiceMap.igdb
+                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
+              )}
+            >
+              <Sparkles className="h-5 w-5 mx-auto mb-1 text-purple-500" />
+              <div
+                className={cn(
+                  'text-sm font-medium mt-1',
+                  selectedService === imageServiceMap.igdb
+                    ? 'text-purple-600 dark:text-purple-400'
+                    : 'text-gray-700 dark:text-gray-300',
+                )}
+              >
+                IGDB
+              </div>
+              <span className="absolute -top-1 -right-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-1 rounded text-[10px]">
+                NEW
+              </span>
+            </button>
           </div>
 
-          <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+          <div className="text-sm text-gray-600 dark:text-gray-400 text-center">
             {selectedService === imageServiceMap.rawg
               ? 'Using RAWG.io for game images'
-              : 'Using TheGamesDB for game images'}
+              : selectedService === imageServiceMap.tgdb
+                ? 'Using TheGamesDB for game images'
+                : 'Using IGDB for comprehensive game media'}
           </div>
-        </div>
 
-        <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-          {selectedService === imageServiceMap.rawg
-            ? 'RAWG.io provides comprehensive game data with screenshots and backgrounds'
-            : 'TheGamesDB offers high-quality boxart and game media from the community'}
+          <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+            {selectedService === imageServiceMap.rawg &&
+              'RAWG.io provides comprehensive game data with screenshots and backgrounds'}
+            {selectedService === imageServiceMap.tgdb &&
+              'TheGamesDB offers high-quality boxart and game media from the community'}
+            {selectedService === imageServiceMap.igdb &&
+              'IGDB provides rich media including covers, artworks, and screenshots with detailed metadata'}
+          </div>
         </div>
       </div>
 
-      {/* Animated Image Selector */}
       <div className="relative overflow-hidden">
-        <AnimatePresence mode="wait" custom={selectedService === 'tgdb' ? 1 : -1}>
+        <AnimatePresence mode="wait" custom={imageServiceDirection[selectedService]}>
           {selectedService === imageServiceMap.rawg ? (
             <motion.div
               key="rawg"
-              custom={-1}
+              custom={imageServiceDirection.rawg}
               variants={slideVariants}
               initial="initial"
               animate="animate"
@@ -105,10 +171,26 @@ export function ImageSelectorSwitcher(props: Props) {
                 onError={props.onError}
               />
             </motion.div>
+          ) : selectedService === imageServiceMap.igdb ? (
+            <motion.div
+              key="igdb"
+              custom={imageServiceDirection.igdb}
+              variants={slideVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <IGDBImageSelector
+                gameTitle={props.gameTitle}
+                selectedImageUrl={props.selectedImageUrl}
+                onImageSelect={props.onImageSelect}
+                onError={props.onError}
+              />
+            </motion.div>
           ) : (
             <motion.div
               key="tgdb"
-              custom={1}
+              custom={imageServiceDirection.tgdb}
               variants={slideVariants}
               initial="initial"
               animate="animate"

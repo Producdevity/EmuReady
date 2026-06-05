@@ -1,10 +1,11 @@
 import { z } from 'zod'
+import { SortDirection } from '@/schemas/common'
 import { Role, PermissionActionType } from '@orm'
 
 // Sorting and filtering schemas
 export const PermissionSortField = z.enum(['label', 'key', 'category', 'createdAt', 'updatedAt'])
 
-export const SortDirection = z.enum(['asc', 'desc'])
+export { SortDirection }
 
 export const PermissionCategory = z.enum(['CONTENT', 'MODERATION', 'USER_MANAGEMENT', 'SYSTEM'])
 

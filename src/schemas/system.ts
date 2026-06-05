@@ -1,7 +1,8 @@
 import { z } from 'zod'
+import { SortDirection } from '@/schemas/common'
 
 export const SystemSortField = z.enum(['name', 'key', 'gamesCount'])
-export const SortDirection = z.enum(['asc', 'desc'])
+export { SortDirection }
 
 export const GetSystemsSchema = z
   .object({

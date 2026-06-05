@@ -2,7 +2,8 @@
 
 import { useMemo } from 'react'
 import { cn } from '@/lib/utils'
-import { getBarColor, getBarWidth } from '@/utils/vote'
+import { getSuccessRateBarColor } from '@/utils/badge-colors'
+import { getBarWidth } from '@/utils/vote'
 
 interface Props {
   rate: number
@@ -15,7 +16,7 @@ export function SuccessRateBar(props: Props) {
   const { compact = false } = props
   const voteCount = props.voteCount ?? 0
   const roundedRate = useMemo(() => Math.round(props.rate), [props.rate])
-  const barColor = useMemo(() => getBarColor(roundedRate), [roundedRate])
+  const barColor = useMemo(() => getSuccessRateBarColor(roundedRate), [roundedRate])
 
   return (
     <div className={cn('flex flex-col gap-1', compact ? 'w-20' : 'w-full')}>

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { HumanVerificationTokenSchema } from '@/features/human-verification/shared/schema'
+import { SortDirection } from '@/schemas/common'
 import { ApprovalStatus } from '@orm'
 
 export const GameSortField = z.enum([
@@ -10,7 +11,7 @@ export const GameSortField = z.enum([
   'status',
 ])
 
-export const SortDirection = z.enum(['asc', 'desc'])
+export { SortDirection }
 
 export const GameListingFilter = z.enum(['all', 'withListings', 'noListings'])
 

@@ -72,3 +72,17 @@ export function getPermissionCategoryBadgeVariant(
 ): BadgeVariant {
   return permissionCategoryVariantMap[permissionCategory] || 'default'
 }
+
+export function getSuccessRateBarColor(rate: number): string {
+  if (rate >= 95) return 'bg-green-600'
+  if (rate >= 85) return 'bg-green-500'
+  if (rate >= 75) return 'bg-green-400'
+  if (rate >= 65) return 'bg-lime-500'
+  if (rate >= 55) return 'bg-yellow-400'
+  if (rate >= 45) return 'bg-yellow-500'
+  if (rate >= 35) return 'bg-orange-400'
+  if (rate >= 25) return 'bg-orange-500'
+  if (rate >= 15) return 'bg-red-400'
+  if (rate >= 5) return 'bg-red-500'
+  return 'bg-red-600'
+}

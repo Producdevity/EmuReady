@@ -17,6 +17,15 @@ interface PrivacySettings {
   followingVisible: boolean
 }
 
+export const PROFILE_ACCESS_REASONS = {
+  NOT_FOUND: 'not_found',
+  BANNED: 'banned',
+  PRIVATE: 'private',
+} as const
+
+export type ProfileAccessReason =
+  (typeof PROFILE_ACCESS_REASONS)[keyof typeof PROFILE_ACCESS_REASONS]
+
 interface AccessibleProfile {
   accessible: true
   isBanned: boolean
@@ -29,7 +38,7 @@ interface AccessibleProfile {
 
 interface InaccessibleProfile {
   accessible: false
-  reason: 'not_found' | 'banned' | 'private' // TODO: use constants or enums
+  reason: ProfileAccessReason
 }
 
 export type ProfileAccessResult = AccessibleProfile | InaccessibleProfile
@@ -77,7 +86,7 @@ export async function checkProfileAccess(
     },
   })
 
-  if (!user) return { accessible: false, reason: 'not_found' }
+  if (!user) return { accessible: false, reason: PROFILE_ACCESS_REASONS.NOT_FOUND }
 
   const isBanned = user.userBans.length > 0
   const canViewBannedUsers = roleIncludesRole(ctx.currentUserRole, Role.MODERATOR)
@@ -85,7 +94,7 @@ export async function checkProfileAccess(
   const isMod = canViewBannedUsers
 
   if (isBanned && !canViewBannedUsers) {
-    return { accessible: false, reason: 'banned' }
+    return { accessible: false, reason: PROFILE_ACCESS_REASONS.BANNED }
   }
 
   const privacySettings: PrivacySettings = {
@@ -98,7 +107,7 @@ export async function checkProfileAccess(
   }
 
   if (!privacySettings.profilePublic && !isOwner && !isMod) {
-    return { accessible: false, reason: 'private' }
+    return { accessible: false, reason: PROFILE_ACCESS_REASONS.PRIVATE }
   }
 
   return {
