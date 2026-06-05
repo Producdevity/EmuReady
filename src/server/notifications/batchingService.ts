@@ -35,16 +35,15 @@ export class NotificationBatchingService {
   constructor(config: Partial<BatchConfig> = {}) {
     this.config = {
       batchSize: 50,
-      batchIntervalMs: 30000, // 30 seconds
+      batchIntervalMs: 30000,
       maxRetries: 3,
-      retryDelayMs: 5000, // 5 seconds
+      retryDelayMs: 5000,
       ...config,
     }
 
     this.startBatchTimer()
   }
 
-  // Add notification to batch queue
   scheduleNotification(
     data: NotificationData,
     scheduledFor: Date = new Date(),
@@ -64,7 +63,6 @@ export class NotificationBatchingService {
     this.queue.push(batchedNotification)
     console.log(`Notification scheduled for batch processing: ${id}`)
 
-    // Process immediately if batch is full
     if (this.queue.length >= this.config.batchSize) {
       this.processBatch().catch(console.error)
     }
@@ -72,11 +70,10 @@ export class NotificationBatchingService {
     return id
   }
 
-  // Schedule weekly digest notifications
   scheduleWeeklyDigest(userId: string): void {
     const nextWeek = new Date()
     nextWeek.setDate(nextWeek.getDate() + 7)
-    nextWeek.setHours(9, 0, 0, 0) // 9 AM next week
+    nextWeek.setHours(9, 0, 0, 0)
 
     this.scheduleNotification(
       {
@@ -91,9 +88,7 @@ export class NotificationBatchingService {
     )
   }
 
-  // Schedule maintenance notifications
   scheduleMaintenanceNotification(scheduledFor: Date, title: string, message: string): void {
-    // Get all users who want maintenance notifications
     prisma.user
       .findMany({
         where: {
@@ -124,7 +119,6 @@ export class NotificationBatchingService {
       .catch(console.error)
   }
 
-  // Process batch of notifications
   private async processBatch(): Promise<void> {
     if (this.processing || this.queue.length === 0) {
       return
@@ -133,7 +127,6 @@ export class NotificationBatchingService {
     this.processing = true
     const now = new Date()
 
-    // Get notifications ready for processing
     const readyNotifications = this.queue.filter((notification) => notification.scheduledFor <= now)
 
     if (readyNotifications.length === 0) {
@@ -141,7 +134,6 @@ export class NotificationBatchingService {
       return
     }
 
-    // Take up to batchSize notifications
     const batch = readyNotifications.slice(0, this.config.batchSize)
 
     console.log(`Processing batch of ${batch.length} notifications`)
@@ -150,16 +142,13 @@ export class NotificationBatchingService {
       batch.map((notification) => this.processNotification(notification)),
     )
 
-    // Handle results and retries
     for (let i = 0; i < batch.length; i++) {
       const notification = batch[i]
       const result = results[i]
 
       if (result.status === 'fulfilled' && result.value) {
-        // Success - remove from queue
         this.removeFromQueue(notification.id)
       } else {
-        // Failed - increment attempts and potentially retry
         notification.attempts++
 
         if (notification.attempts >= notification.maxAttempts) {
@@ -168,7 +157,6 @@ export class NotificationBatchingService {
           )
           this.removeFromQueue(notification.id)
         } else {
-          // Schedule retry
           notification.scheduledFor = new Date(Date.now() + this.config.retryDelayMs)
           console.log(
             `Notification ${notification.id} scheduled for retry (attempt ${notification.attempts + 1})`,
@@ -180,12 +168,10 @@ export class NotificationBatchingService {
     this.processing = false
   }
 
-  // Process individual notification
   private async processNotification(notification: BatchedNotification): Promise<boolean> {
     try {
       const { data } = notification
 
-      // Create notification in database
       const dbNotification = await prisma.notification.create({
         data: {
           userId: data.userId,
@@ -200,10 +186,8 @@ export class NotificationBatchingService {
         },
       })
 
-      // Deliver via appropriate channels
       const deliveryPromises: Promise<boolean>[] = []
 
-      // In-app delivery is complete once the notification record exists.
       if (
         data.deliveryChannel === DeliveryChannel.IN_APP ||
         data.deliveryChannel === DeliveryChannel.BOTH
@@ -211,7 +195,6 @@ export class NotificationBatchingService {
         deliveryPromises.push(Promise.resolve(true))
       }
 
-      // Email delivery
       if (
         (data.deliveryChannel === 'EMAIL' || data.deliveryChannel === 'BOTH') &&
         this.emailService
@@ -222,7 +205,6 @@ export class NotificationBatchingService {
       const results = await Promise.all(deliveryPromises)
       const success = results.some((result) => result)
 
-      // Update delivery status
       await prisma.notification.update({
         where: { id: dbNotification.id },
         data: {
@@ -232,7 +214,6 @@ export class NotificationBatchingService {
         },
       })
 
-      // Invalidate analytics cache when notifications are processed in batches
       if (success) {
         notificationAnalyticsService.clearCache()
       }
@@ -244,7 +225,6 @@ export class NotificationBatchingService {
     }
   }
 
-  // Deliver email notification
   private async deliverEmail(data: NotificationData): Promise<boolean> {
     if (!this.emailService) return false
 
@@ -264,7 +244,6 @@ export class NotificationBatchingService {
     }
   }
 
-  // Remove notification from queue
   private removeFromQueue(id: string): void {
     const index = this.queue.findIndex((notification) => notification.id === id)
     if (index !== -1) {
@@ -272,16 +251,13 @@ export class NotificationBatchingService {
     }
   }
 
-  // Start batch processing timer
   private startBatchTimer(): void {
     this.batchTimer = setInterval(() => {
       this.processBatch().catch(console.error)
     }, this.config.batchIntervalMs)
-    // Allow process to exit if no other tasks are queued
     this.batchTimer.unref?.()
   }
 
-  // Get queue status
   getQueueStatus(): {
     queueLength: number
     processing: boolean
@@ -299,7 +275,6 @@ export class NotificationBatchingService {
     }
   }
 
-  // Cleanup
   destroy() {
     if (!this.batchTimer) return
     clearInterval(this.batchTimer)
@@ -307,5 +282,4 @@ export class NotificationBatchingService {
   }
 }
 
-// Singleton instance
 export const notificationBatchingService = new NotificationBatchingService()

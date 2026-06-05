@@ -41,7 +41,6 @@ function NotificationCenter(props: Props) {
     refetchIntervalInBackground: false,
   })
 
-  // Mutations
   const markAsReadMutation = api.notifications.markAsRead.useMutation({
     onMutate: () => setIsLoading(true),
     onSuccess: () => {
@@ -97,7 +96,6 @@ function NotificationCenter(props: Props) {
     }
   }
 
-  // Add escape key handler
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen) {
@@ -116,21 +114,17 @@ function NotificationCenter(props: Props) {
     }
   }, [isOpen])
 
-  // Don't render anything if user is not authenticated
   if (!user) return null
 
   const handleNotificationClick = (notification: (typeof notifications)[0]) => {
-    // Mark as read if not already read (swallow error if it fails)
     if (!notification.isRead) {
       markAsReadMutation.mutateAsync({ notificationId: notification.id }).catch(console.error)
     }
 
     setIsOpen(false)
 
-    // Navigate based on actionUrl if available
     if (notification.actionUrl) return router.push(notification.actionUrl)
 
-    // Try to extract route from metadata if actionUrl is not available
     const metadata = notification.metadata as Record<string, unknown>
     if (typeof metadata?.listingId === 'string') {
       router.push(`/listings/${metadata.listingId}`)
@@ -139,7 +133,6 @@ function NotificationCenter(props: Props) {
     } else if (typeof metadata?.userId === 'string') {
       router.push(`/users/${metadata.userId}`)
     } else {
-      // Default to notifications page if no specific route
       router.push('/notifications')
     }
   }
@@ -153,7 +146,6 @@ function NotificationCenter(props: Props) {
   }
 
   const handleBackdropClick = (ev: MouseEvent) => {
-    // Only close if the click is directly on the backdrop, not bubbling from child elements
     if (ev.target !== ev.currentTarget) return
     setIsOpen(false)
   }
@@ -163,7 +155,6 @@ function NotificationCenter(props: Props) {
 
   return (
     <div className={cn('relative', props.className)}>
-      {/* Notification Bell Button */}
       <button
         aria-label={
           unreadCount > 0 ? `Open notifications (${unreadCount} unread)` : 'Open notifications'
@@ -187,7 +178,6 @@ function NotificationCenter(props: Props) {
         )}
       </button>
 
-      {/* Desktop Dropdown */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -201,7 +191,6 @@ function NotificationCenter(props: Props) {
             role="region"
             aria-label="Notifications"
           >
-            {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Notifications</h3>
               <div className="flex items-center gap-2">
@@ -224,7 +213,6 @@ function NotificationCenter(props: Props) {
               </div>
             </div>
 
-            {/* Notifications List */}
             <div className="max-h-72 overflow-y-auto">
               <NotificationList
                 notifications={notifications}
@@ -237,7 +225,6 @@ function NotificationCenter(props: Props) {
               />
             </div>
 
-            {/* Footer */}
             {notifications.length > 0 && (
               <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky bottom-0">
                 <button
@@ -252,13 +239,11 @@ function NotificationCenter(props: Props) {
         )}
       </AnimatePresence>
 
-      {/* Mobile Bottom Sheet */}
       {typeof document !== 'undefined' &&
         createPortal(
           <AnimatePresence mode="wait">
             {isOpen && (
               <>
-                {/* Backdrop for mobile */}
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -269,7 +254,6 @@ function NotificationCenter(props: Props) {
                   aria-hidden="true"
                 />
 
-                {/* Bottom Sheet */}
                 <motion.div
                   initial={{ translateY: '100%' }}
                   animate={{ translateY: 0 }}
@@ -285,12 +269,10 @@ function NotificationCenter(props: Props) {
                   aria-modal="true"
                   aria-label="Notifications"
                 >
-                  {/* Handle Bar */}
                   <div className="flex flex-shrink-0 justify-center pb-2 pt-3">
                     <div className="h-1 w-12 rounded-full bg-gray-300 dark:bg-gray-600" />
                   </div>
 
-                  {/* Header */}
                   <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                       Notifications
@@ -315,7 +297,6 @@ function NotificationCenter(props: Props) {
                     </div>
                   </div>
 
-                  {/* Notifications List */}
                   <div className="min-h-0 flex-1 overflow-y-auto">
                     <NotificationList
                       notifications={notifications}
@@ -328,7 +309,6 @@ function NotificationCenter(props: Props) {
                     />
                   </div>
 
-                  {/* Footer */}
                   {notifications.length > 0 && (
                     <div className="flex-shrink-0 border-t border-gray-200 p-4 pb-safe dark:border-gray-700">
                       <button
@@ -346,7 +326,6 @@ function NotificationCenter(props: Props) {
           document.body,
         )}
 
-      {/* Desktop Backdrop */}
       <AnimatePresence>
         {isOpen && (
           <motion.div

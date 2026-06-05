@@ -139,8 +139,6 @@ vi.mock('@/server/repositories/notification-preferences.repository', () => ({
     }),
 }))
 
-// ── Helpers ────────────────────────────────────────────────────────
-
 function resetMocks() {
   for (const model of Object.values(mockPrisma)) {
     for (const fn of Object.values(model)) {
