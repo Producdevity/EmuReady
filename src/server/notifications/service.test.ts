@@ -105,13 +105,6 @@ vi.mock('@/server/notifications/rateLimitService', () => ({
   },
 }))
 
-vi.mock('@/server/notifications/realtimeService', () => ({
-  realtimeNotificationService: {
-    sendNotificationToUser: vi.fn().mockReturnValue(true),
-    sendUnreadCountToUser: vi.fn(),
-  },
-}))
-
 vi.mock('@/server/notifications/emailService', () => ({
   createEmailService: vi.fn().mockReturnValue({
     sendNotificationEmail: vi.fn().mockResolvedValue({ success: true }),

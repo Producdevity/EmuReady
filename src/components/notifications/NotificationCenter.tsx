@@ -6,7 +6,7 @@ import { Bell, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, type MouseEvent } from 'react'
 import { createPortal } from 'react-dom'
-import { POLLING_INTERVALS } from '@/data/constants'
+import { CACHE_DURATIONS, POLLING_INTERVALS } from '@/data/constants'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
@@ -27,15 +27,18 @@ function NotificationCenter(props: Props) {
   const notificationsQuery = api.notifications.get.useQuery(
     { limit: 10, offset: 0 },
     {
-      enabled: !!user,
-      refetchOnWindowFocus: true,
-      refetchInterval: POLLING_INTERVALS.NOTIFICATIONS,
+      enabled: !!user && isOpen,
+      refetchOnWindowFocus: isOpen,
+      refetchInterval: isOpen ? POLLING_INTERVALS.SHORT : false,
+      staleTime: CACHE_DURATIONS.VERY_SHORT,
     },
   )
   const unreadCountQuery = api.notifications.getUnreadCount.useQuery(undefined, {
     enabled: !!user,
+    staleTime: CACHE_DURATIONS.SHORT,
     refetchOnWindowFocus: true,
-    refetchInterval: POLLING_INTERVALS.NOTIFICATIONS,
+    refetchInterval: isOpen ? false : POLLING_INTERVALS.EXTRA_LONG,
+    refetchIntervalInBackground: false,
   })
 
   // Mutations
@@ -83,6 +86,15 @@ function NotificationCenter(props: Props) {
   const handleViewAllNotifications = () => {
     setIsOpen(false)
     router.push('/notifications')
+  }
+
+  const handleToggleNotifications = () => {
+    const nextIsOpen = !isOpen
+    setIsOpen(nextIsOpen)
+
+    if (nextIsOpen) {
+      void utils.notifications.getUnreadCount.invalidate()
+    }
   }
 
   // Add escape key handler
@@ -158,7 +170,7 @@ function NotificationCenter(props: Props) {
         }
         onClick={(ev) => {
           ev.stopPropagation()
-          setIsOpen(!isOpen)
+          handleToggleNotifications()
         }}
         className="relative p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
         disabled={isLoading}

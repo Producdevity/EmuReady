@@ -19,7 +19,6 @@ import {
 import { createEmailService } from './emailService'
 import { type NotificationEventData, notificationEventEmitter } from './eventEmitter'
 import { notificationRateLimitService } from './rateLimitService'
-import { realtimeNotificationService } from './realtimeService'
 import { notificationTemplateEngine, type TemplateContext } from './templates'
 import type {
   NotificationData,
@@ -44,7 +43,6 @@ export class NotificationService {
   constructor(config: Partial<NotificationServiceConfig> = {}) {
     this.config = {
       enableEmailDelivery: false,
-      enableRealTimeDelivery: true,
       maxRetries: 3,
       retryDelayMs: 1000,
       batchSize: 50,
@@ -180,7 +178,7 @@ export class NotificationService {
     const deliveryResults: NotificationDeliveryResult[] = []
 
     // Always deliver in-app notifications
-    const inAppResult = await this.deliverInApp(notificationId, data)
+    const inAppResult = this.deliverInApp()
     deliveryResults.push(inAppResult)
 
     // Deliver email if enabled and email service is configured
@@ -216,49 +214,11 @@ export class NotificationService {
     })
   }
 
-  private async deliverInApp(
-    notificationId: string,
-    data: NotificationData,
-  ): Promise<NotificationDeliveryResult> {
-    try {
-      // Send real-time notification if user is connected
-      const notification = await prisma.notification.findUnique({
-        where: { id: notificationId },
-      })
-
-      if (notification) {
-        const sent = realtimeNotificationService.sendNotificationToUser(data.userId, {
-          id: notification.id,
-          type: notification.type,
-          title: notification.title,
-          message: notification.message,
-          actionUrl: notification.actionUrl || undefined,
-          createdAt: notification.createdAt.toISOString(),
-        })
-
-        // Also update unread count
-        const unreadCount = await prisma.notification.count({
-          where: { userId: data.userId, isRead: false },
-        })
-
-        realtimeNotificationService.sendUnreadCountToUser(data.userId, unreadCount)
-
-        logger.log(`Real-time notification ${sent ? 'sent' : 'queued'} for user ${data.userId}`)
-      }
-
-      return {
-        success: true,
-        channel: DeliveryChannel.IN_APP,
-        status: NotificationDeliveryStatus.SENT,
-      }
-    } catch (error) {
-      console.error('In-app delivery error:', error)
-      return {
-        success: false,
-        channel: DeliveryChannel.IN_APP,
-        status: NotificationDeliveryStatus.FAILED,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }
+  private deliverInApp(): NotificationDeliveryResult {
+    return {
+      success: true,
+      channel: DeliveryChannel.IN_APP,
+      status: NotificationDeliveryStatus.SENT,
     }
   }
 
@@ -384,16 +344,8 @@ export class NotificationService {
       data: { isRead: true },
     })
 
-    // If notification was actually updated, invalidate caches and update real-time count
+    // If notification was actually updated, invalidate caches
     if (updatedCount.count > 0) {
-      // Get updated unread count
-      const unreadCount = await prisma.notification.count({
-        where: { userId, isRead: false },
-      })
-
-      // Send real-time unread count update
-      realtimeNotificationService.sendUnreadCountToUser(userId, unreadCount)
-
       // Clear analytics cache since notification status changed
       notificationAnalyticsService.clearCache()
 
@@ -408,11 +360,8 @@ export class NotificationService {
       data: { isRead: true },
     })
 
-    // If any notifications were updated, invalidate caches and update real-time count
+    // If any notifications were updated, invalidate caches
     if (updatedCount.count > 0) {
-      // Send real-time unread count update (should be 0 after marking all as read)
-      realtimeNotificationService.sendUnreadCountToUser(userId, 0)
-
       // Clear analytics cache since notification status changed
       notificationAnalyticsService.clearCache()
 
@@ -421,29 +370,13 @@ export class NotificationService {
   }
 
   async deleteNotification(notificationId: string, userId: string): Promise<void> {
-    // First check if the notification exists and is unread
-    const notification = await prisma.notification.findFirst({
-      where: { id: notificationId, userId },
-      select: { isRead: true },
-    })
-
     // Delete the notification
     const deletedCount = await prisma.notification.deleteMany({
       where: { id: notificationId, userId },
     })
 
-    // If notification was deleted and was unread, update real-time count
+    // If notification was deleted, invalidate caches
     if (deletedCount.count > 0) {
-      // If the deleted notification was unread, update the unread count
-      if (notification && !notification.isRead) {
-        const unreadCount = await prisma.notification.count({
-          where: { userId, isRead: false },
-        })
-
-        // Send real-time unread count update
-        realtimeNotificationService.sendUnreadCountToUser(userId, unreadCount)
-      }
-
       // Clear analytics cache since a notification was deleted
       notificationAnalyticsService.clearCache()
 

@@ -72,7 +72,6 @@ export interface NotificationEventPayload {
 
 export interface NotificationServiceConfig {
   enableEmailDelivery: boolean
-  enableRealTimeDelivery: boolean
   maxRetries: number
   retryDelayMs: number
   batchSize: number

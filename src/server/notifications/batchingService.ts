@@ -7,7 +7,6 @@ import {
   NotificationType,
 } from '@orm/client'
 import { createEmailService } from './emailService'
-import { realtimeNotificationService } from './realtimeService'
 import type { NotificationData } from './types'
 
 export interface BatchedNotification {
@@ -204,12 +203,12 @@ export class NotificationBatchingService {
       // Deliver via appropriate channels
       const deliveryPromises: Promise<boolean>[] = []
 
-      // In-app delivery
+      // In-app delivery is complete once the notification record exists.
       if (
         data.deliveryChannel === DeliveryChannel.IN_APP ||
         data.deliveryChannel === DeliveryChannel.BOTH
       ) {
-        deliveryPromises.push(this.deliverInApp(dbNotification.id, data))
+        deliveryPromises.push(Promise.resolve(true))
       }
 
       // Email delivery
@@ -241,41 +240,6 @@ export class NotificationBatchingService {
       return success
     } catch (error) {
       console.error(`Error processing notification ${notification.id}:`, error)
-      return false
-    }
-  }
-
-  // Deliver in-app notification
-  private async deliverInApp(notificationId: string, data: NotificationData): Promise<boolean> {
-    try {
-      const notification = await prisma.notification.findUnique({
-        where: { id: notificationId },
-      })
-
-      if (!notification) return false
-
-      realtimeNotificationService.sendNotificationToUser(data.userId, {
-        id: notification.id,
-        type: notification.type,
-        title: notification.title,
-        message: notification.message,
-        actionUrl: notification.actionUrl || undefined,
-        createdAt: notification.createdAt.toISOString(),
-      })
-
-      // Update unread count
-      const unreadCount = await prisma.notification.count({
-        where: {
-          userId: data.userId,
-          isRead: false,
-        },
-      })
-
-      realtimeNotificationService.sendUnreadCountToUser(data.userId, unreadCount)
-
-      return true
-    } catch (error) {
-      console.error('In-app delivery error:', error)
       return false
     }
   }
