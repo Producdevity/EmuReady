@@ -64,7 +64,7 @@ function AdminGpusPage() {
   })
 
   const gpusStatsQuery = api.gpus.stats.useQuery()
-  const brandsQuery = api.deviceBrands.get.useQuery({ limit: 100 })
+  const brandsQuery = api.deviceBrands.get.useQuery({ limit: 100, category: 'gpu' })
   const deleteGpu = api.gpus.delete.useMutation()
   const confirm = useConfirmDialog()
 
@@ -77,12 +77,6 @@ function AdminGpusPage() {
 
   const userQuery = api.users.me.useQuery()
   const canManageDevices = hasPermission(userQuery.data?.permissions, PERMISSIONS.MANAGE_DEVICES)
-
-  // TODO: Temporary fix for brands query
-  // only keep 'Intel', 'AMD' and 'NVIDIA' brands
-  const brands = (brandsQuery.data || []).filter((brand) =>
-    ['intel', 'amd', 'nvidia'].includes(brand.name.toLowerCase()),
-  )
 
   const invalidateGpuQueries = () => {
     utils.gpus.get.invalidate().catch(console.error)
@@ -176,7 +170,7 @@ function AdminGpusPage() {
         <Autocomplete
           value={table.additionalParams.brandId || ''}
           onChange={(value) => table.setAdditionalParam('brandId', value || '')}
-          items={[{ id: '', name: 'All Brands' }, ...brands]}
+          items={[{ id: '', name: 'All Brands' }, ...(brandsQuery.data || [])]}
           optionToValue={(brand) => brand.id}
           optionToLabel={(brand) => brand.name}
           className="w-full md:w-64"

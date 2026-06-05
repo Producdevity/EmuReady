@@ -25,13 +25,8 @@ export class DeviceBrandsRepository extends BaseRepository {
   ): Promise<
     Prisma.DeviceBrandGetPayload<{ include: typeof DeviceBrandsRepository.includes.withCounts }>[]
   > {
-    const { search, limit = 50, sortField = 'name', sortDirection } = filters
-
-    const where: Prisma.DeviceBrandWhereInput = {
-      ...(search && {
-        name: { contains: search, mode: this.mode },
-      }),
-    }
+    const { limit = 50, sortField = 'name', sortDirection } = filters
+    const where = this.buildWhereClause(filters)
 
     // Map schema sort fields to Prisma orderBy
     const orderBy: Prisma.DeviceBrandOrderByWithRelationInput =
@@ -101,15 +96,21 @@ export class DeviceBrandsRepository extends BaseRepository {
    * Get total count with filters
    */
   async count(filters: GetDeviceBrandsInput = {}): Promise<number> {
-    const { search } = filters
+    const where = this.buildWhereClause(filters)
 
-    const where: Prisma.DeviceBrandWhereInput = {
+    return this.prisma.deviceBrand.count({ where })
+  }
+
+  private buildWhereClause(filters: GetDeviceBrandsInput = {}): Prisma.DeviceBrandWhereInput {
+    const { search, category } = filters
+
+    return {
       ...(search && {
         name: { contains: search, mode: this.mode },
       }),
+      ...(category === 'cpu' && { cpus: { some: {} } }),
+      ...(category === 'gpu' && { gpus: { some: {} } }),
     }
-
-    return this.prisma.deviceBrand.count({ where })
   }
 
   /**

@@ -8,7 +8,13 @@ export const mobileDeviceBrandsRouter = createMobileTRPCRouter({
    * Get device brands with search and sorting
    */
   get: mobilePublicProcedure.input(GetDeviceBrandsSchema).query(async ({ ctx, input }) => {
-    const { search, limit, sortField, sortDirection } = input ?? {}
+    const { search, category, limit, sortField, sortDirection } = input ?? {}
+
+    const where: Prisma.DeviceBrandWhereInput = {
+      ...(search && { name: { contains: search, mode: 'insensitive' } }),
+      ...(category === 'cpu' && { cpus: { some: {} } }),
+      ...(category === 'gpu' && { gpus: { some: {} } }),
+    }
 
     const orderBy: Prisma.DeviceBrandOrderByWithRelationInput[] = []
 
@@ -29,7 +35,7 @@ export const mobileDeviceBrandsRouter = createMobileTRPCRouter({
     }
 
     return ctx.prisma.deviceBrand.findMany({
-      where: search ? { name: { contains: search, mode: 'insensitive' } } : undefined,
+      where,
       include: { _count: { select: { devices: true } } },
       orderBy,
       take: limit,
