@@ -43,10 +43,6 @@ export class NotificationService {
   constructor(config: Partial<NotificationServiceConfig> = {}) {
     this.config = {
       enableEmailDelivery: false,
-      maxRetries: 3,
-      retryDelayMs: 1000,
-      batchSize: 50,
-      rateLimitPerMinute: 60,
       ...config,
     }
     this.setupEventListeners()
