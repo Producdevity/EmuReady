@@ -199,7 +199,7 @@ const GAMENATIVE_CUSTOM_FIELDS: GameNativeCustomFieldSeed[] = [
     type: CustomFieldType.SELECT,
     required: false,
     displayOrder: 9,
-    defaultValue: 'Aggressive (Stop services on startup)',
+    defaultValue: 'Essential (Load only essential services)',
     options: [
       { value: 'Normal (Load all services)', label: 'Normal (Load all services)' },
       {
