@@ -70,12 +70,22 @@ describe('SessionTracker', () => {
       expect(testState.analytics.session.sessionStarted).toHaveBeenCalledOnce()
       expect(testState.analytics.session.pageView).toHaveBeenCalledOnce()
     })
+    expect(testState.analytics.session.pageView.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({
+        loadTime: expect.any(Number),
+        pathname: '/',
+      }),
+    )
 
     testState.pathname = '/games'
     view.rerender(<SessionTracker />)
 
     await waitFor(() => {
       expect(testState.analytics.session.pageView).toHaveBeenCalledTimes(2)
+    })
+    expect(testState.analytics.session.pageView).toHaveBeenLastCalledWith({
+      pathname: '/games',
+      userId: undefined,
     })
 
     fireEvent.click(document.body)
@@ -92,7 +102,7 @@ describe('SessionTracker', () => {
     )
   })
 
-  it('reports the Clerk OAuth provider when a user signs in after session start', async () => {
+  it('reports the Clerk OAuth provider without counting sign-in as a page view', async () => {
     const view = render(<SessionTracker />)
 
     await waitFor(() => {

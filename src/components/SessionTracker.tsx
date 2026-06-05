@@ -55,6 +55,7 @@ function SessionTracker() {
   const pageLoadTimeRef = useRef<number | null>(null)
   const sessionIdRef = useRef<string | null>(null)
   const hasTrackedSessionStart = useRef<boolean>(false)
+  const hasTrackedPageViewRef = useRef(false)
   const pageViewCountRef = useRef(0)
   const interactionCountRef = useRef(0)
   const currentUserIdRef = useRef<string | undefined>(undefined)
@@ -110,8 +111,15 @@ function SessionTracker() {
   useEffect(() => {
     if (!analyticsAllowed || pageLoadTimeRef.current === null) return
 
-    const loadTime = Date.now() - pageLoadTimeRef.current
+    const loadTime = hasTrackedPageViewRef.current ? undefined : Date.now() - pageLoadTimeRef.current
     const currentUserId = currentUserIdRef.current
+    const pageViewEvent: Parameters<typeof analytics.session.pageView>[0] = {
+      pathname,
+      userId: currentUserId,
+    }
+    if (loadTime !== undefined) pageViewEvent.loadTime = loadTime
+
+    hasTrackedPageViewRef.current = true
     pageViewCountRef.current += 1
 
     if (process.env.NODE_ENV === 'development') {
@@ -122,7 +130,7 @@ function SessionTracker() {
       })
     }
 
-    analytics.session.pageView({ pathname, loadTime, userId: currentUserId })
+    analytics.session.pageView(pageViewEvent)
 
     // Track feature discovery based on page visits
     const featureMap: Record<string, string> = {
@@ -144,9 +152,6 @@ function SessionTracker() {
         context: pathname,
       })
     }
-
-    // Reset page load timer
-    pageLoadTimeRef.current = Date.now()
   }, [analyticsAllowed, pathname])
 
   // Count basic user interactions for the session summary
