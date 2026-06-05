@@ -26,9 +26,16 @@ export const UpdatePerformanceScaleSchema = z.object({
   description: z.string().optional(),
 })
 
-export const DeletePerformanceScaleSchema = z.object({ id: z.number() })
+export const DeletePerformanceScaleSchema = z
+  .object({
+    id: z.number(),
+    replacementId: z.number().optional(),
+  })
+  .refine((data) => data.replacementId === undefined || data.replacementId !== data.id, {
+    message: 'Replacement performance scale must be different from the deleted scale',
+    path: ['replacementId'],
+  })
 
-// Type exports for repository use
 export type GetPerformanceScalesInput = z.input<typeof GetPerformanceScalesSchema>
 export type CreatePerformanceScaleInput = z.infer<typeof CreatePerformanceScaleSchema>
 export type UpdatePerformanceScaleInput = z.infer<typeof UpdatePerformanceScaleSchema>

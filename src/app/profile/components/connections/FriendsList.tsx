@@ -94,6 +94,8 @@ function FriendsList(props: Props) {
       emptyMessage="No friends yet"
       renderAction={() => null}
       header={pendingRequestsHeader}
+      showActionSkeleton={false}
+      skeletonRows={props.limit}
     />
   )
 }

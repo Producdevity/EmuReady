@@ -21,6 +21,11 @@ export const performanceScalesRouter = createTRPCRouter({
     return repository.list(input ?? {})
   }),
 
+  getWithCounts: publicProcedure.input(GetPerformanceScalesSchema).query(async ({ ctx, input }) => {
+    const repository = new PerformanceScalesRepository(ctx.prisma)
+    return repository.listWithCounts(input ?? {})
+  }),
+
   byId: publicProcedure.input(GetPerformanceScaleByIdSchema).query(async ({ ctx, input }) => {
     const repository = new PerformanceScalesRepository(ctx.prisma)
     const scale = await repository.byNumericId(input.id)
@@ -46,7 +51,7 @@ export const performanceScalesRouter = createTRPCRouter({
     .input(DeletePerformanceScaleSchema)
     .mutation(async ({ ctx, input }) => {
       const repository = new PerformanceScalesRepository(ctx.prisma)
-      await repository.deleteByNumericId(input.id)
+      await repository.deleteByNumericIdWithReplacement(input.id, input.replacementId)
       return { success: true }
     }),
 })

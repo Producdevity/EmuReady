@@ -36,7 +36,6 @@ const users: UserData[] = [
     username: 'moderator',
     role: Role.MODERATOR,
   },
-  // TODO: Assign emulators to Developer User
   {
     email: 'developer@emuready.com',
     name: 'Developer User',
@@ -64,11 +63,27 @@ const users: UserData[] = [
 ]
 
 const DEFAULT_SEED_PASSWORD = 'DevPassword123!'
+const DEVELOPER_SEED_EMAIL = 'developer@emuready.com'
+const SUPER_ADMIN_SEED_EMAIL = 'superadmin@emuready.com'
 
 async function cleanupExistingUsers(prisma: PrismaClient) {
   console.info('🧹 Cleaning up existing seed users...')
 
   const clerk = await clerkClient()
+  const seedUserEmails = users.map((user) => user.email)
+  const seedUsers = await prisma.user.findMany({
+    where: { email: { in: seedUserEmails } },
+    select: { id: true },
+  })
+
+  if (seedUsers.length > 0) {
+    const seedUserIds = seedUsers.map((user) => user.id)
+    await prisma.verifiedDeveloper.deleteMany({
+      where: {
+        OR: [{ userId: { in: seedUserIds } }, { verifiedBy: { in: seedUserIds } }],
+      },
+    })
+  }
 
   for (const userData of users) {
     try {
@@ -90,6 +105,56 @@ async function cleanupExistingUsers(prisma: PrismaClient) {
   }
 
   console.info('✅ Cleanup completed')
+}
+
+async function assignDeveloperEmulators(prisma: PrismaClient) {
+  const [developerUser, verifierUser, emulators] = await Promise.all([
+    prisma.user.findUnique({
+      where: { email: DEVELOPER_SEED_EMAIL },
+      select: { id: true },
+    }),
+    prisma.user.findUnique({
+      where: { email: SUPER_ADMIN_SEED_EMAIL },
+      select: { id: true },
+    }),
+    prisma.emulator.findMany({ select: { id: true } }),
+  ])
+
+  if (!developerUser) {
+    throw new Error('Expected seeded developer user to exist before assigning emulators')
+  }
+
+  if (emulators.length === 0) {
+    console.info('ℹ️  No emulators found to assign to the developer seed user.')
+    return
+  }
+
+  const verifierId = verifierUser?.id ?? developerUser.id
+
+  await prisma.$transaction(
+    emulators.map((emulator) =>
+      prisma.verifiedDeveloper.upsert({
+        where: {
+          userId_emulatorId: {
+            userId: developerUser.id,
+            emulatorId: emulator.id,
+          },
+        },
+        update: {
+          verifiedBy: verifierId,
+          notes: 'Seeded developer emulator access',
+        },
+        create: {
+          userId: developerUser.id,
+          emulatorId: emulator.id,
+          verifiedBy: verifierId,
+          notes: 'Seeded developer emulator access',
+        },
+      }),
+    ),
+  )
+
+  console.info(`✅ Assigned ${emulators.length} emulator(s) to the developer seed user`)
 }
 
 async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
@@ -165,6 +230,8 @@ async function usersSeeder(prisma: PrismaClient, shouldCleanup = false) {
   if (failedUsers.length > 0) {
     throw new Error(`Failed to seed users: ${failedUsers.join(', ')}`)
   }
+
+  await assignDeveloperEmulators(prisma)
 
   console.info('✅ Users seeding completed')
   console.info('📝 You can now log in with any of these accounts using the default password.')
