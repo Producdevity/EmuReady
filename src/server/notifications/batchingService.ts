@@ -142,7 +142,8 @@ class NotificationBatchingService {
       }
 
       if (
-        (data.deliveryChannel === 'EMAIL' || data.deliveryChannel === 'BOTH') &&
+        (data.deliveryChannel === DeliveryChannel.EMAIL ||
+          data.deliveryChannel === DeliveryChannel.BOTH) &&
         this.emailService
       ) {
         deliveryPromises.push(this.deliverEmail(data))
