@@ -114,14 +114,12 @@ export class DeviceBrandsRepository extends BaseRepository {
   }
 
   private buildWhereClause(filters: GetDeviceBrandsInput = {}): Prisma.DeviceBrandWhereInput {
-    const { search, category } = filters
-
     return {
-      ...(search && {
-        name: { contains: search, mode: this.mode },
+      ...(filters.search && {
+        name: { contains: filters.search, mode: this.mode },
       }),
-      ...(category === 'cpu' && { cpus: { some: {} } }),
-      ...(category === 'gpu' && { gpus: { some: {} } }),
+      ...(filters.category === 'cpu' && { cpus: { some: {} } }),
+      ...(filters.category === 'gpu' && { gpus: { some: {} } }),
     }
   }
 
