@@ -7,14 +7,6 @@ import type {
   UpdateDeviceBrandInput,
 } from '@/schemas/deviceBrand'
 
-interface DeviceBrandListOptions {
-  defaultLimit: number | undefined
-}
-
-const DEFAULT_LIST_OPTIONS: DeviceBrandListOptions = {
-  defaultLimit: 50,
-}
-
 /**
  * Repository for DeviceBrand data access
  */
@@ -30,11 +22,10 @@ export class DeviceBrandsRepository extends BaseRepository {
   } as const
   async list(
     filters: GetDeviceBrandsInput = {},
-    options: DeviceBrandListOptions = DEFAULT_LIST_OPTIONS,
   ): Promise<
     Prisma.DeviceBrandGetPayload<{ include: typeof DeviceBrandsRepository.includes.withCounts }>[]
   > {
-    const { limit, sortField = 'name', sortDirection } = filters
+    const { limit = 50, sortField = 'name', sortDirection } = filters
     const where = this.buildWhereClause(filters)
 
     // Map schema sort fields to Prisma orderBy
@@ -47,12 +38,24 @@ export class DeviceBrandsRepository extends BaseRepository {
       where,
       include: DeviceBrandsRepository.includes.withCounts,
       orderBy,
-      take: limit ?? options.defaultLimit,
+      take: limit,
     })
   }
 
   async byId(id: string): Promise<DeviceBrand | null> {
     return this.prisma.deviceBrand.findUnique({ where: { id } })
+  }
+
+  async byIdWithCounts(
+    id: string,
+  ): Promise<
+    | Prisma.DeviceBrandGetPayload<{ include: typeof DeviceBrandsRepository.includes.withCounts }>
+    | null
+  > {
+    return this.prisma.deviceBrand.findUnique({
+      where: { id },
+      include: DeviceBrandsRepository.includes.withCounts,
+    })
   }
 
   async create(data: CreateDeviceBrandInput): Promise<DeviceBrand> {

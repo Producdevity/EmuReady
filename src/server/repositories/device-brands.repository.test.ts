@@ -18,6 +18,7 @@ function createMockPrisma() {
   return {
     deviceBrand: {
       findMany: vi.fn().mockResolvedValue([]),
+      findUnique: vi.fn().mockResolvedValue(null),
       count: vi.fn().mockResolvedValue(0),
     },
   } as unknown as PrismaClient
@@ -68,14 +69,17 @@ describe('DeviceBrandsRepository', () => {
     )
   })
 
-  it('allows callers to disable the default limit', async () => {
-    await repository.list({}, { defaultLimit: undefined })
+  it('loads a brand by id with its device count', async () => {
+    await repository.byIdWithCounts('brand-id')
 
-    expect(prisma.deviceBrand.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        take: undefined,
-      }),
-    )
+    expect(prisma.deviceBrand.findUnique).toHaveBeenCalledWith({
+      where: { id: 'brand-id' },
+      include: {
+        _count: {
+          select: { devices: true },
+        },
+      },
+    })
   })
 
   it('uses the same category filter when counting brands', async () => {

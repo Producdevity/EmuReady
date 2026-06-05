@@ -9,17 +9,15 @@ export const mobileDeviceBrandsRouter = createMobileTRPCRouter({
    */
   get: mobilePublicProcedure.input(GetDeviceBrandsSchema).query(async ({ ctx, input }) => {
     const repository = new DeviceBrandsRepository(ctx.prisma)
-    return repository.list(input ?? {}, { defaultLimit: undefined })
+    return repository.list(input ?? {})
   }),
 
   /**
    * Get device brand by ID
    */
   getById: mobilePublicProcedure.input(GetDeviceBrandByIdSchema).query(async ({ ctx, input }) => {
-    const brand = await ctx.prisma.deviceBrand.findUnique({
-      where: { id: input.id },
-      include: { _count: { select: { devices: true } } },
-    })
+    const repository = new DeviceBrandsRepository(ctx.prisma)
+    const brand = await repository.byIdWithCounts(input.id)
 
     return brand || ResourceError.deviceBrand.notFound()
   }),
