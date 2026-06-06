@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { SortDirection } from '@/schemas/soc'
+import { SortDirectionSchema } from '@/schemas/common'
 
 export const PerformanceScaleSortField = z.enum(['label', 'rank'])
 
@@ -7,7 +7,7 @@ export const GetPerformanceScalesSchema = z
   .object({
     search: z.string().optional(),
     sortField: PerformanceScaleSortField.optional(),
-    sortDirection: SortDirection.optional(),
+    sortDirection: SortDirectionSchema.optional(),
   })
   .optional()
 

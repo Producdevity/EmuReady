@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { HumanVerificationTokenSchema } from '@/features/human-verification/shared/schema'
+import { SortDirectionSchema } from '@/schemas/common'
 import { ApprovalStatus } from '@orm'
 
 export const GameSortField = z.enum([
@@ -9,8 +10,6 @@ export const GameSortField = z.enum([
   'submittedAt',
   'status',
 ])
-
-export const SortDirection = z.enum(['asc', 'desc'])
 
 export const GameListingFilter = z.enum(['all', 'withListings', 'noListings'])
 
@@ -41,7 +40,7 @@ export const GetGamesSchema = z
     offset: z.number().default(0),
     page: z.number().optional(),
     sortField: GameSortField.nullable().optional(),
-    sortDirection: SortDirection.nullable().optional(),
+    sortDirection: SortDirectionSchema.nullable().optional(),
   })
   .optional()
   .transform((data) => {
@@ -135,7 +134,7 @@ export const GetPendingGamesSchema = z
     offset: z.number().default(0),
     page: z.number().optional(),
     sortField: GameSortField.optional(),
-    sortDirection: SortDirection.optional(),
+    sortDirection: SortDirectionSchema.optional(),
   })
   .optional()
 
@@ -163,7 +162,6 @@ export const GetBestThreeDsTitleIdSchema = z.object({
 
 export const GetThreeDsGamesStatsSchema = z.object({}).optional()
 
-// Type exports for repository use
 export type GetGamesInput = z.input<typeof GetGamesSchema>
 export type CreateGameInput = z.infer<typeof CreateGameSchema>
 export type UpdateGameInput = z.infer<typeof UpdateGameSchema>

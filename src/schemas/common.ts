@@ -1,11 +1,14 @@
 import { z } from 'zod'
 
+export const SortDirectionSchema = z.enum(['asc', 'desc'])
+export type SortDirection = z.infer<typeof SortDirectionSchema>
+
 // Admin table URL parameters
 export const AdminTableParamsSchema = z.object({
   search: z.string().default(''),
   page: z.number().int().positive().default(1),
   sortField: z.string().nullable().default(null),
-  sortDirection: z.enum(['asc', 'desc']).nullable().default(null), // TODO: extract
+  sortDirection: SortDirectionSchema.nullable().default(null),
 })
 
 export const JsonValueSchema: z.ZodType<unknown> = z.lazy(() =>

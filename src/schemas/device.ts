@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { HOME_PAGE_LIMITS } from '@/data/constants'
-import { SortDirection } from '@/schemas/soc'
+import { SortDirectionSchema } from '@/schemas/common'
 
 export const DeviceSortField = z.enum(['brand', 'modelName', 'soc', 'listings'])
 
@@ -13,7 +13,7 @@ export const GetDevicesSchema = z
     offset: z.number().default(0),
     page: z.number().optional(),
     sortField: DeviceSortField.nullable().optional(),
-    sortDirection: SortDirection.nullable().optional(),
+    sortDirection: SortDirectionSchema.nullable().optional(),
   })
   .optional()
 
@@ -49,7 +49,6 @@ export const GetTrendingDevicesSummarySchema = z.object({
   limit: z.number().int().min(1).max(20).default(HOME_PAGE_LIMITS.TRENDING_DEVICES),
 })
 
-// Type exports for repository use
 export type GetDevicesInput = z.input<typeof GetDevicesSchema>
 export type GetDeviceOptionsInput = z.input<typeof GetDeviceOptionsSchema>
 export type CreateDeviceInput = z.infer<typeof CreateDeviceSchema>

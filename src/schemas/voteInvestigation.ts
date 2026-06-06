@@ -1,6 +1,5 @@
 import { z } from 'zod'
-import { ListingType } from '@/schemas/common'
-import { SortDirection } from '@/schemas/soc'
+import { ListingType, SortDirectionSchema } from '@/schemas/common'
 
 export const VoteTypeFilter = z.enum(['all', 'up', 'down'])
 export const ListingTypeFilter = z.enum(['all', ...ListingType.options])
@@ -13,7 +12,7 @@ export const GetUserVotesSchema = z.object({
   voteType: VoteTypeFilter.default('all'),
   listingType: ListingTypeFilter.default('all'),
   sortField: VoteSortField.default('createdAt'),
-  sortDirection: SortDirection.default('desc'),
+  sortDirection: SortDirectionSchema.default('desc'),
   includeNullified: z.boolean().default(false),
 })
 

@@ -1,11 +1,11 @@
 import { z } from 'zod'
+import { SortDirectionSchema } from '@/schemas/common'
 import { ApiUsagePeriod } from '@orm'
 
 const quotaValueSchema = z.number().int().positive().max(1_000_000_000)
 const quotaSchema = quotaValueSchema.or(z.literal(0)).or(z.null())
 
 export const ApiKeySortFieldSchema = z.enum(['name', 'createdAt', 'lastUsedAt', 'monthlyQuota'])
-export const SortDirectionSchema = z.enum(['asc', 'desc'])
 
 export const CreateApiKeySchema = z.object({
   name: z.string({ description: 'Friendly label for the key' }).trim().min(1).max(100).optional(),

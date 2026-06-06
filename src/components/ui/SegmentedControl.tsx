@@ -15,33 +15,32 @@ const paddingClasses = {
   lg: 'px-4',
 }
 
-export interface ThreeWayToggleOption<T extends string> {
+export interface SegmentedControlOption<T extends string> {
   value: T
   label: string
   icon?: ReactNode
 }
 
 interface Props<T extends string> {
-  options: [ThreeWayToggleOption<T>, ThreeWayToggleOption<T>, ThreeWayToggleOption<T>]
+  options: readonly [SegmentedControlOption<T>, ...SegmentedControlOption<T>[]]
   value: T
   onChange: (value: T) => void
   className?: string
   size?: 'sm' | 'md' | 'lg'
 }
 
-// TODO: I feel like the english language has a better name for this
-export function ThreeWayToggle<T extends string>(props: Props<T>) {
+export function SegmentedControl<T extends string>(props: Props<T>) {
   const size = props.size ?? 'md'
 
   return (
     <div
       className={cn(
-        'relative inline-grid grid-cols-3 gap-1 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm p-1',
+        'relative inline-grid gap-1 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm p-1',
         sizeClasses[size],
         props.className,
       )}
+      style={{ gridTemplateColumns: `repeat(${props.options.length}, minmax(0, 1fr))` }}
     >
-      {/* Options */}
       {props.options.map((option) => (
         <button
           key={option.value}
