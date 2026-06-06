@@ -123,21 +123,65 @@ export class CommentsRepository extends BaseRepository {
     })
   }
 
-  /**
-   * Create a new comment
-   */
-  async create(
-    data: Prisma.CommentCreateInput,
-  ): Promise<Prisma.CommentGetPayload<{ include: typeof CommentsRepository.includes.minimal }>> {
-    return this.prisma.comment.create({
-      data,
-      include: CommentsRepository.includes.minimal,
+  async listingExists(listingId: string): Promise<boolean> {
+    const listing = await this.handleDatabaseOperation(
+      () => this.prisma.listing.findUnique({ where: { id: listingId }, select: { id: true } }),
+      'Listing',
+    )
+
+    return listing !== null
+  }
+
+  async commentExists(commentId: string): Promise<boolean> {
+    const comment = await this.handleDatabaseOperation(
+      () => this.prisma.comment.findUnique({ where: { id: commentId }, select: { id: true } }),
+      'Comment',
+    )
+
+    return comment !== null
+  }
+
+  async userExists(userId: string): Promise<boolean> {
+    const user = await this.handleDatabaseOperation(
+      () => this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } }),
+      'User',
+    )
+
+    return user !== null
+  }
+
+  async countByUser(userId: string): Promise<number> {
+    return this.handleDatabaseOperation(
+      () => this.prisma.comment.count({ where: { userId } }),
+      'Comment',
+    )
+  }
+
+  async create(data: Prisma.CommentCreateInput): Promise<MinimalComment> {
+    return this.handleDatabaseOperation(
+      () =>
+        this.prisma.comment.create({
+          data,
+          include: CommentsRepository.includes.minimal,
+        }),
+      'Comment',
+    )
+  }
+
+  async createForListing(input: {
+    content: string
+    userId: string
+    listingId: string
+    parentId?: string
+  }): Promise<MinimalComment> {
+    return this.create({
+      content: input.content,
+      user: { connect: { id: input.userId } },
+      listing: { connect: { id: input.listingId } },
+      ...(input.parentId ? { parent: { connect: { id: input.parentId } } } : {}),
     })
   }
 
-  /**
-   * Update a comment
-   */
   async update(
     id: string,
     data: Prisma.CommentUpdateInput,
@@ -260,3 +304,7 @@ export class CommentsRepository extends BaseRepository {
     }
   }
 }
+
+export type MinimalComment = Prisma.CommentGetPayload<{
+  include: typeof CommentsRepository.includes.minimal
+}>
