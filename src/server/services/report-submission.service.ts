@@ -1,4 +1,4 @@
-import { AppError, ResourceError } from '@/lib/errors'
+import { ResourceError } from '@/lib/errors'
 import { emitReportCreatedNotification } from '@/server/notifications/reportEvents'
 import { sanitizeInput } from '@/server/utils/security-validation'
 import { type PrismaClient, type ReportReason } from '@orm/client'
@@ -87,7 +87,7 @@ export class ReportSubmissionService {
     if (!pcListing) return ResourceError.pcListing.notFound()
 
     if (pcListing.authorId === input.reportedById) {
-      return AppError.forbidden('You cannot report your own listing')
+      return ResourceError.pcListingReport.cannotReportOwnListing()
     }
 
     const existingReport = await this.prisma.pcListingReport.findUnique({
@@ -99,7 +99,7 @@ export class ReportSubmissionService {
       },
     })
 
-    if (existingReport) return AppError.conflict('You have already reported this listing')
+    if (existingReport) return ResourceError.pcListingReport.alreadyExists()
 
     const report = await this.prisma.pcListingReport.create({
       data: {
