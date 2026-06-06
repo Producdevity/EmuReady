@@ -16,90 +16,21 @@ import { canManageCommentPins } from '@/server/api/utils/pinPermissions'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { CommentsRepository } from '@/server/repositories/comments.repository'
 import { logAudit } from '@/server/services/audit.service'
+import { ListingCommentService } from '@/server/services/listing-comment.service'
 import { isUserBanned } from '@/server/utils/query-builders'
-import { checkSpamContent } from '@/server/utils/spam-check'
 import { handleCommentVoteTrustEffects } from '@/server/utils/vote-trust-effects'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { canDeleteComment, canEditComment } from '@/utils/permissions'
 import { AuditAction, AuditEntityType, Role } from '@orm/client'
 
 export const commentsRouter = createTRPCRouter({
-  // TODO: This should use a repository, too much logic in here.
   create: protectedProcedure.input(CreateCommentSchema).mutation(async ({ ctx, input }) => {
-    const { listingId, content, parentId, humanVerificationToken } = input
-    const userId = ctx.session.user.id
-
-    const listing = await ctx.prisma.listing.findUnique({
-      where: { id: listingId },
-    })
-
-    if (!listing) return ResourceError.listing.notFound()
-
-    // If parentId is provided, check if parent comment exists
-    if (parentId) {
-      const parentComment = await ctx.prisma.comment.findUnique({ where: { id: parentId } })
-
-      if (!parentComment) return ResourceError.comment.parentNotFound()
-    }
-
-    const userExists = await ctx.prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true },
-    })
-
-    if (!userExists) return ResourceError.user.notInDatabase(userId)
-
-    await checkSpamContent({
-      prisma: ctx.prisma,
-      userId,
-      content,
-      entityType: 'comment',
-      challengeMode: 'challenge',
-      humanVerificationToken,
+    const service = new ListingCommentService(ctx.prisma)
+    return service.create({
+      ...input,
+      userId: ctx.session.user.id,
       headers: ctx.headers,
     })
-
-    const repository = new CommentsRepository(ctx.prisma)
-    const comment = await repository.create({
-      content,
-      user: { connect: { id: userId } },
-      listing: { connect: { id: listingId } },
-      ...(parentId && { parent: { connect: { id: parentId } } }),
-    })
-
-    notificationEventEmitter.emitNotificationEvent({
-      eventType: parentId
-        ? NOTIFICATION_EVENTS.COMMENT_REPLIED
-        : NOTIFICATION_EVENTS.LISTING_COMMENTED,
-      entityType: 'listing',
-      entityId: listingId,
-      triggeredBy: userId,
-      payload: {
-        listingId,
-        commentId: comment.id,
-        parentId: parentId ?? undefined,
-        commentText: content,
-      },
-    })
-
-    analytics.engagement.comment({
-      action: parentId ? 'reply' : 'created',
-      commentId: comment.id,
-      listingId: listingId,
-      isReply: !!parentId,
-      contentLength: content.length,
-    })
-
-    // Check if this is user's first comment for journey analytics
-    const userCommentCount = await ctx.prisma.comment.count({
-      where: { userId: userId },
-    })
-
-    if (userCommentCount === 1) {
-      analytics.userJourney.firstTimeAction({ userId: userId, action: 'first_comment' })
-    }
-
-    return comment
   }),
 
   get: publicProcedure.input(GetCommentsSchema).query(async ({ ctx, input }) => {
