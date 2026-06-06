@@ -61,6 +61,7 @@ import {
   invalidatePcListingsSeo,
 } from '@/server/cache/invalidation'
 import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
+import { emitReportCreatedNotification } from '@/server/notifications/reportEvents'
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
 import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
 import { logAudit } from '@/server/services/audit.service'
@@ -76,7 +77,7 @@ import { listingStatsCache } from '@/server/utils/cache'
 import { normalizeCustomFieldValues } from '@/server/utils/custom-field-values'
 import { paginate } from '@/server/utils/pagination'
 import { isUserBanned } from '@/server/utils/query-builders'
-import { validatePagination } from '@/server/utils/security-validation'
+import { sanitizeInput, validatePagination } from '@/server/utils/security-validation'
 import { checkSpamContent } from '@/server/utils/spam-check'
 import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
 import {
@@ -1687,8 +1688,8 @@ export const pcListingsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { pcListingId, reason, description } = input
       const userId = ctx.session.user.id
+      const sanitizedDescription = description ? sanitizeInput(description) : description
 
-      // Check if PC listing exists
       const pcListing = await ctx.prisma.pcListing.findUnique({
         where: { id: pcListingId },
         include: { author: true },
@@ -1698,12 +1699,10 @@ export const pcListingsRouter = createTRPCRouter({
         return ResourceError.pcListing.notFound()
       }
 
-      // Prevent users from reporting their own listings
       if (pcListing.authorId === userId) {
         return AppError.badRequest('You cannot report your own listing')
       }
 
-      // Check if user already reported this listing
       const existingReport = await ctx.prisma.pcListingReport.findUnique({
         where: {
           pcListingId_reportedById: {
@@ -1717,12 +1716,12 @@ export const pcListingsRouter = createTRPCRouter({
         return AppError.badRequest('You have already reported this listing')
       }
 
-      return await ctx.prisma.pcListingReport.create({
+      const report = await ctx.prisma.pcListingReport.create({
         data: {
           pcListingId,
           reportedById: userId,
           reason,
-          description,
+          description: sanitizedDescription,
         },
         include: {
           pcListing: {
@@ -1733,6 +1732,15 @@ export const pcListingsRouter = createTRPCRouter({
           },
         },
       })
+
+      emitReportCreatedNotification({
+        type: 'pcListing',
+        reportId: report.id,
+        pcListingId,
+        reportedById: userId,
+      })
+
+      return report
     }),
 
   getReports: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)

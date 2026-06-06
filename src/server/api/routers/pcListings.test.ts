@@ -7,7 +7,7 @@ import {
   invalidatePcListingsSeo,
 } from '@/server/cache/invalidation'
 import { PERMISSIONS } from '@/utils/permission-system'
-import { ApprovalStatus, PcOs, Role, TrustAction } from '@orm/client'
+import { ApprovalStatus, PcOs, ReportReason, Role, TrustAction } from '@orm/client'
 
 vi.unmock('@/server/api/trpc')
 vi.unmock('@/server/api/root')
@@ -46,6 +46,7 @@ vi.mock('@/server/notifications/eventEmitter', () => ({
     COMMENT_REPLIED: 'COMMENT_REPLIED',
     PC_LISTING_APPROVED: 'PC_LISTING_APPROVED',
     PC_LISTING_REJECTED: 'PC_LISTING_REJECTED',
+    REPORT_CREATED: 'report.created',
   },
 }))
 
@@ -111,6 +112,7 @@ vi.mock('@/server/api/utils/pinPermissions', () => ({
 
 vi.mock('@/server/utils/security-validation', () => ({
   validatePagination: vi.fn((page, limit, max) => ({ page: page ?? 1, limit: limit ?? max ?? 20 })),
+  sanitizeInput: vi.fn((value: string) => value.trim()),
 }))
 
 const mockRepositoryCreate = vi.fn()
@@ -195,6 +197,20 @@ function createMockPrisma() {
       findMany: vi.fn().mockResolvedValue([]),
       update: vi.fn(),
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
+    pcListingReport: {
+      findUnique: vi.fn().mockResolvedValue(null),
+      create: vi.fn().mockResolvedValue({
+        id: '00000000-0000-4000-a000-000000000030',
+        pcListingId: LISTING_ID,
+        reportedById: USER_ID,
+        reason: ReportReason.SPAM,
+        description: 'needs review',
+        pcListing: {
+          game: { title: 'PC Test Game' },
+          author: { name: 'PC Report Author' },
+        },
+      }),
     },
     user: {
       findUnique: vi.fn().mockResolvedValue({ id: ADMIN_ID }),
@@ -561,6 +577,47 @@ describe('pcListings trust integration', () => {
         headers: expect.any(Headers),
       })
       expect(mockRepositoryCreate).toHaveBeenCalled()
+    })
+  })
+
+  describe('createReport', () => {
+    it('creates a PC report and emits a moderator notification event', async () => {
+      const { caller, prisma } = createCaller()
+      prisma.pcListing.findUnique.mockResolvedValue({
+        id: LISTING_ID,
+        authorId: AUTHOR_ID,
+        author: { id: AUTHOR_ID },
+      })
+
+      const report = await caller.createReport({
+        pcListingId: LISTING_ID,
+        reason: ReportReason.SPAM,
+        description: '  needs review  ',
+      })
+
+      expect(report.id).toBe('00000000-0000-4000-a000-000000000030')
+      expect(prisma.pcListingReport.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            pcListingId: LISTING_ID,
+            reportedById: USER_ID,
+            description: 'needs review',
+          }),
+        }),
+      )
+      expect(mockEmitNotificationEvent).toHaveBeenCalledWith({
+        eventType: 'report.created',
+        entityType: 'pcListingReport',
+        entityId: '00000000-0000-4000-a000-000000000030',
+        triggeredBy: USER_ID,
+        payload: {
+          reportId: '00000000-0000-4000-a000-000000000030',
+          contentId: LISTING_ID,
+          contentType: 'PC Compatibility Report',
+          actionUrl: `/admin/reports?pcListing=${LISTING_ID}`,
+          pcListingId: LISTING_ID,
+        },
+      })
     })
   })
 

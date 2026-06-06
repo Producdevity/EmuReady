@@ -60,6 +60,8 @@ export const NOTIFICATION_EVENTS = {
   MAINTENANCE_SCHEDULED: 'maintenance.scheduled',
   FEATURE_ANNOUNCED: 'feature.announced',
   USER_ROLE_CHANGED: 'user.role_changed',
+  REPORT_CREATED: 'report.created',
+  REPORT_STATUS_CHANGED: 'report.status_changed',
   GAME_STATUS_OVERRIDDEN: 'game.status_overridden',
   PC_LISTING_APPROVED: 'pcListing.approved',
   PC_LISTING_REJECTED: 'pcListing.rejected',

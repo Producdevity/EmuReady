@@ -15,6 +15,7 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
+import { emitReportCreatedNotification } from '@/server/notifications/reportEvents'
 import { getAuthorReportCounts } from '@/server/services/report-stats.service'
 import { paginate } from '@/server/utils/pagination'
 import { validateEnum, sanitizeInput, validatePagination } from '@/server/utils/security-validation'
@@ -131,13 +132,10 @@ export const listingReportsRouter = createTRPCRouter({
     const { listingId, reason, description } = input
     const userId = ctx.session.user.id
 
-    // Validate reason enum
     validateEnum(reason, Object.values(ReportReason), 'reason')
 
-    // Sanitize description if provided (plain text, not markdown)
     const sanitizedDescription = description ? sanitizeInput(description) : description
 
-    // Check if listing exists
     const listing = await ctx.prisma.listing.findUnique({
       where: { id: listingId },
       include: { author: true },
@@ -145,12 +143,10 @@ export const listingReportsRouter = createTRPCRouter({
 
     if (!listing) return ResourceError.listing.notFound()
 
-    // Prevent users from reporting their own listings
     if (listing.authorId === userId) {
       return ResourceError.listingReport.cannotReportOwnListing()
     }
 
-    // Check if user already reported this listing
     const existingReport = await ctx.prisma.listingReport.findUnique({
       where: {
         listingId_reportedById: {
@@ -162,9 +158,7 @@ export const listingReportsRouter = createTRPCRouter({
 
     if (existingReport) return ResourceError.listingReport.alreadyExists()
 
-    // TODO: Send notification to SUPER_ADMIN users
-
-    return await ctx.prisma.listingReport.create({
+    const report = await ctx.prisma.listingReport.create({
       data: {
         listingId,
         reportedById: userId,
@@ -180,6 +174,15 @@ export const listingReportsRouter = createTRPCRouter({
         },
       },
     })
+
+    emitReportCreatedNotification({
+      type: 'listing',
+      reportId: report.id,
+      listingId,
+      reportedById: userId,
+    })
+
+    return report
   }),
 
   updateStatus: permissionProcedure(PERMISSIONS.MANAGE_USER_BANS)
