@@ -21,7 +21,6 @@ function createWebServerEnv(): { [key: string]: string } {
   env.NEXT_PUBLIC_ENABLE_ANALYTICS = 'false'
   env.NEXT_PUBLIC_ENABLE_KOFI_WIDGET = 'false'
   env.NEXT_PUBLIC_ENABLE_SENTRY = 'false'
-  env.NEXT_PUBLIC_VERCEL_ANALYTICS_ENABLED = 'false'
   env.NEXT_PUBLIC_DISABLE_COOKIE_BANNER = 'true'
   env.PLAYWRIGHT_TEST = 'true'
   return env

@@ -80,8 +80,6 @@
     "@trpc/react-query": "11.17.0",
     "@trpc/server": "11.17.0",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "@vercel/analytics": "^1.5.0",
-    "@vercel/speed-insights": "^1.2.0",
     "axios": "1.16.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

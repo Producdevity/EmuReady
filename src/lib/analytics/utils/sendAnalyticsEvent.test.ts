@@ -5,15 +5,10 @@ const mocks = vi.hoisted(() => ({
   isTrackingAllowed: vi.fn(() => true),
   loggerLog: vi.fn(),
   sendGAEvent: vi.fn(),
-  track: vi.fn(),
 }))
 
 vi.mock('@next/third-parties/google', () => ({
   sendGAEvent: mocks.sendGAEvent,
-}))
-
-vi.mock('@vercel/analytics', () => ({
-  track: mocks.track,
 }))
 
 vi.mock('@/lib/logger', () => ({
@@ -50,7 +45,6 @@ describe('sendAnalyticsEvent', () => {
       NEXT_PUBLIC_APP_ENV: 'production',
       NEXT_PUBLIC_ENABLE_ANALYTICS: 'false',
       NEXT_PUBLIC_GA_ID: 'G-TEST',
-      NEXT_PUBLIC_VERCEL_ANALYTICS_ENABLED: 'true',
     })
 
     sendAnalyticsEvent({
@@ -58,17 +52,15 @@ describe('sendAnalyticsEvent', () => {
       action: 'support_banner_shown',
     })
 
-    expect(mocks.track).not.toHaveBeenCalled()
     expect(mocks.sendGAEvent).not.toHaveBeenCalled()
   })
 
-  it('sends enabled analytics services when the master analytics flag is enabled', async () => {
+  it('sends Google Analytics events when analytics are enabled', async () => {
     const { sendAnalyticsEvent } = await loadSendAnalyticsEvent({
       NODE_ENV: 'production',
       NEXT_PUBLIC_APP_ENV: 'production',
       NEXT_PUBLIC_ENABLE_ANALYTICS: 'true',
       NEXT_PUBLIC_GA_ID: 'G-TEST',
-      NEXT_PUBLIC_VERCEL_ANALYTICS_ENABLED: 'true',
     })
 
     sendAnalyticsEvent({
@@ -76,10 +68,6 @@ describe('sendAnalyticsEvent', () => {
       action: 'support_banner_shown',
     })
 
-    expect(mocks.track).toHaveBeenCalledWith(
-      'support_banner_shown',
-      expect.objectContaining({ category: ANALYTICS_CATEGORIES.ENGAGEMENT }),
-    )
     expect(mocks.sendGAEvent).toHaveBeenCalledWith(
       'event',
       'support_banner_shown',

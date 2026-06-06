@@ -4,7 +4,6 @@ allowBuilds:
   "@prisma/engines": true
   "@sentry/cli": true
   "@tailwindcss/oxide": true
-  "@vercel/speed-insights": false
   esbuild: true
   prisma: true
   sharp: true

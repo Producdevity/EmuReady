@@ -4,8 +4,6 @@ const OPTIONAL_SERVICE_REQUEST_PATTERNS = [
   'storage.ko-fi.com',
   'googletagmanager.com',
   'google-analytics.com',
-  '_vercel/insights',
-  '_vercel/speed-insights',
   'ingest.us.sentry.io',
 ] as const
 
