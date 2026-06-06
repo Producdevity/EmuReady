@@ -18,7 +18,6 @@ interface Env {
   GA_ID: string
   LOCAL_STORAGE_PREFIX: string
   ENABLE_SW: boolean
-  VERCEL_ANALYTICS_ENABLED: boolean
   DISABLE_COOKIE_BANNER: boolean
   APP_ENV: AppEnv
   IS_PUBLIC_PRODUCTION: boolean
@@ -78,8 +77,6 @@ export const env = {
   LOCAL_STORAGE_PREFIX: process.env.NEXT_PUBLIC_LOCAL_STORAGE_PREFIX ?? '@LocalEmuReady_',
 
   ENABLE_SW: process.env.NEXT_PUBLIC_ENABLE_SW === 'true',
-
-  VERCEL_ANALYTICS_ENABLED: process.env.NEXT_PUBLIC_VERCEL_ANALYTICS_ENABLED === 'true',
 
   DISABLE_COOKIE_BANNER: process.env.NEXT_PUBLIC_DISABLE_COOKIE_BANNER === 'true',
 

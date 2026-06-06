@@ -6,14 +6,6 @@ const transparentPng = Buffer.from(
 )
 
 export async function registerExternalServiceMocks(page: Page) {
-  await page.route('**/_vercel/speed-insights/script.js*', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/javascript',
-      body: '',
-    })
-  })
-
   await page.route(
     'https://storage.ko-fi.com/cdn/scripts/floating-chat-wrapper.css*',
     async (route) => {

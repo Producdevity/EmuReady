@@ -1026,7 +1026,7 @@ const analytics = {
       })
     },
 
-    pageView: (params: { pathname: string; loadTime: number; userId?: string }) => {
+    pageView: (params: { pathname: string; loadTime?: number; userId?: string }) => {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.SESSION,
         action: SESSION_ACTIONS.PAGE_VIEW,

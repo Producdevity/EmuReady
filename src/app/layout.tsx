@@ -2,8 +2,6 @@ import './globals.css'
 import { ClerkProvider } from '@clerk/nextjs'
 import { shadesOfPurple } from '@clerk/themes'
 import { GoogleAnalytics } from '@next/third-parties/google'
-import { Analytics } from '@vercel/analytics/next'
-import { SpeedInsights } from '@vercel/speed-insights/next'
 import { type Metadata, type Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { connection } from 'next/server'
@@ -55,16 +53,10 @@ export default function RootLayout(props: PropsWithChildren) {
                 <>
                   <SessionTracker />
                   <PageViewTracker />
-                  <SpeedInsights />
                   {env.GA_ID && <GoogleAnalytics gaId={env.GA_ID} />}
                 </>
               )}
               {env.ENABLE_KOFI_WIDGET && <KofiWidget />}
-            </Suspense>
-          )}
-          {env.ENABLE_ANALYTICS && env.VERCEL_ANALYTICS_ENABLED && (
-            <Suspense fallback={null}>
-              <Analytics />
             </Suspense>
           )}
         </ClerkBoundary>
