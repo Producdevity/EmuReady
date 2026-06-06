@@ -1,5 +1,6 @@
 import analytics from '@/lib/analytics'
 import { ResourceError } from '@/lib/errors'
+import { logger } from '@/lib/logger'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { CommentsRepository, type MinimalComment } from '@/server/repositories/comments.repository'
 import { checkSpamContent } from '@/server/utils/spam-check'
@@ -53,7 +54,12 @@ export class ListingCommentService {
 
     this.emitCreatedNotification(comment.id, input)
     this.trackCreatedComment(comment.id, input)
-    await this.trackFirstComment(input.userId)
+    void this.trackFirstComment(input.userId).catch((error: unknown) => {
+      logger.error('[ListingCommentService] Failed to track first comment analytics', error, {
+        userId: input.userId,
+        commentId: comment.id,
+      })
+    })
 
     return comment
   }

@@ -10,6 +10,7 @@ const mockCheckSpamContent = vi.fn().mockResolvedValue(undefined)
 const mockAnalyticsComment = vi.fn()
 const mockAnalyticsCommentVote = vi.fn()
 const mockAnalyticsFirstTimeAction = vi.fn()
+const mockLoggerError = vi.fn()
 
 vi.mock('@/server/utils/vote-trust-effects', () => ({
   handleCommentVoteTrustEffects: (...args: unknown[]) => mockHandleCommentVoteTrustEffects(...args),
@@ -43,6 +44,12 @@ vi.mock('@/lib/analytics', () => ({
     userJourney: {
       firstTimeAction: (...args: unknown[]) => mockAnalyticsFirstTimeAction(...args),
     },
+  },
+}))
+
+vi.mock('@/lib/logger', () => ({
+  logger: {
+    error: (...args: unknown[]) => mockLoggerError(...args),
   },
 }))
 
@@ -110,6 +117,10 @@ function createCaller(overrides: { userId?: string; role?: Role; prisma?: MockPr
     }),
     prisma,
   }
+}
+
+function flushBackgroundTasks(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0))
 }
 
 describe('handheld comments router — voteComment', () => {
@@ -280,6 +291,8 @@ describe('handheld comments router — create', () => {
       isReply: false,
       contentLength: 'Runs well with these settings'.length,
     })
+    await flushBackgroundTasks()
+
     expect(mockAnalyticsFirstTimeAction).toHaveBeenCalledWith({
       userId: USER_ID,
       action: 'first_comment',
@@ -331,7 +344,34 @@ describe('handheld comments router — create', () => {
       content: 'Another comment',
     })
 
+    await flushBackgroundTasks()
+
     expect(mockAnalyticsFirstTimeAction).not.toHaveBeenCalled()
+  })
+
+  it('returns the created comment when first-comment analytics fails', async () => {
+    const analyticsError = new Error('count failed')
+    const { caller, prisma } = createCaller()
+    prisma.comment.count.mockRejectedValue(analyticsError)
+
+    const result = await caller.create({
+      listingId: LISTING_ID,
+      content: 'Runs well with these settings',
+    })
+
+    expect(result.id).toBe(COMMENT_ID)
+    expect(prisma.comment.create).toHaveBeenCalled()
+
+    await flushBackgroundTasks()
+
+    expect(mockLoggerError).toHaveBeenCalledWith(
+      '[ListingCommentService] Failed to track first comment analytics',
+      expect.any(Error),
+      {
+        userId: USER_ID,
+        commentId: COMMENT_ID,
+      },
+    )
   })
 
   it('does not check spam or create when the listing is missing', async () => {
