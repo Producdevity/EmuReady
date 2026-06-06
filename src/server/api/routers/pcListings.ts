@@ -64,6 +64,7 @@ import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifica
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
 import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
 import { logAudit } from '@/server/services/audit.service'
+import { ReportSubmissionService } from '@/server/services/report-submission.service'
 import { autoRejectRiskyPcReports } from '@/server/services/review-risk-auto-reject.service'
 import {
   attachReviewRiskProfiles,
@@ -1687,51 +1688,13 @@ export const pcListingsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { pcListingId, reason, description } = input
       const userId = ctx.session.user.id
+      const reportSubmissionService = new ReportSubmissionService(ctx.prisma)
 
-      // Check if PC listing exists
-      const pcListing = await ctx.prisma.pcListing.findUnique({
-        where: { id: pcListingId },
-        include: { author: true },
-      })
-
-      if (!pcListing) {
-        return ResourceError.pcListing.notFound()
-      }
-
-      // Prevent users from reporting their own listings
-      if (pcListing.authorId === userId) {
-        return AppError.badRequest('You cannot report your own listing')
-      }
-
-      // Check if user already reported this listing
-      const existingReport = await ctx.prisma.pcListingReport.findUnique({
-        where: {
-          pcListingId_reportedById: {
-            pcListingId,
-            reportedById: userId,
-          },
-        },
-      })
-
-      if (existingReport) {
-        return AppError.badRequest('You have already reported this listing')
-      }
-
-      return await ctx.prisma.pcListingReport.create({
-        data: {
-          pcListingId,
-          reportedById: userId,
-          reason,
-          description,
-        },
-        include: {
-          pcListing: {
-            include: {
-              game: { select: { title: true } },
-              author: { select: { name: true } },
-            },
-          },
-        },
+      return await reportSubmissionService.createPcListingReport({
+        pcListingId,
+        reportedById: userId,
+        reason,
+        description,
       })
     }),
 

@@ -4,6 +4,7 @@ import {
   NotificationCategory,
   NotificationDeliveryStatus,
   NotificationType,
+  Role,
 } from '@orm/client'
 import { NOTIFICATION_EVENTS } from './eventEmitter'
 import type { NotificationEventData } from './eventEmitter'
@@ -263,6 +264,32 @@ describe('NotificationService', () => {
       expect(users).toContain('pc-author-1')
     })
 
+    it('report.created returns moderator and higher users', async () => {
+      mockPrisma.user.findMany.mockResolvedValue([
+        { id: 'moderator-1' },
+        { id: 'admin-1' },
+        { id: 'super-admin-1' },
+        { id: 'reporter-1' },
+      ])
+
+      const users = await serviceInternals.getUsersForEvent(
+        makeEvent({
+          eventType: NOTIFICATION_EVENTS.REPORT_CREATED,
+          entityType: 'listingReport',
+          entityId: 'report-1',
+          triggeredBy: 'reporter-1',
+          includeTriggeredBy: true,
+          payload: { reportId: 'report-1', listingId: 'listing-1' },
+        }),
+      )
+
+      expect(mockPrisma.user.findMany).toHaveBeenCalledWith({
+        where: { role: { in: [Role.MODERATOR, Role.ADMIN, Role.SUPER_ADMIN] } },
+        select: { id: true },
+      })
+      expect(users).toEqual(['moderator-1', 'admin-1', 'super-admin-1', 'reporter-1'])
+    })
+
     it('excludes the actor from recipients', async () => {
       mockPrisma.listing.findUnique.mockResolvedValue(makeListingRecord({ authorId: 'admin-1' }))
 
@@ -518,6 +545,8 @@ describe('NotificationService', () => {
       ['pcListing.rejected', NotificationType.LISTING_REJECTED],
       ['game_follow.new_listing', NotificationType.FOLLOWED_GAME_NEW_LISTING],
       ['game_follow.new_pc_listing', NotificationType.FOLLOWED_GAME_NEW_PC_LISTING],
+      [NOTIFICATION_EVENTS.REPORT_CREATED, NotificationType.REPORT_CREATED],
+      [NOTIFICATION_EVENTS.REPORT_STATUS_CHANGED, NotificationType.REPORT_STATUS_CHANGED],
       ['listing.commented', NotificationType.COMMENT_ON_LISTING],
     ]
 

@@ -16,6 +16,7 @@ import {
   publicProcedure,
 } from '@/server/api/trpc'
 import { getAuthorReportCounts } from '@/server/services/report-stats.service'
+import { ReportSubmissionService } from '@/server/services/report-submission.service'
 import { paginate } from '@/server/utils/pagination'
 import { validateEnum, sanitizeInput, validatePagination } from '@/server/utils/security-validation'
 import { PERMISSIONS } from '@/utils/permission-system'
@@ -131,54 +132,15 @@ export const listingReportsRouter = createTRPCRouter({
     const { listingId, reason, description } = input
     const userId = ctx.session.user.id
 
-    // Validate reason enum
     validateEnum(reason, Object.values(ReportReason), 'reason')
 
-    // Sanitize description if provided (plain text, not markdown)
-    const sanitizedDescription = description ? sanitizeInput(description) : description
+    const reportSubmissionService = new ReportSubmissionService(ctx.prisma)
 
-    // Check if listing exists
-    const listing = await ctx.prisma.listing.findUnique({
-      where: { id: listingId },
-      include: { author: true },
-    })
-
-    if (!listing) return ResourceError.listing.notFound()
-
-    // Prevent users from reporting their own listings
-    if (listing.authorId === userId) {
-      return ResourceError.listingReport.cannotReportOwnListing()
-    }
-
-    // Check if user already reported this listing
-    const existingReport = await ctx.prisma.listingReport.findUnique({
-      where: {
-        listingId_reportedById: {
-          listingId,
-          reportedById: userId,
-        },
-      },
-    })
-
-    if (existingReport) return ResourceError.listingReport.alreadyExists()
-
-    // TODO: Send notification to SUPER_ADMIN users
-
-    return await ctx.prisma.listingReport.create({
-      data: {
-        listingId,
-        reportedById: userId,
-        reason,
-        description: sanitizedDescription,
-      },
-      include: {
-        listing: {
-          include: {
-            game: { select: { title: true } },
-            author: { select: { name: true } },
-          },
-        },
-      },
+    return await reportSubmissionService.createListingReport({
+      listingId,
+      reportedById: userId,
+      reason,
+      description,
     })
   }),
 

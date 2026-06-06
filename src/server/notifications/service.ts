@@ -17,7 +17,10 @@ import {
   Role,
 } from '@orm/client'
 import { createEmailService } from './emailService'
-import { type NotificationEventData, notificationEventEmitter } from './eventEmitter'
+import {
+  type NotificationEventData,
+  notificationEventEmitter,
+} from './eventEmitter'
 import { notificationRateLimitService } from './rateLimitService'
 import { notificationTemplateEngine, type TemplateContext } from './templates'
 import type {
@@ -673,7 +676,7 @@ export class NotificationService {
         break
     }
 
-    if (eventData.triggeredBy) {
+    if (eventData.triggeredBy && !eventData.includeTriggeredBy) {
       const actorId = eventData.triggeredBy
       for (let i = userIds.length - 1; i >= 0; i--) {
         if (userIds[i] === actorId) userIds.splice(i, 1)

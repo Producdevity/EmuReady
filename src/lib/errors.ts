@@ -486,6 +486,12 @@ export class ResourceError {
     cannotReportOwnListing: () => AppError.forbidden('You cannot report your own listing'),
   }
 
+  static pcListingReport = {
+    notFound: () => AppError.notFound('PC listing report'),
+    alreadyExists: () => AppError.conflict('You have already reported this listing'),
+    cannotReportOwnListing: () => AppError.forbidden('You cannot report your own listing'),
+  }
+
   static userBan = {
     notFound: () => AppError.notFound('User ban'),
     alreadyBanned: () => AppError.conflict('User already has an active ban'),
