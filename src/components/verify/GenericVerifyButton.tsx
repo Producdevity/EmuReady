@@ -40,7 +40,6 @@ export default function GenericVerifyButton(props: Props) {
   const currentUserQuery = api.users.me.useQuery()
   const userId = currentUserQuery.data?.id
 
-  // Check if user is verified developer for this emulator
   const verifiedDeveloperQuery = api.emulators.getVerifiedDeveloper.useQuery(
     { emulatorId: props.emulatorId },
     { enabled: !!userId && !!props.emulatorId },
@@ -99,42 +98,31 @@ export default function GenericVerifyButton(props: Props) {
 
   const handleVerify = () => {
     if (isPcListing) {
-      verifyPcListingMutation.mutate({
+      return verifyPcListingMutation.mutate({
         pcListingId: props.listingId,
         notes: notes.trim() || undefined,
       })
-    } else {
-      verifyListingMutation.mutate({
-        listingId: props.listingId,
-        notes: notes.trim() || undefined,
-      })
     }
+    verifyListingMutation.mutate({
+      listingId: props.listingId,
+      notes: notes.trim() || undefined,
+    })
   }
 
   const handleUnverify = () => {
-    if (isPcListing) {
-      if (props.verificationId) {
-        removeVerificationMutation.mutate({
-          verificationId: props.verificationId,
-        })
-      }
-    } else {
-      unverifyListingMutation.mutate({
-        listingId: props.listingId,
-      })
+    if (!isPcListing) {
+      return unverifyListingMutation.mutate({ listingId: props.listingId })
     }
+    if (!props.verificationId) return
+    removeVerificationMutation.mutate({ verificationId: props.verificationId })
   }
 
-  // Don't show button if user is not logged in
   if (!currentUserQuery.data) return null
 
-  // Don't show button if user is not a verified developer for this emulator
   if (!verifiedDeveloperQuery.data) return null
 
-  // Don't show button if user is the author (can't verify own listings)
   if (props.authorId === userId) return null
 
-  // Don't show button if user doesn't have at least DEVELOPER role
   if (!roleIncludesRole(currentUserQuery.data.role, Role.DEVELOPER)) return null
 
   const isLoading = isPcListing
