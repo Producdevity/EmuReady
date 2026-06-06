@@ -112,11 +112,12 @@ describe('mobileListingReportsRouter create', () => {
       entityType: 'listingReport',
       entityId: REPORT_ID,
       triggeredBy: USER_ID,
+      includeTriggeredBy: true,
       payload: {
         reportId: REPORT_ID,
         contentId: LISTING_ID,
         contentType: 'Compatibility Report',
-        actionUrl: `/admin/reports?listing=${LISTING_ID}`,
+        actionUrl: `/listings/${LISTING_ID}`,
         listingId: LISTING_ID,
       },
     })

@@ -1,13 +1,11 @@
-import { AppError, ResourceError } from '@/lib/errors'
 import { CreateListingReportSchema, GetUserReportStatsSchema } from '@/schemas/listingReport'
 import {
   createMobileTRPCRouter,
   mobileProtectedProcedure,
   mobilePublicProcedure,
 } from '@/server/api/mobileContext'
-import { emitReportCreatedNotification } from '@/server/notifications/reportEvents'
 import { getAuthorReportCounts } from '@/server/services/report-stats.service'
-import { sanitizeInput } from '@/server/utils/security-validation'
+import { ReportSubmissionService } from '@/server/services/report-submission.service'
 
 export const mobileListingReportsRouter = createMobileTRPCRouter({
   create: mobileProtectedProcedure
@@ -15,44 +13,13 @@ export const mobileListingReportsRouter = createMobileTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { listingId, reason, description } = input
       const userId = ctx.session.user.id
-      const sanitizedDescription = description ? sanitizeInput(description) : description
 
-      const listing = await ctx.prisma.listing.findUnique({
-        where: { id: listingId },
-        include: { author: true },
-      })
-
-      if (!listing) return ResourceError.listing.notFound()
-
-      if (listing.authorId === userId) {
-        return AppError.badRequest('You cannot report your own listing')
-      }
-
-      const existingReport = await ctx.prisma.listingReport.findUnique({
-        where: { listingId_reportedById: { listingId, reportedById: userId } },
-      })
-
-      if (existingReport) {
-        return AppError.badRequest('You have already reported this listing')
-      }
-
-      const report = await ctx.prisma.listingReport.create({
-        data: { listingId, reportedById: userId, reason, description: sanitizedDescription },
-        include: {
-          listing: {
-            include: {
-              game: { select: { title: true } },
-              author: { select: { name: true } },
-            },
-          },
-        },
-      })
-
-      emitReportCreatedNotification({
-        type: 'listing',
-        reportId: report.id,
+      const reportSubmissionService = new ReportSubmissionService(ctx.prisma)
+      const report = await reportSubmissionService.createListingReport({
         listingId,
         reportedById: userId,
+        reason,
+        description,
       })
 
       return {

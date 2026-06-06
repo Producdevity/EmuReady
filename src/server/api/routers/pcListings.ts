@@ -61,10 +61,10 @@ import {
   invalidatePcListingsSeo,
 } from '@/server/cache/invalidation'
 import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
-import { emitReportCreatedNotification } from '@/server/notifications/reportEvents'
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
 import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
 import { logAudit } from '@/server/services/audit.service'
+import { ReportSubmissionService } from '@/server/services/report-submission.service'
 import { autoRejectRiskyPcReports } from '@/server/services/review-risk-auto-reject.service'
 import {
   attachReviewRiskProfiles,
@@ -77,7 +77,7 @@ import { listingStatsCache } from '@/server/utils/cache'
 import { normalizeCustomFieldValues } from '@/server/utils/custom-field-values'
 import { paginate } from '@/server/utils/pagination'
 import { isUserBanned } from '@/server/utils/query-builders'
-import { sanitizeInput, validatePagination } from '@/server/utils/security-validation'
+import { validatePagination } from '@/server/utils/security-validation'
 import { checkSpamContent } from '@/server/utils/spam-check'
 import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
 import {
@@ -1688,59 +1688,14 @@ export const pcListingsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { pcListingId, reason, description } = input
       const userId = ctx.session.user.id
-      const sanitizedDescription = description ? sanitizeInput(description) : description
+      const reportSubmissionService = new ReportSubmissionService(ctx.prisma)
 
-      const pcListing = await ctx.prisma.pcListing.findUnique({
-        where: { id: pcListingId },
-        include: { author: true },
-      })
-
-      if (!pcListing) {
-        return ResourceError.pcListing.notFound()
-      }
-
-      if (pcListing.authorId === userId) {
-        return AppError.badRequest('You cannot report your own listing')
-      }
-
-      const existingReport = await ctx.prisma.pcListingReport.findUnique({
-        where: {
-          pcListingId_reportedById: {
-            pcListingId,
-            reportedById: userId,
-          },
-        },
-      })
-
-      if (existingReport) {
-        return AppError.badRequest('You have already reported this listing')
-      }
-
-      const report = await ctx.prisma.pcListingReport.create({
-        data: {
-          pcListingId,
-          reportedById: userId,
-          reason,
-          description: sanitizedDescription,
-        },
-        include: {
-          pcListing: {
-            include: {
-              game: { select: { title: true } },
-              author: { select: { name: true } },
-            },
-          },
-        },
-      })
-
-      emitReportCreatedNotification({
-        type: 'pcListing',
-        reportId: report.id,
+      return await reportSubmissionService.createPcListingReport({
         pcListingId,
         reportedById: userId,
+        reason,
+        description,
       })
-
-      return report
     }),
 
   getReports: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)

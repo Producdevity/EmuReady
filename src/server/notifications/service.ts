@@ -18,7 +18,6 @@ import {
 } from '@orm/client'
 import { createEmailService } from './emailService'
 import {
-  NOTIFICATION_EVENTS,
   type NotificationEventData,
   notificationEventEmitter,
 } from './eventEmitter'
@@ -677,7 +676,7 @@ export class NotificationService {
         break
     }
 
-    if (eventData.triggeredBy && eventData.eventType !== NOTIFICATION_EVENTS.REPORT_CREATED) {
+    if (eventData.triggeredBy && !eventData.includeTriggeredBy) {
       const actorId = eventData.triggeredBy
       for (let i = userIds.length - 1; i >= 0; i--) {
         if (userIds[i] === actorId) userIds.splice(i, 1)

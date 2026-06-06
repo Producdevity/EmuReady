@@ -6,6 +6,7 @@ export interface NotificationEventData {
   entityType: string
   entityId: string
   triggeredBy?: string
+  includeTriggeredBy?: boolean
   payload?: NotificationEventPayload
 }
 

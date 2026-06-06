@@ -27,13 +27,14 @@ export function emitReportCreatedNotification(input: ReportNotificationInput): v
     entityType: isPcListing ? 'pcListingReport' : 'listingReport',
     entityId: input.reportId,
     triggeredBy: input.reportedById,
+    includeTriggeredBy: true,
     payload: {
       reportId: input.reportId,
       contentId,
       contentType: isPcListing ? 'PC Compatibility Report' : 'Compatibility Report',
       actionUrl: isPcListing
-        ? `/admin/reports?pcListing=${contentId}`
-        : `/admin/reports?listing=${contentId}`,
+        ? `/pc-listings/${contentId}`
+        : `/listings/${contentId}`,
       ...(isPcListing ? { pcListingId: input.pcListingId } : { listingId: input.listingId }),
     },
   })

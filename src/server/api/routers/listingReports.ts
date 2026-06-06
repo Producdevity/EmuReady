@@ -15,8 +15,8 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
-import { emitReportCreatedNotification } from '@/server/notifications/reportEvents'
 import { getAuthorReportCounts } from '@/server/services/report-stats.service'
+import { ReportSubmissionService } from '@/server/services/report-submission.service'
 import { paginate } from '@/server/utils/pagination'
 import { validateEnum, sanitizeInput, validatePagination } from '@/server/utils/security-validation'
 import { PERMISSIONS } from '@/utils/permission-system'
@@ -134,55 +134,14 @@ export const listingReportsRouter = createTRPCRouter({
 
     validateEnum(reason, Object.values(ReportReason), 'reason')
 
-    const sanitizedDescription = description ? sanitizeInput(description) : description
+    const reportSubmissionService = new ReportSubmissionService(ctx.prisma)
 
-    const listing = await ctx.prisma.listing.findUnique({
-      where: { id: listingId },
-      include: { author: true },
-    })
-
-    if (!listing) return ResourceError.listing.notFound()
-
-    if (listing.authorId === userId) {
-      return ResourceError.listingReport.cannotReportOwnListing()
-    }
-
-    const existingReport = await ctx.prisma.listingReport.findUnique({
-      where: {
-        listingId_reportedById: {
-          listingId,
-          reportedById: userId,
-        },
-      },
-    })
-
-    if (existingReport) return ResourceError.listingReport.alreadyExists()
-
-    const report = await ctx.prisma.listingReport.create({
-      data: {
-        listingId,
-        reportedById: userId,
-        reason,
-        description: sanitizedDescription,
-      },
-      include: {
-        listing: {
-          include: {
-            game: { select: { title: true } },
-            author: { select: { name: true } },
-          },
-        },
-      },
-    })
-
-    emitReportCreatedNotification({
-      type: 'listing',
-      reportId: report.id,
+    return await reportSubmissionService.createListingReport({
       listingId,
       reportedById: userId,
+      reason,
+      description,
     })
-
-    return report
   }),
 
   updateStatus: permissionProcedure(PERMISSIONS.MANAGE_USER_BANS)

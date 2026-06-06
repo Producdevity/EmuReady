@@ -610,11 +610,12 @@ describe('pcListings trust integration', () => {
         entityType: 'pcListingReport',
         entityId: '00000000-0000-4000-a000-000000000030',
         triggeredBy: USER_ID,
+        includeTriggeredBy: true,
         payload: {
           reportId: '00000000-0000-4000-a000-000000000030',
           contentId: LISTING_ID,
           contentType: 'PC Compatibility Report',
-          actionUrl: `/admin/reports?pcListing=${LISTING_ID}`,
+          actionUrl: `/pc-listings/${LISTING_ID}`,
           pcListingId: LISTING_ID,
         },
       })

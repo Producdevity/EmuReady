@@ -278,6 +278,7 @@ describe('NotificationService', () => {
           entityType: 'listingReport',
           entityId: 'report-1',
           triggeredBy: 'reporter-1',
+          includeTriggeredBy: true,
           payload: { reportId: 'report-1', listingId: 'listing-1' },
         }),
       )
