@@ -4,6 +4,12 @@ import { env } from '@/lib/env'
 import { logger } from '@/lib/logger'
 import { isTrackingAllowed } from './isTrackingAllowed'
 
+function ensureGoogleAnalyticsDataLayer() {
+  if (typeof window === 'undefined') return
+
+  if (!window.dataLayer) window.dataLayer = []
+}
+
 export function sendAnalyticsEvent(params: AnalyticsEventData) {
   if (!isTrackingAllowed(params.category)) return
 
@@ -53,6 +59,8 @@ export function sendAnalyticsEvent(params: AnalyticsEventData) {
 
   if (typeof window !== 'undefined' && env.ENABLE_ANALYTICS) {
     if (env.GA_ID) {
+      ensureGoogleAnalyticsDataLayer()
+
       sendGAEvent('event', params.action, {
         event_category: params.category,
         ...eventData,
