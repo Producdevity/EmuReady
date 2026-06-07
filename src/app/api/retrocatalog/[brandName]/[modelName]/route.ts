@@ -18,7 +18,7 @@ function isCatalogSegment(value: string) {
 }
 
 function emptyCatalogResponse() {
-  return NextResponse.json([], { headers: CATALOG_CACHE_HEADERS })
+  return NextResponse.json([], { headers: { 'Cache-Control': 'no-store' } })
 }
 
 function catalogUrl(brandName: string, modelName: string) {
@@ -38,12 +38,22 @@ export async function GET(
   try {
     const response = await fetch(catalogUrl(brandName, modelName), {
       headers: { Accept: 'application/json' },
-      next: { revalidate: 86400 },
+      cache: 'no-store',
     })
 
-    if (!response.ok) return emptyCatalogResponse()
+    if (!response.ok) {
+      logger.warn('[retrocatalog] Device lookup rejected', {
+        status: response.status,
+        brandName,
+        modelName,
+      })
 
-    const data = await response.json()
+      return emptyCatalogResponse()
+    }
+
+    const data: unknown = await response.json()
+    if (!Array.isArray(data) || data.length === 0) return emptyCatalogResponse()
+
     return NextResponse.json(data, { headers: CATALOG_CACHE_HEADERS })
   } catch (error) {
     logger.warn('[retrocatalog] Device lookup failed', {
