@@ -25,6 +25,7 @@ import { listingsRouter } from './routers/listings'
 import { listingVerificationsRouter } from './routers/listingVerifications'
 import { mobileRouter } from './routers/mobile'
 import { notificationsRouter } from './routers/notifications'
+import { pcListingReportsRouter } from './routers/pcListingReports'
 import { pcListingsRouter } from './routers/pcListings'
 import { performanceScalesRouter } from './routers/performanceScales'
 import { permissionLogsRouter } from './routers/permissionLogs'
@@ -47,6 +48,7 @@ export const appRouter = createTRPCRouter({
   activity: activityRouter,
   listings: listingsRouter,
   pcListings: pcListingsRouter,
+  pcListingReports: pcListingReportsRouter,
   apiKeys: apiKeysRouter,
   devices: devicesRouter,
   cpus: cpusRouter,

@@ -1,4 +1,5 @@
 import { AppError } from '@/lib/errors'
+// TODO: carefully consider wtf this file is. seems like none of this is how it should be done.
 
 /**
  * Security validation utilities for critical runtime parameters
@@ -74,6 +75,7 @@ export function validateEnum<T extends string>(
 /**
  * Validates pagination parameters
  * Prevents excessive data retrieval
+ * TODO: this needs to get the fuck out of here. zod validates, this is bs.
  */
 export function validatePagination(
   page?: number,
@@ -89,6 +91,7 @@ export function validatePagination(
 /**
  * Sanitizes user input to prevent XSS and injection
  * Removes potentially dangerous characters
+ * TODO: this is like insufficient or not the proper way of doing it.
  */
 export function sanitizeInput(input: string): string {
   return input

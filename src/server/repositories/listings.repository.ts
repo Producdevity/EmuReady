@@ -2,7 +2,6 @@ import { PAGINATION } from '@/data/constants'
 import { AppError, ResourceError } from '@/lib/errors'
 import { canUserAutoApprove } from '@/lib/trust/service'
 import { EMULATOR_VERSION_FIELD_NAME } from '@/schemas/submissionRisk'
-import { validateCustomFields } from '@/server/api/routers/listings/validation'
 import { computeVoteCounts } from '@/server/utils/moderator-info'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
 import {
@@ -11,6 +10,7 @@ import {
   buildShadowBanFilter,
   buildApprovalStatusFilter,
 } from '@/server/utils/query-builders'
+import { validateCustomFields } from '@/server/utils/validate-custom-fields'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { calculateWilsonScore } from '@/utils/wilson-score'
 import { Prisma, ApprovalStatus, Role } from '@orm/client'

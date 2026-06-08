@@ -39,7 +39,7 @@ function PcReportListingModal(props: Props) {
   const [description, setDescription] = useState('')
   const [error, setError] = useState('')
 
-  const createReport = api.pcListings.createReport.useMutation()
+  const createReport = api.pcListingReports.create.useMutation()
   const { user } = useUser()
 
   // Reset form when modal opens/closes
@@ -64,7 +64,7 @@ function PcReportListingModal(props: Props) {
         pcListingId: props.pcListingId,
         reason,
         description: description.trim() || undefined,
-      } satisfies RouterInput['pcListings']['createReport'])
+      } satisfies RouterInput['pcListingReports']['create'])
 
       // Track content flagging in analytics
       if (user?.id) {

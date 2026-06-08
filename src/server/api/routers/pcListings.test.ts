@@ -581,48 +581,6 @@ describe('pcListings trust integration', () => {
     })
   })
 
-  describe('createReport', () => {
-    it('creates a PC report and emits a moderator notification event', async () => {
-      const { caller, prisma } = createCaller()
-      prisma.pcListing.findUnique.mockResolvedValue({
-        id: LISTING_ID,
-        authorId: AUTHOR_ID,
-        author: { id: AUTHOR_ID },
-      })
-
-      const report = await caller.createReport({
-        pcListingId: LISTING_ID,
-        reason: ReportReason.SPAM,
-        description: '  needs review  ',
-      })
-
-      expect(report.id).toBe('00000000-0000-4000-a000-000000000030')
-      expect(prisma.pcListingReport.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            pcListingId: LISTING_ID,
-            reportedById: USER_ID,
-            description: 'needs review',
-          }),
-        }),
-      )
-      expect(mockEmitNotificationEvent).toHaveBeenCalledWith({
-        eventType: 'report.created',
-        entityType: 'pcListingReport',
-        entityId: '00000000-0000-4000-a000-000000000030',
-        triggeredBy: USER_ID,
-        includeTriggeredBy: true,
-        payload: {
-          reportId: '00000000-0000-4000-a000-000000000030',
-          contentId: LISTING_ID,
-          contentType: 'PC Compatibility Report',
-          actionUrl: `/pc-listings/${LISTING_ID}`,
-          pcListingId: LISTING_ID,
-        },
-      })
-    })
-  })
-
   describe('byId', () => {
     it('hides review risk profiles for non-reviewers', async () => {
       mockRepositoryGetByIdWithDetails.mockResolvedValueOnce({
