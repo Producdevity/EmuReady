@@ -6,7 +6,7 @@ import superjson from 'superjson'
 import { ZodError } from 'zod'
 import analytics from '@/lib/analytics'
 import { getSerializableAppError } from '@/lib/app-error-cause'
-import { AppError } from '@/lib/errors'
+import { AppError, ERROR_CODES } from '@/lib/errors'
 import { prisma } from '@/server/db'
 import { hasDeveloperAccessToEmulator } from '@/server/utils/permissions'
 import { type Nullable } from '@/types/utils'
@@ -165,7 +165,7 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
   errorFormatter(ctx) {
     // Track errors for analytics
-    if (ctx.error.code !== 'UNAUTHORIZED' && ctx.error.code !== 'FORBIDDEN') {
+    if (ctx.error.code !== ERROR_CODES.UNAUTHORIZED && ctx.error.code !== ERROR_CODES.FORBIDDEN) {
       analytics.performance.errorOccurred({
         errorType: ctx.error.code || 'UNKNOWN',
         errorMessage: ctx.error.message,
@@ -230,9 +230,7 @@ export const authorProcedure = t.procedure.use(performanceMiddleware).use(({ ctx
   if (!ctx.session?.user) return AppError.unauthorized()
 
   // For now, we consider User as Author
-  if (!hasRolePermission(ctx.session.user.role, Role.USER)) {
-    return AppError.forbidden()
-  }
+  if (!hasRolePermission(ctx.session.user.role, Role.USER)) return AppError.forbidden()
 
   return next({
     ctx: {
@@ -249,7 +247,7 @@ export const moderatorProcedure = t.procedure.use(performanceMiddleware).use(({ 
   if (!ctx.session?.user) AppError.unauthorized()
 
   if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
-    AppError.insufficientRole(Role.MODERATOR)
+    return AppError.insufficientRole(Role.MODERATOR)
   }
 
   return next({ ctx: { session: { ...ctx.session, user: ctx.session.user } } })
@@ -262,7 +260,7 @@ export const developerProcedure = t.procedure.use(performanceMiddleware).use(({ 
   if (!ctx.session?.user) AppError.unauthorized()
 
   if (!hasRolePermission(ctx.session.user.role, Role.DEVELOPER)) {
-    AppError.insufficientRole(Role.DEVELOPER)
+    return AppError.insufficientRole(Role.DEVELOPER)
   }
 
   return next({ ctx: { session: { ...ctx.session, user: ctx.session.user } } })
@@ -275,7 +273,7 @@ export const adminProcedure = t.procedure.use(performanceMiddleware).use(({ ctx,
   if (!ctx.session?.user) AppError.unauthorized()
 
   if (!hasRolePermission(ctx.session.user.role, Role.ADMIN)) {
-    AppError.insufficientRole(Role.ADMIN)
+    return AppError.insufficientRole(Role.ADMIN)
   }
 
   return next({ ctx: { session: { ...ctx.session, user: ctx.session.user } } })
@@ -288,7 +286,7 @@ export const superAdminProcedure = t.procedure.use(performanceMiddleware).use(({
   if (!ctx.session?.user) return AppError.unauthorized()
 
   if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-    AppError.insufficientRole(Role.SUPER_ADMIN)
+    return AppError.insufficientRole(Role.SUPER_ADMIN)
   }
 
   return next({ ctx: { session: { ...ctx.session, user: ctx.session.user } } })
@@ -343,7 +341,7 @@ export function multiPermissionProcedure(requiredPermissions: string[]) {
       (permission) => !hasPermissionInContext(ctx, permission),
     )
 
-    if (missingPermissions.length > 0) AppError.insufficientPermissions(missingPermissions)
+    if (missingPermissions.length > 0) return AppError.insufficientPermissions(missingPermissions)
 
     return next({ ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } } })
   })
@@ -360,7 +358,7 @@ export function anyPermissionProcedure(requiredPermissions: string[]) {
       hasPermissionInContext(ctx, permission),
     )
 
-    if (!hasAnyPermission) AppError.insufficientRoles(requiredPermissions)
+    if (!hasAnyPermission) return AppError.insufficientRoles(requiredPermissions)
 
     return next({ ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } } })
   })
