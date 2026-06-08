@@ -7,7 +7,7 @@ import {
   invalidatePcListingsSeo,
 } from '@/server/cache/invalidation'
 import { PERMISSIONS } from '@/utils/permission-system'
-import { ApprovalStatus, PcOs, ReportReason, Role, TrustAction } from '@orm/client'
+import { ApprovalStatus, PcOs, ReportReason, Role, TrustAction } from '@orm'
 
 vi.unmock('@/server/api/trpc')
 vi.unmock('@/server/api/root')
@@ -195,6 +195,7 @@ function createMockPrisma() {
     pcListing: {
       findUnique: vi.fn(),
       findMany: vi.fn().mockResolvedValue([]),
+      count: vi.fn().mockResolvedValue(0),
       update: vi.fn(),
       updateMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
@@ -850,6 +851,159 @@ describe('pcListings trust integration', () => {
       expect(mockRepositoryGetPendingListingsByIds).not.toHaveBeenCalled()
       expect(result.pcListings).toHaveLength(0)
       expect(result.pagination.total).toBe(0)
+    })
+  })
+
+  describe('getProcessed', () => {
+    it('loads processed PC reports with status, search, pagination, and sorting', async () => {
+      const processedListing = {
+        id: LISTING_ID,
+        status: ApprovalStatus.APPROVED,
+      }
+      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.SUPER_ADMIN })
+      prisma.pcListing.findMany.mockResolvedValueOnce([processedListing])
+      prisma.pcListing.count.mockResolvedValueOnce(1)
+
+      const result = await caller.getProcessed({
+        page: 2,
+        limit: 10,
+        filterStatus: ApprovalStatus.APPROVED,
+        search: 'steam deck',
+        sortField: 'cpu',
+        sortDirection: 'asc',
+      })
+
+      expect(prisma.pcListing.findMany).toHaveBeenCalledWith({
+        where: {
+          NOT: { status: ApprovalStatus.PENDING },
+          status: ApprovalStatus.APPROVED,
+          OR: [
+            { game: { title: { contains: 'steam deck', mode: 'insensitive' } } },
+            { game: { system: { name: { contains: 'steam deck', mode: 'insensitive' } } } },
+            { cpu: { modelName: { contains: 'steam deck', mode: 'insensitive' } } },
+            { cpu: { brand: { name: { contains: 'steam deck', mode: 'insensitive' } } } },
+            { gpu: { modelName: { contains: 'steam deck', mode: 'insensitive' } } },
+            { gpu: { brand: { name: { contains: 'steam deck', mode: 'insensitive' } } } },
+            { emulator: { name: { contains: 'steam deck', mode: 'insensitive' } } },
+            { author: { name: { contains: 'steam deck', mode: 'insensitive' } } },
+            { processedNotes: { contains: 'steam deck', mode: 'insensitive' } },
+            { notes: { contains: 'steam deck', mode: 'insensitive' } },
+          ],
+        },
+        include: expect.objectContaining({ processedByUser: true }),
+        orderBy: [{ cpu: { brand: { name: 'asc' } } }, { cpu: { modelName: 'asc' } }],
+        skip: 10,
+        take: 10,
+      })
+      expect(prisma.pcListing.count).toHaveBeenCalledWith({
+        where: expect.objectContaining({
+          NOT: { status: ApprovalStatus.PENDING },
+          status: ApprovalStatus.APPROVED,
+        }),
+      })
+      expect(result.pcListings).toEqual([processedListing])
+      expect(result.pagination.total).toBe(1)
+    })
+  })
+
+  describe('overrideStatus', () => {
+    it('updates a processed PC report, invalidates SEO, and emits a rejected event', async () => {
+      const gameId = '00000000-0000-4000-a000-000000000040'
+      const cpuId = '00000000-0000-4000-a000-000000000070'
+      const processedAt = new Date('2026-06-01T12:00:00.000Z')
+      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.SUPER_ADMIN })
+      prisma.pcListing.findUnique.mockResolvedValueOnce({
+        id: LISTING_ID,
+        status: ApprovalStatus.APPROVED,
+        gameId,
+        cpuId,
+        gpuId: null,
+        authorId: AUTHOR_ID,
+        processedNotes: 'Old notes',
+      })
+      prisma.pcListing.update.mockResolvedValueOnce({
+        id: LISTING_ID,
+        status: ApprovalStatus.REJECTED,
+        processedAt,
+      })
+
+      await caller.overrideStatus({
+        pcListingId: LISTING_ID,
+        newStatus: ApprovalStatus.REJECTED,
+        overrideNotes: 'Incorrect hardware',
+      })
+
+      expect(prisma.pcListing.update).toHaveBeenCalledWith({
+        where: { id: LISTING_ID },
+        data: {
+          status: ApprovalStatus.REJECTED,
+          processedByUserId: ADMIN_ID,
+          processedAt: expect.any(Date),
+          processedNotes: 'Incorrect hardware',
+        },
+      })
+      expect(invalidatePcListingSeo).toHaveBeenCalledWith({
+        id: LISTING_ID,
+        gameId,
+        cpuId,
+        gpuId: null,
+      })
+      expect(mockApplyTrustAction).toHaveBeenCalledWith({
+        userId: AUTHOR_ID,
+        action: TrustAction.LISTING_REJECTED,
+        context: {
+          pcListingId: LISTING_ID,
+          adminUserId: ADMIN_ID,
+          reason: 'Incorrect hardware',
+        },
+      })
+      expect(mockEmitNotificationEvent).toHaveBeenCalledWith({
+        eventType: 'PC_LISTING_REJECTED',
+        entityType: 'pcListing',
+        entityId: LISTING_ID,
+        triggeredBy: ADMIN_ID,
+        payload: {
+          pcListingId: LISTING_ID,
+          rejectedBy: ADMIN_ID,
+          rejectedAt: processedAt,
+          rejectionReason: 'Incorrect hardware',
+        },
+      })
+    })
+
+    it('clears processed metadata without emitting a notification when returning to pending', async () => {
+      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.SUPER_ADMIN })
+      prisma.pcListing.findUnique.mockResolvedValueOnce({
+        id: LISTING_ID,
+        status: ApprovalStatus.REJECTED,
+        gameId: '00000000-0000-4000-a000-000000000040',
+        cpuId: '00000000-0000-4000-a000-000000000070',
+        gpuId: null,
+        authorId: AUTHOR_ID,
+        processedNotes: 'Rejected notes',
+      })
+      prisma.pcListing.update.mockResolvedValueOnce({
+        id: LISTING_ID,
+        status: ApprovalStatus.PENDING,
+      })
+
+      await caller.overrideStatus({
+        pcListingId: LISTING_ID,
+        newStatus: ApprovalStatus.PENDING,
+      })
+
+      expect(prisma.pcListing.update).toHaveBeenCalledWith({
+        where: { id: LISTING_ID },
+        data: {
+          status: ApprovalStatus.PENDING,
+          processedByUserId: null,
+          processedAt: null,
+          processedNotes: null,
+        },
+      })
+      expect(invalidatePcListingSeo).not.toHaveBeenCalled()
+      expect(mockApplyTrustAction).not.toHaveBeenCalled()
+      expect(mockEmitNotificationEvent).not.toHaveBeenCalled()
     })
   })
 

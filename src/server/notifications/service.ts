@@ -17,10 +17,7 @@ import {
   Role,
 } from '@orm/client'
 import { createEmailService } from './emailService'
-import {
-  type NotificationEventData,
-  notificationEventEmitter,
-} from './eventEmitter'
+import { type NotificationEventData, notificationEventEmitter } from './eventEmitter'
 import { notificationRateLimitService } from './rateLimitService'
 import { notificationTemplateEngine, type TemplateContext } from './templates'
 import type {
@@ -252,7 +249,6 @@ export class NotificationService {
       'pcListing.approved': NotificationType.LISTING_APPROVED,
       'listing.rejected': NotificationType.LISTING_REJECTED,
       'pcListing.rejected': NotificationType.LISTING_REJECTED,
-      'listing.status_overridden': NotificationType.LISTING_APPROVED,
       'content.flagged': NotificationType.CONTENT_FLAGGED,
       'game.added': NotificationType.GAME_ADDED,
       'emulator.updated': NotificationType.EMULATOR_UPDATED,

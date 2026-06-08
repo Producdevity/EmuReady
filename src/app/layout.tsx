@@ -51,9 +51,9 @@ export default function RootLayout(props: PropsWithChildren) {
             <Suspense fallback={null}>
               {env.ENABLE_ANALYTICS && (
                 <>
+                  {env.GA_ID && <GoogleAnalytics gaId={env.GA_ID} />}
                   <SessionTracker />
                   <PageViewTracker />
-                  {env.GA_ID && <GoogleAnalytics gaId={env.GA_ID} />}
                 </>
               )}
               {env.ENABLE_KOFI_WIDGET && <KofiWidget />}

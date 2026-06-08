@@ -136,9 +136,15 @@ export const superAdminNavItems: AdminNavItem[] = [
   },
   {
     href: ADMIN_ROUTES.PROCESSED_LISTINGS,
-    label: 'Processed Listings',
+    label: 'Processed Reports',
     exact: true,
-    description: 'View all processed listings.',
+    description: 'View approved and rejected handheld reports.',
+  },
+  {
+    href: ADMIN_ROUTES.PC_PROCESSED_LISTINGS,
+    label: 'PC Processed Reports',
+    exact: true,
+    description: 'View approved and rejected PC compatibility reports.',
   },
   {
     href: ADMIN_ROUTES.REPORTS,

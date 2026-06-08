@@ -66,27 +66,32 @@ export const GetPendingPcListingsSchema = z
 
 export const DeletePcListingSchema = z.object({ id: z.string().uuid() })
 
-// TODO: Wire up a PC admin processed-listings page + router procedure for
-// parity with handheld (`admin.getProcessed` + `src/app/admin/processed-listings/`).
-// When doing so, extend this schema with `sortField` / `sortDirection` using the
-// same shape as `GetProcessedSchema` in `./listing.ts`, and ideally share as much
-// of the admin router logic as possible (the two codebases are drifting — fixes
-// applied to handheld listings often miss their PC counterpart). Candidates for
-// shared code: `buildProcessedOrderBy`, the search `where` builder, the
-// approval-flow branches. See also: `src/server/api/utils/listingHelpers.ts`
-// (handheld) vs `pcListingHelpers.ts` (PC) — these helpers already exist and
-// should be the basis for a shared abstraction.
 export const GetProcessedPcSchema = z.object({
   page: z.number().default(1),
   limit: z.number().default(10),
-  filterStatus: z.nativeEnum(ApprovalStatus).optional(),
-  search: z.string().optional(),
+  filterStatus: z.nativeEnum(ApprovalStatus).nullable().optional(),
+  search: z.string().nullable().optional(),
+  sortField: z
+    .enum([
+      'processedAt',
+      'createdAt',
+      'status',
+      'game.title',
+      'game.system.name',
+      'cpu',
+      'gpu',
+      'emulator.name',
+      'author.name',
+    ])
+    .nullable()
+    .optional(),
+  sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
 })
 
 export const OverridePcApprovalStatusSchema = z.object({
   pcListingId: z.string().uuid(),
   newStatus: z.nativeEnum(ApprovalStatus), // PENDING, APPROVED, or REJECTED
-  overrideNotes: z.string().optional(),
+  overrideNotes: z.string().nullable().optional(),
 })
 
 export const ResetPcListingToPendingSchema = z.object({

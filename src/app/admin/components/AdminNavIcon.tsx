@@ -36,6 +36,7 @@ const getAdminNavIcon = (href: string, className: string) => {
   if (href.includes(ADMIN_ROUTES.API_ACCESS_DEV)) return <TerminalSquare className={className} />
   if (href.includes(ADMIN_ROUTES.API_ACCESS)) return <ServerCog className={className} />
   if (href.includes(ADMIN_ROUTES.MANAGE_LISTINGS)) return <List className={className} />
+  if (href.includes(ADMIN_ROUTES.PC_PROCESSED_LISTINGS)) return <FileText className={className} />
   if (href.includes(ADMIN_ROUTES.PROCESSED_LISTINGS)) return <FileText className={className} />
   if (href.includes(ADMIN_ROUTES.REPORTS)) return <AlertCircle className={className} />
   if (href.includes(ADMIN_ROUTES.USER_BANS)) return <Gavel className={className} />

@@ -1,7 +1,10 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { RISK_SIGNAL_TYPES } from '@/schemas/authorRisk'
 import { SUBMISSION_RISK_SIGNAL_TYPES } from '@/schemas/submissionRisk'
-import { ApprovalStatus, Role } from '@orm/client'
+import { invalidateListingSeo } from '@/server/cache/invalidation'
+import { notificationEventEmitter } from '@/server/notifications/eventEmitter'
+import { invalidateCatalogCompatibilityCacheForDevice } from '@/server/utils/cache/instances'
+import { ApprovalStatus, Role, TrustAction } from '@orm'
 import type * as AuthorRiskService from '@/server/services/author-risk.service'
 
 vi.unmock('@/server/api/trpc')
@@ -260,6 +263,237 @@ describe('listing admin pending approvals', () => {
     expect(mockGetPendingListingsByIds).not.toHaveBeenCalled()
     expect(result.listings).toHaveLength(0)
     expect(result.pagination.total).toBe(0)
+  })
+})
+
+describe('listing admin processed reports', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  function setupPrisma() {
+    const listing = {
+      findMany: vi.fn().mockResolvedValue([]),
+      count: vi.fn().mockResolvedValue(0),
+    }
+    const prismaMock = prisma as unknown as {
+      listing: typeof listing
+    }
+
+    prismaMock.listing = listing
+
+    return { listing }
+  }
+
+  it('searches processed handheld reports across visible report columns', async () => {
+    const processedListing = {
+      id: LISTING_ID,
+      status: ApprovalStatus.REJECTED,
+    }
+    const { listing } = setupPrisma()
+    listing.findMany.mockResolvedValueOnce([processedListing])
+    listing.count.mockResolvedValueOnce(1)
+
+    const { caller } = createCaller({ role: Role.SUPER_ADMIN })
+
+    const result = await caller.getProcessed({
+      page: 1,
+      limit: 20,
+      filterStatus: ApprovalStatus.REJECTED,
+      search: 'ayaneo',
+      sortField: 'device',
+      sortDirection: 'asc',
+    })
+
+    expect(listing.findMany).toHaveBeenCalledWith({
+      where: {
+        NOT: { status: ApprovalStatus.PENDING },
+        status: ApprovalStatus.REJECTED,
+        OR: [
+          { game: { title: { contains: 'ayaneo', mode: 'insensitive' } } },
+          { game: { system: { name: { contains: 'ayaneo', mode: 'insensitive' } } } },
+          { device: { modelName: { contains: 'ayaneo', mode: 'insensitive' } } },
+          { device: { brand: { name: { contains: 'ayaneo', mode: 'insensitive' } } } },
+          { emulator: { name: { contains: 'ayaneo', mode: 'insensitive' } } },
+          { author: { name: { contains: 'ayaneo', mode: 'insensitive' } } },
+          { processedNotes: { contains: 'ayaneo', mode: 'insensitive' } },
+          { notes: { contains: 'ayaneo', mode: 'insensitive' } },
+        ],
+      },
+      include: {
+        game: { include: { system: true } },
+        device: { include: { brand: true } },
+        emulator: true,
+        author: { select: { id: true, name: true } },
+        performance: true,
+        processedByUser: { select: { id: true, name: true } },
+      },
+      orderBy: [{ device: { brand: { name: 'asc' } } }, { device: { modelName: 'asc' } }],
+      skip: 0,
+      take: 20,
+    })
+    expect(listing.count).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        NOT: { status: ApprovalStatus.PENDING },
+        status: ApprovalStatus.REJECTED,
+      }),
+    })
+    expect(result.listings).toEqual([processedListing])
+    expect(result.pagination.total).toBe(1)
+  })
+})
+
+describe('listing admin processed report status overrides', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  function setupPrisma() {
+    const listing = {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    }
+    const prismaMock = prisma as unknown as {
+      listing: typeof listing
+    }
+
+    prismaMock.listing = listing
+
+    return { listing }
+  }
+
+  it('emits a rejection notification when a processed handheld report is overridden to rejected', async () => {
+    const processedAt = new Date('2026-06-01T12:00:00.000Z')
+    const { listing } = setupPrisma()
+    listing.findUnique.mockResolvedValueOnce({
+      id: LISTING_ID,
+      status: ApprovalStatus.APPROVED,
+      gameId: '00000000-0000-4000-a000-000000000030',
+      deviceId: '00000000-0000-4000-a000-000000000031',
+      emulatorId: '00000000-0000-4000-a000-000000000032',
+      authorId: AUTHOR_ID,
+      processedNotes: 'Old notes',
+    })
+    listing.update.mockResolvedValueOnce({
+      id: LISTING_ID,
+      status: ApprovalStatus.REJECTED,
+      processedAt,
+    })
+
+    const { caller } = createCaller({ role: Role.SUPER_ADMIN })
+
+    await caller.overrideStatus({
+      listingId: LISTING_ID,
+      newStatus: ApprovalStatus.REJECTED,
+      overrideNotes: 'Incorrect report',
+    })
+
+    expect(listing.update).toHaveBeenCalledWith({
+      where: { id: LISTING_ID },
+      data: {
+        status: ApprovalStatus.REJECTED,
+        processedByUserId: ADMIN_ID,
+        processedAt: expect.any(Date),
+        processedNotes: 'Incorrect report',
+      },
+    })
+    expect(invalidateListingSeo).toHaveBeenCalledWith({
+      id: LISTING_ID,
+      gameId: '00000000-0000-4000-a000-000000000030',
+      deviceId: '00000000-0000-4000-a000-000000000031',
+      emulatorId: '00000000-0000-4000-a000-000000000032',
+    })
+    expect(invalidateCatalogCompatibilityCacheForDevice).toHaveBeenCalledWith(
+      '00000000-0000-4000-a000-000000000031',
+    )
+    expect(mockApplyTrustAction).toHaveBeenCalledWith({
+      userId: AUTHOR_ID,
+      action: TrustAction.LISTING_REJECTED,
+      context: {
+        listingId: LISTING_ID,
+        adminUserId: ADMIN_ID,
+        reason: 'Incorrect report',
+      },
+    })
+    expect(notificationEventEmitter.emitNotificationEvent).toHaveBeenCalledWith({
+      eventType: 'LISTING_REJECTED',
+      entityType: 'listing',
+      entityId: LISTING_ID,
+      triggeredBy: ADMIN_ID,
+      payload: {
+        listingId: LISTING_ID,
+        rejectedBy: ADMIN_ID,
+        rejectedAt: processedAt,
+        rejectionReason: 'Incorrect report',
+      },
+    })
+  })
+
+  it('clears processed metadata without emitting a notification when overriding to pending', async () => {
+    const { listing } = setupPrisma()
+    listing.findUnique.mockResolvedValueOnce({
+      id: LISTING_ID,
+      status: ApprovalStatus.REJECTED,
+      gameId: '00000000-0000-4000-a000-000000000030',
+      deviceId: '00000000-0000-4000-a000-000000000031',
+      emulatorId: '00000000-0000-4000-a000-000000000032',
+      authorId: AUTHOR_ID,
+      processedNotes: 'Rejected notes',
+    })
+    listing.update.mockResolvedValueOnce({
+      id: LISTING_ID,
+      status: ApprovalStatus.PENDING,
+    })
+
+    const { caller } = createCaller({ role: Role.SUPER_ADMIN })
+
+    await caller.overrideStatus({
+      listingId: LISTING_ID,
+      newStatus: ApprovalStatus.PENDING,
+    })
+
+    expect(listing.update).toHaveBeenCalledWith({
+      where: { id: LISTING_ID },
+      data: {
+        status: ApprovalStatus.PENDING,
+        processedByUserId: null,
+        processedAt: null,
+        processedNotes: null,
+      },
+    })
+    expect(invalidateListingSeo).not.toHaveBeenCalled()
+    expect(mockApplyTrustAction).not.toHaveBeenCalled()
+    expect(notificationEventEmitter.emitNotificationEvent).not.toHaveBeenCalled()
+  })
+
+  it('invalidates public handheld report caches when resetting an approved report to pending', async () => {
+    const { listing } = setupPrisma()
+    listing.findUnique.mockResolvedValueOnce({
+      id: LISTING_ID,
+      status: ApprovalStatus.APPROVED,
+      gameId: '00000000-0000-4000-a000-000000000030',
+      deviceId: '00000000-0000-4000-a000-000000000031',
+      emulatorId: '00000000-0000-4000-a000-000000000032',
+    })
+    listing.update.mockResolvedValueOnce({
+      id: LISTING_ID,
+      status: ApprovalStatus.PENDING,
+    })
+
+    const { caller } = createCaller({ role: Role.MODERATOR })
+
+    await caller.resetToPending({ listingId: LISTING_ID })
+
+    expect(invalidateListingSeo).toHaveBeenCalledWith({
+      id: LISTING_ID,
+      gameId: '00000000-0000-4000-a000-000000000030',
+      deviceId: '00000000-0000-4000-a000-000000000031',
+      emulatorId: '00000000-0000-4000-a000-000000000032',
+    })
+    expect(invalidateCatalogCompatibilityCacheForDevice).toHaveBeenCalledWith(
+      '00000000-0000-4000-a000-000000000031',
+    )
+    expect(notificationEventEmitter.emitNotificationEvent).not.toHaveBeenCalled()
   })
 })
 

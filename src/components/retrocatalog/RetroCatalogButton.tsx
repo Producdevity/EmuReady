@@ -25,17 +25,15 @@ interface Props {
 }
 
 /**
- * RetroCatalog specs button - shows only when device exists on RetroCatalog
- * Opens device specs in new tab with tasteful hover animations
+ * RetroCatalog specs button
+ * shows only when device exists on RetroCatalog
+ * Opens device specs in new tab
  */
 export function RetroCatalogButton(props: Props) {
   const { deviceId, brandName, modelName, variant = 'pill' } = props
   const [isHovered, setIsHovered] = useState(false)
 
-  const { exists, url, isLoading } = useRetroCatalogDevice({
-    brandName,
-    modelName,
-  })
+  const { exists, url, isLoading } = useRetroCatalogDevice({ brandName, modelName })
 
   if (isLoading || !exists || !url) return null
 
