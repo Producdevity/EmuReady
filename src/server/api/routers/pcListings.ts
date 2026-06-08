@@ -24,6 +24,8 @@ import {
   GetPcListingVerificationsSchema,
   GetPcPresetsSchema,
   GetPendingPcListingsSchema,
+  GetProcessedPcSchema,
+  OverridePcApprovalStatusSchema,
   PinPcListingCommentSchema,
   RejectPcListingSchema,
   RemovePcListingVerificationSchema,
@@ -45,16 +47,19 @@ import {
   permissionProcedure,
   protectedProcedure,
   publicProcedure,
+  superAdminProcedure,
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
 import { buildCommentTree, findCommentWithParent } from '@/server/api/utils/commentTree'
 import {
   buildPcListingOrderBy,
   buildPcListingWhere,
+  buildProcessedPcListingOrderBy,
   pcListingAdminInclude,
   pcListingDetailInclude,
 } from '@/server/api/utils/pcListingHelpers'
 import { canManageCommentPins } from '@/server/api/utils/pinPermissions'
+import { getProcessedStatusTrustAction } from '@/server/api/utils/processedStatusTrust'
 import {
   invalidatePcListingSeo,
   invalidatePcListingSeoForUpdate,
@@ -91,15 +96,8 @@ import {
   hasRolePermission,
   isModerator,
 } from '@/utils/permissions'
-import {
-  ApprovalStatus,
-  AuditAction,
-  AuditEntityType,
-  Prisma,
-  ReportStatus,
-  Role,
-  TrustAction,
-} from '@orm/client'
+import { ApprovalStatus, AuditAction, AuditEntityType, ReportStatus, Role, TrustAction } from '@orm'
+import { Prisma } from '@orm/client'
 
 function isJsonRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -640,6 +638,8 @@ export const pcListingsRouter = createTRPCRouter({
       payload: {
         pcListingId: input.pcListingId,
         gameId: pcListing.gameId,
+        approvedBy: ctx.session.user.id,
+        approvedAt: approvedListing.processedAt,
       },
     })
 
@@ -750,6 +750,148 @@ export const pcListingsRouter = createTRPCRouter({
       return updatedListing
     }),
 
+  getProcessed: superAdminProcedure.input(GetProcessedPcSchema).query(async ({ ctx, input }) => {
+    const { page, limit, filterStatus, search, sortField, sortDirection } = input
+    const skip = (page - 1) * limit
+
+    const baseWhere: Prisma.PcListingWhereInput = {
+      NOT: { status: ApprovalStatus.PENDING },
+      ...(filterStatus ? { status: filterStatus } : {}),
+    }
+
+    const searchWhere: Prisma.PcListingWhereInput = search
+      ? {
+          OR: [
+            { game: { title: { contains: search, mode: 'insensitive' } } },
+            { game: { system: { name: { contains: search, mode: 'insensitive' } } } },
+            { cpu: { modelName: { contains: search, mode: 'insensitive' } } },
+            { cpu: { brand: { name: { contains: search, mode: 'insensitive' } } } },
+            { gpu: { modelName: { contains: search, mode: 'insensitive' } } },
+            { gpu: { brand: { name: { contains: search, mode: 'insensitive' } } } },
+            { emulator: { name: { contains: search, mode: 'insensitive' } } },
+            { author: { name: { contains: search, mode: 'insensitive' } } },
+            { processedNotes: { contains: search, mode: 'insensitive' } },
+            { notes: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      : {}
+
+    const where = buildPcListingWhere({ ...baseWhere, ...searchWhere }, true)
+    const orderBy = buildProcessedPcListingOrderBy(sortField, sortDirection)
+
+    const [pcListings, total] = await Promise.all([
+      ctx.prisma.pcListing.findMany({
+        where,
+        include: pcListingAdminInclude,
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      ctx.prisma.pcListing.count({ where }),
+    ])
+
+    return {
+      pcListings,
+      pagination: paginate({ total, page, limit }),
+    }
+  }),
+
+  overrideStatus: superAdminProcedure
+    .input(OverridePcApprovalStatusSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { pcListingId, newStatus, overrideNotes } = input
+      const superAdminUserId = ctx.session.user.id
+
+      const pcListing = await ctx.prisma.pcListing.findUnique({
+        where: { id: pcListingId },
+        select: {
+          id: true,
+          status: true,
+          gameId: true,
+          cpuId: true,
+          gpuId: true,
+          authorId: true,
+          processedNotes: true,
+        },
+      })
+
+      if (!pcListing) return ResourceError.pcListing.notFound()
+
+      const updatedPcListing = await ctx.prisma.pcListing.update({
+        where: { id: pcListingId },
+        data:
+          newStatus === ApprovalStatus.PENDING
+            ? {
+                status: newStatus,
+                processedByUserId: null,
+                processedAt: null,
+                processedNotes: null,
+              }
+            : {
+                status: newStatus,
+                processedByUserId: superAdminUserId,
+                processedAt: new Date(),
+                processedNotes: overrideNotes ?? pcListing.processedNotes,
+              },
+      })
+
+      listingStatsCache.delete('pc-listing-stats')
+
+      if (pcListing.status === ApprovalStatus.APPROVED || newStatus === ApprovalStatus.APPROVED) {
+        await invalidatePcListingSeo({
+          id: pcListingId,
+          gameId: pcListing.gameId,
+          cpuId: pcListing.cpuId,
+          gpuId: pcListing.gpuId,
+        })
+      }
+
+      const trustAction = getProcessedStatusTrustAction({
+        previousStatus: pcListing.status,
+        newStatus,
+        authorId: pcListing.authorId,
+      })
+      if (trustAction) {
+        await applyTrustAction({
+          userId: trustAction.userId,
+          action: trustAction.action,
+          context: {
+            pcListingId,
+            adminUserId: superAdminUserId,
+            reason: overrideNotes || 'pc_listing_status_override',
+          },
+        })
+      }
+
+      if (newStatus === ApprovalStatus.APPROVED || newStatus === ApprovalStatus.REJECTED) {
+        notificationEventEmitter.emitNotificationEvent({
+          eventType:
+            newStatus === ApprovalStatus.APPROVED
+              ? NOTIFICATION_EVENTS.PC_LISTING_APPROVED
+              : NOTIFICATION_EVENTS.PC_LISTING_REJECTED,
+          entityType: 'pcListing',
+          entityId: pcListingId,
+          triggeredBy: superAdminUserId,
+          payload:
+            newStatus === ApprovalStatus.APPROVED
+              ? {
+                  pcListingId,
+                  gameId: pcListing.gameId,
+                  approvedBy: superAdminUserId,
+                  approvedAt: updatedPcListing.processedAt,
+                }
+              : {
+                  pcListingId,
+                  rejectedBy: superAdminUserId,
+                  rejectedAt: updatedPcListing.processedAt,
+                  rejectionReason: overrideNotes,
+                },
+        })
+      }
+
+      return updatedPcListing
+    }),
+
   bulkApprove: protectedProcedure
     .input(BulkApprovePcListingsSchema)
     .mutation(async ({ ctx, input }) => {
@@ -766,17 +908,17 @@ export const pcListingsRouter = createTRPCRouter({
         where: { id: { in: input.pcListingIds }, status: ApprovalStatus.PENDING },
         select: { id: true, gameId: true, cpuId: true, gpuId: true, authorId: true },
       })
+      const approvedAt = new Date()
 
       const result = await ctx.prisma.pcListing.updateMany({
         where: { id: { in: pendingListings.map((l) => l.id) } },
         data: {
           status: ApprovalStatus.APPROVED,
-          processedAt: new Date(),
+          processedAt: approvedAt,
           processedByUserId: ctx.session.user.id,
         },
       })
 
-      // Apply trust actions in parallel — distinct user adjustments, independent.
       const listingsWithAuthor = pendingListings.filter(
         (l): l is typeof l & { authorId: string } => l.authorId !== null,
       )
@@ -807,6 +949,9 @@ export const pcListingsRouter = createTRPCRouter({
           payload: {
             pcListingId: listing.id,
             gameId: listing.gameId,
+            approvedBy: ctx.session.user.id,
+            approvedAt,
+            bulk: true,
           },
         })
       }

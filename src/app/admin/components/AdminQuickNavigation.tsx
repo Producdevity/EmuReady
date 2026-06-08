@@ -4,17 +4,17 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
-import { type AdminNavItem } from '../../data'
-import ApprovalCountBadge from '../ApprovalCountBadge'
+import { type AdminNavItem } from '../data'
+import ApprovalCountBadge from './ApprovalCountBadge'
 
-interface QuickNavigationProps {
+interface Props {
   items: AdminNavItem[]
   title: string
   defaultExpanded?: boolean
   className?: string
 }
 
-export function QuickNavigation(props: QuickNavigationProps) {
+export function AdminQuickNavigation(props: Props) {
   const defaultExpanded = props.defaultExpanded ?? true
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
 
@@ -51,7 +51,6 @@ export function QuickNavigation(props: QuickNavigationProps) {
 
       {isExpanded && (
         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-          {/* Responsive grid that adjusts based on screen size */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
             {props.items.map((item) => (
               <Link

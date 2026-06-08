@@ -95,6 +95,47 @@ export function buildPcListingOrderBy(
   return orderBy
 }
 
+export type ProcessedPcListingSortField =
+  | 'processedAt'
+  | 'createdAt'
+  | 'status'
+  | 'game.title'
+  | 'game.system.name'
+  | 'cpu'
+  | 'gpu'
+  | 'emulator.name'
+  | 'author.name'
+
+export function buildProcessedPcListingOrderBy(
+  sortField: ProcessedPcListingSortField | null | undefined,
+  sortDirection: 'asc' | 'desc' | null | undefined,
+): Prisma.PcListingOrderByWithRelationInput | Prisma.PcListingOrderByWithRelationInput[] {
+  const direction: Prisma.SortOrder = sortDirection ?? 'desc'
+
+  switch (sortField) {
+    case 'createdAt':
+      return { createdAt: direction }
+    case 'status':
+      return { status: direction }
+    case 'game.title':
+      return { game: { title: direction } }
+    case 'game.system.name':
+      return { game: { system: { name: direction } } }
+    case 'cpu':
+      return [{ cpu: { brand: { name: direction } } }, { cpu: { modelName: direction } }]
+    case 'gpu':
+      return [{ gpu: { brand: { name: direction } } }, { gpu: { modelName: direction } }]
+    case 'emulator.name':
+      return { emulator: { name: direction } }
+    case 'author.name':
+      return { author: { name: direction } }
+    case 'processedAt':
+    case null:
+    case undefined:
+      return { processedAt: direction }
+  }
+}
+
 /**
  * Builds where clause for PC listings with banned user filtering
  */

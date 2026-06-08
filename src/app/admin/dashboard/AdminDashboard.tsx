@@ -2,8 +2,8 @@
 
 import { Users, FileText, MessageSquare, AlertTriangle, Ban } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
+import { AdminQuickNavigation } from '@/app/admin/components/AdminQuickNavigation'
 import { ErrorBoundary } from '@/app/admin/components/ErrorBoundary'
-import { QuickNavigation } from '@/app/admin/components/QuickNavigation/QuickNavigation'
 import { ADMIN_ROUTES } from '@/app/admin/config/routes'
 import { type AdminNavItem } from '@/app/admin/data'
 import { api } from '@/lib/api'
@@ -104,7 +104,11 @@ export function AdminDashboard(props: Props) {
     <div className="space-y-6">
       {/* Quick Navigation - Collapsible */}
       <ErrorBoundary>
-        <QuickNavigation items={props.navItems} title="Quick Navigation" defaultExpanded={true} />
+        <AdminQuickNavigation
+          items={props.navItems}
+          title="Quick Navigation"
+          defaultExpanded={true}
+        />
       </ErrorBoundary>
 
       {/* Show error banner if API call failed */}
