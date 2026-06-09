@@ -120,11 +120,6 @@ export const VerifyPcListingAdminSchema = z.object({
   notes: z.string().optional(),
 })
 
-export const UnverifyPcListingAdminSchema = z.object({
-  pcListingId: z.string().uuid(),
-  notes: z.string().optional(),
-})
-
 // Admin schemas for PC listing management
 export const GetAllPcListingsAdminSchema = z.object({
   page: z.number().int().positive().default(1),
@@ -192,10 +187,6 @@ export const UpdatePcListingUserSchema = z.object({
       }),
     )
     .optional(),
-})
-
-export const GetPcListingForOwnerEditSchema = z.object({
-  id: z.string().uuid(),
 })
 
 // PC Preset schemas
@@ -295,8 +286,8 @@ export const GetPcListingReportsSchema = z
     reason: z.nativeEnum(ReportReason).optional(),
     sortField: PcListingReportSortField.optional(),
     sortDirection: SortDirectionSchema.optional(),
-    page: z.number().min(1).default(1),
-    limit: z.number().min(1).max(100).default(20),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
   })
   .optional()
 
@@ -315,9 +306,6 @@ export const GetPcListingVerificationsSchema = z.object({
 })
 
 // User permissions and editing
-export const CanEditPcListingSchema = z.object({
-  pcListingId: z.string().uuid(),
-})
 
 export const GetPcListingForUserEditSchema = z.object({
   id: z.string().uuid(),
