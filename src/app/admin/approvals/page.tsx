@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import { useAdminTable, useReviewRiskFilter } from '@/app/admin/hooks'
 import { confirmBulkApproval } from '@/app/admin/utils'
 import {
   AdminErrorState,
@@ -49,6 +48,7 @@ import {
   useColumnVisibility,
   type ColumnDefinition,
 } from '@/hooks'
+import { useAdminTable, useReviewRiskFilter } from '@/hooks/admin'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { logger } from '@/lib/logger'

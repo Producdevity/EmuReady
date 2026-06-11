@@ -6,8 +6,8 @@ import {
   ProcessedReportsAdminPage,
   type ProcessedReportHardwareColumn,
 } from '@/app/admin/components/processed-reports'
-import { useAdminTable } from '@/app/admin/hooks'
 import storageKeys from '@/data/storageKeys'
+import { useAdminTable } from '@/hooks/admin'
 import { api } from '@/lib/api'
 import { logger } from '@/lib/logger'
 import toast from '@/lib/toast'

@@ -4,8 +4,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import { useAdminTable } from '@/app/admin/hooks'
-import { useAdminFilters } from '@/app/admin/hooks/useAdminFilters'
 import {
   AdminPageLayout,
   AdminTableContainer,
@@ -36,6 +34,7 @@ import {
   useColumnVisibility,
   type ColumnDefinition,
 } from '@/hooks'
+import { useAdminTable, useAdminFilters } from '@/hooks/admin'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'

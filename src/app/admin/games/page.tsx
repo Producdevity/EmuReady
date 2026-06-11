@@ -7,8 +7,6 @@ import { useState } from 'react'
 import { isEmpty, isNullish } from 'remeda'
 import ImageIndicators from '@/app/admin/components/ImageIndicators'
 import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
-import { useAdminTable } from '@/app/admin/hooks'
-import { useAdminFilters } from '@/app/admin/hooks/useAdminFilters'
 import {
   AdminPageLayout,
   AdminStatsDisplay,
@@ -38,6 +36,7 @@ import {
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
+import { useAdminTable, useAdminFilters } from '@/hooks/admin'
 import { api } from '@/lib/api'
 import { logger } from '@/lib/logger'
 import toast from '@/lib/toast'

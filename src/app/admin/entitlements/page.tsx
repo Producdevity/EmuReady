@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import { useAdminTable } from '@/app/admin/hooks/useAdminTable'
 import {
   AdminPageLayout,
   AdminSearchFilters,
@@ -23,6 +22,7 @@ import {
   UndoButton,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
+import { useAdminTable } from '@/hooks/admin'
 import { useColumnVisibility } from '@/hooks/useColumnVisibility'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'

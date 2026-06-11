@@ -1,4 +1,4 @@
-import type { UseAdminTableReturn } from '@/app/admin/hooks'
+import type { UseAdminTableReturn } from '@/hooks/admin'
 import type { ApprovalStatus, Role } from '@orm'
 import type { ReactNode } from 'react'
 

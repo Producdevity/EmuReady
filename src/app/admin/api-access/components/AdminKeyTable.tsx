@@ -1,4 +1,3 @@
-import { type UseAdminTableReturn } from '@/app/admin/hooks/useAdminTable'
 import { AdminTableContainer, AdminTableNoResults } from '@/components/admin'
 import {
   Badge,
@@ -9,6 +8,7 @@ import {
   RefreshButton,
   SortableHeader,
 } from '@/components/ui'
+import { type UseAdminTableReturn } from '@/hooks/admin'
 import { type UseColumnVisibilityReturn } from '@/hooks/useColumnVisibility'
 import { type ApiKeySortField } from '@/schemas/apiAccess'
 import { formatters, getLocale } from '@/utils/date'

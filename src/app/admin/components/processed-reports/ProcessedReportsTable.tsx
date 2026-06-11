@@ -2,7 +2,6 @@
 
 import { ExternalLink } from 'lucide-react'
 import Link from 'next/link'
-import { type UseAdminTableReturn } from '@/app/admin/hooks'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
   ApproveButton,
@@ -18,6 +17,7 @@ import {
   ViewUserButton,
 } from '@/components/ui'
 import { type UseColumnVisibilityReturn } from '@/hooks'
+import { type UseAdminTableReturn } from '@/hooks/admin'
 import analytics from '@/lib/analytics'
 import { getApprovalStatusColor } from '@/utils/badge-colors'
 import { ApprovalStatus } from '@orm'
