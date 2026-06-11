@@ -9,7 +9,6 @@ import { LogoIcon, LoadingIcon } from '@/components/icons'
 import NotificationCenter from '@/components/notifications/NotificationCenter'
 import { ThemeToggle } from '@/components/ui'
 import analytics from '@/lib/analytics'
-import { env } from '@/lib/env'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import { navbarItems } from './data'
@@ -139,18 +138,6 @@ function Navbar() {
                         shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-105"
                       >
                         Admin
-                      </Link>
-                    )}
-                    {hasRolePermission(userRole, Role.MODERATOR) && env.ENABLE_V2_LISTINGS && (
-                      <Link
-                        href="/v2/listings"
-                        className="px-4 py-2.5 bg-gradient-to-r
-                        from-pink-500 to-rose-600
-                        hover:from-pink-600 hover:to-rose-700
-                        text-white font-semibold text-sm rounded-xl transition-all duration-300
-                        shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 hover:scale-105"
-                      >
-                        V2
                       </Link>
                     )}
 
