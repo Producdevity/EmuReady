@@ -34,18 +34,46 @@ describe('getImageUrl', () => {
     expect(result).toBe(localPath)
   })
 
-  it('returns a proxied url when the url starts with http', () => {
+  it('returns a proxied url when an http url cannot be optimized directly', () => {
     const httpUrl = 'http://example.com/image.jpg'
     const result = getImageUrl(httpUrl)
 
     expect(result).toBe(`/api/proxy-image?url=${encodeURIComponent(httpUrl)}`)
   })
 
-  it('returns a proxied url when the url starts with https', () => {
+  it('returns a proxied url when an https host is not configured for next/image', () => {
     const httpsUrl = 'https://example.com/image.jpg'
     const result = getImageUrl(httpsUrl)
 
     expect(result).toBe(`/api/proxy-image?url=${encodeURIComponent(httpsUrl)}`)
+  })
+
+  it('returns a configured next/image remote url directly', () => {
+    const imageUrl = 'https://images.igdb.com/igdb/image/upload/t_cover_big/game.jpg'
+    const result = getImageUrl(imageUrl)
+
+    expect(result).toBe(imageUrl)
+  })
+
+  it('supports wildcard configured next/image remote hosts', () => {
+    const imageUrl = 'https://img.clerk.com/avatar.png'
+    const result = getImageUrl(imageUrl)
+
+    expect(result).toBe(imageUrl)
+  })
+
+  it('can force proxying for a configured next/image remote url', () => {
+    const imageUrl = 'https://images.igdb.com/igdb/image/upload/t_cover_big/game.jpg'
+    const result = getImageUrl(imageUrl, null, { useProxy: true })
+
+    expect(result).toBe(`/api/proxy-image?url=${encodeURIComponent(imageUrl)}`)
+  })
+
+  it('can force direct usage for an unknown remote url', () => {
+    const imageUrl = 'https://example.com/image.jpg'
+    const result = getImageUrl(imageUrl, null, { useProxy: false })
+
+    expect(result).toBe(imageUrl)
   })
 
   it('returns a placeholder image when the url format is invalid', () => {

@@ -1,5 +1,6 @@
 import NextBundleAnalyzer from '@next/bundle-analyzer'
 import { withSentryConfig } from '@sentry/nextjs'
+import { NEXT_IMAGE_REMOTE_PATTERNS } from '@/data/image-hosts'
 import type { NextConfig } from 'next'
 import type { Configuration as WebpackConfiguration } from 'webpack'
 
@@ -174,17 +175,7 @@ const nextConfig: NextConfig = {
       { pathname: '/placeholder/**' },
       { pathname: '/assets/android-app/**' },
     ],
-    remotePatterns: [
-      { protocol: 'https', hostname: 'placehold.co', pathname: '/**' },
-      { protocol: 'https', hostname: 'media.rawg.io', pathname: '/**' },
-      { protocol: 'https', hostname: '*.clerk.com', pathname: '/**' },
-      { protocol: 'https', hostname: '*.clerk.accounts.dev', pathname: '/**' },
-      { protocol: 'https', hostname: 'cdn.thegamesdb.net', pathname: '/**' },
-      { protocol: 'https', hostname: 'images.igdb.com', pathname: '/**' },
-      { protocol: 'https', hostname: 'assets.nintendo.com', pathname: '/**' },
-      { protocol: 'https', hostname: 'storage.ko-fi.com', pathname: '/**' },
-      { protocol: 'https', hostname: 'ko-fi.com', pathname: '/**' },
-    ],
+    remotePatterns: NEXT_IMAGE_REMOTE_PATTERNS,
   },
 
   allowedDevOrigins: ['dev.emuready.com', '127.0.0.1'],

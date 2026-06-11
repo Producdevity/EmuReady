@@ -4,6 +4,7 @@ import Image, { type ImageProps } from 'next/image'
 import { useState } from 'react'
 import { LoadingSpinner } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import { resolveImageProxyUrl } from '@/utils/imageProxy'
 
 type ObjectFit = 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
 
@@ -39,19 +40,7 @@ export function OptimizedImage(props: Props) {
 
   const resolveSrc = (): string => {
     if (error) return fallbackSrc
-
-    const shouldProxy = props.useProxy ?? true
-    const src = props.src
-
-    if (!shouldProxy) return src
-
-    if (src.startsWith('/api/proxy-image')) return src
-
-    if (src.startsWith('http://') || src.startsWith('https://')) {
-      return `/api/proxy-image?url=${encodeURIComponent(src)}`
-    }
-
-    return src
+    return resolveImageProxyUrl(props.src, props.useProxy)
   }
 
   const handleError = () => {

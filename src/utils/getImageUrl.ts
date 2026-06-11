@@ -1,5 +1,6 @@
 import { type Nullable } from '@/types/utils'
 import getSafePlaceholderImageUrl from './getSafePlaceholderImageUrl'
+import { resolveImageProxyUrl } from './imageProxy'
 
 type Options = {
   useProxy?: boolean
@@ -12,7 +13,6 @@ type Options = {
  * @returns A valid image URL or a placeholder if the URL is invalid.
  */
 function getImageUrl(url: Nullable<string>, title?: string | null, opts?: Options): string {
-  const useProxy = opts?.useProxy ?? true
   if (!url) return getSafePlaceholderImageUrl(title)
 
   if (url.startsWith('/') && !url.startsWith('//')) {
@@ -20,7 +20,7 @@ function getImageUrl(url: Nullable<string>, title?: string | null, opts?: Option
   }
 
   if (url.startsWith('http://') || url.startsWith('https://')) {
-    return useProxy ? `/api/proxy-image?url=${encodeURIComponent(url)}` : url
+    return resolveImageProxyUrl(url, opts?.useProxy)
   }
 
   return getSafePlaceholderImageUrl(title ?? null) // Invalid URL format, use placeholder
