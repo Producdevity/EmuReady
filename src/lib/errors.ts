@@ -400,6 +400,8 @@ export class ResourceError {
       AppError.forbidden('You can only approve PC listings for emulators you are verified for'),
     mustBeVerifiedToReject: () =>
       AppError.forbidden('You can only reject PC listings for emulators you are verified for'),
+    bulkAlreadyProcessed: () =>
+      AppError.conflict('Some selected PC reports were already processed. Refresh and try again.'),
   }
 
   static notification = {
@@ -484,12 +486,20 @@ export class ResourceError {
     notFound: () => AppError.notFound('Listing report'),
     alreadyExists: () => AppError.conflict('You have already reported this listing'),
     cannotReportOwnListing: () => AppError.forbidden('You cannot report your own listing'),
+    cannotChangeFinalStatus: () =>
+      AppError.conflict(
+        'Listing report has already been resolved or dismissed and cannot be reopened.',
+      ),
   }
 
   static pcListingReport = {
     notFound: () => AppError.notFound('PC listing report'),
     alreadyExists: () => AppError.conflict('You have already reported this listing'),
     cannotReportOwnListing: () => AppError.forbidden('You cannot report your own listing'),
+    cannotChangeFinalStatus: () =>
+      AppError.conflict(
+        'PC listing report has already been resolved or dismissed and cannot be reopened.',
+      ),
   }
 
   static userBan = {
