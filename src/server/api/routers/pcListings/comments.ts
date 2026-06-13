@@ -140,9 +140,12 @@ export const commentsRouter = createTRPCRouter({
       if (parentId) {
         const parentComment = await ctx.prisma.pcListingComment.findUnique({
           where: { id: parentId },
+          select: { pcListingId: true },
         })
 
-        if (!parentComment) return ResourceError.comment.parentNotFound()
+        if (!parentComment || parentComment.pcListingId !== pcListingId) {
+          return ResourceError.comment.parentNotFound()
+        }
       }
 
       await checkSpamContent({

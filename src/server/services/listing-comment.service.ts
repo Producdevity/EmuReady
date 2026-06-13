@@ -27,7 +27,10 @@ export class ListingCommentService {
       return ResourceError.listing.notFound()
     }
 
-    if (input.parentId && !(await this.comments.commentExists(input.parentId))) {
+    if (
+      input.parentId &&
+      !(await this.comments.commentBelongsToListing(input.parentId, input.listingId))
+    ) {
       return ResourceError.comment.parentNotFound()
     }
 

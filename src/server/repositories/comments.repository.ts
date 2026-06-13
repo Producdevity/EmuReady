@@ -133,13 +133,17 @@ export class CommentsRepository extends BaseRepository {
     return listing !== null
   }
 
-  async commentExists(commentId: string): Promise<boolean> {
+  async commentBelongsToListing(commentId: string, listingId: string): Promise<boolean> {
     const comment = await this.handleDatabaseOperation(
-      () => this.prisma.comment.findUnique({ where: { id: commentId }, select: { id: true } }),
+      () =>
+        this.prisma.comment.findUnique({
+          where: { id: commentId },
+          select: { listingId: true },
+        }),
       'Comment',
     )
 
-    return comment !== null
+    return comment?.listingId === listingId
   }
 
   async userExists(userId: string): Promise<boolean> {

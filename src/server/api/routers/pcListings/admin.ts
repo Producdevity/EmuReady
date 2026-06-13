@@ -37,6 +37,7 @@ import {
 } from '@/server/cache/invalidation'
 import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
+import { PcListingBulkModerationService } from '@/server/services/pc-listing-bulk-moderation.service'
 import { autoRejectRiskyPcReports } from '@/server/services/review-risk-auto-reject.service'
 import {
   attachReviewRiskProfiles,
@@ -443,29 +444,17 @@ export const adminRouter = createTRPCRouter({
   bulkApprove: protectedProcedure
     .input(BulkApprovePcListingsSchema)
     .mutation(async ({ ctx, input }) => {
-      const isModerator = hasRolePermission(ctx.session.user.role, Role.MODERATOR)
-      const isDeveloper = hasRolePermission(ctx.session.user.role, Role.DEVELOPER)
-
-      if (!isModerator && !isDeveloper) {
-        return ResourceError.pcListing.requiresDeveloperToApprove()
-      }
-
-      const pendingListings = await ctx.prisma.pcListing.findMany({
-        where: { id: { in: input.pcListingIds }, status: ApprovalStatus.PENDING },
-        select: { id: true, gameId: true, cpuId: true, gpuId: true, authorId: true },
-      })
-      const approvedAt = new Date()
-
-      const result = await ctx.prisma.pcListing.updateMany({
-        where: { id: { in: pendingListings.map((l) => l.id) } },
-        data: {
-          status: ApprovalStatus.APPROVED,
-          processedAt: approvedAt,
-          processedByUserId: ctx.session.user.id,
+      const adminUserId = ctx.session.user.id
+      const bulkModeration = new PcListingBulkModerationService(ctx.prisma)
+      const transactionResult = await bulkModeration.bulkApprove({
+        pcListingIds: input.pcListingIds,
+        actor: {
+          userId: adminUserId,
+          role: ctx.session.user.role,
         },
       })
 
-      const listingsWithAuthor = pendingListings.filter(
+      const listingsWithAuthor = transactionResult.pcListings.filter(
         (l): l is typeof l & { authorId: string } => l.authorId !== null,
       )
       await Promise.all(
@@ -475,7 +464,7 @@ export const adminRouter = createTRPCRouter({
             action: TrustAction.LISTING_APPROVED,
             context: {
               pcListingId: listing.id,
-              adminUserId: ctx.session.user.id,
+              adminUserId,
               reason: 'bulk_listing_approved',
             },
           }),
@@ -484,55 +473,42 @@ export const adminRouter = createTRPCRouter({
 
       invalidatePcListingStatsCache()
 
-      await invalidatePcListingsSeo(pendingListings)
+      await invalidatePcListingsSeo(transactionResult.pcListings)
 
-      for (const listing of pendingListings) {
+      for (const listing of transactionResult.pcListings) {
         notificationEventEmitter.emitNotificationEvent({
           eventType: NOTIFICATION_EVENTS.PC_LISTING_APPROVED,
           entityType: 'pcListing',
           entityId: listing.id,
-          triggeredBy: ctx.session.user.id,
+          triggeredBy: adminUserId,
           payload: {
             pcListingId: listing.id,
             gameId: listing.gameId,
-            approvedBy: ctx.session.user.id,
-            approvedAt,
+            approvedBy: adminUserId,
+            approvedAt: transactionResult.processedAt,
             bulk: true,
           },
         })
       }
 
-      return { count: result.count }
+      return { count: transactionResult.count }
     }),
 
   bulkReject: protectedProcedure
     .input(BulkRejectPcListingsSchema)
     .mutation(async ({ ctx, input }) => {
-      const isModerator = hasRolePermission(ctx.session.user.role, Role.MODERATOR)
-      const isDeveloper = hasRolePermission(ctx.session.user.role, Role.DEVELOPER)
-
-      if (!isModerator && !isDeveloper) {
-        return ResourceError.pcListing.requiresDeveloperToReject()
-      }
-
-      const pendingListings = await ctx.prisma.pcListing.findMany({
-        where: { id: { in: input.pcListingIds }, status: ApprovalStatus.PENDING },
-        select: { id: true, authorId: true },
-      })
-
-      const result = await ctx.prisma.pcListing.updateMany({
-        where: {
-          id: { in: pendingListings.map((l) => l.id) },
-        },
-        data: {
-          status: ApprovalStatus.REJECTED,
-          processedAt: new Date(),
-          processedByUserId: ctx.session.user.id,
-          processedNotes: input.notes,
+      const adminUserId = ctx.session.user.id
+      const bulkModeration = new PcListingBulkModerationService(ctx.prisma)
+      const transactionResult = await bulkModeration.bulkReject({
+        pcListingIds: input.pcListingIds,
+        notes: input.notes,
+        actor: {
+          userId: adminUserId,
+          role: ctx.session.user.role,
         },
       })
 
-      const listingsWithAuthor = pendingListings.filter(
+      const listingsWithAuthor = transactionResult.pcListings.filter(
         (l): l is typeof l & { authorId: string } => l.authorId !== null,
       )
       await Promise.all(
@@ -542,7 +518,7 @@ export const adminRouter = createTRPCRouter({
             action: TrustAction.LISTING_REJECTED,
             context: {
               pcListingId: listing.id,
-              adminUserId: ctx.session.user.id,
+              adminUserId,
               reason: input.notes || 'bulk_listing_rejected',
             },
           }),
@@ -551,22 +527,22 @@ export const adminRouter = createTRPCRouter({
 
       invalidatePcListingStatsCache()
 
-      for (const listing of pendingListings) {
+      for (const listing of transactionResult.pcListings) {
         notificationEventEmitter.emitNotificationEvent({
           eventType: NOTIFICATION_EVENTS.PC_LISTING_REJECTED,
           entityType: 'pcListing',
           entityId: listing.id,
-          triggeredBy: ctx.session.user.id,
+          triggeredBy: adminUserId,
           payload: {
             pcListingId: listing.id,
-            rejectedBy: ctx.session.user.id,
-            rejectedAt: new Date(),
+            rejectedBy: adminUserId,
+            rejectedAt: transactionResult.processedAt,
             rejectionReason: input.notes,
           },
         })
       }
 
-      return { count: result.count }
+      return { count: transactionResult.count }
     }),
 
   autoRejectRiskyPreview: adminProcedure.query(async ({ ctx }) => {
@@ -666,32 +642,49 @@ export const adminRouter = createTRPCRouter({
 
       const pcListing = await ctx.prisma.pcListing.findUnique({
         where: { id },
-        include: { customFieldValues: true },
+        select: {
+          id: true,
+          gameId: true,
+          cpuId: true,
+          gpuId: true,
+          status: true,
+        },
       })
 
       if (!pcListing) return ResourceError.pcListing.notFound()
 
-      const updatedPcListing = await ctx.prisma.pcListing.update({
-        where: { id },
-        data: { ...data, updatedAt: new Date() },
-        include: pcListingDetailInclude,
-      })
+      const customFieldCreateData = customFieldValues?.map((cfv) => ({
+        pcListingId: id,
+        customFieldDefinitionId: cfv.customFieldDefinitionId,
+        value: toPrismaCustomFieldValue(cfv.value),
+      }))
 
-      if (customFieldValues) {
-        await ctx.prisma.pcListingCustomFieldValue.deleteMany({
-          where: { pcListingId: id },
+      const updatedPcListing = await ctx.prisma.$transaction(async (tx) => {
+        await tx.pcListing.update({
+          where: { id },
+          data: { ...data, updatedAt: new Date() },
         })
 
-        if (customFieldValues.length > 0) {
-          await ctx.prisma.pcListingCustomFieldValue.createMany({
-            data: customFieldValues.map((cfv) => ({
-              pcListingId: id,
-              customFieldDefinitionId: cfv.customFieldDefinitionId,
-              value: toPrismaCustomFieldValue(cfv.value),
-            })),
+        if (customFieldCreateData !== undefined) {
+          await tx.pcListingCustomFieldValue.deleteMany({
+            where: { pcListingId: id },
           })
+
+          if (customFieldCreateData.length > 0) {
+            await tx.pcListingCustomFieldValue.createMany({
+              data: customFieldCreateData,
+            })
+          }
         }
-      }
+
+        const finalPcListing = await tx.pcListing.findUnique({
+          where: { id },
+          include: pcListingDetailInclude,
+        })
+
+        if (!finalPcListing) return ResourceError.pcListing.notFound()
+        return finalPcListing
+      })
 
       const previousSeoTarget = {
         id,

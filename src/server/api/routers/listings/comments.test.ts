@@ -301,7 +301,7 @@ describe('handheld comments router — create', () => {
 
   it('emits reply notification and analytics for a child comment', async () => {
     const { caller, prisma } = createCaller()
-    prisma.comment.findUnique.mockResolvedValue({ id: PARENT_COMMENT_ID })
+    prisma.comment.findUnique.mockResolvedValue({ listingId: LISTING_ID })
 
     await caller.create({
       listingId: LISTING_ID,
@@ -392,6 +392,24 @@ describe('handheld comments router — create', () => {
   it('does not check spam or create when the parent comment is missing', async () => {
     const { caller, prisma } = createCaller()
     prisma.comment.findUnique.mockResolvedValue(null)
+
+    await expect(
+      caller.create({
+        listingId: LISTING_ID,
+        content: 'Replying with more settings',
+        parentId: PARENT_COMMENT_ID,
+      }),
+    ).rejects.toThrow('Parent comment not found')
+
+    expect(mockCheckSpamContent).not.toHaveBeenCalled()
+    expect(prisma.comment.create).not.toHaveBeenCalled()
+  })
+
+  it('does not check spam or create when the parent comment belongs to another handheld report', async () => {
+    const { caller, prisma } = createCaller()
+    prisma.comment.findUnique.mockResolvedValue({
+      listingId: '00000000-0000-4000-a000-000000000099',
+    })
 
     await expect(
       caller.create({
