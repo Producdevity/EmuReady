@@ -22,18 +22,6 @@ export function deviceOptions(
   }))
 }
 
-export function cpuOptions(
-  cpus: { id: string; modelName: string; brand: { name: string } }[],
-): Option[] {
-  return deviceOptions(cpus)
-}
-
-export function gpuOptions(
-  gpus: { id: string; modelName: string; brand: { name: string } }[],
-): Option[] {
-  return deviceOptions(gpus)
-}
-
 export function socOptions(socs: { id: string; name: string; manufacturer: string }[]): Option[] {
   return socs.map((s) => ({ id: s.id, name: `${s.manufacturer} ${s.name}`, badgeName: s.name }))
 }

@@ -11,6 +11,7 @@ import {
   MobileFiltersFab,
   ListingsTableSkeleton,
 } from '@/app/listings/shared/components'
+import { shouldUseAsyncListingFilters } from '@/app/listings/shared/utils/asyncListingFilters'
 import CommunitySupportBanner from '@/components/banners/CommunitySupportBanner'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import { BannedUserBadge } from '@/components/ui/BannedUserBadge'
@@ -29,7 +30,7 @@ import { SuccessRateBar } from '@/components/ui/SuccessRateBar'
 import { EditButton, ViewButton } from '@/components/ui/table-buttons'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/Tooltip'
 import { VerifiedDeveloperBadge } from '@/components/ui/VerifiedDeveloperBadge'
-import { CACHE_DURATIONS } from '@/data/constants'
+import { CACHE_DURATIONS, LOOKUP_PAGINATION } from '@/data/constants'
 import storageKeys from '@/data/storageKeys'
 import {
   useEmulatorLogos,
@@ -66,9 +67,7 @@ const LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
-const LOOKUP_DATA_STALE_TIME = CACHE_DURATIONS.LOOKUP
-const LOOKUP_DATA_GC_TIME = CACHE_DURATIONS.LOOKUP_GC
-const USE_ASYNC_LISTING_FILTERS = process.env.NEXT_PUBLIC_ENABLE_ASYNC_LISTINGS_FILTERS === 'true'
+const USE_ASYNC_LISTING_FILTERS = shouldUseAsyncListingFilters()
 
 function ListingsPage() {
   const { isSignedIn } = useUser()
@@ -112,39 +111,17 @@ function ListingsPage() {
     socIds: listingsState.socIds,
   })
 
-  const systemsQuery = api.systems.get.useQuery(undefined, {
-    staleTime: LOOKUP_DATA_STALE_TIME,
-    gcTime: LOOKUP_DATA_GC_TIME,
-  })
-  // TODO: Remove this legacy fallback once async filters no longer need an opt-out.
+  const systemsQuery = api.systems.get.useQuery()
   const devicesQuery = api.devices.options.useQuery(
-    { limit: 10000 },
-    {
-      enabled: !USE_ASYNC_LISTING_FILTERS,
-      staleTime: LOOKUP_DATA_STALE_TIME,
-      gcTime: LOOKUP_DATA_GC_TIME,
-    },
+    { limit: LOOKUP_PAGINATION.MAX_LIMIT },
+    { enabled: !USE_ASYNC_LISTING_FILTERS },
   )
-  // TODO: Remove this legacy fallback once async filters no longer need an opt-out.
   const socsQuery = api.socs.options.useQuery(
-    { limit: 10000 },
-    {
-      enabled: !USE_ASYNC_LISTING_FILTERS,
-      staleTime: LOOKUP_DATA_STALE_TIME,
-      gcTime: LOOKUP_DATA_GC_TIME,
-    },
+    { limit: LOOKUP_PAGINATION.MAX_LIMIT },
+    { enabled: !USE_ASYNC_LISTING_FILTERS },
   )
-  const emulatorsQuery = api.emulators.get.useQuery(
-    { limit: 100 },
-    {
-      staleTime: LOOKUP_DATA_STALE_TIME,
-      gcTime: LOOKUP_DATA_GC_TIME,
-    },
-  )
-  const performanceScalesQuery = api.listings.performanceScales.useQuery(undefined, {
-    staleTime: LOOKUP_DATA_STALE_TIME,
-    gcTime: LOOKUP_DATA_GC_TIME,
-  })
+  const emulatorsQuery = api.emulators.get.useQuery({ limit: 100 })
+  const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
   const filterParams: RouterInput['listings']['get'] = {
     page: listingsState.page,

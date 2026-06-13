@@ -3,8 +3,8 @@
 import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { zodToJsonSchema } from 'zod-to-json-schema'
-import * as mobileSchemas from '@/schemas/mobile'
-import * as mobileAuthSchemas from '@/schemas/mobileAuth'
+import { getMobileApiSchema } from './mobile-schema-registry'
+import type { z } from 'zod'
 
 interface SwaggerEndpoint {
   path: string
@@ -24,227 +24,10 @@ interface RouterInfo {
     name: string
     type: 'query' | 'mutation'
     input?: string
+    output?: string
     auth: 'public' | 'protected'
     description?: string
-    returnStructure?: string
   }[]
-}
-
-/**
- * Extracts return type annotation from procedure code
- * E.g., `: Promise<DeviceCompatibilityResponse>` -> 'DeviceCompatibilityResponse'
- */
-function extractReturnType(procedureBlock: string): string | null {
-  const returnTypeMatch = procedureBlock.match(/:\s*Promise<(\w+)>/)
-  if (returnTypeMatch) {
-    return returnTypeMatch[1]
-  }
-  return null
-}
-
-function analyzeReturnStructure(filePath: string, procedureName: string): string {
-  try {
-    const content = readFileSync(filePath, 'utf-8')
-
-    // Find the procedure by looking for the procedure name and analyzing its block
-    const startIndex = content.indexOf(`${procedureName}:`)
-    if (startIndex === -1) return 'unknown'
-
-    // Find enough of the procedure to extract return type annotation
-    // Look for the opening of the query/mutation function (where return type is declared)
-    const queryOrMutationStart = content.substring(startIndex).search(/\.(query|mutation)\s*\(/)
-
-    if (queryOrMutationStart === -1) return 'unknown'
-
-    const signatureEnd = startIndex + queryOrMutationStart + 300
-    const procedureBlock = content.substring(startIndex, Math.min(signatureEnd, content.length))
-
-    const returnType = extractReturnType(procedureBlock)
-    if (returnType) {
-      const schemaName = `${returnType}Schema`
-      const schema =
-        (mobileSchemas as Record<string, unknown>)[schemaName] ||
-        (mobileAuthSchemas as Record<string, unknown>)[schemaName]
-      if (schema) return `schema:${returnType}`
-    }
-
-    return 'generic-object'
-
-    // Fallback pattern matching (disabled to prevent documentation inconsistencies)
-    // If you need to re-enable this, uncomment the code below and remove the early return above
-    /*
-    if (procedureBlock.includes('ctx.prisma') && procedureBlock.includes('findMany')) {
-      if (procedureBlock.includes('_count') && procedureBlock.includes('include')) {
-        return 'array-with-relations-and-counts'
-      } else if (procedureBlock.includes('include')) {
-        return 'array-with-relations'
-      } else {
-        return 'array-simple'
-      }
-    }
-
-    if (procedureBlock.includes('ctx.prisma') && procedureBlock.includes('findUnique')) {
-      return procedureBlock.includes('include') ? 'object-with-relations' : 'object-simple'
-    }
-
-    if (procedureBlock.includes('pagination') || procedureBlock.includes('total')) {
-      return 'paginated-list'
-    }
-
-    if (procedureBlock.includes('create') || procedureBlock.includes('update')) {
-      return 'mutation-result'
-    }
-
-    if (procedureBlock.includes('count')) {
-      return 'count-result'
-    }
-
-    // Analyze router context to infer likely structure
-    if (
-      filePath.includes('games') &&
-      procedureName.startsWith('get') &&
-      !procedureName.includes('ById')
-    ) {
-      return 'array-with-relations-and-counts'
-    }
-    if (filePath.includes('listings') && procedureName === 'getListings') {
-      return 'paginated-list'
-    }
-    if (procedureName.includes('ById')) {
-      return 'object-with-relations'
-    }
-
-    return 'generic-object'
-    */
-  } catch (error) {
-    console.warn(
-      `Could not analyze return structure for ${procedureName}:`,
-      error instanceof Error ? error.message : String(error),
-    )
-    return 'unknown'
-  }
-}
-
-function generateResponseExampleByStructure(
-  routerName: string,
-  procedureName: string,
-  structure: string,
-): unknown {
-  if (structure.startsWith('schema:')) {
-    const returnType = structure.replace('schema:', '')
-    const schemaName = `${returnType}Schema`
-    const schema =
-      (mobileSchemas as Record<string, unknown>)[schemaName] ||
-      (mobileAuthSchemas as Record<string, unknown>)[schemaName]
-
-    if (schema) {
-      try {
-        const jsonSchema = zodToJsonSchema(schema as never, schemaName) as Record<string, unknown>
-        return generateExampleFromSchema(jsonSchema)
-      } catch (error) {
-        console.warn(`Failed to generate example from schema ${schemaName}:`, error)
-      }
-    }
-  }
-
-  // Fallback: Use structure analysis to generate examples for common patterns
-  switch (structure) {
-    case 'array-with-relations-and-counts':
-      return createArrayWithRelationsAndCounts(routerName, procedureName)
-    case 'array-with-relations':
-      return createArrayWithRelations(routerName, procedureName)
-    case 'array-simple':
-      return createSimpleArray(routerName, procedureName)
-    case 'object-with-relations':
-      return createObjectWithRelations(routerName, procedureName)
-    case 'object-simple':
-      return createSimpleObject(routerName, procedureName)
-    case 'paginated-list':
-      return createPaginatedList(routerName, procedureName)
-    case 'mutation-result':
-      return createMutationResult(routerName, procedureName)
-    case 'count-result':
-      return { count: 42 }
-    default:
-      return createGenericResponse(routerName, procedureName)
-  }
-}
-
-function createArrayWithRelationsAndCounts(routerName: string, _procedureName: string): unknown {
-  const baseItem = getBaseItemStructure(routerName)
-  return [
-    {
-      ...baseItem,
-      ...getRelationsForRouter(routerName),
-      _count: getCountStructure(routerName),
-    },
-  ]
-}
-
-function createArrayWithRelations(routerName: string, _procedureName: string): unknown {
-  const baseItem = getBaseItemStructure(routerName)
-  return [
-    {
-      ...baseItem,
-      ...getRelationsForRouter(routerName),
-    },
-  ]
-}
-
-function createSimpleArray(routerName: string, _procedureName: string): unknown {
-  return [getBaseItemStructure(routerName)]
-}
-
-function createObjectWithRelations(routerName: string, _procedureName: string): unknown {
-  const baseItem = getBaseItemStructure(routerName)
-  return {
-    ...baseItem,
-    ...getRelationsForRouter(routerName),
-  }
-}
-
-function createSimpleObject(routerName: string, _procedureName: string): unknown {
-  return getBaseItemStructure(routerName)
-}
-
-function createPaginatedList(routerName: string, _procedureName: string): unknown {
-  return {
-    [getPluralName(routerName)]: [
-      {
-        ...getBaseItemStructure(routerName),
-        ...getRelationsForRouter(routerName),
-        _count: getCountStructure(routerName),
-      },
-    ],
-    pagination: {
-      total: 156,
-      pages: 8,
-      page: 1,
-      limit: 20,
-      hasNextPage: true,
-      hasPreviousPage: false,
-    },
-  }
-}
-
-function createMutationResult(routerName: string, procedureName: string): unknown {
-  if (procedureName.startsWith('create')) {
-    return {
-      id: 'uuid-generated',
-      message: 'Created successfully',
-      ...getBaseItemStructure(routerName),
-    }
-  }
-  if (procedureName.startsWith('update')) {
-    return {
-      id: 'uuid-updated',
-      message: 'Updated successfully',
-    }
-  }
-  if (procedureName.startsWith('delete')) {
-    return { success: true, message: 'Deleted successfully' }
-  }
-  return { success: true }
 }
 
 function createGenericResponse(routerName: string, procedureName: string): unknown {
@@ -300,108 +83,167 @@ function getBaseItemStructure(routerName: string): Record<string, unknown> {
   return structures[routerName] || { id: 'uuid-generic', name: 'Generic Item' }
 }
 
-function getRelationsForRouter(routerName: string): Record<string, unknown> {
-  const relations: Record<string, Record<string, unknown>> = {
-    games: {
-      system: {
-        id: 'uuid-system',
-        name: 'Nintendo Entertainment System',
-        key: 'nes',
-      },
-    },
-    listings: {
-      game: { id: 'uuid-game', title: 'Super Mario Bros' },
-      device: {
-        id: 'uuid-device',
-        modelName: 'Steam Deck',
-        brand: { name: 'Valve' },
-      },
-      emulator: { id: 'uuid-emulator', name: 'RetroArch' },
-      performance: { id: 1, label: 'Perfect', rank: 1 },
-      author: { id: 'uuid-user', name: 'GameTester' },
-    },
-    devices: {
-      brand: { id: 'uuid-brand', name: 'Valve' },
-      soc: { id: 'uuid-soc', name: 'AMD APU' },
-    },
-  }
-
-  return relations[routerName] || {}
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function getCountStructure(routerName: string): Record<string, unknown> {
-  const counts: Record<string, Record<string, unknown>> = {
-    games: { listings: 45 },
-    listings: { votes: 12, comments: 3 },
-    devices: { listings: 28 },
-  }
-
-  return counts[routerName] || {}
+type DefinitionRef = {
+  ref: string
+  value: unknown
 }
 
-function getPluralName(routerName: string): string {
-  const plurals: Record<string, string> = {
-    game: 'games',
-    listing: 'listings',
-    device: 'devices',
-    emulator: 'emulators',
-    notification: 'notifications',
-  }
-
-  return plurals[routerName] || `${routerName}s`
+function decodeJsonPointerSegment(segment: string): string {
+  return segment.replace(/~1/g, '/').replace(/~0/g, '~')
 }
 
-function generateExampleFromSchema(jsonSchema: Record<string, unknown>): Record<string, unknown> {
+function resolveDefinitionRef(
+  ref: unknown,
+  definitions: Record<string, unknown>,
+): DefinitionRef | null {
+  if (typeof ref !== 'string') return null
+  if (!ref.startsWith('#/definitions/')) return null
+
+  let current: unknown = definitions
+  const segments = ref
+    .slice('#/definitions/'.length)
+    .split('/')
+    .map((segment) => decodeJsonPointerSegment(segment))
+
+  for (const segment of segments) {
+    if (Array.isArray(current)) {
+      const index = Number(segment)
+      if (!Number.isInteger(index)) return null
+      current = current[index]
+      continue
+    }
+
+    if (!isRecord(current)) return null
+    current = current[segment]
+  }
+
+  return { ref, value: current }
+}
+
+function cloneJsonSchema(schema: Record<string, unknown>): Record<string, unknown> {
+  const cloned: unknown = JSON.parse(JSON.stringify(schema))
+  return isRecord(cloned) ? cloned : {}
+}
+
+function resolveDefinitionRefs(
+  value: unknown,
+  definitions: Record<string, unknown>,
+  seenRefs = new Set<string>(),
+): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => resolveDefinitionRefs(item, definitions, seenRefs))
+  }
+
+  if (!isRecord(value)) return value
+
+  const definitionRef = resolveDefinitionRef(value.$ref, definitions)
+  if (definitionRef) {
+    if (seenRefs.has(definitionRef.ref)) return {}
+
+    const nextSeenRefs = new Set(seenRefs)
+    nextSeenRefs.add(definitionRef.ref)
+
+    const resolvedDefinition = resolveDefinitionRefs(definitionRef.value, definitions, nextSeenRefs)
+    const siblingEntries = Object.entries(value).filter(
+      ([key]) => key !== '$ref' && key !== '$schema' && key !== 'definitions',
+    )
+
+    if (isRecord(resolvedDefinition)) {
+      return resolveDefinitionRefs(
+        {
+          ...resolvedDefinition,
+          ...Object.fromEntries(siblingEntries),
+        },
+        definitions,
+        nextSeenRefs,
+      )
+    }
+
+    return resolvedDefinition
+  }
+
+  const resolved: Record<string, unknown> = {}
+
+  for (const [key, childValue] of Object.entries(value)) {
+    if (key === '$schema' || key === 'definitions') continue
+    resolved[key] = resolveDefinitionRefs(childValue, definitions, seenRefs)
+  }
+
+  return resolved
+}
+
+function resolveReferencedSchema(jsonSchema: Record<string, unknown>): Record<string, unknown> {
+  if (!isRecord(jsonSchema.definitions)) return jsonSchema
+
+  const resolved = resolveDefinitionRefs(jsonSchema, jsonSchema.definitions)
+
+  return isRecord(resolved) ? resolved : {}
+}
+
+function generateScalarExample(propName: string, schema: Record<string, unknown>): unknown {
+  const propType = schema.type as string | undefined
+  const format = schema.format as string | undefined
+
+  switch (propType) {
+    case 'string':
+      if (format === 'uuid') return 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
+      if (propName.toLowerCase().includes('search')) return 'mario'
+      return 'example'
+    case 'number':
+    case 'integer':
+      if (propName === 'limit') return 10
+      if (propName === 'page') return 1
+      return schema.default ?? 1
+    case 'boolean':
+      return schema.default ?? false
+    default:
+      return schema.default
+  }
+}
+
+function generateExampleFromSchema(jsonSchema: Record<string, unknown>): unknown {
+  const resolvedSchema = resolveReferencedSchema(jsonSchema)
+  const schemaType = resolvedSchema.type as string | undefined
+
+  if (schemaType === 'array') {
+    const items = resolvedSchema.items
+    if (items && typeof items === 'object' && !Array.isArray(items)) {
+      return [generateExampleFromSchema(items as Record<string, unknown>)]
+    }
+
+    return []
+  }
+
+  if (schemaType && schemaType !== 'object' && !resolvedSchema.properties) {
+    return generateScalarExample('', resolvedSchema)
+  }
+
   const example: Record<string, unknown> = {}
 
   // Handle direct properties
-  let properties = jsonSchema.properties as Record<string, Record<string, unknown>> | undefined
-  let required = jsonSchema.required as string[] | undefined
-
-  // Handle $ref definitions
-  if (!properties && jsonSchema.definitions && jsonSchema.$ref) {
-    const refName = (jsonSchema.$ref as string).split('/').pop()
-    if (refName) {
-      const definitions = jsonSchema.definitions as Record<string, Record<string, unknown>>
-      const definition = definitions[refName]
-      if (definition) {
-        properties = definition.properties as Record<string, Record<string, unknown>>
-        required = definition.required as string[] | undefined
-      }
-    }
-  }
+  const properties = resolvedSchema.properties as
+    | Record<string, Record<string, unknown>>
+    | undefined
+  const required = resolvedSchema.required as string[] | undefined
 
   if (!properties) return {}
 
   for (const [propName, propSchema] of Object.entries(properties)) {
     const isRequired = required?.includes(propName) || false
     const propType = propSchema.type as string
-    const format = propSchema.format as string | undefined
 
     // Only include required fields and some common optional ones in examples
     if (isRequired || ['search', 'limit', 'page'].includes(propName)) {
       switch (propType) {
         case 'string':
-          if (format === 'uuid') {
-            example[propName] = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
-          } else if (propName.toLowerCase().includes('search')) {
-            example[propName] = 'mario'
-          } else {
-            example[propName] = 'example'
-          }
-          break
         case 'number':
         case 'integer':
-          if (propName === 'limit') {
-            example[propName] = 10
-          } else if (propName === 'page') {
-            example[propName] = 1
-          } else {
-            example[propName] = propSchema.default ?? 1
-          }
-          break
         case 'boolean':
-          example[propName] = propSchema.default ?? false
+          example[propName] = generateScalarExample(propName, propSchema)
           break
         case 'array':
           // Handle array types
@@ -423,7 +265,12 @@ function generateExampleFromSchema(jsonSchema: Record<string, unknown>): Record<
             } else if (itemType === 'object') {
               // Recursively generate example for nested object
               const nestedExample = generateExampleFromSchema(items)
-              example[propName] = Object.keys(nestedExample).length > 0 ? [nestedExample] : []
+              example[propName] =
+                typeof nestedExample === 'object' &&
+                nestedExample !== null &&
+                Object.keys(nestedExample).length > 0
+                  ? [nestedExample]
+                  : []
             } else {
               example[propName] = []
             }
@@ -434,7 +281,11 @@ function generateExampleFromSchema(jsonSchema: Record<string, unknown>): Record<
         case 'object':
           // Recursively generate example for nested object
           const nestedObjExample = generateExampleFromSchema(propSchema)
-          if (Object.keys(nestedObjExample).length > 0) {
+          if (
+            typeof nestedObjExample === 'object' &&
+            nestedObjExample !== null &&
+            Object.keys(nestedObjExample).length > 0
+          ) {
             example[propName] = nestedObjExample
           }
           break
@@ -456,9 +307,10 @@ function extractRouterInfo(filePath: string): RouterInfo | null {
 
     const procedures: RouterInfo['procedures'] = []
 
-    // Extract procedure definitions - handle multiline patterns
+    // Extract explicit tRPC procedure chains. The docs generator only trusts schemas declared
+    // in .input(...) and .output(...); response examples for uncontracted procedures stay generic.
     const procedureRegex =
-      /(\w+):\s*(mobilePublicProcedure|mobileProtectedProcedure)\s*(?:\.input\((\w+)\))?\s*\.(query|mutation)/g
+      /(\w+):\s*(mobilePublicProcedure|mobileProtectedProcedure)([\s\S]*?)\.(query|mutation)\s*\(/g
     let match
 
     // First, find where nested routers are defined
@@ -503,7 +355,9 @@ function extractRouterInfo(filePath: string): RouterInfo | null {
     }
 
     while ((match = procedureRegex.exec(content)) !== null) {
-      const [, name, authType, inputSchema, type] = match
+      const [, name, authType, procedureChain, type] = match
+      const inputSchema = procedureChain.match(/\.input\((\w+)\)/)?.[1]
+      const outputSchema = procedureChain.match(/\.output\((\w+)\)/)?.[1]
 
       // Check if this procedure is inside a nested router
       let isInNestedRouter = false
@@ -517,33 +371,15 @@ function extractRouterInfo(filePath: string): RouterInfo | null {
       // Skip procedures that are inside nested routers
       if (isInNestedRouter) continue
 
-      // Extract JSDoc comment for this procedure
-      const beforeProcedure = content.substring(0, match.index)
-      const lastCommentMatch = beforeProcedure.match(/\/\*\*[\s\S]*?\*\//g)
-      let description = lastCommentMatch
-        ? lastCommentMatch[lastCommentMatch.length - 1]
-            .replace(/\/\*\*|\*\//g, '') // Remove /** and */
-            .replace(/^\s*\*\s?/gm, '') // Remove leading * from each line
-            .trim()
-            .replace(/\n\s*\n/g, '\n') // Remove empty lines
-            .replace(/\n/g, ' ') // Join lines with space
-        : undefined
-
-      // Skip comments that are clearly for nested routers, not procedures
-      if (description && description.toLowerCase().includes('nested router')) {
-        description = undefined
-      }
-
-      // Use the JSDoc description as is, since we're now excluding nested router procedures
-      const finalDescription = description
+      const description = extractAdjacentJsDoc(content, match.index)
 
       procedures.push({
         name,
         type: type as 'query' | 'mutation',
         input: inputSchema,
+        output: outputSchema,
         auth: authType === 'mobileProtectedProcedure' ? 'protected' : 'public',
-        description: finalDescription || description,
-        returnStructure: analyzeReturnStructure(filePath, name),
+        description,
       })
     }
 
@@ -557,31 +393,43 @@ function extractRouterInfo(filePath: string): RouterInfo | null {
   }
 }
 
+function extractAdjacentJsDoc(content: string, procedureIndex: number): string | undefined {
+  const beforeProcedure = content.substring(0, procedureIndex)
+  const commentEnd = beforeProcedure.lastIndexOf('*/')
+  if (commentEnd === -1) return undefined
+
+  const trailingContent = beforeProcedure.slice(commentEnd + 2)
+  if (trailingContent.trim() !== '') return undefined
+
+  const commentStart = beforeProcedure.lastIndexOf('/**', commentEnd)
+  if (commentStart === -1) return undefined
+
+  const description = beforeProcedure
+    .slice(commentStart, commentEnd + 2)
+    .replace(/\/\*\*|\*\//g, '')
+    .replace(/^\s*\*\s?/gm, '')
+    .trim()
+    .replace(/\n\s*\n/g, '\n')
+    .replace(/\n/g, ' ')
+
+  if (description.toLowerCase().includes('nested router')) return undefined
+
+  return description
+}
+
 /**
  * Convert JSON Schema Draft 7 to OpenAPI 3.0 compatible format
  * Handles nullable types properly for OpenAPI 3.0
  */
 function convertJsonSchemaToOpenApi30(schema: Record<string, unknown>): Record<string, unknown> {
-  // Deep clone to avoid mutating original
-  const converted = JSON.parse(JSON.stringify(schema)) as Record<string, unknown>
-
-  // If schema has definitions with a $ref pointing to it, flatten it
-  if (converted.definitions && converted.$ref) {
-    const refPath = (converted.$ref as string).split('/').pop()
-    const definitions = converted.definitions as Record<string, unknown>
-    if (refPath && definitions[refPath]) {
-      const definition = definitions[refPath] as Record<string, unknown>
-      // Copy all properties from the definition to the root
-      Object.assign(converted, definition)
-      // Remove JSON Schema specific properties
-      delete converted.definitions
-      delete converted.$ref
-      delete converted.$schema
-    }
-  }
+  const cloned = cloneJsonSchema(schema)
+  const definitions = isRecord(cloned.definitions) ? cloned.definitions : {}
+  const resolved = resolveDefinitionRefs(cloned, definitions)
+  const converted = isRecord(resolved) ? resolved : {}
 
   // Remove JSON Schema specific properties that aren't valid in OpenAPI
   delete converted.$schema
+  delete converted.definitions
 
   function processSchema(obj: Record<string, unknown>): void {
     // Handle array type format (OpenAPI 3.1) to nullable format (OpenAPI 3.0)
@@ -617,15 +465,12 @@ function convertJsonSchemaToOpenApi30(schema: Record<string, unknown>): Record<s
         } else if (key === 'items' && !Array.isArray(value)) {
           processSchema(value as Record<string, unknown>)
         } else if (
-          !Array.isArray(value) &&
+          Array.isArray(value) &&
           (key === 'allOf' || key === 'anyOf' || key === 'oneOf')
         ) {
-          // Process schemas in these arrays
-          if (Array.isArray(value)) {
-            for (const item of value) {
-              if (item && typeof item === 'object') {
-                processSchema(item as Record<string, unknown>)
-              }
+          for (const item of value) {
+            if (item && typeof item === 'object' && !Array.isArray(item)) {
+              processSchema(item as Record<string, unknown>)
             }
           }
         } else if (!Array.isArray(value) && typeof value === 'object' && key !== 'definitions') {
@@ -637,6 +482,20 @@ function convertJsonSchemaToOpenApi30(schema: Record<string, unknown>): Record<s
 
   processSchema(converted)
   return converted
+}
+
+function toJsonSchema(schema: z.ZodTypeAny, schemaName: string): Record<string, unknown> {
+  return zodToJsonSchema(schema, schemaName) as Record<string, unknown>
+}
+
+function addComponentSchema(
+  schemas: Record<string, unknown>,
+  schemaName: string,
+  schema: z.ZodTypeAny,
+): Record<string, unknown> {
+  const jsonSchema = toJsonSchema(schema, schemaName)
+  schemas[schemaName] = convertJsonSchemaToOpenApi30(jsonSchema)
+  return jsonSchema
 }
 
 function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
@@ -658,16 +517,10 @@ function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
 
       if (procedure.input) {
         const schemaName = procedure.input
-        const schema =
-          (mobileSchemas as Record<string, unknown>)[schemaName] ||
-          (mobileAuthSchemas as Record<string, unknown>)[schemaName]
+        const schema = getMobileApiSchema(schemaName)
 
         if (schema) {
-          const jsonSchema = zodToJsonSchema(schema as never, schemaName) as Record<string, unknown>
-
-          // Convert to OpenAPI 3.0 format (handles nullable properly)
-          // Add schema to components/schemas
-          schemas[schemaName] = convertJsonSchemaToOpenApi30(jsonSchema)
+          const jsonSchema = addComponentSchema(schemas, schemaName, schema)
 
           if (method === 'post') {
             // Mutations use POST with request body
@@ -684,8 +537,9 @@ function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
           } else {
             // Queries use GET with input query parameter containing JSON string
             const schemaExample = generateExampleFromSchema(jsonSchema)
+            const resolvedInputSchema = resolveReferencedSchema(jsonSchema)
             const hasRequiredFields =
-              jsonSchema.required && (jsonSchema.required as string[]).length > 0
+              Array.isArray(resolvedInputSchema.required) && resolvedInputSchema.required.length > 0
 
             parameters = [
               {
@@ -703,6 +557,23 @@ function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
           }
         }
       }
+
+      const outputSchemaName = procedure.output
+      const outputSchema = outputSchemaName ? getMobileApiSchema(outputSchemaName) : null
+      const outputJsonSchema =
+        outputSchemaName && outputSchema
+          ? addComponentSchema(schemas, outputSchemaName, outputSchema)
+          : null
+      const responseDataSchema =
+        outputSchemaName && outputSchema
+          ? { $ref: `#/components/schemas/${outputSchemaName}` }
+          : {
+              type: 'object',
+              description: `Response data from ${routerInfo.router}.${procedure.name}`,
+            }
+      const responseExample = outputJsonSchema
+        ? generateExampleFromSchema(outputJsonSchema)
+        : createGenericResponse(routerInfo.router, procedure.name)
 
       // Build security requirement
       const security = procedure.auth === 'protected' ? [{ ClerkAuth: [] }] : []
@@ -727,10 +598,7 @@ function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
                       type: 'object',
                       description: 'tRPC result wrapper containing the actual response data',
                       properties: {
-                        data: {
-                          type: 'object',
-                          description: `Response data from ${routerInfo.router}.${procedure.name}`,
-                        },
+                        data: responseDataSchema,
                       },
                     },
                   },
@@ -741,11 +609,7 @@ function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
                     summary: 'Successful response',
                     value: {
                       result: {
-                        data: generateResponseExampleByStructure(
-                          routerInfo.router,
-                          procedure.name,
-                          procedure.returnStructure || 'generic-object',
-                        ),
+                        data: responseExample,
                       },
                     },
                   },
@@ -855,11 +719,11 @@ function generateOpenAPISpec(endpoints: SwaggerEndpoint[], schemas: Record<strin
   return {
     openapi: '3.0.0',
     info: {
-      title: 'EmuReady Mobile API (tRPC)',
+      title: 'EmuReady Public Integration API (mobile-compatible tRPC)',
       description: `
-# EmuReady Mobile tRPC API
+# EmuReady Public Integration tRPC API
 
-Complete API documentation for EmuReady mobile applications built with tRPC.
+API documentation for the mobile-compatible public integration surface built with tRPC.
 
 ## tRPC HTTP Method Conventions
 
@@ -895,8 +759,8 @@ curl -X POST "https://www.emuready.com/api/mobile/trpc/listings.createListing" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \\
   -d '{"gameId":"uuid","deviceId":"uuid","emulatorId":"uuid","performanceId":"uuid"}'
 
-# Protected query with authentication (GET with query parameter and auth header)
-curl -X GET "https://www.emuready.com/api/mobile/trpc/listings.getUserListings?input=%7B%22userId%22%3A%22uuid%22%7D" \\
+# Protected query with authentication (GET with SuperJSON wrapped input and auth header)
+curl -X GET "https://www.emuready.com/api/mobile/trpc/listings.getUserListings?input=%7B%22json%22%3A%7B%22userId%22%3A%22uuid%22%7D%7D" \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 \`\`\`
@@ -962,7 +826,7 @@ This API provides endpoints for:
     servers: [
       {
         url: '/api/mobile/trpc',
-        description: 'Mobile API Base URL',
+        description: 'Mobile-compatible public integration API base URL',
       },
     ],
     security: [
@@ -1143,11 +1007,13 @@ All endpoints return consistent error responses:
 \`\`\`json
 {
   "error": {
-    "message": "Error description",
-    "code": "ERROR_CODE",
-    "data": {
-      "code": "TRPC_ERROR_CODE",
-      "httpStatus": 400
+    "json": {
+      "message": "Error description",
+      "code": -32600,
+      "data": {
+        "code": "TRPC_ERROR_CODE",
+        "httpStatus": 400
+      }
     }
   }
 }
@@ -1206,7 +1072,7 @@ async function main() {
     mkdirSync(outputDir, { recursive: true })
     mkdirSync(docsDir, { recursive: true })
   } catch {
-    // Swallow that shit
+    // Directory creation is best-effort because writeFileSync below reports any real failure.
   }
 
   // Write OpenAPI spec

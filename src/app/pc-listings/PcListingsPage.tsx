@@ -10,6 +10,7 @@ import {
   MobileFilterSheet,
   ListingsTableSkeleton,
 } from '@/app/listings/shared/components'
+import { shouldUseAsyncListingFilters } from '@/app/listings/shared/utils/asyncListingFilters'
 import CommunitySupportBanner from '@/components/banners/CommunitySupportBanner'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
@@ -31,8 +32,10 @@ import {
   TooltipTrigger,
   ViewButton,
 } from '@/components/ui'
-import { CACHE_DURATIONS } from '@/data/constants'
+import { LOOKUP_PAGINATION } from '@/data/constants'
 import storageKeys from '@/data/storageKeys'
+import { getCpuLabel } from '@/features/hardware/cpu/shared/cpu-format'
+import { getGpuLabel } from '@/features/hardware/gpu/shared/gpu-format'
 import {
   useEmulatorLogos,
   useLocalStorage,
@@ -70,11 +73,7 @@ const PC_LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
-const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: CACHE_DURATIONS.LOOKUP,
-  gcTime: CACHE_DURATIONS.LOOKUP_GC,
-}
-const USE_ASYNC_LISTING_FILTERS = process.env.NEXT_PUBLIC_ENABLE_ASYNC_LISTINGS_FILTERS === 'true'
+const USE_ASYNC_LISTING_FILTERS = shouldUseAsyncListingFilters()
 
 function PcListingsPage() {
   const router = useRouter()
@@ -103,22 +102,17 @@ function PcListingsPage() {
   const isAdmin = userRole ? hasRolePermission(userRole, Role.ADMIN) : false
   const isModerator = userRole ? roleIncludesRole(userRole, Role.MODERATOR) : false
 
-  // TODO: Remove this legacy fallback once async PC filters no longer need an opt-out.
   const cpusQuery = api.cpus.options.useQuery(
-    { limit: 1000 },
-    { ...LOOKUP_DATA_QUERY_OPTIONS, enabled: !USE_ASYNC_LISTING_FILTERS },
+    { limit: LOOKUP_PAGINATION.MAX_LIMIT },
+    { enabled: !USE_ASYNC_LISTING_FILTERS },
   )
-  // TODO: Remove this legacy fallback once async PC filters no longer need an opt-out.
   const gpusQuery = api.gpus.options.useQuery(
-    { limit: 1000 },
-    { ...LOOKUP_DATA_QUERY_OPTIONS, enabled: !USE_ASYNC_LISTING_FILTERS },
+    { limit: LOOKUP_PAGINATION.MAX_LIMIT },
+    { enabled: !USE_ASYNC_LISTING_FILTERS },
   )
-  const emulatorsQuery = api.emulators.get.useQuery({ limit: 100 }, LOOKUP_DATA_QUERY_OPTIONS)
-  const performanceScalesQuery = api.listings.performanceScales.useQuery(
-    undefined,
-    LOOKUP_DATA_QUERY_OPTIONS,
-  )
-  const systemsQuery = api.systems.get.useQuery(undefined, LOOKUP_DATA_QUERY_OPTIONS)
+  const emulatorsQuery = api.emulators.get.useQuery({ limit: 100 })
+  const performanceScalesQuery = api.listings.performanceScales.useQuery()
+  const systemsQuery = api.systems.get.useQuery()
 
   const filterParams: RouterInput['pcListings']['get'] = {
     page: listingsState.page,
@@ -556,16 +550,12 @@ function PcListingsPage() {
                         )}
                         {columnVisibility.isColumnVisible('cpu') && (
                           <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                            {listing.cpu
-                              ? `${listing.cpu.brand.name} ${listing.cpu.modelName}`
-                              : 'N/A'}
+                            {listing.cpu ? getCpuLabel(listing.cpu) : 'N/A'}
                           </td>
                         )}
                         {columnVisibility.isColumnVisible('gpu') && (
                           <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                            {listing.gpu
-                              ? `${listing.gpu.brand.name} ${listing.gpu.modelName}`
-                              : 'Integrated'}
+                            {listing.gpu ? getGpuLabel(listing.gpu) : 'Integrated'}
                           </td>
                         )}
                         {columnVisibility.isColumnVisible('memory') && (

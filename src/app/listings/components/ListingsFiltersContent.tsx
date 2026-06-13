@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { Joystick, MonitorSmartphone, Cpu, Gamepad, Rocket } from 'lucide-react'
 import { ActiveFiltersSummary, ListingsSearchBar } from '@/app/listings/shared/components'
+import { shouldUseAsyncListingFilters } from '@/app/listings/shared/utils/asyncListingFilters'
 import { buildActiveFilterItems } from '@/app/listings/shared/utils/buildActiveFilterItems'
 import { MultiSelect } from '@/components/ui'
 import {
@@ -38,7 +39,7 @@ interface Props {
 }
 
 export default function ListingsFiltersContent(props: Props) {
-  const ENABLE_ASYNC_LISTINGS = process.env.NEXT_PUBLIC_ENABLE_ASYNC_LISTINGS_FILTERS === 'true'
+  const ENABLE_ASYNC_LISTINGS = shouldUseAsyncListingFilters()
 
   const hasActiveFilters =
     props.systemIds.length > 0 ||

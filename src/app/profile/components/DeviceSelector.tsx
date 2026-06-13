@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Smartphone, Search, Loader2, ChevronDown, Check } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Input } from '@/components/ui'
-import { CACHE_DURATIONS } from '@/data/constants'
+import { LOOKUP_PAGINATION } from '@/data/constants'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -30,11 +30,6 @@ interface Props {
   className?: string
 }
 
-const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: CACHE_DURATIONS.LOOKUP,
-  gcTime: CACHE_DURATIONS.LOOKUP_GC,
-}
-
 const EMPTY_DEVICES: Device[] = []
 
 function DeviceSelector(props: Props) {
@@ -42,7 +37,7 @@ function DeviceSelector(props: Props) {
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set())
 
   // TODO: Make this selector async instead of preloading 1000 options.
-  const devicesQuery = api.devices.options.useQuery({ limit: 1000 }, LOOKUP_DATA_QUERY_OPTIONS)
+  const devicesQuery = api.devices.options.useQuery({ limit: LOOKUP_PAGINATION.MAX_LIMIT })
   const devices = devicesQuery.data?.devices ?? EMPTY_DEVICES
 
   const filteredDevices = useMemo(() => {

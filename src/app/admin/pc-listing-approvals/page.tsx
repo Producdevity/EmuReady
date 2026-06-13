@@ -44,6 +44,8 @@ import {
 } from '@/components/ui'
 import { POLLING_INTERVALS } from '@/data/constants'
 import storageKeys from '@/data/storageKeys'
+import { getCpuLabel } from '@/features/hardware/cpu/shared/cpu-format'
+import { getGpuLabel } from '@/features/hardware/gpu/shared/gpu-format'
 import {
   useEmulatorLogos,
   useLocalStorage,
@@ -97,7 +99,6 @@ function PcListingApprovalsPage() {
   const router = useRouter()
 
   const table = useAdminTable<PcApprovalSortField>({
-    defaultLimit: 20,
     defaultSortField: 'createdAt',
     defaultSortDirection: 'asc',
   })
@@ -609,12 +610,12 @@ function PcListingApprovalsPage() {
                     )}
                     {columnVisibility.isColumnVisible('cpu') && (
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                        {listing.cpu.brand.name} {listing.cpu.modelName}
+                        {getCpuLabel(listing.cpu)}
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('gpu') && (
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                        {listing.gpu?.brand.name} {listing.gpu?.modelName}
+                        {listing.gpu ? getGpuLabel(listing.gpu) : 'Integrated'}
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('emulator') && (

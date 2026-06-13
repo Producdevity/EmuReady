@@ -523,14 +523,14 @@ export class ResourceError {
     notFound: () => AppError.notFound('CPU'),
     alreadyExists: (modelName: string) =>
       AppError.conflict(`A CPU with model name "${modelName}" already exists for this brand`),
-    inUse: (count: number) => AppError.resourceInUse('CPU', count),
+    inUse: (count?: number) => AppError.resourceInUse('CPU', count),
   }
 
   static gpu = {
     notFound: () => AppError.notFound('GPU'),
     alreadyExists: (modelName: string) =>
       AppError.conflict(`A GPU with model name "${modelName}" already exists for this brand`),
-    inUse: (count: number) => AppError.resourceInUse('GPU', count),
+    inUse: (count?: number) => AppError.resourceInUse('GPU', count),
   }
 
   static pcPreset = {

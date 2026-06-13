@@ -1,23 +1,28 @@
-import { ResourceError } from '@/lib/errors'
-import { GetGpusSchema, GetGpuByIdSchema } from '@/schemas/gpu'
+import { createGpuService } from '@/features/hardware/gpu/server/gpu.service'
+import {
+  GetGpuByIdSchema,
+  MobileGetGpusSchema,
+  MobileGpuListItemSchema,
+  MobileGpuListResponseSchema,
+} from '@/features/hardware/gpu/shared/gpu.schemas'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
-import { GpusRepository } from '@/server/repositories/gpus.repository'
 
 export const mobileGpusRouter = createMobileTRPCRouter({
   /**
-   * Get GPUs with search, filtering, and pagination
+   * Get GPUs with search, filtering, and pagination.
    */
-  get: mobilePublicProcedure.input(GetGpusSchema).query(async ({ ctx, input }) => {
-    const repository = new GpusRepository(ctx.prisma)
-    return repository.list(input ?? {}, { limited: true })
-  }),
+  get: mobilePublicProcedure
+    .input(MobileGetGpusSchema)
+    .output(MobileGpuListResponseSchema)
+    .query(async ({ ctx, input }) => createGpuService(ctx.prisma).listMobileCompatibility(input)),
 
   /**
-   * Get GPU by ID
+   * Get GPU by ID.
    */
-  getById: mobilePublicProcedure.input(GetGpuByIdSchema).query(async ({ ctx, input }) => {
-    const repository = new GpusRepository(ctx.prisma)
-    const gpu = await repository.byIdWithCounts(input.id, { limited: true })
-    return gpu || ResourceError.gpu.notFound()
-  }),
+  getById: mobilePublicProcedure
+    .input(GetGpuByIdSchema)
+    .output(MobileGpuListItemSchema)
+    .query(async ({ ctx, input }) =>
+      createGpuService(ctx.prisma).byIdMobileCompatibility(input.id),
+    ),
 })

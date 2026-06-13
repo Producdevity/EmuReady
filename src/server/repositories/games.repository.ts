@@ -1,11 +1,12 @@
 import { PAGINATION } from '@/data/constants'
-import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
+import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { buildShadowBanFilter } from '@/server/utils/query-builders'
 import { normalizeGameTitle } from '@/server/utils/steamGameBatcher'
 import { hasRolePermission } from '@/utils/permissions'
 import { normalizeString } from '@/utils/text'
 import { Prisma, ApprovalStatus, Role } from '@orm/client'
 import { BaseRepository } from './base.repository'
+import type { PaginationResult } from '@/schemas/pagination'
 
 // Type guard for game metadata with Steam App ID
 function hasSteamAppId(metadata: unknown): metadata is { steamAppId: string } {

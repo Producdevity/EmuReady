@@ -1,8 +1,9 @@
-import { PAGINATION } from '@/data/constants'
+import { LOOKUP_PAGINATION, PAGINATION } from '@/data/constants'
 import { ResourceError } from '@/lib/errors'
-import { calculateOffset, paginate, type PaginationResult } from '@/server/utils/pagination'
+import { calculateOffset, paginate } from '@/server/utils/pagination'
 import { Prisma, type SoC } from '@orm/client'
 import { BaseRepository } from './base.repository'
+import type { PaginationResult } from '@/schemas/pagination'
 import type {
   GetSoCsInput,
   GetSoCOptionsInput,
@@ -68,7 +69,7 @@ export class SoCsRepository extends BaseRepository {
     socs: Pick<SoC, 'id' | 'name' | 'manufacturer'>[]
     hasMore: boolean
   }> {
-    const limit = filters.limit ?? 50
+    const limit = filters.limit ?? LOOKUP_PAGINATION.DEFAULT_LIMIT
     const offset = filters.offset ?? 0
     const where: Prisma.SoCWhereInput = {
       ...(filters.search && {

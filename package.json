@@ -30,7 +30,7 @@
     "dev:profile": "NEXT_CPU_PROF=1 NEXT_TURBOPACK_TRACING=1 next dev --turbopack",
     "dev:debug": "DEBUG=next:* next dev --turbopack",
     "docs:generate": "tsx src/scripts/api/generate-api-docs.ts",
-    "docs:watch": "nodemon --watch src/server/api/routers/mobile --watch src/schemas/mobile.ts --exec \"pnpm docs:generate\"",
+    "docs:watch": "nodemon --watch src/server/api/routers/mobile --watch src/features --watch src/schemas --exec \"pnpm docs:generate\"",
     "format": "prettier --write .",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",

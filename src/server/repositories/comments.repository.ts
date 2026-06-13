@@ -1,8 +1,9 @@
 import { PAGINATION } from '@/data/constants'
-import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
+import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { type Prisma, Role } from '@orm/client'
 import { BaseRepository } from './base.repository'
+import type { PaginationResult } from '@/schemas/pagination'
 
 export interface CommentFilters {
   listingId?: string
@@ -58,7 +59,7 @@ export class CommentsRepository extends BaseRepository {
 
     const where = this.buildWhereClause(filters)
     const orderBy = this.buildOrderBy(sortField, sortDirection)
-    const actualOffset = calculateOffset({ page, offset }, limit ?? 20)
+    const actualOffset = calculateOffset({ page, offset }, limit)
 
     const [total, comments] = await Promise.all([
       this.prisma.comment.count({ where }),
@@ -67,14 +68,14 @@ export class CommentsRepository extends BaseRepository {
         include: CommentsRepository.includes.default,
         orderBy,
         skip: actualOffset,
-        take: limit ?? 20,
+        take: limit,
       }),
     ])
 
     const pagination = paginate({
-      total: total,
-      page: page ?? Math.floor(actualOffset / (limit ?? 20)) + 1,
-      limit: limit ?? 20,
+      total,
+      page: page ?? Math.floor(actualOffset / limit) + 1,
+      limit,
     })
 
     return { comments, pagination }

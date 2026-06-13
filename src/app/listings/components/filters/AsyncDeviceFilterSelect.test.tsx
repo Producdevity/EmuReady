@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest'
+import { LOOKUP_PAGINATION } from '@/data/constants'
 import type AsyncDeviceFilterSelectComponent from './AsyncDeviceFilterSelect'
 
 const apiMocks = vi.hoisted(() => ({
@@ -30,22 +31,17 @@ interface IdsInput {
 
 interface OptionsQueryDescriptor {
   input: OptionsInput
-  queryOptions: unknown
+  queryOptions: unknown | undefined
 }
 
 interface QueryProxy {
   devices: {
-    options: (input: OptionsInput, queryOptions: unknown) => OptionsQueryDescriptor
+    options: (input: OptionsInput, queryOptions?: unknown) => OptionsQueryDescriptor
   }
 }
 
 let requestedOptionInputs: OptionsInput[] = []
 let requestedQueryOptions: unknown[] = []
-
-const queryOptions = expect.objectContaining({
-  staleTime: expect.any(Number),
-  gcTime: expect.any(Number),
-})
 
 const firstPageData = {
   devices: [
@@ -124,8 +120,10 @@ describe('AsyncDeviceFilterSelect', () => {
       { ids: ['device-selected'] },
       expect.objectContaining({ enabled: true }),
     )
-    expect(requestedOptionInputs).toEqual([{ search: undefined, limit: 50, offset: 0 }])
-    expect(requestedQueryOptions[0]).toEqual(queryOptions)
+    expect(requestedOptionInputs).toEqual([
+      { search: undefined, limit: LOOKUP_PAGINATION.DEFAULT_LIMIT, offset: 0 },
+    ])
+    expect(requestedQueryOptions[0]).toBeUndefined()
 
     fireEvent.click(screen.getByRole('button', { name: 'Devices multi-select' }))
     expect(screen.getByText('Retroid Pocket 5')).toBeInTheDocument()
@@ -165,8 +163,10 @@ describe('AsyncDeviceFilterSelect', () => {
         vi.advanceTimersByTime(300)
       })
 
-      expect(requestedOptionInputs).toEqual([{ search: 'odin', limit: 50, offset: 0 }])
-      expect(requestedQueryOptions[0]).toEqual(queryOptions)
+      expect(requestedOptionInputs).toEqual([
+        { search: 'odin', limit: LOOKUP_PAGINATION.DEFAULT_LIMIT, offset: 0 },
+      ])
+      expect(requestedQueryOptions[0]).toBeUndefined()
     } finally {
       vi.useRealTimers()
     }
@@ -183,9 +183,13 @@ describe('AsyncDeviceFilterSelect', () => {
     fireEvent.scroll(scrollContainer)
 
     expect(requestedOptionInputs).toEqual([
-      { search: undefined, limit: 50, offset: 0 },
-      { search: undefined, limit: 50, offset: 50 },
+      { search: undefined, limit: LOOKUP_PAGINATION.DEFAULT_LIMIT, offset: 0 },
+      {
+        search: undefined,
+        limit: LOOKUP_PAGINATION.DEFAULT_LIMIT,
+        offset: LOOKUP_PAGINATION.DEFAULT_LIMIT,
+      },
     ])
-    expect(requestedQueryOptions[1]).toEqual(queryOptions)
+    expect(requestedQueryOptions[1]).toBeUndefined()
   })
 })

@@ -20,6 +20,7 @@ import {
   Pagination,
   LocalizedDate,
   Code,
+  Dropdown,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
@@ -180,36 +181,8 @@ function AdminAuditLogsPage() {
         searchPlaceholder="Search by actor, target, entity ID, request, IP, user agent..."
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-          <select
-            value={selectedAction}
-            onChange={(e) => setSelectedAction(e.target.value)}
-            className="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-          >
-            {ACTION_OPTIONS.map((opt) => (
-              <option
-                key={opt.value ? String(opt.value) : 'all'}
-                value={opt.value as unknown as string}
-              >
-                {opt.label}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={selectedEntity}
-            onChange={(e) => setSelectedEntity(e.target.value)}
-            className="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-          >
-            {ENTITY_OPTIONS.map((opt) => (
-              <option
-                key={opt.value ? String(opt.value) : 'all'}
-                value={opt.value as unknown as string}
-              >
-                {opt.label}
-              </option>
-            ))}
-          </select>
-
+          <Dropdown options={ACTION_OPTIONS} value={selectedAction} onChange={setSelectedAction} />
+          <Dropdown options={ENTITY_OPTIONS} value={selectedEntity} onChange={setSelectedEntity} />
           <input
             type="date"
             value={dateFrom}

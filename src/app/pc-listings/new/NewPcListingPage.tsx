@@ -3,8 +3,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useCallback, useEffect, useState } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import {
   CustomFieldsFormSection,
   FormValidationSummary,
@@ -21,8 +21,10 @@ import {
   useFormKeyDown,
 } from '@/app/listings/hooks'
 import { Autocomplete, Button, Input, LoadingSpinner, SelectInput } from '@/components/ui'
-import { CACHE_DURATIONS } from '@/data/constants'
+import { LOOKUP_PAGINATION } from '@/data/constants'
 import { PC_OS_OPTIONS } from '@/data/pc-os'
+import { getCpuLabel } from '@/features/hardware/cpu/shared/cpu-format'
+import { getGpuLabel } from '@/features/hardware/gpu/shared/gpu-format'
 import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
@@ -37,21 +39,20 @@ import createDynamicPcListingSchema from './form-schemas/createDynamicPcListingS
 
 export type PcListingFormValues = RouterInput['pcListings']['create']
 
-type CpuOption = RouterOutput['cpus']['options']['cpus'][number]
-type GpuOption = RouterOutput['gpus']['options']['gpus'][number]
+type CpuSummary = RouterOutput['cpus']['options']['cpus'][number]
+type GpuSummary = RouterOutput['gpus']['options']['gpus'][number]
 type PcPresetOption = RouterOutput['pcListings']['presets']['get'][number]
 
 const OS_OPTIONS = PC_OS_OPTIONS
-const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: CACHE_DURATIONS.LOOKUP,
-  gcTime: CACHE_DURATIONS.LOOKUP_GC,
-}
+const EMPTY_PC_LISTING_SCHEMA = createDynamicPcListingSchema([])
 
 function AddPcListingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const currentUserQuery = api.users.me.useQuery()
   const submitWithHumanVerification = useSubmitWithHumanVerification()
+  const schemaRef = useRef(EMPTY_PC_LISTING_SCHEMA)
+  const previousCustomFieldIdsKeyRef = useRef('')
 
   const gameIdFromUrl = searchParams.get('gameId')
 
@@ -59,19 +60,9 @@ function AddPcListingPage() {
   const [selectedEmulator, setSelectedEmulator] = useState<EmulatorOption | null>(null)
   const [selectedPreset, setSelectedPreset] = useState<PcPresetOption | null>(null)
   const [emulatorInputFocus, setEmulatorInputFocus] = useState(false)
-  const [parsedCustomFields, setParsedCustomFields] = useState<CustomFieldDefinitionWithOptions[]>(
-    [],
-  )
-  const [schemaState, setSchemaState] = useState<ReturnType<typeof createDynamicPcListingSchema>>(
-    createDynamicPcListingSchema([]),
-  )
-
   const utils = api.useUtils()
   const createPcListing = api.pcListings.create.useMutation()
-  const performanceScalesQuery = api.performanceScales.get.useQuery(
-    undefined,
-    LOOKUP_DATA_QUERY_OPTIONS,
-  )
+  const performanceScalesQuery = api.performanceScales.get.useQuery()
   const presetsQuery = api.pcListings.presets.get.useQuery({})
   const { handleKeyDown } = useFormKeyDown()
 
@@ -80,10 +71,13 @@ function AddPcListingPage() {
     useEmulatorLoader(selectedGame)
 
   const loadCpuItems = useCallback(
-    async (query: string): Promise<CpuOption[]> => {
+    async (query: string): Promise<CpuSummary[]> => {
       if (query.length < 2) return Promise.resolve([])
       try {
-        const result = await utils.cpus.options.fetch({ search: query, limit: 20 })
+        const result = await utils.cpus.options.fetch({
+          search: query,
+          limit: LOOKUP_PAGINATION.AUTOCOMPLETE_LIMIT,
+        })
         return result.cpus ?? []
       } catch (error) {
         console.error('Error fetching CPUs:', error)
@@ -94,10 +88,13 @@ function AddPcListingPage() {
   )
 
   const loadGpuItems = useCallback(
-    async (query: string): Promise<GpuOption[]> => {
+    async (query: string): Promise<GpuSummary[]> => {
       if (query.length < 2) return Promise.resolve([])
       try {
-        const result = await utils.gpus.options.fetch({ search: query, limit: 20 })
+        const result = await utils.gpus.options.fetch({
+          search: query,
+          limit: LOOKUP_PAGINATION.AUTOCOMPLETE_LIMIT,
+        })
         return result.gpus ?? []
       } catch (error) {
         console.error('Error fetching GPUs:', error)
@@ -108,7 +105,8 @@ function AddPcListingPage() {
   )
 
   const form = useForm<PcListingFormValues>({
-    resolver: zodResolver(schemaState),
+    resolver: (values, context, options) =>
+      zodResolver(schemaRef.current)(values, context, options),
     defaultValues: {
       gameId: gameIdFromUrl ?? '',
       cpuId: '',
@@ -123,7 +121,7 @@ function AddPcListingPage() {
     },
   })
 
-  const selectedEmulatorId = form.watch('emulatorId')
+  const selectedEmulatorId = useWatch({ control: form.control, name: 'emulatorId' })
   const customFieldDefinitionsQuery = api.customFieldDefinitions.getByEmulator.useQuery(
     { emulatorId: selectedEmulatorId },
     {
@@ -131,6 +129,22 @@ function AddPcListingPage() {
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
     },
+  )
+  const parsedCustomFields = useMemo(() => {
+    if (!customFieldDefinitionsQuery.data) return []
+
+    return customFieldDefinitionsQuery.data.map((field): CustomFieldDefinitionWithOptions => {
+      const parsedOptions = parseCustomFieldOptions(field)
+      return {
+        ...field,
+        parsedOptions,
+        defaultValue: field.defaultValue as string | number | boolean | null | undefined,
+      }
+    })
+  }, [customFieldDefinitionsQuery.data])
+  const customFieldIdsKey = useMemo(
+    () => parsedCustomFields.map((field) => field.id).join('|'),
+    [parsedCustomFields],
   )
 
   usePreSelectedGame({
@@ -140,37 +154,17 @@ function AddPcListingPage() {
     onSearchTermChange: setGameSearchTerm,
   })
 
-  // Update custom field definitions when emulator changes
+  // Sync custom field defaults when emulator-specific definitions change.
   useEffect(() => {
-    if (!customFieldDefinitionsQuery.data) return
-
-    const parsed = customFieldDefinitionsQuery.data.map(
-      (field): CustomFieldDefinitionWithOptions => {
-        const parsedOptions = parseCustomFieldOptions(field)
-        return {
-          ...field,
-          parsedOptions,
-          defaultValue: field.defaultValue as string | number | boolean | null | undefined,
-        }
-      },
-    )
-
-    const isSameAsCurrent =
-      parsedCustomFields.length === parsed.length &&
-      parsedCustomFields.every((f, i) => f.id === parsed[i]?.id)
-    if (isSameAsCurrent) return
-
-    setParsedCustomFields(parsed)
-
-    const dynamicSchema = createDynamicPcListingSchema(parsed)
-    setSchemaState(dynamicSchema)
+    schemaRef.current = createDynamicPcListingSchema(parsedCustomFields)
+    if (previousCustomFieldIdsKeyRef.current === customFieldIdsKey) return
+    previousCustomFieldIdsKeyRef.current = customFieldIdsKey
 
     const currentValues = form.getValues()
-    form.reset()
     form.reset(currentValues)
 
-    const currentCustomValues = form.watch('customFieldValues') ?? []
-    const newCustomValues = parsed.map((field) => {
+    const currentCustomValues = form.getValues('customFieldValues') ?? []
+    const newCustomValues = parsedCustomFields.map((field) => {
       const existingValueObj = currentCustomValues.find(
         (cv) => cv.customFieldDefinitionId === field.id,
       )
@@ -184,7 +178,7 @@ function AddPcListingPage() {
       }
     })
     form.setValue('customFieldValues', newCustomValues)
-  }, [customFieldDefinitionsQuery.data, form, parsedCustomFields])
+  }, [customFieldIdsKey, form, parsedCustomFields])
 
   // Clear emulator when game changes and load initial emulators
   useEffect(() => {
@@ -196,53 +190,42 @@ function AddPcListingPage() {
     }
   }, [selectedGame, form, loadEmulatorItems, setAvailableEmulators])
 
-  const onSubmit = useCallback(
-    async (data: PcListingFormValues) => {
-      if (!currentUserQuery.data?.id) {
-        return toast.error('You must be signed in to create a Compatibility Report.')
+  async function onSubmit(data: PcListingFormValues) {
+    if (!currentUserQuery.data?.id) {
+      toast.error('You must be signed in to create a Compatibility Report.')
+      return
+    }
+    try {
+      const result = await submitWithHumanVerification((humanVerificationToken) =>
+        createPcListing.mutateAsync({
+          ...data,
+          humanVerificationToken,
+        }),
+      )
+
+      analytics.listing.created({
+        listingId: result.id,
+        gameId: data.gameId,
+        systemId: selectedGame?.system?.id || '',
+        emulatorId: data.emulatorId,
+        deviceId: 'pc',
+        performanceId: data.performanceId,
+        hasCustomFields: parsedCustomFields.length > 0,
+        customFieldCount: parsedCustomFields.length,
+      })
+
+      await utils.pcListings.get.invalidate()
+      if (data.gameId) {
+        await utils.games.byId.invalidate({ id: data.gameId })
       }
-      try {
-        const result = await submitWithHumanVerification((humanVerificationToken) =>
-          createPcListing.mutateAsync({
-            ...data,
-            humanVerificationToken,
-          }),
-        )
 
-        analytics.listing.created({
-          listingId: result.id,
-          gameId: data.gameId,
-          systemId: selectedGame?.system?.id || '',
-          emulatorId: data.emulatorId,
-          deviceId: 'pc',
-          performanceId: data.performanceId,
-          hasCustomFields: parsedCustomFields.length > 0,
-          customFieldCount: parsedCustomFields.length,
-        })
-
-        // Invalidate queries to refresh data
-        await utils.pcListings.get.invalidate()
-        if (data.gameId) {
-          await utils.games.byId.invalidate({ id: data.gameId })
-        }
-
-        toast.success('PC Report created! It will be reviewed before going live.')
-        router.push(`/pc-listings/${result.id}`)
-      } catch (error) {
-        const message = getErrorMessage(error)
-        toast.error(`Failed to create PC Report: ${message}`)
-      }
-    },
-    [
-      currentUserQuery.data?.id,
-      createPcListing,
-      submitWithHumanVerification,
-      selectedGame?.system?.id,
-      parsedCustomFields.length,
-      router,
-      utils,
-    ],
-  )
+      toast.success('PC Report created! It will be reviewed before going live.')
+      router.push(`/pc-listings/${result.id}`)
+    } catch (error) {
+      const message = getErrorMessage(error)
+      toast.error(`Failed to create PC Report: ${message}`)
+    }
+  }
 
   const handlePresetSelect = (preset: PcPresetOption) => {
     setSelectedPreset(preset)
@@ -261,9 +244,6 @@ function AddPcListingPage() {
     form.setValue('os', PcOs.WINDOWS)
     form.setValue('osVersion', '')
   }
-
-  const formatCpuLabel = (cpu: CpuOption) => `${cpu.brand.name} ${cpu.modelName}`
-  const formatGpuLabel = (gpu: GpuOption) => `${gpu.brand.name} ${gpu.modelName}`
 
   return (
     <ListingFormAuthGuard
@@ -316,14 +296,14 @@ function AddPcListingPage() {
                         <div className="flex justify-between">
                           <span className="text-gray-600 dark:text-gray-400">CPU:</span>
                           <span className="font-medium text-gray-900 dark:text-white">
-                            {selectedPreset.cpu.brand.name} {selectedPreset.cpu.modelName}
+                            {getCpuLabel(selectedPreset.cpu)}
                           </span>
                         </div>
                         {selectedPreset.gpu && (
                           <div className="flex justify-between">
                             <span className="text-gray-600 dark:text-gray-400">GPU:</span>
                             <span className="font-medium text-gray-900 dark:text-white">
-                              {selectedPreset.gpu.brand.name} {selectedPreset.gpu.modelName}
+                              {getGpuLabel(selectedPreset.gpu)}
                             </span>
                           </div>
                         )}
@@ -368,13 +348,9 @@ function AddPcListingPage() {
                             {preset.name}
                           </div>
                           <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                            <div>{getCpuLabel(preset.cpu)}</div>
                             <div>
-                              {preset.cpu.brand.name} {preset.cpu.modelName}
-                            </div>
-                            <div>
-                              {preset.gpu
-                                ? `${preset.gpu.brand.name} ${preset.gpu.modelName}`
-                                : 'Integrated Graphics'}
+                              {preset.gpu ? getGpuLabel(preset.gpu) : 'Integrated Graphics'}
                             </div>
                             <div>
                               {preset.memorySize}GB •{' '}
@@ -400,6 +376,7 @@ function AddPcListingPage() {
                 onGameSelect={(game: GameOption | null) => {
                   setSelectedGame(game)
                   if (game) return
+                  form.setValue('gameId', '')
                   form.setValue('emulatorId', '')
                   form.setValue('customFieldValues', [])
                 }}
@@ -438,7 +415,7 @@ function AddPcListingPage() {
                         onChange={(value) => field.onChange(value || '')}
                         loadItems={loadCpuItems}
                         optionToValue={(cpu) => cpu.id}
-                        optionToLabel={formatCpuLabel}
+                        optionToLabel={getCpuLabel}
                         placeholder="Select a CPU..."
                         className="w-full"
                         filterKeys={['modelName']}
@@ -466,7 +443,7 @@ function AddPcListingPage() {
                         onChange={(value) => field.onChange(value || '')}
                         loadItems={loadGpuItems}
                         optionToValue={(gpu) => gpu.id}
-                        optionToLabel={formatGpuLabel}
+                        optionToLabel={getGpuLabel}
                         placeholder="Select a GPU..."
                         className="w-full"
                         filterKeys={['modelName']}

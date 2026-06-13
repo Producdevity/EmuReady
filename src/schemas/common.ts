@@ -3,6 +3,15 @@ import { z } from 'zod'
 export const SortDirectionSchema = z.enum(['asc', 'desc'])
 export type SortDirection = z.infer<typeof SortDirectionSchema>
 
+export const MutationSuccessSchema = z.object({
+  success: z.literal(true),
+})
+export type MutationSuccess = z.output<typeof MutationSuccessSchema>
+
+export function createMutationSuccess(): MutationSuccess {
+  return { success: true }
+}
+
 // Admin table URL parameters
 export const AdminTableParamsSchema = z.object({
   search: z.string().default(''),

@@ -8,6 +8,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { LogoIcon, LoadingIcon } from '@/components/icons'
 import NotificationCenter from '@/components/notifications/NotificationCenter'
 import { ThemeToggle } from '@/components/ui'
+import useMounted from '@/hooks/useMounted'
 import analytics from '@/lib/analytics'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
@@ -15,12 +16,22 @@ import { navbarItems } from './data'
 import MobileSearchOverlay from './MobileSearchOverlay'
 import NavbarExpandableSearch from './NavbarExpandableSearch'
 
+function AuthLoadingIndicator() {
+  return (
+    <div className="flex items-center justify-center w-8 h-8">
+      <LoadingIcon />
+    </div>
+  )
+}
+
 function Navbar() {
   const { user, isLoaded } = useUser()
+  const mounted = useMounted()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const pathname = usePathname()
+  const authReady = mounted && isLoaded
 
   // Handle scroll effect for navbar
   useEffect(() => {
@@ -118,12 +129,10 @@ function Navbar() {
           {/* Right Section */}
           <div className="hidden md:flex items-center space-x-4">
             <ThemeToggle />
-            {user && <NotificationCenter />}
+            {authReady && user && <NotificationCenter />}
 
-            {!isLoaded ? (
-              <div className="flex items-center justify-center w-8 h-8">
-                <LoadingIcon />
-              </div>
+            {!authReady ? (
+              <AuthLoadingIndicator />
             ) : (
               <>
                 {user ? (
@@ -183,7 +192,7 @@ function Navbar() {
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-3">
             <ThemeToggle />
-            {user && <NotificationCenter />}
+            {authReady && user && <NotificationCenter />}
             <button
               onClick={() => setMobileSearchOpen(true)}
               className="inline-flex items-center justify-center p-2.5 rounded-xl text-gray-400 hover:text-blue-500 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all duration-300"

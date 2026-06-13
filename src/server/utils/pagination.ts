@@ -1,25 +1,12 @@
+import { PAGINATION } from '@/data/constants'
 import { toArray } from '@/utils/array'
+import type { PaginatedResponse, PaginationInput, PaginationResult } from '@/schemas/pagination'
 import type { SortDirection } from '@/types/api'
 
-export interface PaginationInput {
-  limit?: number
-  offset?: number
-  page?: number
-}
-
-export interface PaginationResult {
-  total: number
-  pages: number
-  page: number
-  offset: number
+export interface ResolvedPagination {
   limit: number
-  hasNextPage: boolean
-  hasPreviousPage: boolean
-}
-
-export interface PaginatedResponse<T> {
-  items: T[]
-  pagination: PaginationResult
+  offset: number
+  page: number
 }
 
 /**
@@ -34,6 +21,20 @@ export function calculateOffset(
 ): number {
   const { page, offset = 0 } = input
   return page ? (page - 1) * limit : (offset ?? 0)
+}
+
+export function resolvePagination(
+  input: PaginationInput | undefined,
+  defaultLimit = PAGINATION.DEFAULT_LIMIT,
+): ResolvedPagination {
+  const limit = input?.limit ?? defaultLimit
+  const offset = calculateOffset({ page: input?.page, offset: input?.offset ?? 0 }, limit)
+
+  return {
+    limit,
+    offset,
+    page: input?.page ?? Math.floor(offset / limit) + 1,
+  }
 }
 
 interface PaginateParams {
@@ -61,6 +62,10 @@ export function paginate(params: PaginateParams): PaginationResult {
   }
 }
 
+export function paginationResult(total: number, pagination: ResolvedPagination): PaginationResult {
+  return paginate({ total, page: pagination.page, limit: pagination.limit })
+}
+
 /**
  * Create a paginated response - clean API
  * @param params - Response parameters
@@ -77,50 +82,6 @@ export function paginatedResponse<T>(params: {
   return {
     items,
     pagination: paginate({ total, page, limit }),
-  }
-}
-
-/**
- * Execute a paginated Prisma query with consistent pagination handling
- * @param model - Prisma model to query
- * @param args - Prisma findMany arguments (where, orderBy, include, etc.)
- * @param paginationInput - Pagination parameters
- * @param defaultLimit - Default items per page if not specified
- * @returns Paginated response
- */
-export async function paginatedQuery<T>(
-  model: {
-    count: (args?: { where?: unknown }) => Promise<number>
-    findMany: (args?: unknown) => Promise<T[]>
-  },
-  args: {
-    where?: unknown
-    orderBy?: unknown
-    include?: unknown
-    select?: unknown
-  },
-  paginationInput: PaginationInput,
-  defaultLimit = 20,
-): Promise<PaginatedResponse<T>> {
-  const limit = paginationInput.limit ?? defaultLimit
-  const actualOffset = calculateOffset(paginationInput, limit)
-
-  // Execute count and findMany queries in parallel for better performance
-  const [total, items] = await Promise.all([
-    model.count({ where: args.where }),
-    model.findMany({
-      ...args,
-      skip: actualOffset,
-      take: limit,
-    }),
-  ])
-
-  const actualPage = paginationInput.page ?? Math.floor(actualOffset / limit) + 1
-  const pagination = paginate({ total, page: actualPage, limit })
-
-  return {
-    items,
-    pagination,
   }
 }
 

@@ -4,6 +4,8 @@ import { Computer, Plus, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Button, LoadingSpinner, useConfirmDialog, Card } from '@/components/ui'
 import { PC_OS_LABELS } from '@/data/pc-os'
+import { getCpuLabel } from '@/features/hardware/cpu/shared/cpu-format'
+import { getGpuLabel } from '@/features/hardware/gpu/shared/gpu-format'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -136,15 +138,13 @@ function PcPresets() {
                 <div>
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300">CPU</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {preset.cpu.brand.name} {preset.cpu.modelName}
+                    {getCpuLabel(preset.cpu)}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300">GPU</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {preset.gpu
-                      ? `${preset.gpu.brand.name} ${preset.gpu.modelName}`
-                      : 'Integrated Graphics'}
+                    {preset.gpu ? getGpuLabel(preset.gpu) : 'Integrated Graphics'}
                   </p>
                 </div>
                 <div className="flex justify-between">
@@ -175,12 +175,14 @@ function PcPresets() {
         </div>
       )}
 
-      <PcPresetModal
-        isOpen={modalOpen}
-        onClose={closeModal}
-        preset={editingPreset}
-        onSuccess={handleModalSuccess}
-      />
+      {modalOpen && (
+        <PcPresetModal
+          key={editingPreset?.id ?? 'new'}
+          onClose={closeModal}
+          preset={editingPreset}
+          onSuccess={handleModalSuccess}
+        />
+      )}
     </div>
   )
 }

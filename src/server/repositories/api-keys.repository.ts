@@ -10,14 +10,10 @@ import {
   type ListApiKeysInput,
   type UpdateApiKeyQuotaInput,
 } from '@/schemas/apiAccess'
-import {
-  calculateOffset,
-  paginate,
-  buildOrderBy,
-  type PaginationResult,
-} from '@/server/utils/pagination'
+import { calculateOffset, paginate, buildOrderBy } from '@/server/utils/pagination'
 import { Prisma, ApiUsagePeriod } from '@orm/client'
 import { BaseRepository } from './base.repository'
+import type { PaginationResult } from '@/schemas/pagination'
 
 const USAGE_WINDOW_FACTORY: Record<ApiUsagePeriod, (now: Date) => Date> = {
   [ApiUsagePeriod.MINUTE]: (now) => startOfMinute(now),

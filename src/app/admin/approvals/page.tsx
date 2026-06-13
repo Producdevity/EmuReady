@@ -91,7 +91,6 @@ function AdminApprovalsPage() {
   const router = useRouter()
 
   const table = useAdminTable<ApprovalSortField>({
-    defaultLimit: 20,
     defaultSortField: 'createdAt',
     defaultSortDirection: 'asc',
   })

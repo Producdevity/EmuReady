@@ -4,21 +4,17 @@ import { AnimatePresence } from 'framer-motion'
 import { Cpu, HardDrive, Rocket, MonitorSpeaker, Gamepad2, MemoryStick } from 'lucide-react'
 import { type ChangeEvent } from 'react'
 import { ListingsSearchBar, ActiveFiltersSummary } from '@/app/listings/shared/components'
+import { shouldUseAsyncListingFilters } from '@/app/listings/shared/utils/asyncListingFilters'
 import { buildPcActiveFilterItems } from '@/app/pc-listings/utils/buildPcActiveFilterItems'
 import { MultiSelect, Input } from '@/components/ui'
-import {
-  cpuOptions,
-  emulatorOptions,
-  gpuOptions,
-  performanceOptions,
-  systemOptions,
-} from '@/utils/options'
+import AsyncCpuFilterSelect from '@/features/hardware/cpu/client/components/AsyncCpuFilterSelect'
+import { toCpuSelectOption } from '@/features/hardware/cpu/client/utils/cpuSelectOption'
+import AsyncGpuFilterSelect from '@/features/hardware/gpu/client/components/AsyncGpuFilterSelect'
+import { toGpuSelectOption } from '@/features/hardware/gpu/client/utils/gpuSelectOption'
+import { emulatorOptions, performanceOptions, systemOptions } from '@/utils/options'
 import { type System, type PerformanceScale, type Emulator } from '@orm'
-import AsyncCpuFilterSelect from './filters/AsyncCpuFilterSelect'
-import AsyncGpuFilterSelect from './filters/AsyncGpuFilterSelect'
-
-type CpuWithBrand = { id: string; modelName: string; brand: { name: string } }
-type GpuWithBrand = { id: string; modelName: string; brand: { name: string } }
+import type { CpuSummary } from '@/features/hardware/cpu/shared/cpu.types'
+import type { GpuSummary } from '@/features/hardware/gpu/shared/gpu.types'
 
 interface Props {
   cpuIds: string[]
@@ -29,8 +25,8 @@ interface Props {
   minMemory: number | null
   maxMemory: number | null
   searchTerm: string
-  cpus: CpuWithBrand[]
-  gpus: GpuWithBrand[]
+  cpus: CpuSummary[]
+  gpus: GpuSummary[]
   systems: System[]
   emulators: Emulator[]
   performanceScales: PerformanceScale[]
@@ -80,7 +76,7 @@ export default function PcFiltersContent(props: Props) {
     props.onPerformanceChange(values)
   }
 
-  const ENABLE_ASYNC = process.env.NEXT_PUBLIC_ENABLE_ASYNC_LISTINGS_FILTERS === 'true'
+  const ENABLE_ASYNC = shouldUseAsyncListingFilters()
 
   const hasActiveFilters =
     props.searchTerm ||
@@ -131,7 +127,7 @@ export default function PcFiltersContent(props: Props) {
           leftIcon={<Cpu className="w-5 h-5" />}
           value={props.cpuIds}
           onChange={props.onCpuChange}
-          options={cpuOptions(props.cpus)}
+          options={props.cpus.map((cpu) => toCpuSelectOption(cpu))}
           placeholder="All CPUs"
           maxDisplayed={2}
         />
@@ -153,7 +149,7 @@ export default function PcFiltersContent(props: Props) {
           leftIcon={<HardDrive className="w-5 h-5" />}
           value={props.gpuIds}
           onChange={props.onGpuChange}
-          options={gpuOptions(props.gpus)}
+          options={props.gpus.map((gpu) => toGpuSelectOption(gpu))}
           placeholder="All GPUs"
           maxDisplayed={2}
         />

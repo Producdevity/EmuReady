@@ -7,6 +7,8 @@ import {
   type ProcessedReportHardwareColumn,
 } from '@/app/admin/components/processed-reports'
 import storageKeys from '@/data/storageKeys'
+import { getCpuLabel } from '@/features/hardware/cpu/shared/cpu-format'
+import { getGpuLabel } from '@/features/hardware/gpu/shared/gpu-format'
 import { useAdminTable } from '@/hooks/admin'
 import { api } from '@/lib/api'
 import { logger } from '@/lib/logger'
@@ -27,8 +29,8 @@ type ProcessedPcListingSortField =
   | 'emulator.name'
   | 'author.name'
 
-function getGpuLabel(listing: ProcessedPcListing): string {
-  return listing.gpu ? `${listing.gpu.brand.name} ${listing.gpu.modelName}` : 'Integrated / N/A'
+function getProcessedGpuLabel(listing: ProcessedPcListing): string {
+  return listing.gpu ? getGpuLabel(listing.gpu) : 'Integrated / N/A'
 }
 
 const PC_HARDWARE_COLUMNS: ProcessedReportHardwareColumn<
@@ -40,14 +42,14 @@ const PC_HARDWARE_COLUMNS: ProcessedReportHardwareColumn<
     label: 'CPU',
     sortField: 'cpu',
     defaultVisible: true,
-    render: (listing) => `${listing.cpu.brand.name} ${listing.cpu.modelName}`, // TODO: replace with     render: (listing) => getCpuLabel(listing.cpu),
+    render: (listing) => getCpuLabel(listing.cpu),
   },
   {
     key: 'gpu',
     label: 'GPU',
     sortField: 'gpu',
     defaultVisible: true,
-    render: getGpuLabel,
+    render: getProcessedGpuLabel,
   },
 ]
 

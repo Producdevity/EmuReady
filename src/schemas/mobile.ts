@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { JsonValueSchema } from '@/schemas/common'
 import { CreateListingBaseSchema, CreatePcListingBaseSchema } from '@/schemas/listingCreate'
+import { PaginationResultSchema } from '@/schemas/pagination'
 import { ReportReason, ReportStatus, PcOs, CustomFieldType, NotificationType } from '@orm'
 
 // Type-safe custom field value schema using discriminated union
@@ -237,17 +238,6 @@ export const GetGamesSchema = z
 
 export type GetGamesInput = z.infer<typeof GetGamesSchema>
 
-// Response schemas for documentation generation
-export const PaginationResultSchema = z.object({
-  total: z.number(),
-  pages: z.number(),
-  page: z.number(),
-  offset: z.number(),
-  limit: z.number(),
-  hasNextPage: z.boolean(),
-  hasPreviousPage: z.boolean(),
-})
-
 export const GameMobileSchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
@@ -417,18 +407,6 @@ export const GetPcListingsSchema = z.object({
   search: z.string().optional(),
   minMemory: z.number().min(1).max(256).optional(),
   maxMemory: z.number().min(1).max(256).optional(),
-})
-
-export const GetCpusSchema = z.object({
-  search: z.string().optional(),
-  brandId: z.string().uuid().optional(),
-  limit: z.number().min(1).max(100).default(50),
-})
-
-export const GetGpusSchema = z.object({
-  search: z.string().optional(),
-  brandId: z.string().uuid().optional(),
-  limit: z.number().min(1).max(100).default(50),
 })
 
 export const GetPcPresetsSchema = z.object({
