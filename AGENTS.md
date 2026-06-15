@@ -98,6 +98,12 @@ This file is the source of working guidance for AI coding agents in this reposit
 - Do not use casts to hide type problems. Fix the underlying type issue.
 - Handle null and undefined explicitly.
 - Use generated Prisma types where appropriate.
+- Prefer deriving types from existing contracts instead of hand-maintaining
+  structural copies. Use Prisma `GetPayload`, Zod `z.input`/`z.output`, tRPC
+  `RouterInput`/`RouterOutput`, `ReturnType`, and `typeof` on const contracts
+  before adding a new interface or structural type alias. Add new manual
+  interfaces/types only for genuinely new UI/application state or external
+  boundaries that cannot be inferred, and keep them narrow and local.
 - Do not add unused functions, exports, or speculative helpers.
 - Remove dead code when refactoring.
 - Do not remove or rewrite existing TODO comments unless the user explicitly
