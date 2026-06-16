@@ -8575,8 +8575,8 @@
     },
     "/listings.getListings": {
       "get": {
-        "summary": "@deprecated Use 'get' instead - kept for backwards compatibility with Eden",
-        "description": "@deprecated Use 'get' instead - kept for backwards compatibility with Eden",
+        "summary": "Use 'get' instead - kept for backwards compatibility with Eden",
+        "description": "Use 'get' instead - kept for backwards compatibility with Eden",
         "tags": [
           "listings"
         ],

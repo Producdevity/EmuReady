@@ -1,6 +1,6 @@
 # EmuReady Public Integration API (mobile-compatible tRPC)
 
-*Auto-generated on: 2026-06-12T17:07:50.301Z*
+*Auto-generated on: 2026-06-15T12:16:27.168Z*
 
 ## Summary
 - **Total Endpoints**: 113
@@ -285,7 +285,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 #### 38. **getListings**
 - **Method**: GET
 - **Path**: `/listings.getListings`
-- **Description**: @deprecated Use 'get' instead - kept for backwards compatibility with Eden
+- **Description**: Use 'get' instead - kept for backwards compatibility with Eden
 - **Tags**: listings
 
 

@@ -121,11 +121,7 @@ export function buildGpuWhere(search?: string, brandId?: string): Prisma.GpuWher
   return where
 }
 
-//
-/**
- * Preserves the pre-feature mobile/public GPU catalog search semantics until that API is versioned.
- * @deprecated
- */
+// Preserves the pre-feature mobile/public GPU catalog search semantics until that API is versioned.
 function buildMobileGpuCatalogCompatibilityWhere(
   search?: string,
   brandId?: string,
