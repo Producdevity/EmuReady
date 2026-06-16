@@ -9,16 +9,13 @@ import {
 } from '@/app/listings/shared/components'
 import {
   getSystemNames,
-  getCpuNames,
-  getGpuNames,
   getEmulatorNames,
   getPerformanceLabels,
 } from '@/app/listings/shared/utils/selectedLabels'
 import { buildPcActiveFilterItems } from '@/app/pc-listings/utils/buildPcActiveFilterItems'
+import { type Option } from '@/components/ui/form/async-multi-select/AsyncMultiSelect'
 import { filterAnalytics } from '@/lib/analytics/filterAnalytics'
 import PcFiltersContent from './PcFiltersContent'
-import type { CpuSummary } from '@/features/hardware/cpu/shared/cpu.types'
-import type { GpuSummary } from '@/features/hardware/gpu/shared/gpu.types'
 import type { System, PerformanceScale, Emulator } from '@orm'
 
 interface Props {
@@ -33,8 +30,6 @@ interface Props {
   minMemory: number | null
   maxMemory: number | null
   searchTerm: string
-  cpus: CpuSummary[]
-  gpus: GpuSummary[]
   systems: System[]
   emulators: Emulator[]
   performanceScales: PerformanceScale[]
@@ -169,15 +164,15 @@ export default function PcFiltersSidebar(props: Props) {
           const names = getSystemNames(props.systems, values)
           filterAnalytics.systems(values, names)
         }}
-        onCpuChange={(values) => {
+        onCpuChange={(values, selectedOptions: Option[]) => {
           props.onCpuChange(values)
-          const names = getCpuNames(props.cpus, values)
-          filterAnalytics.devices(values, names)
+          const names = selectedOptions.map((option) => option.name)
+          filterAnalytics.cpus(values, names)
         }}
-        onGpuChange={(values) => {
+        onGpuChange={(values, selectedOptions: Option[]) => {
           props.onGpuChange(values)
-          const names = getGpuNames(props.gpus, values)
-          filterAnalytics.devices(values, names)
+          const names = selectedOptions.map((option) => option.name)
+          filterAnalytics.gpus(values, names)
         }}
         onEmulatorChange={(values) => {
           props.onEmulatorChange(values)

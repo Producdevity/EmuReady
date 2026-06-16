@@ -90,6 +90,30 @@ const analytics = {
       })
     },
 
+    cpu: (cpuIds: string[], cpuNames?: string[]) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.FILTER,
+        action: FILTER_ACTIONS.CPU,
+        value: cpuIds.length.toString(),
+        metadata: {
+          count: cpuIds.length,
+          cpus: cpuNames?.join(',') || cpuIds.join(','),
+        },
+      })
+    },
+
+    gpu: (gpuIds: string[], gpuNames?: string[]) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.FILTER,
+        action: FILTER_ACTIONS.GPU,
+        value: gpuIds.length.toString(),
+        metadata: {
+          count: gpuIds.length,
+          gpus: gpuNames?.join(',') || gpuIds.join(','),
+        },
+      })
+    },
+
     soc: (socIds: string[], socNames?: string[]) => {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.FILTER,
@@ -221,6 +245,20 @@ const analytics = {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.FILTER,
         action: FILTER_ACTIONS.CLEAR_DEVICE_FILTER,
+      })
+    },
+
+    clearCpuFilter: () => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.FILTER,
+        action: FILTER_ACTIONS.CLEAR_CPU_FILTER,
+      })
+    },
+
+    clearGpuFilter: () => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.FILTER,
+        action: FILTER_ACTIONS.CLEAR_GPU_FILTER,
       })
     },
 
@@ -1044,7 +1082,7 @@ const analytics = {
   contentQuality: {
     // TODO
     contentFlagged: (params: {
-      entityType: 'listing' | 'comment' | 'game'
+      entityType: 'pc-listing' | 'listing' | 'comment' | 'game'
       entityId: string
       flaggedBy: string
       reason: string

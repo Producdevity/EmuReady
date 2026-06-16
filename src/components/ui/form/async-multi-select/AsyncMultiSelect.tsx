@@ -24,10 +24,11 @@ interface Props {
   label: string
   leftIcon?: ReactNode
   value: string[]
-  onChange: (values: string[]) => void
+  onChange: (values: string[], selectedOptions: Option[]) => void
   placeholder?: string
   className?: string
   maxDisplayed?: number
+  searchPlaceholder?: string
 
   // Data from wrappers
   options: Option[]
@@ -124,19 +125,29 @@ export default function AsyncMultiSelect(props: Props) {
     loadMoreRequestedRef.current = false
   }, [props.hasMore, props.isFetching, props.options.length, query])
 
-  // Selected options: merge page options + byIds; ordered by value
-  const selectedOptions = useMemo(() => {
-    const byIdMap = new Map(props.selectedByIds.map((o) => [o.id, o]))
-    const optionMap = new Map(props.options.map((o) => [o.id, o]))
-    const result: Option[] = []
-    for (const id of props.value) {
-      const fromOptions = optionMap.get(id)
-      const fromByIds = byIdMap.get(id)
-      if (fromOptions) result.push(fromOptions)
-      else if (fromByIds) result.push(fromByIds)
-    }
+  const optionById = useMemo(() => {
+    const result = new Map<string, Option>()
+    for (const option of props.selectedByIds) result.set(option.id, option)
+    for (const option of props.options) result.set(option.id, option)
     return result
-  }, [props.options, props.selectedByIds, props.value])
+  }, [props.options, props.selectedByIds])
+
+  const getSelectedOptions = useCallback(
+    (values: string[]) => {
+      const result: Option[] = []
+      for (const id of values) {
+        const option = optionById.get(id)
+        if (option) result.push(option)
+      }
+      return result
+    },
+    [optionById],
+  )
+
+  const selectedOptions = useMemo(
+    () => getSelectedOptions(props.value),
+    [getSelectedOptions, props.value],
+  )
 
   const maxDisplayed = props.maxDisplayed ?? 2
   const getDisplayText = () => {
@@ -153,11 +164,14 @@ export default function AsyncMultiSelect(props: Props) {
     const newValue = props.value.includes(id)
       ? props.value.filter((v) => v !== id)
       : [...props.value, id]
-    props.onChange(newValue)
+    props.onChange(newValue, getSelectedOptions(newValue))
   }
 
-  const handleClearAll = () => props.onChange([])
-  const handleRemoveOption = (id: string) => props.onChange(props.value.filter((v) => v !== id))
+  const handleClearAll = () => props.onChange([], [])
+  const handleRemoveOption = (id: string) => {
+    const newValue = props.value.filter((v) => v !== id)
+    props.onChange(newValue, getSelectedOptions(newValue))
+  }
 
   const handleDropdownKeyDown = (ev: KeyboardEvent<HTMLDivElement>) => {
     if (ev.key !== 'Escape' || !isOpen) return
@@ -240,7 +254,7 @@ export default function AsyncMultiSelect(props: Props) {
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder={`Search ${props.label.toLowerCase()}...`}
+                  placeholder={props.searchPlaceholder ?? `Search ${props.label.toLowerCase()}...`}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   className="w-full px-2 py-1 pr-8 text-sm border-0 focus:ring-0

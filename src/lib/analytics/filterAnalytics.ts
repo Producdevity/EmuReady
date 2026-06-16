@@ -9,6 +9,14 @@ export const filterAnalytics = {
     if (values.length === 0) return analytics.filter.clearDeviceFilter()
     analytics.filter.device(values, names)
   },
+  cpus(values: string[], names: string[]) {
+    if (values.length === 0) return analytics.filter.clearCpuFilter()
+    analytics.filter.cpu(values, names)
+  },
+  gpus(values: string[], names: string[]) {
+    if (values.length === 0) return analytics.filter.clearGpuFilter()
+    analytics.filter.gpu(values, names)
+  },
   socs(values: string[], names: string[]) {
     if (values.length === 0) return analytics.filter.clearSocFilter()
     analytics.filter.soc(values, names)

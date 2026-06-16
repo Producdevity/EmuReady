@@ -36,7 +36,7 @@ export type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number]
 // Async entity lookup pagination for dropdowns and filter selectors
 export const LOOKUP_PAGINATION = {
   DEFAULT_LIMIT: 50,
-  MAX_LIMIT: 1000, // TODO: temporary limit for places where we aren't using async inputs/selects yet.
+  MAX_LIMIT: 1000,
   AUTOCOMPLETE_LIMIT: 20,
 } as const
 

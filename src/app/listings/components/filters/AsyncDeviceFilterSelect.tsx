@@ -1,7 +1,9 @@
 'use client'
 
 import { type ReactNode, useCallback, useMemo, useState } from 'react'
-import AsyncMultiSelect from '@/components/ui/form/async-multi-select/AsyncMultiSelect'
+import AsyncMultiSelect, {
+  type Option,
+} from '@/components/ui/form/async-multi-select/AsyncMultiSelect'
 import { LOOKUP_PAGINATION } from '@/data/constants'
 import { api } from '@/lib/api'
 
@@ -9,7 +11,7 @@ interface Props {
   label: string
   leftIcon?: ReactNode
   value: string[]
-  onChange: (values: string[]) => void
+  onChange: (values: string[], selectedOptions: Option[]) => void
   placeholder?: string
   className?: string
   maxDisplayed?: number
@@ -81,6 +83,7 @@ export default function AsyncDeviceFilterSelect(props: Props) {
       hasMore={hasMore}
       onLoadMore={handleLoadMore}
       onQueryChange={handleQueryChange}
+      searchPlaceholder="Search devices..."
     />
   )
 }

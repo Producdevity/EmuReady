@@ -4,17 +4,13 @@ import { AnimatePresence } from 'framer-motion'
 import { Cpu, HardDrive, Rocket, MonitorSpeaker, Gamepad2, MemoryStick } from 'lucide-react'
 import { type ChangeEvent } from 'react'
 import { ListingsSearchBar, ActiveFiltersSummary } from '@/app/listings/shared/components'
-import { shouldUseAsyncListingFilters } from '@/app/listings/shared/utils/asyncListingFilters'
 import { buildPcActiveFilterItems } from '@/app/pc-listings/utils/buildPcActiveFilterItems'
 import { MultiSelect, Input } from '@/components/ui'
+import { type Option } from '@/components/ui/form/async-multi-select/AsyncMultiSelect'
 import AsyncCpuFilterSelect from '@/features/hardware/cpu/client/components/AsyncCpuFilterSelect'
-import { toCpuSelectOption } from '@/features/hardware/cpu/client/utils/cpuSelectOption'
 import AsyncGpuFilterSelect from '@/features/hardware/gpu/client/components/AsyncGpuFilterSelect'
-import { toGpuSelectOption } from '@/features/hardware/gpu/client/utils/gpuSelectOption'
 import { emulatorOptions, performanceOptions, systemOptions } from '@/utils/options'
 import { type System, type PerformanceScale, type Emulator } from '@orm'
-import type { CpuSummary } from '@/features/hardware/cpu/shared/cpu.types'
-import type { GpuSummary } from '@/features/hardware/gpu/shared/gpu.types'
 
 interface Props {
   cpuIds: string[]
@@ -25,13 +21,11 @@ interface Props {
   minMemory: number | null
   maxMemory: number | null
   searchTerm: string
-  cpus: CpuSummary[]
-  gpus: GpuSummary[]
   systems: System[]
   emulators: Emulator[]
   performanceScales: PerformanceScale[]
-  onCpuChange: (values: string[]) => void
-  onGpuChange: (values: string[]) => void
+  onCpuChange: (values: string[], selectedOptions: Option[]) => void
+  onGpuChange: (values: string[], selectedOptions: Option[]) => void
   onSystemChange: (values: string[]) => void
   onEmulatorChange: (values: string[]) => void
   onPerformanceChange: (values: string[]) => void
@@ -76,8 +70,6 @@ export default function PcFiltersContent(props: Props) {
     props.onPerformanceChange(values)
   }
 
-  const ENABLE_ASYNC = shouldUseAsyncListingFilters()
-
   const hasActiveFilters =
     props.searchTerm ||
     props.systemIds.length > 0 ||
@@ -112,48 +104,24 @@ export default function PcFiltersContent(props: Props) {
       />
 
       {/* CPUs */}
-      {ENABLE_ASYNC ? (
-        <AsyncCpuFilterSelect
-          label="CPUs"
-          leftIcon={<Cpu className="w-5 h-5" />}
-          value={props.cpuIds}
-          onChange={props.onCpuChange}
-          placeholder="All CPUs"
-          maxDisplayed={2}
-        />
-      ) : (
-        <MultiSelect
-          label="CPUs"
-          leftIcon={<Cpu className="w-5 h-5" />}
-          value={props.cpuIds}
-          onChange={props.onCpuChange}
-          options={props.cpus.map((cpu) => toCpuSelectOption(cpu))}
-          placeholder="All CPUs"
-          maxDisplayed={2}
-        />
-      )}
+      <AsyncCpuFilterSelect
+        label="CPUs"
+        leftIcon={<Cpu className="w-5 h-5" />}
+        value={props.cpuIds}
+        onChange={props.onCpuChange}
+        placeholder="All CPUs"
+        maxDisplayed={2}
+      />
 
       {/* GPUs */}
-      {ENABLE_ASYNC ? (
-        <AsyncGpuFilterSelect
-          label="GPUs"
-          leftIcon={<HardDrive className="w-5 h-5" />}
-          value={props.gpuIds}
-          onChange={props.onGpuChange}
-          placeholder="All GPUs"
-          maxDisplayed={2}
-        />
-      ) : (
-        <MultiSelect
-          label="GPUs"
-          leftIcon={<HardDrive className="w-5 h-5" />}
-          value={props.gpuIds}
-          onChange={props.onGpuChange}
-          options={props.gpus.map((gpu) => toGpuSelectOption(gpu))}
-          placeholder="All GPUs"
-          maxDisplayed={2}
-        />
-      )}
+      <AsyncGpuFilterSelect
+        label="GPUs"
+        leftIcon={<HardDrive className="w-5 h-5" />}
+        value={props.gpuIds}
+        onChange={props.onGpuChange}
+        placeholder="All GPUs"
+        maxDisplayed={2}
+      />
 
       {/* Emulators */}
       <MultiSelect
