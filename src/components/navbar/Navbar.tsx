@@ -245,7 +245,7 @@ function Navbar() {
             </Link>
           ))}
 
-          {!isLoaded ? (
+          {!authReady ? (
             <div className="px-4 py-3 text-gray-500">Loading...</div>
           ) : (
             <>
