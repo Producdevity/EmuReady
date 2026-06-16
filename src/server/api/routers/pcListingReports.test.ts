@@ -91,7 +91,7 @@ describe('pcListingReportsRouter', () => {
     })
 
     await caller.updateStatus({
-      reportId: REPORT_ID,
+      id: REPORT_ID,
       status: ReportStatus.RESOLVED,
       reviewNotes: 'Confirmed spam',
     })
@@ -141,7 +141,7 @@ describe('pcListingReportsRouter', () => {
     })
 
     await caller.updateStatus({
-      reportId: REPORT_ID,
+      id: REPORT_ID,
       status: ReportStatus.RESOLVED,
       reviewNotes: 'Already handled',
     })
@@ -164,11 +164,11 @@ describe('pcListingReportsRouter', () => {
 
     await expect(
       caller.updateStatus({
-        reportId: REPORT_ID,
+        id: REPORT_ID,
         status: ReportStatus.DISMISSED,
         reviewNotes: 'Changing decision',
       }),
-    ).rejects.toThrow('PC listing report has already been resolved or dismissed')
+    ).rejects.toThrow('PC report has already been resolved or dismissed')
 
     expect(prisma.pcListing.update).not.toHaveBeenCalled()
     expect(mockLogAction).not.toHaveBeenCalled()
@@ -179,7 +179,7 @@ describe('pcListingReportsRouter', () => {
     const { caller, prisma } = createCaller()
     prisma.pcListingReport.delete.mockRejectedValue(createPrismaError('P2025'))
 
-    await expect(caller.delete({ id: REPORT_ID })).rejects.toThrow('PC listing report not found')
+    await expect(caller.delete({ id: REPORT_ID })).rejects.toThrow('PC report not found')
 
     expect(prisma.pcListingReport.findUnique).not.toHaveBeenCalled()
   })

@@ -274,7 +274,7 @@ export const CreatePcListingReportSchema = z.object({
 })
 
 export const UpdatePcListingReportSchema = z.object({
-  reportId: z.string().uuid(),
+  id: z.string().uuid(),
   status: z.nativeEnum(ReportStatus),
   reviewNotes: z.string().max(1000).optional(),
 })

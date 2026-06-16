@@ -483,23 +483,22 @@ export class ResourceError {
   }
 
   static listingReport = {
-    notFound: () => AppError.notFound('Listing report'),
-    alreadyExists: () => AppError.conflict('You have already reported this listing'),
-    cannotReportOwnListing: () => AppError.forbidden('You cannot report your own listing'),
+    notFound: () => AppError.notFound('Report'),
+    alreadyExists: () => AppError.conflict('You have already reported this compatibility report'),
+    cannotReportOwnListing: () =>
+      AppError.forbidden('You cannot report your own compatibility report'),
     cannotChangeFinalStatus: () =>
-      AppError.conflict(
-        'Listing report has already been resolved or dismissed and cannot be reopened.',
-      ),
+      AppError.conflict('Report has already been resolved or dismissed and cannot be reopened.'),
   }
 
   static pcListingReport = {
-    notFound: () => AppError.notFound('PC listing report'),
-    alreadyExists: () => AppError.conflict('You have already reported this listing'),
-    cannotReportOwnListing: () => AppError.forbidden('You cannot report your own listing'),
+    notFound: () => AppError.notFound('PC report'),
+    alreadyExists: () =>
+      AppError.conflict('You have already reported this PC compatibility report'),
+    cannotReportOwnListing: () =>
+      AppError.forbidden('You cannot report your own PC compatibility report'),
     cannotChangeFinalStatus: () =>
-      AppError.conflict(
-        'PC listing report has already been resolved or dismissed and cannot be reopened.',
-      ),
+      AppError.conflict('PC report has already been resolved or dismissed and cannot be reopened.'),
   }
 
   static userBan = {

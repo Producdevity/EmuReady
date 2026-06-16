@@ -582,21 +582,27 @@ async function openReportDialog(page: Page, listingPath: string): Promise<void> 
   await reportButton.click()
 }
 
-export async function createReport(page: Page): Promise<void> {
+export async function createReport(
+  page: Page,
+  description = 'E2E test report for admin-reports testing',
+): Promise<void> {
   const target = await createApprovedHandheldListingFixture(REPORT_TARGET_AUTHOR_EMAIL)
 
   await openReportDialog(page, target.path)
 
-  const dialog = await submitReportDialog(page, 'E2E test report for admin-reports testing')
+  const dialog = await submitReportDialog(page, description)
   await expect(dialog).toBeHidden()
 }
 
-export async function createPcReport(page: Page): Promise<void> {
+export async function createPcReport(
+  page: Page,
+  description = 'E2E test PC report for admin-reports testing',
+): Promise<void> {
   const target = await createApprovedPcListingFixture(REPORT_TARGET_AUTHOR_EMAIL)
 
   await openReportDialog(page, target.path)
 
-  const dialog = await submitReportDialog(page, 'E2E test PC report for admin-reports testing')
+  const dialog = await submitReportDialog(page, description)
   await expect(dialog).toBeHidden()
 }
 

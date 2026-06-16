@@ -1,18 +1,23 @@
 'use client'
 
-import { useState, useEffect, type SubmitEvent, type ChangeEvent } from 'react'
+import { useState, type SubmitEvent, type ChangeEvent } from 'react'
 import { Button, Input, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
-import { type ReportStatusType } from '@/schemas/listingReport'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { ReportStatus } from '@orm'
-import { type ListingReportWithDetails } from '../types'
+import { type AdminReportWithDetails } from '../adminReport'
 
 interface Props {
   isOpen: boolean
   onClose: () => void
-  report?: ListingReportWithDetails
+  report?: AdminReportWithDetails
+  onSuccess: () => void
+}
+
+interface ContentProps {
+  onClose: () => void
+  report: AdminReportWithDetails
   onSuccess: () => void
 }
 
@@ -22,50 +27,49 @@ const STATUSES = [
   { value: ReportStatus.DISMISSED, label: 'Dismissed' },
 ] as const
 
-function ReportStatusModal(props: Props) {
-  const [status, setStatus] = useState<ReportStatusType>(ReportStatus.UNDER_REVIEW)
-  const [reviewNotes, setReviewNotes] = useState('')
+type ReviewableReportStatus = (typeof STATUSES)[number]['value']
+
+function isReviewableReportStatus(value: string): value is ReviewableReportStatus {
+  return STATUSES.some((status) => status.value === value)
+}
+
+function getInitialStatus(report: AdminReportWithDetails): ReviewableReportStatus {
+  return report.status === ReportStatus.PENDING ? ReportStatus.UNDER_REVIEW : report.status
+}
+
+function ReportStatusModalContent(props: ContentProps) {
+  const [status, setStatus] = useState<ReviewableReportStatus>(getInitialStatus(props.report))
+  const [reviewNotes, setReviewNotes] = useState(props.report.reviewNotes || '')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  const updateReportStatus = api.listingReports.updateStatus.useMutation()
-
-  // Reset form when modal opens/closes
-  useEffect(() => {
-    if (props.isOpen && props.report) {
-      setStatus(
-        props.report.status === ReportStatus.PENDING
-          ? ReportStatus.UNDER_REVIEW
-          : props.report.status,
-      )
-      setReviewNotes(props.report.reviewNotes || '')
-      setError('')
-      setSuccess('')
-    } else if (!props.isOpen) {
-      setStatus(ReportStatus.UNDER_REVIEW)
-      setReviewNotes('')
-      setError('')
-      setSuccess('')
-    }
-  }, [props.isOpen, props.report])
+  const updateListingReportStatus = api.listingReports.updateStatus.useMutation()
+  const updatePcListingReportStatus = api.pcListingReports.updateStatus.useMutation()
+  const isPending = updateListingReportStatus.isPending || updatePcListingReportStatus.isPending
 
   const handleSubmit = async (ev: SubmitEvent) => {
     ev.preventDefault()
-    if (!props.report) return
 
     setError('')
     setSuccess('')
 
     try {
-      await updateReportStatus.mutateAsync({
-        id: props.report.id,
-        status,
-        reviewNotes: reviewNotes.trim() || undefined,
-      } satisfies RouterInput['listingReports']['updateStatus'])
+      if (props.report.kind === 'handheld') {
+        await updateListingReportStatus.mutateAsync({
+          id: props.report.id,
+          status,
+          reviewNotes: reviewNotes.trim() || undefined,
+        } satisfies RouterInput['listingReports']['updateStatus'])
+      } else {
+        await updatePcListingReportStatus.mutateAsync({
+          id: props.report.id,
+          status,
+          reviewNotes: reviewNotes.trim() || undefined,
+        } satisfies RouterInput['pcListingReports']['updateStatus'])
+      }
 
       setSuccess('Report status updated successfully!')
 
-      // Close modal after short delay
       setTimeout(() => {
         props.onSuccess()
       }, 1000)
@@ -74,22 +78,20 @@ function ReportStatusModal(props: Props) {
     }
   }
 
-  if (!props.report) return null
-
   return (
     <Modal
-      isOpen={props.isOpen}
+      isOpen
       onClose={props.onClose}
       title="Update Report Status"
       closeOnBackdropClick={false}
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Report Summary */}
         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded">
           <h4 className="font-medium text-gray-900 dark:text-white mb-2">Report Summary</h4>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            <strong>Listing:</strong> {props.report.listing.game.title}
+            <strong>{props.report.compatibilityReport.reportLabel}:</strong>{' '}
+            {props.report.compatibilityReport.gameTitle}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             <strong>Reason:</strong> {props.report.reason.replace(/_/g, ' ')}
@@ -104,7 +106,6 @@ function ReportStatusModal(props: Props) {
           )}
         </div>
 
-        {/* Status Selection */}
         <div>
           <label
             htmlFor="status"
@@ -115,7 +116,10 @@ function ReportStatusModal(props: Props) {
           <select
             id="status"
             value={status}
-            onChange={(e) => setStatus(e.target.value as ReportStatusType)}
+            onChange={(e) => {
+              if (!isReviewableReportStatus(e.target.value)) return
+              setStatus(e.target.value)
+            }}
             required
             className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
           >
@@ -127,7 +131,6 @@ function ReportStatusModal(props: Props) {
           </select>
         </div>
 
-        {/* Review Notes */}
         <div>
           <label
             htmlFor="reviewNotes"
@@ -151,12 +154,11 @@ function ReportStatusModal(props: Props) {
           </p>
         </div>
 
-        {/* Status-specific help text */}
         {status === ReportStatus.RESOLVED && (
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-3">
             <p className="text-sm text-green-800 dark:text-green-200">
               <strong>Resolved:</strong> Use this when the report is valid and appropriate action
-              has been taken (e.g., listing was removed, user was warned, etc.).
+              has been taken (e.g., report was removed, user was warned, etc.).
             </p>
           </div>
         )}
@@ -186,16 +188,25 @@ function ReportStatusModal(props: Props) {
           <Button type="button" variant="outline" onClick={props.onClose}>
             Cancel
           </Button>
-          <Button
-            type="submit"
-            isLoading={updateReportStatus.isPending}
-            disabled={updateReportStatus.isPending}
-          >
+          <Button type="submit" isLoading={isPending} disabled={isPending}>
             Update Status
           </Button>
         </div>
       </form>
     </Modal>
+  )
+}
+
+function ReportStatusModal(props: Props) {
+  if (!props.isOpen || !props.report) return null
+
+  return (
+    <ReportStatusModalContent
+      key={`${props.report.kind}:${props.report.id}`}
+      report={props.report}
+      onClose={props.onClose}
+      onSuccess={props.onSuccess}
+    />
   )
 }
 

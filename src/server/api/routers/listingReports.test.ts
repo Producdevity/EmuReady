@@ -209,7 +209,7 @@ describe('listingReportsRouter create', () => {
         status: ReportStatus.DISMISSED,
         reviewNotes: 'Changing decision',
       }),
-    ).rejects.toThrow('Listing report has already been resolved or dismissed')
+    ).rejects.toThrow('Report has already been resolved or dismissed')
 
     expect(prisma.listing.update).not.toHaveBeenCalled()
     expect(mockLogAction).not.toHaveBeenCalled()

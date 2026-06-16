@@ -1,7 +1,12 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { useState, useEffect, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
+import {
+  REPORT_REASON_OPTIONS,
+  type ReportReasonOptionValue,
+  isReportReasonOptionValue,
+} from '@/app/listings/shared/utils/reportReasonOptions'
 import { Button, Modal } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
@@ -17,38 +22,19 @@ interface Props {
   onSuccess: () => void
 }
 
-const REPORT_REASONS = [
-  { value: ReportReason.SPAM, label: 'Spam or repetitive content' },
-  {
-    value: ReportReason.INAPPROPRIATE_CONTENT,
-    label: 'Inappropriate or offensive content',
-  },
-  {
-    value: ReportReason.MISLEADING_INFORMATION,
-    label: 'Misleading or false information',
-  },
-  { value: ReportReason.FAKE_LISTING, label: 'Fake or fabricated listing' },
-  { value: ReportReason.COPYRIGHT_VIOLATION, label: 'Copyright violation' },
-  { value: ReportReason.OTHER, label: 'Other (please specify)' },
-] as const
+interface ModalContentProps {
+  onClose: () => void
+  pcListingId: string
+  onSuccess: () => void
+}
 
-type ReportReasonType = (typeof REPORT_REASONS)[number]['value']
-
-function PcReportListingModal(props: Props) {
-  const [reason, setReason] = useState<ReportReasonType>(ReportReason.SPAM)
+function PcReportListingModalContent(props: ModalContentProps) {
+  const [reason, setReason] = useState<ReportReasonOptionValue>(ReportReason.SPAM)
   const [description, setDescription] = useState('')
   const [error, setError] = useState('')
 
   const createReport = api.pcListingReports.create.useMutation()
   const { user } = useUser()
-
-  // Reset form when modal opens/closes
-  useEffect(() => {
-    if (!props.isOpen) return
-    setReason(ReportReason.SPAM)
-    setDescription('')
-    setError('')
-  }, [props.isOpen])
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
@@ -66,10 +52,9 @@ function PcReportListingModal(props: Props) {
         description: description.trim() || undefined,
       } satisfies RouterInput['pcListingReports']['create'])
 
-      // Track content flagging in analytics
       if (user?.id) {
         analytics.contentQuality.contentFlagged({
-          entityType: 'listing',
+          entityType: 'pc-listing',
           entityId: props.pcListingId,
           flaggedBy: user.id,
           reason,
@@ -90,7 +75,7 @@ function PcReportListingModal(props: Props) {
   }
 
   return (
-    <Modal isOpen={props.isOpen} onClose={handleClose} title="Report PC Listing">
+    <Modal isOpen onClose={handleClose} title="Report a PC Compatibility Report">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -109,11 +94,14 @@ function PcReportListingModal(props: Props) {
           <select
             id="reason"
             value={reason}
-            onChange={(e) => setReason(e.target.value as ReportReasonType)}
+            onChange={(ev) => {
+              if (!isReportReasonOptionValue(ev.target.value)) return
+              setReason(ev.target.value)
+            }}
             className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             required
           >
-            {REPORT_REASONS.map((reasonOption) => (
+            {REPORT_REASON_OPTIONS.map((reasonOption) => (
               <option key={reasonOption.value} value={reasonOption.value}>
                 {reasonOption.label}
               </option>
@@ -133,7 +121,7 @@ function PcReportListingModal(props: Props) {
             id="description"
             value={description}
             onChange={(ev) => setDescription(ev.target.value)}
-            placeholder="Please provide additional context about why you're reporting this PC listing..."
+            placeholder="Please provide additional context about why you're reporting this PC compatibility report..."
             className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             rows={4}
             maxLength={1000}
@@ -172,6 +160,18 @@ function PcReportListingModal(props: Props) {
         </div>
       </form>
     </Modal>
+  )
+}
+
+function PcReportListingModal(props: Props) {
+  if (!props.isOpen) return null
+
+  return (
+    <PcReportListingModalContent
+      onClose={props.onClose}
+      pcListingId={props.pcListingId}
+      onSuccess={props.onSuccess}
+    />
   )
 }
 

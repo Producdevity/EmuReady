@@ -134,7 +134,7 @@ export const pcListingReportsRouter = createTRPCRouter({
     .input(UpdatePcListingReportSchema)
     .mutation(async ({ ctx, input }) => {
       return new ReportModerationService(ctx.prisma).updatePcListingReportStatus({
-        reportId: input.reportId,
+        reportId: input.id,
         status: input.status,
         reviewNotes: input.reviewNotes,
         reviewerId: ctx.session.user.id,
