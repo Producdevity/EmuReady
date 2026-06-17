@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
@@ -22,6 +21,7 @@ import {
   TooltipTrigger,
   TooltipContent,
   BulkActions,
+  ImageRenderer,
   LoadingSpinner,
   DisplayToggleButton,
   ApproveButton,
@@ -427,7 +427,7 @@ function GameApprovalsPage() {
                                 className="group relative block"
                               >
                                 <div className="h-16 w-20 rounded-md overflow-hidden relative">
-                                  <Image
+                                  <ImageRenderer
                                     src={getGameImageUrl(game)}
                                     alt={game.title}
                                     fill

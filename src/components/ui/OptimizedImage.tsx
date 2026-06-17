@@ -1,10 +1,11 @@
 'use client'
 
-import Image, { type ImageProps } from 'next/image'
-import { useState } from 'react'
-import { LoadingSpinner } from '@/components/ui'
+import { type ImageProps } from 'next/image'
+import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { resolveImageProxyUrl } from '@/utils/imageProxy'
+import getImageUrl from '@/utils/getImageUrl'
+import { ImageRenderer } from './ImageRenderer'
+import { LoadingSpinner } from './LoadingSpinner'
 
 type ObjectFit = 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
 
@@ -23,13 +24,13 @@ interface Props {
   height?: number
   className?: string
   imageClassName?: string
-  priority?: ImageProps['priority']
+  preload?: ImageProps['preload']
   unoptimized?: ImageProps['unoptimized']
   loading?: ImageProps['loading']
+  fetchPriority?: ImageProps['fetchPriority']
   quality?: 50 | 75 | 85 | 100
   fallbackSrc?: string
   objectFit?: ObjectFit
-  useProxy?: boolean
 }
 
 export function OptimizedImage(props: Props) {
@@ -40,8 +41,13 @@ export function OptimizedImage(props: Props) {
 
   const resolveSrc = (): string => {
     if (error) return fallbackSrc
-    return resolveImageProxyUrl(props.src, props.useProxy)
+    return getImageUrl(props.src, null)
   }
+
+  useEffect(() => {
+    setIsLoading(true)
+    setError(false)
+  }, [props.src, fallbackSrc])
 
   const handleError = () => {
     setIsLoading(false)
@@ -55,7 +61,7 @@ export function OptimizedImage(props: Props) {
           <LoadingSpinner size="sm" />
         </div>
       )}
-      <Image
+      <ImageRenderer
         src={resolveSrc()}
         alt={props.alt}
         width={props.width ?? 300}
@@ -66,7 +72,8 @@ export function OptimizedImage(props: Props) {
           objectFitMap[props.objectFit ?? 'contain'],
           props.imageClassName,
         )}
-        priority={props.priority ?? false}
+        preload={props.preload}
+        fetchPriority={props.fetchPriority}
         quality={props.quality ?? 75}
         onLoad={() => setIsLoading(false)}
         onError={handleError}

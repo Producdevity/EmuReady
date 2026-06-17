@@ -222,7 +222,7 @@ function GamesContent() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {games.map((game, index) => (
-                <GameCard key={game.id} game={game} priority={index < ABOVE_FOLD_IMAGE_COUNT} />
+                <GameCard key={game.id} game={game} eagerLoad={index < ABOVE_FOLD_IMAGE_COUNT} />
               ))}
             </div>
 

@@ -15,7 +15,14 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isNumber } from 'remeda'
 import { type ProcessingAction } from '@/app/admin/games/approvals/page'
-import { Modal, Button, ApprovalStatusBadge, Code, LocalizedDate } from '@/components/ui'
+import {
+  ApprovalStatusBadge,
+  Button,
+  Code,
+  ImageRenderer,
+  LocalizedDate,
+  Modal,
+} from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { logger } from '@/lib/logger'
@@ -155,7 +162,7 @@ export default function GameDetailsModal(props: Props) {
         <div className="relative h-48 bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 rounded-t-lg overflow-hidden">
           {hasAnyImage && (
             <div className="absolute inset-0 bg-black/20">
-              <Image
+              <ImageRenderer
                 src={displayImage ?? ''}
                 alt={props.selectedGame.title}
                 fill
@@ -259,7 +266,7 @@ export default function GameDetailsModal(props: Props) {
                     onClick={() => handleImageClick(activeImageTab)}
                     className="w-full block"
                   >
-                    <Image
+                    <ImageRenderer
                       src={displayImage ?? ''}
                       alt={`${props.selectedGame.title} - ${activeImageTab}`}
                       width={800}

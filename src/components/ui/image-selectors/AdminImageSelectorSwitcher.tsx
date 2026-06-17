@@ -2,15 +2,10 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { Database, Zap, Link, X, Check, Sparkles } from 'lucide-react'
-import Image from 'next/image'
-import { useState } from 'react'
-import { Button, Input } from '@/components/ui'
+import { useEffect, useState } from 'react'
+import { ImageRenderer, Input, Button } from '@/components/ui'
 import getImageUrl from '@/utils/getImageUrl'
-import {
-  validateImageUrl,
-  getImageValidationError,
-  IMAGE_EXTENSIONS,
-} from '@/utils/imageValidation'
+import { getGameImageUrlValidationError } from '@/utils/imageUrls'
 import { IGDBImageSelector } from './providers/IGDBImageSelector'
 import { RawgImageSelector } from './providers/RawgImageSelector'
 import { TGDBImageSelector } from './providers/TGDBImageSelector'
@@ -42,10 +37,16 @@ export function AdminImageSelectorSwitcher(props: Props) {
   const [isValidUrl, setIsValidUrl] = useState(false)
   const [showApplied, setShowApplied] = useState(false)
 
+  useEffect(() => {
+    const selectedImageUrl = props.selectedImageUrl ?? ''
+    setManualUrl(selectedImageUrl)
+    setIsValidUrl(selectedImageUrl ? !getGameImageUrlValidationError(selectedImageUrl) : false)
+  }, [props.selectedImageUrl])
+
   const validateUrl = (url: string) => {
-    const result = validateImageUrl(url)
-    setIsValidUrl(result.isValid)
-    return result.isValid
+    const isValid = !getGameImageUrlValidationError(url)
+    setIsValidUrl(isValid)
+    return isValid
   }
 
   const handleManualUrlChange = (url: string) => {
@@ -65,7 +66,7 @@ export function AdminImageSelectorSwitcher(props: Props) {
     } else if (trimmedUrl === '') {
       props.onImageSelect('')
     } else {
-      props.onError?.(getImageValidationError(trimmedUrl))
+      props.onError?.(getGameImageUrlValidationError(trimmedUrl) ?? 'Invalid image URL')
     }
   }
 
@@ -208,8 +209,7 @@ export function AdminImageSelectorSwitcher(props: Props) {
           </div>
 
           <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-            {selectedService === 'url' &&
-              `Paste any image URL (${IMAGE_EXTENSIONS.join(', ')}) from the web`}
+            {selectedService === 'url' && 'HTTPS image URL'}
             {selectedService === 'rawg' &&
               'RAWG.io provides comprehensive game data with screenshots and backgrounds'}
             {selectedService === 'tgdb' &&
@@ -253,6 +253,7 @@ export function AdminImageSelectorSwitcher(props: Props) {
                   {manualUrl.trim() && (
                     <Button
                       type="button"
+                      aria-label="Clear image URL"
                       variant="outline"
                       size="sm"
                       icon={X}
@@ -280,7 +281,7 @@ export function AdminImageSelectorSwitcher(props: Props) {
                     animate={{ opacity: 1, y: 0 }}
                     className="text-sm text-red-600 dark:text-red-400"
                   >
-                    {getImageValidationError(manualUrl.trim())}
+                    {getGameImageUrlValidationError(manualUrl)}
                   </motion.p>
                 )}
 
@@ -288,7 +289,7 @@ export function AdminImageSelectorSwitcher(props: Props) {
                   <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Current image:</p>
                     <div className="flex items-center gap-3">
-                      <Image
+                      <ImageRenderer
                         src={getImageUrl(props.selectedImageUrl)}
                         alt="Selected image preview"
                         width={64}

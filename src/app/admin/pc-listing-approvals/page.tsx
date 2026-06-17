@@ -1,7 +1,6 @@
 'use client'
 
 import { Clock } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -30,6 +29,7 @@ import {
   BulkActions,
   ColumnVisibilityControl,
   DisplayToggleButton,
+  ImageRenderer,
   LoadingSpinner,
   LocalizedDate,
   Pagination,
@@ -570,7 +570,7 @@ function PcListingApprovalsPage() {
                     {columnVisibility.isColumnVisible('thumbnail') && (
                       <td className="px-6 py-4">
                         {listing.game.imageUrl && (
-                          <Image
+                          <ImageRenderer
                             src={getImageUrl(listing.game.imageUrl, listing.game.title)}
                             alt={listing.game.title}
                             width={40}

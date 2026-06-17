@@ -1,12 +1,12 @@
 'use client'
 
 import { Puzzle } from 'lucide-react'
-import Image from 'next/image'
 import { Controller } from 'react-hook-form'
 import { type Control, type FieldPath, type FieldValues } from 'react-hook-form'
-import { Autocomplete } from '@/components/ui'
+import { Autocomplete, ImageRenderer } from '@/components/ui'
 import { logger } from '@/lib/logger'
 import { type Nullable } from '@/types/utils'
+import getImageUrl from '@/utils/getImageUrl'
 import { ApprovalStatus } from '@orm'
 import { SelectedItemCard } from '../SelectedItemCard'
 import { type GameOption } from '../types'
@@ -37,8 +37,8 @@ export function GameSelector<TFieldValues extends FieldValues = FieldValues>(
           leftContent={
             thumbnailUrl ? (
               <div className="relative w-12 h-16 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
-                <Image
-                  src={thumbnailUrl}
+                <ImageRenderer
+                  src={getImageUrl(thumbnailUrl, props.selectedGame.title)}
                   alt={props.selectedGame.title}
                   fill
                   className="object-cover"

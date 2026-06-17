@@ -7,11 +7,11 @@ vi.mock('next/image', () => ({
   default: (
     props: ImgHTMLAttributes<HTMLImageElement> & {
       fill?: boolean
-      priority?: boolean
+      preload?: boolean
       unoptimized?: boolean
     },
   ) => {
-    const { fill: _fill, priority: _priority, unoptimized: _unoptimized, ...imgProps } = props
+    const { fill: _fill, preload: _preload, unoptimized: _unoptimized, ...imgProps } = props
     return <img alt={String(imgProps.alt ?? '')} {...imgProps} />
   },
 }))

@@ -15,6 +15,7 @@
     "incremental": true,
     "plugins": [{ "name": "next" }],
     "paths": {
+      "@config/*": ["./config/*"],
       "@/*": ["./src/*"],
       "@orm": ["./prisma/generated/client/browser"],
       "@orm/client": ["./prisma/generated/client/client"],

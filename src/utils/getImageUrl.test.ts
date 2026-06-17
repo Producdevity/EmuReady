@@ -34,18 +34,18 @@ describe('getImageUrl', () => {
     expect(result).toBe(localPath)
   })
 
-  it('returns a proxied url when an http url cannot be optimized directly', () => {
+  it('returns a placeholder when an http url cannot be rendered safely', () => {
     const httpUrl = 'http://example.com/image.jpg'
-    const result = getImageUrl(httpUrl)
+    const result = getImageUrl(httpUrl, 'HTTP Game')
 
-    expect(result).toBe(`/api/proxy-image?url=${encodeURIComponent(httpUrl)}`)
+    expect(result).toBe('/placeholder-image-for-HTTP Game')
   })
 
-  it('returns a proxied url when an https host is not configured for next/image', () => {
+  it('returns an unknown https remote url directly for native browser rendering', () => {
     const httpsUrl = 'https://example.com/image.jpg'
     const result = getImageUrl(httpsUrl)
 
-    expect(result).toBe(`/api/proxy-image?url=${encodeURIComponent(httpsUrl)}`)
+    expect(result).toBe(httpsUrl)
   })
 
   it('returns a configured next/image remote url directly', () => {
@@ -62,20 +62,6 @@ describe('getImageUrl', () => {
     expect(result).toBe(imageUrl)
   })
 
-  it('can force proxying for a configured next/image remote url', () => {
-    const imageUrl = 'https://images.igdb.com/igdb/image/upload/t_cover_big/game.jpg'
-    const result = getImageUrl(imageUrl, null, { useProxy: true })
-
-    expect(result).toBe(`/api/proxy-image?url=${encodeURIComponent(imageUrl)}`)
-  })
-
-  it('can force direct usage for an unknown remote url', () => {
-    const imageUrl = 'https://example.com/image.jpg'
-    const result = getImageUrl(imageUrl, null, { useProxy: false })
-
-    expect(result).toBe(imageUrl)
-  })
-
   it('returns a placeholder image when the url format is invalid', () => {
     const invalidUrl = 'invalid-url-format'
     const result = getImageUrl(invalidUrl, 'Invalid URL Game')
@@ -86,7 +72,7 @@ describe('getImageUrl', () => {
 
   it('handles protocol-relative URLs correctly', () => {
     const protocolRelativeUrl = '//example.com/image.jpg'
-    const result = getImageUrl(protocolRelativeUrl, null, { useProxy: true })
+    const result = getImageUrl(protocolRelativeUrl)
 
     expect(getSafePlaceholderImageUrl).toHaveBeenCalled()
     expect(result).toBe('/placeholder-image-for-unknown')

@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import {
   Badge,
@@ -6,6 +5,7 @@ import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
+  ImageRenderer,
 } from '@/components/ui'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
 import { type Game, ApprovalStatus } from '@orm'
@@ -15,7 +15,7 @@ interface Props {
     system?: { name: string } | null
     _count: { listings: number; pcListings: number }
   }
-  priority?: boolean
+  eagerLoad?: boolean
 }
 
 function GameCard(props: Props) {
@@ -28,13 +28,13 @@ function GameCard(props: Props) {
       className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200"
     >
       <div className="relative h-40 bg-gray-200 dark:bg-gray-700">
-        <Image
+        <ImageRenderer
           src={getGameImageUrl(props.game)}
           alt={props.game.title}
           fill
           className="object-cover"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          priority={props.priority ?? false}
+          loading={props.eagerLoad ? 'eager' : undefined}
           unoptimized
         />
       </div>

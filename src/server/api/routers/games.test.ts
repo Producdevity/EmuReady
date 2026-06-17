@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApprovalStatus, Role } from '@orm/client'
+import { ERROR_MESSAGES } from '@/lib/errors'
+import { ApprovalStatus, Role } from '@orm'
 
 vi.unmock('@/server/api/trpc')
 vi.unmock('@/server/api/root')
@@ -129,6 +130,38 @@ describe('games router', () => {
         }),
       )
       expect(mockGameStatsCacheDelete).toHaveBeenCalled()
+    })
+
+    it('rejects arbitrary image URLs for regular users', async () => {
+      const { caller, prisma } = createCaller()
+
+      await expect(
+        caller.create({
+          title: 'Game With Arbitrary Art',
+          systemId: SYSTEM_ID,
+          imageUrl: 'https://example.com/game.jpg',
+        }),
+      ).rejects.toThrow(ERROR_MESSAGES.FORBIDDEN)
+
+      expect(prisma.game.create).not.toHaveBeenCalled()
+    })
+
+    it('allows provider image URLs for regular users', async () => {
+      const { caller, prisma } = createCaller()
+
+      await caller.create({
+        title: 'Game With Provider Art',
+        systemId: SYSTEM_ID,
+        imageUrl: 'https://images.igdb.com/igdb/image/upload/t_cover_big/game.jpg',
+      })
+
+      expect(prisma.game.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            imageUrl: 'https://images.igdb.com/igdb/image/upload/t_cover_big/game.jpg',
+          }),
+        }),
+      )
     })
   })
 })

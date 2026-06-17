@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
@@ -20,6 +19,7 @@ import {
   DisplayToggleButton,
   Dropdown,
   EditButton,
+  ImageRenderer,
   LoadingSpinner,
   Pagination,
   SortableHeader,
@@ -389,7 +389,7 @@ function AdminListingsPage() {
                       <td className="px-6 py-4">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-16 w-20 flex justify-center items-center">
-                            <Image
+                            <ImageRenderer
                               src={getGameImageUrl(listing.game)}
                               alt={listing.game.title}
                               width={80}

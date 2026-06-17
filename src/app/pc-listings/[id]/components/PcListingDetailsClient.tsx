@@ -149,7 +149,7 @@ function PcListingDetailsClient(props: Props) {
                   className="w-full max-w-full aspect-video rounded-lg shadow-md"
                   aspectRatio="video"
                   showFallback={true}
-                  priority={true}
+                  preload={true}
                 />
               </div>
 

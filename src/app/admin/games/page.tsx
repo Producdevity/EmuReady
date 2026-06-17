@@ -1,7 +1,6 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty, isNullish } from 'remeda'
@@ -22,6 +21,7 @@ import {
   DeleteButton,
   Dropdown,
   EditButton,
+  ImageRenderer,
   LoadingSpinner,
   Pagination,
   RejectButton,
@@ -367,7 +367,7 @@ function AdminGamesPage() {
                                 onClick={() => handleImageClick(game)}
                                 className="group relative block"
                               >
-                                <Image
+                                <ImageRenderer
                                   src={getGameImageUrl(game)}
                                   alt={game.title}
                                   width={64}
@@ -376,7 +376,6 @@ function AdminGamesPage() {
                                   style={{ width: 'auto', height: 'auto' }}
                                   unoptimized
                                 />
-                                {/* Image indicators */}
                                 <div className="absolute -bottom-1 -right-1">
                                   <ImageIndicators game={game} />
                                 </div>
@@ -521,7 +520,6 @@ function AdminGamesPage() {
         )}
       </AdminTableContainer>
 
-      {/* Image Preview Modal */}
       <ImagePreviewModal
         isOpen={isImagePreviewOpen}
         onClose={() => setIsImagePreviewOpen(false)}
