@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 import { createPrismaClient } from '@/server/prisma-client'
-import { ApprovalStatus } from '@orm/client'
+import { ApprovalStatus } from '@orm'
 import { test } from './fixtures'
 import type { Locator, Page } from '@playwright/test'
 
@@ -91,7 +91,17 @@ async function waitForListingsTableIdle(page: Page) {
 
 async function openFilterDropdown(filterButton: Locator) {
   await filterButton.scrollIntoViewIfNeeded()
-  await filterButton.click()
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await filterButton.click()
+    try {
+      await expect(filterButton).toHaveAttribute('aria-expanded', 'true', { timeout: 1000 })
+      return
+    } catch {
+      // Retry once for pages that are still finishing client hydration.
+    }
+  }
+
   await expect(filterButton).toHaveAttribute('aria-expanded', 'true')
 }
 
@@ -110,8 +120,7 @@ async function selectAsyncFilterOption(
 
   const option = page
     .getByTestId('async-multi-select-options')
-    .locator('label')
-    .filter({ hasText: fixture.label })
+    .getByRole('checkbox', { name: fixture.label, exact: true })
   await expect(option).toBeVisible()
   await expect(option).toHaveCount(1)
   await option.click()
