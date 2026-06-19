@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
   AdminStatsDisplay,
@@ -24,26 +23,34 @@ import {
   LocalizedDate,
   Code,
   Dropdown,
+  type BadgeVariant,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
+import { useAdminTable } from '@/hooks/admin'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
-import { type ReportReasonType, type ReportStatusType } from '@/schemas/listingReport'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import { ReportReason, ReportStatus } from '@orm'
+import {
+  REPORT_TYPES,
+  type AdminReportKind,
+  type AdminReportWithDetails,
+  isAdminReportKind,
+  toHandheldAdminReport,
+  toPcAdminReport,
+} from './adminReport'
 import ReportDetailsModal from './components/ReportDetailsModal'
 import ReportStatusModal from './components/ReportStatusModal'
-import { type ReportModalState, type ReportStatusModalState } from './types'
 import UserDetailsModal from '../users/components/UserDetailsModal'
 
 type ReportSortField = 'createdAt' | 'updatedAt' | 'status' | 'reason'
 
 const REPORT_COLUMNS: ColumnDefinition[] = [
   { key: 'id', label: 'ID', defaultVisible: false },
-  { key: 'listing', label: 'Listing', defaultVisible: true },
+  { key: 'listing', label: 'Report', defaultVisible: true },
   { key: 'reason', label: 'Reason', defaultVisible: true },
   { key: 'status', label: 'Status', defaultVisible: true },
   { key: 'reportedBy', label: 'Reported By', defaultVisible: true },
@@ -60,7 +67,7 @@ const REPORT_REASONS = [
     value: ReportReason.MISLEADING_INFORMATION,
     label: 'Misleading Information',
   },
-  { value: ReportReason.FAKE_LISTING, label: 'Fake Listing' },
+  { value: ReportReason.FAKE_LISTING, label: 'Fake Report' },
   { value: ReportReason.COPYRIGHT_VIOLATION, label: 'Copyright Violation' },
   { value: ReportReason.OTHER, label: 'Other' },
 ] as const
@@ -73,38 +80,38 @@ const REPORT_STATUSES = [
   { value: ReportStatus.DISMISSED, label: 'Dismissed' },
 ] as const
 
-const getReasonBadgeVariant = (reason: ReportReasonType) => {
-  switch (reason) {
-    case ReportReason.INAPPROPRIATE_CONTENT:
-      return 'danger'
-    case ReportReason.SPAM:
-      return 'warning'
-    case ReportReason.MISLEADING_INFORMATION:
-      return 'danger'
-    case ReportReason.FAKE_LISTING:
-      return 'danger'
-    case ReportReason.COPYRIGHT_VIOLATION:
-      return 'danger'
-    case ReportReason.OTHER:
-      return 'default'
-    default:
-      return 'default'
-  }
+type ReportReasonFilter = (typeof REPORT_REASONS)[number]['value']
+type ReportStatusFilter = (typeof REPORT_STATUSES)[number]['value']
+
+function isReportReasonFilter(value: string): value is ReportReasonFilter {
+  return REPORT_REASONS.some((reason) => reason.value === value)
 }
 
-const getStatusBadgeVariant = (status: ReportStatusType) => {
-  switch (status) {
-    case ReportStatus.PENDING:
-      return 'warning'
-    case ReportStatus.UNDER_REVIEW:
-      return 'info'
-    case ReportStatus.RESOLVED:
-      return 'success'
-    case ReportStatus.DISMISSED:
-      return 'default'
-    default:
-      return 'default'
+function isReportStatusFilter(value: string): value is ReportStatusFilter {
+  return REPORT_STATUSES.some((status) => status.value === value)
+}
+
+const getReasonBadgeVariant = (reason: ReportReason) => {
+  const reasonBadgeVariantsMap: Record<ReportReason, BadgeVariant> = {
+    [ReportReason.INAPPROPRIATE_CONTENT]: 'danger',
+    [ReportReason.SPAM]: 'warning',
+    [ReportReason.MISLEADING_INFORMATION]: 'danger',
+    [ReportReason.FAKE_LISTING]: 'danger',
+    [ReportReason.COPYRIGHT_VIOLATION]: 'danger',
+    [ReportReason.OTHER]: 'default',
   }
+  return reasonBadgeVariantsMap[reason] ?? 'default'
+}
+
+const getStatusBadgeVariant = (status: ReportStatus) => {
+  const statusBadgeVariantsMap: Record<ReportStatus, BadgeVariant> = {
+    [ReportStatus.PENDING]: 'warning',
+    [ReportStatus.UNDER_REVIEW]: 'info',
+    [ReportStatus.RESOLVED]: 'success',
+    [ReportStatus.DISMISSED]: 'default',
+  }
+
+  return statusBadgeVariantsMap[status] ?? 'default'
 }
 
 function AdminReportsPage() {
@@ -116,16 +123,16 @@ function AdminReportsPage() {
     storageKey: storageKeys.columnVisibility.adminReports,
   })
 
-  const [selectedReason, setSelectedReason] = useState<ReportReasonType | ''>('')
-  const [selectedStatus, setSelectedStatus] = useState<ReportStatusType | ''>('')
-  const [reportDetailsModal, setReportDetailsModal] = useState<ReportModalState>({ isOpen: false })
-  const [reportStatusModal, setReportStatusModal] = useState<ReportStatusModalState>({
-    isOpen: false,
-  })
+  const [selectedReportKind, setSelectedReportKind] = useState<AdminReportKind>('handheld')
+  const [selectedReason, setSelectedReason] = useState<ReportReasonFilter>('')
+  const [selectedStatus, setSelectedStatus] = useState<ReportStatusFilter>('')
+  const [reportDetailsModalReport, setReportDetailsModalReport] =
+    useState<AdminReportWithDetails | null>(null)
+  const [reportStatusModalReport, setReportStatusModalReport] =
+    useState<AdminReportWithDetails | null>(null)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
-  const reportsStatsQuery = api.listingReports.stats.useQuery()
-  const reportsQuery = api.listingReports.get.useQuery({
+  const reportQueryInput = {
     search: table.debouncedSearch || undefined,
     reason: selectedReason || undefined,
     status: selectedStatus || undefined,
@@ -133,42 +140,88 @@ function AdminReportsPage() {
     sortDirection: table.sortDirection ?? undefined,
     page: table.page,
     limit: table.limit,
+  }
+
+  const listingReportsStatsQuery = api.listingReports.stats.useQuery(undefined, {
+    enabled: selectedReportKind === 'handheld',
+  })
+  const pcReportsStatsQuery = api.pcListingReports.stats.useQuery(undefined, {
+    enabled: selectedReportKind === 'pc',
+  })
+  const listingReportsQuery = api.listingReports.get.useQuery(reportQueryInput, {
+    enabled: selectedReportKind === 'handheld',
+  })
+  const pcReportsQuery = api.pcListingReports.get.useQuery(reportQueryInput, {
+    enabled: selectedReportKind === 'pc',
   })
 
-  const reports = reportsQuery.data?.reports ?? []
-  const pagination = reportsQuery.data?.pagination
+  const activeStatsQuery =
+    selectedReportKind === 'handheld' ? listingReportsStatsQuery : pcReportsStatsQuery
+  const activeReportsQuery =
+    selectedReportKind === 'handheld' ? listingReportsQuery : pcReportsQuery
 
-  const deleteReport = api.listingReports.delete.useMutation({
+  const reports: AdminReportWithDetails[] =
+    selectedReportKind === 'handheld'
+      ? (listingReportsQuery.data?.reports.map(toHandheldAdminReport) ?? [])
+      : (pcReportsQuery.data?.reports.map(toPcAdminReport) ?? [])
+  const pagination = activeReportsQuery.data?.pagination
+
+  const invalidateReports = () => {
+    utils.listingReports.get.invalidate().catch(console.error)
+    utils.listingReports.stats.invalidate().catch(console.error)
+    utils.pcListingReports.get.invalidate().catch(console.error)
+    utils.pcListingReports.stats.invalidate().catch(console.error)
+  }
+
+  const deleteListingReport = api.listingReports.delete.useMutation({
     onSuccess: () => {
       toast.success('Report deleted successfully!')
-      utils.listingReports.get.invalidate().catch(console.error)
-      utils.listingReports.stats.invalidate().catch(console.error)
+      invalidateReports()
     },
     onError: (err) => {
       toast.error(`Failed to delete report: ${getErrorMessage(err)}`)
     },
   })
 
-  const updateStatus = api.listingReports.updateStatus.useMutation({
+  const deletePcListingReport = api.pcListingReports.delete.useMutation({
+    onSuccess: () => {
+      toast.success('Report deleted successfully!')
+      invalidateReports()
+    },
+    onError: (err) => {
+      toast.error(`Failed to delete report: ${getErrorMessage(err)}`)
+    },
+  })
+
+  const updateListingStatus = api.listingReports.updateStatus.useMutation({
     onSuccess: () => {
       toast.success('Report status updated successfully!')
-      utils.listingReports.get.invalidate().catch(console.error)
-      utils.listingReports.stats.invalidate().catch(console.error)
+      invalidateReports()
     },
     onError: (err) => {
       toast.error(`Failed to update report status: ${getErrorMessage(err)}`)
     },
   })
 
-  const handleViewDetails = (report: (typeof reports)[0]) => {
-    setReportDetailsModal({ isOpen: true, report })
+  const updatePcListingStatus = api.pcListingReports.updateStatus.useMutation({
+    onSuccess: () => {
+      toast.success('Report status updated successfully!')
+      invalidateReports()
+    },
+    onError: (err) => {
+      toast.error(`Failed to update report status: ${getErrorMessage(err)}`)
+    },
+  })
+
+  const handleViewDetails = (report: AdminReportWithDetails) => {
+    setReportDetailsModalReport(report)
   }
 
-  const handleUpdateStatus = (report: (typeof reports)[0]) => {
-    setReportStatusModal({ isOpen: true, report })
+  const handleUpdateStatus = (report: AdminReportWithDetails) => {
+    setReportStatusModalReport(report)
   }
 
-  const handleDelete = async (report: (typeof reports)[0]) => {
+  const handleDelete = async (report: AdminReportWithDetails) => {
     const confirmed = await confirm({
       title: 'Delete Report',
       description: `Are you sure you want to delete this report? This action cannot be undone.`,
@@ -176,12 +229,19 @@ function AdminReportsPage() {
 
     if (!confirmed) return
 
-    deleteReport.mutate({
+    if (report.kind === 'handheld') {
+      deleteListingReport.mutate({
+        id: report.id,
+      } satisfies RouterInput['listingReports']['delete'])
+      return
+    }
+
+    deletePcListingReport.mutate({
       id: report.id,
-    } satisfies RouterInput['listingReports']['delete'])
+    } satisfies RouterInput['pcListingReports']['delete'])
   }
 
-  const handleMarkResolved = async (report: (typeof reports)[0]) => {
+  const handleMarkResolved = async (report: AdminReportWithDetails) => {
     const confirmed = await confirm({
       title: 'Mark as Resolved',
       description: 'Are you sure you want to mark this report as resolved?',
@@ -190,58 +250,70 @@ function AdminReportsPage() {
 
     if (!confirmed) return
 
-    updateStatus.mutate({
+    if (report.kind === 'handheld') {
+      updateListingStatus.mutate({
+        id: report.id,
+        status: ReportStatus.RESOLVED,
+        reviewNotes: 'Marked as resolved',
+      } satisfies RouterInput['listingReports']['updateStatus'])
+      return
+    }
+
+    updatePcListingStatus.mutate({
       id: report.id,
       status: ReportStatus.RESOLVED,
       reviewNotes: 'Marked as resolved',
-    } satisfies RouterInput['listingReports']['updateStatus'])
+    } satisfies RouterInput['pcListingReports']['updateStatus'])
   }
 
-  const statsData = reportsStatsQuery.data
+  const statsData = activeStatsQuery.data
     ? [
         {
           label: 'Total Reports',
-          value: reportsStatsQuery.data.total,
+          value: activeStatsQuery.data.total,
           color: 'blue' as const,
         },
         {
           label: 'Pending',
-          value: reportsStatsQuery.data.pending,
+          value: activeStatsQuery.data.pending,
           color: 'yellow' as const,
         },
         {
           label: 'Under Review',
-          value: reportsStatsQuery.data.underReview,
+          value: activeStatsQuery.data.underReview,
           color: 'blue' as const,
         },
         {
           label: 'Resolved',
-          value: reportsStatsQuery.data.resolved,
+          value: activeStatsQuery.data.resolved,
           color: 'green' as const,
         },
         {
           label: 'Dismissed',
-          value: reportsStatsQuery.data.dismissed,
+          value: activeStatsQuery.data.dismissed,
           color: 'gray' as const,
         },
       ]
     : []
 
-  if (reportsQuery.isPending) return <LoadingSpinner />
+  const isDeletePending = deleteListingReport.isPending || deletePcListingReport.isPending
+  const isUpdateStatusPending = updateListingStatus.isPending || updatePcListingStatus.isPending
+
+  if (activeReportsQuery.isPending) return <LoadingSpinner />
 
   return (
     <AdminPageLayout
       title="Report Management"
-      description="Manage user reports for listings"
+      description="Manage user reports for compatibility reports"
       headerActions={
         <ColumnVisibilityControl columns={REPORT_COLUMNS} columnVisibility={columnVisibility} />
       }
     >
-      <AdminStatsDisplay stats={statsData} isLoading={reportsStatsQuery.isPending} />
+      <AdminStatsDisplay stats={statsData} isLoading={activeStatsQuery.isPending} />
 
       <AdminSearchFilters<ReportSortField>
         table={table}
-        searchPlaceholder="Search reports by listing, user, or description..."
+        searchPlaceholder="Search reports by compatibility report, user, or description..."
         onClear={() => {
           setSelectedReason('')
           setSelectedStatus('')
@@ -249,14 +321,29 @@ function AdminReportsPage() {
       >
         <div className="flex gap-2">
           <Dropdown
+            options={[...REPORT_TYPES]}
+            value={selectedReportKind}
+            onChange={(value) => {
+              if (!isAdminReportKind(value)) return
+              setSelectedReportKind(value)
+              table.setPage(1)
+            }}
+          />
+          <Dropdown
             options={[...REPORT_REASONS]}
             value={selectedReason}
-            onChange={(value) => setSelectedReason(value as ReportReasonType | '')}
+            onChange={(value) => {
+              if (!isReportReasonFilter(value)) return
+              setSelectedReason(value)
+            }}
           />
           <Dropdown
             options={[...REPORT_STATUSES]}
             value={selectedStatus}
-            onChange={(value) => setSelectedStatus(value as ReportStatusType | '')}
+            onChange={(value) => {
+              if (!isReportStatusFilter(value)) return
+              setSelectedStatus(value)
+            }}
           />
         </div>
       </AdminSearchFilters>
@@ -280,7 +367,7 @@ function AdminReportsPage() {
                   )}
                   {columnVisibility.isColumnVisible('listing') && (
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Listing
+                      Report
                     </th>
                   )}
                   {columnVisibility.isColumnVisible('reason') && (
@@ -345,16 +432,18 @@ function AdminReportsPage() {
                       <td className="px-6 py-4 text-sm">
                         <div>
                           <Link
-                            href={`/listings/${report.listing.id}`}
+                            href={report.compatibilityReport.href}
                             className="font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
                           >
-                            {report.listing.game.title}
+                            {report.compatibilityReport.gameTitle}
                           </Link>
                           <div className="text-gray-500 dark:text-gray-400 text-xs">
-                            {report.listing.device.modelName} • {report.listing.emulator.name}
+                            {report.compatibilityReport.hardwareLabel} •{' '}
+                            {report.compatibilityReport.emulatorName}
                           </div>
                           <div className="text-gray-500 dark:text-gray-400 text-xs">
-                            by {report.listing.author.name || 'Unknown'}
+                            {report.compatibilityReport.reportLabel} by{' '}
+                            {report.compatibilityReport.author.name || 'Unknown'}
                           </div>
                         </div>
                       </td>
@@ -414,8 +503,8 @@ function AdminReportsPage() {
                               <ApproveButton
                                 onClick={() => handleMarkResolved(report)}
                                 title="Mark as Resolved"
-                                isLoading={updateStatus.isPending}
-                                disabled={updateStatus.isPending}
+                                isLoading={isUpdateStatusPending}
+                                disabled={isUpdateStatusPending}
                               />
                             )}
                           {hasPermission(
@@ -434,8 +523,8 @@ function AdminReportsPage() {
                             <DeleteButton
                               onClick={() => handleDelete(report)}
                               title="Delete Report"
-                              isLoading={deleteReport.isPending}
-                              disabled={deleteReport.isPending}
+                              isLoading={isDeletePending}
+                              disabled={isDeletePending}
                             />
                           )}
                         </div>
@@ -460,19 +549,18 @@ function AdminReportsPage() {
       )}
 
       <ReportDetailsModal
-        report={reportDetailsModal.report}
-        isOpen={reportDetailsModal.isOpen}
-        onClose={() => setReportDetailsModal({ isOpen: false })}
+        report={reportDetailsModalReport ?? undefined}
+        isOpen={reportDetailsModalReport !== null}
+        onClose={() => setReportDetailsModalReport(null)}
       />
 
       <ReportStatusModal
-        report={reportStatusModal.report}
-        isOpen={reportStatusModal.isOpen}
-        onClose={() => setReportStatusModal({ isOpen: false })}
+        report={reportStatusModalReport ?? undefined}
+        isOpen={reportStatusModalReport !== null}
+        onClose={() => setReportStatusModalReport(null)}
         onSuccess={() => {
-          setReportStatusModal({ isOpen: false })
-          utils.listingReports.get.invalidate().catch(console.error)
-          utils.listingReports.stats.invalidate().catch(console.error)
+          setReportStatusModalReport(null)
+          invalidateReports()
         }}
       />
 

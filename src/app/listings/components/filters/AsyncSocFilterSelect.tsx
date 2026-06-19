@@ -1,24 +1,20 @@
 'use client'
 
 import { type ReactNode, useCallback, useMemo, useState } from 'react'
-import AsyncMultiSelect from '@/components/ui/form/async-multi-select/AsyncMultiSelect'
-import { CACHE_DURATIONS } from '@/data/constants'
+import AsyncMultiSelect, {
+  type Option,
+} from '@/components/ui/form/async-multi-select/AsyncMultiSelect'
+import { LOOKUP_PAGINATION } from '@/data/constants'
 import { api } from '@/lib/api'
 
 interface Props {
   label: string
   leftIcon?: ReactNode
   value: string[]
-  onChange: (values: string[]) => void
+  onChange: (values: string[], selectedOptions: Option[]) => void
   placeholder?: string
   className?: string
   maxDisplayed?: number
-}
-
-const PAGE_SIZE = 50
-const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: CACHE_DURATIONS.LOOKUP,
-  gcTime: CACHE_DURATIONS.LOOKUP_GC,
 }
 
 export default function AsyncSocFilterSelect(props: Props) {
@@ -27,15 +23,16 @@ export default function AsyncSocFilterSelect(props: Props) {
 
   const byIdsQuery = api.socs.getByIds.useQuery(
     { ids: props.value },
-    { ...LOOKUP_DATA_QUERY_OPTIONS, enabled: props.value.length > 0 },
+    { enabled: props.value.length > 0 },
   )
 
   const pageQueries = api.useQueries((t) =>
     pageOffsets.map((offset) =>
-      t.socs.options(
-        { search: query || undefined, limit: PAGE_SIZE, offset },
-        LOOKUP_DATA_QUERY_OPTIONS,
-      ),
+      t.socs.options({
+        search: query || undefined,
+        limit: LOOKUP_PAGINATION.DEFAULT_LIMIT,
+        offset,
+      }),
     ),
   )
 
@@ -66,7 +63,10 @@ export default function AsyncSocFilterSelect(props: Props) {
   const isFetching = pageQueries.some((pageQuery) => pageQuery.isFetching)
 
   const handleLoadMore = useCallback(() => {
-    setPageOffsets((offsets) => [...offsets, offsets[offsets.length - 1] + PAGE_SIZE])
+    setPageOffsets((offsets) => [
+      ...offsets,
+      offsets[offsets.length - 1] + LOOKUP_PAGINATION.DEFAULT_LIMIT,
+    ])
   }, [])
 
   const handleQueryChange = useCallback((q: string) => {
@@ -83,6 +83,7 @@ export default function AsyncSocFilterSelect(props: Props) {
       hasMore={hasMore}
       onLoadMore={handleLoadMore}
       onQueryChange={handleQueryChange}
+      searchPlaceholder="Search SoCs..."
     />
   )
 }

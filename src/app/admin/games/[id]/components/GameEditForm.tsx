@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { type infer as ZodInfer } from 'zod'
 import { Button, Input, Autocomplete } from '@/components/ui'
 import { AdminImageSelectorSwitcher } from '@/components/ui/image-selectors'
 import { api } from '@/lib/api'
@@ -12,10 +11,12 @@ import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import updateGameSchema from '../form-schemas/updateGameSchema'
+import type { z } from 'zod'
 
 type Game = NonNullable<RouterOutput['games']['byId']>
 
-type UpdateGameInput = ZodInfer<typeof updateGameSchema>
+type UpdateGameFormInput = z.input<typeof updateGameSchema>
+type UpdateGameInput = z.output<typeof updateGameSchema>
 
 interface Props {
   game: Game
@@ -47,7 +48,11 @@ export function GameEditForm(props: Props) {
     },
   })
 
-  const { register, handleSubmit, formState, setValue, watch } = useForm<UpdateGameInput>({
+  const { register, handleSubmit, formState, setValue, watch } = useForm<
+    UpdateGameFormInput,
+    unknown,
+    UpdateGameInput
+  >({
     resolver: zodResolver(updateGameSchema),
     defaultValues: {
       title: props.game.title,
@@ -61,9 +66,7 @@ export function GameEditForm(props: Props) {
   })
 
   const onSubmit = (data: UpdateGameInput) => {
-    console.log('Form data being sent:', { id: props.game.id, ...data })
     setIsSubmitting(true)
-    // The schema now handles transformation of empty strings to undefined
     updateGame.mutate({ id: props.game.id, ...data })
   }
 

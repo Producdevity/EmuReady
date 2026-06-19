@@ -5,13 +5,8 @@ import { Joystick, MonitorSmartphone, Cpu, Gamepad, Rocket } from 'lucide-react'
 import { ActiveFiltersSummary, ListingsSearchBar } from '@/app/listings/shared/components'
 import { buildActiveFilterItems } from '@/app/listings/shared/utils/buildActiveFilterItems'
 import { MultiSelect } from '@/components/ui'
-import {
-  performanceOptions,
-  deviceOptions,
-  socOptions,
-  systemOptions,
-  emulatorOptions,
-} from '@/utils/options'
+import { type Option } from '@/components/ui/form/async-multi-select/AsyncMultiSelect'
+import { performanceOptions, systemOptions, emulatorOptions } from '@/utils/options'
 import AsyncDeviceFilterSelect from './filters/AsyncDeviceFilterSelect'
 import AsyncSocFilterSelect from './filters/AsyncSocFilterSelect'
 
@@ -23,13 +18,11 @@ interface Props {
   performanceIds: number[]
   searchTerm: string
   systems: { id: string; name: string }[]
-  devices: { id: string; modelName: string; brand: { name: string } }[]
-  socs: { id: string; name: string; manufacturer: string }[]
   emulators: { id: string; name: string }[]
   performanceScales: { id: number; label: string }[]
   onSystemChange: (values: string[]) => void
-  onDeviceChange: (values: string[]) => void
-  onSocChange: (values: string[]) => void
+  onDeviceChange: (values: string[], selectedOptions: Option[]) => void
+  onSocChange: (values: string[], selectedOptions: Option[]) => void
   onEmulatorChange: (values: string[]) => void
   onPerformanceChange: (values: string[]) => void
   onSearchChange: (value: string) => void
@@ -38,8 +31,6 @@ interface Props {
 }
 
 export default function ListingsFiltersContent(props: Props) {
-  const ENABLE_ASYNC_LISTINGS = process.env.NEXT_PUBLIC_ENABLE_ASYNC_LISTINGS_FILTERS === 'true'
-
   const hasActiveFilters =
     props.systemIds.length > 0 ||
     props.deviceIds.length > 0 ||
@@ -76,49 +67,23 @@ export default function ListingsFiltersContent(props: Props) {
         maxDisplayed={1}
       />
 
-      {ENABLE_ASYNC_LISTINGS ? (
-        <AsyncDeviceFilterSelect
-          label="Devices"
-          leftIcon={<MonitorSmartphone className="w-5 h-5" />}
-          value={props.deviceIds}
-          onChange={props.onDeviceChange}
-          placeholder="All devices"
-          maxDisplayed={1}
-        />
-      ) : (
-        <MultiSelect
-          label="Devices"
-          leftIcon={<MonitorSmartphone className="w-5 h-5" />}
-          value={props.deviceIds}
-          onChange={props.onDeviceChange}
-          options={deviceOptions(props.devices)}
-          color="green"
-          placeholder="All devices"
-          maxDisplayed={1}
-        />
-      )}
+      <AsyncDeviceFilterSelect
+        label="Devices"
+        leftIcon={<MonitorSmartphone className="w-5 h-5" />}
+        value={props.deviceIds}
+        onChange={props.onDeviceChange}
+        placeholder="All devices"
+        maxDisplayed={1}
+      />
 
-      {ENABLE_ASYNC_LISTINGS ? (
-        <AsyncSocFilterSelect
-          label="SoCs"
-          leftIcon={<Cpu className="w-5 h-5" />}
-          value={props.socIds}
-          onChange={props.onSocChange}
-          placeholder="All SoCs"
-          maxDisplayed={1}
-        />
-      ) : (
-        <MultiSelect
-          label="SoCs"
-          leftIcon={<Cpu className="w-5 h-5" />}
-          value={props.socIds}
-          onChange={props.onSocChange}
-          options={socOptions(props.socs)}
-          color="purple"
-          placeholder="All SoCs"
-          maxDisplayed={1}
-        />
-      )}
+      <AsyncSocFilterSelect
+        label="SoCs"
+        leftIcon={<Cpu className="w-5 h-5" />}
+        value={props.socIds}
+        onChange={props.onSocChange}
+        placeholder="All SoCs"
+        maxDisplayed={1}
+      />
 
       <MultiSelect
         label="Emulators"

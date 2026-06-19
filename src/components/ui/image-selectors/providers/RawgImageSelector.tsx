@@ -288,9 +288,7 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
                   >
                     <div className="aspect-square relative bg-gray-100 dark:bg-gray-800">
                       <OptimizedImage
-                        src={getImageUrl(image.url, image.gameName, {
-                          useProxy: false,
-                        })}
+                        src={getImageUrl(image.url, image.gameName)}
                         alt={getImageDisplayName(image)}
                         width={200}
                         height={200}
@@ -380,9 +378,7 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
           <div className="space-y-4">
             <div className="relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
               <OptimizedImage
-                src={getImageUrl(previewImage.url, previewImage.gameName, {
-                  useProxy: false,
-                })}
+                src={getImageUrl(previewImage.url, previewImage.gameName)}
                 alt={getImageDisplayName(previewImage)}
                 width={600}
                 height={400}

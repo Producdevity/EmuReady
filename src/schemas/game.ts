@@ -69,13 +69,20 @@ export const CheckExistingByNamesAndSystemsSchema = z.object({
   ),
 })
 
+const OptionalGameImageUrlSchema = z
+  .string()
+  .trim()
+  .nullable()
+  .optional()
+  .transform((value) => (value === '' ? null : value))
+
 export const CreateGameSchema = z.object({
   title: z.string().min(1),
   systemId: z.string().uuid(),
   humanVerificationToken: HumanVerificationTokenSchema.optional(),
-  imageUrl: z.string().nullable().optional(),
-  boxartUrl: z.string().nullable().optional(),
-  bannerUrl: z.string().nullable().optional(),
+  imageUrl: OptionalGameImageUrlSchema,
+  boxartUrl: OptionalGameImageUrlSchema,
+  bannerUrl: OptionalGameImageUrlSchema,
   tgdbGameId: z.number().nullable().optional(), // TODO: store in metadata
   igdbGameId: z.number().nullable().optional(), // TODO: For IGDB game creation (stored in metadata for now)
   isErotic: z.boolean().optional(),
@@ -85,21 +92,9 @@ export const UpdateGameSchema = z.object({
   id: z.string().uuid(),
   title: z.string().min(1),
   systemId: z.string().uuid(),
-  imageUrl: z
-    .string()
-    .nullable()
-    .optional()
-    .or(z.literal('').transform(() => null)),
-  boxartUrl: z
-    .string()
-    .nullable()
-    .optional()
-    .or(z.literal('').transform(() => null)),
-  bannerUrl: z
-    .string()
-    .nullable()
-    .optional()
-    .or(z.literal('').transform(() => null)),
+  imageUrl: OptionalGameImageUrlSchema,
+  boxartUrl: OptionalGameImageUrlSchema,
+  bannerUrl: OptionalGameImageUrlSchema,
   tgdbGameId: z.number().optional(),
   isErotic: z.boolean().optional(),
 })

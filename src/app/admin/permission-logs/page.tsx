@@ -4,7 +4,6 @@ import { FileText } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { ADMIN_ROUTES } from '@/app/admin/config/routes'
-import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
   AdminStatsDisplay,
@@ -24,6 +23,7 @@ import {
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
+import { useAdminTable } from '@/hooks/admin'
 import { api } from '@/lib/api'
 import { PermissionActionType, Role } from '@orm'
 

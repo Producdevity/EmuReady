@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "EmuReady Mobile API (tRPC)",
-    "description": "\n# EmuReady Mobile tRPC API\n\nComplete API documentation for EmuReady mobile applications built with tRPC.\n\n## tRPC HTTP Method Conventions\n\nNOTE: the protected routes require authentication via Clerk JWT token in the Authorization header. This isn't implemented yet.\n\ntRPC uses HTTP method semantics with fetchRequestHandler:\n- **Queries** use **GET** requests with input as query parameter\n- **Mutations** use **POST** requests with input in request body\n\n### Schema References:\n\nAll input schemas are defined in the **components/schemas** section. When you see a parameter referencing a schema (e.g., GetEmulatorsSchema), check the schemas section for the complete structure with field types, validations, and defaults.\n\n### Usage Examples:\n\n```bash\n# Query: Get games with search and limit (GET with SuperJSON wrapped input)\n# Schema: See components/schemas/GetGamesSchema\ncurl -X GET \"https://www.emuready.com/api/mobile/trpc/games.getGames?input=%7B%22json%22%3A%7B%22search%22%3A%22mario%22%2C%22limit%22%3A5%7D%7D\" \\\n  -H \"Content-Type: application/json\"\n\n# Query: Get popular games (GET, no input required)\ncurl -X GET \"https://www.emuready.com/api/mobile/trpc/games.getPopularGames\" \\\n  -H \"Content-Type: application/json\"\n\n# Query: Get listings with filters (GET with SuperJSON wrapped input)\ncurl -X GET \"https://www.emuready.com/api/mobile/trpc/listings.getListings?input=%7B%22json%22%3A%7B%22page%22%3A1%2C%22limit%22%3A10%2C%22search%22%3A%22zelda%22%7D%7D\" \\\n  -H \"Content-Type: application/json\"\n\n# Mutation: Create listing (POST with request body)\ncurl -X POST \"https://www.emuready.com/api/mobile/trpc/listings.createListing\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\" \\\n  -d '{\"gameId\":\"uuid\",\"deviceId\":\"uuid\",\"emulatorId\":\"uuid\",\"performanceId\":\"uuid\"}'\n\n# Protected query with authentication (GET with query parameter and auth header)\ncurl -X GET \"https://www.emuready.com/api/mobile/trpc/listings.getUserListings?input=%7B%22userId%22%3A%22uuid%22%7D\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\"\n```\n\n### Important Notes:\n\n**For Queries (GET requests):**\n✅ Use GET method\n✅ Send input wrapped in SuperJSON format: `{\"json\":{\"field\":\"value\"}}`\n✅ URL-encode the entire JSON string\n✅ Many endpoints have defaults and don't require input\n✅ Input parameter format: `?input={\"json\":{\"field\":\"value\"}}` (URL-encoded)\n\n**For Mutations (POST requests):**\n✅ Use POST method\n✅ Send input as JSON in request body\n✅ Set Content-Type: application/json\n\n### Response Format:\nAll responses are wrapped in a tRPC result object:\n```json\n{\n  \"result\": {\n    \"data\": /* response data */\n  }\n}\n```\n\n### Error Response Format:\n```json\n{\n  \"error\": {\n    \"json\": {\n      \"message\": \"Error message\",\n      \"code\": -32600,\n      \"data\": {\n        \"code\": \"BAD_REQUEST\",\n        \"httpStatus\": 400,\n        \"path\": \"games.getGames\"\n      }\n    }\n  }\n}\n```\n\nThis API provides endpoints for:\n- Game emulation listings management\n- User authentication and profiles  \n- Device and hardware information\n- Emulator data and compatibility\n- Community features (comments, votes)\n      ",
+    "title": "EmuReady Public Integration API (mobile-compatible tRPC)",
+    "description": "\n# EmuReady Public Integration tRPC API\n\nAPI documentation for the mobile-compatible public integration surface built with tRPC.\n\n## tRPC HTTP Method Conventions\n\nNOTE: the protected routes require authentication via Clerk JWT token in the Authorization header. This isn't implemented yet.\n\ntRPC uses HTTP method semantics with fetchRequestHandler:\n- **Queries** use **GET** requests with input as query parameter\n- **Mutations** use **POST** requests with input in request body\n\n### Schema References:\n\nAll input schemas are defined in the **components/schemas** section. When you see a parameter referencing a schema (e.g., GetEmulatorsSchema), check the schemas section for the complete structure with field types, validations, and defaults.\n\n### Usage Examples:\n\n```bash\n# Query: Get games with search and limit (GET with SuperJSON wrapped input)\n# Schema: See components/schemas/GetGamesSchema\ncurl -X GET \"https://www.emuready.com/api/mobile/trpc/games.getGames?input=%7B%22json%22%3A%7B%22search%22%3A%22mario%22%2C%22limit%22%3A5%7D%7D\" \\\n  -H \"Content-Type: application/json\"\n\n# Query: Get popular games (GET, no input required)\ncurl -X GET \"https://www.emuready.com/api/mobile/trpc/games.getPopularGames\" \\\n  -H \"Content-Type: application/json\"\n\n# Query: Get listings with filters (GET with SuperJSON wrapped input)\ncurl -X GET \"https://www.emuready.com/api/mobile/trpc/listings.getListings?input=%7B%22json%22%3A%7B%22page%22%3A1%2C%22limit%22%3A10%2C%22search%22%3A%22zelda%22%7D%7D\" \\\n  -H \"Content-Type: application/json\"\n\n# Mutation: Create listing (POST with request body)\ncurl -X POST \"https://www.emuready.com/api/mobile/trpc/listings.createListing\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\" \\\n  -d '{\"gameId\":\"uuid\",\"deviceId\":\"uuid\",\"emulatorId\":\"uuid\",\"performanceId\":\"uuid\"}'\n\n# Protected query with authentication (GET with SuperJSON wrapped input and auth header)\ncurl -X GET \"https://www.emuready.com/api/mobile/trpc/listings.getUserListings?input=%7B%22json%22%3A%7B%22userId%22%3A%22uuid%22%7D%7D\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\"\n```\n\n### Important Notes:\n\n**For Queries (GET requests):**\n✅ Use GET method\n✅ Send input wrapped in SuperJSON format: `{\"json\":{\"field\":\"value\"}}`\n✅ URL-encode the entire JSON string\n✅ Many endpoints have defaults and don't require input\n✅ Input parameter format: `?input={\"json\":{\"field\":\"value\"}}` (URL-encoded)\n\n**For Mutations (POST requests):**\n✅ Use POST method\n✅ Send input as JSON in request body\n✅ Set Content-Type: application/json\n\n### Response Format:\nAll responses are wrapped in a tRPC result object:\n```json\n{\n  \"result\": {\n    \"data\": /* response data */\n  }\n}\n```\n\n### Error Response Format:\n```json\n{\n  \"error\": {\n    \"json\": {\n      \"message\": \"Error message\",\n      \"code\": -32600,\n      \"data\": {\n        \"code\": \"BAD_REQUEST\",\n        \"httpStatus\": 400,\n        \"path\": \"games.getGames\"\n      }\n    }\n  }\n}\n```\n\nThis API provides endpoints for:\n- Game emulation listings management\n- User authentication and profiles  \n- Device and hardware information\n- Emulator data and compatibility\n- Community features (comments, votes)\n      ",
     "version": "1.0.0",
     "contact": {
       "name": "EmuReady API Support",
@@ -16,7 +16,7 @@
   "servers": [
     {
       "url": "/api/mobile/trpc",
-      "description": "Mobile API Base URL"
+      "description": "Mobile-compatible public integration API base URL"
     }
   ],
   "security": [
@@ -192,23 +192,235 @@
         "additionalProperties": false,
         "description": "Fetch device compatibility scores aggregated by system"
       },
-      "GetCpusSchema": {
+      "MobileGetCpusSchema": {
+        "anyOf": [
+          {
+            "not": {}
+          },
+          {
+            "type": "object",
+            "properties": {
+              "search": {
+                "type": "string"
+              },
+              "brandId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "limit": {
+                "type": "number",
+                "default": 20
+              },
+              "offset": {
+                "type": "number",
+                "default": 0
+              },
+              "page": {
+                "type": "number"
+              },
+              "sortField": {
+                "type": "string",
+                "enum": [
+                  "brand",
+                  "modelName",
+                  "pcListings"
+                ]
+              },
+              "sortDirection": {
+                "type": "string",
+                "enum": [
+                  "asc",
+                  "desc"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "MobileCpuListResponseSchema": {
         "type": "object",
         "properties": {
-          "search": {
-            "type": "string"
+          "cpus": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "brandId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "modelName": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "brand": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                },
+                "_count": {
+                  "type": "object",
+                  "properties": {
+                    "pcListings": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "pcListings"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "id",
+                "brandId",
+                "modelName",
+                "createdAt",
+                "brand",
+                "_count"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "pages": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "page": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "offset": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "limit": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "hasNextPage": {
+                "type": "boolean"
+              },
+              "hasPreviousPage": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "total",
+              "pages",
+              "page",
+              "offset",
+              "limit",
+              "hasNextPage",
+              "hasPreviousPage"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "cpus",
+          "pagination"
+        ],
+        "additionalProperties": false
+      },
+      "GetCpuByIdSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "MobileCpuListItemSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
           },
           "brandId": {
             "type": "string",
             "format": "uuid"
           },
-          "limit": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 100,
-            "default": 50
+          "modelName": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "brand": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "additionalProperties": false
+          },
+          "_count": {
+            "type": "object",
+            "properties": {
+              "pcListings": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "pcListings"
+            ],
+            "additionalProperties": false
           }
         },
+        "required": [
+          "id",
+          "brandId",
+          "modelName",
+          "createdAt",
+          "brand",
+          "_count"
+        ],
         "additionalProperties": false
       },
       "IsVerifiedDeveloperSchema": {
@@ -552,23 +764,235 @@
         ],
         "additionalProperties": false
       },
-      "GetGpusSchema": {
+      "MobileGetGpusSchema": {
+        "anyOf": [
+          {
+            "not": {}
+          },
+          {
+            "type": "object",
+            "properties": {
+              "search": {
+                "type": "string"
+              },
+              "brandId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "limit": {
+                "type": "number",
+                "default": 20
+              },
+              "offset": {
+                "type": "number",
+                "default": 0
+              },
+              "page": {
+                "type": "number"
+              },
+              "sortField": {
+                "type": "string",
+                "enum": [
+                  "brand",
+                  "modelName",
+                  "pcListings"
+                ]
+              },
+              "sortDirection": {
+                "type": "string",
+                "enum": [
+                  "asc",
+                  "desc"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "MobileGpuListResponseSchema": {
         "type": "object",
         "properties": {
-          "search": {
-            "type": "string"
+          "gpus": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "brandId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "modelName": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "brand": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                },
+                "_count": {
+                  "type": "object",
+                  "properties": {
+                    "pcListings": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "pcListings"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "id",
+                "brandId",
+                "modelName",
+                "createdAt",
+                "brand",
+                "_count"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "pages": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "page": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "offset": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "limit": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "hasNextPage": {
+                "type": "boolean"
+              },
+              "hasPreviousPage": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "total",
+              "pages",
+              "page",
+              "offset",
+              "limit",
+              "hasNextPage",
+              "hasPreviousPage"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "gpus",
+          "pagination"
+        ],
+        "additionalProperties": false
+      },
+      "GetGpuByIdSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "MobileGpuListItemSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
           },
           "brandId": {
             "type": "string",
             "format": "uuid"
           },
-          "limit": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 100,
-            "default": 50
+          "modelName": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "brand": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "additionalProperties": false
+          },
+          "_count": {
+            "type": "object",
+            "properties": {
+              "pcListings": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "pcListings"
+            ],
+            "additionalProperties": false
           }
         },
+        "required": [
+          "id",
+          "brandId",
+          "modelName",
+          "createdAt",
+          "brand",
+          "_count"
+        ],
         "additionalProperties": false
       },
       "GetListingsSchema": {
@@ -759,13 +1183,55 @@
                         {
                           "type": "array",
                           "items": {
-                            "$ref": "#/definitions/CreateListingSchema/properties/customFieldValues/anyOf/0/items/properties/value"
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "boolean"
+                              },
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "array",
+                                "items": {}
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": {}
+                              }
+                            ]
                           }
                         },
                         {
                           "type": "object",
                           "additionalProperties": {
-                            "$ref": "#/definitions/CreateListingSchema/properties/customFieldValues/anyOf/0/items/properties/value"
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "boolean"
+                              },
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "array",
+                                "items": {}
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": {}
+                              }
+                            ]
                           }
                         }
                       ]
@@ -982,13 +1448,55 @@
                         {
                           "type": "array",
                           "items": {
-                            "$ref": "#/definitions/UpdateListingSchema/properties/customFieldValues/items/anyOf/1/properties/value"
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "boolean"
+                              },
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "array",
+                                "items": {}
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": {}
+                              }
+                            ]
                           }
                         },
                         {
                           "type": "object",
                           "additionalProperties": {
-                            "$ref": "#/definitions/UpdateListingSchema/properties/customFieldValues/items/anyOf/1/properties/value"
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "boolean"
+                              },
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "array",
+                                "items": {}
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": {}
+                              }
+                            ]
                           }
                         }
                       ]
@@ -1410,13 +1918,55 @@
                     {
                       "type": "array",
                       "items": {
-                        "$ref": "#/definitions/CreatePcListingSchema/properties/customFieldValues/items/properties/value"
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "array",
+                            "items": {}
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        ]
                       }
                     },
                     {
                       "type": "object",
                       "additionalProperties": {
-                        "$ref": "#/definitions/CreatePcListingSchema/properties/customFieldValues/items/properties/value"
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "array",
+                            "items": {}
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        ]
                       }
                     }
                   ]
@@ -1653,13 +2203,55 @@
                         {
                           "type": "array",
                           "items": {
-                            "$ref": "#/definitions/UpdatePcListingSchema/properties/customFieldValues/items/anyOf/1/properties/value"
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "boolean"
+                              },
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "array",
+                                "items": {}
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": {}
+                              }
+                            ]
                           }
                         },
                         {
                           "type": "object",
                           "additionalProperties": {
-                            "$ref": "#/definitions/UpdatePcListingSchema/properties/customFieldValues/items/anyOf/1/properties/value"
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "boolean"
+                              },
+                              {
+                                "type": "null"
+                              },
+                              {
+                                "type": "array",
+                                "items": {}
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": {}
+                              }
+                            ]
                           }
                         }
                       ]
@@ -1676,6 +2268,158 @@
         },
         "required": [
           "id"
+        ],
+        "additionalProperties": false
+      },
+      "MobilePcListingCpusSchema": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string"
+          },
+          "brandId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          }
+        },
+        "additionalProperties": false
+      },
+      "MobilePcListingCpuResponseSchema": {
+        "type": "object",
+        "properties": {
+          "cpus": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "brandId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "modelName": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "brand": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "id",
+                "brandId",
+                "modelName",
+                "createdAt",
+                "brand"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "cpus"
+        ],
+        "additionalProperties": false
+      },
+      "MobilePcListingGpusSchema": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string"
+          },
+          "brandId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          }
+        },
+        "additionalProperties": false
+      },
+      "MobilePcListingGpuResponseSchema": {
+        "type": "object",
+        "properties": {
+          "gpus": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "brandId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "modelName": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "brand": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "id",
+                "brandId",
+                "modelName",
+                "createdAt",
+                "brand"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "gpus"
         ],
         "additionalProperties": false
       },
@@ -2007,6 +2751,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -2134,6 +2879,139 @@
           }
         },
         "security": []
+      }
+    },
+    "/auth.getSession": {
+      "get": {
+        "summary": "Get current user session info",
+        "description": "Get current user session info",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful tRPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {
+                      "type": "object",
+                      "description": "tRPC result wrapper containing the actual response data",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "description": "Response data from auth.getSession"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "result"
+                  ]
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "result": {
+                        "data": {
+                          "message": "Response from auth.getSession",
+                          "data": {
+                            "id": "uuid-user",
+                            "email": "user@example.com",
+                            "name": "John Doe"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input parameters or malformed JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                },
+                "examples": {
+                  "invalidInput": {
+                    "summary": "Invalid input example",
+                    "value": {
+                      "error": {
+                        "json": {
+                          "message": "Input validation failed",
+                          "code": -32600,
+                          "data": {
+                            "code": "BAD_REQUEST",
+                            "httpStatus": 400,
+                            "path": "auth.getSession",
+                            "zodError": {
+                              "formErrors": [
+                                "Required"
+                              ],
+                              "fieldErrors": {}
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found - Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TRPCError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ClerkAuth": []
+          }
+        ]
       }
     },
     "/auth.updateProfile": {
@@ -2439,6 +3317,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -2476,43 +3355,11 @@
                     "value": {
                       "result": {
                         "data": {
-                          "device": {
-                            "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                            "modelName": "example",
-                            "brandName": "example"
-                          },
-                          "systems": [
-                            {
-                              "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                              "name": "example",
-                              "key": "example",
-                              "compatibilityScore": 1,
-                              "confidence": "example",
-                              "dataSource": "example",
-                              "metrics": {
-                                "totalListings": 1,
-                                "uniqueGames": 1,
-                                "avgPerformanceRank": 1,
-                                "developerVerifiedCount": 1,
-                                "totalVotes": 1,
-                                "authoredByDeveloperCount": 1
-                              },
-                              "emulators": [
-                                {
-                                  "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                                  "name": "example",
-                                  "key": "example",
-                                  "listingCount": 1,
-                                  "avgCompatibilityScore": 1,
-                                  "avgPerformanceRank": 1,
-                                  "developerVerifiedCount": 1
-                                }
-                              ],
-                              "lastUpdated": "example"
-                            }
-                          ],
-                          "generatedAt": "example",
-                          "cacheExpiresIn": 1
+                          "message": "Response from catalog.getDeviceCompatibility",
+                          "data": {
+                            "id": "uuid-generic",
+                            "name": "Generic Item"
+                          }
                         }
                       }
                     }
@@ -2601,8 +3448,8 @@
     },
     "/cpus.get": {
       "get": {
-        "summary": "Get CPUs with search, filtering, and pagination",
-        "description": "Get CPUs with search, filtering, and pagination",
+        "summary": "Get CPUs with search, filtering, and pagination.",
+        "description": "Get CPUs with search, filtering, and pagination.",
         "tags": [
           "cpus"
         ],
@@ -2610,12 +3457,13 @@
           {
             "name": "input",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
             },
-            "description": "SuperJSON wrapped input matching GetCpusSchema schema. See components/schemas/GetCpusSchema for structure.",
-            "example": "{\"json\":{\"search\":\"mario\",\"limit\":10}}"
+            "description": "SuperJSON wrapped input matching MobileGetCpusSchema schema. See components/schemas/MobileGetCpusSchema for structure.",
+            "example": "{\"json\":{}}"
           }
         ],
         "responses": {
@@ -2631,8 +3479,7 @@
                       "description": "tRPC result wrapper containing the actual response data",
                       "properties": {
                         "data": {
-                          "type": "object",
-                          "description": "Response data from cpus.get"
+                          "$ref": "#/components/schemas/MobileCpuListResponseSchema"
                         }
                       }
                     }
@@ -2647,10 +3494,29 @@
                     "value": {
                       "result": {
                         "data": {
-                          "message": "Response from cpus.get",
-                          "data": {
-                            "id": "uuid-generic",
-                            "name": "Generic Item"
+                          "cpus": [
+                            {
+                              "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                              "brandId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                              "modelName": "example",
+                              "createdAt": "example",
+                              "brand": {
+                                "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                                "name": "example"
+                              },
+                              "_count": {
+                                "pcListings": 1
+                              }
+                            }
+                          ],
+                          "pagination": {
+                            "total": 1,
+                            "pages": 1,
+                            "page": 1,
+                            "offset": 1,
+                            "limit": 10,
+                            "hasNextPage": false,
+                            "hasPreviousPage": false
                           }
                         }
                       }
@@ -2740,12 +3606,24 @@
     },
     "/cpus.getById": {
       "get": {
-        "summary": "Get CPU by ID",
-        "description": "Get CPU by ID",
+        "summary": "Get CPU by ID.",
+        "description": "Get CPU by ID.",
         "tags": [
           "cpus"
         ],
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "SuperJSON wrapped input object"
+            },
+            "description": "SuperJSON wrapped input matching GetCpuByIdSchema schema. See components/schemas/GetCpuByIdSchema for structure.",
+            "example": "{\"json\":{\"id\":\"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\"}}"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful tRPC response",
@@ -2759,8 +3637,7 @@
                       "description": "tRPC result wrapper containing the actual response data",
                       "properties": {
                         "data": {
-                          "type": "object",
-                          "description": "Response data from cpus.getById"
+                          "$ref": "#/components/schemas/MobileCpuListItemSchema"
                         }
                       }
                     }
@@ -2775,10 +3652,16 @@
                     "value": {
                       "result": {
                         "data": {
-                          "message": "Response from cpus.getById",
-                          "data": {
-                            "id": "uuid-generic",
-                            "name": "Generic Item"
+                          "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                          "brandId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                          "modelName": "example",
+                          "createdAt": "example",
+                          "brand": {
+                            "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                            "name": "example"
+                          },
+                          "_count": {
+                            "pcListings": 1
                           }
                         }
                       }
@@ -3005,6 +3888,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -3404,6 +4288,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -3935,6 +4820,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -4075,6 +4961,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -4215,6 +5102,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -4252,31 +5140,13 @@
                     "value": {
                       "result": {
                         "data": {
-                          "games": [
-                            {
-                              "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                              "title": "example",
-                              "systemId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                              "isErotic": false,
-                              "status": "example",
-                              "createdAt": "example",
-                              "system": {
-                                "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                                "name": "example"
-                              },
-                              "_count": {
-                                "listings": 1
-                              }
-                            }
-                          ],
-                          "pagination": {
-                            "total": 1,
-                            "pages": 1,
-                            "page": 1,
-                            "offset": 1,
-                            "limit": 10,
-                            "hasNextPage": false,
-                            "hasPreviousPage": false
+                          "message": "Response from games.get",
+                          "data": {
+                            "id": "uuid-game",
+                            "title": "Super Mario Bros",
+                            "systemId": "uuid-system",
+                            "imageUrl": "https://example.com/game.jpg",
+                            "status": "APPROVED"
                           }
                         }
                       }
@@ -4506,6 +5376,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -4648,6 +5519,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -4790,6 +5662,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -4932,6 +5805,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -5074,6 +5948,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -5216,6 +6091,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -5358,6 +6234,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -5500,6 +6377,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -5642,6 +6520,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -5784,6 +6663,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -5926,6 +6806,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -6068,6 +6949,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -6594,6 +7476,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -6852,8 +7735,8 @@
     },
     "/gpus.get": {
       "get": {
-        "summary": "Get GPUs with search, filtering, and pagination",
-        "description": "Get GPUs with search, filtering, and pagination",
+        "summary": "Get GPUs with search, filtering, and pagination.",
+        "description": "Get GPUs with search, filtering, and pagination.",
         "tags": [
           "gpus"
         ],
@@ -6861,12 +7744,13 @@
           {
             "name": "input",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
             },
-            "description": "SuperJSON wrapped input matching GetGpusSchema schema. See components/schemas/GetGpusSchema for structure.",
-            "example": "{\"json\":{\"search\":\"mario\",\"limit\":10}}"
+            "description": "SuperJSON wrapped input matching MobileGetGpusSchema schema. See components/schemas/MobileGetGpusSchema for structure.",
+            "example": "{\"json\":{}}"
           }
         ],
         "responses": {
@@ -6882,8 +7766,7 @@
                       "description": "tRPC result wrapper containing the actual response data",
                       "properties": {
                         "data": {
-                          "type": "object",
-                          "description": "Response data from gpus.get"
+                          "$ref": "#/components/schemas/MobileGpuListResponseSchema"
                         }
                       }
                     }
@@ -6898,10 +7781,29 @@
                     "value": {
                       "result": {
                         "data": {
-                          "message": "Response from gpus.get",
-                          "data": {
-                            "id": "uuid-generic",
-                            "name": "Generic Item"
+                          "gpus": [
+                            {
+                              "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                              "brandId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                              "modelName": "example",
+                              "createdAt": "example",
+                              "brand": {
+                                "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                                "name": "example"
+                              },
+                              "_count": {
+                                "pcListings": 1
+                              }
+                            }
+                          ],
+                          "pagination": {
+                            "total": 1,
+                            "pages": 1,
+                            "page": 1,
+                            "offset": 1,
+                            "limit": 10,
+                            "hasNextPage": false,
+                            "hasPreviousPage": false
                           }
                         }
                       }
@@ -6991,12 +7893,24 @@
     },
     "/gpus.getById": {
       "get": {
-        "summary": "Get GPU by ID",
-        "description": "Get GPU by ID",
+        "summary": "Get GPU by ID.",
+        "description": "Get GPU by ID.",
         "tags": [
           "gpus"
         ],
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "SuperJSON wrapped input object"
+            },
+            "description": "SuperJSON wrapped input matching GetGpuByIdSchema schema. See components/schemas/GetGpuByIdSchema for structure.",
+            "example": "{\"json\":{\"id\":\"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\"}}"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful tRPC response",
@@ -7010,8 +7924,7 @@
                       "description": "tRPC result wrapper containing the actual response data",
                       "properties": {
                         "data": {
-                          "type": "object",
-                          "description": "Response data from gpus.getById"
+                          "$ref": "#/components/schemas/MobileGpuListItemSchema"
                         }
                       }
                     }
@@ -7026,10 +7939,16 @@
                     "value": {
                       "result": {
                         "data": {
-                          "message": "Response from gpus.getById",
-                          "data": {
-                            "id": "uuid-generic",
-                            "name": "Generic Item"
+                          "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                          "brandId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                          "modelName": "example",
+                          "createdAt": "example",
+                          "brand": {
+                            "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                            "name": "example"
+                          },
+                          "_count": {
+                            "pcListings": 1
                           }
                         }
                       }
@@ -7119,8 +8038,7 @@
     },
     "/listingReports.create": {
       "post": {
-        "summary": "Create a new listing report (user-facing)",
-        "description": "Create a new listing report (user-facing)",
+        "summary": "create - listingReports",
         "tags": [
           "listingReports"
         ],
@@ -7521,6 +8439,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -7656,8 +8575,8 @@
     },
     "/listings.getListings": {
       "get": {
-        "summary": "@deprecated Use 'get' instead - kept for backwards compatibility with Eden",
-        "description": "@deprecated Use 'get' instead - kept for backwards compatibility with Eden",
+        "summary": "Use 'get' instead - kept for backwards compatibility with Eden",
+        "description": "Use 'get' instead - kept for backwards compatibility with Eden",
         "tags": [
           "listings"
         ],
@@ -7665,6 +8584,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -7942,6 +8862,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -8086,6 +9007,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -8230,6 +9152,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -8986,6 +9909,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -9134,6 +10058,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -9733,6 +10658,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -10028,6 +10954,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -10328,6 +11255,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -11021,6 +11949,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -11449,8 +12378,8 @@
     },
     "/pcListings.cpus": {
       "get": {
-        "summary": "Get CPUs for mobile",
-        "description": "Get CPUs for mobile",
+        "summary": "Get CPUs for PC compatibility report filters.",
+        "description": "Get CPUs for PC compatibility report filters.",
         "tags": [
           "pcListings"
         ],
@@ -11458,11 +12387,12 @@
           {
             "name": "input",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
             },
-            "description": "SuperJSON wrapped input matching GetCpusSchema schema. See components/schemas/GetCpusSchema for structure.",
+            "description": "SuperJSON wrapped input matching MobilePcListingCpusSchema schema. See components/schemas/MobilePcListingCpusSchema for structure.",
             "example": "{\"json\":{\"search\":\"mario\",\"limit\":10}}"
           }
         ],
@@ -11479,8 +12409,7 @@
                       "description": "tRPC result wrapper containing the actual response data",
                       "properties": {
                         "data": {
-                          "type": "object",
-                          "description": "Response data from pcListings.cpus"
+                          "$ref": "#/components/schemas/MobilePcListingCpuResponseSchema"
                         }
                       }
                     }
@@ -11495,11 +12424,18 @@
                     "value": {
                       "result": {
                         "data": {
-                          "message": "Response from pcListings.cpus",
-                          "data": {
-                            "id": "uuid-generic",
-                            "name": "Generic Item"
-                          }
+                          "cpus": [
+                            {
+                              "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                              "brandId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                              "modelName": "example",
+                              "createdAt": "example",
+                              "brand": {
+                                "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                                "name": "example"
+                              }
+                            }
+                          ]
                         }
                       }
                     }
@@ -11588,8 +12524,8 @@
     },
     "/pcListings.gpus": {
       "get": {
-        "summary": "Get GPUs for mobile",
-        "description": "Get GPUs for mobile",
+        "summary": "Get GPUs for PC compatibility report filters.",
+        "description": "Get GPUs for PC compatibility report filters.",
         "tags": [
           "pcListings"
         ],
@@ -11597,11 +12533,12 @@
           {
             "name": "input",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
             },
-            "description": "SuperJSON wrapped input matching GetGpusSchema schema. See components/schemas/GetGpusSchema for structure.",
+            "description": "SuperJSON wrapped input matching MobilePcListingGpusSchema schema. See components/schemas/MobilePcListingGpusSchema for structure.",
             "example": "{\"json\":{\"search\":\"mario\",\"limit\":10}}"
           }
         ],
@@ -11618,8 +12555,7 @@
                       "description": "tRPC result wrapper containing the actual response data",
                       "properties": {
                         "data": {
-                          "type": "object",
-                          "description": "Response data from pcListings.gpus"
+                          "$ref": "#/components/schemas/MobilePcListingGpuResponseSchema"
                         }
                       }
                     }
@@ -11634,11 +12570,18 @@
                     "value": {
                       "result": {
                         "data": {
-                          "message": "Response from pcListings.gpus",
-                          "data": {
-                            "id": "uuid-generic",
-                            "name": "Generic Item"
-                          }
+                          "gpus": [
+                            {
+                              "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                              "brandId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                              "modelName": "example",
+                              "createdAt": "example",
+                              "brand": {
+                                "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+                                "name": "example"
+                              }
+                            }
+                          ]
                         }
                       }
                     }
@@ -11736,6 +12679,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -13312,6 +14256,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -13726,6 +14671,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"
@@ -16580,6 +17526,7 @@
           {
             "name": "input",
             "in": "query",
+            "required": true,
             "schema": {
               "type": "string",
               "description": "SuperJSON wrapped input object"

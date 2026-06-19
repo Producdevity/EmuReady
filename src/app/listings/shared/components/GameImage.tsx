@@ -1,7 +1,7 @@
 'use client'
 
-import Image from 'next/image'
 import { useState } from 'react'
+import { ImageRenderer } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import getImageUrl from '@/utils/getImageUrl'
 
@@ -16,7 +16,7 @@ interface Props {
   className?: string
   prioritizeBanner?: boolean
   sizes?: string
-  priority?: boolean
+  preload?: boolean
   aspectRatio?: 'square' | 'video' | 'poster' | 'auto'
   showFallback?: boolean
 }
@@ -67,13 +67,13 @@ export function GameImage(props: Props) {
         props.className,
       )}
     >
-      <Image
+      <ImageRenderer
         src={imageUrl}
         alt={props.game.title}
         fill
         className="object-cover"
         sizes={props.sizes ?? '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'}
-        priority={props.priority ?? false}
+        preload={props.preload}
         onError={() => setImageError(true)}
         unoptimized={false}
       />

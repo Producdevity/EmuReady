@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { PAGINATION, CHAR_LIMITS } from '@/data/constants'
 import { HumanVerificationTokenSchema } from '@/features/human-verification/shared/schema'
-import { JsonValueSchema } from '@/schemas/common'
+import { JsonValueSchema, SortDirectionSchema } from '@/schemas/common'
 import { CreatePcListingBaseSchema } from '@/schemas/listingCreate'
 import { REVIEW_RISK_FILTERS, ReviewRiskFilterSchema } from '@/schemas/submissionRisk'
 import { ApprovalStatus, PcOs, ReportReason, ReportStatus } from '@orm'
@@ -120,11 +120,6 @@ export const VerifyPcListingAdminSchema = z.object({
   notes: z.string().optional(),
 })
 
-export const UnverifyPcListingAdminSchema = z.object({
-  pcListingId: z.string().uuid(),
-  notes: z.string().optional(),
-})
-
 // Admin schemas for PC listing management
 export const GetAllPcListingsAdminSchema = z.object({
   page: z.number().int().positive().default(1),
@@ -192,10 +187,6 @@ export const UpdatePcListingUserSchema = z.object({
       }),
     )
     .optional(),
-})
-
-export const GetPcListingForOwnerEditSchema = z.object({
-  id: z.string().uuid(),
 })
 
 // PC Preset schemas
@@ -274,6 +265,8 @@ export const UnpinPcListingCommentSchema = z.object({
 })
 
 // PC Listing Report schemas
+export const PcListingReportSortField = z.enum(['createdAt', 'updatedAt', 'status', 'reason'])
+
 export const CreatePcListingReportSchema = z.object({
   pcListingId: z.string().uuid(),
   reason: z.nativeEnum(ReportReason),
@@ -281,16 +274,22 @@ export const CreatePcListingReportSchema = z.object({
 })
 
 export const UpdatePcListingReportSchema = z.object({
-  reportId: z.string().uuid(),
+  id: z.string().uuid(),
   status: z.nativeEnum(ReportStatus),
   reviewNotes: z.string().max(1000).optional(),
 })
 
-export const GetPcListingReportsSchema = z.object({
-  status: z.nativeEnum(ReportStatus).optional(),
-  page: z.number().min(1).default(1),
-  limit: z.number().min(1).max(100).default(20),
-})
+export const GetPcListingReportsSchema = z
+  .object({
+    search: z.string().optional(),
+    status: z.nativeEnum(ReportStatus).optional(),
+    reason: z.nativeEnum(ReportReason).optional(),
+    sortField: PcListingReportSortField.optional(),
+    sortDirection: SortDirectionSchema.optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+  })
+  .optional()
 
 // PC Listing Verification schemas
 export const VerifyPcListingSchema = z.object({
@@ -307,9 +306,6 @@ export const GetPcListingVerificationsSchema = z.object({
 })
 
 // User permissions and editing
-export const CanEditPcListingSchema = z.object({
-  pcListingId: z.string().uuid(),
-})
 
 export const GetPcListingForUserEditSchema = z.object({
   id: z.string().uuid(),

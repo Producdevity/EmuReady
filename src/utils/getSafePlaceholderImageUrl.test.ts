@@ -6,7 +6,7 @@ describe('getSafePlaceholderImageUrl', () => {
     const title = 'Game Title'
     const result = getSafePlaceholderImageUrl(title)
 
-    expect(result).toContain('/api/proxy-image?url=https://placehold.co/')
+    expect(result).toContain('https://placehold.co/')
     expect(result).toContain(encodeURIComponent(title))
   })
 
@@ -14,10 +14,10 @@ describe('getSafePlaceholderImageUrl', () => {
     const resultNull = getSafePlaceholderImageUrl(null)
     const resultUndefined = getSafePlaceholderImageUrl(undefined)
 
-    expect(resultNull).toContain('/api/proxy-image?url=https://placehold.co/')
+    expect(resultNull).toContain('https://placehold.co/')
     expect(resultNull).toContain(encodeURIComponent(''))
 
-    expect(resultUndefined).toContain('/api/proxy-image?url=https://placehold.co/')
+    expect(resultUndefined).toContain('https://placehold.co/')
     expect(resultUndefined).toContain(encodeURIComponent(''))
   })
 

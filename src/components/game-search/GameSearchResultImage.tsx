@@ -1,6 +1,6 @@
 import { Gamepad2 } from 'lucide-react'
-import Image from 'next/image'
 import { useState } from 'react'
+import { ImageRenderer } from '@/components/ui'
 
 interface GameImageProps {
   src: string
@@ -19,7 +19,7 @@ export function GameSearchResultImage(props: GameImageProps) {
   }
 
   return (
-    <Image
+    <ImageRenderer
       src={props.src}
       alt={props.alt}
       fill

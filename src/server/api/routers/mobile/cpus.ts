@@ -1,23 +1,28 @@
-import { ResourceError } from '@/lib/errors'
-import { GetCpusSchema, GetCpuByIdSchema } from '@/schemas/cpu'
+import { createCpuService } from '@/features/hardware/cpu/server/cpu.service'
+import {
+  GetCpuByIdSchema,
+  MobileCpuListItemSchema,
+  MobileCpuListResponseSchema,
+  MobileGetCpusSchema,
+} from '@/features/hardware/cpu/shared/cpu.schemas'
 import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
-import { CpusRepository } from '@/server/repositories/cpus.repository'
 
 export const mobileCpusRouter = createMobileTRPCRouter({
   /**
-   * Get CPUs with search, filtering, and pagination
+   * Get CPUs with search, filtering, and pagination.
    */
-  get: mobilePublicProcedure.input(GetCpusSchema).query(async ({ ctx, input }) => {
-    const repository = new CpusRepository(ctx.prisma)
-    return repository.list(input ?? {}, { limited: true })
-  }),
+  get: mobilePublicProcedure
+    .input(MobileGetCpusSchema)
+    .output(MobileCpuListResponseSchema)
+    .query(async ({ ctx, input }) => createCpuService(ctx.prisma).listMobileCompatibility(input)),
 
   /**
-   * Get CPU by ID
+   * Get CPU by ID.
    */
-  getById: mobilePublicProcedure.input(GetCpuByIdSchema).query(async ({ ctx, input }) => {
-    const repository = new CpusRepository(ctx.prisma)
-    const cpu = await repository.byIdWithCounts(input.id, { limited: true })
-    return cpu || ResourceError.cpu.notFound()
-  }),
+  getById: mobilePublicProcedure
+    .input(GetCpuByIdSchema)
+    .output(MobileCpuListItemSchema)
+    .query(async ({ ctx, input }) =>
+      createCpuService(ctx.prisma).byIdMobileCompatibility(input.id),
+    ),
 })

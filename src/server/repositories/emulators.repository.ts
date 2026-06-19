@@ -1,8 +1,9 @@
 import { PAGINATION } from '@/data/constants'
 import { ResourceError } from '@/lib/errors'
-import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
+import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { ApprovalStatus, Prisma } from '@orm/client'
 import { BaseRepository } from './base.repository'
+import type { PaginationResult } from '@/schemas/pagination'
 
 export interface EmulatorFilters {
   search?: string | null

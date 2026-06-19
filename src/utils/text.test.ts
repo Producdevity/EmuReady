@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatCountLabel, normalizeString, normalizeStrings, bytesToHuman } from './text'
+import { formatCountLabel, normalizeString, normalizeWhitespace, bytesToHuman } from './text'
 
 describe('formatCountLabel', () => {
   it('should format count label correctly', () => {
@@ -76,21 +76,11 @@ describe('normalizeString', () => {
   })
 })
 
-describe('normalizeStrings', () => {
-  it('should normalize an array of strings', () => {
-    const input = ['Astérix', 'Obélix', 'Pokémon']
-    const expected = ['asterix', 'obelix', 'pokemon']
-    expect(normalizeStrings(input)).toEqual(expected)
-  })
-
-  it('should handle empty array', () => {
-    expect(normalizeStrings([])).toEqual([])
-  })
-
-  it('should handle array with mixed strings', () => {
-    const input = ['CAFÉ', 'naïve', 'hello world']
-    const expected = ['cafe', 'naive', 'hello world']
-    expect(normalizeStrings(input)).toEqual(expected)
+describe('normalizeWhitespace', () => {
+  it('should trim and collapse whitespace while preserving casing and accents', () => {
+    expect(normalizeWhitespace('  GeForce   RTX 4090  ')).toBe('GeForce RTX 4090')
+    expect(normalizeWhitespace('  Ryzen\t7\n7800X3D  ')).toBe('Ryzen 7 7800X3D')
+    expect(normalizeWhitespace('  Café   Pro  ')).toBe('Café Pro')
   })
 })
 

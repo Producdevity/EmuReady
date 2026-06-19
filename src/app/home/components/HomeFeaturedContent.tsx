@@ -1,7 +1,6 @@
 import { MessageCircle, ThumbsUp } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
-import { LoadingSpinner, PerformanceBadge, SuccessRateBar } from '@/components/ui'
+import { ImageRenderer, LoadingSpinner, PerformanceBadge, SuccessRateBar } from '@/components/ui'
 import { api } from '@/lib/api'
 import getImageUrl from '@/utils/getImageUrl'
 
@@ -31,7 +30,7 @@ export function HomeFeaturedContent() {
               className="group bg-white/80 dark:bg-gray-800/80 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition duration-500 transform hover:scale-[1.02] backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50"
             >
               <div className="relative overflow-hidden">
-                <Image
+                <ImageRenderer
                   src={getImageUrl(listing.game.imageUrl, listing.game.title)}
                   alt={listing.game.title}
                   width={400}

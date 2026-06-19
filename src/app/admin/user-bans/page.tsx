@@ -2,8 +2,7 @@
 
 import { useUser } from '@clerk/nextjs'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
-import { useAdminTable } from '@/app/admin/hooks'
+import { useState } from 'react'
 import {
   AdminPageLayout,
   AdminStatsDisplay,
@@ -27,6 +26,7 @@ import {
 import { ViewButton, DeleteButton, UndoButton } from '@/components/ui/table-buttons'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
+import { useAdminTable } from '@/hooks/admin'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
@@ -84,17 +84,17 @@ function AdminUserBansPage() {
     userId: undefined,
   })
 
-  // Handle query params to auto-open modal
-  useEffect(() => {
-    const action = searchParams.get('action')
-    const userId = searchParams.get('userId')
+  const queryBanUserId =
+    searchParams.get('action') === 'ban' ? (searchParams.get('userId') ?? undefined) : undefined
+  const displayedCreateBanModal: CreateBanModalState = {
+    isOpen: createBanModal.isOpen || Boolean(queryBanUserId),
+    userId: createBanModal.userId ?? queryBanUserId,
+  }
 
-    if (action === 'ban' && userId) {
-      setCreateBanModal({ isOpen: true, userId })
-      // Clean up URL after opening modal
-      router.replace('/admin/user-bans')
-    }
-  }, [searchParams, router])
+  const closeCreateBanModal = () => {
+    setCreateBanModal({ isOpen: false })
+    if (queryBanUserId) router.replace('/admin/user-bans')
+  }
 
   // Get current user data to check permissions
   const currentUserQuery = api.users.me.useQuery(undefined, {
@@ -416,9 +416,9 @@ function AdminUserBansPage() {
       />
 
       <CreateBanModal
-        isOpen={createBanModal.isOpen}
-        onClose={() => setCreateBanModal({ isOpen: false })}
-        userId={createBanModal.userId}
+        isOpen={displayedCreateBanModal.isOpen}
+        onClose={closeCreateBanModal}
+        userId={displayedCreateBanModal.userId}
         onSuccess={() => {
           utils.userBans.get.invalidate().catch(console.error)
           utils.userBans.stats.invalidate().catch(console.error)

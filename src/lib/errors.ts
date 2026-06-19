@@ -400,6 +400,8 @@ export class ResourceError {
       AppError.forbidden('You can only approve PC listings for emulators you are verified for'),
     mustBeVerifiedToReject: () =>
       AppError.forbidden('You can only reject PC listings for emulators you are verified for'),
+    bulkAlreadyProcessed: () =>
+      AppError.conflict('Some selected PC reports were already processed. Refresh and try again.'),
   }
 
   static notification = {
@@ -481,15 +483,22 @@ export class ResourceError {
   }
 
   static listingReport = {
-    notFound: () => AppError.notFound('Listing report'),
-    alreadyExists: () => AppError.conflict('You have already reported this listing'),
-    cannotReportOwnListing: () => AppError.forbidden('You cannot report your own listing'),
+    notFound: () => AppError.notFound('Report'),
+    alreadyExists: () => AppError.conflict('You have already reported this compatibility report'),
+    cannotReportOwnListing: () =>
+      AppError.forbidden('You cannot report your own compatibility report'),
+    cannotChangeFinalStatus: () =>
+      AppError.conflict('Report has already been resolved or dismissed and cannot be reopened.'),
   }
 
   static pcListingReport = {
-    notFound: () => AppError.notFound('PC listing report'),
-    alreadyExists: () => AppError.conflict('You have already reported this listing'),
-    cannotReportOwnListing: () => AppError.forbidden('You cannot report your own listing'),
+    notFound: () => AppError.notFound('PC report'),
+    alreadyExists: () =>
+      AppError.conflict('You have already reported this PC compatibility report'),
+    cannotReportOwnListing: () =>
+      AppError.forbidden('You cannot report your own PC compatibility report'),
+    cannotChangeFinalStatus: () =>
+      AppError.conflict('PC report has already been resolved or dismissed and cannot be reopened.'),
   }
 
   static userBan = {
@@ -523,14 +532,14 @@ export class ResourceError {
     notFound: () => AppError.notFound('CPU'),
     alreadyExists: (modelName: string) =>
       AppError.conflict(`A CPU with model name "${modelName}" already exists for this brand`),
-    inUse: (count: number) => AppError.resourceInUse('CPU', count),
+    inUse: (count?: number) => AppError.resourceInUse('CPU', count),
   }
 
   static gpu = {
     notFound: () => AppError.notFound('GPU'),
     alreadyExists: (modelName: string) =>
       AppError.conflict(`A GPU with model name "${modelName}" already exists for this brand`),
-    inUse: (count: number) => AppError.resourceInUse('GPU', count),
+    inUse: (count?: number) => AppError.resourceInUse('GPU', count),
   }
 
   static pcPreset = {

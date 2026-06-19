@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ReportReason, Role } from '@orm/client'
+import { PERMISSIONS } from '@/utils/permission-system'
+import { ApprovalStatus, ReportReason, ReportStatus, Role, TrustAction } from '@orm/client'
 
 vi.unmock('@/server/api/trpc')
 vi.unmock('@/server/api/root')
@@ -13,14 +14,13 @@ vi.mock('@/server/notifications/eventEmitter', () => ({
 }))
 
 vi.mock('@/server/utils/security-validation', () => ({
-  validateEnum: vi.fn(),
   sanitizeInput: vi.fn((value: string) => value.trim()),
-  validatePagination: vi.fn((page, limit, max) => ({ page: page ?? 1, limit: limit ?? max ?? 20 })),
 }))
 
+const mockLogAction = vi.fn().mockResolvedValue(undefined)
 vi.mock('@/lib/trust/service', () => ({
   TrustService: vi.fn().mockImplementation(function MockTrustService() {
-    return { logAction: vi.fn(), reverseLogAction: vi.fn() }
+    return { logAction: mockLogAction, reverseLogAction: vi.fn() }
   }),
 }))
 
@@ -32,13 +32,14 @@ const LISTING_ID = '00000000-0000-4000-a000-000000000010'
 const REPORT_ID = '00000000-0000-4000-a000-000000000020'
 
 function createMockPrisma() {
-  return {
+  const tx = {
     listing: {
       findUnique: vi.fn().mockResolvedValue({
         id: LISTING_ID,
         authorId: AUTHOR_ID,
         author: { id: AUTHOR_ID },
       }),
+      update: vi.fn().mockResolvedValue({ id: LISTING_ID }),
     },
     listingReport: {
       findUnique: vi.fn().mockResolvedValue(null),
@@ -53,13 +54,32 @@ function createMockPrisma() {
           author: { name: 'Report Author' },
         },
       }),
+      update: vi.fn().mockResolvedValue({ id: REPORT_ID, status: ReportStatus.RESOLVED }),
+      delete: vi.fn().mockResolvedValue({ id: REPORT_ID }),
     },
+    user: {
+      findUnique: vi.fn().mockResolvedValue({ trustScore: 0 }),
+      update: vi.fn().mockResolvedValue({ id: USER_ID }),
+    },
+    trustActionLog: {
+      create: vi.fn().mockResolvedValue({ id: 'trust-log-id' }),
+    },
+  }
+
+  return {
+    ...tx,
+    $transaction: vi.fn(async (callback: (transaction: typeof tx) => Promise<unknown>) =>
+      callback(tx),
+    ),
   }
 }
 
 type MockPrisma = ReturnType<typeof createMockPrisma>
 
-function createCaller(prisma: MockPrisma = createMockPrisma()) {
+function createCaller(
+  prisma: MockPrisma = createMockPrisma(),
+  options: { role?: Role; permissions?: string[] } = {},
+) {
   return {
     caller: listingReportsRouter.createCaller({
       session: {
@@ -67,8 +87,8 @@ function createCaller(prisma: MockPrisma = createMockPrisma()) {
           id: USER_ID,
           email: 'test@test.com',
           name: 'Test User',
-          role: Role.USER,
-          permissions: [],
+          role: options.role ?? Role.USER,
+          permissions: options.permissions ?? [],
           showNsfw: false,
         },
       },
@@ -117,5 +137,82 @@ describe('listingReportsRouter create', () => {
         listingId: LISTING_ID,
       },
     })
+  })
+
+  it('updates report status, listing status, and trust effects inside one transaction', async () => {
+    const { caller, prisma } = createCaller(createMockPrisma(), {
+      role: Role.ADMIN,
+      permissions: [PERMISSIONS.MANAGE_USER_BANS],
+    })
+    prisma.listingReport.findUnique.mockResolvedValue({
+      id: REPORT_ID,
+      listingId: LISTING_ID,
+      reportedById: USER_ID,
+      reason: ReportReason.SPAM,
+      status: ReportStatus.PENDING,
+      listing: { status: ApprovalStatus.APPROVED },
+    })
+
+    await caller.updateStatus({
+      id: REPORT_ID,
+      status: ReportStatus.RESOLVED,
+      reviewNotes: 'Confirmed spam',
+    })
+
+    expect(prisma.$transaction).toHaveBeenCalled()
+    expect(prisma.listing.update).toHaveBeenCalledWith({
+      where: { id: LISTING_ID },
+      data: expect.objectContaining({
+        status: ApprovalStatus.REJECTED,
+        processedByUserId: USER_ID,
+        processedNotes: 'Rejected due to report: Confirmed spam',
+      }),
+    })
+    expect(mockLogAction).toHaveBeenCalledWith({
+      userId: USER_ID,
+      action: TrustAction.REPORT_CONFIRMED,
+      metadata: {
+        reportId: REPORT_ID,
+        listingId: LISTING_ID,
+        reviewedBy: USER_ID,
+        reason: ReportReason.SPAM,
+      },
+    })
+    expect(prisma.listingReport.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: REPORT_ID },
+        data: expect.objectContaining({
+          status: ReportStatus.RESOLVED,
+          reviewedById: USER_ID,
+        }),
+      }),
+    )
+  })
+
+  it('prevents changing a report after it reaches a final status', async () => {
+    const { caller, prisma } = createCaller(createMockPrisma(), {
+      role: Role.ADMIN,
+      permissions: [PERMISSIONS.MANAGE_USER_BANS],
+    })
+    prisma.listingReport.findUnique.mockResolvedValue({
+      id: REPORT_ID,
+      listingId: LISTING_ID,
+      reportedById: USER_ID,
+      reason: ReportReason.SPAM,
+      status: ReportStatus.RESOLVED,
+      listing: { status: ApprovalStatus.REJECTED },
+    })
+
+    await expect(
+      caller.updateStatus({
+        id: REPORT_ID,
+        status: ReportStatus.DISMISSED,
+        reviewNotes: 'Changing decision',
+      }),
+    ).rejects.toThrow('Report has already been resolved or dismissed')
+
+    expect(prisma.listing.update).not.toHaveBeenCalled()
+    expect(mockLogAction).not.toHaveBeenCalled()
+    expect(prisma.listingReport.update).not.toHaveBeenCalled()
   })
 })

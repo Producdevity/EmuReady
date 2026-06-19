@@ -14,7 +14,6 @@ import {
 import Link from 'next/link'
 import { type ChangeEvent, useEffect, useRef, useState } from 'react'
 import { ADMIN_ROUTES } from '@/app/admin/config/routes'
-import { useAdminTable } from '@/app/admin/hooks/useAdminTable'
 import { AdminTableContainer } from '@/components/admin'
 import {
   Badge,
@@ -29,6 +28,7 @@ import {
   useConfirmDialog,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
+import { useAdminTable } from '@/hooks/admin'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks/useColumnVisibility'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -182,12 +182,6 @@ function VoterSection() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-
-  useEffect(() => {
-    if (userSearchQuery.data && userSearch.length >= 2 && !selectedUser) {
-      setShowDropdown(true)
-    }
-  }, [userSearchQuery.data, userSearch, selectedUser])
 
   const handleChangeUserSearch = (ev: ChangeEvent<HTMLInputElement>) => {
     setUserSearch(ev.target.value)

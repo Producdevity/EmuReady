@@ -1,5 +1,4 @@
 import { ResourceError } from '@/lib/errors'
-import { TrustService } from '@/lib/trust/service'
 import {
   CreateListingReportSchema,
   DeleteReportSchema,
@@ -15,12 +14,12 @@ import {
   protectedProcedure,
   publicProcedure,
 } from '@/server/api/trpc'
+import { ReportModerationService } from '@/server/services/report-moderation.service'
 import { getAuthorReportCounts } from '@/server/services/report-stats.service'
 import { ReportSubmissionService } from '@/server/services/report-submission.service'
 import { paginate } from '@/server/utils/pagination'
-import { validateEnum, sanitizeInput, validatePagination } from '@/server/utils/security-validation'
 import { PERMISSIONS } from '@/utils/permission-system'
-import { ApprovalStatus, type Prisma, ReportStatus, TrustAction, ReportReason } from '@orm/client'
+import { type Prisma, type ReportReason, ReportStatus } from '@orm/client'
 
 export const listingReportsRouter = createTRPCRouter({
   stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
@@ -51,22 +50,20 @@ export const listingReportsRouter = createTRPCRouter({
         sortDirection = 'desc',
       } = input ?? {}
 
-      // Validate pagination
-      const { page, limit } = validatePagination(input?.page, input?.limit, 50)
-
-      // Sanitize search term (plain text, not markdown)
-      const sanitizedSearch = search ? sanitizeInput(search) : undefined
+      const page = input?.page ?? 1
+      const limit = input?.limit ?? 20
+      const normalizedSearch = search?.trim() || undefined
 
       const offset = (page - 1) * limit
 
       // Build where clause
       const where: Prisma.ListingReportWhereInput = {}
 
-      if (sanitizedSearch) {
+      if (normalizedSearch) {
         where.OR = [
-          { listing: { game: { title: { contains: sanitizedSearch, mode: 'insensitive' } } } },
-          { reportedBy: { name: { contains: sanitizedSearch, mode: 'insensitive' } } },
-          { description: { contains: sanitizedSearch, mode: 'insensitive' } },
+          { listing: { game: { title: { contains: normalizedSearch, mode: 'insensitive' } } } },
+          { reportedBy: { name: { contains: normalizedSearch, mode: 'insensitive' } } },
+          { description: { contains: normalizedSearch, mode: 'insensitive' } },
         ]
       }
 
@@ -132,8 +129,6 @@ export const listingReportsRouter = createTRPCRouter({
     const { listingId, reason, description } = input
     const userId = ctx.session.user.id
 
-    validateEnum(reason, Object.values(ReportReason), 'reason')
-
     const reportSubmissionService = new ReportSubmissionService(ctx.prisma)
 
     return await reportSubmissionService.createListingReport({
@@ -147,100 +142,18 @@ export const listingReportsRouter = createTRPCRouter({
   updateStatus: permissionProcedure(PERMISSIONS.MANAGE_USER_BANS)
     .input(UpdateReportStatusSchema)
     .mutation(async ({ ctx, input }) => {
-      const { id, status, reviewNotes } = input
-      const reviewerId = ctx.session.user.id
-
-      // Validate status enum
-      validateEnum(status, Object.values(ReportStatus), 'status')
-
-      const report = await ctx.prisma.listingReport.findUnique({
-        where: { id },
-        include: {
-          listing: true,
-        },
-      })
-
-      if (!report) {
-        return ResourceError.listingReport.notFound()
-      }
-
-      // If resolving the report and marking listing as rejected
-      if (status === ReportStatus.RESOLVED && report.listing?.status === ApprovalStatus.APPROVED) {
-        // Update the listing status to rejected
-        await ctx.prisma.listing.update({
-          where: { id: report.listingId },
-          data: {
-            status: ApprovalStatus.REJECTED,
-            processedAt: new Date(),
-            processedByUserId: reviewerId,
-            processedNotes: `Rejected due to report: ${reviewNotes || 'No additional notes'}`,
-          },
-        })
-      }
-
-      // Award trust points based on report outcome
-      const trustService = new TrustService(ctx.prisma)
-
-      if (status === ReportStatus.RESOLVED) {
-        // Report was confirmed - reward the reporter
-        await trustService.logAction({
-          userId: report.reportedById,
-          action: TrustAction.REPORT_CONFIRMED,
-          metadata: {
-            reportId: id,
-            listingId: report.listingId,
-            reviewedBy: reviewerId,
-            reason: report.reason,
-          },
-        })
-      } else if (status === ReportStatus.DISMISSED) {
-        // Report was false/malicious - penalize the reporter
-        await trustService.logAction({
-          userId: report.reportedById,
-          action: TrustAction.FALSE_REPORT,
-          metadata: {
-            reportId: id,
-            listingId: report.listingId,
-            reviewedBy: reviewerId,
-            reason: report.reason,
-            reviewNotes,
-          },
-        })
-      }
-
-      return ctx.prisma.listingReport.update({
-        where: { id },
-        data: {
-          status,
-          reviewNotes,
-          reviewedById: reviewerId,
-          reviewedAt: new Date(),
-        },
-        include: {
-          listing: {
-            include: {
-              game: { select: { title: true } },
-              author: { select: { name: true } },
-            },
-          },
-          reportedBy: { select: { name: true } },
-          reviewedBy: { select: { name: true } },
-        },
+      return new ReportModerationService(ctx.prisma).updateListingReportStatus({
+        id: input.id,
+        status: input.status,
+        reviewNotes: input.reviewNotes,
+        reviewerId: ctx.session.user.id,
       })
     }),
 
   delete: permissionProcedure(PERMISSIONS.MANAGE_USER_BANS)
     .input(DeleteReportSchema)
     .mutation(async ({ ctx, input }) => {
-      const report = await ctx.prisma.listingReport.findUnique({
-        where: { id: input.id },
-      })
-
-      if (!report) ResourceError.listingReport.notFound()
-
-      return ctx.prisma.listingReport.delete({
-        where: { id: input.id },
-      })
+      return new ReportModerationService(ctx.prisma).deleteListingReport(input.id)
     }),
 
   getUserReportStats: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)

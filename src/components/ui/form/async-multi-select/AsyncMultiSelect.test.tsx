@@ -181,10 +181,10 @@ describe('AsyncMultiSelect', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Devices multi-select' }))
     fireEvent.click(screen.getByLabelText('Retroid Pocket 5'))
-    expect(onChange).toHaveBeenCalledWith([])
+    expect(onChange).toHaveBeenCalledWith([], [])
 
     fireEvent.click(screen.getByLabelText('AYN Odin 2'))
-    expect(onChange).toHaveBeenCalledWith(['device-1', 'device-2'])
+    expect(onChange).toHaveBeenCalledWith(['device-1', 'device-2'], options)
   })
 
   it('selects an option when the visible row text is clicked', () => {
@@ -194,7 +194,7 @@ describe('AsyncMultiSelect', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Devices multi-select' }))
     fireEvent.click(screen.getByText('AYN Odin 2'))
 
-    expect(onChange).toHaveBeenCalledWith(['device-2'])
+    expect(onChange).toHaveBeenCalledWith(['device-2'], [options[1]])
   })
 
   it('clears all selections from the dropdown footer', () => {
@@ -204,7 +204,7 @@ describe('AsyncMultiSelect', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Devices multi-select' }))
     fireEvent.click(screen.getByText('Clear all (2)'))
 
-    expect(onChange).toHaveBeenCalledWith([])
+    expect(onChange).toHaveBeenCalledWith([], [])
   })
 
   it('removes one selected chip without clearing the other selected values', () => {
@@ -213,7 +213,7 @@ describe('AsyncMultiSelect', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove Retroid Pocket 5' }))
 
-    expect(onChange).toHaveBeenCalledWith(['device-2'])
+    expect(onChange).toHaveBeenCalledWith(['device-2'], [options[1]])
   })
 
   it('shows empty and loading states', () => {

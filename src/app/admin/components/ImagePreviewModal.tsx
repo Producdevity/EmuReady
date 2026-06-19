@@ -1,9 +1,8 @@
 'use client'
 
 import { ExternalLink } from 'lucide-react'
-import Image from 'next/image'
 import { useState } from 'react'
-import { Modal, Button } from '@/components/ui'
+import { Button, ImageRenderer, Modal } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 import getImageUrl from '@/utils/getImageUrl'
@@ -97,7 +96,7 @@ function ImagePreviewModal(props: Props) {
           {currentImageUrl && !failedImages.has(activeTab) ? (
             <div className="relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden group">
               <div className="relative w-full h-96 flex items-center justify-center">
-                <Image
+                <ImageRenderer
                   src={displayImageUrl ?? ''}
                   alt={`${props.game.title} - ${tabLabelMap[activeTab]}`}
                   fill

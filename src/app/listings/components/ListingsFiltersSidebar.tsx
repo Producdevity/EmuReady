@@ -22,12 +22,11 @@ import {
 import { buildActiveFilterItems } from '@/app/listings/shared/utils/buildActiveFilterItems'
 import {
   getSystemNames,
-  getDeviceNames,
-  getSocNames,
   getEmulatorNames,
   getPerformanceLabels,
 } from '@/app/listings/shared/utils/selectedLabels'
 import { Button } from '@/components/ui'
+import { type Option } from '@/components/ui/form/async-multi-select/AsyncMultiSelect'
 import analytics from '@/lib/analytics'
 import { filterAnalytics } from '@/lib/analytics/filterAnalytics'
 import ListingsFiltersContent from './ListingsFiltersContent'
@@ -44,12 +43,6 @@ interface FiltersProps {
   performanceIds: number[]
   searchTerm: string
   systems: { id: string; name: string }[]
-  devices: {
-    id: string
-    modelName: string
-    brand: { id: string; name: string }
-  }[]
-  socs: { id: string; name: string; manufacturer: string }[]
   emulators: { id: string; name: string }[]
   performanceScales: { id: number; label: string }[]
   onSystemChange: (values: string[]) => void
@@ -79,16 +72,26 @@ function ListingsFiltersSidebar(props: FiltersProps) {
     filterAnalytics.systems(values, names)
   }
 
-  const handleDeviceChange = (values: string[]) => {
+  const handleDeviceChange = (values: string[], selectedOptions: Option[]) => {
     props.onDeviceChange(values)
-    const names = getDeviceNames(props.devices, values)
+    const names = selectedOptions.map((option) => option.name)
     filterAnalytics.devices(values, names)
   }
 
-  const handleSocChange = (values: string[]) => {
+  const handleSocChange = (values: string[], selectedOptions: Option[]) => {
     props.onSocChange(values)
-    const names = getSocNames(props.socs, values)
+    const names = selectedOptions.map((option) => option.name)
     filterAnalytics.socs(values, names)
+  }
+
+  const handleClearDeviceFilter = () => {
+    props.onDeviceChange([])
+    filterAnalytics.devices([], [])
+  }
+
+  const handleClearSocFilter = () => {
+    props.onSocChange([])
+    filterAnalytics.socs([], [])
   }
 
   const handleEmulatorChange = (values: string[]) => {
@@ -228,8 +231,6 @@ function ListingsFiltersSidebar(props: FiltersProps) {
           performanceIds={props.performanceIds}
           searchTerm={props.searchTerm}
           systems={props.systems}
-          devices={props.devices}
-          socs={props.socs}
           emulators={props.emulators}
           performanceScales={props.performanceScales}
           onSystemChange={handleSystemChange}
@@ -267,7 +268,7 @@ function ListingsFiltersSidebar(props: FiltersProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleDeviceChange([])}
+                onClick={handleClearDeviceFilter}
                 className="text-xs h-7 px-2"
               >
                 Show all devices
@@ -340,7 +341,7 @@ function ListingsFiltersSidebar(props: FiltersProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleSocChange([])}
+                onClick={handleClearSocFilter}
                 className="text-xs h-7 px-2"
               >
                 Show all SoCs

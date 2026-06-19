@@ -1,5 +1,6 @@
 import NextBundleAnalyzer from '@next/bundle-analyzer'
 import { withSentryConfig } from '@sentry/nextjs'
+import { NEXT_IMAGE_REMOTE_PATTERNS } from '@config/image-hosts'
 import type { NextConfig } from 'next'
 import type { Configuration as WebpackConfiguration } from 'webpack'
 
@@ -47,24 +48,7 @@ const contentSecurityPolicyDirectives = [
   },
   {
     name: 'img-src',
-    sources: [
-      "'self'",
-      'data:',
-      'https://placehold.co',
-      'https://*.clerk.com',
-      'https://*.clerk.accounts.dev',
-      'https://img.clerk.com',
-      'https://clerk.emuready.com',
-      'https://cdn.thegamesdb.net',
-      'https://images.igdb.com',
-      'https://media.rawg.io',
-      'https://www.googletagmanager.com',
-      'https://assets.nintendo.com',
-      'https://*.google-analytics.com',
-      'https://storage.ko-fi.com',
-      'https://vercel.com',
-      'https://files.catbox.moe',
-    ],
+    sources: ["'self'", 'data:', 'https:'],
   },
   {
     name: 'font-src',
@@ -165,26 +149,16 @@ function createContentSecurityPolicy(): string {
 const nextConfig: NextConfig = {
   images: {
     unoptimized: process.env.NEXT_IMAGE_UNOPTIMIZED === 'true',
-    dangerouslyAllowSVG: true,
     qualities: [50, 75, 85, 100],
+    maximumRedirects: 0,
+    maximumResponseBody: 5_000_000,
     localPatterns: [
-      // Allow any query on the proxy route
-      { pathname: '/api/proxy-image' },
       { pathname: '/_next/**' },
       { pathname: '/placeholder/**' },
       { pathname: '/assets/android-app/**' },
+      { pathname: '/uploads/**' },
     ],
-    remotePatterns: [
-      { protocol: 'https', hostname: 'placehold.co', pathname: '/**' },
-      { protocol: 'https', hostname: 'media.rawg.io', pathname: '/**' },
-      { protocol: 'https', hostname: '*.clerk.com', pathname: '/**' },
-      { protocol: 'https', hostname: '*.clerk.accounts.dev', pathname: '/**' },
-      { protocol: 'https', hostname: 'cdn.thegamesdb.net', pathname: '/**' },
-      { protocol: 'https', hostname: 'images.igdb.com', pathname: '/**' },
-      { protocol: 'https', hostname: 'assets.nintendo.com', pathname: '/**' },
-      { protocol: 'https', hostname: 'storage.ko-fi.com', pathname: '/**' },
-      { protocol: 'https', hostname: 'ko-fi.com', pathname: '/**' },
-    ],
+    remotePatterns: NEXT_IMAGE_REMOTE_PATTERNS,
   },
 
   allowedDevOrigins: ['dev.emuready.com', '127.0.0.1'],

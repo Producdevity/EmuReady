@@ -5,7 +5,7 @@ import { TrendingUp, ChevronRight, Smartphone, Cpu } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useMemo } from 'react'
 import { RetroCatalogIndicator } from '@/components/retrocatalog'
-import { CACHE_DURATIONS, HOME_PAGE_LIMITS } from '@/data/constants'
+import { HOME_PAGE_LIMITS } from '@/data/constants'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -18,15 +18,9 @@ const TIME_RANGE_LABELS: Record<TimeRangeId, string> = {
 }
 
 export function HomeTrendingDevices() {
-  const trendingDevicesQuery = api.devices.trendingSummary.useQuery(
-    {
-      limit: HOME_PAGE_LIMITS.TRENDING_DEVICES,
-    },
-    {
-      staleTime: CACHE_DURATIONS.LOOKUP,
-      gcTime: CACHE_DURATIONS.LOOKUP_GC,
-    },
-  )
+  const trendingDevicesQuery = api.devices.trendingSummary.useQuery({
+    limit: HOME_PAGE_LIMITS.TRENDING_DEVICES,
+  })
 
   const [activeTimeRange, setActiveTimeRange] = useState<TimeRangeId>('thisMonth')
 

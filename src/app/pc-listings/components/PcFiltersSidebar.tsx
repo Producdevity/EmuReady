@@ -9,18 +9,14 @@ import {
 } from '@/app/listings/shared/components'
 import {
   getSystemNames,
-  getCpuNames,
-  getGpuNames,
   getEmulatorNames,
   getPerformanceLabels,
 } from '@/app/listings/shared/utils/selectedLabels'
 import { buildPcActiveFilterItems } from '@/app/pc-listings/utils/buildPcActiveFilterItems'
+import { type Option } from '@/components/ui/form/async-multi-select/AsyncMultiSelect'
 import { filterAnalytics } from '@/lib/analytics/filterAnalytics'
 import PcFiltersContent from './PcFiltersContent'
 import type { System, PerformanceScale, Emulator } from '@orm'
-
-type CpuWithBrand = { id: string; modelName: string; brand: { name: string } }
-type GpuWithBrand = { id: string; modelName: string; brand: { name: string } }
 
 interface Props {
   isCollapsed?: boolean
@@ -34,8 +30,6 @@ interface Props {
   minMemory: number | null
   maxMemory: number | null
   searchTerm: string
-  cpus: CpuWithBrand[]
-  gpus: GpuWithBrand[]
   systems: System[]
   emulators: Emulator[]
   performanceScales: PerformanceScale[]
@@ -142,7 +136,7 @@ export default function PcFiltersSidebar(props: Props) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 10 }}
-          onClick={props.onClearAll}
+          onClick={handleClearAll}
           className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 flex items-center justify-center transition-colors"
           whileHover={{ scale: 1.1, rotate: 5 }}
           whileTap={{ scale: 0.95 }}
@@ -170,15 +164,15 @@ export default function PcFiltersSidebar(props: Props) {
           const names = getSystemNames(props.systems, values)
           filterAnalytics.systems(values, names)
         }}
-        onCpuChange={(values) => {
+        onCpuChange={(values, selectedOptions: Option[]) => {
           props.onCpuChange(values)
-          const names = getCpuNames(props.cpus, values)
-          filterAnalytics.devices(values, names)
+          const names = selectedOptions.map((option) => option.name)
+          filterAnalytics.cpus(values, names)
         }}
-        onGpuChange={(values) => {
+        onGpuChange={(values, selectedOptions: Option[]) => {
           props.onGpuChange(values)
-          const names = getGpuNames(props.gpus, values)
-          filterAnalytics.devices(values, names)
+          const names = selectedOptions.map((option) => option.name)
+          filterAnalytics.gpus(values, names)
         }}
         onEmulatorChange={(values) => {
           props.onEmulatorChange(values)

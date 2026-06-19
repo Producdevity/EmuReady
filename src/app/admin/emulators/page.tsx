@@ -4,7 +4,6 @@ import { LinkIcon, UnlinkIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import EmulatorModal from '@/app/admin/emulators/components/EmulatorModal'
-import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
   AdminSearchFilters,
@@ -29,6 +28,7 @@ import {
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { type ColumnDefinition, useColumnVisibility, useEmulatorLogos } from '@/hooks'
+import { useAdminTable } from '@/hooks/admin'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'

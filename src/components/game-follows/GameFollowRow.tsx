@@ -1,9 +1,8 @@
 'use client'
 
 import { Gamepad2 } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
-import { Badge, LocalizedDate } from '@/components/ui'
+import { Badge, ImageRenderer, LocalizedDate } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { type RouterOutput } from '@/types/trpc'
 
@@ -36,7 +35,7 @@ function GameFollowRow(props: Props) {
       onClick={props.onClick}
     >
       {game.imageUrl ? (
-        <Image
+        <ImageRenderer
           src={game.imageUrl}
           alt={game.title}
           width={imgSize}

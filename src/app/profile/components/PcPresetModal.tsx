@@ -1,9 +1,11 @@
 'use client'
 
-import { useCallback, useState, useEffect, type SubmitEvent } from 'react'
+import { useCallback, useState, type SubmitEvent } from 'react'
 import { Button, Input, Modal, Autocomplete, SelectInput } from '@/components/ui'
-import { CACHE_DURATIONS } from '@/data/constants'
+import { LOOKUP_PAGINATION } from '@/data/constants'
 import { PC_OS_OPTIONS } from '@/data/pc-os'
+import { getCpuLabel } from '@/features/hardware/cpu/shared/cpu-format'
+import { getGpuLabel } from '@/features/hardware/gpu/shared/gpu-format'
 import { api } from '@/lib/api'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -13,20 +15,13 @@ type PcPreset = RouterOutput['pcListings']['presets']['get'][number]
 type PcPresetMutationResult =
   | RouterOutput['pcListings']['presets']['create']
   | RouterOutput['pcListings']['presets']['update']
-type CpuOption = RouterOutput['cpus']['options']['cpus'][number]
-type GpuOption = RouterOutput['gpus']['options']['gpus'][number]
+type CpuSummary = RouterOutput['cpus']['options']['cpus'][number]
+type GpuSummary = RouterOutput['gpus']['options']['gpus'][number]
 
 interface Props {
-  isOpen: boolean
   onClose: () => void
   preset: PcPreset | null
   onSuccess: (data?: PcPresetMutationResult) => void
-}
-
-const OS_OPTIONS = PC_OS_OPTIONS
-const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: CACHE_DURATIONS.LOOKUP,
-  gcTime: CACHE_DURATIONS.LOOKUP_GC,
 }
 
 function PcPresetModal(props: Props) {
@@ -34,29 +29,31 @@ function PcPresetModal(props: Props) {
   const createPreset = api.pcListings.presets.create.useMutation()
   const updatePreset = api.pcListings.presets.update.useMutation()
 
-  const [name, setName] = useState('')
-  const [cpuId, setCpuId] = useState('')
-  const [gpuId, setGpuId] = useState('')
-  const [memorySize, setMemorySize] = useState('')
-  const [os, setOs] = useState<PcOs>(PcOs.WINDOWS)
-  const [osVersion, setOsVersion] = useState('')
+  const [name, setName] = useState(props.preset?.name ?? '')
+  const [cpuId, setCpuId] = useState(props.preset?.cpuId ?? '')
+  const [gpuId, setGpuId] = useState(props.preset?.gpuId ?? '')
+  const [memorySize, setMemorySize] = useState(props.preset?.memorySize.toString() ?? '')
+  const [os, setOs] = useState<PcOs>(props.preset?.os ?? PcOs.WINDOWS)
+  const [osVersion, setOsVersion] = useState(props.preset?.osVersion ?? '')
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
 
   const selectedCpuQuery = api.cpus.getByIds.useQuery(
     { ids: cpuId ? [cpuId] : [] },
-    { ...LOOKUP_DATA_QUERY_OPTIONS, enabled: cpuId !== '' },
+    { enabled: cpuId !== '' },
   )
   const selectedGpuQuery = api.gpus.getByIds.useQuery(
     { ids: gpuId ? [gpuId] : [] },
-    { ...LOOKUP_DATA_QUERY_OPTIONS, enabled: gpuId !== '' },
+    { enabled: gpuId !== '' },
   )
 
   const loadCpuItems = useCallback(
-    async (query: string): Promise<CpuOption[]> => {
+    async (query: string): Promise<CpuSummary[]> => {
       if (query.length < 2) return []
       try {
-        const result = await utils.cpus.options.fetch({ search: query, limit: 20 })
+        const result = await utils.cpus.options.fetch({
+          search: query,
+          limit: LOOKUP_PAGINATION.AUTOCOMPLETE_LIMIT,
+        })
         return result.cpus
       } catch (err) {
         console.error('Error fetching CPUs:', err)
@@ -67,10 +64,13 @@ function PcPresetModal(props: Props) {
   )
 
   const loadGpuItems = useCallback(
-    async (query: string): Promise<GpuOption[]> => {
+    async (query: string): Promise<GpuSummary[]> => {
       if (query.length < 2) return []
       try {
-        const result = await utils.gpus.options.fetch({ search: query, limit: 20 })
+        const result = await utils.gpus.options.fetch({
+          search: query,
+          limit: LOOKUP_PAGINATION.AUTOCOMPLETE_LIMIT,
+        })
         return result.gpus
       } catch (err) {
         console.error('Error fetching GPUs:', err)
@@ -80,31 +80,9 @@ function PcPresetModal(props: Props) {
     [utils.gpus.options],
   )
 
-  // Update form fields when preset changes
-  useEffect(() => {
-    if (props.preset) {
-      setName(props.preset.name)
-      setCpuId(props.preset.cpuId)
-      setGpuId(props.preset.gpuId || '')
-      setMemorySize(props.preset.memorySize.toString())
-      setOs(props.preset.os)
-      setOsVersion(props.preset.osVersion)
-    } else {
-      setName('')
-      setCpuId('')
-      setGpuId('')
-      setMemorySize('')
-      setOs(PcOs.WINDOWS)
-      setOsVersion('')
-    }
-    setError('')
-    setSuccess('')
-  }, [props.preset, props.isOpen])
-
   const handleSubmit = async (ev: SubmitEvent) => {
     ev.preventDefault()
     setError('')
-    setSuccess('')
 
     const memorySizeNum = parseInt(memorySize)
     if (isNaN(memorySizeNum) || memorySizeNum < 1 || memorySizeNum > 256) {
@@ -127,36 +105,21 @@ function PcPresetModal(props: Props) {
           id: props.preset.id,
           ...presetData,
         } satisfies RouterInput['pcListings']['presets']['update'])
-        setSuccess('PC preset updated!')
         props.onSuccess(updated)
       } else {
         const created = await createPreset.mutateAsync(
           presetData satisfies RouterInput['pcListings']['presets']['create'],
         )
-        setSuccess('PC preset created!')
         props.onSuccess(created)
       }
-
-      // Reset form
-      setName('')
-      setCpuId('')
-      setGpuId('')
-      setMemorySize('')
-      setOs(PcOs.WINDOWS)
-      setOsVersion('')
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to save PC preset.'))
     }
   }
 
-  const formatCpuLabel = (cpu: { brand: { name: string }; modelName: string }) =>
-    `${cpu.brand.name} ${cpu.modelName}`
-  const formatGpuLabel = (gpu: { brand: { name: string }; modelName: string }) =>
-    `${gpu.brand.name} ${gpu.modelName}`
-
   return (
     <Modal
-      isOpen={props.isOpen}
+      isOpen
       onClose={props.onClose}
       title={props.preset ? 'Edit PC Preset' : 'Add PC Preset'}
       closeOnEscape={false}
@@ -189,7 +152,7 @@ function PcPresetModal(props: Props) {
             items={selectedCpuQuery.data ?? []}
             loadItems={loadCpuItems}
             optionToValue={(cpu) => cpu.id}
-            optionToLabel={formatCpuLabel}
+            optionToLabel={getCpuLabel}
             placeholder="Select a CPU..."
             className="w-full"
             minCharsToTrigger={2}
@@ -206,7 +169,7 @@ function PcPresetModal(props: Props) {
             items={selectedGpuQuery.data ?? []}
             loadItems={loadGpuItems}
             optionToValue={(gpu) => gpu.id}
-            optionToLabel={formatGpuLabel}
+            optionToLabel={getGpuLabel}
             placeholder="Select a GPU..."
             className="w-full"
             minCharsToTrigger={2}
@@ -240,7 +203,7 @@ function PcPresetModal(props: Props) {
           <SelectInput
             label="Operating System"
             hideLabel
-            options={OS_OPTIONS.map((opt) => ({
+            options={PC_OS_OPTIONS.map((opt) => ({
               id: opt.value,
               name: opt.label,
             }))}
@@ -269,12 +232,6 @@ function PcPresetModal(props: Props) {
         {error && (
           <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded">
             {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="text-green-600 text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded">
-            {success}
           </div>
         )}
 

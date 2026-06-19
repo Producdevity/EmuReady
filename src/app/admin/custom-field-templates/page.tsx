@@ -2,7 +2,6 @@
 
 import { PlusCircle } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
   AdminSearchFilters,
@@ -10,6 +9,7 @@ import {
   AdminTableNoResults,
 } from '@/components/admin'
 import { Button, LoadingSpinner } from '@/components/ui'
+import { useAdminTable } from '@/hooks/admin'
 import { api } from '@/lib/api'
 import { type RouterOutput } from '@/types/trpc'
 import CustomFieldTemplateFormModal from './components/CustomFieldTemplateFormModal'

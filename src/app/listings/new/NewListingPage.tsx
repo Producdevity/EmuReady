@@ -13,12 +13,12 @@ import {
   useState,
   type ChangeEvent,
 } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, useWatch } from 'react-hook-form'
 import '@/shared/emulator-config/eden'
 import '@/shared/emulator-config/azahar'
 import '@/shared/emulator-config/gamenative'
 import { Button, LoadingSpinner } from '@/components/ui'
-import { CACHE_DURATIONS } from '@/data/constants'
+import { CACHE_DURATIONS, LOOKUP_PAGINATION } from '@/data/constants'
 import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
@@ -51,9 +51,17 @@ import { reconcileDriverValue } from '../components/shared/custom-fields/driverV
 export type ListingFormValues = RouterInput['listings']['create']
 
 const HIGHLIGHT_DURATION_MS = 1800
-const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: CACHE_DURATIONS.LOOKUP,
-  gcTime: CACHE_DURATIONS.LOOKUP_GC,
+type ImportSummary = { filled: number; missing: string[] }
+type ImportFeedbackState = {
+  emulatorSlug: string | null
+  highlightedFieldIds: string[]
+  summary: ImportSummary | null
+}
+
+const EMPTY_IMPORT_FEEDBACK: ImportFeedbackState = {
+  emulatorSlug: null,
+  highlightedFieldIds: [],
+  summary: null,
 }
 
 function AddListingPage() {
@@ -69,16 +77,9 @@ function AddListingPage() {
   const [selectedDevice, setSelectedDevice] = useState<DeviceOption | null>(null)
   const [deviceSearchTerm, setDeviceSearchTerm] = useState('')
   const [emulatorInputFocus, setEmulatorInputFocus] = useState(false)
-  const [parsedCustomFields, setParsedCustomFields] = useState<CustomFieldDefinitionWithOptions[]>(
-    [],
-  )
-  const [schemaState, setSchemaState] = useState<
-    typeof listingFormSchema | ReturnType<typeof createDynamicListingSchema>
-  >(listingFormSchema)
-  const [highlightedFieldIds, setHighlightedFieldIds] = useState<string[]>([])
-  const [importSummary, setImportSummary] = useState<{ filled: number; missing: string[] } | null>(
-    null,
-  )
+  const [importFeedback, setImportFeedback] = useState<ImportFeedbackState>(EMPTY_IMPORT_FEEDBACK)
+  const schemaRef = useRef<ReturnType<typeof createDynamicListingSchema>>(listingFormSchema)
+  const previousCustomFieldIdsKeyRef = useRef('')
   const importHighlightTimeoutRef = useRef<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -87,7 +88,8 @@ function AddListingPage() {
     useEmulatorLoader(selectedGame)
 
   const form = useForm<ListingFormValues>({
-    resolver: zodResolver(schemaState),
+    resolver: (values, context, options) =>
+      zodResolver(schemaRef.current)(values, context, options),
     defaultValues: {
       gameId: gameIdFromUrl ?? '',
       deviceId: '',
@@ -98,7 +100,7 @@ function AddListingPage() {
     },
   })
 
-  const selectedEmulatorId = form.watch('emulatorId')
+  const selectedEmulatorId = useWatch({ control: form.control, name: 'emulatorId' })
 
   const selectedEmulatorOption = useMemo(() => {
     if (!selectedEmulatorId) return undefined
@@ -110,6 +112,48 @@ function AddListingPage() {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   })
+  const customFieldDefinitionsQuery = api.customFieldDefinitions.getByEmulator.useQuery(
+    { emulatorId: selectedEmulatorId },
+    {
+      enabled: !!selectedEmulatorId && selectedEmulatorId.trim() !== '',
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    },
+  )
+  const parsedCustomFields = useMemo(() => {
+    if (!customFieldDefinitionsQuery.data) return []
+
+    return customFieldDefinitionsQuery.data.map((field): CustomFieldDefinitionWithOptions => {
+      const parsedOptions = parseCustomFieldOptions(field)
+      return {
+        ...field,
+        parsedOptions,
+        defaultValue: field.defaultValue as string | number | boolean | null | undefined,
+      }
+    })
+  }, [customFieldDefinitionsQuery.data])
+  const customFieldIdsKey = useMemo(
+    () => parsedCustomFields.map((field) => field.id).join('|'),
+    [parsedCustomFields],
+  )
+  const normalizedEmulatorName = (
+    selectedEmulatorOption?.name ??
+    customFieldDefinitionsQuery.data?.[0]?.emulator?.name ??
+    ''
+  )
+    .trim()
+    .toLowerCase()
+  const importerSlugMap: Record<string, 'eden' | 'azahar' | 'gamenative'> = {
+    eden: 'eden',
+    azahar: 'azahar',
+    gamenative: 'gamenative',
+  }
+  const selectedEmulatorSlug = importerSlugMap[normalizedEmulatorName] ?? null
+  const importSummary =
+    importFeedback.emulatorSlug === selectedEmulatorSlug ? importFeedback.summary : null
+  const highlightedFieldIds =
+    importFeedback.emulatorSlug === selectedEmulatorSlug ? importFeedback.highlightedFieldIds : []
+
   const handleImportResult = useCallback(
     (result: {
       values: { id: string; value: unknown }[]
@@ -164,14 +208,20 @@ function AddListingPage() {
       }, 0)
 
       const uniqueMissing = Array.from(new Set(result.missing))
-      setImportSummary({ filled: changedCount, missing: uniqueMissing })
-
-      setHighlightedFieldIds(result.values.map((entry) => entry.id))
+      const nextHighlightedFieldIds = result.values.map((entry) => entry.id)
+      setImportFeedback({
+        emulatorSlug: selectedEmulatorSlug,
+        highlightedFieldIds: nextHighlightedFieldIds,
+        summary: { filled: changedCount, missing: uniqueMissing },
+      })
       if (importHighlightTimeoutRef.current) {
         window.clearTimeout(importHighlightTimeoutRef.current)
       }
       importHighlightTimeoutRef.current = window.setTimeout(() => {
-        setHighlightedFieldIds([])
+        setImportFeedback((currentFeedback) => {
+          if (currentFeedback.emulatorSlug !== selectedEmulatorSlug) return currentFeedback
+          return { ...currentFeedback, highlightedFieldIds: [] }
+        })
       }, HIGHLIGHT_DURATION_MS)
 
       const changedFieldsMessage =
@@ -187,37 +237,10 @@ function AddListingPage() {
 
       result.warnings.forEach((warning) => toast.warning(warning))
     },
-    [form, parsedCustomFields, driverVersionsQuery.data?.releases],
+    [form, parsedCustomFields, driverVersionsQuery.data?.releases, selectedEmulatorSlug],
   )
 
-  const performanceScalesQuery = api.listings.performanceScales.useQuery(
-    undefined,
-    LOOKUP_DATA_QUERY_OPTIONS,
-  )
-  const customFieldDefinitionsQuery = api.customFieldDefinitions.getByEmulator.useQuery(
-    { emulatorId: selectedEmulatorId },
-    {
-      enabled: !!selectedEmulatorId && selectedEmulatorId.trim() !== '',
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-    },
-  )
-
-  const normalizedEmulatorName = (
-    selectedEmulatorOption?.name ??
-    customFieldDefinitionsQuery.data?.[0]?.emulator?.name ??
-    ''
-  )
-    .trim()
-    .toLowerCase()
-
-  const importerSlugMap: Record<string, 'eden' | 'azahar' | 'gamenative'> = {
-    eden: 'eden',
-    azahar: 'azahar',
-    gamenative: 'gamenative',
-  }
-
-  const selectedEmulatorSlug = importerSlugMap[normalizedEmulatorName] ?? null
+  const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
   const {
     importFile: importEmulatorConfig,
@@ -275,7 +298,7 @@ function AddListingPage() {
       try {
         const result = await utils.devices.options.fetch({
           search: query,
-          limit: 50,
+          limit: LOOKUP_PAGINATION.AUTOCOMPLETE_LIMIT,
         })
         const devices = result.devices || []
         return devices
@@ -309,7 +332,7 @@ function AddListingPage() {
     }
   }, [])
 
-  const selectedGameId = form.watch('gameId')
+  const selectedGameId = useWatch({ control: form.control, name: 'gameId' })
   const { isInitialGameLoaded } = usePreSelectedGame({
     gameIdFromUrl,
     form,
@@ -326,11 +349,8 @@ function AddListingPage() {
         const game = games.find((g) => g.id === selectedGameId)
         if (game) setSelectedGame(game)
       })
-    } else if (isInitialGameLoaded && !selectedGameId) {
-      setSelectedGame(null)
-      form.setValue('emulatorId', '')
     }
-  }, [selectedGameId, selectedGame, gameSearchTerm, loadGameItems, form, isInitialGameLoaded])
+  }, [selectedGameId, selectedGame, gameSearchTerm, loadGameItems, isInitialGameLoaded])
 
   // Clear emulator when game changes and load initial emulators
   useEffect(() => {
@@ -342,37 +362,17 @@ function AddListingPage() {
     }
   }, [selectedGame, form, loadEmulatorItems, setAvailableEmulators])
 
-  // Update custom field definitions when emulator changes
+  // Sync custom field defaults when emulator-specific definitions change.
   useEffect(() => {
-    if (!customFieldDefinitionsQuery.data) return
-
-    const parsed = customFieldDefinitionsQuery.data.map(
-      (field): CustomFieldDefinitionWithOptions => {
-        const parsedOptions = parseCustomFieldOptions(field)
-        return {
-          ...field,
-          parsedOptions,
-          defaultValue: field.defaultValue as string | number | boolean | null | undefined,
-        }
-      },
-    )
-
-    const isSameAsCurrent =
-      parsedCustomFields.length === parsed.length &&
-      parsedCustomFields.every((f, i) => f.id === parsed[i]?.id)
-    if (isSameAsCurrent) return
-
-    setParsedCustomFields(parsed)
-
-    const dynamicSchema = createDynamicListingSchema(parsed)
-    setSchemaState(dynamicSchema)
+    schemaRef.current = createDynamicListingSchema(parsedCustomFields)
+    if (previousCustomFieldIdsKeyRef.current === customFieldIdsKey) return
+    previousCustomFieldIdsKeyRef.current = customFieldIdsKey
 
     const currentValues = form.getValues()
-    form.reset()
     form.reset(currentValues)
 
-    const currentCustomValues = form.watch('customFieldValues') ?? []
-    const newCustomValues = parsed.map((field) => {
+    const currentCustomValues = form.getValues('customFieldValues') ?? []
+    const newCustomValues = parsedCustomFields.map((field) => {
       const existingValueObj = currentCustomValues.find(
         (cv) => cv.customFieldDefinitionId === field.id,
       )
@@ -386,7 +386,7 @@ function AddListingPage() {
       }
     })
     form.setValue('customFieldValues', newCustomValues)
-  }, [customFieldDefinitionsQuery.data, form, parsedCustomFields])
+  }, [customFieldIdsKey, form, parsedCustomFields])
 
   const createListingMutation = api.listings.create.useMutation({
     onSuccess: async (data) => {
@@ -417,11 +417,6 @@ function AddListingPage() {
       router.push('/listings')
     },
   })
-
-  useEffect(() => {
-    setImportSummary(null)
-    setHighlightedFieldIds([])
-  }, [selectedEmulatorSlug])
 
   const onSubmit = async (data: ListingFormValues) => {
     if (!currentUserQuery.data?.id) {
@@ -467,6 +462,7 @@ function AddListingPage() {
                 onGameSelect={(game: GameOption | null) => {
                   setSelectedGame(game)
                   if (game) return
+                  form.setValue('gameId', '')
                   form.setValue('emulatorId', '')
                   form.setValue('customFieldValues', [])
                 }}

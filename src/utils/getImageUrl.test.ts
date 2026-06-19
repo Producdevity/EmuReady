@@ -34,18 +34,32 @@ describe('getImageUrl', () => {
     expect(result).toBe(localPath)
   })
 
-  it('returns a proxied url when the url starts with http', () => {
+  it('returns a placeholder when an http url cannot be rendered safely', () => {
     const httpUrl = 'http://example.com/image.jpg'
-    const result = getImageUrl(httpUrl)
+    const result = getImageUrl(httpUrl, 'HTTP Game')
 
-    expect(result).toBe(`/api/proxy-image?url=${encodeURIComponent(httpUrl)}`)
+    expect(result).toBe('/placeholder-image-for-HTTP Game')
   })
 
-  it('returns a proxied url when the url starts with https', () => {
+  it('returns an unknown https remote url directly for native browser rendering', () => {
     const httpsUrl = 'https://example.com/image.jpg'
     const result = getImageUrl(httpsUrl)
 
-    expect(result).toBe(`/api/proxy-image?url=${encodeURIComponent(httpsUrl)}`)
+    expect(result).toBe(httpsUrl)
+  })
+
+  it('returns a configured next/image remote url directly', () => {
+    const imageUrl = 'https://images.igdb.com/igdb/image/upload/t_cover_big/game.jpg'
+    const result = getImageUrl(imageUrl)
+
+    expect(result).toBe(imageUrl)
+  })
+
+  it('supports wildcard configured next/image remote hosts', () => {
+    const imageUrl = 'https://img.clerk.com/avatar.png'
+    const result = getImageUrl(imageUrl)
+
+    expect(result).toBe(imageUrl)
   })
 
   it('returns a placeholder image when the url format is invalid', () => {
@@ -58,7 +72,7 @@ describe('getImageUrl', () => {
 
   it('handles protocol-relative URLs correctly', () => {
     const protocolRelativeUrl = '//example.com/image.jpg'
-    const result = getImageUrl(protocolRelativeUrl, null, { useProxy: true })
+    const result = getImageUrl(protocolRelativeUrl)
 
     expect(getSafePlaceholderImageUrl).toHaveBeenCalled()
     expect(result).toBe('/placeholder-image-for-unknown')

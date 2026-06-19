@@ -1,12 +1,16 @@
+import { createCpuService } from '@/features/hardware/cpu/server/cpu.service'
+import {
+  MobilePcListingCpuResponseSchema,
+  MobilePcListingCpusSchema,
+} from '@/features/hardware/cpu/shared/cpu.schemas'
+import { createGpuService } from '@/features/hardware/gpu/server/gpu.service'
+import {
+  MobilePcListingGpuResponseSchema,
+  MobilePcListingGpusSchema,
+} from '@/features/hardware/gpu/shared/gpu.schemas'
 import { ResourceError } from '@/lib/errors'
 import { applyTrustAction } from '@/lib/trust/service'
-import {
-  CreatePcListingSchema,
-  GetCpusSchema,
-  GetGpusSchema,
-  GetPcListingsSchema,
-  UpdatePcListingSchema,
-} from '@/schemas/mobile'
+import { CreatePcListingSchema, GetPcListingsSchema, UpdatePcListingSchema } from '@/schemas/mobile'
 import { GetPcListingByIdSchema } from '@/schemas/pcListing'
 import {
   createMobileTRPCRouter,
@@ -264,55 +268,22 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
   }),
 
   /**
-   * Get CPUs for mobile
+   * Get CPUs for PC compatibility report filters.
    */
-  cpus: mobilePublicProcedure.input(GetCpusSchema).query(async ({ ctx, input }) => {
-    const mode = Prisma.QueryMode.insensitive
-
-    const where = {
-      ...(input.search && {
-        OR: [
-          { modelName: { contains: input.search, mode } },
-          { brand: { name: { contains: input.search, mode } } },
-        ],
-      }),
-      ...(input.brandId && { brandId: input.brandId }),
-    }
-
-    const cpus = await ctx.prisma.cpu.findMany({
-      where,
-      take: input.limit,
-      orderBy: { modelName: 'asc' },
-      include: { brand: { select: { id: true, name: true } } },
-    })
-
-    return { cpus }
-  }),
+  cpus: mobilePublicProcedure
+    .input(MobilePcListingCpusSchema)
+    .output(MobilePcListingCpuResponseSchema)
+    .query(async ({ ctx, input }) =>
+      createCpuService(ctx.prisma).pcListingMobileCpuCompatibility(input),
+    ),
 
   /**
-   * Get GPUs for mobile
+   * Get GPUs for PC compatibility report filters.
    */
-  gpus: mobilePublicProcedure.input(GetGpusSchema).query(async ({ ctx, input }) => {
-    const mode = Prisma.QueryMode.insensitive
-    const { search, brandId, limit } = input
-
-    const where = {
-      ...(search && {
-        OR: [
-          { modelName: { contains: search, mode } },
-          { brand: { name: { contains: search, mode } } },
-        ],
-      }),
-      ...(brandId && { brandId }),
-    }
-
-    const gpus = await ctx.prisma.gpu.findMany({
-      where,
-      take: limit,
-      orderBy: { modelName: 'asc' },
-      include: { brand: { select: { id: true, name: true } } },
-    })
-
-    return { gpus }
-  }),
+  gpus: mobilePublicProcedure
+    .input(MobilePcListingGpusSchema)
+    .output(MobilePcListingGpuResponseSchema)
+    .query(async ({ ctx, input }) =>
+      createGpuService(ctx.prisma).pcListingMobileGpuCompatibility(input),
+    ),
 })

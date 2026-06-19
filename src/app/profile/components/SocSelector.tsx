@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Check, Cpu, ChevronDown } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { Input } from '@/components/ui'
-import { CACHE_DURATIONS } from '@/data/constants'
+import { LOOKUP_PAGINATION } from '@/data/constants'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -20,16 +20,11 @@ interface Props {
   onSocsChange: (socs: Soc[]) => void
 }
 
-const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: CACHE_DURATIONS.LOOKUP,
-  gcTime: CACHE_DURATIONS.LOOKUP_GC,
-}
-
 function SocSelector(props: Props) {
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedManufacturers, setExpandedManufacturers] = useState<Set<string>>(new Set())
   // TODO: Make this selector async instead of preloading 1000 options.
-  const socsQuery = api.socs.options.useQuery({ limit: 1000 }, LOOKUP_DATA_QUERY_OPTIONS)
+  const socsQuery = api.socs.options.useQuery({ limit: LOOKUP_PAGINATION.MAX_LIMIT })
 
   const filteredSocs = useMemo(() => {
     const allSocs: Soc[] =

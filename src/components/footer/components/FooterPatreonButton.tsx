@@ -54,10 +54,8 @@ export function FooterPatreonButton() {
                   isHovered ? 'scale-110 brightness-110' : '',
                 )}
                 unoptimized
-                priority={false}
               />
             )}
-            {/* Avoid hydration mismatch; render nothing until mounted */}
           </div>
 
           {/* Accent pulse */}

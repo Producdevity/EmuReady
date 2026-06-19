@@ -12,12 +12,91 @@ const featureNames = existsSync('./src/features')
       .map((entry) => entry.name)
   : []
 
-const featureBoundaryZones = featureNames.map((featureName) => ({
+const featureScopeNames = new Set(['client', 'components', 'hooks', 'server', 'shared', 'utils'])
+
+function hasFeatureScopeDirectory(featurePath) {
+  if (!existsSync(featurePath)) return false
+
+  return readdirSync(featurePath, { withFileTypes: true }).some(
+    (entry) => entry.isDirectory() && featureScopeNames.has(entry.name),
+  )
+}
+
+const featureModuleNames = featureNames.flatMap((featureName) => {
+  const featurePath = `./src/features/${featureName}`
+  if (!existsSync(featurePath)) return []
+
+  return readdirSync(featurePath, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !featureScopeNames.has(entry.name))
+    .map((entry) => `${featureName}/${entry.name}`)
+})
+
+const topLevelFeatureLayerRootNames = featureNames.filter((featureName) =>
+  hasFeatureScopeDirectory(`./src/features/${featureName}`),
+)
+
+const featureLayerRootNames = [...topLevelFeatureLayerRootNames, ...featureModuleNames]
+
+const topLevelFeatureBoundaryZones = featureNames.map((featureName) => ({
   target: `./src/features/${featureName}`,
   from: './src/features',
   except: [`./${featureName}`],
   message: 'Features must not import from other features. Compose features at the route layer.',
 }))
+
+const nestedFeatureBoundaryZones = featureModuleNames.map((featureModuleName) => {
+  const [domainName, moduleName] = featureModuleName.split('/')
+
+  return {
+    target: `./src/features/${featureModuleName}`,
+    from: `./src/features/${domainName}`,
+    except: [`./${moduleName}`, './shared'],
+    message:
+      'Feature modules must not import from sibling modules. Extract shared domain code or compose modules at the route layer.',
+  }
+})
+
+const featureLayerBoundaryZones = featureLayerRootNames.flatMap((featureRootName) => [
+  {
+    target: `./src/features/${featureRootName}/shared`,
+    from: `./src/features/${featureRootName}`,
+    except: ['./shared'],
+    message: 'Feature shared code must not import from client, server, or workflow layers.',
+  },
+  {
+    target: `./src/features/${featureRootName}/client`,
+    from: `./src/features/${featureRootName}/server`,
+    message: 'Feature client code must not import server code.',
+  },
+  {
+    target: `./src/features/${featureRootName}/client`,
+    from: './src/server',
+    message: 'Feature client code must not import app-wide server code.',
+  },
+  {
+    target: `./src/features/${featureRootName}/server`,
+    from: `./src/features/${featureRootName}/client`,
+    message: 'Feature server code must not import client code.',
+  },
+  {
+    target: `./src/features/${featureRootName}/shared`,
+    from: './src/server',
+    message: 'Feature shared code must stay client-safe and must not import server utilities.',
+  },
+])
+
+const featureToAppRouteBoundaryZone = {
+  target: './src/features',
+  from: './src/app',
+  message: 'Feature modules must not import from Next.js app routes. Compose features in app routes.',
+}
+
+const featureBoundaryZones = [
+  ...topLevelFeatureBoundaryZones,
+  ...nestedFeatureBoundaryZones,
+  ...featureLayerBoundaryZones,
+  featureToAppRouteBoundaryZone,
+]
 
 const eslintConfig = [
   {
@@ -32,7 +111,6 @@ const eslintConfig = [
       'build/**',
       'coverage/**',
       'dist/**',
-      'next-env.d.ts',
       'next-env.d.ts',
       'node_modules/**',
       'notes/**',

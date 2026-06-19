@@ -1,12 +1,13 @@
 import { z } from 'zod'
+import { getGameImageUrlValidationError } from '@/utils/imageUrls'
 
 const imageUrlSchema = z
   .string()
-  .transform((val) => val.trim()) // Trim whitespace
-  .refine((val) => val === '' || val.startsWith('http://') || val.startsWith('https://'), {
-    message: 'Must be a valid URL starting with http:// or https://',
+  .transform((val) => val.trim())
+  .refine((val) => !getGameImageUrlValidationError(val), {
+    message: 'Must be a valid HTTPS image URL',
   })
-  .transform((val) => val || undefined) // Convert empty string to undefined
+  .transform((val) => val || null)
   .optional()
 
 const updateGameSchema = z.object({

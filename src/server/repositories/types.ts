@@ -1,4 +1,4 @@
-import type { PaginationResult } from '@/server/utils/pagination'
+import type { PaginationResult } from '@/schemas/pagination'
 import type { Role } from '@orm/client'
 
 export interface VisibilityContext {
