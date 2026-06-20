@@ -4,7 +4,6 @@ import { useUser } from '@clerk/nextjs'
 import { Edit3, Clock } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui'
-import { POLLING_INTERVALS } from '@/data/constants'
 import { api } from '@/lib/api'
 import EditPcListingModal from './EditPcListingModal'
 
@@ -21,7 +20,7 @@ function EditPcListingButton(props: Props) {
     { id: props.pcListingId },
     {
       enabled: !!user?.id,
-      refetchInterval: POLLING_INTERVALS.SHORT,
+      refetchOnWindowFocus: true,
     },
   )
 
