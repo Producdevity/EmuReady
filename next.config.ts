@@ -281,24 +281,6 @@ const nextConfig: NextConfig = {
         headers: [{ key: 'Cache-Control', value: 'public, max-age=86400, must-revalidate' }],
       },
       {
-        source: '/api/mobile/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
-          { key: 'Access-Control-Allow-Origin', value: '*' },
-          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
-          {
-            key: 'Access-Control-Allow-Headers',
-            value: 'Content-Type, Authorization, x-trpc-source',
-          },
-          { key: 'Access-Control-Expose-Headers', value: 'x-trpc-source' },
-        ],
-      },
-      // tRPC endpoints are dynamic; prevent intermediary/proxy caching
-      {
-        source: '/api/trpc/:path*',
-        headers: [{ key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' }],
-      },
-      {
         source: '/(.*)',
         headers: [
           {

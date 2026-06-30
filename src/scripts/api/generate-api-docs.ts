@@ -37,6 +37,48 @@ function createGenericResponse(routerName: string, procedureName: string): unkno
   }
 }
 
+function getResponseExampleOverride(outputSchemaName: string | undefined): unknown | null {
+  if (outputSchemaName !== 'BatchBySteamAppIdsResponseSchema') return null
+
+  return {
+    success: true,
+    results: [
+      {
+        game_id: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        steam_app_id: '220',
+        title: 'Half-Life 2',
+        performance: {
+          id: 1,
+          label: 'Perfect',
+          rank: 1,
+          description: null,
+        },
+        emulator: {
+          id: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+          name: 'GameHub',
+          logo: null,
+        },
+        device: {
+          id: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+          modelName: 'Steam Deck',
+          soc: null,
+        },
+        listing: {
+          id: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+          notes: 'Runs well',
+          upvoteCount: 4,
+          downvoteCount: 1,
+          voteCount: 5,
+          successRate: 0.8,
+        },
+      },
+    ],
+    totalRequested: 1,
+    totalFound: 1,
+    totalNotFound: 0,
+  }
+}
+
 function getBaseItemStructure(routerName: string): Record<string, unknown> {
   const structures: Record<string, Record<string, unknown>> = {
     games: {
@@ -185,6 +227,8 @@ function resolveReferencedSchema(jsonSchema: Record<string, unknown>): Record<st
 }
 
 function generateScalarExample(propName: string, schema: Record<string, unknown>): unknown {
+  if (schema.const !== undefined) return schema.const
+
   const propType = schema.type as string | undefined
   const format = schema.format as string | undefined
 
@@ -571,9 +615,11 @@ function generateSwaggerEndpoints(routerInfos: RouterInfo[]): {
               type: 'object',
               description: `Response data from ${routerInfo.router}.${procedure.name}`,
             }
-      const responseExample = outputJsonSchema
-        ? generateExampleFromSchema(outputJsonSchema)
-        : createGenericResponse(routerInfo.router, procedure.name)
+      const responseExample =
+        getResponseExampleOverride(outputSchemaName) ??
+        (outputJsonSchema
+          ? generateExampleFromSchema(outputJsonSchema)
+          : createGenericResponse(routerInfo.router, procedure.name))
 
       // Build security requirement
       const security = procedure.auth === 'protected' ? [{ ClerkAuth: [] }] : []
@@ -727,7 +773,7 @@ API documentation for the mobile-compatible public integration surface built wit
 
 ## tRPC HTTP Method Conventions
 
-NOTE: the protected routes require authentication via Clerk JWT token in the Authorization header. This isn't implemented yet.
+Protected routes require authentication via Clerk JWT token in the Authorization header. Public integration requests can also include an issued API key in \`x-api-key\`; invalid explicit API keys are rejected.
 
 tRPC uses HTTP method semantics with fetchRequestHandler:
 - **Queries** use **GET** requests with input as query parameter
@@ -742,7 +788,7 @@ All input schemas are defined in the **components/schemas** section. When you se
 \`\`\`bash
 # Query: Get games with search and limit (GET with SuperJSON wrapped input)
 # Schema: See components/schemas/GetGamesSchema
-curl -X GET "https://www.emuready.com/api/mobile/trpc/games.getGames?input=%7B%22json%22%3A%7B%22search%22%3A%22mario%22%2C%22limit%22%3A5%7D%7D" \\
+curl -X GET "https://www.emuready.com/api/mobile/trpc/games.get?input=%7B%22json%22%3A%7B%22search%22%3A%22mario%22%2C%22limit%22%3A5%7D%7D" \\
   -H "Content-Type: application/json"
 
 # Query: Get popular games (GET, no input required)
@@ -750,7 +796,7 @@ curl -X GET "https://www.emuready.com/api/mobile/trpc/games.getPopularGames" \\
   -H "Content-Type: application/json"
 
 # Query: Get listings with filters (GET with SuperJSON wrapped input)
-curl -X GET "https://www.emuready.com/api/mobile/trpc/listings.getListings?input=%7B%22json%22%3A%7B%22page%22%3A1%2C%22limit%22%3A10%2C%22search%22%3A%22zelda%22%7D%7D" \\
+curl -X GET "https://www.emuready.com/api/mobile/trpc/listings.get?input=%7B%22json%22%3A%7B%22page%22%3A1%2C%22limit%22%3A10%2C%22search%22%3A%22zelda%22%7D%7D" \\
   -H "Content-Type: application/json"
 
 # Mutation: Create listing (POST with request body)
@@ -799,7 +845,7 @@ All responses are wrapped in a tRPC result object:
       "data": {
         "code": "BAD_REQUEST",
         "httpStatus": 400,
-        "path": "games.getGames"
+        "path": "games.get"
       }
     }
   }
@@ -876,7 +922,7 @@ This API provides endpoints for:
                         },
                         path: {
                           type: 'string',
-                          description: 'tRPC procedure path (e.g., "games.getGames")',
+                          description: 'tRPC procedure path (e.g., "games.get")',
                         },
                         zodError: {
                           type: 'object',
@@ -961,7 +1007,7 @@ function generateMarkdownDocs(openApiSpec: ReturnType<typeof generateOpenAPISpec
 \`${openApiSpec.servers[0].url}\`
 
 ## Authentication
-Protected endpoints require Bearer token authentication using Clerk JWT.
+Protected endpoints require Bearer token authentication using Clerk JWT. Public integration requests can also include an issued API key in \`x-api-key\`.
 
 ## Interactive Documentation
 - **Swagger UI**: [/docs/api/swagger](https://emuready.com/docs/api/swagger)

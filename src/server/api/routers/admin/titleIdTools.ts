@@ -1,5 +1,6 @@
 import { AppError } from '@/lib/errors'
 import { logger } from '@/lib/logger'
+import { BatchBySteamAppIdsResponseSchema, BatchBySteamAppIdsSchema } from '@/schemas/mobile'
 import {
   TitleIdSearchInputSchema,
   TitleIdStatsInputSchema,
@@ -7,6 +8,7 @@ import {
   TitleIdStatsSchema,
 } from '@/schemas/titleId'
 import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
+import { lookupGamesBySteamAppIds } from '@/server/services/steam-batch-lookup.service'
 import {
   getBestTitleIdResult,
   getTitleIdProvider,
@@ -66,5 +68,15 @@ export const titleIdToolsRouter = createTRPCRouter({
         console.error('Title ID stats fetch failed', error)
         return AppError.internalError('Failed to fetch title ID statistics')
       }
+    }),
+
+  batchSteamAppIds: titleIdAccessProcedure
+    .input(BatchBySteamAppIdsSchema)
+    .output(BatchBySteamAppIdsResponseSchema)
+    .query(async ({ ctx, input }) => {
+      return lookupGamesBySteamAppIds(input, {
+        prisma: ctx.prisma,
+        showNsfw: ctx.session.user.showNsfw,
+      })
     }),
 })

@@ -14,6 +14,11 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
+import type {
+  BatchBySteamAppIdsResponse,
+  BatchGameResult,
+  MinimalGameResult,
+} from '@/schemas/mobile'
 
 SyntaxHighlighter.registerLanguage('json', json)
 
@@ -28,14 +33,52 @@ const SAMPLE_STEAM_APP_IDS = `220
 80
 240`
 
-interface BatchResult {
+type BatchResult = BatchBySteamAppIdsResponse['results'][number]
+
+interface BatchResultDisplay {
   steamAppId: string
-  game: {
-    id: string
-    title: string
-    _count: { listings: number }
-  } | null
-  matchStrategy: 'metadata' | 'exact' | 'normalized' | 'not_found'
+  title: string | null
+  found: boolean
+  matchStrategy: 'metadata' | 'exact' | 'normalized' | 'not_found' | 'minimal'
+  listingCount: number | null
+}
+
+function isBatchGameResult(result: BatchResult): result is BatchGameResult {
+  return 'steamAppId' in result && typeof result.steamAppId === 'string'
+}
+
+function isMinimalGameResult(result: BatchResult): result is MinimalGameResult {
+  return 'steam_app_id' in result && typeof result.steam_app_id === 'string'
+}
+
+function toBatchResultDisplay(result: BatchResult): BatchResultDisplay {
+  if (isBatchGameResult(result)) {
+    return {
+      steamAppId: result.steamAppId,
+      title: result.game?.title ?? null,
+      found: result.game !== null,
+      matchStrategy: result.matchStrategy,
+      listingCount: result.game?._count.listings ?? null,
+    }
+  }
+
+  if (!isMinimalGameResult(result)) {
+    return {
+      steamAppId: 'unknown',
+      title: null,
+      found: false,
+      matchStrategy: 'not_found',
+      listingCount: null,
+    }
+  }
+
+  return {
+    steamAppId: result.steam_app_id,
+    title: result.title,
+    found: result.game_id !== null,
+    matchStrategy: 'minimal',
+    listingCount: result.listing ? 1 : null,
+  }
 }
 
 export function BatchSteamLookup() {
@@ -54,7 +97,7 @@ export function BatchSteamLookup() {
     minimal?: boolean
   } | null>(null)
 
-  const batchLookupQuery = api.mobile.games.batchBySteamAppIds.useQuery(
+  const batchLookupQuery = api.titleIdTools.batchSteamAppIds.useQuery(
     queryInput ?? { steamAppIds: [] },
     { enabled: queryInput !== null },
   )
@@ -62,28 +105,7 @@ export function BatchSteamLookup() {
   const isLoading = batchLookupQuery.isFetching
   const responseData = batchLookupQuery.data
 
-  // Type guard for successful response
-  const isSuccessResponse = (
-    data: unknown,
-  ): data is {
-    success: true
-    results: BatchResult[]
-    totalRequested: number
-    totalFound: number
-    totalNotFound: number
-  } => {
-    return (
-      typeof data === 'object' &&
-      data !== null &&
-      'success' in data &&
-      data.success === true &&
-      'results' in data &&
-      Array.isArray(data.results)
-    )
-  }
-
-  const isSuccess = isSuccessResponse(responseData)
-  const results = isSuccess ? responseData.results : []
+  const results = responseData?.results ?? []
 
   const parsedIds = useMemo(() => {
     return steamAppIds
@@ -126,10 +148,14 @@ export function BatchSteamLookup() {
 
     const textResults = results
       .map((result) => {
-        if (!result.game) {
-          return `${result.steamAppId}: NOT FOUND`
-        }
-        return `${result.steamAppId}: ${result.game.title} (${result.matchStrategy}, ${result.game._count.listings} listings)`
+        const displayResult = toBatchResultDisplay(result)
+        if (!displayResult.found) return `${displayResult.steamAppId}: NOT FOUND`
+
+        const listingSummary =
+          displayResult.listingCount === null
+            ? 'listings unavailable'
+            : `${displayResult.listingCount} listings`
+        return `${displayResult.steamAppId}: ${displayResult.title} (${displayResult.matchStrategy}, ${listingSummary})`
       })
       .join('\n')
 
@@ -253,7 +279,7 @@ export function BatchSteamLookup() {
         </div>
       </Card>
 
-      {isSuccess && responseData && (
+      {responseData && (
         <Card>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -330,10 +356,10 @@ export function BatchSteamLookup() {
                     </thead>
                     <tbody>
                       {results.map((result, index) => {
-                        const isFound = result.game !== null
+                        const displayResult = toBatchResultDisplay(result)
                         return (
                           <tr
-                            key={`${result.steamAppId}-${index}`}
+                            key={`${displayResult.steamAppId}-${index}`}
                             className={cn(
                               index % 2 === 0
                                 ? 'bg-white dark:bg-gray-900'
@@ -341,10 +367,12 @@ export function BatchSteamLookup() {
                               'text-gray-900 dark:text-gray-100',
                             )}
                           >
-                            <td className="px-4 py-3 font-mono text-xs">{result.steamAppId}</td>
+                            <td className="px-4 py-3 font-mono text-xs">
+                              {displayResult.steamAppId}
+                            </td>
                             <td className="px-4 py-3">
-                              {isFound && result.game ? (
-                                <span>{result.game.title}</span>
+                              {displayResult.found && displayResult.title ? (
+                                <span>{displayResult.title}</span>
                               ) : (
                                 <span className="text-gray-500 dark:text-gray-400 italic">
                                   Not found
@@ -355,26 +383,28 @@ export function BatchSteamLookup() {
                               <span
                                 className={cn(
                                   'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium',
-                                  result.matchStrategy === 'metadata' &&
+                                  displayResult.matchStrategy === 'metadata' &&
                                     'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-                                  result.matchStrategy === 'exact' &&
+                                  displayResult.matchStrategy === 'exact' &&
                                     'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-                                  result.matchStrategy === 'normalized' &&
+                                  displayResult.matchStrategy === 'normalized' &&
                                     'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-                                  result.matchStrategy === 'not_found' &&
+                                  displayResult.matchStrategy === 'not_found' &&
                                     'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+                                  displayResult.matchStrategy === 'minimal' &&
+                                    'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
                                 )}
                               >
-                                {result.matchStrategy}
+                                {displayResult.matchStrategy}
                               </span>
                             </td>
                             <td className="px-4 py-3">
-                              {isFound && result.game ? (
+                              {displayResult.found && displayResult.listingCount !== null ? (
                                 <span className="text-gray-900 dark:text-gray-100">
-                                  {result.game._count.listings}
+                                  {displayResult.listingCount}
                                 </span>
                               ) : (
-                                <span className="text-gray-500 dark:text-gray-400">—</span>
+                                <span className="text-gray-500 dark:text-gray-400">-</span>
                               )}
                             </td>
                           </tr>

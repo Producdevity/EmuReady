@@ -120,7 +120,10 @@ async function resolveApiKey(headers: Headers): Promise<ApiKeyWithUser | null> {
   if (!rawKey) return null
 
   const apiAccessService = new ApiAccessService(prisma)
-  return apiAccessService.authorize(rawKey)
+  const apiKey = await apiAccessService.authorize(rawKey)
+  if (!apiKey) AppError.unauthorized('Invalid API key')
+
+  return apiKey
 }
 
 async function resolveClerkSessionFromHeaders(headers: Headers): Promise<string | null> {

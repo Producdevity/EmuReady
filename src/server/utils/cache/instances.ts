@@ -1,7 +1,6 @@
 import { LRUCache } from 'lru-cache'
 import { CACHE_DURATIONS } from '@/data/constants'
-import type { DeviceCompatibilityResponse } from '@/schemas/mobile'
-import type { BatchBySteamAppIdsResponse } from '@/server/api/routers/mobile/games'
+import type { BatchBySteamAppIdsResponse, DeviceCompatibilityResponse } from '@/schemas/mobile'
 import type {
   NotificationMetrics,
   ChannelMetrics,

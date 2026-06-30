@@ -28,6 +28,16 @@ const LOCAL_TEST_ORIGINS = [
   'http://127.0.0.1:3000',
 ]
 
+const CORS_ALLOWED_METHODS = 'GET, POST, PUT, DELETE, OPTIONS'
+const CORS_ALLOWED_HEADERS = [
+  'Content-Type',
+  'Authorization',
+  'x-api-key',
+  'x-auth-token',
+  'x-trpc-source',
+].join(', ')
+const CORS_EXPOSED_HEADERS = ['Content-Type', 'x-trpc-source'].join(', ')
+
 function addMissingOrigins(origins: string[], additionalOrigins: string[]) {
   for (const origin of additionalOrigins) {
     if (!origins.includes(origin)) origins.push(origin)
@@ -116,9 +126,11 @@ export function getCORSHeaders(request?: NextRequest): Record<string, string> {
     console.error('CORS Error: No allowed origins configured in production')
     return {
       'Access-Control-Allow-Origin': 'null',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Methods': CORS_ALLOWED_METHODS,
+      'Access-Control-Allow-Headers': CORS_ALLOWED_HEADERS,
+      'Access-Control-Expose-Headers': CORS_EXPOSED_HEADERS,
       'Access-Control-Allow-Credentials': 'true',
+      Vary: 'Origin',
     }
   }
 
@@ -132,8 +144,10 @@ export function getCORSHeaders(request?: NextRequest): Record<string, string> {
 
   return {
     'Access-Control-Allow-Origin': allowOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': CORS_ALLOWED_METHODS,
+    'Access-Control-Allow-Headers': CORS_ALLOWED_HEADERS,
+    'Access-Control-Expose-Headers': CORS_EXPOSED_HEADERS,
     'Access-Control-Allow-Credentials': 'true',
+    Vary: 'Origin',
   }
 }

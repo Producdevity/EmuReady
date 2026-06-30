@@ -1,7 +1,7 @@
 'use client'
 
 import { Badge } from '@/components/ui'
-import { CACHE_DURATIONS, POLLING_INTERVALS } from '@/data/constants'
+import { CACHE_DURATIONS } from '@/data/constants'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
@@ -30,26 +30,23 @@ export default function ApprovalCountBadge(props: Props) {
 
   const gameStatsQuery = api.games.stats.useQuery(undefined, {
     enabled: canViewStats && props.href === '/admin/games/approvals',
-    refetchInterval: POLLING_INTERVALS.SHORT,
-    staleTime: CACHE_DURATIONS.VERY_SHORT,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    staleTime: CACHE_DURATIONS.SHORT,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   })
 
   const listingStatsQuery = api.listings.stats.useQuery(undefined, {
     enabled: canViewStats && props.href === '/admin/approvals',
-    refetchInterval: POLLING_INTERVALS.SHORT,
-    staleTime: CACHE_DURATIONS.VERY_SHORT,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    staleTime: CACHE_DURATIONS.SHORT,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   })
 
   const pcListingStatsQuery = api.pcListings.stats.useQuery(undefined, {
     enabled: canViewStats && props.href === '/admin/pc-listing-approvals',
-    refetchInterval: POLLING_INTERVALS.SHORT,
-    staleTime: CACHE_DURATIONS.VERY_SHORT,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    staleTime: CACHE_DURATIONS.SHORT,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   })
 
   const statsMap = {

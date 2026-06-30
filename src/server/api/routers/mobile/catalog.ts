@@ -18,7 +18,7 @@ export const mobileCatalogRouter = createMobileTRPCRouter({
    * - Community votes (Wilson score)
    * - Developer verifications
    *
-   * Results are cached for 10 minutes to reduce server load.
+   * Results are cached for 15 minutes to reduce server load.
    */
   getDeviceCompatibility: mobilePublicProcedure
     .input(GetDeviceCompatibilitySchema)

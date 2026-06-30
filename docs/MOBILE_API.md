@@ -1,6 +1,6 @@
 # EmuReady Public Integration API (mobile-compatible tRPC)
 
-*Auto-generated on: 2026-06-15T12:16:27.168Z*
+*Auto-generated on: 2026-06-21T17:28:57.453Z*
 
 ## Summary
 - **Total Endpoints**: 113
@@ -12,7 +12,7 @@
 `/api/mobile/trpc`
 
 ## Authentication
-Protected endpoints require Bearer token authentication using Clerk JWT.
+Protected endpoints require Bearer token authentication using Clerk JWT. Public integration requests can also include an issued API key in `x-api-key`.
 
 ## Interactive Documentation
 - **Swagger UI**: [/docs/api/swagger](https://emuready.com/docs/api/swagger)
@@ -33,7 +33,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 #### 2. **getDeviceCompatibility**
 - **Method**: GET
 - **Path**: `/catalog.getDeviceCompatibility`
-- **Description**: Get device compatibility scores by system Returns aggregated compatibility scores (0-100) for each system tested on a device. Scores are calculated from: - Performance ratings from authors - Community votes (Wilson score) - Developer verifications Results are cached for 10 minutes to reduce server load.
+- **Description**: Get device compatibility scores by system Returns aggregated compatibility scores (0-100) for each system tested on a device. Scores are calculated from: - Performance ratings from authors - Community votes (Wilson score) - Developer verifications Results are cached for 15 minutes to reduce server load.
 - **Tags**: catalog
 
 
@@ -208,7 +208,7 @@ Protected endpoints require Bearer token authentication using Clerk JWT.
 #### 27. **batchBySteamAppIds**
 - **Method**: GET
 - **Path**: `/games.batchBySteamAppIds`
-- **Description**: Batch lookup games by Steam App IDs Optimized for large batches (up to 1000 Steam App IDs) Returns games with their listings filtered by emulator if specified Results cached for 5 minutes to optimize repeated queries
+- **Description**: Batch lookup games by Steam App IDs Optimized for large batches (up to 1000 Steam App IDs) Returns games with their listings filtered by emulator if specified Results cached for 15 minutes to optimize repeated queries
 - **Tags**: games
 
 

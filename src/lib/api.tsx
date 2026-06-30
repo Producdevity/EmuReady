@@ -52,6 +52,7 @@ function createQueryClient() {
 }
 
 const MAX_URL_LENGTH = 2000
+const MAX_TRPC_BATCH_ITEMS = 20
 
 export function TRPCProvider(props: PropsWithChildren) {
   const [queryClient] = useState(createQueryClient)
@@ -64,6 +65,7 @@ export function TRPCProvider(props: PropsWithChildren) {
           transformer: superjson,
           headers: () => ({}),
           maxURLLength: MAX_URL_LENGTH,
+          maxItems: MAX_TRPC_BATCH_ITEMS,
         }),
       ],
     }),

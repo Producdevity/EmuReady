@@ -4,6 +4,14 @@ import { CreateListingBaseSchema, CreatePcListingBaseSchema } from '@/schemas/li
 import { PaginationResultSchema } from '@/schemas/pagination'
 import { ReportReason, ReportStatus, PcOs, CustomFieldType, NotificationType } from '@orm'
 
+const MOBILE_SEARCH_QUERY_MAX_LENGTH = 100
+const MOBILE_GAME_NAME_MAX_LENGTH = 120
+const MOBILE_EMULATOR_NAME_MAX_LENGTH = 100
+const MOBILE_DEVICE_MODEL_MAX_LENGTH = 120
+const MOBILE_DEVICE_BRAND_MAX_LENGTH = 80
+const MOBILE_SYSTEM_FILTER_LIMIT = 100
+const CATALOG_MIN_LISTING_COUNT_MAX = 100
+
 // Type-safe custom field value schema using discriminated union
 const CustomFieldValueSchema = z.discriminatedUnion('type', [
   z.object({
@@ -70,38 +78,56 @@ export const GetListingsByGameSchema = z.object({
 })
 
 export const SearchGamesSchema = z.object({
-  query: z.string().min(1),
+  query: z.string().min(1).max(MOBILE_SEARCH_QUERY_MAX_LENGTH),
 })
 
 export const FindSwitchTitleIdMobileSchema = z.object({
-  gameName: z.string().min(2, 'Game name must be at least 2 characters'),
+  gameName: z
+    .string()
+    .min(2, 'Game name must be at least 2 characters')
+    .max(MOBILE_GAME_NAME_MAX_LENGTH),
   maxResults: z.number().min(1).max(20).default(5),
 })
 
 export const GetBestSwitchTitleIdMobileSchema = z.object({
-  gameName: z.string().min(2, 'Game name must be at least 2 characters'),
+  gameName: z
+    .string()
+    .min(2, 'Game name must be at least 2 characters')
+    .max(MOBILE_GAME_NAME_MAX_LENGTH),
 })
 
 export const GetSwitchGamesStatsMobileSchema = z.object({}).optional()
 
 export const FindThreeDsTitleIdMobileSchema = z.object({
-  gameName: z.string().min(2, 'Game name must be at least 2 characters'),
+  gameName: z
+    .string()
+    .min(2, 'Game name must be at least 2 characters')
+    .max(MOBILE_GAME_NAME_MAX_LENGTH),
   maxResults: z.number().min(1).max(20).default(5),
 })
 
 export const GetBestThreeDsTitleIdMobileSchema = z.object({
-  gameName: z.string().min(2, 'Game name must be at least 2 characters'),
+  gameName: z
+    .string()
+    .min(2, 'Game name must be at least 2 characters')
+    .max(MOBILE_GAME_NAME_MAX_LENGTH),
 })
 
 export const GetThreeDsGamesStatsMobileSchema = z.object({}).optional()
 
 export const FindSteamAppIdMobileSchema = z.object({
-  gameName: z.string().min(2, 'Game name must be at least 2 characters'),
+  gameName: z
+    .string()
+    .min(2, 'Game name must be at least 2 characters')
+    .max(MOBILE_GAME_NAME_MAX_LENGTH),
   maxResults: z.number().min(1).max(20).default(5),
 })
 
 export const GetBestSteamAppIdMobileSchema = z.object({
-  gameName: z.string().min(2, 'Game name must be at least 2 characters'),
+  gameName: z
+    .string()
+    .min(2, 'Game name must be at least 2 characters')
+    .max(MOBILE_GAME_NAME_MAX_LENGTH),
 })
 
 export const GetSteamGamesStatsMobileSchema = z.object({}).nullish()
@@ -112,7 +138,11 @@ export const BatchBySteamAppIdsSchema = z.object({
     .min(1, 'At least one Steam App ID is required')
     .max(1000, 'Maximum 1000 Steam App IDs per request')
     .describe('Steam App IDs to lookup (1-1000)'),
-  emulatorName: z.string().optional().describe('Filter listings by emulator name'),
+  emulatorName: z
+    .string()
+    .max(MOBILE_EMULATOR_NAME_MAX_LENGTH)
+    .optional()
+    .describe('Filter listings by emulator name'),
   maxListingsPerGame: z
     .number()
     .min(1)
@@ -125,6 +155,148 @@ export const BatchBySteamAppIdsSchema = z.object({
     .default(false)
     .describe('Return minimal response with only essential fields'),
 })
+
+const BatchSteamSocSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    manufacturer: z.string().nullable(),
+    architecture: z.string().nullable(),
+    processNode: z.string().nullable(),
+    cpuCores: z.number().nullable(),
+    gpuModel: z.string().nullable(),
+  })
+  .passthrough()
+
+const BatchSteamDeviceSchema = z
+  .object({
+    id: z.string(),
+    modelName: z.string(),
+    soc: BatchSteamSocSchema.nullable(),
+  })
+  .passthrough()
+
+const BatchSteamEmulatorSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    logo: z.string().nullable(),
+  })
+  .passthrough()
+
+const BatchSteamPerformanceSchema = z
+  .object({
+    id: z.number(),
+    label: z.string(),
+    rank: z.number(),
+    description: z.string().nullable(),
+  })
+  .passthrough()
+
+const BatchSteamListingSummarySchema = z
+  .object({
+    id: z.string().nullable(),
+    notes: z.string().nullable(),
+    upvoteCount: z.number(),
+    downvoteCount: z.number(),
+    voteCount: z.number(),
+    successRate: z.number().nullable(),
+  })
+  .passthrough()
+
+const BatchSteamListingSchema = BatchSteamListingSummarySchema.extend({
+  id: z.string(),
+  deviceId: z.string(),
+  gameId: z.string(),
+  emulatorId: z.string(),
+  performanceId: z.number(),
+  device: BatchSteamDeviceSchema,
+  emulator: BatchSteamEmulatorSchema,
+  performance: BatchSteamPerformanceSchema,
+  customFieldValues: z.array(
+    z
+      .object({
+        id: z.string(),
+        listingId: z.string(),
+        customFieldDefinitionId: z.string(),
+        value: JsonValueSchema,
+        customFieldDefinition: z
+          .object({
+            id: z.string(),
+            type: z.string(),
+            label: z.string(),
+            name: z.string(),
+          })
+          .passthrough(),
+      })
+      .passthrough(),
+  ),
+}).passthrough()
+
+const BatchSteamGameSchema = z
+  .object({
+    id: z.string(),
+    title: z.string(),
+    normalizedTitle: z.string().nullable().optional(),
+    systemId: z.string(),
+    imageUrl: z.string().nullable(),
+    boxartUrl: z.string().nullable(),
+    bannerUrl: z.string().nullable(),
+    tgdbGameId: z.number().nullable(),
+    metadata: z.unknown(),
+    isErotic: z.boolean(),
+    ageRating: z.string().nullable().optional(),
+    status: z.string(),
+    createdAt: z.date(),
+    system: z
+      .object({
+        id: z.string(),
+        name: z.string(),
+        key: z.string().nullable(),
+      })
+      .passthrough(),
+    _count: z
+      .object({
+        listings: z.number(),
+      })
+      .passthrough(),
+    listings: z.array(BatchSteamListingSchema),
+  })
+  .passthrough()
+
+export const BatchSteamFullResultSchema = z
+  .object({
+    steamAppId: z.string(),
+    game: BatchSteamGameSchema.nullable(),
+    matchStrategy: z.enum(['metadata', 'exact', 'normalized', 'not_found']),
+  })
+  .passthrough()
+
+export const BatchSteamMinimalResultSchema = z
+  .object({
+    game_id: z.string().nullable(),
+    steam_app_id: z.string(),
+    title: z.string().nullable(),
+    performance: BatchSteamPerformanceSchema.nullable(),
+    emulator: BatchSteamEmulatorSchema.nullable(),
+    device: BatchSteamDeviceSchema.nullable(),
+    listing: BatchSteamListingSummarySchema.nullable(),
+  })
+  .passthrough()
+
+export const BatchBySteamAppIdsResponseSchema = z
+  .object({
+    success: z.literal(true),
+    results: z.array(z.union([BatchSteamFullResultSchema, BatchSteamMinimalResultSchema])),
+    totalRequested: z.number(),
+    totalFound: z.number(),
+    totalNotFound: z.number(),
+  })
+  .passthrough()
+
+export type BatchGameResult = z.output<typeof BatchSteamFullResultSchema>
+export type MinimalGameResult = z.output<typeof BatchSteamMinimalResultSchema>
+export type BatchBySteamAppIdsResponse = z.output<typeof BatchBySteamAppIdsResponseSchema>
 
 export const GetListingCommentsSchema = z.object({
   listingId: z.string().uuid(),
@@ -215,7 +387,11 @@ export const GetListingsSchema = z
       .array(z.union([z.number(), z.string().transform(Number)]))
       .optional()
       .describe('Filter by performance IDs'),
-    search: z.string().optional().describe('Search listings by game name'),
+    search: z
+      .string()
+      .max(MOBILE_SEARCH_QUERY_MAX_LENGTH)
+      .optional()
+      .describe('Search listings by game name'),
   })
   .optional()
   .describe('Get listings with optional filters and pagination')
@@ -224,7 +400,7 @@ export type GetListingsInput = z.infer<typeof GetListingsSchema>
 
 export const GetGamesSchema = z
   .object({
-    search: z.string().optional(),
+    search: z.string().max(MOBILE_SEARCH_QUERY_MAX_LENGTH).optional(),
     systemId: z.string().uuid().optional(),
     page: z
       .number()
@@ -269,7 +445,11 @@ export type GetGamesResponse = z.infer<typeof GetGamesResponseSchema>
 
 export const GetDevicesSchema = z
   .object({
-    search: z.string().optional().describe('Search devices by name'),
+    search: z
+      .string()
+      .max(MOBILE_SEARCH_QUERY_MAX_LENGTH)
+      .optional()
+      .describe('Search devices by name'),
     brandId: z.string().uuid().optional().describe('Filter by brand ID'),
     limit: z.number().min(1).max(1000).default(50).describe('Number of results to return (1-1000)'),
   })
@@ -278,7 +458,7 @@ export const GetDevicesSchema = z
 
 export const GetEmulatorsSchema = z.object({
   systemId: z.string().uuid().optional(),
-  search: z.string().optional(),
+  search: z.string().max(MOBILE_SEARCH_QUERY_MAX_LENGTH).optional(),
   limit: z.number().min(1).max(100).default(50),
 })
 
@@ -314,7 +494,7 @@ export const UpdateNotificationPreferenceMobileSchema = z.object({
 })
 
 export const SearchSuggestionsSchema = z.object({
-  query: z.string().min(1),
+  query: z.string().min(1).max(MOBILE_SEARCH_QUERY_MAX_LENGTH),
   limit: z.number().min(1).max(20).default(10),
 })
 
@@ -404,7 +584,7 @@ export const GetPcListingsSchema = z.object({
   gpuId: z.string().uuid().optional(),
   emulatorId: z.string().uuid().optional(),
   os: z.nativeEnum(PcOs).optional(),
-  search: z.string().optional(),
+  search: z.string().max(MOBILE_SEARCH_QUERY_MAX_LENGTH).optional(),
   minMemory: z.number().min(1).max(256).optional(),
   maxMemory: z.number().min(1).max(256).optional(),
 })
@@ -442,7 +622,7 @@ export const MobileAdminGetStatsSchema = z.object({}).optional()
 
 export const MobileAdminGetPendingListingsSchema = z
   .object({
-    search: z.string().optional(),
+    search: z.string().max(MOBILE_SEARCH_QUERY_MAX_LENGTH).optional(),
     page: z
       .number()
       .min(1)
@@ -464,7 +644,7 @@ export const MobileAdminRejectListingSchema = z.object({
 
 export const MobileAdminGetPendingGamesSchema = z
   .object({
-    search: z.string().optional(),
+    search: z.string().max(MOBILE_SEARCH_QUERY_MAX_LENGTH).optional(),
     page: z
       .number()
       .min(1)
@@ -533,10 +713,19 @@ export const MobileAdminUpdateUserBanSchema = z.object({
 export const GetDeviceCompatibilitySchema = z
   .object({
     deviceId: z.string().uuid().optional().describe('Device UUID to fetch compatibility data for'),
-    deviceModelName: z.string().optional().describe('Device model name (e.g., "Pocket 5")'),
-    deviceBrandName: z.string().optional().describe('Device brand name (e.g., "Retroid")'),
+    deviceModelName: z
+      .string()
+      .max(MOBILE_DEVICE_MODEL_MAX_LENGTH)
+      .optional()
+      .describe('Device model name (e.g., "Pocket 5")'),
+    deviceBrandName: z
+      .string()
+      .max(MOBILE_DEVICE_BRAND_MAX_LENGTH)
+      .optional()
+      .describe('Device brand name (e.g., "Retroid")'),
     systemIds: z
       .array(z.string().uuid())
+      .max(MOBILE_SYSTEM_FILTER_LIMIT)
       .optional()
       .describe('Filter results to specific system IDs'),
     includeEmulatorBreakdown: z
@@ -546,6 +735,7 @@ export const GetDeviceCompatibilitySchema = z
     minListingCount: z
       .number()
       .min(0)
+      .max(CATALOG_MIN_LISTING_COUNT_MAX)
       .default(1)
       .describe('Minimum number of listings required to include a system'),
   })
