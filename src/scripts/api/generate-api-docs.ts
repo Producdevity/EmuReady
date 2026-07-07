@@ -773,7 +773,7 @@ API documentation for the mobile-compatible public integration surface built wit
 
 ## tRPC HTTP Method Conventions
 
-Protected routes require authentication via Clerk JWT token in the Authorization header. Public integration requests can also include an issued API key in \`x-api-key\`; invalid explicit API keys are rejected.
+Protected routes require authentication via Clerk JWT token in the Authorization header. Public integration requests can also include an issued API key in \`x-api-key\` for attribution and quota tracking. Invalid \`Authorization: ApiKey\` credentials are rejected.
 
 tRPC uses HTTP method semantics with fetchRequestHandler:
 - **Queries** use **GET** requests with input as query parameter

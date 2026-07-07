@@ -141,7 +141,10 @@ async function resolveApiKey(headers: Headers): Promise<ApiKeyWithUser | null> {
 
   if (credential.source === 'authorization') AppError.unauthorized('Invalid API key')
 
-  // x-api-key is optional quota attribution for mobile tRPC; shipped clients may also send Bearer.
+  // Temporary EmuReadyApp compatibility: shipped clients may send a stale x-api-key
+  // together with Bearer auth. Treat it as absent so auth can fall through to
+  // Bearer/anonymous access, then remove this after the mobile app stops sending it.
+  // Until then, x-api-key must not be treated as an access-control boundary here.
   return null
 }
 
