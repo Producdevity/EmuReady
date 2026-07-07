@@ -33,6 +33,11 @@ type Session = {
   user: User
 }
 
+type ApiKeyCredential = {
+  rawKey: string
+  source: 'header' | 'authorization'
+}
+
 type CreateMobileContextOptions = {
   session: Nullable<Session>
   apiKey?: ApiKeyWithUser | null
@@ -101,29 +106,43 @@ async function createSessionFromApiKey(apiKey: ApiKeyWithUser): Promise<Nullable
   }
 }
 
-function extractApiKey(headers: Headers): string | null {
+function extractApiKey(headers: Headers): ApiKeyCredential | null {
   const headerCandidates = [headers.get('x-api-key'), headers.get('X-API-Key')]
   for (const candidate of headerCandidates) {
-    if (candidate && candidate.trim()) return candidate.trim()
+    if (candidate && candidate.trim()) {
+      return {
+        rawKey: candidate.trim(),
+        source: 'header',
+      }
+    }
   }
 
   const authorization = headers.get('authorization') || headers.get('Authorization')
   if (authorization && authorization.startsWith('ApiKey ')) {
-    return authorization.slice('ApiKey '.length).trim()
+    const rawKey = authorization.slice('ApiKey '.length).trim()
+    if (rawKey) {
+      return {
+        rawKey,
+        source: 'authorization',
+      }
+    }
   }
 
   return null
 }
 
 async function resolveApiKey(headers: Headers): Promise<ApiKeyWithUser | null> {
-  const rawKey = extractApiKey(headers)
-  if (!rawKey) return null
+  const credential = extractApiKey(headers)
+  if (!credential) return null
 
   const apiAccessService = new ApiAccessService(prisma)
-  const apiKey = await apiAccessService.authorize(rawKey)
-  if (!apiKey) AppError.unauthorized('Invalid API key')
+  const apiKey = await apiAccessService.authorize(credential.rawKey)
+  if (apiKey) return apiKey
 
-  return apiKey
+  if (credential.source === 'authorization') AppError.unauthorized('Invalid API key')
+
+  // x-api-key is optional quota attribution for mobile tRPC; shipped clients may also send Bearer.
+  return null
 }
 
 async function resolveClerkSessionFromHeaders(headers: Headers): Promise<string | null> {
