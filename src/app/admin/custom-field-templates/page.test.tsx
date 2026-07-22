@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { CustomFieldType } from '@orm'
-import type CustomFieldTemplatesPageComponent from './page'
+import CustomFieldTemplatesPage from './page'
 
 const apiMocks = vi.hoisted(() => ({
   customFieldTemplatesGetUseQuery: vi.fn(),
@@ -53,8 +53,6 @@ vi.mock('./components/CustomFieldTemplateFormModal', () => ({
   default: () => <div data-testid="template-form-modal" />,
 }))
 
-let CustomFieldTemplatesPage: typeof CustomFieldTemplatesPageComponent
-
 const templates = [
   {
     id: 'template-performance',
@@ -95,10 +93,6 @@ const templates = [
 ]
 
 describe('CustomFieldTemplatesPage', () => {
-  beforeAll(async () => {
-    ;({ default: CustomFieldTemplatesPage } = await import('./page'))
-  })
-
   beforeEach(() => {
     vi.clearAllMocks()
     navigationMocks.searchParams = new URLSearchParams()

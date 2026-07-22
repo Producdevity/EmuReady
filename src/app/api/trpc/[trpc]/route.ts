@@ -2,6 +2,7 @@ import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import { connection, type NextRequest } from 'next/server'
 import { appRouter } from '@/server/api/root'
 import { createAppRouterTRPCContext } from '@/server/api/trpc'
+import { getTRPCResponseCacheHeaders } from '@/server/api/trpc-cache'
 
 const handler = async (req: NextRequest) => {
   return fetchRequestHandler({
@@ -15,6 +16,20 @@ const handler = async (req: NextRequest) => {
             console.error(`❌ tRPC failed on ${path ?? '<no-path>'}: ${error.message}`)
           }
         : undefined,
+    responseMeta(opts) {
+      return {
+        headers: getTRPCResponseCacheHeaders({
+          endpoint: 'web',
+          method: req.method,
+          type: opts.type,
+          info: opts.info,
+          hasErrors: opts.errors.length > 0,
+          eagerGeneration: opts.eagerGeneration,
+          session: opts.ctx?.session,
+          headers: opts.ctx?.headers,
+        }),
+      }
+    },
   })
 }
 

@@ -54,7 +54,7 @@ const cachedResponse = {
   },
   systems: [],
   generatedAt: new Date('2026-01-01T00:00:00.000Z'),
-  cacheExpiresIn: 600,
+  cacheExpiresIn: 900,
 }
 
 describe('catalog compatibility cache', () => {

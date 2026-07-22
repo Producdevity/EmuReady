@@ -78,6 +78,10 @@ function checkRateLimit(identifier: string): boolean {
   return true
 }
 
+function hasRequestOriginMetadata(req: NextRequest): boolean {
+  return Boolean(req.headers.get('origin') || req.headers.get('referer'))
+}
+
 function isValidOrigin(req: NextRequest): boolean {
   const origin = req.headers.get('origin')
   const referer = req.headers.get('referer')
@@ -105,6 +109,14 @@ function isValidOrigin(req: NextRequest): boolean {
   return false
 }
 
+function isMobileTRPCPath(pathname: string): boolean {
+  return pathname.startsWith('/api/mobile/trpc/') || pathname.startsWith('/api/trpc/mobile.')
+}
+
+function isProtectedTRPCPath(pathname: string): boolean {
+  return pathname.startsWith('/api/trpc/') || pathname.startsWith('/api/mobile/trpc/')
+}
+
 function isSameOriginSource(req: NextRequest, source: string | null): boolean {
   const sourceOrigin = getOriginFromUrl(source ?? '')
   if (!sourceOrigin) return false
@@ -117,12 +129,11 @@ function isSameOriginSource(req: NextRequest, source: string | null): boolean {
 
 function protectTRPCAPI(req: NextRequest): NextResponse | null {
   const pathname = req.nextUrl.pathname
+  const isMobileTRPC = isMobileTRPCPath(pathname)
 
-  if (pathname.startsWith('/api/mobile/trpc/')) return null
+  if (!isProtectedTRPCPath(pathname)) return null
 
-  if (!pathname.startsWith('/api/trpc/')) return null
-
-  if (pathname.startsWith('/api/trpc/mobile.')) return null
+  if (isMobileTRPC && req.method === 'OPTIONS') return null
 
   const clientId = getClientIdentifier(req)
 
@@ -146,7 +157,11 @@ function protectTRPCAPI(req: NextRequest): NextResponse | null {
     )
   }
 
-  if (!IS_AUTOMATED_TEST_ENVIRONMENT && !isValidOrigin(req)) {
+  const hasInvalidOrigin =
+    !IS_AUTOMATED_TEST_ENVIRONMENT &&
+    (isMobileTRPC ? hasRequestOriginMetadata(req) && !isValidOrigin(req) : !isValidOrigin(req))
+
+  if (hasInvalidOrigin) {
     console.warn(
       `Invalid origin for client: ${clientId}, origin: ${req.headers.get('origin')}, referer: ${req.headers.get('referer')}, path: ${pathname}`,
     )

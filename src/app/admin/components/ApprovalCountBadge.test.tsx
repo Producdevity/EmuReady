@@ -1,22 +1,38 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { api } from '@/lib/api'
 import { PERMISSIONS } from '@/utils/permission-system'
 import ApprovalCountBadge from './ApprovalCountBadge'
 
-vi.mock('@/lib/api', () => ({
-  api: {
-    users: { me: { useQuery: vi.fn() } },
-    games: { stats: { useQuery: vi.fn() } },
-    listings: { stats: { useQuery: vi.fn() } },
-    pcListings: { stats: { useQuery: vi.fn() } },
-  },
+interface UserQueryResult {
+  data?: {
+    permissions?: string[] | null
+  } | null
+}
+
+interface StatsQueryResult {
+  data?: {
+    pending: number
+    approved: number
+    rejected: number
+    total: number
+  }
+}
+
+const apiMocks = vi.hoisted(() => ({
+  userMeUseQuery: vi.fn<() => UserQueryResult>(),
+  gamesStatsUseQuery: vi.fn<(input?: undefined, options?: unknown) => StatsQueryResult>(),
+  listingsStatsUseQuery: vi.fn<(input?: undefined, options?: unknown) => StatsQueryResult>(),
+  pcListingsStatsUseQuery: vi.fn<(input?: undefined, options?: unknown) => StatsQueryResult>(),
 }))
 
-const mockUserQuery = vi.mocked(api.users.me.useQuery)
-const mockGamesStatsQuery = vi.mocked(api.games.stats.useQuery)
-const mockListingsStatsQuery = vi.mocked(api.listings.stats.useQuery)
-const mockPcListingsStatsQuery = vi.mocked(api.pcListings.stats.useQuery)
+vi.mock('@/lib/api', () => ({
+  api: {
+    users: { me: { useQuery: apiMocks.userMeUseQuery } },
+    games: { stats: { useQuery: apiMocks.gamesStatsUseQuery } },
+    listings: { stats: { useQuery: apiMocks.listingsStatsUseQuery } },
+    pcListings: { stats: { useQuery: apiMocks.pcListingsStatsUseQuery } },
+  },
+}))
 
 describe('ApprovalCountBadge', () => {
   beforeEach(() => {
@@ -24,34 +40,14 @@ describe('ApprovalCountBadge', () => {
   })
 
   it('renders badge when count is available and user has permission', () => {
-    mockUserQuery.mockReturnValue({
+    apiMocks.userMeUseQuery.mockReturnValue({
       data: { permissions: [PERMISSIONS.VIEW_STATISTICS] },
-      isLoading: false,
-      isError: false,
-      error: null,
-      trpc: {},
-    } as any)
-    mockGamesStatsQuery.mockReturnValue({
+    })
+    apiMocks.gamesStatsUseQuery.mockReturnValue({
       data: { pending: 3, approved: 0, rejected: 0, total: 3 },
-      isLoading: false,
-      isError: false,
-      error: null,
-      trpc: {},
-    } as any)
-    mockListingsStatsQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: false,
-      error: null,
-      trpc: {},
-    } as any)
-    mockPcListingsStatsQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: false,
-      error: null,
-      trpc: {},
-    } as any)
+    })
+    apiMocks.listingsStatsUseQuery.mockReturnValue({})
+    apiMocks.pcListingsStatsUseQuery.mockReturnValue({})
 
     render(<ApprovalCountBadge href="/admin/games/approvals" />)
 
@@ -60,34 +56,12 @@ describe('ApprovalCountBadge', () => {
   })
 
   it('returns null when user lacks permission', () => {
-    mockUserQuery.mockReturnValue({
+    apiMocks.userMeUseQuery.mockReturnValue({
       data: { permissions: [] },
-      isLoading: false,
-      isError: false,
-      error: null,
-      trpc: {},
-    } as any)
-    mockGamesStatsQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: false,
-      error: null,
-      trpc: {},
-    } as any)
-    mockListingsStatsQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: false,
-      error: null,
-      trpc: {},
-    } as any)
-    mockPcListingsStatsQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: false,
-      error: null,
-      trpc: {},
-    } as any)
+    })
+    apiMocks.gamesStatsUseQuery.mockReturnValue({})
+    apiMocks.listingsStatsUseQuery.mockReturnValue({})
+    apiMocks.pcListingsStatsUseQuery.mockReturnValue({})
 
     const { container } = render(<ApprovalCountBadge href="/admin/games/approvals" />)
 
@@ -95,34 +69,12 @@ describe('ApprovalCountBadge', () => {
   })
 
   it('returns null for invalid href', () => {
-    mockUserQuery.mockReturnValue({
+    apiMocks.userMeUseQuery.mockReturnValue({
       data: { permissions: [PERMISSIONS.VIEW_STATISTICS] },
-      isLoading: false,
-      isError: false,
-      error: null,
-      trpc: {},
-    } as any)
-    mockGamesStatsQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: false,
-      error: null,
-      trpc: {},
-    } as any)
-    mockListingsStatsQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: false,
-      error: null,
-      trpc: {},
-    } as any)
-    mockPcListingsStatsQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: false,
-      error: null,
-      trpc: {},
-    } as any)
+    })
+    apiMocks.gamesStatsUseQuery.mockReturnValue({})
+    apiMocks.listingsStatsUseQuery.mockReturnValue({})
+    apiMocks.pcListingsStatsUseQuery.mockReturnValue({})
     render(<ApprovalCountBadge href="/admin/unknown" />)
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })

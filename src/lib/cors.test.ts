@@ -1,3 +1,4 @@
+import { NextRequest } from 'next/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const allowedOrigins = ['https://emuready.com', 'capacitor://localhost']
@@ -122,5 +123,38 @@ describe('isAllowedRequestOrigin', () => {
         source: null,
       }),
     ).toBe(false)
+  })
+})
+
+describe('getCORSHeaders', () => {
+  it('allows mobile authentication headers for configured origins', async () => {
+    const { getCORSHeaders } = await loadCors({
+      ALLOWED_ORIGINS: 'capacitor://localhost',
+    })
+
+    const request = new NextRequest('https://emuready.com/api/mobile/trpc/games.get', {
+      headers: { origin: 'capacitor://localhost' },
+    })
+    const headers = getCORSHeaders(request)
+
+    expect(headers['Access-Control-Allow-Origin']).toBe('capacitor://localhost')
+    expect(headers['Access-Control-Allow-Headers']).toContain('x-api-key')
+    expect(headers['Access-Control-Allow-Headers']).toContain('x-auth-token')
+    expect(headers['Access-Control-Allow-Headers']).toContain('x-trpc-source')
+    expect(headers['Access-Control-Expose-Headers']).toContain('x-trpc-source')
+    expect(headers.Vary).toBe('Origin')
+  })
+
+  it('does not echo unconfigured origins', async () => {
+    const { getCORSHeaders } = await loadCors({
+      ALLOWED_ORIGINS: 'https://emuready.com',
+      NEXT_PUBLIC_APP_ENV: 'production',
+    })
+
+    const request = new NextRequest('https://emuready.com/api/mobile/trpc/games.get', {
+      headers: { origin: 'https://attacker.example' },
+    })
+
+    expect(getCORSHeaders(request)['Access-Control-Allow-Origin']).toBe('null')
   })
 })
