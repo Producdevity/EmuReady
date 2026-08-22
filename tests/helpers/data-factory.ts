@@ -667,10 +667,10 @@ export async function expectOwnPcReportBlocked(page: Page): Promise<void> {
 
 export async function withContext(
   browser: Browser,
-  storageState: string,
+  storageState: string | undefined,
   fn: (page: Page) => Promise<void>,
 ) {
-  const ctx = await browser.newContext({ storageState })
+  const ctx = storageState ? await browser.newContext({ storageState }) : await browser.newContext()
   await registerCookieConsent(ctx)
   const page = await ctx.newPage()
   await registerExternalServiceMocks(page)
