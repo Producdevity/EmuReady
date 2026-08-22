@@ -1,38 +1,121 @@
 import { randomUUID } from 'node:crypto'
 import { createPrismaClient } from '@/server/prisma-client'
-import { ApprovalStatus, Role } from '@orm'
+import { ApprovalStatus, Role, type Prisma } from '@orm'
 import { test, expect } from './fixtures'
 import { withContext } from './helpers/data-factory'
 import { GamesPage } from './pages/GamesPage'
 import { ListingsPage } from './pages/ListingsPage'
 
+const SEARCH_LISTING_KEYS = [
+  'approvedMatch',
+  'approvedControl',
+  'ownerPendingMatch',
+  'ownerPendingControl',
+  'otherPendingMatch',
+] as const
+
+type SearchListingKey = (typeof SEARCH_LISTING_KEYS)[number]
+
 type HandheldSearchFixture = {
   searchTerm: string
-  matchingId: string
-  controlId: string
-  matchingPath: string
-  controlPath: string
+  listings: Record<SearchListingKey, { id: string; path: string }>
 }
 
-const SEARCH_ACCESS_CASES = [
-  { label: 'anonymous', storageState: undefined },
-  { label: Role.USER, storageState: 'tests/.auth/user.json' },
-  { label: Role.AUTHOR, storageState: 'tests/.auth/author.json' },
-  { label: Role.DEVELOPER, storageState: 'tests/.auth/developer.json' },
-  { label: Role.MODERATOR, storageState: 'tests/.auth/moderator.json' },
-  { label: Role.ADMIN, storageState: 'tests/.auth/admin.json' },
-  { label: Role.SUPER_ADMIN, storageState: 'tests/.auth/super_admin.json' },
-] satisfies readonly { label: string; storageState: string | undefined }[]
+type SearchAccessCase = {
+  label: string
+  storageState: string | undefined
+  ownerEmail: string
+  expectedListings: readonly SearchListingKey[]
+}
 
-async function createHandheldSearchFixture(): Promise<HandheldSearchFixture> {
+const E2E_USERS = {
+  [Role.USER]: {
+    ownerEmail: 'user@emuready.com',
+    storageState: 'tests/.auth/user.json',
+  },
+  [Role.AUTHOR]: {
+    ownerEmail: 'author@emuready.com',
+    storageState: 'tests/.auth/author.json',
+  },
+  [Role.DEVELOPER]: {
+    ownerEmail: 'developer@emuready.com',
+    storageState: 'tests/.auth/developer.json',
+  },
+  [Role.MODERATOR]: {
+    ownerEmail: 'moderator@emuready.com',
+    storageState: 'tests/.auth/moderator.json',
+  },
+  [Role.ADMIN]: {
+    ownerEmail: 'admin@emuready.com',
+    storageState: 'tests/.auth/admin.json',
+  },
+  [Role.SUPER_ADMIN]: {
+    ownerEmail: 'superadmin@emuready.com',
+    storageState: 'tests/.auth/super_admin.json',
+  },
+} satisfies Record<Role, { ownerEmail: string; storageState: string }>
+
+const PUBLIC_RESULTS: readonly SearchListingKey[] = ['approvedMatch']
+const AUTHENTICATED_RESULTS: readonly SearchListingKey[] = ['approvedMatch', 'ownerPendingMatch']
+const MODERATOR_RESULTS: readonly SearchListingKey[] = [
+  'approvedMatch',
+  'ownerPendingMatch',
+  'otherPendingMatch',
+]
+
+const SEARCH_ACCESS_CASES = [
+  {
+    label: 'anonymous',
+    storageState: undefined,
+    ownerEmail: E2E_USERS[Role.USER].ownerEmail,
+    expectedListings: PUBLIC_RESULTS,
+  },
+  {
+    label: Role.USER,
+    ...E2E_USERS[Role.USER],
+    expectedListings: AUTHENTICATED_RESULTS,
+  },
+  {
+    label: Role.AUTHOR,
+    ...E2E_USERS[Role.AUTHOR],
+    expectedListings: AUTHENTICATED_RESULTS,
+  },
+  {
+    label: Role.DEVELOPER,
+    ...E2E_USERS[Role.DEVELOPER],
+    expectedListings: AUTHENTICATED_RESULTS,
+  },
+  {
+    label: Role.MODERATOR,
+    ...E2E_USERS[Role.MODERATOR],
+    expectedListings: MODERATOR_RESULTS,
+  },
+  {
+    label: Role.ADMIN,
+    ...E2E_USERS[Role.ADMIN],
+    expectedListings: MODERATOR_RESULTS,
+  },
+  {
+    label: Role.SUPER_ADMIN,
+    ...E2E_USERS[Role.SUPER_ADMIN],
+    expectedListings: MODERATOR_RESULTS,
+  },
+] satisfies readonly SearchAccessCase[]
+
+async function createHandheldSearchFixture(ownerEmail: string): Promise<HandheldSearchFixture> {
   const prisma = createPrismaClient()
 
   try {
-    const author = await prisma.user.findUnique({
-      where: { email: 'superadmin@emuready.com' },
-      select: { id: true },
-    })
-    if (!author) throw new Error('Expected seeded super admin for listing search E2E')
+    const otherAuthorEmail =
+      ownerEmail === E2E_USERS[Role.AUTHOR].ownerEmail
+        ? E2E_USERS[Role.USER].ownerEmail
+        : E2E_USERS[Role.AUTHOR].ownerEmail
+    const [owner, otherAuthor] = await Promise.all([
+      prisma.user.findUnique({ where: { email: ownerEmail }, select: { id: true } }),
+      prisma.user.findUnique({ where: { email: otherAuthorEmail }, select: { id: true } }),
+    ])
+    if (!owner) throw new Error(`Expected seeded listing owner: ${ownerEmail}`)
+    if (!otherAuthor) throw new Error(`Expected seeded listing author: ${otherAuthorEmail}`)
 
     const game = await prisma.game.findFirst({
       where: { status: ApprovalStatus.APPROVED, isErotic: false },
@@ -52,42 +135,65 @@ async function createHandheldSearchFixture(): Promise<HandheldSearchFixture> {
     if (!emulator) throw new Error('Expected an emulator for listing search E2E')
     if (!performance) throw new Error('Expected a performance scale for listing search E2E')
 
-    const searchTerm = `rolesearch${randomUUID().replaceAll('-', '')}`
-    const [matchingListing, controlListing] = await prisma.$transaction([
+    const fixtureToken = randomUUID().replaceAll('-', '')
+    const searchTerm = `rolesearch${fixtureToken}`
+    const controlTerm = `rolecontrol${fixtureToken}`
+    const createListing = (
+      authorId: string,
+      status: ApprovalStatus,
+      notes: string,
+    ): Prisma.ListingUncheckedCreateInput => ({
+      authorId,
+      gameId: game.id,
+      deviceId: device.id,
+      emulatorId: emulator.id,
+      performanceId: performance.id,
+      status,
+      processedAt: status === ApprovalStatus.APPROVED ? new Date() : null,
+      notes,
+    })
+
+    const [
+      approvedMatch,
+      approvedControl,
+      ownerPendingMatch,
+      ownerPendingControl,
+      otherPendingMatch,
+    ] = await prisma.$transaction([
       prisma.listing.create({
-        data: {
-          authorId: author.id,
-          gameId: game.id,
-          deviceId: device.id,
-          emulatorId: emulator.id,
-          performanceId: performance.id,
-          status: ApprovalStatus.APPROVED,
-          processedAt: new Date(),
-          notes: searchTerm,
-        },
+        data: createListing(otherAuthor.id, ApprovalStatus.APPROVED, searchTerm),
         select: { id: true },
       }),
       prisma.listing.create({
-        data: {
-          authorId: author.id,
-          gameId: game.id,
-          deviceId: device.id,
-          emulatorId: emulator.id,
-          performanceId: performance.id,
-          status: ApprovalStatus.APPROVED,
-          processedAt: new Date(),
-          notes: `E2E listing search control ${randomUUID()}`,
-        },
+        data: createListing(otherAuthor.id, ApprovalStatus.APPROVED, controlTerm),
+        select: { id: true },
+      }),
+      prisma.listing.create({
+        data: createListing(owner.id, ApprovalStatus.PENDING, searchTerm),
+        select: { id: true },
+      }),
+      prisma.listing.create({
+        data: createListing(owner.id, ApprovalStatus.PENDING, controlTerm),
+        select: { id: true },
+      }),
+      prisma.listing.create({
+        data: createListing(otherAuthor.id, ApprovalStatus.PENDING, searchTerm),
         select: { id: true },
       }),
     ])
 
+    const toFixtureListing = (id: string) => ({ id, path: `/listings/${id}` })
+    const listings: HandheldSearchFixture['listings'] = {
+      approvedMatch: toFixtureListing(approvedMatch.id),
+      approvedControl: toFixtureListing(approvedControl.id),
+      ownerPendingMatch: toFixtureListing(ownerPendingMatch.id),
+      ownerPendingControl: toFixtureListing(ownerPendingControl.id),
+      otherPendingMatch: toFixtureListing(otherPendingMatch.id),
+    }
+
     return {
       searchTerm,
-      matchingId: matchingListing.id,
-      controlId: controlListing.id,
-      matchingPath: `/listings/${matchingListing.id}`,
-      controlPath: `/listings/${controlListing.id}`,
+      listings,
     }
   } finally {
     await prisma.$disconnect()
@@ -101,7 +207,7 @@ async function deleteHandheldSearchFixture(fixture: HandheldSearchFixture): Prom
     await prisma.listing.deleteMany({
       where: {
         id: {
-          in: [fixture.matchingId, fixture.controlId],
+          in: Object.values(fixture.listings).map((listing) => listing.id),
         },
       },
     })
@@ -111,9 +217,10 @@ async function deleteHandheldSearchFixture(fixture: HandheldSearchFixture): Prom
 }
 
 async function withHandheldSearchFixture(
+  ownerEmail: string,
   run: (fixture: HandheldSearchFixture) => Promise<void>,
 ): Promise<void> {
-  const fixture = await createHandheldSearchFixture()
+  const fixture = await createHandheldSearchFixture(ownerEmail)
 
   try {
     await run(fixture)
@@ -125,7 +232,7 @@ async function withHandheldSearchFixture(
 test.describe('Handheld Report search visibility by role', () => {
   for (const accessCase of SEARCH_ACCESS_CASES) {
     test(`filters results for ${accessCase.label}`, async ({ browser }) => {
-      await withHandheldSearchFixture(async (fixture) => {
+      await withHandheldSearchFixture(accessCase.ownerEmail, async (fixture) => {
         await withContext(browser, accessCase.storageState, async (page) => {
           const listingsPage = new ListingsPage(page)
           await listingsPage.goto()
@@ -133,9 +240,17 @@ test.describe('Handheld Report search visibility by role', () => {
 
           await listingsPage.searchListings(fixture.searchTerm)
 
-          await expect(page.locator(`a[href="${fixture.matchingPath}"]`).first()).toBeVisible()
-          await expect(listingsPage.listingItems).toHaveCount(1)
-          await expect(page.locator(`a[href="${fixture.controlPath}"]`)).toHaveCount(0)
+          await expect(listingsPage.listingItems).toHaveCount(accessCase.expectedListings.length)
+
+          for (const key of SEARCH_LISTING_KEYS) {
+            const listing = fixture.listings[key]
+            const link = page.locator(`a[href="${listing.path}"]`)
+            if (accessCase.expectedListings.includes(key)) {
+              await expect(link.first()).toBeVisible()
+            } else {
+              await expect(link).toHaveCount(0)
+            }
+          }
         })
       })
     })

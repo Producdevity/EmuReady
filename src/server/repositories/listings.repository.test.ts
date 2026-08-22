@@ -1,28 +1,32 @@
 import { describe, expect, it } from 'vitest'
 import { ApprovalStatus, Prisma, Role } from '@orm'
-import { ListingsRepository } from './listings.repository'
+import { ListingsRepository, type ListingFilters } from './listings.repository'
 
-const USER_ID = 'user-123'
+const FILTERS = {
+  userId: 'user-123',
+  userRole: Role.USER,
+  search: 'zelda',
+} satisfies ListingFilters
 
 describe('handheld listing repository query builder', () => {
   it('keeps search and authenticated visibility filters conjunctive', () => {
-    const where = ListingsRepository.buildListWhere({
-      userId: USER_ID,
-      userRole: Role.USER,
-      search: 'zelda',
-    })
+    const where = ListingsRepository.buildListWhere(FILTERS)
 
     expect(where).toMatchObject({
       AND: [
         {
           OR: expect.arrayContaining([
-            { game: { title: { contains: 'zelda', mode: Prisma.QueryMode.insensitive } } },
+            {
+              game: {
+                title: { contains: FILTERS.search, mode: Prisma.QueryMode.insensitive },
+              },
+            },
           ]),
         },
         {
           OR: [
             { status: ApprovalStatus.APPROVED },
-            { status: ApprovalStatus.PENDING, authorId: USER_ID },
+            { status: ApprovalStatus.PENDING, authorId: FILTERS.userId },
           ],
         },
       ],
