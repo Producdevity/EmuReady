@@ -1,3 +1,43 @@
+# 🚀 EmuReady Release Notes – 22 August 2026 (v0.15.0)
+
+v0.15.0 brings the PC moderation workflow up to parity with handheld reports, hardens the web and mobile API paths, and cuts unnecessary server traffic. It also includes a set of smaller fixes across report browsing, comments, notifications, admin tools, and GameNative configuration.
+
+## Users
+
+- Handheld report search now combines the search term with approval and ownership rules correctly. Signed-out users see matching approved reports, signed-in users also see their own matching pending reports, and unrelated reports no longer leak into the results.
+- Comments and replies can now be submitted with Cmd+Enter or Ctrl+Enter without bypassing validation or human-verification checks.
+- Oversized cover art no longer pushes handheld or PC report detail cards outside their containers.
+- Translation language detection now loads only when translated content is near the viewport, and cached translated text is reset when the source content changes.
+- Notification lists load only while the notification menu is open. The unread badge refreshes less often in the background and refreshes again when the menu is opened.
+- Handheld and PC report filters now use the async selectors consistently instead of depending on feature flags.
+- New GameNative configurations now default `startup_selection` to Essential, matching the generated configuration.
+
+## Moderators and admins
+
+- Added a processed PC reports page with status filtering, search, sorting, pagination, status overrides, and reset-to-pending actions.
+- Handheld and PC processed-report actions now share the same admin UI and keep trust changes, notifications, and cache invalidation aligned.
+- Moderator-role users and above now receive notifications when handheld or PC reports are submitted through the web or mobile API.
+- Report submission and moderation paths now share more of their validation and persistence logic, including description sanitization for PC and mobile submissions.
+- Custom field template search now matches template names, descriptions, field names, and field labels, with a separate empty state when no filtered results match.
+- CPU and GPU admin pages now request the correct brand category from the server instead of maintaining client-side brand allowlists.
+- IGDB image selection is available to moderators while the normal author flow keeps its existing RAWG and TheGamesDB choices.
+- Admin pages use more of the shared layout, error, statistics, and empty-state components. Deleting an in-use performance scale now completes its replacement step before removal.
+
+## Developers and contributors
+
+- Anonymous public GET lookups can use shared-cache headers. Authenticated requests, errors, batches, mutations, and requests carrying credentials remain `private, no-store`.
+- Mobile CORS and origin handling were standardized. Browser requests with untrusted origin metadata are rejected, while native clients without browser origin headers continue to work.
+- Explicit invalid `Authorization: ApiKey ...` credentials are rejected. The legacy `x-api-key` fallback remains temporarily permissive for shipped mobile clients that also use Bearer authentication.
+- Steam batch lookup now uses one shared service for the mobile API and admin tools, preserves the requested App ID order, and returns explicit not-found results.
+- CPU and GPU code now lives in feature-owned modules with shared contracts, repositories, services, policies, mappers, routers, and admin components.
+- Mobile API documentation and generated OpenAPI output were refreshed for the current authentication, validation, hardware lookup, report, and Steam batch contracts.
+- Game image handling now uses provider-aware validation and rendering, and the deprecated image proxy path was removed.
+- Removed unused realtime notification/SSE code, Vercel Analytics integration, old popup code, and the experimental v2 listings implementation.
+- Session analytics now derive sign-in method, page views, and interaction counts from actual client activity instead of placeholder values.
+- Test coverage was expanded for mobile authentication, proxy origin handling, CORS, tRPC cache policy, Steam batch lookups, CPU/GPU modules, PC moderation, notifications, session tracking, admin search, report layout, and search visibility across user roles.
+
+---
+
 # 🚀 EmuReady Release Notes – 4 June 2026 (v0.14.0)
 
 This update is smaller than the v0.13.0 catch-up release, but it touches some important day-to-day workflows. The main themes are safer moderation, better spam protection, faster report browsing, and fewer stale-cache issues. Routine cleanup, small dependency churn, and test-only refactors are omitted unless they affect users, moderators, or maintenance.
