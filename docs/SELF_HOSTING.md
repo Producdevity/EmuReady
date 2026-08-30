@@ -30,6 +30,7 @@ The first VPS deployment is manual. The repository does not yet publish images o
 - Provision an isolated staging upload bucket, scoped token, and hostname before enabling upload testing in staging.
 - Make APK objects private so entitlement checks cannot be bypassed with a known public R2 URL.
 - Publish immutable images and trigger verified Coolify deployments from CI.
+- Replace the current `staging` default branch and `master` production convention with a documented release and promotion flow.
 - Consolidate the duplicate mobile tRPC paths and remove the unused transport.
 - Audit the stale TransIP, FTP, and mail DNS records, then add DMARC after confirming the mail policy.
 
