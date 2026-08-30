@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { freemem, totalmem } from 'node:os'
 import { connection, NextResponse } from 'next/server'
+import { env } from '@/lib/env'
 import { prisma } from '@/server/db'
 
 interface HealthResponse {
@@ -186,7 +187,7 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       uptime: Math.floor(process.uptime()),
       version: process.env.APP_VERSION || 'unknown',
-      environment: process.env.NODE_ENV || 'unknown',
+      environment: env.APP_ENV,
       services: {
         database: {
           status: 'connected',

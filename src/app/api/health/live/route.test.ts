@@ -25,6 +25,7 @@ describe('GET /api/health/live', () => {
     expect(response.status).toBe(200)
     expect(body.status).toBe('alive')
     expect(body.version).toBe('test-deployment')
+    expect(body.environment).toBe('test')
   })
 
   it('uses an explicit fallback when no build version is available', async () => {

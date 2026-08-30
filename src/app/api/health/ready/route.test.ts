@@ -31,6 +31,7 @@ describe('GET /api/health/ready', () => {
     expect(response.status).toBe(200)
     expect(body.status).toBe('healthy')
     expect(body.version).toBe('test-deployment')
+    expect(body.environment).toBe('test')
     expect(body.services.database.status).toBe('connected')
     expect(body.services.auth.status).toBe('available')
   })
