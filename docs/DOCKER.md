@@ -340,7 +340,6 @@ Docker creates the following persistent volumes:
 
 ```
 emuready/
-├── public/uploads/     # File uploads (persistent)
 ├── .env.docker         # Your environment config
 ├── docker-compose.yml  # Service configuration
 ├── Dockerfile          # App container definition

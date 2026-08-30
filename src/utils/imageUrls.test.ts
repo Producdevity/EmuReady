@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   getGameImageUrlValidationError,
   getImageRenderMode,
@@ -9,6 +9,20 @@ describe('imageUrls', () => {
   it('uses Next Image for local paths and configured remote hosts', () => {
     expect(getImageRenderMode('/uploads/games/image.jpg')).toBe('next-image')
     expect(getImageRenderMode('https://media.rawg.io/media/games/example.jpg')).toBe('next-image')
+  })
+
+  it('treats the configured R2 uploads host as a next-image host', async () => {
+    vi.stubEnv('NEXT_PUBLIC_R2_UPLOADS_PUBLIC_BASE_URL', 'https://media.test.emuready.com')
+    vi.resetModules()
+    try {
+      const { getImageRenderMode } = await import('./imageUrls')
+      expect(getImageRenderMode('https://media.test.emuready.com/uploads/games/abc.jpg')).toBe(
+        'next-image',
+      )
+    } finally {
+      vi.unstubAllEnvs()
+      vi.resetModules()
+    }
   })
 
   it('uses native browser image rendering for arbitrary HTTPS hosts', () => {
