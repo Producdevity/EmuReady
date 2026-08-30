@@ -71,3 +71,46 @@ describe('proxy mobile tRPC origin handling', () => {
     expect(response.status).toBe(200)
   })
 })
+
+describe('getClientIdentifier', () => {
+  it('prefers cf-connecting-ip when TRUST_CF_CONNECTING_IP is true', async () => {
+    vi.stubEnv('TRUST_CF_CONNECTING_IP', 'true')
+    const { getClientIdentifier } = await loadProxy()
+
+    const req = new NextRequest('https://emuready.com/x', {
+      headers: {
+        'cf-connecting-ip': '203.0.113.10',
+        'x-forwarded-for': '198.51.100.20',
+      },
+    })
+
+    expect(getClientIdentifier(req)).toBe('203.0.113.10')
+  })
+
+  it('ignores forgeable cf-connecting-ip by default and uses x-forwarded-for (Vercel-safe)', async () => {
+    vi.stubEnv('TRUST_CF_CONNECTING_IP', '')
+    const { getClientIdentifier } = await loadProxy()
+
+    const req = new NextRequest('https://emuready.com/x', {
+      headers: {
+        'cf-connecting-ip': '203.0.113.10',
+        'x-forwarded-for': '198.51.100.20, 10.0.0.1',
+      },
+    })
+
+    expect(getClientIdentifier(req)).toBe('198.51.100.20')
+  })
+
+  it('falls back to x-real-ip then unknown when no trusted header is present', async () => {
+    vi.stubEnv('TRUST_CF_CONNECTING_IP', '')
+    const { getClientIdentifier } = await loadProxy()
+
+    const withRealIp = new NextRequest('https://emuready.com/x', {
+      headers: { 'x-real-ip': '198.51.100.99' },
+    })
+    expect(getClientIdentifier(withRealIp)).toBe('198.51.100.99')
+
+    const empty = new NextRequest('https://emuready.com/x')
+    expect(getClientIdentifier(empty)).toBe('unknown')
+  })
+})

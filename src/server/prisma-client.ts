@@ -15,7 +15,7 @@ function getDatabaseUrl() {
   return connectionString
 }
 
-function getPoolMax(connectionString: string): number | undefined {
+export function getPoolMax(connectionString: string): number | undefined {
   try {
     const url = new URL(connectionString)
     const raw = url.searchParams.get('connection_limit')
@@ -24,9 +24,15 @@ function getPoolMax(connectionString: string): number | undefined {
       if (Number.isInteger(parsed) && parsed > 0) return parsed
     }
 
-    return LOCAL_DATABASE_HOSTS.has(url.hostname.toLowerCase()) ? undefined : 1
+    if (LOCAL_DATABASE_HOSTS.has(url.hostname.toLowerCase())) return undefined
+
+    // Vercel serverless instances are short-lived and each constructs its own
+    // pool, so one connection per instance avoids exhausting the database budget.
+    // A persistent self-hosted server holds a small pool instead. Override either
+    // via the `connection_limit` query param on DATABASE_URL.
+    return process.env.VERCEL === '1' ? 1 : 5
   } catch {
-    return 1
+    return process.env.VERCEL === '1' ? 1 : 5
   }
 }
 

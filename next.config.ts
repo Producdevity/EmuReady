@@ -8,6 +8,7 @@ type Header = Awaited<ReturnType<NonNullable<NextConfig['headers']>>>[number]
 
 const isVercelBuild = process.env.VERCEL === '1'
 const isSentryEnabled = process.env.NEXT_PUBLIC_ENABLE_SENTRY === 'true'
+const nextBuildId = process.env.NEXT_BUILD_ID
 
 const contentSecurityPolicyDirectives = [
   {
@@ -147,6 +148,12 @@ function createContentSecurityPolicy(): string {
 }
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
+
+  // Keep build identity stable and protect clients from version skew while
+  // Coolify briefly overlaps the old and new containers during deployment.
+  ...(nextBuildId ? { deploymentId: nextBuildId, generateBuildId: () => nextBuildId } : {}),
+
   images: {
     unoptimized: process.env.NEXT_IMAGE_UNOPTIMIZED === 'true',
     qualities: [50, 75, 85, 100],
@@ -225,7 +232,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['@prisma/client', 'jsdom', 'markdown-it', 'dompurify'],
 
   outputFileTracingIncludes: {
-    '/*': ['docs/**/*.md'],
+    '/*': ['docs/**/*.md', 'prisma/generated/client/**'],
   },
 
   outputFileTracingExcludes: {

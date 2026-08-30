@@ -49,7 +49,7 @@ export default defineConfig({
   globalSetup: path.resolve(currentDir, './tests/global.setup.ts'),
 
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: process.env.PW_BASE_URL ?? 'http://localhost:3000',
     actionTimeout: 10 * 1000,
     navigationTimeout: 30 * 1000,
     trace: 'on-first-retry',
