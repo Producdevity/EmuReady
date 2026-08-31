@@ -1,5 +1,5 @@
 import { HealthRepository } from './health.repository'
-import type { PrismaRepositoryClient } from '@/server/persistence/prisma.repository'
+import type { PrismaClient } from '@orm/client'
 
 export class HealthService {
   constructor(private readonly repository: HealthRepository) {}
@@ -9,6 +9,6 @@ export class HealthService {
   }
 }
 
-export function createHealthService(prisma: PrismaRepositoryClient): HealthService {
+export function createHealthService(prisma: PrismaClient): HealthService {
   return new HealthService(new HealthRepository(prisma))
 }
