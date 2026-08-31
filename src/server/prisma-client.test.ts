@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 vi.mock('@orm/client', () => ({ PrismaClient: class {} }))
 vi.mock('@prisma/adapter-pg', () => ({ PrismaPg: class {} }))
 
-const { getPoolMax } = await import('./prisma-client')
+const { getPoolMax, getPoolMin } = await import('./prisma-client')
 
 afterEach(() => {
   vi.unstubAllEnvs()
@@ -46,5 +46,17 @@ describe('getPoolMax', () => {
     expect(getPoolMax('not-a-url')).toBe(5)
     vi.stubEnv('VERCEL', '1')
     expect(getPoolMax('not-a-url')).toBe(1)
+  })
+})
+
+describe('getPoolMin', () => {
+  it('keeps one connection warm on a persistent server', () => {
+    vi.stubEnv('VERCEL', '')
+    expect(getPoolMin()).toBe(1)
+  })
+
+  it('does not retain a connection in a Vercel instance', () => {
+    vi.stubEnv('VERCEL', '1')
+    expect(getPoolMin()).toBe(0)
   })
 })

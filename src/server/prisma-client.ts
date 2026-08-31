@@ -36,6 +36,10 @@ export function getPoolMax(connectionString: string): number | undefined {
   }
 }
 
+export function getPoolMin(): number {
+  return process.env.VERCEL === '1' ? 0 : 1
+}
+
 export function createPrismaClient(options?: PrismaClientConfig) {
   const connectionString = getDatabaseUrl()
   const poolMax = getPoolMax(connectionString)
@@ -43,6 +47,7 @@ export function createPrismaClient(options?: PrismaClientConfig) {
   const adapter = new PrismaPg({
     connectionString,
     ...(poolMax ? { max: poolMax } : {}),
+    min: getPoolMin(),
     connectionTimeoutMillis: 5_000,
     idleTimeoutMillis: 10_000,
   })
