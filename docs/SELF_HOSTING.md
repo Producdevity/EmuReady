@@ -32,6 +32,7 @@ The VPS currently builds from source in Coolify. A verified GitHub App webhook a
 - Move builds to GitHub-hosted Actions, publish immutable images to GHCR, and have Coolify deploy them by digest. Do not run the build runner on the application VPS.
 - Replace the current `staging` default branch and `master` production convention with a documented release and promotion flow.
 - Consolidate the duplicate mobile tRPC paths and remove the unused transport.
+- Make Clerk user deletion idempotent and define how authored reports are retained; current production deliveries can fail on `Listing_authorId_fkey`. Reconcile duplicate-email `user.created` events as part of the same webhook cleanup.
 - Audit the stale TransIP, FTP, and mail DNS records, then add DMARC after confirming the mail policy.
 
 ## Verification and cutover
@@ -39,7 +40,7 @@ The VPS currently builds from source in Coolify. A verified GitHub App webhook a
 1. Deploy with staging Clerk and Supabase credentials under a temporary hostname.
 2. Verify `/api/health/live`, `/api/health/ready`, public pages, authentication, API routes, and image optimization.
 3. Measure baseline and burst performance against staging, including p95 latency, errors, CPU, memory, image processing, disk use, and Supabase pool usage.
-4. Deploy the production configuration while the production domain still points to Vercel.
-5. Point Cloudflare at the VPS and keep the previous Vercel deployment available for rollback.
+4. Deploy the production configuration while the production domain still points to Vercel. Verify web and mobile Clerk flows through the temporary hostname.
+5. Point both the apex and `www` Cloudflare records at the VPS, preserve the current apex-to-`www` canonical redirect, and keep the previous Vercel deployment available for rollback.
 
 Do not run an upload backfill unless a read-only production database inventory confirms that `/uploads/...` references still exist and the matching source files have been recovered.
