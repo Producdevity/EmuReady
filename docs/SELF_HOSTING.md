@@ -29,7 +29,7 @@ The VPS currently builds from source in Coolify. A verified GitHub App webhook a
 
 - Provision an isolated staging upload bucket, scoped token, and hostname before enabling upload testing in staging.
 - Make APK objects private so entitlement checks cannot be bypassed with a known public R2 URL.
-- Publish immutable images from CI and deploy them by digest instead of rebuilding source in Coolify.
+- Move builds to GitHub-hosted Actions, publish immutable images to GHCR, and have Coolify deploy them by digest. Do not run the build runner on the application VPS.
 - Replace the current `staging` default branch and `master` production convention with a documented release and promotion flow.
 - Consolidate the duplicate mobile tRPC paths and remove the unused transport.
 - Audit the stale TransIP, FTP, and mail DNS records, then add DMARC after confirming the mail policy.
