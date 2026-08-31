@@ -2,12 +2,12 @@
 
 import { Plus, Users } from 'lucide-react'
 import { useState } from 'react'
-import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
   AdminTableContainer,
   AdminStatsDisplay,
   AdminSearchFilters,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   Button,
@@ -29,6 +29,7 @@ import {
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
+import { useAdminTable } from '@/hooks/admin'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
@@ -240,11 +241,11 @@ export default function AdminBadgesPage() {
         {badgesQuery.isPending ? (
           <LoadingSpinner text="Loading badges…" />
         ) : badges.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search ? 'No badges found matching your search.' : 'No badges created yet.'}
-            </p>
-          </div>
+          <AdminTableNoResults
+            hasQuery={!!table.search || statusFilter !== 'all'}
+            queryTitle="No badges found matching your search."
+            title="No badges created yet."
+          />
         ) : (
           <>
             <div className="overflow-x-auto">

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { SortDirection } from '@/schemas/soc'
+import { SortDirectionSchema } from '@/schemas/common'
 
 export const EmulatorSortField = z.enum(['name', 'systemCount', 'listingCount'])
 
@@ -10,7 +10,7 @@ export const GetEmulatorsSchema = z
     offset: z.number().default(0),
     page: z.number().optional(),
     sortField: EmulatorSortField.optional(),
-    sortDirection: SortDirection.optional(),
+    sortDirection: SortDirectionSchema.optional(),
   })
   .optional()
 
@@ -46,7 +46,6 @@ export const UpdateSupportedSystemsSchema = z.object({
   systemIds: z.array(z.string().uuid()),
 })
 
-// Type exports for repository use
 export type GetEmulatorsInput = z.input<typeof GetEmulatorsSchema>
 export type CreateEmulatorInput = z.infer<typeof CreateEmulatorSchema>
 export type UpdateEmulatorInput = z.infer<typeof UpdateEmulatorSchema>

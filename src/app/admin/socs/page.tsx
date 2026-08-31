@@ -3,8 +3,8 @@
 import { Cpu } from 'lucide-react'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import { useAdminTable } from '@/app/admin/hooks'
 import {
+  AdminPageLayout,
   AdminTableContainer,
   AdminSearchFilters,
   AdminStatsDisplay,
@@ -23,6 +23,7 @@ import {
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
+import { useAdminTable } from '@/hooks/admin'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
@@ -127,24 +128,17 @@ function AdminSoCsPage() {
     }
   }
 
-  // TODO: use AdminPageLayout like all the other admin pages
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            System on Chips (SoCs)
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage all processors and system on chips
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
+    <AdminPageLayout
+      title="System on Chips (SoCs)"
+      description="Manage all processors and system on chips"
+      headerActions={
+        <>
           <ColumnVisibilityControl columns={SOCS_COLUMNS} columnVisibility={columnVisibility} />
           {canManageDevices && <Button onClick={() => openModal()}>Add SoC</Button>}
-        </div>
-      </div>
-
+        </>
+      }
+    >
       <AdminStatsDisplay
         stats={[
           {
@@ -276,7 +270,7 @@ function AdminSoCsPage() {
       />
 
       <SocViewModal isOpen={viewModalOpen} onClose={closeViewModal} socData={socData} />
-    </div>
+    </AdminPageLayout>
   )
 }
 

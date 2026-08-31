@@ -5,7 +5,7 @@ import {
   getApprovedPcListingsForSitemap,
 } from '@/server/db/seo-queries'
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://emuready.com'
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.emuready.com'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [

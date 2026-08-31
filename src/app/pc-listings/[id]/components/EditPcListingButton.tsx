@@ -20,7 +20,7 @@ function EditPcListingButton(props: Props) {
     { id: props.pcListingId },
     {
       enabled: !!user?.id,
-      refetchInterval: 60000, // Refetch every minute to update time remaining
+      refetchOnWindowFocus: true,
     },
   )
 

@@ -1,9 +1,8 @@
 import { startOfMonth, subDays } from 'date-fns'
 import { LRUCache } from 'lru-cache'
-import { HOME_PAGE_LIMITS } from '@/data/constants'
+import { CACHE_DURATIONS, HOME_PAGE_LIMITS, LOOKUP_PAGINATION, PAGINATION } from '@/data/constants'
 import { ResourceError } from '@/lib/errors'
-import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
-import { TIME_CONSTANTS } from '@/utils/time'
+import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { Prisma, ApprovalStatus } from '@orm/client'
 import { getTrendingDevices } from '@orm/sql'
 import { BaseRepository } from './base.repository'
@@ -13,7 +12,9 @@ import type {
   GetDeviceOptionsInput,
   CreateDeviceInput,
   UpdateDeviceInput,
+  GetDevicesByIdsInput,
 } from '@/schemas/device'
+import type { PaginationResult } from '@/schemas/pagination'
 
 export interface TrendingDevice {
   id: string
@@ -31,7 +32,7 @@ export interface TrendingDevicesSummary {
 }
 
 const trendingDevicesSummaryCache = new LRUCache<string, TrendingDevicesSummary>({
-  ttl: TIME_CONSTANTS.SIX_HOURS,
+  ttl: CACHE_DURATIONS.LOOKUP,
   max: 20,
 })
 
@@ -93,7 +94,7 @@ export class DevicesRepository extends BaseRepository {
   /**
    * Get Devices by a list of IDs (limited include)
    */
-  async listByIds(ids: string[]) {
+  async listByIds(ids: GetDevicesByIdsInput['ids']) {
     if (ids.length === 0) return []
     return this.prisma.device.findMany({
       where: { id: { in: ids } },
@@ -235,7 +236,7 @@ export class DevicesRepository extends BaseRepository {
     devices: Prisma.DeviceGetPayload<{ include: typeof DevicesRepository.includes.withCounts }>[]
     pagination: PaginationResult
   }> {
-    const limit = input.limit ?? 20
+    const limit = input.limit ?? PAGINATION.DEFAULT_LIMIT
     const actualOffset = calculateOffset({ page: input.page, offset: input.offset }, limit)
 
     const where = this.buildWhere(input)
@@ -253,9 +254,9 @@ export class DevicesRepository extends BaseRepository {
     ])
 
     const pagination = paginate({
-      total: total,
+      total,
       page: input.page ?? Math.floor(actualOffset / limit) + 1,
-      limit: limit,
+      limit,
     })
 
     return { devices, pagination }
@@ -265,7 +266,7 @@ export class DevicesRepository extends BaseRepository {
     devices: Prisma.DeviceGetPayload<{ select: typeof DevicesRepository.selects.option }>[]
     hasMore: boolean
   }> {
-    const limit = input.limit ?? 50
+    const limit = input.limit ?? LOOKUP_PAGINATION.DEFAULT_LIMIT
     const offset = input.offset ?? 0
     const devices = await this.prisma.device.findMany({
       where: this.buildWhere(input),
@@ -339,7 +340,7 @@ export class DevicesRepository extends BaseRepository {
     }[]
     pagination: PaginationResult
   }> {
-    const limit = filters.limit ?? 20
+    const limit = filters.limit ?? PAGINATION.DEFAULT_LIMIT
     const page = filters.page ?? 1
     const actualOffset = calculateOffset({ page }, limit)
 

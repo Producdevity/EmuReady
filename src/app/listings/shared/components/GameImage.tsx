@@ -1,7 +1,7 @@
 'use client'
 
-import Image from 'next/image'
 import { useState } from 'react'
+import { ImageRenderer } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import getImageUrl from '@/utils/getImageUrl'
 
@@ -16,7 +16,7 @@ interface Props {
   className?: string
   prioritizeBanner?: boolean
   sizes?: string
-  priority?: boolean
+  preload?: boolean
   aspectRatio?: 'square' | 'video' | 'poster' | 'auto'
   showFallback?: boolean
 }
@@ -44,7 +44,7 @@ export function GameImage(props: Props) {
     return (
       <div
         className={cn(
-          'relative bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 flex items-center justify-center',
+          'relative flex w-full min-w-0 max-w-full items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900',
           aspectRatioClass,
           props.className,
         )}
@@ -60,14 +60,20 @@ export function GameImage(props: Props) {
   }
 
   return (
-    <div className={cn('relative overflow-hidden', aspectRatioClass, props.className)}>
-      <Image
+    <div
+      className={cn(
+        'relative w-full min-w-0 max-w-full overflow-hidden',
+        aspectRatioClass,
+        props.className,
+      )}
+    >
+      <ImageRenderer
         src={imageUrl}
         alt={props.game.title}
         fill
         className="object-cover"
         sizes={props.sizes ?? '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'}
-        priority={props.priority ?? false}
+        preload={props.preload}
         onError={() => setImageError(true)}
         unoptimized={false}
       />

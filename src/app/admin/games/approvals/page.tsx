@@ -1,16 +1,15 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
 import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
-import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
   AdminTableContainer,
   AdminStatsDisplay,
   AdminSearchFilters,
+  AdminTableNoResults,
 } from '@/components/admin'
 import { SystemIcon } from '@/components/icons'
 import {
@@ -22,6 +21,7 @@ import {
   TooltipTrigger,
   TooltipContent,
   BulkActions,
+  ImageRenderer,
   LoadingSpinner,
   DisplayToggleButton,
   ApproveButton,
@@ -33,6 +33,7 @@ import {
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useLocalStorage, useColumnVisibility, type ColumnDefinition } from '@/hooks'
+import { useAdminTable } from '@/hooks/admin'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -331,13 +332,11 @@ function GameApprovalsPage() {
         {pendingGamesQuery.isPending ? (
           <LoadingSpinner text="Loading pending games..." />
         ) : filteredGames.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search
-                ? 'No games found matching your search.'
-                : 'No pending games to review.'}
-            </p>
-          </div>
+          <AdminTableNoResults
+            hasQuery={!!table.search}
+            queryTitle="No games found matching your search."
+            title="No pending games to review."
+          />
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -428,7 +427,7 @@ function GameApprovalsPage() {
                                 className="group relative block"
                               >
                                 <div className="h-16 w-20 rounded-md overflow-hidden relative">
-                                  <Image
+                                  <ImageRenderer
                                     src={getGameImageUrl(game)}
                                     alt={game.title}
                                     fill

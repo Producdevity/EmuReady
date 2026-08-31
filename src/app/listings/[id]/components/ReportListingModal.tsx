@@ -1,12 +1,16 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import { useState, useEffect, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
+import {
+  REPORT_REASON_OPTIONS,
+  type ReportReasonOptionValue,
+  isReportReasonOptionValue,
+} from '@/app/listings/shared/utils/reportReasonOptions'
 import { Button, Modal } from '@/components/ui'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
-import { type ReportReasonType } from '@/schemas/listingReport'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { ReportReason } from '@orm'
@@ -18,36 +22,19 @@ interface Props {
   onSuccess: () => void
 }
 
-const REPORT_REASONS = [
-  { value: ReportReason.SPAM, label: 'Spam or repetitive content' },
-  {
-    value: ReportReason.INAPPROPRIATE_CONTENT,
-    label: 'Inappropriate or offensive content',
-  },
-  {
-    value: ReportReason.MISLEADING_INFORMATION,
-    label: 'Misleading or false information',
-  },
-  { value: ReportReason.FAKE_LISTING, label: 'Fake or fabricated listing' },
-  { value: ReportReason.COPYRIGHT_VIOLATION, label: 'Copyright violation' },
-  { value: ReportReason.OTHER, label: 'Other (please specify)' },
-] as const
+interface ModalContentProps {
+  onClose: () => void
+  listingId: string
+  onSuccess: () => void
+}
 
-function ReportListingModal(props: Props) {
-  const [reason, setReason] = useState<ReportReasonType>(ReportReason.SPAM)
+function ReportListingModalContent(props: ModalContentProps) {
+  const [reason, setReason] = useState<ReportReasonOptionValue>(ReportReason.SPAM)
   const [description, setDescription] = useState('')
   const [error, setError] = useState('')
 
   const createReport = api.listingReports.create.useMutation()
   const { user } = useUser()
-
-  // Reset form when modal opens/closes
-  useEffect(() => {
-    if (!props.isOpen) return
-    setReason(ReportReason.SPAM)
-    setDescription('')
-    setError('')
-  }, [props.isOpen])
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
@@ -65,7 +52,6 @@ function ReportListingModal(props: Props) {
         description: description.trim() || undefined,
       } satisfies RouterInput['listingReports']['create'])
 
-      // Track content flagging in analytics
       if (user?.id) {
         analytics.contentQuality.contentFlagged({
           entityType: 'listing',
@@ -89,7 +75,7 @@ function ReportListingModal(props: Props) {
   }
 
   return (
-    <Modal isOpen={props.isOpen} onClose={handleClose} title="Report Listing">
+    <Modal isOpen onClose={handleClose} title="Report a Compatibility Report">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -108,11 +94,14 @@ function ReportListingModal(props: Props) {
           <select
             id="reason"
             value={reason}
-            onChange={(e) => setReason(e.target.value as ReportReasonType)}
+            onChange={(ev) => {
+              if (!isReportReasonOptionValue(ev.target.value)) return
+              setReason(ev.target.value)
+            }}
             className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             required
           >
-            {REPORT_REASONS.map((reasonOption) => (
+            {REPORT_REASON_OPTIONS.map((reasonOption) => (
               <option key={reasonOption.value} value={reasonOption.value}>
                 {reasonOption.label}
               </option>
@@ -132,14 +121,14 @@ function ReportListingModal(props: Props) {
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Please provide additional context about why you're reporting this listing..."
+            placeholder="Please provide additional context about why you're reporting this compatibility report..."
             className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             rows={4}
-            maxLength={500}
+            maxLength={1000}
             required={reason === ReportReason.OTHER}
           />
           <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {description.length}/500 characters
+            {description.length}/1000 characters
           </div>
         </div>
 
@@ -171,6 +160,18 @@ function ReportListingModal(props: Props) {
         </div>
       </form>
     </Modal>
+  )
+}
+
+function ReportListingModal(props: Props) {
+  if (!props.isOpen) return null
+
+  return (
+    <ReportListingModalContent
+      listingId={props.listingId}
+      onClose={props.onClose}
+      onSuccess={props.onSuccess}
+    />
   )
 }
 

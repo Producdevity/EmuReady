@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Role, type PrismaClient } from '@orm/client'
-import { checkProfileAccess, PRIVATE_PROFILE_SETTINGS } from './user-profile.service'
+import {
+  checkProfileAccess,
+  PRIVATE_PROFILE_SETTINGS,
+  PROFILE_ACCESS_REASONS,
+} from './user-profile.service'
 
 function createMockPrisma() {
   return {
@@ -36,7 +40,7 @@ describe('user-profile.service', () => {
 
       const result = await checkProfileAccess(prisma, 'missing-id', {})
 
-      expect(result).toEqual({ accessible: false, reason: 'not_found' })
+      expect(result).toEqual({ accessible: false, reason: PROFILE_ACCESS_REASONS.NOT_FOUND })
     })
 
     it('should return banned when user has active ban and viewer is not mod', async () => {
@@ -50,7 +54,7 @@ describe('user-profile.service', () => {
         currentUserRole: Role.USER,
       })
 
-      expect(result).toEqual({ accessible: false, reason: 'banned' })
+      expect(result).toEqual({ accessible: false, reason: PROFILE_ACCESS_REASONS.BANNED })
     })
 
     it('should return accessible with isBanned when user has active ban but viewer is MODERATOR', async () => {
@@ -83,7 +87,7 @@ describe('user-profile.service', () => {
         currentUserRole: Role.USER,
       })
 
-      expect(result).toEqual({ accessible: false, reason: 'private' })
+      expect(result).toEqual({ accessible: false, reason: PROFILE_ACCESS_REASONS.PRIVATE })
     })
 
     it('should return accessible when profile is private but viewer is the owner', async () => {

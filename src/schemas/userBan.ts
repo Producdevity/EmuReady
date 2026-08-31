@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { SortDirection } from '@/schemas/soc'
+import { SortDirectionSchema } from '@/schemas/common'
 
 export const UserBanSortField = z.enum(['bannedAt', 'expiresAt', 'isActive', 'reason'])
 
@@ -29,7 +29,7 @@ export const GetUserBansSchema = z
     search: z.string().optional(),
     isActive: z.boolean().optional(),
     sortField: UserBanSortField.optional(),
-    sortDirection: SortDirection.optional(),
+    sortDirection: SortDirectionSchema.optional(),
     page: z.number().min(1).default(1),
     limit: z.number().min(1).max(100).default(20),
   })

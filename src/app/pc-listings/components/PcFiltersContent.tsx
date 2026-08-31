@@ -6,19 +6,11 @@ import { type ChangeEvent } from 'react'
 import { ListingsSearchBar, ActiveFiltersSummary } from '@/app/listings/shared/components'
 import { buildPcActiveFilterItems } from '@/app/pc-listings/utils/buildPcActiveFilterItems'
 import { MultiSelect, Input } from '@/components/ui'
-import {
-  cpuOptions,
-  emulatorOptions,
-  gpuOptions,
-  performanceOptions,
-  systemOptions,
-} from '@/utils/options'
+import { type Option } from '@/components/ui/form/async-multi-select/AsyncMultiSelect'
+import AsyncCpuFilterSelect from '@/features/hardware/cpu/client/components/AsyncCpuFilterSelect'
+import AsyncGpuFilterSelect from '@/features/hardware/gpu/client/components/AsyncGpuFilterSelect'
+import { emulatorOptions, performanceOptions, systemOptions } from '@/utils/options'
 import { type System, type PerformanceScale, type Emulator } from '@orm'
-import AsyncCpuFilterSelect from './filters/AsyncCpuFilterSelect'
-import AsyncGpuFilterSelect from './filters/AsyncGpuFilterSelect'
-
-type CpuWithBrand = { id: string; modelName: string; brand: { name: string } }
-type GpuWithBrand = { id: string; modelName: string; brand: { name: string } }
 
 interface Props {
   cpuIds: string[]
@@ -29,13 +21,11 @@ interface Props {
   minMemory: number | null
   maxMemory: number | null
   searchTerm: string
-  cpus: CpuWithBrand[]
-  gpus: GpuWithBrand[]
   systems: System[]
   emulators: Emulator[]
   performanceScales: PerformanceScale[]
-  onCpuChange: (values: string[]) => void
-  onGpuChange: (values: string[]) => void
+  onCpuChange: (values: string[], selectedOptions: Option[]) => void
+  onGpuChange: (values: string[], selectedOptions: Option[]) => void
   onSystemChange: (values: string[]) => void
   onEmulatorChange: (values: string[]) => void
   onPerformanceChange: (values: string[]) => void
@@ -80,8 +70,6 @@ export default function PcFiltersContent(props: Props) {
     props.onPerformanceChange(values)
   }
 
-  const ENABLE_ASYNC = process.env.NEXT_PUBLIC_ENABLE_ASYNC_LISTINGS_FILTERS === 'true'
-
   const hasActiveFilters =
     props.searchTerm ||
     props.systemIds.length > 0 ||
@@ -116,48 +104,24 @@ export default function PcFiltersContent(props: Props) {
       />
 
       {/* CPUs */}
-      {ENABLE_ASYNC ? (
-        <AsyncCpuFilterSelect
-          label="CPUs"
-          leftIcon={<Cpu className="w-5 h-5" />}
-          value={props.cpuIds}
-          onChange={props.onCpuChange}
-          placeholder="All CPUs"
-          maxDisplayed={2}
-        />
-      ) : (
-        <MultiSelect
-          label="CPUs"
-          leftIcon={<Cpu className="w-5 h-5" />}
-          value={props.cpuIds}
-          onChange={props.onCpuChange}
-          options={cpuOptions(props.cpus)}
-          placeholder="All CPUs"
-          maxDisplayed={2}
-        />
-      )}
+      <AsyncCpuFilterSelect
+        label="CPUs"
+        leftIcon={<Cpu className="w-5 h-5" />}
+        value={props.cpuIds}
+        onChange={props.onCpuChange}
+        placeholder="All CPUs"
+        maxDisplayed={2}
+      />
 
       {/* GPUs */}
-      {ENABLE_ASYNC ? (
-        <AsyncGpuFilterSelect
-          label="GPUs"
-          leftIcon={<HardDrive className="w-5 h-5" />}
-          value={props.gpuIds}
-          onChange={props.onGpuChange}
-          placeholder="All GPUs"
-          maxDisplayed={2}
-        />
-      ) : (
-        <MultiSelect
-          label="GPUs"
-          leftIcon={<HardDrive className="w-5 h-5" />}
-          value={props.gpuIds}
-          onChange={props.onGpuChange}
-          options={gpuOptions(props.gpus)}
-          placeholder="All GPUs"
-          maxDisplayed={2}
-        />
-      )}
+      <AsyncGpuFilterSelect
+        label="GPUs"
+        leftIcon={<HardDrive className="w-5 h-5" />}
+        value={props.gpuIds}
+        onChange={props.onGpuChange}
+        placeholder="All GPUs"
+        maxDisplayed={2}
+      />
 
       {/* Emulators */}
       <MultiSelect

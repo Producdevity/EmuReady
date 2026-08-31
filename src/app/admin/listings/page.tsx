@@ -1,16 +1,14 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import { useAdminTable } from '@/app/admin/hooks'
-import { useAdminFilters } from '@/app/admin/hooks/useAdminFilters'
 import {
   AdminPageLayout,
   AdminTableContainer,
   AdminStatsDisplay,
   AdminSearchFilters,
+  AdminTableNoResults,
 } from '@/components/admin'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
 import {
@@ -21,6 +19,7 @@ import {
   DisplayToggleButton,
   Dropdown,
   EditButton,
+  ImageRenderer,
   LoadingSpinner,
   Pagination,
   SortableHeader,
@@ -35,6 +34,7 @@ import {
   useColumnVisibility,
   type ColumnDefinition,
 } from '@/hooks'
+import { useAdminTable, useAdminFilters } from '@/hooks/admin'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
@@ -366,14 +366,17 @@ function AdminListingsPage() {
                 </tr>
               ) : listings.length === 0 ? (
                 <tr>
-                  <td colSpan={visibleColumnCount} className="py-12">
-                    <div className="text-center">
-                      <p className="text-gray-600 dark:text-gray-400 text-lg">
-                        {table.search || filters.status || filters.systemId || filters.emulatorId
-                          ? 'No compatibility reports found matching your filters.'
-                          : 'No compatibility reports found.'}
-                      </p>
-                    </div>
+                  <td colSpan={visibleColumnCount}>
+                    <AdminTableNoResults
+                      hasQuery={
+                        !!table.search ||
+                        !!filters.status ||
+                        !!filters.systemId ||
+                        !!filters.emulatorId
+                      }
+                      queryTitle="No compatibility reports found matching your filters."
+                      title="No compatibility reports found."
+                    />
                   </td>
                 </tr>
               ) : (
@@ -386,7 +389,7 @@ function AdminListingsPage() {
                       <td className="px-6 py-4">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-16 w-20 flex justify-center items-center">
-                            <Image
+                            <ImageRenderer
                               src={getGameImageUrl(listing.game)}
                               alt={listing.game.title}
                               width={80}

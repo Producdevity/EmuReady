@@ -2,7 +2,6 @@ import { PAGINATION } from '@/data/constants'
 import { AppError, ResourceError } from '@/lib/errors'
 import { canUserAutoApprove } from '@/lib/trust/service'
 import { EMULATOR_VERSION_FIELD_NAME } from '@/schemas/submissionRisk'
-import { validateCustomFields } from '@/server/api/routers/listings/validation'
 import { computeVoteCounts } from '@/server/utils/moderator-info'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
 import {
@@ -11,6 +10,7 @@ import {
   buildShadowBanFilter,
   buildApprovalStatusFilter,
 } from '@/server/utils/query-builders'
+import { validateCustomFields } from '@/server/utils/validate-custom-fields'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { calculateWilsonScore } from '@/utils/wilson-score'
 import { Prisma, ApprovalStatus, Role } from '@orm/client'
@@ -183,9 +183,8 @@ export class ListingsRepository extends BaseRepository {
    * Build the where clause for listing queries
    * @param filters - Listing filter options including search, IDs, and user context
    * @returns Prisma where clause object
-   * @private
    */
-  private buildWhereClause(filters: ListingFilters): Prisma.ListingWhereInput {
+  static buildListWhere(filters: ListingFilters): Prisma.ListingWhereInput {
     const where: Prisma.ListingWhereInput = {}
     let gameFilter: Prisma.GameWhereInput = {}
 
@@ -265,9 +264,15 @@ export class ListingsRepository extends BaseRepository {
     )
     if (statusFilter) {
       if (Array.isArray(statusFilter)) {
-        where.OR = where.OR
-          ? [...(Array.isArray(where.OR) ? where.OR : [where.OR]), ...statusFilter]
-          : statusFilter
+        if (where.OR) {
+          const existingAnd = Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []
+          const existingOr = Array.isArray(where.OR) ? where.OR : [where.OR]
+
+          where.AND = [...existingAnd, { OR: existingOr }, { OR: statusFilter }]
+          delete where.OR
+        } else {
+          where.OR = statusFilter
+        }
       } else {
         Object.assign(where, statusFilter)
       }
@@ -300,7 +305,7 @@ export class ListingsRepository extends BaseRepository {
     const limit = filters.limit || 20
     const offset = calculateOffset({ page: filters.page, offset: filters.offset }, limit)
 
-    const where = this.buildWhereClause(filters)
+    const where = ListingsRepository.buildListWhere(filters)
 
     // Build order by clause - now includes native success rate sorting!
     const orderBy = this.buildOrderBy(filters.sortField, filters.sortDirection)

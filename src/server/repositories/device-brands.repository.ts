@@ -25,13 +25,8 @@ export class DeviceBrandsRepository extends BaseRepository {
   ): Promise<
     Prisma.DeviceBrandGetPayload<{ include: typeof DeviceBrandsRepository.includes.withCounts }>[]
   > {
-    const { search, limit = 50, sortField = 'name', sortDirection } = filters
-
-    const where: Prisma.DeviceBrandWhereInput = {
-      ...(search && {
-        name: { contains: search, mode: this.mode },
-      }),
-    }
+    const { limit = 50, sortField = 'name', sortDirection } = filters
+    const where = this.buildWhereClause(filters)
 
     // Map schema sort fields to Prisma orderBy
     const orderBy: Prisma.DeviceBrandOrderByWithRelationInput =
@@ -49,6 +44,18 @@ export class DeviceBrandsRepository extends BaseRepository {
 
   async byId(id: string): Promise<DeviceBrand | null> {
     return this.prisma.deviceBrand.findUnique({ where: { id } })
+  }
+
+  async byIdWithCounts(
+    id: string,
+  ): Promise<
+    | Prisma.DeviceBrandGetPayload<{ include: typeof DeviceBrandsRepository.includes.withCounts }>
+    | null
+  > {
+    return this.prisma.deviceBrand.findUnique({
+      where: { id },
+      include: DeviceBrandsRepository.includes.withCounts,
+    })
   }
 
   async create(data: CreateDeviceBrandInput): Promise<DeviceBrand> {
@@ -101,15 +108,19 @@ export class DeviceBrandsRepository extends BaseRepository {
    * Get total count with filters
    */
   async count(filters: GetDeviceBrandsInput = {}): Promise<number> {
-    const { search } = filters
-
-    const where: Prisma.DeviceBrandWhereInput = {
-      ...(search && {
-        name: { contains: search, mode: this.mode },
-      }),
-    }
+    const where = this.buildWhereClause(filters)
 
     return this.prisma.deviceBrand.count({ where })
+  }
+
+  private buildWhereClause(filters: GetDeviceBrandsInput = {}): Prisma.DeviceBrandWhereInput {
+    return {
+      ...(filters.search && {
+        name: { contains: filters.search, mode: this.mode },
+      }),
+      ...(filters.category === 'cpu' && { cpus: { some: {} } }),
+      ...(filters.category === 'gpu' && { gpus: { some: {} } }),
+    }
   }
 
   /**

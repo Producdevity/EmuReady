@@ -121,9 +121,10 @@ export function GameBoxartImage(props: Props) {
   }
 
   const getCurrentImageUrl = () => {
-    return (
-      getImageUrl(getFieldValue(activeImageType), props.game.title) || getGameImageUrl(props.game)
-    )
+    const activeImageUrl = getFieldValue(activeImageType)
+    return activeImageUrl
+      ? getImageUrl(activeImageUrl, props.game.title)
+      : getGameImageUrl(props.game)
   }
 
   const availableImageTypes: ImageField[] = ['imageUrl', 'boxartUrl', 'bannerUrl']
@@ -175,7 +176,7 @@ export function GameBoxartImage(props: Props) {
             imageClassName="w-full max-h-96"
             objectFit="contain"
             fallbackSrc="/placeholder/game.svg"
-            priority
+            preload
             quality={75}
           />
 

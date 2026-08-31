@@ -90,6 +90,30 @@ const analytics = {
       })
     },
 
+    cpu: (cpuIds: string[], cpuNames?: string[]) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.FILTER,
+        action: FILTER_ACTIONS.CPU,
+        value: cpuIds.length.toString(),
+        metadata: {
+          count: cpuIds.length,
+          cpus: cpuNames?.join(',') || cpuIds.join(','),
+        },
+      })
+    },
+
+    gpu: (gpuIds: string[], gpuNames?: string[]) => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.FILTER,
+        action: FILTER_ACTIONS.GPU,
+        value: gpuIds.length.toString(),
+        metadata: {
+          count: gpuIds.length,
+          gpus: gpuNames?.join(',') || gpuIds.join(','),
+        },
+      })
+    },
+
     soc: (socIds: string[], socNames?: string[]) => {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.FILTER,
@@ -221,6 +245,20 @@ const analytics = {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.FILTER,
         action: FILTER_ACTIONS.CLEAR_DEVICE_FILTER,
+      })
+    },
+
+    clearCpuFilter: () => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.FILTER,
+        action: FILTER_ACTIONS.CLEAR_CPU_FILTER,
+      })
+    },
+
+    clearGpuFilter: () => {
+      sendAnalyticsEvent({
+        category: ANALYTICS_CATEGORIES.FILTER,
+        action: FILTER_ACTIONS.CLEAR_GPU_FILTER,
       })
     },
 
@@ -381,24 +419,6 @@ const analytics = {
         action: ENGAGEMENT_ACTIONS.VOTE_REMINDER_CLICKED,
         entityType: 'listing',
         entityId: params.listingId,
-        metadata: { timeOnPage: params.timeOnPage },
-      })
-    },
-
-    stopKillingGamesDismissed: (params: { timeOnPage: number }) => {
-      sendAnalyticsEvent({
-        category: ANALYTICS_CATEGORIES.ENGAGEMENT,
-        action: ENGAGEMENT_ACTIONS.STOP_KILLING_GAMES_DISMISSED,
-        entityType: 'popup',
-        metadata: { timeOnPage: params.timeOnPage },
-      })
-    },
-
-    stopKillingGamesCTA: (params: { timeOnPage: number }) => {
-      sendAnalyticsEvent({
-        category: ANALYTICS_CATEGORIES.ENGAGEMENT,
-        action: ENGAGEMENT_ACTIONS.STOP_KILLING_GAMES_CTA,
-        entityType: 'popup',
         metadata: { timeOnPage: params.timeOnPage },
       })
     },
@@ -1044,7 +1064,7 @@ const analytics = {
       })
     },
 
-    pageView: (params: { pathname: string; loadTime: number; userId?: string }) => {
+    pageView: (params: { pathname: string; loadTime?: number; userId?: string }) => {
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.SESSION,
         action: SESSION_ACTIONS.PAGE_VIEW,
@@ -1062,7 +1082,7 @@ const analytics = {
   contentQuality: {
     // TODO
     contentFlagged: (params: {
-      entityType: 'listing' | 'comment' | 'game'
+      entityType: 'pc-listing' | 'listing' | 'comment' | 'game'
       entityId: string
       flaggedBy: string
       reason: string

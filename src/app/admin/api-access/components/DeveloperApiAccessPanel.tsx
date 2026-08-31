@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useAdminTable } from '@/app/admin/hooks'
+import { useMemo, useState } from 'react'
 import { AdminPageLayout, AdminSearchFilters, AdminStatsDisplay } from '@/components/admin'
 import {
   Badge,
@@ -10,16 +9,16 @@ import {
   LoadingSpinner,
   useConfirmDialog,
 } from '@/components/ui'
-import { API_KEY_LIMITS } from '@/data/constants'
+import { API_KEY_LIMITS, POLLING_INTERVALS } from '@/data/constants'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility } from '@/hooks'
+import { useAdminTable } from '@/hooks/admin'
 import { type ColumnDefinition } from '@/hooks/useColumnVisibility'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type ApiKeySortField } from '@/schemas/apiAccess'
 import { formatters, getLocale } from '@/utils/date'
 import getErrorMessage from '@/utils/getErrorMessage'
-import { ms } from '@/utils/time'
 import { ApiUsagePeriod } from '@orm'
 import { DeveloperKeyTable } from './DeveloperKeyTable'
 import { KeySecretBanner } from './KeySecretBanner'
@@ -75,7 +74,7 @@ export function DeveloperApiAccessPanel(props: Props) {
     },
   )
   const statsQuery = api.apiKeys.myStats.useQuery(undefined, {
-    refetchInterval: ms.minutes(5),
+    refetchInterval: POLLING_INTERVALS.LONG,
   })
 
   const keys = listQuery.data?.keys ?? EMPTY_KEY_ROWS
@@ -85,35 +84,26 @@ export function DeveloperApiAccessPanel(props: Props) {
   const [dialogState, setDialogState] = useState<KeyDialogState | null>(null)
   const [latestSecret, setLatestSecret] = useState<KeyDialogState | null>(null)
 
-  useEffect(() => {
-    if (keys.length === 0) {
-      setSelectedKeyId(null)
-      return
-    }
-    if (!selectedKeyId || !keys.some((key) => key.id === selectedKeyId)) {
-      setSelectedKeyId(keys[0].id)
-    }
-  }, [keys, selectedKeyId])
-
-  const selectedKey = keys.find((key) => key.id === selectedKeyId) ?? null
+  const selectedKey = keys.find((key) => key.id === selectedKeyId) ?? keys[0] ?? null
+  const effectiveSelectedKeyId = selectedKey?.id ?? null
   const selectedKeyStatus = selectedKey ? getKeyStatusLabel(selectedKey) : null
 
   const monthUsageQuery = api.apiKeys.usage.useQuery(
     {
-      id: selectedKeyId ?? '',
+      id: effectiveSelectedKeyId ?? '',
       period: ApiUsagePeriod.MONTH,
       limit: API_KEY_LIMITS.USAGE_SERIES_LIMIT,
     },
-    { enabled: Boolean(selectedKeyId) },
+    { enabled: Boolean(effectiveSelectedKeyId) },
   )
 
   const weekUsageQuery = api.apiKeys.usage.useQuery(
     {
-      id: selectedKeyId ?? '',
+      id: effectiveSelectedKeyId ?? '',
       period: ApiUsagePeriod.WEEK,
       limit: API_KEY_LIMITS.USAGE_SERIES_LIMIT,
     },
-    { enabled: Boolean(selectedKeyId) },
+    { enabled: Boolean(effectiveSelectedKeyId) },
   )
 
   const monthlySummary = useMemo(() => {
@@ -209,7 +199,7 @@ export function DeveloperApiAccessPanel(props: Props) {
     try {
       await revokeMutation.mutateAsync({ id: keyId })
       await listQuery.refetch()
-      if (selectedKeyId === keyId) setSelectedKeyId(null)
+      if (effectiveSelectedKeyId === keyId) setSelectedKeyId(null)
       toast.success('API key revoked successfully.')
     } catch (error) {
       toast.error(getErrorMessage(error))
@@ -317,7 +307,7 @@ export function DeveloperApiAccessPanel(props: Props) {
         table={table}
         columnVisibility={columnVisibility}
         keys={keys}
-        selectedKeyId={selectedKeyId}
+        selectedKeyId={effectiveSelectedKeyId}
         includeRevoked={includeRevoked}
         isLoading={listQuery.isPending}
         pagination={pagination}

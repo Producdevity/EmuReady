@@ -28,6 +28,7 @@ import {
   protectedProcedure,
 } from '@/server/api/trpc'
 import { buildProcessedOrderBy } from '@/server/api/utils/listingHelpers'
+import { getProcessedStatusTrustAction } from '@/server/api/utils/processedStatusTrust'
 import { invalidateListingSeo, invalidateListingsSeo } from '@/server/cache/invalidation'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
@@ -47,7 +48,8 @@ import {
 import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
 import { paginate } from '@/server/utils/pagination'
 import { hasRolePermission } from '@/utils/permissions'
-import { Prisma, ApprovalStatus, TrustAction, Role } from '@orm/client'
+import { ApprovalStatus, Role, TrustAction } from '@orm'
+import { Prisma } from '@orm/client'
 
 const LISTING_STATS_CACHE_KEY = 'listing-stats'
 
@@ -350,7 +352,7 @@ export const adminRouter = createTRPCRouter({
 
       const listing = await ctx.prisma.listing.findUnique({
         where: { id: listingId },
-        select: { id: true, status: true },
+        select: { id: true, status: true, gameId: true, deviceId: true, emulatorId: true },
       })
 
       if (!listing) return ResourceError.listing.notFound()
@@ -371,6 +373,16 @@ export const adminRouter = createTRPCRouter({
 
       listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
 
+      if (listing.status === ApprovalStatus.APPROVED) {
+        await invalidateListingSeo({
+          id: listingId,
+          gameId: listing.gameId,
+          deviceId: listing.deviceId,
+          emulatorId: listing.emulatorId,
+        })
+        invalidateCatalogCompatibilityCacheForDevice(listing.deviceId)
+      }
+
       return updatedListing
     }),
 
@@ -387,6 +399,10 @@ export const adminRouter = createTRPCRouter({
       ? {
           OR: [
             { game: { title: { contains: search, mode } } },
+            { game: { system: { name: { contains: search, mode } } } },
+            { device: { modelName: { contains: search, mode } } },
+            { device: { brand: { name: { contains: search, mode } } } },
+            { emulator: { name: { contains: search, mode } } },
             { author: { name: { contains: search, mode } } },
             { processedNotes: { contains: search, mode } },
             { notes: { contains: search, mode } },
@@ -434,34 +450,91 @@ export const adminRouter = createTRPCRouter({
 
       const listingToOverride = await ctx.prisma.listing.findUnique({
         where: { id: listingId },
+        select: {
+          id: true,
+          status: true,
+          gameId: true,
+          deviceId: true,
+          emulatorId: true,
+          authorId: true,
+          processedNotes: true,
+        },
       })
 
       if (!listingToOverride) return ResourceError.listing.notFound()
 
       const updatedListing = await ctx.prisma.listing.update({
         where: { id: listingId },
-        data: {
-          status: newStatus,
-          processedByUserId: superAdminUserId, // Log the SUPER_ADMIN as the latest processor
-          processedAt: new Date(), // Update timestamp to the override time
-          processedNotes: overrideNotes ?? listingToOverride.processedNotes, // Keep old notes if no new ones
-        },
+        data:
+          newStatus === ApprovalStatus.PENDING
+            ? {
+                status: newStatus,
+                processedByUserId: null,
+                processedAt: null,
+                processedNotes: null,
+              }
+            : {
+                status: newStatus,
+                processedByUserId: superAdminUserId,
+                processedAt: new Date(),
+                processedNotes: overrideNotes ?? listingToOverride.processedNotes,
+              },
       })
 
-      // Emit notification event
-      notificationEventEmitter.emitNotificationEvent({
-        eventType: NOTIFICATION_EVENTS.LISTING_STATUS_OVERRIDDEN,
-        entityType: 'listing',
-        entityId: listingId,
-        triggeredBy: superAdminUserId,
-        payload: {
-          listingId,
-          overriddenBy: superAdminUserId,
-          newStatus,
-          overriddenAt: updatedListing.processedAt,
-          overrideNotes: overrideNotes,
-        },
+      if (
+        listingToOverride.status === ApprovalStatus.APPROVED ||
+        newStatus === ApprovalStatus.APPROVED
+      ) {
+        await invalidateListingSeo({
+          id: listingId,
+          gameId: listingToOverride.gameId,
+          deviceId: listingToOverride.deviceId,
+          emulatorId: listingToOverride.emulatorId,
+        })
+        invalidateCatalogCompatibilityCacheForDevice(listingToOverride.deviceId)
+      }
+
+      const trustAction = getProcessedStatusTrustAction({
+        previousStatus: listingToOverride.status,
+        newStatus,
+        authorId: listingToOverride.authorId,
       })
+      if (trustAction) {
+        await applyTrustAction({
+          userId: trustAction.userId,
+          action: trustAction.action,
+          context: {
+            listingId,
+            adminUserId: superAdminUserId,
+            reason: overrideNotes || 'listing_status_override',
+          },
+        })
+      }
+
+      if (newStatus === ApprovalStatus.APPROVED || newStatus === ApprovalStatus.REJECTED) {
+        notificationEventEmitter.emitNotificationEvent({
+          eventType:
+            newStatus === ApprovalStatus.APPROVED
+              ? NOTIFICATION_EVENTS.LISTING_APPROVED
+              : NOTIFICATION_EVENTS.LISTING_REJECTED,
+          entityType: 'listing',
+          entityId: listingId,
+          triggeredBy: superAdminUserId,
+          payload:
+            newStatus === ApprovalStatus.APPROVED
+              ? {
+                  listingId,
+                  approvedBy: superAdminUserId,
+                  approvedAt: updatedListing.processedAt,
+                }
+              : {
+                  listingId,
+                  rejectedBy: superAdminUserId,
+                  rejectedAt: updatedListing.processedAt,
+                  rejectionReason: overrideNotes,
+                },
+        })
+      }
 
       // Invalidate listing stats cache
       listingStatsCache.delete(LISTING_STATS_CACHE_KEY)

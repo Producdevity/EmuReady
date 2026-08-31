@@ -1,7 +1,22 @@
 import { test, expect } from './fixtures'
+import {
+  HANDHELD_REPORT_DESCRIPTION,
+  PC_REPORT_DESCRIPTION,
+  openFirstAdminReportDetails,
+  searchAdminReports,
+  selectAdminReportType,
+} from './helpers/admin-reports'
+import { createPcReport, createReport, withContext } from './helpers/data-factory'
 
 test.describe('Admin Reports Management Tests - Requires Admin Role', () => {
   test.use({ storageState: 'tests/.auth/super_admin.json' })
+  test.beforeAll(async ({ browser }) => {
+    await withContext(browser, 'tests/.auth/author.json', async (page) => {
+      await createReport(page, HANDHELD_REPORT_DESCRIPTION)
+      await createPcReport(page, PC_REPORT_DESCRIPTION)
+    })
+  })
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/admin/reports', { waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL(/\/admin\/reports/)
@@ -41,19 +56,34 @@ test.describe('Admin Reports Management Tests - Requires Admin Role', () => {
     await expect(table).toBeVisible()
   })
 
-  test('should display report details', async ({ page }) => {
-    const viewButtons = page.locator('button[title="View Report Details"]')
-    await expect(viewButtons.first()).toBeVisible()
-    expect(await viewButtons.count()).toBeGreaterThan(0)
+  test('should display reported handheld compatibility report details', async ({ page }) => {
+    await selectAdminReportType(page, 'Handheld Reports')
+    await searchAdminReports(page, HANDHELD_REPORT_DESCRIPTION, 'listingReports.get')
 
-    await viewButtons.first().click()
+    const reportModal = await openFirstAdminReportDetails(page)
 
-    const reportModal = page.locator('[role="dialog"]')
-    await expect(reportModal).toBeVisible()
+    await expect(reportModal).toContainText(HANDHELD_REPORT_DESCRIPTION)
+    await expect(reportModal).toContainText('Reported Compatibility Report')
+    await expect(reportModal).toContainText('Handheld Report')
+    await expect(reportModal.getByText('Device', { exact: true })).toBeVisible()
+    await expect(reportModal.getByRole('button', { name: /view report/i })).toBeVisible()
 
-    const modalContent = await reportModal.textContent()
-    expect(modalContent).toBeTruthy()
-    expect(modalContent?.length).toBeGreaterThan(0)
+    const closeButton = reportModal.locator('button').filter({ hasText: /close/i })
+    await expect(closeButton).toBeVisible()
+    await closeButton.click()
+  })
+
+  test('should display reported PC compatibility report details', async ({ page }) => {
+    await selectAdminReportType(page, 'PC Reports')
+    await searchAdminReports(page, PC_REPORT_DESCRIPTION, 'pcListingReports.get')
+
+    const reportModal = await openFirstAdminReportDetails(page)
+
+    await expect(reportModal).toContainText(PC_REPORT_DESCRIPTION)
+    await expect(reportModal).toContainText('Reported Compatibility Report')
+    await expect(reportModal).toContainText('PC Report')
+    await expect(reportModal.getByText('Hardware', { exact: true })).toBeVisible()
+    await expect(reportModal.getByRole('button', { name: /view report/i })).toBeVisible()
 
     const closeButton = reportModal.locator('button').filter({ hasText: /close/i })
     await expect(closeButton).toBeVisible()
@@ -97,7 +127,7 @@ test.describe('Admin Reports Management Tests - Requires Admin Role', () => {
     const dialog = page.locator('[role="dialog"]')
     await expect(dialog).toBeVisible()
 
-    const viewListingButton = dialog.getByRole('button', { name: /view listing/i })
+    const viewListingButton = dialog.getByRole('button', { name: /view report/i })
     await expect(viewListingButton).toBeVisible()
 
     const closeButton = dialog.getByRole('button', { name: /^close$/i })

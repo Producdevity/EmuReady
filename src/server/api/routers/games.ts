@@ -40,6 +40,7 @@ import {
   revalidateByTag,
 } from '@/server/cache/invalidation'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
+import { assertGameImageUrlsAllowed } from '@/server/policies/game-image-url.policy'
 import { GamesRepository } from '@/server/repositories/games.repository'
 import { gameStatsCache } from '@/server/utils/cache'
 import { buildOrderBy, paginate } from '@/server/utils/pagination'
@@ -304,6 +305,8 @@ export const gamesRouter = createTRPCRouter({
       isErotic: input.isErotic,
     }
 
+    assertGameImageUrlsAllowed(gameInput, ctx.session.user)
+
     const system = await ctx.prisma.system.findUnique({
       where: { id: gameInput.systemId },
     })
@@ -407,6 +410,8 @@ export const gamesRouter = createTRPCRouter({
 
     if (!existingGame) return ResourceError.game.notFound()
 
+    assertGameImageUrlsAllowed(data, ctx.session.user)
+
     await validateGameConflicts(ctx.prisma, id, data, existingGame!)
 
     const result = await performGameUpdate(ctx.prisma, id, data, existingGame!)
@@ -447,6 +452,8 @@ export const gamesRouter = createTRPCRouter({
       if (existingGame!.status !== ApprovalStatus.PENDING) {
         return ResourceError.game.canOnlyEditPending()
       }
+
+      assertGameImageUrlsAllowed(data, ctx.session.user)
 
       await validateGameConflicts(ctx.prisma, id, data, existingGame!)
 

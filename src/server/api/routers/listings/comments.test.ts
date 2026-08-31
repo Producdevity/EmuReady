@@ -7,6 +7,10 @@ vi.unmock('@/server/api/root')
 const mockHandleCommentVoteTrustEffects = vi.fn().mockResolvedValue(undefined)
 const mockEmitNotificationEvent = vi.fn()
 const mockCheckSpamContent = vi.fn().mockResolvedValue(undefined)
+const mockAnalyticsComment = vi.fn()
+const mockAnalyticsCommentVote = vi.fn()
+const mockAnalyticsFirstTimeAction = vi.fn()
+const mockLoggerError = vi.fn()
 
 vi.mock('@/server/utils/vote-trust-effects', () => ({
   handleCommentVoteTrustEffects: (...args: unknown[]) => mockHandleCommentVoteTrustEffects(...args),
@@ -33,8 +37,19 @@ vi.mock('@/server/utils/spam-check', () => ({
 
 vi.mock('@/lib/analytics', () => ({
   default: {
-    engagement: { comment: vi.fn(), commentVote: vi.fn() },
-    userJourney: { firstTimeAction: vi.fn() },
+    engagement: {
+      comment: (...args: unknown[]) => mockAnalyticsComment(...args),
+      commentVote: (...args: unknown[]) => mockAnalyticsCommentVote(...args),
+    },
+    userJourney: {
+      firstTimeAction: (...args: unknown[]) => mockAnalyticsFirstTimeAction(...args),
+    },
+  },
+}))
+
+vi.mock('@/lib/logger', () => ({
+  logger: {
+    error: (...args: unknown[]) => mockLoggerError(...args),
   },
 }))
 
@@ -44,6 +59,7 @@ const USER_ID = '00000000-0000-4000-a000-000000000001'
 const AUTHOR_ID = '00000000-0000-4000-a000-000000000002'
 const LISTING_ID = '00000000-0000-4000-a000-000000000010'
 const COMMENT_ID = '00000000-0000-4000-a000-000000000020'
+const PARENT_COMMENT_ID = '00000000-0000-4000-a000-000000000021'
 
 function createMockPrisma() {
   const mockTx = {
@@ -101,6 +117,10 @@ function createCaller(overrides: { userId?: string; role?: Role; prisma?: MockPr
     }),
     prisma,
   }
+}
+
+function flushBackgroundTasks(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0))
 }
 
 describe('handheld comments router — voteComment', () => {
@@ -242,6 +262,165 @@ describe('handheld comments router — create', () => {
       headers: expect.any(Headers),
     })
     expect(prisma.comment.create).toHaveBeenCalled()
+  })
+
+  it('emits listing comment notification and analytics for a top-level comment', async () => {
+    const { caller } = createCaller()
+
+    await caller.create({
+      listingId: LISTING_ID,
+      content: 'Runs well with these settings',
+    })
+
+    expect(mockEmitNotificationEvent).toHaveBeenCalledWith({
+      eventType: 'LISTING_COMMENTED',
+      entityType: 'listing',
+      entityId: LISTING_ID,
+      triggeredBy: USER_ID,
+      payload: {
+        listingId: LISTING_ID,
+        commentId: COMMENT_ID,
+        parentId: undefined,
+        commentText: 'Runs well with these settings',
+      },
+    })
+    expect(mockAnalyticsComment).toHaveBeenCalledWith({
+      action: 'created',
+      commentId: COMMENT_ID,
+      listingId: LISTING_ID,
+      isReply: false,
+      contentLength: 'Runs well with these settings'.length,
+    })
+    await flushBackgroundTasks()
+
+    expect(mockAnalyticsFirstTimeAction).toHaveBeenCalledWith({
+      userId: USER_ID,
+      action: 'first_comment',
+    })
+  })
+
+  it('emits reply notification and analytics for a child comment', async () => {
+    const { caller, prisma } = createCaller()
+    prisma.comment.findUnique.mockResolvedValue({ listingId: LISTING_ID })
+
+    await caller.create({
+      listingId: LISTING_ID,
+      content: 'Replying with more settings',
+      parentId: PARENT_COMMENT_ID,
+    })
+
+    expect(prisma.comment.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          parent: { connect: { id: PARENT_COMMENT_ID } },
+        }),
+      }),
+    )
+    expect(mockEmitNotificationEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: 'COMMENT_REPLIED',
+        payload: expect.objectContaining({
+          listingId: LISTING_ID,
+          commentId: COMMENT_ID,
+          parentId: PARENT_COMMENT_ID,
+          commentText: 'Replying with more settings',
+        }),
+      }),
+    )
+    expect(mockAnalyticsComment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'reply',
+        isReply: true,
+      }),
+    )
+  })
+
+  it('does not track first comment journey analytics after the first comment', async () => {
+    const { caller, prisma } = createCaller()
+    prisma.comment.count.mockResolvedValue(2)
+
+    await caller.create({
+      listingId: LISTING_ID,
+      content: 'Another comment',
+    })
+
+    await flushBackgroundTasks()
+
+    expect(mockAnalyticsFirstTimeAction).not.toHaveBeenCalled()
+  })
+
+  it('returns the created comment when first-comment analytics fails', async () => {
+    const analyticsError = new Error('count failed')
+    const { caller, prisma } = createCaller()
+    prisma.comment.count.mockRejectedValue(analyticsError)
+
+    const result = await caller.create({
+      listingId: LISTING_ID,
+      content: 'Runs well with these settings',
+    })
+
+    expect(result.id).toBe(COMMENT_ID)
+    expect(prisma.comment.create).toHaveBeenCalled()
+
+    await flushBackgroundTasks()
+
+    expect(mockLoggerError).toHaveBeenCalledWith(
+      '[ListingCommentService] Failed to track first comment analytics',
+      expect.any(Error),
+      {
+        userId: USER_ID,
+        commentId: COMMENT_ID,
+      },
+    )
+  })
+
+  it('does not check spam or create when the listing is missing', async () => {
+    const { caller, prisma } = createCaller()
+    prisma.listing.findUnique.mockResolvedValue(null)
+
+    await expect(
+      caller.create({
+        listingId: LISTING_ID,
+        content: 'Runs well with these settings',
+      }),
+    ).rejects.toThrow('Report not found')
+
+    expect(mockCheckSpamContent).not.toHaveBeenCalled()
+    expect(prisma.comment.create).not.toHaveBeenCalled()
+  })
+
+  it('does not check spam or create when the parent comment is missing', async () => {
+    const { caller, prisma } = createCaller()
+    prisma.comment.findUnique.mockResolvedValue(null)
+
+    await expect(
+      caller.create({
+        listingId: LISTING_ID,
+        content: 'Replying with more settings',
+        parentId: PARENT_COMMENT_ID,
+      }),
+    ).rejects.toThrow('Parent comment not found')
+
+    expect(mockCheckSpamContent).not.toHaveBeenCalled()
+    expect(prisma.comment.create).not.toHaveBeenCalled()
+  })
+
+  it('does not check spam or create when the parent comment belongs to another handheld report', async () => {
+    const { caller, prisma } = createCaller()
+    prisma.comment.findUnique.mockResolvedValue({
+      listingId: '00000000-0000-4000-a000-000000000099',
+    })
+
+    await expect(
+      caller.create({
+        listingId: LISTING_ID,
+        content: 'Replying with more settings',
+        parentId: PARENT_COMMENT_ID,
+      }),
+    ).rejects.toThrow('Parent comment not found')
+
+    expect(mockCheckSpamContent).not.toHaveBeenCalled()
+    expect(prisma.comment.create).not.toHaveBeenCalled()
   })
 
   it('passes a human verification token to the spam check when retrying creation', async () => {

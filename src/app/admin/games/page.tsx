@@ -1,19 +1,17 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty, isNullish } from 'remeda'
 import ImageIndicators from '@/app/admin/components/ImageIndicators'
 import ImagePreviewModal from '@/app/admin/components/ImagePreviewModal'
-import { useAdminTable } from '@/app/admin/hooks'
-import { useAdminFilters } from '@/app/admin/hooks/useAdminFilters'
 import {
   AdminPageLayout,
   AdminStatsDisplay,
   AdminTableContainer,
   AdminSearchFilters,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   ApprovalStatusBadge,
@@ -23,6 +21,7 @@ import {
   DeleteButton,
   Dropdown,
   EditButton,
+  ImageRenderer,
   LoadingSpinner,
   Pagination,
   RejectButton,
@@ -37,6 +36,7 @@ import {
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
+import { useAdminTable, useAdminFilters } from '@/hooks/admin'
 import { api } from '@/lib/api'
 import { logger } from '@/lib/logger'
 import toast from '@/lib/toast'
@@ -277,13 +277,11 @@ function AdminGamesPage() {
             <LoadingSpinner text="Loading games..." />
           </div>
         ) : gamesQuery.data?.games.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search || filters.systemId || filters.status
-                ? 'No games found matching your criteria.'
-                : 'No games found.'}
-            </p>
-          </div>
+          <AdminTableNoResults
+            hasQuery={!!table.search || !!filters.systemId || !!filters.status}
+            queryTitle="No games found matching your criteria."
+            title="No games found."
+          />
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -369,7 +367,7 @@ function AdminGamesPage() {
                                 onClick={() => handleImageClick(game)}
                                 className="group relative block"
                               >
-                                <Image
+                                <ImageRenderer
                                   src={getGameImageUrl(game)}
                                   alt={game.title}
                                   width={64}
@@ -378,7 +376,6 @@ function AdminGamesPage() {
                                   style={{ width: 'auto', height: 'auto' }}
                                   unoptimized
                                 />
-                                {/* Image indicators */}
                                 <div className="absolute -bottom-1 -right-1">
                                   <ImageIndicators game={game} />
                                 </div>
@@ -523,7 +520,6 @@ function AdminGamesPage() {
         )}
       </AdminTableContainer>
 
-      {/* Image Preview Modal */}
       <ImagePreviewModal
         isOpen={isImagePreviewOpen}
         onClose={() => setIsImagePreviewOpen(false)}

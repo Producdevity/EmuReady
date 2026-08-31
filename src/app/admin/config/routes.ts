@@ -45,6 +45,7 @@ export const ADMIN_ROUTES = {
   // Listings
   MANAGE_LISTINGS: '/admin/listings',
   PROCESSED_LISTINGS: '/admin/processed-listings',
+  PC_PROCESSED_LISTINGS: '/admin/pc-processed-listings',
 
   // Custom Fields
   FIELD_TEMPLATES: '/admin/custom-field-templates',

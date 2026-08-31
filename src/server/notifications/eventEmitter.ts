@@ -6,6 +6,7 @@ export interface NotificationEventData {
   entityType: string
   entityId: string
   triggeredBy?: string
+  includeTriggeredBy?: boolean
   payload?: NotificationEventPayload
 }
 
@@ -52,7 +53,6 @@ export const NOTIFICATION_EVENTS = {
   USER_MENTIONED: 'user.mentioned',
   LISTING_APPROVED: 'listing.approved',
   LISTING_REJECTED: 'listing.rejected',
-  LISTING_STATUS_OVERRIDDEN: 'listing.status_overridden',
   LISTING_VERIFIED: 'listing.verified',
   CONTENT_FLAGGED: 'content.flagged',
   GAME_ADDED: 'game.added',
@@ -60,6 +60,8 @@ export const NOTIFICATION_EVENTS = {
   MAINTENANCE_SCHEDULED: 'maintenance.scheduled',
   FEATURE_ANNOUNCED: 'feature.announced',
   USER_ROLE_CHANGED: 'user.role_changed',
+  REPORT_CREATED: 'report.created',
+  REPORT_STATUS_CHANGED: 'report.status_changed',
   GAME_STATUS_OVERRIDDEN: 'game.status_overridden',
   PC_LISTING_APPROVED: 'pcListing.approved',
   PC_LISTING_REJECTED: 'pcListing.rejected',

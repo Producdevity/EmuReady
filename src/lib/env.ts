@@ -18,7 +18,6 @@ interface Env {
   GA_ID: string
   LOCAL_STORAGE_PREFIX: string
   ENABLE_SW: boolean
-  VERCEL_ANALYTICS_ENABLED: boolean
   DISABLE_COOKIE_BANNER: boolean
   APP_ENV: AppEnv
   IS_PUBLIC_PRODUCTION: boolean
@@ -28,7 +27,6 @@ interface Env {
   ENABLE_ANALYTICS: boolean
   ENABLE_KOFI_WIDGET: boolean
   ENABLE_SENTRY: boolean
-  ENABLE_V2_LISTINGS: boolean
   ENABLE_PATREON_VERIFICATION: boolean
   ENABLE_ANDROID_DOWNLOADS: boolean
   TURNSTILE_SITE_KEY: string
@@ -79,8 +77,6 @@ export const env = {
 
   ENABLE_SW: process.env.NEXT_PUBLIC_ENABLE_SW === 'true',
 
-  VERCEL_ANALYTICS_ENABLED: process.env.NEXT_PUBLIC_VERCEL_ANALYTICS_ENABLED === 'true',
-
   DISABLE_COOKIE_BANNER: process.env.NEXT_PUBLIC_DISABLE_COOKIE_BANNER === 'true',
 
   APP_ENV,
@@ -92,7 +88,6 @@ export const env = {
   ENABLE_KOFI_WIDGET: process.env.NEXT_PUBLIC_ENABLE_KOFI_WIDGET === 'true',
   ENABLE_SENTRY: process.env.NEXT_PUBLIC_ENABLE_SENTRY === 'true',
 
-  ENABLE_V2_LISTINGS: process.env.NEXT_PUBLIC_ENABLE_V2_LISTINGS === 'true',
   ENABLE_PATREON_VERIFICATION: process.env.NEXT_PUBLIC_ENABLE_PATREON_VERIFICATION === 'true',
   ENABLE_ANDROID_DOWNLOADS: process.env.NEXT_PUBLIC_ENABLE_ANDROID_DOWNLOADS === 'true',
   TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? '',

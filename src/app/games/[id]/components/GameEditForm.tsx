@@ -2,10 +2,9 @@
 
 import { useUser } from '@clerk/nextjs'
 import { ImageIcon, X } from 'lucide-react'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
-import { Button, Input, Badge, EditButton } from '@/components/ui'
+import { Badge, Button, EditButton, ImageRenderer, Input } from '@/components/ui'
 import { ImageSelectorSwitcher } from '@/components/ui/image-selectors'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
@@ -319,7 +318,7 @@ export function GameEditForm(props: Props) {
                     {/* Image Preview */}
                     {getCurrentImageUrl() && (
                       <div className="relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
-                        <Image
+                        <ImageRenderer
                           src={getImageUrl(getCurrentImageUrl(), title) ?? ''}
                           alt={`${title} - ${imageTypeToLabel[activeImageTab]}`}
                           width={400}
@@ -419,6 +418,7 @@ export function GameEditForm(props: Props) {
                 selectedImageUrl={getCurrentImageUrl()}
                 onImageSelect={handleImageSelect}
                 onError={setError}
+                allowIgdbProvider={isModerator}
               />
             </div>
           </div>

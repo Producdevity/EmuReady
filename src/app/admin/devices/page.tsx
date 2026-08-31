@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminTableContainer,
   AdminSearchFilters,
   AdminStatsDisplay,
   AdminPageLayout,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   Button,
@@ -23,6 +23,7 @@ import {
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
+import { useAdminTable } from '@/hooks/admin'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
@@ -280,13 +281,12 @@ function AdminDevicesPage() {
               ))}
               {!devicesQuery.isPending && devicesQuery.data?.devices.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={columnVisibility.visibleColumns.size}
-                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                  >
-                    {table.search || table.additionalParams.brandId
-                      ? 'No devices found matching your search.'
-                      : 'No devices found. Add your first device.'}
+                  <td colSpan={columnVisibility.visibleColumns.size}>
+                    <AdminTableNoResults
+                      hasQuery={!!table.search || !!table.additionalParams.brandId}
+                      queryTitle="No devices found matching your search."
+                      title="No devices found. Add your first device."
+                    />
                   </td>
                 </tr>
               )}

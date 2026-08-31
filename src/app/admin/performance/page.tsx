@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
   AdminStatsDisplay,
   AdminSearchFilters,
   AdminTableContainer,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   Button,
@@ -20,6 +20,7 @@ import {
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
+import { useAdminTable } from '@/hooks/admin'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
@@ -59,7 +60,7 @@ function AdminPerformancePage() {
   })
 
   const performanceStatsQuery = api.performanceScales.stats.useQuery()
-  const performanceScalesQuery = api.performanceScales.get.useQuery({
+  const performanceScalesQuery = api.performanceScales.getWithCounts.useQuery({
     search: table.search || undefined,
     sortField: table.sortField ?? undefined,
     sortDirection: table.sortDirection ?? undefined,
@@ -73,6 +74,7 @@ function AdminPerformancePage() {
     onSuccess: () => {
       toast.success('Performance scale deleted successfully!')
       utils.performanceScales.get.invalidate().catch(console.error)
+      utils.performanceScales.getWithCounts.invalidate().catch(console.error)
       utils.performanceScales.stats.invalidate().catch(console.error)
     },
     onError: (err) => {
@@ -89,6 +91,20 @@ function AdminPerformancePage() {
   }
 
   const handleDelete = async (scale: PerformanceScale) => {
+    const listingsCount = (scale._count?.listings ?? 0) + (scale._count?.pcListings ?? 0)
+
+    if (listingsCount > 0) {
+      setReplacementModal({
+        isOpen: true,
+        scaleToDelete: {
+          id: scale.id,
+          label: scale.label,
+          listingsCount,
+        },
+      })
+      return
+    }
+
     const confirmed = await confirm({
       title: 'Delete Performance Scale',
       description: `Are you sure you want to delete "${scale.label}"? This action cannot be undone.`,
@@ -96,7 +112,6 @@ function AdminPerformancePage() {
 
     if (!confirmed) return
 
-    // Try to delete directly first
     deletePerformanceScale.mutate({
       id: scale.id,
     } satisfies RouterInput['performanceScales']['delete'])
@@ -146,13 +161,11 @@ function AdminPerformancePage() {
 
       <AdminTableContainer>
         {performanceScales.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search
-                ? 'No performance scales found matching your search.'
-                : 'No performance scales found.'}
-            </p>
-          </div>
+          <AdminTableNoResults
+            hasQuery={!!table.search}
+            queryTitle="No performance scales found matching your search."
+            title="No performance scales found."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -257,6 +270,7 @@ function AdminPerformancePage() {
         onSuccess={() => {
           setPerformanceModal({ isOpen: false })
           utils.performanceScales.get.invalidate().catch(console.error)
+          utils.performanceScales.getWithCounts.invalidate().catch(console.error)
           utils.performanceScales.stats.invalidate().catch(console.error)
         }}
       />
@@ -268,6 +282,7 @@ function AdminPerformancePage() {
         onSuccess={() => {
           setReplacementModal({ isOpen: false, scaleToDelete: null })
           utils.performanceScales.get.invalidate().catch(console.error)
+          utils.performanceScales.getWithCounts.invalidate().catch(console.error)
           utils.performanceScales.stats.invalidate().catch(console.error)
           toast.success('Performance scale deleted successfully!')
         }}

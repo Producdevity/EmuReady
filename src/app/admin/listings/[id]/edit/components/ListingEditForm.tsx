@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, useWatch } from 'react-hook-form'
 import { type z } from 'zod'
 import {
   FormValidationSummary,
@@ -19,6 +19,7 @@ import {
   Autocomplete,
   LocalizedDate,
 } from '@/components/ui'
+import { LOOKUP_PAGINATION } from '@/data/constants'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { UpdateListingAdminSchema } from '@/schemas/listing'
@@ -70,7 +71,7 @@ function ListingEditForm(props: Props) {
         if (!query || query.trim().length === 0) return []
         const result = await utils.client.games.get.query({
           search: query,
-          limit: 50,
+          limit: LOOKUP_PAGINATION.AUTOCOMPLETE_LIMIT,
         })
         return result.games.map((game) => ({
           id: game.id,
@@ -91,7 +92,7 @@ function ListingEditForm(props: Props) {
       try {
         const result = await utils.client.emulators.get.query({
           search: query || undefined, // Pass undefined instead of empty string
-          limit: 50,
+          limit: LOOKUP_PAGINATION.AUTOCOMPLETE_LIMIT,
         })
         return result.emulators.map((emulator) => ({
           id: emulator.id,
@@ -111,7 +112,7 @@ function ListingEditForm(props: Props) {
       try {
         const result = await utils.client.devices.options.query({
           search: query || undefined, // Pass undefined instead of empty string
-          limit: 50,
+          limit: LOOKUP_PAGINATION.AUTOCOMPLETE_LIMIT,
         })
         return result.devices.map((device) => ({
           id: device.id,
@@ -159,7 +160,7 @@ function ListingEditForm(props: Props) {
     value: cfv.value,
   }))
 
-  const { register, handleSubmit, formState, setValue, watch, control, getValues } =
+  const { register, handleSubmit, formState, setValue, control, getValues } =
     useForm<UpdateListingFormData>({
       resolver: zodResolver(UpdateListingAdminSchema),
       defaultValues: {
@@ -175,7 +176,7 @@ function ListingEditForm(props: Props) {
     })
 
   // Watch for selected emulator to fetch its custom fields
-  const selectedEmulatorId = watch('emulatorId')
+  const selectedEmulatorId = useWatch({ control, name: 'emulatorId' })
   const customFieldsQuery = api.customFieldDefinitions.getByEmulator.useQuery(
     { emulatorId: selectedEmulatorId },
     { enabled: !!selectedEmulatorId, refetchOnWindowFocus: false, refetchOnReconnect: false },

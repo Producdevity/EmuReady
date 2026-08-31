@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { SortDirection } from '@/schemas/soc'
+import { SortDirectionSchema } from '@/schemas/common'
 import { ReportReason, ReportStatus } from '@orm'
 
 export const ReportReasonSchema = z.nativeEnum(ReportReason)
@@ -10,13 +10,13 @@ export const ListingReportSortField = z.enum(['createdAt', 'updatedAt', 'status'
 export const CreateListingReportSchema = z.object({
   listingId: z.string().uuid(),
   reason: ReportReasonSchema,
-  description: z.string().optional(),
+  description: z.string().max(1000).optional(),
 })
 
 export const UpdateReportStatusSchema = z.object({
   id: z.string().uuid(),
   status: ReportStatusSchema,
-  reviewNotes: z.string().optional(),
+  reviewNotes: z.string().max(1000).optional(),
 })
 
 export const GetListingReportsSchema = z
@@ -25,9 +25,9 @@ export const GetListingReportsSchema = z
     status: ReportStatusSchema.optional(),
     reason: ReportReasonSchema.optional(),
     sortField: ListingReportSortField.optional(),
-    sortDirection: SortDirection.optional(),
-    page: z.number().min(1).default(1),
-    limit: z.number().min(1).max(100).default(20),
+    sortDirection: SortDirectionSchema.optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
   })
   .optional()
 
@@ -49,6 +49,3 @@ export const GetUserReportsSchema = z.object({
 export const GetUserReportStatsSchema = z.object({
   userId: z.string().uuid(),
 })
-
-export type ReportReasonType = ReportReason
-export type ReportStatusType = ReportStatus

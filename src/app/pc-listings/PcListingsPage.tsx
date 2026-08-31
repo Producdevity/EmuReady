@@ -32,6 +32,8 @@ import {
   ViewButton,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
+import { getCpuLabel } from '@/features/hardware/cpu/shared/cpu-format'
+import { getGpuLabel } from '@/features/hardware/gpu/shared/gpu-format'
 import {
   useEmulatorLogos,
   useLocalStorage,
@@ -49,7 +51,6 @@ import {
 } from '@/utils/navigation-events'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
-import { ms } from '@/utils/time'
 import { Role, ApprovalStatus } from '@orm'
 import PcFiltersContent from './components/PcFiltersContent'
 import PcFiltersSidebar from './components/PcFiltersSidebar'
@@ -69,12 +70,6 @@ const PC_LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'posted', label: 'Posted', defaultVisible: false },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
-
-const LOOKUP_DATA_QUERY_OPTIONS = {
-  staleTime: ms.hours(6),
-  gcTime: ms.hours(12),
-}
-const USE_ASYNC_LISTING_FILTERS = process.env.NEXT_PUBLIC_ENABLE_ASYNC_LISTINGS_FILTERS === 'true'
 
 function PcListingsPage() {
   const router = useRouter()
@@ -103,22 +98,9 @@ function PcListingsPage() {
   const isAdmin = userRole ? hasRolePermission(userRole, Role.ADMIN) : false
   const isModerator = userRole ? roleIncludesRole(userRole, Role.MODERATOR) : false
 
-  // TODO: Remove this legacy fallback once async PC filters no longer need an opt-out.
-  const cpusQuery = api.cpus.options.useQuery(
-    { limit: 1000 },
-    { ...LOOKUP_DATA_QUERY_OPTIONS, enabled: !USE_ASYNC_LISTING_FILTERS },
-  )
-  // TODO: Remove this legacy fallback once async PC filters no longer need an opt-out.
-  const gpusQuery = api.gpus.options.useQuery(
-    { limit: 1000 },
-    { ...LOOKUP_DATA_QUERY_OPTIONS, enabled: !USE_ASYNC_LISTING_FILTERS },
-  )
-  const emulatorsQuery = api.emulators.get.useQuery({ limit: 100 }, LOOKUP_DATA_QUERY_OPTIONS)
-  const performanceScalesQuery = api.listings.performanceScales.useQuery(
-    undefined,
-    LOOKUP_DATA_QUERY_OPTIONS,
-  )
-  const systemsQuery = api.systems.get.useQuery(undefined, LOOKUP_DATA_QUERY_OPTIONS)
+  const emulatorsQuery = api.emulators.get.useQuery({ limit: 100 })
+  const performanceScalesQuery = api.listings.performanceScales.useQuery()
+  const systemsQuery = api.systems.get.useQuery()
 
   const filterParams: RouterInput['pcListings']['get'] = {
     page: listingsState.page,
@@ -183,9 +165,6 @@ function PcListingsPage() {
     return <div className="p-8 text-center text-red-500">Failed to load PC listings.</div>
   }
 
-  const cpusForFilters = cpusQuery.data?.cpus ?? []
-  const gpusForFilters = gpusQuery.data?.gpus ?? []
-
   return (
     <main className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="lg:flex">
@@ -203,8 +182,6 @@ function PcListingsPage() {
             minMemory={listingsState.minMemory}
             maxMemory={listingsState.maxMemory}
             searchTerm={listingsState.searchInput}
-            cpus={cpusForFilters}
-            gpus={gpusForFilters}
             systems={systemsQuery.data ?? []}
             emulators={emulatorsQuery.data?.emulators ?? []}
             performanceScales={performanceScalesQuery.data ?? []}
@@ -231,8 +208,6 @@ function PcListingsPage() {
               minMemory={listingsState.minMemory}
               maxMemory={listingsState.maxMemory}
               searchTerm={listingsState.searchInput}
-              cpus={cpusForFilters}
-              gpus={gpusForFilters}
               systems={systemsQuery.data ?? []}
               emulators={emulatorsQuery.data?.emulators ?? []}
               performanceScales={performanceScalesQuery.data ?? []}
@@ -556,16 +531,12 @@ function PcListingsPage() {
                         )}
                         {columnVisibility.isColumnVisible('cpu') && (
                           <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                            {listing.cpu
-                              ? `${listing.cpu.brand.name} ${listing.cpu.modelName}`
-                              : 'N/A'}
+                            {listing.cpu ? getCpuLabel(listing.cpu) : 'N/A'}
                           </td>
                         )}
                         {columnVisibility.isColumnVisible('gpu') && (
                           <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                            {listing.gpu
-                              ? `${listing.gpu.brand.name} ${listing.gpu.modelName}`
-                              : 'Integrated'}
+                            {listing.gpu ? getGpuLabel(listing.gpu) : 'Integrated'}
                           </td>
                         )}
                         {columnVisibility.isColumnVisible('memory') && (

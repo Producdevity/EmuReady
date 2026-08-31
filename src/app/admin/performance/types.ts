@@ -3,6 +3,10 @@ export interface PerformanceScale {
   label: string
   description: string | null
   rank: number
+  _count?: {
+    listings: number
+    pcListings: number
+  }
 }
 
 export interface PerformanceScaleForDeletion {

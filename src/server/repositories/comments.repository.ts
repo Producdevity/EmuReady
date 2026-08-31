@@ -1,8 +1,9 @@
 import { PAGINATION } from '@/data/constants'
-import { type PaginationResult, paginate, calculateOffset } from '@/server/utils/pagination'
+import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { type Prisma, Role } from '@orm/client'
 import { BaseRepository } from './base.repository'
+import type { PaginationResult } from '@/schemas/pagination'
 
 export interface CommentFilters {
   listingId?: string
@@ -58,7 +59,7 @@ export class CommentsRepository extends BaseRepository {
 
     const where = this.buildWhereClause(filters)
     const orderBy = this.buildOrderBy(sortField, sortDirection)
-    const actualOffset = calculateOffset({ page, offset }, limit ?? 20)
+    const actualOffset = calculateOffset({ page, offset }, limit)
 
     const [total, comments] = await Promise.all([
       this.prisma.comment.count({ where }),
@@ -67,14 +68,14 @@ export class CommentsRepository extends BaseRepository {
         include: CommentsRepository.includes.default,
         orderBy,
         skip: actualOffset,
-        take: limit ?? 20,
+        take: limit,
       }),
     ])
 
     const pagination = paginate({
-      total: total,
-      page: page ?? Math.floor(actualOffset / (limit ?? 20)) + 1,
-      limit: limit ?? 20,
+      total,
+      page: page ?? Math.floor(actualOffset / limit) + 1,
+      limit,
     })
 
     return { comments, pagination }
@@ -123,21 +124,69 @@ export class CommentsRepository extends BaseRepository {
     })
   }
 
-  /**
-   * Create a new comment
-   */
-  async create(
-    data: Prisma.CommentCreateInput,
-  ): Promise<Prisma.CommentGetPayload<{ include: typeof CommentsRepository.includes.minimal }>> {
-    return this.prisma.comment.create({
-      data,
-      include: CommentsRepository.includes.minimal,
+  async listingExists(listingId: string): Promise<boolean> {
+    const listing = await this.handleDatabaseOperation(
+      () => this.prisma.listing.findUnique({ where: { id: listingId }, select: { id: true } }),
+      'Listing',
+    )
+
+    return listing !== null
+  }
+
+  async commentBelongsToListing(commentId: string, listingId: string): Promise<boolean> {
+    const comment = await this.handleDatabaseOperation(
+      () =>
+        this.prisma.comment.findUnique({
+          where: { id: commentId },
+          select: { listingId: true },
+        }),
+      'Comment',
+    )
+
+    return comment?.listingId === listingId
+  }
+
+  async userExists(userId: string): Promise<boolean> {
+    const user = await this.handleDatabaseOperation(
+      () => this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } }),
+      'User',
+    )
+
+    return user !== null
+  }
+
+  async countByUser(userId: string): Promise<number> {
+    return this.handleDatabaseOperation(
+      () => this.prisma.comment.count({ where: { userId } }),
+      'Comment',
+    )
+  }
+
+  async create(data: Prisma.CommentCreateInput): Promise<MinimalComment> {
+    return this.handleDatabaseOperation(
+      () =>
+        this.prisma.comment.create({
+          data,
+          include: CommentsRepository.includes.minimal,
+        }),
+      'Comment',
+    )
+  }
+
+  async createForListing(input: {
+    content: string
+    userId: string
+    listingId: string
+    parentId?: string
+  }): Promise<MinimalComment> {
+    return this.create({
+      content: input.content,
+      user: { connect: { id: input.userId } },
+      listing: { connect: { id: input.listingId } },
+      ...(input.parentId ? { parent: { connect: { id: input.parentId } } } : {}),
     })
   }
 
-  /**
-   * Update a comment
-   */
   async update(
     id: string,
     data: Prisma.CommentUpdateInput,
@@ -260,3 +309,7 @@ export class CommentsRepository extends BaseRepository {
     }
   }
 }
+
+export type MinimalComment = Prisma.CommentGetPayload<{
+  include: typeof CommentsRepository.includes.minimal
+}>

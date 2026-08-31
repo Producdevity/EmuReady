@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
   AdminStatsDisplay,
@@ -25,6 +24,7 @@ import {
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
+import { useAdminTable } from '@/hooks/admin'
 import { api } from '@/lib/api'
 import { RolePermissionMatrix } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'

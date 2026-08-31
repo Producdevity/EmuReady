@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import {
@@ -8,7 +7,15 @@ import {
   type CompatibilityCustomFieldValue,
 } from '@/components/compatibility/custom-fields'
 import { EmulatorIcon, SystemIcon } from '@/components/icons'
-import { Badge, Button, Input, LocalizedDate, Modal, PerformanceBadge } from '@/components/ui'
+import {
+  Badge,
+  Button,
+  ImageRenderer,
+  Input,
+  LocalizedDate,
+  Modal,
+  PerformanceBadge,
+} from '@/components/ui'
 import { useEmulatorLogos } from '@/hooks'
 import getImageUrl from '@/utils/getImageUrl'
 import {
@@ -48,7 +55,7 @@ function GameInfoSection(props: { game: CompatibilityReportReviewGame }) {
       <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Game</h3>
       <div className="flex items-center gap-3">
         {props.game.imageUrl && (
-          <Image
+          <ImageRenderer
             src={getImageUrl(props.game.imageUrl, props.game.title)}
             alt={props.game.title}
             width={48}

@@ -29,6 +29,7 @@ import { SuccessRateBar } from '@/components/ui/SuccessRateBar'
 import { EditButton, ViewButton } from '@/components/ui/table-buttons'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/Tooltip'
 import { VerifiedDeveloperBadge } from '@/components/ui/VerifiedDeveloperBadge'
+import { CACHE_DURATIONS } from '@/data/constants'
 import storageKeys from '@/data/storageKeys'
 import {
   useEmulatorLogos,
@@ -47,7 +48,6 @@ import {
 } from '@/utils/navigation-events'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
-import { ms } from '@/utils/time'
 import { Role, ApprovalStatus } from '@orm'
 import ListingsFiltersContent from './components/ListingsFiltersContent'
 import ListingsFiltersSidebar from './components/ListingsFiltersSidebar'
@@ -65,10 +65,6 @@ const LISTINGS_COLUMNS: ColumnDefinition[] = [
   { key: 'posted', label: 'Posted', defaultVisible: false },
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
-
-const LOOKUP_DATA_STALE_TIME = ms.hours(6)
-const LOOKUP_DATA_GC_TIME = ms.hours(12)
-const USE_ASYNC_LISTING_FILTERS = process.env.NEXT_PUBLIC_ENABLE_ASYNC_LISTINGS_FILTERS === 'true'
 
 function ListingsPage() {
   const { isSignedIn } = useUser()
@@ -98,8 +94,8 @@ function ListingsPage() {
   })
   const userPreferencesQuery = api.userPreferences.get.useQuery(undefined, {
     enabled: isSignedIn === true && !!userQuery.data,
-    staleTime: ms.seconds(30),
-    gcTime: ms.minutes(5),
+    staleTime: CACHE_DURATIONS.SHORT,
+    gcTime: CACHE_DURATIONS.MEDIUM,
   })
 
   const userRole = userQuery?.data?.role
@@ -112,39 +108,9 @@ function ListingsPage() {
     socIds: listingsState.socIds,
   })
 
-  const systemsQuery = api.systems.get.useQuery(undefined, {
-    staleTime: LOOKUP_DATA_STALE_TIME,
-    gcTime: LOOKUP_DATA_GC_TIME,
-  })
-  // TODO: Remove this legacy fallback once async filters no longer need an opt-out.
-  const devicesQuery = api.devices.options.useQuery(
-    { limit: 10000 },
-    {
-      enabled: !USE_ASYNC_LISTING_FILTERS,
-      staleTime: LOOKUP_DATA_STALE_TIME,
-      gcTime: LOOKUP_DATA_GC_TIME,
-    },
-  )
-  // TODO: Remove this legacy fallback once async filters no longer need an opt-out.
-  const socsQuery = api.socs.options.useQuery(
-    { limit: 10000 },
-    {
-      enabled: !USE_ASYNC_LISTING_FILTERS,
-      staleTime: LOOKUP_DATA_STALE_TIME,
-      gcTime: LOOKUP_DATA_GC_TIME,
-    },
-  )
-  const emulatorsQuery = api.emulators.get.useQuery(
-    { limit: 100 },
-    {
-      staleTime: LOOKUP_DATA_STALE_TIME,
-      gcTime: LOOKUP_DATA_GC_TIME,
-    },
-  )
-  const performanceScalesQuery = api.listings.performanceScales.useQuery(undefined, {
-    staleTime: LOOKUP_DATA_STALE_TIME,
-    gcTime: LOOKUP_DATA_GC_TIME,
-  })
+  const systemsQuery = api.systems.get.useQuery()
+  const emulatorsQuery = api.emulators.get.useQuery({ limit: 100 })
+  const performanceScalesQuery = api.listings.performanceScales.useQuery()
 
   const filterParams: RouterInput['listings']['get'] = {
     page: listingsState.page,
@@ -254,9 +220,6 @@ function ListingsPage() {
     return <div className="p-8 text-center text-red-500">Failed to load listings.</div>
   }
 
-  const devicesForFilters = devicesQuery.data?.devices ?? []
-  const socsForFilters = socsQuery.data?.socs ?? []
-
   return (
     <main className="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="lg:flex">
@@ -270,8 +233,6 @@ function ListingsPage() {
             performanceIds={listingsState.performanceIds}
             searchTerm={listingsState.searchInput}
             systems={systemsQuery.data ?? []}
-            devices={devicesForFilters}
-            socs={socsForFilters}
             emulators={emulatorsQuery.data?.emulators ?? []}
             performanceScales={performanceScalesQuery.data ?? []}
             onSystemChange={handleSystemChange}
@@ -306,8 +267,6 @@ function ListingsPage() {
               performanceIds={listingsState.performanceIds}
               searchTerm={listingsState.searchInput}
               systems={systemsQuery.data ?? []}
-              devices={devicesForFilters}
-              socs={socsForFilters}
               emulators={emulatorsQuery.data?.emulators ?? []}
               performanceScales={performanceScalesQuery.data ?? []}
               onSystemChange={handleSystemChange}

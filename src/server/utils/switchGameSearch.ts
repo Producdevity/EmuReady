@@ -1,6 +1,6 @@
 import Fuse from 'fuse.js'
 import { LRUCache } from 'lru-cache'
-import { ms } from '@/utils/time'
+import { CACHE_DURATIONS } from '@/data/constants'
 
 interface SwitchGameEntry {
   program_id: string
@@ -21,12 +21,12 @@ interface CachedData<T> {
 }
 
 const switchGamesDataCache = new LRUCache<string, CachedData<SwitchGameEntry[]>>({
-  ttl: ms.days(1),
+  ttl: CACHE_DURATIONS.STATIC,
   max: 1,
 })
 
 const switchGamesFuseCache = new LRUCache<string, Fuse<SwitchGameEntry>>({
-  ttl: ms.days(1),
+  ttl: CACHE_DURATIONS.STATIC,
   max: 1,
 })
 

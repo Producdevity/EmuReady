@@ -1,12 +1,10 @@
 'use client'
 
 import { Clock } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import { useAdminTable, useReviewRiskFilter } from '@/app/admin/hooks'
 import { confirmBulkApproval } from '@/app/admin/utils'
 import {
   AdminErrorState,
@@ -31,6 +29,7 @@ import {
   BulkActions,
   ColumnVisibilityControl,
   DisplayToggleButton,
+  ImageRenderer,
   LoadingSpinner,
   LocalizedDate,
   Pagination,
@@ -43,13 +42,17 @@ import {
   useConfirmDialog,
   ViewUserButton,
 } from '@/components/ui'
+import { POLLING_INTERVALS } from '@/data/constants'
 import storageKeys from '@/data/storageKeys'
+import { getCpuLabel } from '@/features/hardware/cpu/shared/cpu-format'
+import { getGpuLabel } from '@/features/hardware/gpu/shared/gpu-format'
 import {
   useEmulatorLogos,
   useLocalStorage,
   useColumnVisibility,
   type ColumnDefinition,
 } from '@/hooks'
+import { useAdminTable, useReviewRiskFilter } from '@/hooks/admin'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { logger } from '@/lib/logger'
@@ -96,7 +99,6 @@ function PcListingApprovalsPage() {
   const router = useRouter()
 
   const table = useAdminTable<PcApprovalSortField>({
-    defaultLimit: 20,
     defaultSortField: 'createdAt',
     defaultSortDirection: 'asc',
   })
@@ -133,7 +135,7 @@ function PcListingApprovalsPage() {
 
   const gameStatsQuery = api.games.stats.useQuery()
   const pcListingsStatsQuery = api.pcListings.stats.useQuery(undefined, {
-    refetchInterval: 30000,
+    refetchInterval: POLLING_INTERVALS.SHORT,
   })
 
   const approvalModal = useCompatibilityReportReviewDecisionModal<PendingPcListing>()
@@ -568,7 +570,7 @@ function PcListingApprovalsPage() {
                     {columnVisibility.isColumnVisible('thumbnail') && (
                       <td className="px-6 py-4">
                         {listing.game.imageUrl && (
-                          <Image
+                          <ImageRenderer
                             src={getImageUrl(listing.game.imageUrl, listing.game.title)}
                             alt={listing.game.title}
                             width={40}
@@ -608,12 +610,12 @@ function PcListingApprovalsPage() {
                     )}
                     {columnVisibility.isColumnVisible('cpu') && (
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                        {listing.cpu.brand.name} {listing.cpu.modelName}
+                        {getCpuLabel(listing.cpu)}
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('gpu') && (
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                        {listing.gpu?.brand.name} {listing.gpu?.modelName}
+                        {listing.gpu ? getGpuLabel(listing.gpu) : 'Integrated'}
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('emulator') && (

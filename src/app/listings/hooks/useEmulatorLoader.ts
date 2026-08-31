@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { LOOKUP_PAGINATION } from '@/data/constants'
 import { api } from '@/lib/api'
 import { type EmulatorOption, type GameOption } from '../components/shared'
 
@@ -17,7 +18,10 @@ export function useEmulatorLoader(selectedGame: GameOption | null) {
       }
 
       try {
-        const result = await utils.emulators.get.fetch({ search: query })
+        const result = await utils.emulators.get.fetch({
+          search: query,
+          limit: LOOKUP_PAGINATION.AUTOCOMPLETE_LIMIT,
+        })
 
         const filteredEmulators = result.emulators
           .filter((emulator) =>

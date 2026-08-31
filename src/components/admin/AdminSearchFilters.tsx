@@ -1,7 +1,7 @@
 import { Search } from 'lucide-react'
 import { type PropsWithChildren } from 'react'
-import { type UseAdminTableReturn } from '@/app/admin/hooks/useAdminTable'
 import { ClearButton, Input } from '@/components/ui'
+import { type UseAdminTableReturn } from '@/hooks/admin'
 
 interface Props<TSortField extends string> extends PropsWithChildren {
   searchPlaceholder?: string

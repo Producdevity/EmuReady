@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { PAGINATION, CHAR_LIMITS } from '@/data/constants'
 import { HumanVerificationTokenSchema } from '@/features/human-verification/shared/schema'
-import { JsonValueSchema } from '@/schemas/common'
+import { JsonValueSchema, SortDirectionSchema } from '@/schemas/common'
 import { CreatePcListingBaseSchema } from '@/schemas/listingCreate'
 import { REVIEW_RISK_FILTERS, ReviewRiskFilterSchema } from '@/schemas/submissionRisk'
 import { ApprovalStatus, PcOs, ReportReason, ReportStatus } from '@orm'
@@ -66,27 +66,32 @@ export const GetPendingPcListingsSchema = z
 
 export const DeletePcListingSchema = z.object({ id: z.string().uuid() })
 
-// TODO: Wire up a PC admin processed-listings page + router procedure for
-// parity with handheld (`admin.getProcessed` + `src/app/admin/processed-listings/`).
-// When doing so, extend this schema with `sortField` / `sortDirection` using the
-// same shape as `GetProcessedSchema` in `./listing.ts`, and ideally share as much
-// of the admin router logic as possible (the two codebases are drifting — fixes
-// applied to handheld listings often miss their PC counterpart). Candidates for
-// shared code: `buildProcessedOrderBy`, the search `where` builder, the
-// approval-flow branches. See also: `src/server/api/utils/listingHelpers.ts`
-// (handheld) vs `pcListingHelpers.ts` (PC) — these helpers already exist and
-// should be the basis for a shared abstraction.
 export const GetProcessedPcSchema = z.object({
   page: z.number().default(1),
   limit: z.number().default(10),
-  filterStatus: z.nativeEnum(ApprovalStatus).optional(),
-  search: z.string().optional(),
+  filterStatus: z.nativeEnum(ApprovalStatus).nullable().optional(),
+  search: z.string().nullable().optional(),
+  sortField: z
+    .enum([
+      'processedAt',
+      'createdAt',
+      'status',
+      'game.title',
+      'game.system.name',
+      'cpu',
+      'gpu',
+      'emulator.name',
+      'author.name',
+    ])
+    .nullable()
+    .optional(),
+  sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
 })
 
 export const OverridePcApprovalStatusSchema = z.object({
   pcListingId: z.string().uuid(),
   newStatus: z.nativeEnum(ApprovalStatus), // PENDING, APPROVED, or REJECTED
-  overrideNotes: z.string().optional(),
+  overrideNotes: z.string().nullable().optional(),
 })
 
 export const ResetPcListingToPendingSchema = z.object({
@@ -111,11 +116,6 @@ export const BulkRejectPcListingsSchema = z.object({
 })
 
 export const VerifyPcListingAdminSchema = z.object({
-  pcListingId: z.string().uuid(),
-  notes: z.string().optional(),
-})
-
-export const UnverifyPcListingAdminSchema = z.object({
   pcListingId: z.string().uuid(),
   notes: z.string().optional(),
 })
@@ -187,10 +187,6 @@ export const UpdatePcListingUserSchema = z.object({
       }),
     )
     .optional(),
-})
-
-export const GetPcListingForOwnerEditSchema = z.object({
-  id: z.string().uuid(),
 })
 
 // PC Preset schemas
@@ -269,6 +265,8 @@ export const UnpinPcListingCommentSchema = z.object({
 })
 
 // PC Listing Report schemas
+export const PcListingReportSortField = z.enum(['createdAt', 'updatedAt', 'status', 'reason'])
+
 export const CreatePcListingReportSchema = z.object({
   pcListingId: z.string().uuid(),
   reason: z.nativeEnum(ReportReason),
@@ -276,16 +274,22 @@ export const CreatePcListingReportSchema = z.object({
 })
 
 export const UpdatePcListingReportSchema = z.object({
-  reportId: z.string().uuid(),
+  id: z.string().uuid(),
   status: z.nativeEnum(ReportStatus),
   reviewNotes: z.string().max(1000).optional(),
 })
 
-export const GetPcListingReportsSchema = z.object({
-  status: z.nativeEnum(ReportStatus).optional(),
-  page: z.number().min(1).default(1),
-  limit: z.number().min(1).max(100).default(20),
-})
+export const GetPcListingReportsSchema = z
+  .object({
+    search: z.string().optional(),
+    status: z.nativeEnum(ReportStatus).optional(),
+    reason: z.nativeEnum(ReportReason).optional(),
+    sortField: PcListingReportSortField.optional(),
+    sortDirection: SortDirectionSchema.optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+  })
+  .optional()
 
 // PC Listing Verification schemas
 export const VerifyPcListingSchema = z.object({
@@ -302,9 +306,6 @@ export const GetPcListingVerificationsSchema = z.object({
 })
 
 // User permissions and editing
-export const CanEditPcListingSchema = z.object({
-  pcListingId: z.string().uuid(),
-})
 
 export const GetPcListingForUserEditSchema = z.object({
   id: z.string().uuid(),

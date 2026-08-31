@@ -4,8 +4,13 @@ import { Shield, Calendar, Search } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { isEmpty } from 'remeda'
-import { useAdminTable } from '@/app/admin/hooks'
-import { AdminTableContainer, AdminTableNoResults } from '@/components/admin'
+import {
+  AdminErrorState,
+  AdminPageLayout,
+  AdminStatsDisplay,
+  AdminTableContainer,
+  AdminTableNoResults,
+} from '@/components/admin'
 import {
   Button,
   Input,
@@ -19,8 +24,8 @@ import {
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
+import { useAdminTable } from '@/hooks/admin'
 import { api } from '@/lib/api'
-import { TrustStatsOverview } from '@/lib/dynamic-imports'
 import toast from '@/lib/toast'
 import { TRUST_ACTIONS } from '@/lib/trust/config'
 import { type RouterOutput } from '@/types/trpc'
@@ -62,6 +67,11 @@ function AdminTrustLogsPage() {
   })
 
   const trustStatsQuery = api.trust.getTrustStats.useQuery({})
+  const trustedPlusUsers = trustStatsQuery.data
+    ? (trustStatsQuery.data.levelDistribution
+        ?.filter((level) => level.minScore >= 250)
+        .reduce((sum, level) => sum + level.count, 0) ?? 0)
+    : undefined
 
   const runMonthlyBonusMutation = api.trust.runMonthlyActiveBonus.useMutation({
     onSuccess: (result) => {
@@ -87,16 +97,13 @@ function AdminTrustLogsPage() {
 
   if (trustLogsQuery.error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center py-12">
-          <p className="text-red-600 dark:text-red-400 text-lg">
-            Error loading trust logs: {trustLogsQuery.error.message}
-          </p>
-          <Button onClick={() => trustLogsQuery.refetch()} className="mt-4">
-            Try Again
-          </Button>
-        </div>
-      </div>
+      <AdminErrorState
+        title="Failed to load trust logs"
+        message={trustLogsQuery.error.message}
+        onRetry={() => {
+          void trustLogsQuery.refetch()
+        }}
+      />
     )
   }
 
@@ -111,17 +118,12 @@ function AdminTrustLogsPage() {
         : '-'
   }
 
-  // TODO: use AdminPageLayout like all the other admin pages
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Trust System Logs</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Monitor and audit all trust score changes
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
+    <AdminPageLayout
+      title="Trust System Logs"
+      description="Monitor and audit all trust score changes"
+      headerActions={
+        <>
           <Button
             variant="outline"
             icon={Calendar}
@@ -135,11 +137,29 @@ function AdminTrustLogsPage() {
             columns={TRUST_LOGS_COLUMNS}
             columnVisibility={columnVisibility}
           />
-        </div>
-      </div>
-
-      {/*TODO: check if we can use AdminStatsDisplay */}
-      {trustStatsQuery.data && <TrustStatsOverview trustStatsData={trustStatsQuery.data} />}
+        </>
+      }
+    >
+      <AdminStatsDisplay
+        stats={[
+          {
+            label: 'Total Actions',
+            value: trustStatsQuery.data?.totalActions,
+            color: 'blue',
+          },
+          {
+            label: 'Total Users',
+            value: trustStatsQuery.data?.totalUsers,
+            color: 'green',
+          },
+          {
+            label: 'Trusted+ Users',
+            value: trustedPlusUsers,
+            color: 'purple',
+          },
+        ]}
+        isLoading={trustStatsQuery.isPending}
+      />
 
       {/* Search and Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow mt-2 mb-6 p-4">
@@ -314,7 +334,7 @@ function AdminTrustLogsPage() {
           onPageChange={(newPage) => table.setPage(newPage)}
         />
       )}
-    </div>
+    </AdminPageLayout>
   )
 }
 

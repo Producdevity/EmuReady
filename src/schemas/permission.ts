@@ -1,10 +1,9 @@
 import { z } from 'zod'
+import { SortDirectionSchema } from '@/schemas/common'
 import { Role, PermissionActionType } from '@orm'
 
 // Sorting and filtering schemas
 export const PermissionSortField = z.enum(['label', 'key', 'category', 'createdAt', 'updatedAt'])
-
-export const SortDirection = z.enum(['asc', 'desc'])
 
 export const PermissionCategory = z.enum(['CONTENT', 'MODERATION', 'USER_MANAGEMENT', 'SYSTEM'])
 
@@ -14,7 +13,7 @@ export const GetAllPermissionsSchema = z
     search: z.string().optional(),
     category: PermissionCategory.optional(),
     sortField: PermissionSortField.optional(),
-    sortDirection: SortDirection.optional(),
+    sortDirection: SortDirectionSchema.optional(),
     page: z.number().int().min(1).default(1),
     limit: z.number().int().min(1).max(100).default(50),
     includeSystemOnly: z.boolean().optional(),
@@ -79,7 +78,7 @@ export const GetPermissionLogsSchema = z
     targetRole: z.nativeEnum(Role).optional(),
     permissionId: z.string().uuid().optional(),
     sortField: PermissionLogSortField.optional(),
-    sortDirection: SortDirection.optional(),
+    sortDirection: SortDirectionSchema.optional(),
     page: z.number().int().min(1).default(1),
     limit: z.number().int().min(1).max(100).default(20),
     dateFrom: z.string().datetime().optional(),

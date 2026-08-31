@@ -1,16 +1,16 @@
 import { useState } from 'react'
-import { useAdminTable } from '@/app/admin/hooks'
 import { AdminPageLayout, AdminSearchFilters, AdminStatsDisplay } from '@/components/admin'
 import { Button, Card, ColumnVisibilityControl, useConfirmDialog } from '@/components/ui'
+import { POLLING_INTERVALS } from '@/data/constants'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility } from '@/hooks'
+import { useAdminTable } from '@/hooks/admin'
 import { type ColumnDefinition } from '@/hooks/useColumnVisibility'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type ApiKeySortField } from '@/schemas/apiAccess'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasRolePermission } from '@/utils/permissions'
-import { ms } from '@/utils/time'
 import { Role } from '@orm'
 import { AdminCreateKeyForm, type AdminCreateFormState } from './AdminCreateKeyForm'
 import { AdminKeyTable } from './AdminKeyTable'
@@ -67,11 +67,11 @@ export function AdminApiAccessPanel(props: Props) {
   )
 
   const statsQuery = api.apiKeys.adminStats.useQuery(undefined, {
-    refetchInterval: ms.minutes(5),
+    refetchInterval: POLLING_INTERVALS.LONG,
   })
   const canManageSystemKeys = hasRolePermission(props.userRole, Role.SUPER_ADMIN)
   const systemKeysQuery = api.apiKeys.adminSystemKeys.useQuery(undefined, {
-    refetchInterval: ms.minutes(10),
+    refetchInterval: POLLING_INTERVALS.EXTRA_LONG,
     enabled: canManageSystemKeys,
   })
 

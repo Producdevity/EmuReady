@@ -1,16 +1,18 @@
 import { sendGAEvent } from '@next/third-parties/google'
-import { track } from '@vercel/analytics'
 import { type AnalyticsEventData } from '@/lib/analytics/analytics.types'
 import { env } from '@/lib/env'
 import { logger } from '@/lib/logger'
 import { isTrackingAllowed } from './isTrackingAllowed'
-/**
- * Send analytics event with proper consent checking and environment handling
- */
+
+function ensureGoogleAnalyticsDataLayer() {
+  if (typeof window === 'undefined') return
+
+  if (!window.dataLayer) window.dataLayer = []
+}
+
 export function sendAnalyticsEvent(params: AnalyticsEventData) {
   if (!isTrackingAllowed(params.category)) return
 
-  // Build event data with proper typing
   const eventData: Record<string, string | number | boolean> = {
     category: params.category,
     action: params.action,
@@ -40,17 +42,15 @@ export function sendAnalyticsEvent(params: AnalyticsEventData) {
   if (params.duration) eventData.duration = params.duration
   if (params.value !== undefined) eventData.value = params.value
 
-  // Add metadata
   if (params.metadata) {
     Object.entries(params.metadata).forEach(([key, value]) => {
       eventData[key] = value
     })
   }
 
-  // Log in development, send it to external services only when explicitly enabled.
   if (env.IS_DEVELOPMENT_BUILD) {
     const context = typeof window !== 'undefined' ? 'CLIENT' : 'SERVER'
-    return logger.log(`📊 Analytics Event [${context}]:`, {
+    return logger.log(`Analytics Event [${context}]:`, {
       category: params.category,
       action: params.action,
       data: eventData,
@@ -58,8 +58,9 @@ export function sendAnalyticsEvent(params: AnalyticsEventData) {
   }
 
   if (typeof window !== 'undefined' && env.ENABLE_ANALYTICS) {
-    if (env.VERCEL_ANALYTICS_ENABLED) track(params.action, eventData)
     if (env.GA_ID) {
+      ensureGoogleAnalyticsDataLayer()
+
       sendGAEvent('event', params.action, {
         event_category: params.category,
         ...eventData,

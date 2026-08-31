@@ -2,6 +2,12 @@ import { NextRequest } from 'next/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GET } from './route'
 
+vi.mock('@/lib/logger', () => ({
+  logger: {
+    warn: vi.fn(),
+  },
+}))
+
 const request = new NextRequest('http://localhost/api/retrocatalog/Retroid/Pocket%205')
 
 function contextFor(brandName: string, modelName: string) {
@@ -21,6 +27,7 @@ describe('/api/retrocatalog/[brandName]/[modelName]', () => {
     const response = await GET(request, contextFor('Retroid', 'Pocket 5'))
 
     expect(response.status).toBe(200)
+    expect(response.headers.get('Cache-Control')).toBe('no-store')
     expect(await response.json()).toEqual([])
   })
 
@@ -36,6 +43,9 @@ describe('/api/retrocatalog/[brandName]/[modelName]', () => {
     const response = await GET(request, contextFor('Retroid', 'Pocket 5'))
 
     expect(response.status).toBe(200)
+    expect(response.headers.get('Cache-Control')).toBe(
+      'public, s-maxage=86400, stale-while-revalidate=3600',
+    )
     expect(await response.json()).toEqual([device])
   })
 
@@ -49,9 +59,19 @@ describe('/api/retrocatalog/[brandName]/[modelName]', () => {
       'https://retrocatalog.com/api/catalog/retro-handhelds/Retro%2Fid/Pocket%205%3Fx%3D1',
       {
         headers: { Accept: 'application/json' },
-        next: { revalidate: 86400 },
+        cache: 'no-store',
       },
     )
+  })
+
+  it('does not cache empty RetroCatalog matches', async () => {
+    vi.stubGlobal('fetch', async () => Response.json([]))
+
+    const response = await GET(request, contextFor('Retroid', 'Pocket 6'))
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Cache-Control')).toBe('no-store')
+    expect(await response.json()).toEqual([])
   })
 
   it('does not call RetroCatalog for invalid lookup parameters', async () => {

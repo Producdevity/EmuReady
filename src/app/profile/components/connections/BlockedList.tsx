@@ -51,6 +51,8 @@ function BlockedList(props: Props) {
       pagination={query.data?.pagination}
       onPageChange={props.onPageChange}
       emptyMessage="No blocked users"
+      actionSkeletonClassName="w-24"
+      skeletonRows={props.limit}
       renderAction={(user) => (
         <Button
           variant="outline"

@@ -8,20 +8,30 @@ import { useState, useCallback, useEffect } from 'react'
 import { LogoIcon, LoadingIcon } from '@/components/icons'
 import NotificationCenter from '@/components/notifications/NotificationCenter'
 import { ThemeToggle } from '@/components/ui'
+import useMounted from '@/hooks/useMounted'
 import analytics from '@/lib/analytics'
-import { env } from '@/lib/env'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
 import { navbarItems } from './data'
 import MobileSearchOverlay from './MobileSearchOverlay'
 import NavbarExpandableSearch from './NavbarExpandableSearch'
 
+function AuthLoadingIndicator() {
+  return (
+    <div className="flex items-center justify-center w-8 h-8">
+      <LoadingIcon />
+    </div>
+  )
+}
+
 function Navbar() {
   const { user, isLoaded } = useUser()
+  const mounted = useMounted()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const pathname = usePathname()
+  const authReady = mounted && isLoaded
 
   // Handle scroll effect for navbar
   useEffect(() => {
@@ -119,12 +129,10 @@ function Navbar() {
           {/* Right Section */}
           <div className="hidden md:flex items-center space-x-4">
             <ThemeToggle />
-            {user && <NotificationCenter />}
+            {authReady && user && <NotificationCenter />}
 
-            {!isLoaded ? (
-              <div className="flex items-center justify-center w-8 h-8">
-                <LoadingIcon />
-              </div>
+            {!authReady ? (
+              <AuthLoadingIndicator />
             ) : (
               <>
                 {user ? (
@@ -139,18 +147,6 @@ function Navbar() {
                         shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:scale-105"
                       >
                         Admin
-                      </Link>
-                    )}
-                    {hasRolePermission(userRole, Role.MODERATOR) && env.ENABLE_V2_LISTINGS && (
-                      <Link
-                        href="/v2/listings"
-                        className="px-4 py-2.5 bg-gradient-to-r
-                        from-pink-500 to-rose-600
-                        hover:from-pink-600 hover:to-rose-700
-                        text-white font-semibold text-sm rounded-xl transition-all duration-300
-                        shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 hover:scale-105"
-                      >
-                        V2
                       </Link>
                     )}
 
@@ -196,7 +192,7 @@ function Navbar() {
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-3">
             <ThemeToggle />
-            {user && <NotificationCenter />}
+            {authReady && user && <NotificationCenter />}
             <button
               onClick={() => setMobileSearchOpen(true)}
               className="inline-flex items-center justify-center p-2.5 rounded-xl text-gray-400 hover:text-blue-500 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all duration-300"
@@ -249,7 +245,7 @@ function Navbar() {
             </Link>
           ))}
 
-          {!isLoaded ? (
+          {!authReady ? (
             <div className="px-4 py-3 text-gray-500">Loading...</div>
           ) : (
             <>

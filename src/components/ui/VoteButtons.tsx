@@ -6,7 +6,8 @@ import { CheckCircle, XCircle, HelpCircle } from 'lucide-react'
 import { useState, type ComponentType } from 'react'
 import analytics from '@/lib/analytics'
 import toast from '@/lib/toast'
-import { getBarColor, getBarWidth } from '@/utils/vote'
+import { getSuccessRateBarColor } from '@/utils/badge-colors'
+import { getBarWidth } from '@/utils/vote'
 import { wilsonPercent } from '@/utils/wilson-score'
 
 interface VoteButtonsProps {
@@ -125,7 +126,7 @@ export function VoteButtons(props: VoteButtonsProps) {
     Math.max(0, optimisticTotalVotes - optimisticUpVotes),
   )
 
-  const barColor = getBarColor(successRate)
+  const barColor = getSuccessRateBarColor(successRate)
   const barWidth = getBarWidth(successRate, optimisticTotalVotes)
 
   return (

@@ -32,12 +32,12 @@ import { isUserBanned } from '@/server/utils/query-builders'
 import { sanitizeInput, validatePagination } from '@/server/utils/security-validation'
 import { checkSpamContent } from '@/server/utils/spam-check'
 import { withSavepoint } from '@/server/utils/transactions'
+import { validateCustomFields } from '@/server/utils/validate-custom-fields'
 import { updateListingVoteCounts } from '@/server/utils/vote-counts'
 import { handleListingVoteTrustEffects } from '@/server/utils/vote-trust-effects'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { ms } from '@/utils/time'
 import { ApprovalStatus, Prisma, Role, TrustAction } from '@orm/client'
-import { validateCustomFields } from './validation'
 
 const EDIT_TIME_LIMIT_MINUTES = 60
 const EDIT_TIME_LIMIT = ms.minutes(EDIT_TIME_LIMIT_MINUTES)

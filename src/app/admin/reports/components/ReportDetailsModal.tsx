@@ -1,12 +1,12 @@
 'use client'
 
 import { Button, Modal, Badge, LocalizedDate } from '@/components/ui'
-import { type ListingReportWithDetails } from '../types'
+import { type AdminReportWithDetails } from '../adminReport'
 
 interface Props {
   isOpen: boolean
   onClose: () => void
-  report?: ListingReportWithDetails
+  report?: AdminReportWithDetails
 }
 
 function ReportDetailsModal(props: Props) {
@@ -17,7 +17,6 @@ function ReportDetailsModal(props: Props) {
   return (
     <Modal isOpen={props.isOpen} onClose={props.onClose} title="Report Details" size="lg">
       <div className="space-y-6">
-        {/* Report Info */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
             Report Information
@@ -66,7 +65,6 @@ function ReportDetailsModal(props: Props) {
           )}
         </div>
 
-        {/* Reported User */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Reported By</h3>
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded">
@@ -83,25 +81,34 @@ function ReportDetailsModal(props: Props) {
           </div>
         </div>
 
-        {/* Listing Details */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-            Reported Listing
+            Reported Compatibility Report
           </h3>
           <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Game
+                  Type
                 </label>
-                <p className="text-sm text-gray-900 dark:text-white">{report.listing.game.title}</p>
+                <p className="text-sm text-gray-900 dark:text-white">
+                  {report.compatibilityReport.reportLabel}
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Device
+                  Game
                 </label>
                 <p className="text-sm text-gray-900 dark:text-white">
-                  {report.listing.device.modelName}
+                  {report.compatibilityReport.gameTitle}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {report.compatibilityReport.hardwareFieldLabel}
+                </label>
+                <p className="text-sm text-gray-900 dark:text-white">
+                  {report.compatibilityReport.hardwareLabel}
                 </p>
               </div>
               <div>
@@ -109,7 +116,7 @@ function ReportDetailsModal(props: Props) {
                   Emulator
                 </label>
                 <p className="text-sm text-gray-900 dark:text-white">
-                  {report.listing.emulator.name}
+                  {report.compatibilityReport.emulatorName}
                 </p>
               </div>
               <div>
@@ -117,14 +124,13 @@ function ReportDetailsModal(props: Props) {
                   Author
                 </label>
                 <p className="text-sm text-gray-900 dark:text-white">
-                  {report.listing.author.name || 'Unknown'}
+                  {report.compatibilityReport.author.name || 'Unknown'}
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Review Notes */}
         {report.reviewNotes && (
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
@@ -141,19 +147,18 @@ function ReportDetailsModal(props: Props) {
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
           <Button variant="outline" onClick={props.onClose}>
             Close
           </Button>
           <Button
             variant="outline"
-            onClick={() => window.open(`/users/${report.listing.author.id}`, '_blank')}
+            onClick={() => window.open(`/users/${report.compatibilityReport.author.id}`, '_blank')}
           >
             View User (Public)
           </Button>
-          <Button onClick={() => window.open(`/listings/${report.listing.id}`, '_blank')}>
-            View Listing
+          <Button onClick={() => window.open(report.compatibilityReport.href, '_blank')}>
+            View Report
           </Button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { LOOKUP_PAGINATION } from '@/data/constants'
 import { api } from '@/lib/api'
 import { type GameOption } from '../components/shared'
 
@@ -13,7 +14,7 @@ export function useGameLoader() {
       try {
         const result = await utils.games.get.fetch({
           search: query,
-          limit: 20,
+          limit: LOOKUP_PAGINATION.AUTOCOMPLETE_LIMIT,
           listingFilter: 'all',
         })
         return (

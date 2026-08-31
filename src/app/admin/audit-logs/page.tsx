@@ -4,12 +4,12 @@ import { Shield } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { ADMIN_ROUTES } from '@/app/admin/config/routes'
-import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
   AdminStatsDisplay,
   AdminSearchFilters,
   AdminTableContainer,
+  AdminTableNoResults,
 } from '@/components/admin'
 import {
   ColumnVisibilityControl,
@@ -20,9 +20,11 @@ import {
   Pagination,
   LocalizedDate,
   Code,
+  Dropdown,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
+import { useAdminTable } from '@/hooks/admin'
 import { api } from '@/lib/api'
 import { formatEnumLabel } from '@/utils/format'
 import { AuditAction, AuditEntityType } from '@orm'
@@ -179,36 +181,8 @@ function AdminAuditLogsPage() {
         searchPlaceholder="Search by actor, target, entity ID, request, IP, user agent..."
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-          <select
-            value={selectedAction}
-            onChange={(e) => setSelectedAction(e.target.value)}
-            className="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-          >
-            {ACTION_OPTIONS.map((opt) => (
-              <option
-                key={opt.value ? String(opt.value) : 'all'}
-                value={opt.value as unknown as string}
-              >
-                {opt.label}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={selectedEntity}
-            onChange={(e) => setSelectedEntity(e.target.value)}
-            className="rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-          >
-            {ENTITY_OPTIONS.map((opt) => (
-              <option
-                key={opt.value ? String(opt.value) : 'all'}
-                value={opt.value as unknown as string}
-              >
-                {opt.label}
-              </option>
-            ))}
-          </select>
-
+          <Dropdown options={ACTION_OPTIONS} value={selectedAction} onChange={setSelectedAction} />
+          <Dropdown options={ENTITY_OPTIONS} value={selectedEntity} onChange={setSelectedEntity} />
           <input
             type="date"
             value={dateFrom}
@@ -229,13 +203,13 @@ function AdminAuditLogsPage() {
 
       <AdminTableContainer>
         {logs.length === 0 ? (
-          <div className="py-12 text-center">
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              {table.search || selectedAction || selectedEntity || dateFrom || dateTo
-                ? 'No audit logs found matching your criteria.'
-                : 'No audit logs found.'}
-            </p>
-          </div>
+          <AdminTableNoResults
+            hasQuery={
+              !!table.search || !!selectedAction || !!selectedEntity || !!dateFrom || !!dateTo
+            }
+            queryTitle="No audit logs found matching your criteria."
+            title="No audit logs found."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full">

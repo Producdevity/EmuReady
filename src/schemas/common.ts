@@ -1,11 +1,23 @@
 import { z } from 'zod'
 
+export const SortDirectionSchema = z.enum(['asc', 'desc'])
+export type SortDirection = z.output<typeof SortDirectionSchema>
+
+export const MutationSuccessSchema = z.object({
+  success: z.literal(true),
+})
+export type MutationSuccess = z.output<typeof MutationSuccessSchema>
+
+export function createMutationSuccess(): MutationSuccess {
+  return { success: true }
+}
+
 // Admin table URL parameters
 export const AdminTableParamsSchema = z.object({
   search: z.string().default(''),
   page: z.number().int().positive().default(1),
   sortField: z.string().nullable().default(null),
-  sortDirection: z.enum(['asc', 'desc']).nullable().default(null), // TODO: extract
+  sortDirection: SortDirectionSchema.nullable().default(null),
 })
 
 export const JsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
@@ -28,12 +40,12 @@ export const FilterValueSchema = z.object({
   label: z.string(),
 })
 
-export type FilterValue = z.infer<typeof FilterValueSchema>
+export type FilterValue = z.output<typeof FilterValueSchema>
 
 // Listing type: handheld vs PC
 export const ListingType = z.enum(['handheld', 'pc'])
-export type ListingType = z.infer<typeof ListingType>
+export type ListingType = z.output<typeof ListingType>
 
 // Severity level
 export const Severity = z.enum(['low', 'medium', 'high'])
-export type Severity = z.infer<typeof Severity>
+export type Severity = z.output<typeof Severity>

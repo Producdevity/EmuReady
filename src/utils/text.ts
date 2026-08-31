@@ -8,6 +8,10 @@ export function formatCountLabel(word: string, count: number) {
   return `${count} ${word}${count === 1 ? '' : 's'}`
 }
 
+export function normalizeWhitespace(value: string): string {
+  return value.trim().replace(/\s+/g, ' ')
+}
+
 /**
  * Normalizes a string by removing accents and converting to lowercase.
  * Useful for accent-insensitive searching.
@@ -22,16 +26,6 @@ export function normalizeString(str: string): string {
     .normalize('NFD') // Decompose combined characters (é → e + ́)
     .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks
     .toLowerCase()
-}
-
-/**
- * Normalizes an array of strings by removing accents and converting to lowercase.
- *
- * @example
- * normalizeStrings(["Astérix", "Obélix"]) // ["asterix", "obelix"]
- */
-export function normalizeStrings(strings: string[]): string[] {
-  return strings.map(normalizeString)
 }
 
 /**

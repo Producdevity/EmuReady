@@ -25,6 +25,7 @@ import {
   type ComponentType,
   type TouchEvent as ReactTouchEvent,
   type MouseEvent as ReactMouseEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
 } from 'react'
 import { MarkdownRenderer } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -42,6 +43,7 @@ interface Props {
   id?: string
   minHeight?: number
   maxHeight?: number
+  onKeyDown?: (ev: ReactKeyboardEvent<HTMLTextAreaElement>) => void
 }
 
 export function MarkdownEditor(props: Props) {
@@ -297,6 +299,7 @@ export function MarkdownEditor(props: Props) {
               id={props.id}
               value={props.value || ''}
               onChange={(e) => props.onChange(e.target.value)}
+              onKeyDown={props.onKeyDown}
               placeholder={props.placeholder || 'Write your comment...'}
               maxLength={props.maxLength}
               disabled={props.disabled}

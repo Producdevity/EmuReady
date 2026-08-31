@@ -1,7 +1,9 @@
 import { z } from 'zod'
+import { LOOKUP_PAGINATION } from '@/data/constants'
+import { SortDirectionSchema } from '@/schemas/common'
+import { LookupPaginationInputSchema } from '@/schemas/pagination'
 
 export const SoCSortField = z.enum(['name', 'manufacturer', 'devicesCount'])
-export const SortDirection = z.enum(['asc', 'desc'])
 
 export const GetSoCsSchema = z
   .object({
@@ -10,16 +12,15 @@ export const GetSoCsSchema = z
     offset: z.number().default(0),
     page: z.number().optional(),
     sortField: SoCSortField.optional(),
-    sortDirection: SortDirection.optional(),
+    sortDirection: SortDirectionSchema.optional(),
   })
   .optional()
 
 export const GetSoCOptionsSchema = z
   .object({
     search: z.string().optional(),
-    limit: z.number().int().min(1).max(10000).default(50),
-    offset: z.number().int().min(0).default(0),
   })
+  .merge(LookupPaginationInputSchema)
   .optional()
 
 export const GetSoCByIdSchema = z.object({
@@ -41,9 +42,10 @@ export const DeleteSoCSchema = z.object({
   id: z.string().uuid(),
 })
 
-export const GetSoCsByIdsSchema = z.object({ ids: z.array(z.string().uuid()).min(1).max(100) })
+export const GetSoCsByIdsSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(LOOKUP_PAGINATION.MAX_LIMIT),
+})
 
-// Type exports for repository use
 export type GetSoCsInput = z.input<typeof GetSoCsSchema>
 export type GetSoCOptionsInput = z.input<typeof GetSoCOptionsSchema>
 export type CreateSoCInput = z.infer<typeof CreateSoCSchema>

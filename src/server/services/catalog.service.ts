@@ -31,6 +31,8 @@ export interface GetDeviceCompatibilityContext {
   userId?: string
 }
 
+const CATALOG_COMPATIBILITY_CACHE_SECONDS = 900
+
 /**
  * Get device compatibility scores aggregated by system
  *
@@ -45,7 +47,7 @@ export interface GetDeviceCompatibilityContext {
  * - When a system has < MINIMUM_DEVICE_LISTINGS (5) on the device,
  *   data from other devices with the same SoC is included
  *
- * Results are cached for 10 minutes to reduce server load.
+ * Results are cached for 15 minutes to reduce server load.
  */
 export async function getDeviceCompatibility(
   input: GetDeviceCompatibilityInput,
@@ -88,7 +90,7 @@ export async function getDeviceCompatibility(
       },
       systems: [],
       generatedAt: new Date(),
-      cacheExpiresIn: 600,
+      cacheExpiresIn: CATALOG_COMPATIBILITY_CACHE_SECONDS,
     }
   }
 
@@ -239,7 +241,7 @@ export async function getDeviceCompatibility(
     },
     systems,
     generatedAt: new Date(),
-    cacheExpiresIn: 600, // 10 minutes
+    cacheExpiresIn: CATALOG_COMPATIBILITY_CACHE_SECONDS,
   }
 
   catalogCompatibilityCache.set(cacheKey, response)

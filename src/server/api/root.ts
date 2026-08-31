@@ -1,3 +1,5 @@
+import { cpuRouter } from '@/features/hardware/cpu/server/cpu.router'
+import { gpuRouter } from '@/features/hardware/gpu/server/gpu.router'
 import { createTRPCRouter } from '@/server/api/trpc'
 import { accountRouter } from './routers/account'
 import { activityRouter } from './routers/admin/activity'
@@ -8,7 +10,6 @@ import { apiKeysRouter } from './routers/apiKeys'
 import { auditLogsRouter } from './routers/auditLogs'
 import { badgesRouter } from './routers/badges'
 import { bookmarksRouter } from './routers/bookmarks'
-import { cpusRouter } from './routers/cpus'
 import { customFieldCategoryRouter } from './routers/customFieldCategories'
 import { customFieldDefinitionRouter } from './routers/customFieldDefinitions'
 import { customFieldTemplateRouter } from './routers/customFieldTemplates'
@@ -18,13 +19,13 @@ import { emulatorsRouter } from './routers/emulators'
 import { entitlementsRouter } from './routers/entitlements'
 import { gameFollowsRouter } from './routers/gameFollows'
 import { gamesRouter } from './routers/games'
-import { gpusRouter } from './routers/gpus'
 import { igdbRouter } from './routers/igdb'
 import { listingReportsRouter } from './routers/listingReports'
 import { listingsRouter } from './routers/listings'
 import { listingVerificationsRouter } from './routers/listingVerifications'
 import { mobileRouter } from './routers/mobile'
 import { notificationsRouter } from './routers/notifications'
+import { pcListingReportsRouter } from './routers/pcListingReports'
 import { pcListingsRouter } from './routers/pcListings'
 import { performanceScalesRouter } from './routers/performanceScales'
 import { permissionLogsRouter } from './routers/permissionLogs'
@@ -47,10 +48,11 @@ export const appRouter = createTRPCRouter({
   activity: activityRouter,
   listings: listingsRouter,
   pcListings: pcListingsRouter,
+  pcListingReports: pcListingReportsRouter,
   apiKeys: apiKeysRouter,
   devices: devicesRouter,
-  cpus: cpusRouter,
-  gpus: gpusRouter,
+  cpus: cpuRouter,
+  gpus: gpuRouter,
   deviceBrands: deviceBrandsRouter,
   socs: socsRouter,
   games: gamesRouter,

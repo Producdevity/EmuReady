@@ -11,8 +11,8 @@ interface Props {
 export function ReportActivityItem(props: Props) {
   const href =
     props.report.type === 'listing'
-      ? `/admin/reports?listing=${props.report.targetId}`
-      : `/admin/reports?pcListing=${props.report.targetId}`
+      ? `/listings/${props.report.targetId}`
+      : `/pc-listings/${props.report.targetId}`
 
   return (
     <div className="flex items-center justify-between py-2">

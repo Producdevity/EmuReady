@@ -63,13 +63,13 @@ export const adminNavItems: AdminNavItem[] = [
     href: ADMIN_ROUTES.CPUS,
     label: 'CPUs',
     exact: true,
-    description: 'Manage CPU models for PC compatibility.',
+    description: 'Manage CPU hardware catalog entries for PC Compatibility Reports.',
   },
   {
     href: ADMIN_ROUTES.GPUS,
     label: 'GPUs',
     exact: true,
-    description: 'Manage GPU models for PC compatibility.',
+    description: 'Manage GPU hardware catalog entries for PC Compatibility Reports.',
   },
   {
     href: ADMIN_ROUTES.EMULATORS,
@@ -136,9 +136,15 @@ export const superAdminNavItems: AdminNavItem[] = [
   },
   {
     href: ADMIN_ROUTES.PROCESSED_LISTINGS,
-    label: 'Processed Listings',
+    label: 'Processed Reports',
     exact: true,
-    description: 'View all processed listings.',
+    description: 'View approved and rejected handheld reports.',
+  },
+  {
+    href: ADMIN_ROUTES.PC_PROCESSED_LISTINGS,
+    label: 'PC Processed Reports',
+    exact: true,
+    description: 'View approved and rejected PC compatibility reports.',
   },
   {
     href: ADMIN_ROUTES.REPORTS,
@@ -231,13 +237,13 @@ export const moderatorNavItems: AdminNavItem[] = [
     href: ADMIN_ROUTES.CPUS,
     label: 'CPUs',
     exact: true,
-    description: 'Manage CPU models for PC compatibility.',
+    description: 'Manage CPU hardware catalog entries for PC Compatibility Reports.',
   },
   {
     href: ADMIN_ROUTES.GPUS,
     label: 'GPUs',
     exact: true,
-    description: 'Manage GPU models for PC compatibility.',
+    description: 'Manage GPU hardware catalog entries for PC Compatibility Reports.',
   },
   {
     href: ADMIN_ROUTES.SOCS,

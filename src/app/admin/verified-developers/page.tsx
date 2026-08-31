@@ -3,12 +3,12 @@
 import { Shield, UserCheck } from 'lucide-react'
 import Image from 'next/image'
 import { useState } from 'react'
-import { useAdminTable } from '@/app/admin/hooks'
 import {
   AdminPageLayout,
   AdminTableContainer,
   AdminStatsDisplay,
   AdminSearchFilters,
+  AdminTableNoResults,
 } from '@/components/admin'
 import { EmulatorIcon } from '@/components/icons'
 import {
@@ -25,6 +25,7 @@ import {
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
+import { useAdminTable } from '@/hooks/admin'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -353,19 +354,15 @@ function AdminVerifiedDevelopersPage() {
               ))}
               {verifiedDevelopersQuery.data?.verifiedDevelopers.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
-                  >
-                    <div className="flex flex-col items-center">
-                      <Shield className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" />
-                      <p>No verified developers found.</p>
-                      <p className="text-sm mt-1">
-                        {table.search || emulatorFilter
-                          ? 'Try adjusting your search or filters.'
-                          : 'Add your first verified developer.'}
-                      </p>
-                    </div>
+                  <td colSpan={6}>
+                    <AdminTableNoResults
+                      icon={Shield}
+                      hasQuery={!!table.search || !!emulatorFilter}
+                      title="No verified developers found."
+                      queryTitle="No verified developers found."
+                      description="Add your first verified developer."
+                      queryDescription="Try adjusting your search or filters."
+                    />
                   </td>
                 </tr>
               )}

@@ -14,7 +14,7 @@ function PrivacyPolicyPage() {
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">Privacy Policy</h1>
 
         <p className="text-gray-600 dark:text-gray-400 mb-8">
-          <strong>Last updated:</strong> August 1, 2025
+          <strong>Last updated:</strong> June 6, 2026
         </p>
 
         <div className="space-y-8">
@@ -169,7 +169,7 @@ function PrivacyPolicyPage() {
                 <strong>Clerk:</strong> User authentication and account management
               </li>
               <li>
-                <strong>Vercel:</strong> Website hosting and analytics
+                <strong>Vercel:</strong> Website hosting
               </li>
               <li>
                 <strong>Supabase:</strong> Database and storage services

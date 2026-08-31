@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { HumanVerificationTokenSchema } from '@/features/human-verification/shared/schema'
+import { SortDirectionSchema } from '@/schemas/common'
 import { ApprovalStatus } from '@orm'
 
 export const GameSortField = z.enum([
@@ -9,8 +10,6 @@ export const GameSortField = z.enum([
   'submittedAt',
   'status',
 ])
-
-export const SortDirection = z.enum(['asc', 'desc'])
 
 export const GameListingFilter = z.enum(['all', 'withListings', 'noListings'])
 
@@ -41,7 +40,7 @@ export const GetGamesSchema = z
     offset: z.number().default(0),
     page: z.number().optional(),
     sortField: GameSortField.nullable().optional(),
-    sortDirection: SortDirection.nullable().optional(),
+    sortDirection: SortDirectionSchema.nullable().optional(),
   })
   .optional()
   .transform((data) => {
@@ -70,13 +69,20 @@ export const CheckExistingByNamesAndSystemsSchema = z.object({
   ),
 })
 
+const OptionalGameImageUrlSchema = z
+  .string()
+  .trim()
+  .nullable()
+  .optional()
+  .transform((value) => (value === '' ? null : value))
+
 export const CreateGameSchema = z.object({
   title: z.string().min(1),
   systemId: z.string().uuid(),
   humanVerificationToken: HumanVerificationTokenSchema.optional(),
-  imageUrl: z.string().nullable().optional(),
-  boxartUrl: z.string().nullable().optional(),
-  bannerUrl: z.string().nullable().optional(),
+  imageUrl: OptionalGameImageUrlSchema,
+  boxartUrl: OptionalGameImageUrlSchema,
+  bannerUrl: OptionalGameImageUrlSchema,
   tgdbGameId: z.number().nullable().optional(), // TODO: store in metadata
   igdbGameId: z.number().nullable().optional(), // TODO: For IGDB game creation (stored in metadata for now)
   isErotic: z.boolean().optional(),
@@ -86,21 +92,9 @@ export const UpdateGameSchema = z.object({
   id: z.string().uuid(),
   title: z.string().min(1),
   systemId: z.string().uuid(),
-  imageUrl: z
-    .string()
-    .nullable()
-    .optional()
-    .or(z.literal('').transform(() => null)),
-  boxartUrl: z
-    .string()
-    .nullable()
-    .optional()
-    .or(z.literal('').transform(() => null)),
-  bannerUrl: z
-    .string()
-    .nullable()
-    .optional()
-    .or(z.literal('').transform(() => null)),
+  imageUrl: OptionalGameImageUrlSchema,
+  boxartUrl: OptionalGameImageUrlSchema,
+  bannerUrl: OptionalGameImageUrlSchema,
   tgdbGameId: z.number().optional(),
   isErotic: z.boolean().optional(),
 })
@@ -135,7 +129,7 @@ export const GetPendingGamesSchema = z
     offset: z.number().default(0),
     page: z.number().optional(),
     sortField: GameSortField.optional(),
-    sortDirection: SortDirection.optional(),
+    sortDirection: SortDirectionSchema.optional(),
   })
   .optional()
 
@@ -163,7 +157,6 @@ export const GetBestThreeDsTitleIdSchema = z.object({
 
 export const GetThreeDsGamesStatsSchema = z.object({}).optional()
 
-// Type exports for repository use
 export type GetGamesInput = z.input<typeof GetGamesSchema>
 export type CreateGameInput = z.infer<typeof CreateGameSchema>
 export type UpdateGameInput = z.infer<typeof UpdateGameSchema>

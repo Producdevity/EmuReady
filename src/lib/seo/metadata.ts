@@ -79,14 +79,6 @@ export const defaultMetadata: Metadata = {
   },
   other: {
     'theme-color': '#111828',
-    'google-site-verification': process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '', // TODO: add if we start caring
-    'msvalidate.01': process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION || '', // TODO: add if we start caring
-    'yandex-verification': process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || '', // TODO: add if we start caring
-    'fb:app_id': process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '', // TODO: add if we start caring
-  },
-  verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION, // TODO: add if we start caring
-    yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION, // TODO: add if we start caring
   },
   appleWebApp: {
     capable: true,

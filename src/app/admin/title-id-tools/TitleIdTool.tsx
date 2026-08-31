@@ -1,11 +1,13 @@
 'use client'
 
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { AdminTableNoResults } from '@/components/admin'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Dropdown } from '@/components/ui/Dropdown'
 import { Input } from '@/components/ui/form/Input'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { CACHE_DURATIONS } from '@/data/constants'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
@@ -15,7 +17,6 @@ import {
   type TitleIdProviderInfo,
 } from '@/schemas/titleId'
 import { formatters, getLocale } from '@/utils/date'
-import { ms } from '@/utils/time'
 import { TitleIdBestMatch } from './components/TitleIdBestMatch'
 
 const EMPTY_PROVIDERS: TitleIdProviderInfo[] = []
@@ -49,7 +50,7 @@ function TitleIdTool() {
     { platformId: selectedProvider?.id ?? providers[0]?.id ?? TITLE_ID_PLATFORM_IDS[0] },
     {
       enabled: statsQueryEnabled && Boolean(selectedProvider?.id),
-      staleTime: ms.minutes(15),
+      staleTime: CACHE_DURATIONS.LONG,
     },
   )
 
@@ -227,13 +228,11 @@ function TitleIdTool() {
             <LoadingSpinner size="lg" />
           </div>
         ) : latestResults.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400">
-              {searchMutation.data
-                ? 'No matching titles were found for the provided query.'
-                : 'Run a search to see title IDs and scoring details.'}
-            </p>
-          </div>
+          <AdminTableNoResults
+            hasQuery={!!searchMutation.data}
+            queryTitle="No matching titles were found for the provided query."
+            title="Run a search to see title IDs and scoring details."
+          />
         ) : (
           <div className="space-y-4">
             {bestMatch && <TitleIdBestMatch titleIdResult={bestMatch} />}

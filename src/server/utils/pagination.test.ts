@@ -1,16 +1,34 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import {
   paginate,
   paginatedResponse,
-  paginatedQuery,
   buildOrderBy,
   buildSearchConditions,
   contains,
+  resolvePagination,
 } from './pagination'
 
 type TestOrderBy = Record<string, unknown>
 
 describe('pagination utilities', () => {
+  describe('resolvePagination', () => {
+    it('resolves page-based pagination to database offset', () => {
+      expect(resolvePagination({ page: 3, limit: 25 })).toEqual({
+        page: 3,
+        limit: 25,
+        offset: 50,
+      })
+    })
+
+    it('resolves offset-based pagination back to the matching page', () => {
+      expect(resolvePagination({ offset: 40, limit: 20 })).toEqual({
+        page: 3,
+        limit: 20,
+        offset: 40,
+      })
+    })
+  })
+
   describe('paginate', () => {
     it('should create pagination metadata with page', () => {
       const result = paginate({ total: 100, page: 3, limit: 10 })
@@ -92,55 +110,6 @@ describe('pagination utilities', () => {
           hasNextPage: true,
           hasPreviousPage: true,
         },
-      })
-    })
-  })
-
-  describe('paginatedQuery', () => {
-    it('should execute count and findMany in parallel', async () => {
-      const mockModel = {
-        count: vi.fn().mockResolvedValue(100),
-        findMany: vi.fn().mockResolvedValue([{ id: 1 }, { id: 2 }]),
-      }
-
-      const where = { status: 'active' }
-      const orderBy = { createdAt: 'desc' }
-
-      const result = await paginatedQuery(mockModel, { where, orderBy }, { page: 2 }, 10)
-
-      expect(mockModel.count).toHaveBeenCalledWith({ where })
-      expect(mockModel.findMany).toHaveBeenCalledWith({
-        where,
-        orderBy,
-        skip: 10,
-        take: 10,
-      })
-
-      expect(result).toEqual({
-        items: [{ id: 1 }, { id: 2 }],
-        pagination: {
-          total: 100,
-          pages: 10,
-          page: 2,
-          offset: 10,
-          limit: 10,
-          hasNextPage: true,
-          hasPreviousPage: true,
-        },
-      })
-    })
-
-    it('should use default limit when not specified', async () => {
-      const mockModel = {
-        count: vi.fn().mockResolvedValue(50),
-        findMany: vi.fn().mockResolvedValue([]),
-      }
-
-      await paginatedQuery(mockModel, {}, { page: 1 }, 25)
-
-      expect(mockModel.findMany).toHaveBeenCalledWith({
-        skip: 0,
-        take: 25,
       })
     })
   })
