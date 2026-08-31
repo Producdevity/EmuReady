@@ -95,4 +95,18 @@ describe('putUpload', () => {
     expect(result.key).toMatch(/^uploads\/games\/[0-9a-f-]+\.png$/)
     expect(result.url).toBe(`https://media.example.com/${result.key}`)
   })
+
+  it('normalizes multiple trailing slashes in the public base URL', async () => {
+    vi.stubEnv('R2_PUBLIC_BASE_URL', 'https://media.example.com///')
+    r2Mocks.send.mockResolvedValueOnce({})
+
+    const result = await putUpload({
+      directory: 'games',
+      body: Buffer.from('image'),
+      contentType: 'image/png',
+      ext: 'png',
+    })
+
+    expect(result.url).toBe(`https://media.example.com/${result.key}`)
+  })
 })

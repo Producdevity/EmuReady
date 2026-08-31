@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
+import { AppError } from '@/lib/errors'
 import { r2Client } from '@/server/services/r2.service'
 import type { ImageExtension } from '@/utils/imageValidation'
 
@@ -21,15 +22,21 @@ function getUploadsConfig(): UploadsConfig {
   const uploadsPublicBase = process.env.R2_UPLOADS_PUBLIC_BASE_URL
 
   if (Boolean(uploadsBucket) !== Boolean(uploadsPublicBase)) {
-    throw new Error('R2_UPLOADS_BUCKET and R2_UPLOADS_PUBLIC_BASE_URL must be set together')
+    return AppError.internalError(
+      'R2_UPLOADS_BUCKET and R2_UPLOADS_PUBLIC_BASE_URL must be set together',
+    )
   }
 
   const bucket = uploadsBucket || process.env.R2_BUCKET
   const publicBase = uploadsPublicBase || process.env.R2_PUBLIC_BASE_URL
 
-  if (!bucket) throw new Error('R2_UPLOADS_BUCKET (or R2_BUCKET) is required for uploads')
+  if (!bucket) {
+    return AppError.internalError('R2_UPLOADS_BUCKET (or R2_BUCKET) is required for uploads')
+  }
   if (!publicBase) {
-    throw new Error('R2_UPLOADS_PUBLIC_BASE_URL (or R2_PUBLIC_BASE_URL) is required for uploads')
+    return AppError.internalError(
+      'R2_UPLOADS_PUBLIC_BASE_URL (or R2_PUBLIC_BASE_URL) is required for uploads',
+    )
   }
 
   return { bucket, publicBase: validatePublicBase(publicBase) }
@@ -40,14 +47,14 @@ function validatePublicBase(value: string): string {
   try {
     base = new URL(value)
   } catch {
-    throw new Error('R2 uploads public base URL must be a valid HTTPS URL')
+    return AppError.internalError('R2 uploads public base URL must be a valid HTTPS URL')
   }
 
   if (base.protocol !== 'https:' || base.username || base.password || base.search || base.hash) {
-    throw new Error('R2 uploads public base URL must be a valid HTTPS URL')
+    return AppError.internalError('R2 uploads public base URL must be a valid HTTPS URL')
   }
 
-  return base.toString().replace(/\/$/, '')
+  return base.toString().replace(/\/+$/, '')
 }
 
 export async function putUpload(params: {
