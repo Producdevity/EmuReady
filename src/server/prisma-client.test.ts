@@ -6,24 +6,28 @@ vi.mock('@prisma/adapter-pg', () => ({ PrismaPg: class {} }))
 
 const { getPoolMax, getPoolMin } = await import('./prisma-client')
 
+const LOCAL_DATABASE_URL = 'postgres://u:p@localhost:5432/db'
+const LOCAL_IP_DATABASE_URL = 'postgres://u:p@127.0.0.1:5432/db'
+const REMOTE_DATABASE_URL = 'postgres://u:p@db.supabase.co:5432/postgres'
+
 afterEach(() => {
   vi.unstubAllEnvs()
 })
 
 describe('getPoolMax', () => {
   it('returns undefined for local hosts (Prisma default pool)', () => {
-    expect(getPoolMax('postgres://u:p@localhost:5432/db')).toBeUndefined()
-    expect(getPoolMax('postgres://u:p@127.0.0.1:5432/db')).toBeUndefined()
+    expect(getPoolMax(LOCAL_DATABASE_URL)).toBeUndefined()
+    expect(getPoolMax(LOCAL_IP_DATABASE_URL)).toBeUndefined()
   })
 
   it('returns 1 on Vercel (one connection per ephemeral instance)', () => {
     vi.stubEnv('VERCEL', '1')
-    expect(getPoolMax('postgres://u:p@db.supabase.co:5432/postgres')).toBe(1)
+    expect(getPoolMax(REMOTE_DATABASE_URL)).toBe(1)
   })
 
   it('returns 5 for a remote persistent server when not on Vercel', () => {
     vi.stubEnv('VERCEL', '')
-    expect(getPoolMax('postgres://u:p@db.supabase.co:5432/postgres')).toBe(5)
+    expect(getPoolMax(REMOTE_DATABASE_URL)).toBe(5)
   })
 
   it('honors an explicit connection_limit over the default', () => {
