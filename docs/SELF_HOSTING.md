@@ -1,0 +1,46 @@
+# Self-hosting
+
+EmuReady runs as a standalone Next.js container behind Coolify and Cloudflare. Supabase, Clerk, R2, Sentry, and email remain managed services.
+
+## Build and release contract
+
+- Build the `app` target from `Dockerfile`; run the resulting immutable image in Coolify.
+- Supply all `NEXT_PUBLIC_*` values while building. Runtime values cannot change the browser bundle.
+- Use a migrated, disposable Postgres database while building because Prisma TypedSQL generation introspects the schema. Never use production for this.
+- In Coolify, mark the build database URLs as build variables and enable **Use Docker Build Secrets**. Ordinary Docker build arguments expose their values in image metadata.
+- Keep runtime-only secrets, such as `CLERK_SECRET_KEY`, out of the build phase.
+- For a release containing migrations, build the `migrator` target from the same commit and run it with `DATABASE_DIRECT_URL` before deploying the `app` image.
+
+The VPS currently builds from source in Coolify. A verified GitHub App webhook automatically deploys pushes to the configured branch. Publishing prebuilt immutable images remains deferred.
+
+## Coolify application
+
+- Use the Dockerfile build pack, target `app`, and exposed port `3000`.
+- Set `NEXT_BUILD_ID=$SOURCE_COMMIT` and enable **Include Source Commit in Build**.
+- Use `/api/health/ready` for deployment health checks and `/api/health/live` for process liveness.
+
+## Production configuration
+
+- Use the Supabase session pooler on port 5432. Outside Vercel, the app retains one warm connection and allows at most five by default; override the maximum with `connection_limit` in `DATABASE_URL`.
+- Store production user uploads in R2. Set `R2_UPLOADS_BUCKET`, `R2_UPLOADS_PUBLIC_BASE_URL`, and the matching `NEXT_PUBLIC_R2_UPLOADS_PUBLIC_BASE_URL` together. Keep R2 credentials unset in staging for now so it cannot access production assets.
+- Set `TRUST_CF_CONNECTING_IP=true` only after the origin accepts web traffic exclusively through Cloudflare.
+
+## Deferred follow-ups
+
+- Provision an isolated staging upload bucket, scoped token, and hostname before enabling upload testing in staging.
+- Make APK objects private so entitlement checks cannot be bypassed with a known public R2 URL.
+- Move builds to GitHub-hosted Actions, publish immutable images to GHCR, and have Coolify deploy them by digest. Do not run the build runner on the application VPS.
+- Replace the current `staging` default branch and `master` production convention with a documented release and promotion flow.
+- Consolidate the duplicate mobile tRPC paths and remove the unused transport.
+- Make Clerk user deletion idempotent and define how authored reports are retained; current production deliveries can fail on `Listing_authorId_fkey`. Reconcile duplicate-email `user.created` events as part of the same webhook cleanup.
+- Audit the stale TransIP, FTP, and mail DNS records, then add DMARC after confirming the mail policy.
+
+## Verification and cutover
+
+1. Deploy with staging Clerk and Supabase credentials under a temporary hostname.
+2. Verify `/api/health/live`, `/api/health/ready`, public pages, authentication, API routes, and image optimization.
+3. Measure baseline and burst performance against staging, including p95 latency, errors, CPU, memory, image processing, disk use, and Supabase pool usage.
+4. Deploy the production configuration while the production domain still points to Vercel. Verify web and mobile Clerk flows through the temporary hostname.
+5. Point both the apex and `www` Cloudflare records at the VPS, preserve the current apex-to-`www` canonical redirect, and keep the previous Vercel deployment available for rollback.
+
+Do not run an upload backfill unless a read-only production database inventory confirms that `/uploads/...` references still exist and the matching source files have been recovered.

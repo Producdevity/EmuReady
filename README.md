@@ -141,7 +141,7 @@ pnpm dev
 Then open [http://localhost:3000](http://localhost:3000).
 
 Environment setup is documented in [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md). Docker-specific setup is documented in
-[docs/DOCKER.md](docs/DOCKER.md).
+[docs/DOCKER.md](docs/DOCKER.md), and the production container contract is in [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md).
 
 ## Common Commands
 

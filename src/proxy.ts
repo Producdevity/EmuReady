@@ -33,14 +33,24 @@ function applyDevNoStoreHeader<T extends NextResponse | Response>(
   return response
 }
 
-function getClientIdentifier(req: NextRequest): string {
-  const forwarded = req.headers.get('x-forwarded-for')
-  const realIp = req.headers.get('x-real-ip')
-  const cfConnectingIp = req.headers.get('cf-connecting-ip')
+export function getClientIdentifier(req: NextRequest): string {
+  // Prefer cf-connecting-ip only when the origin is reachable exclusively
+  // through Cloudflare, signaled by TRUST_CF_CONNECTING_IP=true. On deployments
+  // without that restriction (e.g. Vercel) the header is client-settable and
+  // forgeable, so the default order is x-forwarded-for (populated by the
+  // platform) first.
+  if (process.env.TRUST_CF_CONNECTING_IP === 'true') {
+    const cfConnectingIp = req.headers.get('cf-connecting-ip')
+    if (cfConnectingIp) return cfConnectingIp.trim()
+  }
 
+  const forwarded = req.headers.get('x-forwarded-for')
   if (forwarded) return forwarded.split(',')[0].trim()
 
-  return realIp || cfConnectingIp || 'unknown'
+  const realIp = req.headers.get('x-real-ip')
+  if (realIp) return realIp.trim()
+
+  return 'unknown'
 }
 
 function shouldBypassRateLimit(identifier: string): boolean {

@@ -35,9 +35,10 @@ interface Env {
 }
 
 function resolveAppEnv(): AppEnv {
+  if (process.env.NODE_ENV === 'test') return 'test'
+
   const appEnv = process.env.NEXT_PUBLIC_APP_ENV
   if (APP_ENV_VALUES.includes(appEnv as AppEnv)) return appEnv as AppEnv
-  if (process.env.NODE_ENV === 'test') return 'test'
   if (process.env.NODE_ENV === 'development') return 'local'
   return 'local'
 }
