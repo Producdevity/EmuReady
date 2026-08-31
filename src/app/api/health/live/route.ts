@@ -1,5 +1,4 @@
 import { connection, NextResponse } from 'next/server'
-import { env } from '@/lib/env'
 
 /**
  * Liveness probe — confirms the process is up and serving HTTP. Performs no
@@ -24,12 +23,6 @@ import { env } from '@/lib/env'
  *                 status:
  *                   type: string
  *                   enum: [alive]
- *                 uptime:
- *                   type: number
- *                 version:
- *                   type: string
- *                 environment:
- *                   type: string
  */
 export async function GET() {
   await connection()
@@ -37,9 +30,6 @@ export async function GET() {
   return NextResponse.json(
     {
       status: 'alive',
-      uptime: Math.floor(process.uptime()),
-      version: process.env.APP_VERSION || 'unknown',
-      environment: env.APP_ENV,
     },
     {
       status: 200,

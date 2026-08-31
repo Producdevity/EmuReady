@@ -16,22 +16,11 @@ describe('GET /api/health/live', () => {
     vi.unstubAllEnvs()
   })
 
-  it('reports process liveness without checking dependencies', async () => {
-    vi.stubEnv('APP_VERSION', 'test-deployment')
-
+  it('reports process liveness without exposing diagnostics', async () => {
     const response = await GET()
     const body = await response.json()
 
     expect(response.status).toBe(200)
-    expect(body.status).toBe('alive')
-    expect(body.version).toBe('test-deployment')
-    expect(body.environment).toBe('test')
-  })
-
-  it('uses an explicit fallback when no build version is available', async () => {
-    const response = await GET()
-    const body = await response.json()
-
-    expect(body.version).toBe('unknown')
+    expect(body).toEqual({ status: 'alive' })
   })
 })
