@@ -90,7 +90,10 @@ ENV NODE_ENV=production \
     PORT=3000 \
     APP_VERSION=${NEXT_BUILD_ID} \
     NEXT_TELEMETRY_DISABLED=1
-RUN groupadd --system --gid 1001 nodejs \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system --gid 1001 nodejs \
     && useradd --system --uid 1001 --gid 1001 --create-home nextjs
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
