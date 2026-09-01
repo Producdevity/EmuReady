@@ -2,6 +2,7 @@ import { verifyWebhook } from '@clerk/nextjs/webhooks'
 import { NextResponse } from 'next/server'
 import analytics from '@/lib/analytics'
 import { prisma } from '@/server/db'
+import { isPrismaError, PRISMA_ERROR_CODES } from '@/server/utils/prisma-errors'
 import { Role } from '@orm'
 import type { NextRequest } from 'next/server'
 
@@ -28,6 +29,12 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
   }
 
   const role = (data.public_metadata?.role as Role) ?? Role.USER
+
+  const existingUser = await prisma.user.findUnique({
+    where: { clerkId: data.id },
+    select: { id: true },
+  })
+  if (existingUser) return
 
   // Normalize username to lowercase for consistency
   let displayName: string | null = null
@@ -70,6 +77,14 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
       stepIndex: 1,
     })
   } catch (error) {
+    if (isPrismaError(error, PRISMA_ERROR_CODES.UNIQUE_CONSTRAINT_VIOLATION)) {
+      const concurrentlyCreatedUser = await prisma.user.findUnique({
+        where: { clerkId: data.id },
+        select: { id: true },
+      })
+      if (concurrentlyCreatedUser) return
+    }
+
     console.error('❌ Failed to create user in database:', error)
     throw error
   }
@@ -138,7 +153,7 @@ async function handleUserUpdated(data: ClerkWebhookEvent['data']) {
 
 async function handleUserDeleted(data: ClerkWebhookEvent['data']) {
   try {
-    await prisma.user.delete({ where: { clerkId: data.id } })
+    await prisma.user.deleteMany({ where: { clerkId: data.id } })
   } catch (error) {
     console.error('❌ Failed to delete user from database:', error)
     throw error
