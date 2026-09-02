@@ -12,6 +12,7 @@ const entitlementMocks = vi.hoisted(() => ({
   fetchPlayOrder: vi.fn(),
   isPaidAppOrder: vi.fn(),
   grant: vi.fn(),
+  listActiveByUser: vi.fn(),
 }))
 const TEST_ORDER_ID = 'GPA.1234-5678'
 const TEST_USER = {
@@ -31,6 +32,7 @@ vi.mock('@/server/services/googlePlayOrders.service', () => ({
 vi.mock('@/server/repositories/entitlements.repository', () => ({
   EntitlementsRepository: class MockEntitlementsRepository {
     grant = entitlementMocks.grant
+    listActiveByUser = entitlementMocks.listActiveByUser
   },
 }))
 
@@ -50,6 +52,20 @@ describe('entitlements router', () => {
   afterEach(() => {
     vi.clearAllMocks()
     vi.unstubAllEnvs()
+  })
+
+  it.each([
+    ['true', true],
+    ['false', false],
+  ])('reports whether Google Play verification is enabled', async (value, expected) => {
+    vi.stubEnv('ENABLE_ANDROID_ENTITLEMENT_VERIFICATION', value)
+    entitlementMocks.listActiveByUser.mockResolvedValueOnce([])
+
+    await expect(createCaller().getMy()).resolves.toEqual({
+      items: [],
+      eligible: false,
+      playVerificationEnabled: expected,
+    })
   })
 
   it('rejects Google Play claims when Android entitlement verification is disabled', async () => {

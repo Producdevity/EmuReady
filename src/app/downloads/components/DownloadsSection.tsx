@@ -26,6 +26,7 @@ export default function DownloadsSection() {
   const latest: LatestRelease | null = latestQuery.data ?? null
   const entitlementQuery = api.entitlements.getMy.useQuery()
   const eligible = entitlementQuery.data?.eligible ?? false
+  const playVerificationEnabled = entitlementQuery.data?.playVerificationEnabled ?? false
   const signDownload = api.releases.signDownload.useMutation()
 
   const handleClickDownload = async () => {
@@ -130,8 +131,9 @@ export default function DownloadsSection() {
               )
             ) : (
               <div className="text-sm text-gray-600 dark:text-gray-400 max-w-sm text-right md:text-left">
-                You’re not yet eligible to download. Use the actions below to verify your purchase
-                or link Patreon (one paid month unlocks lifetime downloads).
+                You’re not yet eligible to download. Use the actions below to{' '}
+                {playVerificationEnabled ? 'verify your purchase or ' : ''}link Patreon (one paid
+                month unlocks lifetime downloads).
               </div>
             )}
 

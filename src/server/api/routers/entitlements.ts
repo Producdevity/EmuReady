@@ -26,7 +26,11 @@ export const entitlementsRouter = createTRPCRouter({
   getMy: protectedProcedure.query(async ({ ctx }) => {
     const repo = new EntitlementsRepository(ctx.prisma)
     const items = await repo.listActiveByUser(ctx.session.user.id)
-    return { items, eligible: items.length > 0 }
+    return {
+      items,
+      eligible: items.length > 0,
+      playVerificationEnabled: process.env.ENABLE_ANDROID_ENTITLEMENT_VERIFICATION === 'true',
+    }
   }),
 
   claimPlayOrder: protectedProcedure
