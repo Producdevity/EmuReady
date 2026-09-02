@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { POST } from './route'
 import type * as ClerkWebhooks from '@clerk/nextjs/webhooks'
 
@@ -67,6 +67,10 @@ describe('Clerk webhook route', () => {
     mocks.analytics.funnelStepCompleted.mockReset()
   })
 
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
   it('creates a new user and emits signup analytics once', async () => {
     mocks.verifyWebhook.mockResolvedValueOnce(createdEvent())
     mocks.user.findUnique.mockResolvedValueOnce(null)
@@ -76,6 +80,7 @@ describe('Clerk webhook route', () => {
 
     expect(response.status).toBe(200)
     expect(mocks.user.create).toHaveBeenCalledOnce()
+    expect(mocks.analytics.signedUp).toHaveBeenCalledOnce()
     expect(mocks.analytics.signedUp).toHaveBeenCalledWith({ userId: 'database_user_1' })
     expect(mocks.analytics.registrationCompleted).toHaveBeenCalledOnce()
     expect(mocks.analytics.registrationStarted).toHaveBeenCalledOnce()
