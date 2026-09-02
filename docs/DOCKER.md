@@ -64,8 +64,9 @@ THE_GAMES_DB_API_KEY="your_tgdb_key"           # Game images
 R2_ACCOUNT_ID="your_account_id"
 R2_ACCESS_KEY_ID="your_access_key"
 R2_SECRET_ACCESS_KEY="your_secret_key"
-R2_BUCKET="your_development_bucket"
-R2_PUBLIC_BASE_URL="https://your-development-r2-host.example.com"
+R2_UPLOADS_BUCKET="your_development_uploads_bucket"
+R2_UPLOADS_PUBLIC_BASE_URL="https://your-development-r2-host.example.com"
+NEXT_PUBLIC_R2_UPLOADS_PUBLIC_BASE_URL="https://your-development-r2-host.example.com"
 
 # For webhook testing (Clerk auth)
 TUNNEL_TOKEN="your_cloudflare_tunnel_token"    # Cloudflare tunnel
