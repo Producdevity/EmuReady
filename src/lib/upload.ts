@@ -1,4 +1,5 @@
 import { prisma } from '@/server/db'
+import { deleteObject } from '@/server/services/r2.service'
 import { putUpload } from '@/server/services/uploads.service'
 import { IMAGE_EXTENSIONS, type ImageExtension } from '@/utils/imageValidation'
 import { hasRolePermission } from '@/utils/permissions'
@@ -95,19 +96,28 @@ export async function uploadFile(
     const fileExtension = getFileExtension(file.name)
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    const { url: imageUrl } = await putUpload({
+    const storedUpload = await putUpload({
       directory: config.directory,
       body: buffer,
       contentType: file.type,
       ext: fileExtension,
     })
+    const imageUrl = storedUpload.url
 
-    // Update user profile if configured
     if (config.updateUserProfile) {
-      await prisma.user.update({
-        where: { clerkId: userId },
-        data: { profileImage: imageUrl },
-      })
+      try {
+        await prisma.user.update({
+          where: { clerkId: userId },
+          data: { profileImage: imageUrl },
+        })
+      } catch (error) {
+        try {
+          await deleteObject({ bucket: storedUpload.bucket, key: storedUpload.key })
+        } catch (cleanupError) {
+          console.error('Failed to delete orphaned profile upload:', cleanupError)
+        }
+        throw error
+      }
     }
 
     return {

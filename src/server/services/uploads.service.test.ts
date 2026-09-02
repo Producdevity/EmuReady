@@ -14,6 +14,8 @@ describe('putUpload', () => {
     vi.unstubAllEnvs()
     vi.stubEnv('R2_BUCKET', 'uploads-test')
     vi.stubEnv('R2_PUBLIC_BASE_URL', 'https://media.example.com/')
+    vi.stubEnv('R2_UPLOADS_BUCKET', '')
+    vi.stubEnv('R2_UPLOADS_PUBLIC_BASE_URL', '')
   })
 
   it('validates the public base URL before writing an object', async () => {
@@ -78,6 +80,11 @@ describe('putUpload', () => {
 
     expect(result.bucket).toBe('dedicated-uploads')
     expect(result.url).toBe(`https://uploads.example.com/${result.key}`)
+    expect(r2Mocks.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.objectContaining({ Bucket: 'dedicated-uploads' }),
+      }),
+    )
   })
 
   it('writes the object and returns its public URL', async () => {
