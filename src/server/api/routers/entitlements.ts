@@ -26,12 +26,20 @@ export const entitlementsRouter = createTRPCRouter({
   getMy: protectedProcedure.query(async ({ ctx }) => {
     const repo = new EntitlementsRepository(ctx.prisma)
     const items = await repo.listActiveByUser(ctx.session.user.id)
-    return { items, eligible: items.length > 0 }
+    return {
+      items,
+      eligible: items.length > 0,
+      playVerificationEnabled: process.env.ENABLE_ANDROID_ENTITLEMENT_VERIFICATION === 'true',
+    }
   }),
 
   claimPlayOrder: protectedProcedure
     .input(ClaimPlayOrderSchema)
     .mutation(async ({ ctx, input }) => {
+      if (process.env.ENABLE_ANDROID_ENTITLEMENT_VERIFICATION !== 'true') {
+        return AppError.operationNotAllowed('Android entitlement verification is disabled')
+      }
+
       const packageName = process.env.ANDROID_PACKAGE_NAME
       if (!packageName) return AppError.internalError('ANDROID_PACKAGE_NAME missing')
       const order = await fetchPlayOrder(packageName, input.orderId)

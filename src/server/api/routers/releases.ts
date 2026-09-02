@@ -1,4 +1,5 @@
 import { env } from '@/lib/env'
+import { AppError } from '@/lib/errors'
 import { GetLatestReleaseSchema, SignDownloadSchema } from '@/schemas/releases'
 import { createTRPCRouter, publicProcedure, protectedProcedure } from '@/server/api/trpc'
 import { EntitlementsRepository } from '@/server/repositories/entitlements.repository'
@@ -7,6 +8,8 @@ import { presignGetObject } from '@/server/services/r2.service'
 
 export const releasesRouter = createTRPCRouter({
   latest: publicProcedure.input(GetLatestReleaseSchema).query(async ({ ctx, input }) => {
+    if (!env.ENABLE_ANDROID_DOWNLOADS) return undefined
+
     const repo = new ReleasesRepository(ctx.prisma)
     // Try selected channel if provided; otherwise prefer stable, then beta
     const tryChannels = input?.channel ? [input.channel] : (['stable', 'beta'] as const)
@@ -39,6 +42,10 @@ export const releasesRouter = createTRPCRouter({
 
   // Records a download (and could issue a signed URL in the future)
   signDownload: protectedProcedure.input(SignDownloadSchema).mutation(async ({ ctx, input }) => {
+    if (!env.ENABLE_ANDROID_DOWNLOADS) {
+      return AppError.operationNotAllowed('Android downloads are disabled')
+    }
+
     const entRepo = new EntitlementsRepository(ctx.prisma)
     const eligible = await entRepo.eligible(ctx.session.user.id)
     if (!eligible) return { url: env.ANDROID_LATEST_APK_URL }

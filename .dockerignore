@@ -15,7 +15,6 @@ out/
 
 # Environment files
 .env*
-!.env.docker
 
 # Development files
 .git
@@ -38,6 +37,8 @@ coverage/
 # Documentation
 docs/
 *.md
+# Read at build/runtime by the API reference page (src/app/docs/api/reference).
+!docs/MOBILE_API.md
 
 # Logs
 logs

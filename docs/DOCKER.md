@@ -38,7 +38,7 @@ When you run the Docker setup, you'll have:
 - Prisma Studio at http://localhost:5555
 - PostgreSQL database with seeded data
 - Hot reload for development
-- Persistent database and uploaded files
+- Persistent database; uploads require external R2 credentials
 - One-time initial seeding
 
 ## Configuration
@@ -60,9 +60,20 @@ CLERK_SECRET_KEY="sk_test_your_key"
 RAWG_API_KEY="your_rawg_key"                    # Game data
 THE_GAMES_DB_API_KEY="your_tgdb_key"           # Game images
 
+# User uploads (use a non-production R2 bucket and scoped credentials)
+R2_ACCOUNT_ID="your_account_id"
+R2_ACCESS_KEY_ID="your_access_key"
+R2_SECRET_ACCESS_KEY="your_secret_key"
+R2_UPLOADS_BUCKET="your_development_uploads_bucket"
+R2_UPLOADS_PUBLIC_BASE_URL="https://your-development-r2-host.example.com"
+NEXT_PUBLIC_R2_UPLOADS_PUBLIC_BASE_URL="https://your-development-r2-host.example.com"
+
 # For webhook testing (Clerk auth)
 TUNNEL_TOKEN="your_cloudflare_tunnel_token"    # Cloudflare tunnel
 ```
+
+Without R2 credentials, the application and local database still run, but upload operations fail
+without writing files locally.
 
 ### Getting API Keys
 
@@ -340,7 +351,6 @@ Docker creates the following persistent volumes:
 
 ```
 emuready/
-├── public/uploads/     # File uploads (persistent)
 ├── .env.docker         # Your environment config
 ├── docker-compose.yml  # Service configuration
 ├── Dockerfile          # App container definition

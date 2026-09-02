@@ -79,6 +79,17 @@ describe('env', () => {
     expect(env.IS_TEST_BUILD).toBe(true)
   })
 
+  it('uses the test app env when a test run inherits a deployment app env', async () => {
+    const { env } = await loadEnv({
+      [ENV_KEYS.nodeEnv]: ENV_VALUES.test,
+      [ENV_KEYS.appEnv]: ENV_VALUES.production,
+    })
+
+    expect(env.APP_ENV).toBe(ENV_VALUES.test)
+    expect(env.IS_PUBLIC_PRODUCTION).toBe(false)
+    expect(env.IS_TEST_BUILD).toBe(true)
+  })
+
   it('only enables optional browser services when their public flags are true', async () => {
     const { env } = await loadEnv({
       [ENV_KEYS.nodeEnv]: ENV_VALUES.production,

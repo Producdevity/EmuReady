@@ -1,6 +1,6 @@
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
 import { prisma } from '@/server/db'
+import { deleteObject } from '@/server/services/r2.service'
+import { putUpload } from '@/server/services/uploads.service'
 import { IMAGE_EXTENSIONS, type ImageExtension } from '@/utils/imageValidation'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
@@ -16,7 +16,6 @@ export const ALLOWED_EXTENSIONS = IMAGE_EXTENSIONS
 // Upload configuration types
 export interface UploadConfig {
   directory: string
-  filenamePrefix: string
   requiredRole?: Role
   updateUserProfile?: boolean
 }
@@ -25,22 +24,15 @@ export interface UploadConfig {
 export const UPLOAD_CONFIGS: Record<string, UploadConfig> = {
   games: {
     directory: 'games',
-    filenamePrefix: 'game',
     requiredRole: Role.USER,
   },
   profiles: {
     directory: 'profiles',
-    filenamePrefix: 'profile',
     updateUserProfile: true,
   },
 } as const
 
 export type UploadType = keyof typeof UPLOAD_CONFIGS
-
-// Sanitize userId to prevent path traversal and filesystem issues
-function sanitizeUserId(userId: string): string {
-  return userId.replace(/[^a-zA-Z0-9_-]/g, '_')
-}
 
 // Validation functions
 export function isValidImage(file: File): boolean {
@@ -101,32 +93,48 @@ export async function uploadFile(
   config: UploadConfig,
 ): Promise<UploadFileResult> {
   try {
-    // Generate unique filename
     const fileExtension = getFileExtension(file.name)
-    const timestamp = Date.now()
-    const randomString = Math.random().toString(36).substring(2, 10)
-    const sanitizedUserId = sanitizeUserId(userId)
-    const fileName = `${config.filenamePrefix}-${sanitizedUserId}-${timestamp}-${randomString}.${fileExtension}`
-
-    // Create directory if it doesn't exist
-    const publicDir = join(process.cwd(), 'public')
-    const uploadDir = join(publicDir, 'uploads', config.directory)
-    await mkdir(uploadDir, { recursive: true })
-
-    // Write file to disk
-    const filePath = join(uploadDir, fileName)
     const buffer = Buffer.from(await file.arrayBuffer())
-    await writeFile(filePath, buffer)
 
-    // Generate public URL
-    const imageUrl = `/uploads/${config.directory}/${fileName}`
+    const storedUpload = await putUpload({
+      directory: config.directory,
+      body: buffer,
+      contentType: file.type,
+      ext: fileExtension,
+    })
+    const imageUrl = storedUpload.url
 
-    // Update user profile if configured
     if (config.updateUserProfile) {
-      await prisma.user.update({
-        where: { clerkId: userId },
-        data: { profileImage: imageUrl },
-      })
+      try {
+        await prisma.user.update({
+          where: { clerkId: userId },
+          data: { profileImage: imageUrl },
+        })
+      } catch (error) {
+        let shouldDeleteUpload = false
+        try {
+          const persistedUser = await prisma.user.findUnique({
+            where: { clerkId: userId },
+            select: { profileImage: true },
+          })
+
+          if (persistedUser?.profileImage === imageUrl) {
+            return { success: true, imageUrl }
+          }
+          shouldDeleteUpload = true
+        } catch (verificationError) {
+          console.error('Failed to verify profile upload persistence:', verificationError)
+        }
+
+        if (shouldDeleteUpload) {
+          try {
+            await deleteObject({ bucket: storedUpload.bucket, key: storedUpload.key })
+          } catch (cleanupError) {
+            console.error('Failed to delete orphaned profile upload:', cleanupError)
+          }
+        }
+        throw error
+      }
     }
 
     return {

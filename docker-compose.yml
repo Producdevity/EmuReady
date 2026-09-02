@@ -50,8 +50,6 @@ services:
       # Source code for hot reload
       - .:/app
       - /app/node_modules
-      # Persistent uploads
-      - uploads_data:/app/public/uploads
       # Flag file to track if initial setup has been done
       - setup_data:/app/.setup
     depends_on:
@@ -144,8 +142,6 @@ services:
 
 volumes:
   postgres_data:
-    driver: local
-  uploads_data:
     driver: local
   pgadmin_data:
     driver: local

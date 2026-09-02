@@ -22,6 +22,7 @@ export default function EligibilityPanel(_: Props) {
   const play = useMemo(() => items.find((e) => e.source === EntitlementSource.PLAY), [items])
   const patreon = useMemo(() => items.find((e) => e.source === EntitlementSource.PATREON), [items])
   const hasPlayEntitlement = Boolean(play)
+  const playVerificationEnabled = entitlementsQuery.data?.playVerificationEnabled ?? false
 
   return (
     <Card className="p-6">
@@ -75,7 +76,7 @@ export default function EligibilityPanel(_: Props) {
           </div>
 
           <div className="mt-4 flex flex-wrap gap-3">
-            {!hasPlayEntitlement && (
+            {!hasPlayEntitlement && playVerificationEnabled && (
               <Button onClick={() => setOpenClaim(true)}>Verify Play Purchase</Button>
             )}
             {!patreon && (
