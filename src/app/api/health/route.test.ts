@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const healthMocks = vi.hoisted(() => ({
   connection: vi.fn(),
@@ -26,6 +26,11 @@ describe('GET /api/health', () => {
     vi.stubEnv('CLERK_SECRET_KEY', 'sk_test')
     vi.stubEnv('APP_VERSION', 'commit-sha')
     healthMocks.checkDatabase.mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllEnvs()
   })
 
   it('preserves the detailed legacy health response', async () => {
@@ -56,6 +61,16 @@ describe('GET /api/health', () => {
     expect(healthMocks.checkDatabase).toHaveBeenCalledOnce()
   })
 
+  it('preserves the legacy unavailable auth status', async () => {
+    vi.stubEnv('CLERK_SECRET_KEY', '')
+
+    const response = await GET()
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.services.auth).toEqual({ status: 'unavailable' })
+  })
+
   it('preserves the legacy unhealthy response when the database check fails', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     healthMocks.checkDatabase.mockRejectedValueOnce(new Error('database unavailable'))
@@ -66,6 +81,6 @@ describe('GET /api/health', () => {
     expect(response.status).toBe(503)
     expect(body).toMatchObject({ status: 'unhealthy', error: 'Health check failed' })
     expect(body.timestamp).toEqual(expect.any(String))
-    consoleError.mockRestore()
+    expect(consoleError).toHaveBeenCalled()
   })
 })
