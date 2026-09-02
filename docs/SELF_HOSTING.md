@@ -22,8 +22,8 @@ The VPS currently builds from source in Coolify. A verified GitHub App webhook a
 ## Production configuration
 
 - Use the Supabase session pooler on port 5432. Outside Vercel, the app retains one warm connection and allows at most five by default; override the maximum with `connection_limit` in `DATABASE_URL`.
-- Store production user uploads in R2. Set `R2_UPLOADS_BUCKET`, `R2_UPLOADS_PUBLIC_BASE_URL`, and the matching `NEXT_PUBLIC_R2_UPLOADS_PUBLIC_BASE_URL` together. Keep R2 credentials unset in staging for now so it cannot access production assets.
-- Set `TRUST_CF_CONNECTING_IP=true` only after the origin accepts web traffic exclusively through Cloudflare.
+- Store production user uploads in R2. Set `R2_UPLOADS_BUCKET`, `R2_UPLOADS_PUBLIC_BASE_URL`, and the matching `NEXT_PUBLIC_R2_UPLOADS_PUBLIC_BASE_URL` together. Keeping R2 credentials unset in staging prevents authenticated R2 API access and writes, but public objects remain readable when their URLs are known.
+- Set `TRUST_CF_CONNECTING_IP=true` only after the origin accepts web traffic exclusively through Cloudflare. Enabling it on a directly reachable origin lets clients forge the trusted header.
 
 ## Deferred follow-ups
 
@@ -32,7 +32,8 @@ The VPS currently builds from source in Coolify. A verified GitHub App webhook a
 - Move builds to GitHub-hosted Actions, publish immutable images to GHCR, and have Coolify deploy them by digest. Do not run the build runner on the application VPS.
 - Replace the current `staging` default branch and `master` production convention with a documented release and promotion flow.
 - Consolidate the duplicate mobile tRPC paths and remove the unused transport.
-- Make Clerk user deletion idempotent and define how authored reports are retained; current production deliveries can fail on `Listing_authorId_fkey`. Reconcile duplicate-email `user.created` events as part of the same webhook cleanup.
+- Define how authored handheld and PC Compatibility Reports are retained when a Clerk user is deleted; their required author relations currently block deletion (observed as `Listing_authorId_fkey`).
+- Define how duplicate-email `user.created` events should reconcile different Clerk identities instead of retrying indefinitely.
 - Audit the stale TransIP, FTP, and mail DNS records, then add DMARC after confirming the mail policy.
 
 ## Verification and cutover
