@@ -111,10 +111,27 @@ export async function uploadFile(
           data: { profileImage: imageUrl },
         })
       } catch (error) {
+        let shouldDeleteUpload = false
         try {
-          await deleteObject({ bucket: storedUpload.bucket, key: storedUpload.key })
-        } catch (cleanupError) {
-          console.error('Failed to delete orphaned profile upload:', cleanupError)
+          const persistedUser = await prisma.user.findUnique({
+            where: { clerkId: userId },
+            select: { profileImage: true },
+          })
+
+          if (persistedUser?.profileImage === imageUrl) {
+            return { success: true, imageUrl }
+          }
+          shouldDeleteUpload = true
+        } catch (verificationError) {
+          console.error('Failed to verify profile upload persistence:', verificationError)
+        }
+
+        if (shouldDeleteUpload) {
+          try {
+            await deleteObject({ bucket: storedUpload.bucket, key: storedUpload.key })
+          } catch (cleanupError) {
+            console.error('Failed to delete orphaned profile upload:', cleanupError)
+          }
         }
         throw error
       }
