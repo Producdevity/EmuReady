@@ -23,7 +23,6 @@ describe('GET /api/health/ready', () => {
     vi.clearAllMocks()
     vi.unstubAllEnvs()
     healthMocks.checkDatabase.mockResolvedValue(undefined)
-    vi.stubEnv('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', 'pk_test')
     vi.stubEnv('CLERK_SECRET_KEY', 'sk_test')
   })
 
@@ -34,6 +33,14 @@ describe('GET /api/health/ready', () => {
     expect(response.status).toBe(200)
     expect(body).toEqual({ status: 'healthy' })
     expect(healthMocks.checkDatabase).toHaveBeenCalledOnce()
+  })
+
+  it('does not require the build-time Clerk publishable key at runtime', async () => {
+    vi.stubEnv('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', '')
+
+    const response = await GET()
+
+    expect(response.status).toBe(200)
   })
 
   it('reports not ready when auth configuration is missing', async () => {

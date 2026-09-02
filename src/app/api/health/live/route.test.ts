@@ -22,5 +22,7 @@ describe('GET /api/health/live', () => {
 
     expect(response.status).toBe(200)
     expect(body).toEqual({ status: 'alive' })
+    expect(response.headers.get('Cache-Control')).toBe('no-cache, no-store, must-revalidate')
+    expect(healthMocks.connection).toHaveBeenCalledOnce()
   })
 })

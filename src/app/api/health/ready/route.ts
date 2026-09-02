@@ -29,9 +29,7 @@ export async function GET() {
   try {
     await createHealthService(prisma).checkDatabase()
 
-    const authAvailable = Boolean(
-      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY,
-    )
+    const authAvailable = Boolean(process.env.CLERK_SECRET_KEY)
 
     return NextResponse.json(
       { status: authAvailable ? 'healthy' : 'unhealthy' },

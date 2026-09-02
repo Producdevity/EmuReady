@@ -79,17 +79,18 @@ export default defineConfig({
   ],
 
   /* Let Playwright handle starting the server */
-  webServer: process.env.PWTEST_SKIP_WEBSERVER
-    ? undefined
-    : {
-        command:
-          process.env.PWTEST_SERVER_COMMAND ||
-          (isGitHubActions ? 'pnpm start' : 'pnpm build && pnpm start'),
-        url: 'http://localhost:3000',
-        env: createWebServerEnv(),
-        reuseExistingServer: !isCI,
-        timeout: isGitHubActions ? 180 * 1000 : 300 * 1000,
-        stdout: 'pipe',
-        stderr: 'pipe',
-      },
+  webServer:
+    process.env.PW_BASE_URL || process.env.PWTEST_SKIP_WEBSERVER
+      ? undefined
+      : {
+          command:
+            process.env.PWTEST_SERVER_COMMAND ||
+            (isGitHubActions ? 'pnpm start' : 'pnpm build && pnpm start'),
+          url: 'http://localhost:3000',
+          env: createWebServerEnv(),
+          reuseExistingServer: !isCI,
+          timeout: isGitHubActions ? 180 * 1000 : 300 * 1000,
+          stdout: 'pipe',
+          stderr: 'pipe',
+        },
 })
