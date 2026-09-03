@@ -6,12 +6,13 @@ EmuReady runs as a standalone Next.js container behind Coolify and Cloudflare. S
 
 - Build the `app` target from `Dockerfile`; run the resulting immutable image in Coolify.
 - Supply all `NEXT_PUBLIC_*` values while building. Runtime values cannot change the browser bundle.
-- Use a migrated, disposable Postgres database while building because Prisma TypedSQL generation introspects the schema. Never use production for this.
-- In Coolify, mark the build database URLs as build variables and enable **Use Docker Build Secrets**. Ordinary Docker build arguments expose their values in image metadata.
-- Keep runtime-only secrets, such as `CLERK_SECRET_KEY`, out of the build phase.
+- Set `BUILD_DATABASE_URL` to a migrated, disposable Postgres database because Prisma TypedSQL generation introspects the schema. Never use production or a restored production backup for this. Apply the existing migrations to an empty database; seeds are unnecessary.
+- Optionally set `BUILD_DATABASE_DIRECT_URL` for that same disposable database. It defaults to `BUILD_DATABASE_URL`. The builder maps these names to Prisma's `DATABASE_URL` and `DATABASE_DIRECT_URL` only for `pnpm build`, and fails if `BUILD_DATABASE_URL` is missing.
+- In Coolify, make `BUILD_DATABASE_URL` and `BUILD_DATABASE_DIRECT_URL` build-only variables and enable **Use Docker Build Secrets**. Ordinary Docker build arguments expose their values in image metadata.
+- Keep the real `DATABASE_URL`, `DATABASE_DIRECT_URL`, and other runtime-only secrets, such as `CLERK_SECRET_KEY`, out of the build phase. Backups and environment files must remain excluded from the Docker context.
 - For a release containing migrations, build the `migrator` target from the same commit and run it with `DATABASE_DIRECT_URL` before deploying the `app` image.
 
-The VPS currently builds from source in Coolify. A verified GitHub App webhook automatically deploys pushes to the configured branch. Publishing prebuilt immutable images remains deferred.
+The VPS currently builds from source in Coolify. Staging uses the GitHub App webhook to deploy its configured branch; production is configured for manual deployments. Publishing prebuilt immutable images remains deferred.
 
 ## Coolify application
 
