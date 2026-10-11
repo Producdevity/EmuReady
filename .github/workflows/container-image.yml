@@ -115,5 +115,6 @@ jobs:
           trap 'docker logout ghcr.io >/dev/null 2>&1' EXIT
           printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
           docker push "$IMAGE:$TAG"
-          digest=$(docker image inspect "$IMAGE:$TAG" --format '{{index .RepoDigests 0}}')
-          printf 'Deploy this immutable image through Coolify Docker Image:\n\n`%s`\n' "$digest" >> "$GITHUB_STEP_SUMMARY"
+          digest=$(docker buildx imagetools inspect "$IMAGE:$TAG" --format '{{json .Manifest}}' | jq -er '.digest')
+          [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
+          printf 'Deploy this immutable image through Coolify Docker Image:\n\n`%s`\n' "$IMAGE@$digest" >> "$GITHUB_STEP_SUMMARY"
