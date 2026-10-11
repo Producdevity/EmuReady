@@ -22,7 +22,8 @@ class ContainerBuildConfigTest(unittest.TestCase):
         for branch, config in [('master', PRODUCTION), ('staging', STAGING)]:
             with self.subTest(branch=branch):
                 args = build_arguments(config, 'refs/heads/' + branch, DOCKERFILE)
-                self.assertIn('NEXT_PUBLIC_APP_URL=' + config['NEXT_PUBLIC_APP_URL'], args)
+                self.assertEqual(set(args[1::2]), {f'{key}={value}' for key, value in config.items()})
+                self.assertEqual(len(args), 2 * len(config))
                 self.assertEqual(args.count('--build-arg'), len(config))
 
     def test_rejects_individual_cross_environment_values(self):
@@ -43,6 +44,12 @@ class ContainerBuildConfigTest(unittest.TestCase):
             with self.subTest(key=key):
                 with self.assertRaises(ValueError):
                     build_arguments({**STAGING, key: 'value'}, 'refs/heads/staging', DOCKERFILE)
+
+    def test_rejects_surrounding_whitespace_in_clerk_key(self):
+        for prefix, suffix in [(' ', ''), ('', ' '), ('\t', ''), ('', '\t')]:
+            with self.subTest(prefix=prefix, suffix=suffix):
+                with self.assertRaises(ValueError):
+                    build_arguments({**STAGING, 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY': prefix + STAGING['NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY'] + suffix}, 'refs/heads/staging', DOCKERFILE)
 
     def test_rejects_non_object_and_unsafe_values(self):
         for config in ([], None, {**STAGING, 'NEXT_PUBLIC_APP_URL': False},

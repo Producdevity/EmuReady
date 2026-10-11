@@ -11,8 +11,8 @@ def build_arguments(config, ref, dockerfile):
     allowed = {key for key in declared if key.startswith('NEXT_PUBLIC_') or key == 'NEXT_IMAGE_UNOPTIMIZED'}
     if set(config) - allowed:
         raise ValueError('Only public arguments declared in Dockerfile are accepted')
-    if any(not isinstance(value, str) or any(c in value for c in '\r\n\0') for value in config.values()):
-        raise ValueError('Build values must be single-line strings')
+    if any(not isinstance(value, str) or value != value.strip() or any(c in value for c in '\r\n\0') for value in config.values()):
+        raise ValueError('Build values must be trimmed single-line strings')
     expected = {
         'refs/heads/master': ('https://www.emuready.com', 'production', 'pk_live_'),
         'refs/heads/staging': ('https://staging.emuready.com', 'staging', 'pk_test_'),

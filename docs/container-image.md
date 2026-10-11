@@ -28,7 +28,13 @@ user explicitly approves applying them. Build the same-commit `migrator` target
 off the application VPS and apply the migrations as described in
 [Self-hosting](SELF_HOSTING.md#build-and-release-contract) before deploying the app.
 
-Deploy the returned immutable digest through Coolify's Docker Image build pack.
+Before deployment, configure GHCR authentication for the Docker account used by
+Coolify on every deployment server. Use a pull-only credential with `read:packages`
+and access to the private EmuReady package; track its expiration and rotate it
+before it expires. Verify that the server can pull the exact published digest.
+The workflow's GitHub token authenticates only the publishing runner.
+
+Deploy that immutable digest through Coolify's Docker Image build pack.
 Preserve runtime credentials, domains, labels, port 3000, health checks,
 certificate mounts and persistent storage. Disable
 source auto-deployment so pushes cannot start builds on the application VPS.
