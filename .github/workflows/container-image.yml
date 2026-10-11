@@ -18,10 +18,10 @@ concurrency:
 
 jobs:
   image:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    environment: container-production
+    environment: ${{ github.ref == 'refs/heads/master' && 'container-production' || 'container-staging' }}
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/emuready_build
       DATABASE_DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/emuready_build
@@ -69,10 +69,15 @@ jobs:
               raise SystemExit('Only public arguments declared in Dockerfile are accepted')
           if any(not isinstance(value, str) or any(c in value for c in '\r\n\0') for value in config.values()):
               raise SystemExit('Build values must be single-line strings')
-          if config.get('NEXT_PUBLIC_APP_URL') != 'https://www.emuready.com' or config.get('NEXT_PUBLIC_APP_ENV') != 'production':
-              raise SystemExit('Expected final production URL and environment')
-          if not config.get('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', '').startswith('pk_live_'):
-              raise SystemExit('Expected the production Clerk publishable key')
+          expected = {
+              'refs/heads/master': ('https://www.emuready.com', 'production', 'pk_live_'),
+              'refs/heads/staging': ('https://staging.emuready.com', 'staging', 'pk_test_'),
+          }
+          url, environment, clerk_prefix = expected[os.environ['GITHUB_REF']]
+          if config.get('NEXT_PUBLIC_APP_URL') != url or config.get('NEXT_PUBLIC_APP_ENV') != environment:
+              raise SystemExit('Public URL and environment must match the selected branch')
+          if not config.get('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', '').startswith(clerk_prefix):
+              raise SystemExit('Clerk publishable key must match the selected environment')
           args = [item for key, value in sorted(config.items()) for item in ('--build-arg', f'{key}={value}')]
           pathlib.Path(os.environ['RUNNER_TEMP'], 'container-build-args').write_bytes(('\0'.join(args) + '\0').encode())
           PY
@@ -88,7 +93,7 @@ jobs:
       - name: Run unit tests
         run: pnpm test:ci
 
-      - name: Build production image
+      - name: Build application image
         id: image
         run: |
           image="ghcr.io/${GITHUB_REPOSITORY,,}"
