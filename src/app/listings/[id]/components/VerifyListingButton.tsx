@@ -5,7 +5,7 @@ import GenericVerifyButton from '@/components/verify/GenericVerifyButton'
 interface Props {
   listingId: string
   emulatorId: string
-  authorId: string
+  authorId: string | null
   isAlreadyVerified: boolean
   verificationId?: string
   onSuccess?: () => void

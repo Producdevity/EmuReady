@@ -1,4 +1,3 @@
-import { ANONYMOUS_AUTHOR_ID } from '@/features/accounts/shared/anonymous-author'
 import { logger } from '@/lib/logger'
 import { prisma } from '@/server/db'
 import { notificationAnalyticsService } from '@/server/notifications/analyticsService'
@@ -55,9 +54,7 @@ export class NotificationService {
       immediate?: boolean
       scheduledFor?: Date
     } = {},
-  ): Promise<string | null> {
-    if (data.userId === ANONYMOUS_AUTHOR_ID) return null
-
+  ): Promise<string> {
     const rateLimitStatus = await notificationRateLimitService.checkRateLimit(
       data.userId,
       data.type,
@@ -102,8 +99,6 @@ export class NotificationService {
     eventData: NotificationEventData,
     userId: string,
   ): Promise<string | null> {
-    if (userId === ANONYMOUS_AUTHOR_ID) return null
-
     try {
       let notificationType = this.mapEventToNotificationType(eventData.eventType)
       if (eventData.eventType === 'listing.voted') {
@@ -544,7 +539,7 @@ export class NotificationService {
             where: { id: eventData.payload.listingId },
             select: { authorId: true },
           })
-          if (listing && listing.authorId !== eventData.triggeredBy) {
+          if (listing?.authorId && listing.authorId !== eventData.triggeredBy) {
             userIds.push(listing.authorId)
           }
         }
@@ -621,7 +616,7 @@ export class NotificationService {
             where: { id: eventData.payload.listingId },
             select: { authorId: true, deviceId: true, device: { select: { socId: true } } },
           })
-          if (listing) {
+          if (listing?.authorId) {
             userIds.push(listing.authorId)
           }
         }
@@ -633,7 +628,7 @@ export class NotificationService {
             where: { id: eventData.payload.pcListingId },
             select: { authorId: true },
           })
-          if (pcListing) {
+          if (pcListing?.authorId) {
             userIds.push(pcListing.authorId)
           }
         }
@@ -645,7 +640,7 @@ export class NotificationService {
             where: { id: eventData.payload.listingId },
             select: { authorId: true },
           })
-          if (listing) {
+          if (listing?.authorId) {
             userIds.push(listing.authorId)
           }
         }
@@ -657,7 +652,7 @@ export class NotificationService {
             where: { id: eventData.payload.pcListingId },
             select: { authorId: true },
           })
-          if (pcListing) {
+          if (pcListing?.authorId) {
             userIds.push(pcListing.authorId)
           }
         }
@@ -704,7 +699,6 @@ export class NotificationService {
   }
 
   private async filterBannedUsers(userIds: string[]): Promise<string[]> {
-    userIds = userIds.filter((id) => id !== ANONYMOUS_AUTHOR_ID)
     if (userIds.length === 0) return []
 
     try {
@@ -740,7 +734,6 @@ export class NotificationService {
     userIds: string[],
     triggeringUserId?: string,
   ): Promise<string[]> {
-    userIds = userIds.filter((id) => id !== ANONYMOUS_AUTHOR_ID)
     if (userIds.length === 0 || !triggeringUserId) return userIds
 
     try {

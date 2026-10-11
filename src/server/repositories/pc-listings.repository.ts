@@ -17,7 +17,7 @@ import { BaseRepository } from './base.repository'
 import {
   buildApprovalStatusFilter,
   buildNsfwFilter,
-  buildShadowBanFilter,
+  buildReportAuthorVisibilityFilter,
 } from '../utils/query-builders'
 
 export interface PcListingFilters {
@@ -45,7 +45,7 @@ export interface PcListingFilters {
 
 export interface PcListingRiskCandidate {
   id: string
-  authorId: string
+  authorId: string | null
   author: { userBans: { reason: string }[] } | null
   customFieldValues: {
     value: unknown
@@ -150,8 +150,10 @@ export function buildPcListingListWhere(
     }
   }
 
-  const shadowBanFilter = canSeeBannedUsers ? undefined : buildShadowBanFilter(userRole, userId)
-  if (shadowBanFilter) where.author = shadowBanFilter
+  const authorVisibility = canSeeBannedUsers
+    ? undefined
+    : buildReportAuthorVisibilityFilter(userRole, userId)
+  if (authorVisibility) appendAndCondition(where, authorVisibility)
 
   return where
 }
@@ -444,10 +446,12 @@ export class PcListingsRepository extends BaseRepository {
       })
     | null
   > {
-    const shadowBanFilter = canSeeBannedUsers ? undefined : buildShadowBanFilter(null, userId)
+    const authorVisibility = canSeeBannedUsers
+      ? undefined
+      : buildReportAuthorVisibilityFilter(null, userId)
     const where: Prisma.PcListingWhereInput = {
       id,
-      ...(shadowBanFilter && { author: shadowBanFilter }),
+      ...(authorVisibility && { AND: [authorVisibility] }),
     }
 
     const pcListing = await this.prisma.pcListing.findFirst({
@@ -481,10 +485,12 @@ export class PcListingsRepository extends BaseRepository {
     ])
 
     // Compute verified developer for author/emulator
-    const verified = await this.prisma.verifiedDeveloper.findFirst({
-      where: { userId: pcListing.authorId, emulatorId: pcListing.emulatorId },
-      select: { id: true },
-    })
+    const verified = pcListing.authorId
+      ? await this.prisma.verifiedDeveloper.findFirst({
+          where: { userId: pcListing.authorId, emulatorId: pcListing.emulatorId },
+          select: { id: true },
+        })
+      : null
 
     return {
       ...pcListing,

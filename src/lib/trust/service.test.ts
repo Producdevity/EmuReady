@@ -461,6 +461,70 @@ describe('TrustService.applyManualAdjustment', () => {
   })
 })
 
+describe('TrustService.logAction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('increments atomically and derives analytics from the score returned by the update', async () => {
+    const prismaCtx = createMockPrismaCtx()
+    prismaCtx.user.update.mockResolvedValue({ trustScore: 101 })
+    const { TrustService } = await import('./service')
+    const analytics = (await import('@/lib/analytics')).default
+
+    await new TrustService(prismaCtx).logAction({
+      userId: 'author-1',
+      action: TrustAction.LISTING_RECEIVED_UPVOTE,
+      metadata: { listingId: 'listing-1' },
+    })
+
+    expect(prismaCtx.user.findUnique).not.toHaveBeenCalled()
+    expect(prismaCtx.user.update).toHaveBeenCalledWith({
+      where: { id: 'author-1' },
+      data: { trustScore: { increment: 2 }, lastActiveAt: expect.any(Date) },
+      select: { trustScore: true },
+    })
+    expect(prismaCtx.trustActionLog.create).toHaveBeenCalledWith({
+      data: {
+        userId: 'author-1',
+        action: TrustAction.LISTING_RECEIVED_UPVOTE,
+        weight: 2,
+        metadata: { listingId: 'listing-1' },
+      },
+    })
+    expect(analytics.trust.trustScoreChanged).toHaveBeenCalledWith({
+      userId: 'author-1',
+      oldScore: 99,
+      newScore: 101,
+      action: TrustAction.LISTING_RECEIVED_UPVOTE,
+      weight: 2,
+    })
+    expect(analytics.trust.trustLevelChanged).toHaveBeenCalledWith({
+      userId: 'author-1',
+      oldLevel: 'Newcomer',
+      newLevel: 'Contributor',
+      score: 101,
+    })
+  })
+
+  it('does not record or emit an action when the user update fails', async () => {
+    const prismaCtx = createMockPrismaCtx()
+    prismaCtx.user.update.mockRejectedValue(new Error('User not found'))
+    const { TrustService } = await import('./service')
+    const analytics = (await import('@/lib/analytics')).default
+
+    await expect(
+      new TrustService(prismaCtx).logAction({
+        userId: 'missing-user',
+        action: TrustAction.LISTING_RECEIVED_UPVOTE,
+      }),
+    ).rejects.toThrow('User not found')
+
+    expect(prismaCtx.trustActionLog.create).not.toHaveBeenCalled()
+    expect(analytics.trust.trustScoreChanged).not.toHaveBeenCalled()
+  })
+})
+
 describe('TrustService.reverseLogAction', () => {
   let prismaCtx: MockPrismaCtx
 
@@ -475,7 +539,7 @@ describe('TrustService.reverseLogAction', () => {
   }
 
   it('negates positive action weight (LISTING_RECEIVED_UPVOTE: +2 → -2)', async () => {
-    prismaCtx.user.findUnique.mockResolvedValue({ trustScore: 10 })
+    prismaCtx.user.update.mockResolvedValue({ trustScore: 8 })
     const service = await createService()
 
     await service.reverseLogAction({
@@ -486,7 +550,8 @@ describe('TrustService.reverseLogAction', () => {
 
     expect(prismaCtx.user.update).toHaveBeenCalledWith({
       where: { id: 'author-1' },
-      data: { trustScore: 8, lastActiveAt: expect.any(Date) },
+      data: { trustScore: { increment: -2 }, lastActiveAt: expect.any(Date) },
+      select: { trustScore: true },
     })
     expect(prismaCtx.trustActionLog.create).toHaveBeenCalledWith({
       data: {
@@ -503,7 +568,7 @@ describe('TrustService.reverseLogAction', () => {
   })
 
   it('negates negative action weight (COMMENT_RECEIVED_DOWNVOTE: -1 → +1)', async () => {
-    prismaCtx.user.findUnique.mockResolvedValue({ trustScore: 5 })
+    prismaCtx.user.update.mockResolvedValue({ trustScore: 6 })
     const service = await createService()
 
     await service.reverseLogAction({
@@ -514,7 +579,8 @@ describe('TrustService.reverseLogAction', () => {
 
     expect(prismaCtx.user.update).toHaveBeenCalledWith({
       where: { id: 'author-1' },
-      data: { trustScore: 6, lastActiveAt: expect.any(Date) },
+      data: { trustScore: { increment: 1 }, lastActiveAt: expect.any(Date) },
+      select: { trustScore: true },
     })
     expect(prismaCtx.trustActionLog.create).toHaveBeenCalledWith({
       data: {
@@ -531,7 +597,7 @@ describe('TrustService.reverseLogAction', () => {
   })
 
   it('allows negative trust score on reversal (no clamping)', async () => {
-    prismaCtx.user.findUnique.mockResolvedValue({ trustScore: 1 })
+    prismaCtx.user.update.mockResolvedValue({ trustScore: -1 })
     const service = await createService()
 
     await service.reverseLogAction({
@@ -543,7 +609,8 @@ describe('TrustService.reverseLogAction', () => {
     // 1 + (-2) = -1, allowed
     expect(prismaCtx.user.update).toHaveBeenCalledWith({
       where: { id: 'author-1' },
-      data: { trustScore: -1, lastActiveAt: expect.any(Date) },
+      data: { trustScore: { increment: -2 }, lastActiveAt: expect.any(Date) },
+      select: { trustScore: true },
     })
   })
 
@@ -579,7 +646,7 @@ describe('TrustService.reverseLogAction', () => {
       return fn(prismaCtx)
     }
     const prismaWithTx = { ...prismaCtx, $transaction: mockTransaction }
-    prismaCtx.user.findUnique.mockResolvedValue({ trustScore: 10 })
+    prismaCtx.user.update.mockResolvedValue({ trustScore: 8 })
 
     const { TrustService } = await import('./service')
     const service = new TrustService(prismaWithTx)
@@ -594,7 +661,7 @@ describe('TrustService.reverseLogAction', () => {
   })
 
   it('calls execute directly when prisma is a transaction client (no $transaction)', async () => {
-    prismaCtx.user.findUnique.mockResolvedValue({ trustScore: 10 })
+    prismaCtx.user.update.mockResolvedValue({ trustScore: 8 })
     const service = await createService()
 
     await service.reverseLogAction({
@@ -609,7 +676,7 @@ describe('TrustService.reverseLogAction', () => {
   it('emits trustLevelChanged when crossing a level boundary', async () => {
     const analytics = (await import('@/lib/analytics')).default
 
-    prismaCtx.user.findUnique.mockResolvedValue({ trustScore: 101 })
+    prismaCtx.user.update.mockResolvedValue({ trustScore: 99 })
     const service = await createService()
 
     await service.reverseLogAction({
@@ -618,7 +685,14 @@ describe('TrustService.reverseLogAction', () => {
       metadata: {},
     })
 
-    // 101 + (-2) = 99, drops from Contributor (>=100) back to Newcomer
+    expect(prismaCtx.user.findUnique).not.toHaveBeenCalled()
+    expect(analytics.trust.trustScoreChanged).toHaveBeenCalledWith({
+      userId: 'user-1',
+      oldScore: 101,
+      newScore: 99,
+      action: TrustAction.VOTE_CHANGE_REVERSAL,
+      weight: -2,
+    })
     expect(analytics.trust.trustLevelChanged).toHaveBeenCalledWith({
       userId: 'user-1',
       oldLevel: 'Contributor',

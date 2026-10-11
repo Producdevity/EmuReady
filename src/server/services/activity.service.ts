@@ -1,6 +1,7 @@
 import { subDays, subHours } from 'date-fns'
 import { type TimeRange } from '@/schemas/activity'
 import { type ListingType } from '@/schemas/common'
+import { buildReportAuthorVisibilityFilter } from '@/server/utils/query-builders'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role, ReportStatus, ApprovalStatus, type PrismaClient, type Prisma } from '@orm/client'
 
@@ -32,7 +33,7 @@ export namespace ActivityTypes {
     cpuName?: string
     gpuName?: string
     authorName: string | null
-    authorId: string
+    authorId: string | null
     status: ApprovalStatus
     createdAt: Date
   }
@@ -75,7 +76,7 @@ export namespace ActivityTypes {
     type: 'game' | 'listing' | 'pcListing'
     title: string
     submittedBy: string | null
-    submittedById: string
+    submittedById: string | null
     createdAt: Date
   }
 
@@ -165,7 +166,6 @@ export class ActivityService {
     const dateFrom = this.getDateRange(timeRange)
 
     // Clear permission hierarchy
-    const isModerator = roleIncludesRole(userRole, Role.MODERATOR)
     const isDeveloperOrHigher = roleIncludesRole(userRole, Role.DEVELOPER)
     const isDeveloperExactly = userRole === Role.DEVELOPER
 
@@ -181,16 +181,8 @@ export class ActivityService {
     }
 
     // Non-moderators don't see content from banned users
-    if (!isModerator) {
-      whereClause.author = {
-        userBans: {
-          none: {
-            isActive: true,
-            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-          },
-        },
-      }
-    }
+    const authorVisibility = buildReportAuthorVisibilityFilter(userRole)
+    if (authorVisibility) whereClause.AND = [authorVisibility]
 
     // Get counts first to determine optimal distribution
     const [handheldCount, pcCount] = await Promise.all([
@@ -244,8 +236,8 @@ export class ActivityService {
         deviceName: `${listing.device.brand.name} ${listing.device.modelName}`,
         cpuName: undefined,
         gpuName: undefined,
-        authorName: listing.author.name,
-        authorId: listing.author.id,
+        authorName: listing.author?.name ?? null,
+        authorId: listing.author?.id ?? null,
         status: listing.status,
         createdAt: listing.createdAt,
       })),
@@ -257,8 +249,8 @@ export class ActivityService {
         deviceName: undefined,
         cpuName: listing.cpu?.modelName,
         gpuName: listing.gpu?.modelName,
-        authorName: listing.author.name,
-        authorId: listing.author.id,
+        authorName: listing.author?.name ?? null,
+        authorId: listing.author?.id ?? null,
         status: listing.status,
         createdAt: listing.createdAt,
       })),
@@ -540,8 +532,8 @@ export class ActivityService {
           id: l.id,
           type: 'listing' as const,
           title: l.game.title,
-          submittedBy: l.author.name,
-          submittedById: l.author.id,
+          submittedBy: l.author?.name ?? null,
+          submittedById: l.author?.id ?? null,
           createdAt: l.createdAt,
         })),
       )
@@ -562,8 +554,8 @@ export class ActivityService {
           id: l.id,
           type: 'pcListing' as const,
           title: l.game.title,
-          submittedBy: l.author.name,
-          submittedById: l.author.id,
+          submittedBy: l.author?.name ?? null,
+          submittedById: l.author?.id ?? null,
           createdAt: l.createdAt,
         })),
       )

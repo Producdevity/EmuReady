@@ -4,30 +4,11 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { Button, Input, Modal, SelectInput } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
+import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 
-interface VerifiedDeveloper {
-  id: string
-  emulatorId: string
-  notes: string | null
-  user: {
-    id: string
-    name: string | null
-    email: string
-    profileImage: string | null
-  }
-  emulator: {
-    id: string
-    name: string
-    logo: string | null
-  }
-  verifier: {
-    id: string
-    name: string | null
-    email: string
-  }
-  verifiedAt: Date
-}
+type VerifiedDeveloper =
+  RouterOutput['verifiedDevelopers']['getVerifiedDevelopers']['verifiedDevelopers'][number]
 
 interface Props {
   isOpen: boolean

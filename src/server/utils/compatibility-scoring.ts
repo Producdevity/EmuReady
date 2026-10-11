@@ -42,7 +42,7 @@ export interface ScoringListing {
   author?: {
     id: string
     trustScore: number
-  }
+  } | null
   emulator?: {
     id: string
     name: string

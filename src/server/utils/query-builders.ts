@@ -25,6 +25,12 @@ export function buildShadowBanFilter(
   }
 }
 
+export function buildReportAuthorVisibilityFilter(userRole?: Role | null, userId?: string | null) {
+  const authorFilter = buildShadowBanFilter(userRole, userId)
+  if (!authorFilter) return undefined
+  return { OR: [{ authorId: null, status: ApprovalStatus.APPROVED }, { author: authorFilter }] }
+}
+
 /**
  * Build where clause for approval status filtering
  * Handles visibility rules for different user roles

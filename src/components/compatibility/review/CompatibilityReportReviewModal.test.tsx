@@ -91,6 +91,33 @@ function renderReviewModal(overrides: Partial<CompatibilityReportReviewItem> = {
 }
 
 describe('CompatibilityReportReviewModal', () => {
+  it('renders an anonymized report without a profile link', () => {
+    render(
+      <CompatibilityReportReviewModalAdapter
+        isOpen
+        onClose={vi.fn()}
+        decision={CompatibilityReportReviewDecision.APPROVED}
+        reportLabel="Handheld Report"
+        report={{
+          ...baseReport,
+          author: null,
+          authorId: null,
+          authorRiskProfile: null,
+          device: { brand: { name: 'ASUS' }, modelName: 'ROG Ally' },
+        }}
+        rejectionNotes=""
+        onRejectionNotesChange={vi.fn()}
+        onSubmit={vi.fn()}
+        isSubmitting={false}
+      />,
+    )
+
+    expect(screen.getByText('Anonymous')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Anonymous' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Reviewer' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Approve Anyway' })).toBeEnabled()
+  })
+
   it('shows combined review risk and custom fields for approval', () => {
     renderReviewModal()
 

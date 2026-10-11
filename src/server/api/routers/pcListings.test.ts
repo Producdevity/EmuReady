@@ -808,7 +808,7 @@ describe('pcListings trust integration', () => {
       expect(result.pcListings[0].id).toBe(LISTING_ID)
       expect(result.pcListings[0].submissionRiskProfile.highestSeverity).toBe('high')
       expect(result.pcListings[1].id).toBe(LISTING_ID_B)
-      expect(result.pcListings[1].authorRiskProfile.highestSeverity).toBe('low')
+      expect(result.pcListings[1].authorRiskProfile?.highestSeverity).toBe('low')
       expect(result.pagination.total).toBe(2)
     })
 
@@ -992,6 +992,43 @@ describe('pcListings trust integration', () => {
   })
 
   describe('approve', () => {
+    it('approves a retained anonymous PC report without awarding author trust', async () => {
+      const report = {
+        id: LISTING_ID,
+        authorId: null,
+        author: null,
+        status: ApprovalStatus.PENDING,
+        emulatorId: '00000000-0000-4000-a000-000000000060',
+        gameId: '00000000-0000-4000-a000-000000000061',
+        cpuId: '00000000-0000-4000-a000-000000000062',
+        gpuId: null,
+      }
+      const approvedReport = {
+        ...report,
+        status: ApprovalStatus.APPROVED,
+        processedAt: new Date('2026-10-11T10:00:00Z'),
+      }
+      mockRepositoryGetById.mockResolvedValueOnce(report)
+      mockRepositoryApprove.mockResolvedValueOnce(approvedReport)
+      const { caller } = createCaller({ userId: ADMIN_ID, role: Role.MODERATOR })
+
+      expect(await caller.approve({ pcListingId: LISTING_ID })).toEqual(approvedReport)
+      expect(mockRepositoryApprove).toHaveBeenCalledWith(LISTING_ID, ADMIN_ID)
+      expect(mockApplyTrustAction).not.toHaveBeenCalled()
+      expect(mockEmitNotificationEvent).toHaveBeenCalledWith({
+        eventType: 'PC_LISTING_APPROVED',
+        entityType: 'pcListing',
+        entityId: LISTING_ID,
+        triggeredBy: ADMIN_ID,
+        payload: {
+          pcListingId: LISTING_ID,
+          gameId: report.gameId,
+          approvedBy: ADMIN_ID,
+          approvedAt: approvedReport.processedAt,
+        },
+      })
+    })
+
     it('calls applyTrustAction with LISTING_APPROVED for author', async () => {
       mockRepositoryGetById.mockResolvedValue({
         id: LISTING_ID,

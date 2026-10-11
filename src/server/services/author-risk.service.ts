@@ -14,7 +14,7 @@ export interface ExistingAuthorBan {
 }
 
 export interface AuthorBanRiskCandidate {
-  authorId: string
+  authorId: string | null
   author?: {
     userBans?: readonly ExistingAuthorBan[]
   } | null
@@ -109,7 +109,7 @@ async function batchCheckNewAuthors(
 ): Promise<Set<string>> {
   const rows = await prisma.$queryRawTyped(getAuthorsWithApprovedListings(authorIds))
 
-  const authorsWithApproved = new Set(rows.map((r) => r.authorId).filter(Boolean) as string[])
+  const authorsWithApproved = new Set(rows.flatMap((row) => (row.authorId ? [row.authorId] : [])))
   return new Set(authorIds.filter((id) => !authorsWithApproved.has(id)))
 }
 
@@ -148,9 +148,11 @@ async function batchGetRejectionCounts(
 
   const rejectionMap = new Map<string, number>()
   for (const row of listingRejections) {
+    if (!row.authorId) continue
     rejectionMap.set(row.authorId, (rejectionMap.get(row.authorId) ?? 0) + row._count)
   }
   for (const row of pcListingRejections) {
+    if (!row.authorId) continue
     rejectionMap.set(row.authorId, (rejectionMap.get(row.authorId) ?? 0) + row._count)
   }
   return rejectionMap
@@ -363,6 +365,7 @@ export function createExistingAuthorBansMap(
 
   for (const listing of listings) {
     if (
+      listing.authorId &&
       listing.author?.userBans &&
       listing.author.userBans.length > 0 &&
       !existingBansMap.has(listing.authorId)

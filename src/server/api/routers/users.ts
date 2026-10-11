@@ -870,9 +870,9 @@ export const usersRouter = createTRPCRouter({
       // Prevent self-deletion
       if (input.userId === ctx.session.user.id) return ResourceError.user.cannotDeleteSelf()
 
-      await new AccountDeletionService(new AccountDeletionRepository(ctx.prisma)).deleteAccount({
-        id: input.userId,
-      })
+      await new AccountDeletionService(new AccountDeletionRepository(ctx.prisma)).deleteAccount(
+        input.userId,
+      )
 
       return { success: true }
     }),

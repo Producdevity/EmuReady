@@ -29,6 +29,12 @@ describe('handheld listing repository query builder', () => {
             { status: ApprovalStatus.PENDING, authorId: FILTERS.userId },
           ],
         },
+        {
+          OR: [
+            { authorId: null, status: ApprovalStatus.APPROVED },
+            { author: expect.objectContaining({ OR: expect.any(Array) }) },
+          ],
+        },
       ],
     })
     expect(where).not.toHaveProperty('OR')

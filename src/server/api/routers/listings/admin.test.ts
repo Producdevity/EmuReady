@@ -204,7 +204,7 @@ describe('listing admin pending approvals', () => {
     expect(result.listings[0].id).toBe(LISTING_ID)
     expect(result.listings[0].submissionRiskProfile.highestSeverity).toBe('high')
     expect(result.listings[1].id).toBe(LISTING_ID_B)
-    expect(result.listings[1].authorRiskProfile.highestSeverity).toBe('low')
+    expect(result.listings[1].authorRiskProfile?.highestSeverity).toBe('low')
     expect(result.pagination.total).toBe(2)
   })
 
@@ -263,6 +263,61 @@ describe('listing admin pending approvals', () => {
     expect(mockGetPendingListingsByIds).not.toHaveBeenCalled()
     expect(result.listings).toHaveLength(0)
     expect(result.pagination.total).toBe(0)
+  })
+})
+
+describe('listing admin approval', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('approves a retained anonymous report without awarding author trust', async () => {
+    const report = {
+      id: LISTING_ID,
+      authorId: null,
+      author: null,
+      status: ApprovalStatus.PENDING,
+      gameId: '00000000-0000-4000-a000-000000000030',
+      deviceId: '00000000-0000-4000-a000-000000000031',
+      emulatorId: '00000000-0000-4000-a000-000000000032',
+    }
+    const approvedReport = {
+      ...report,
+      status: ApprovalStatus.APPROVED,
+      processedAt: new Date('2026-10-11T10:00:00Z'),
+    }
+    const listing = {
+      findUnique: vi.fn().mockResolvedValueOnce(report),
+      update: vi.fn().mockResolvedValueOnce(approvedReport),
+    }
+    Object.assign(prisma, {
+      user: { findUnique: vi.fn().mockResolvedValueOnce({ id: ADMIN_ID }) },
+      listing,
+    })
+    const { caller } = createCaller()
+
+    expect(await caller.approve({ listingId: LISTING_ID })).toEqual(approvedReport)
+    expect(listing.update).toHaveBeenCalledWith({
+      where: { id: LISTING_ID },
+      data: {
+        status: ApprovalStatus.APPROVED,
+        processedByUserId: ADMIN_ID,
+        processedAt: expect.any(Date),
+        processedNotes: null,
+      },
+    })
+    expect(mockApplyTrustAction).not.toHaveBeenCalled()
+    expect(notificationEventEmitter.emitNotificationEvent).toHaveBeenCalledWith({
+      eventType: 'LISTING_APPROVED',
+      entityType: 'listing',
+      entityId: LISTING_ID,
+      triggeredBy: ADMIN_ID,
+      payload: {
+        listingId: LISTING_ID,
+        approvedBy: ADMIN_ID,
+        approvedAt: approvedReport.processedAt,
+      },
+    })
   })
 })
 

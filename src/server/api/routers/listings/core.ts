@@ -79,7 +79,7 @@ export const coreRouter = createTRPCRouter({
 
     // Batch fetch additional data to avoid N+1 queries
     const listingIds = result.listings.map((l) => l.id)
-    const authorIds = [...new Set(result.listings.map((l) => l.authorId))]
+    const authorIds = [...new Set(result.listings.flatMap((l) => (l.authorId ? [l.authorId] : [])))]
 
     const [developerVerifications, userBans] = await Promise.all([
       // Batch fetch developer verifications
@@ -120,10 +120,12 @@ export const coreRouter = createTRPCRouter({
       // isVerifiedDeveloper already provided by repository.list
       isVerifiedDeveloper: listing.isVerifiedDeveloper,
       developerVerifications: devVerificationMap.get(listing.id) || [],
-      author: {
-        ...listing.author,
-        ...(canSeeBannedUsers && { userBans: userBanMap.get(listing.authorId) || [] }),
-      },
+      author: listing.author
+        ? {
+            ...listing.author,
+            ...(canSeeBannedUsers && { userBans: userBanMap.get(listing.author.id) || [] }),
+          }
+        : null,
     }))
 
     return {
@@ -407,7 +409,11 @@ export const coreRouter = createTRPCRouter({
     // Get all verified developer statuses in a single query
     const verifiedDevelopers = listings.length
       ? await ctx.prisma.verifiedDeveloper.findMany({
-          where: { OR: listings.map((l) => ({ userId: l.authorId, emulatorId: l.emulatorId })) },
+          where: {
+            OR: listings.flatMap((l) =>
+              l.authorId ? [{ userId: l.authorId, emulatorId: l.emulatorId }] : [],
+            ),
+          },
           select: { userId: true, emulatorId: true },
         })
       : []

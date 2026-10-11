@@ -80,6 +80,8 @@ export const TRUST_LEVELS = [
 export type TrustLevel = (typeof TRUST_LEVELS)[number]
 
 export const TRUST_CONFIG = {
+  HELPFUL_COMMENT_THRESHOLD: 5,
+
   // Minimum account age (in days) to be eligible for monthly active bonus
   MIN_ACCOUNT_AGE_FOR_BONUS: 30,
 

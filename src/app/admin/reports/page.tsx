@@ -443,7 +443,7 @@ function AdminReportsPage() {
                           </div>
                           <div className="text-gray-500 dark:text-gray-400 text-xs">
                             {report.compatibilityReport.reportLabel} by{' '}
-                            {report.compatibilityReport.author.name || 'Unknown'}
+                            {report.compatibilityReport.author?.name || 'Anonymous'}
                           </div>
                         </div>
                       </td>

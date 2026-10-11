@@ -7,7 +7,7 @@ import PcReportListingModal from './PcReportListingModal'
 
 interface Props {
   pcListingId: string
-  authorId: string
+  authorId: string | null
   currentUserId?: string | null
   onSuccess?: () => void
 }

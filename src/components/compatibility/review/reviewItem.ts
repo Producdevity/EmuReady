@@ -49,7 +49,7 @@ export interface CompatibilityReportReviewItem {
   game: CompatibilityReportReviewGame
   hardware: CompatibilityReportReviewHardware
   emulator: CompatibilityReportReviewEmulator
-  author: CompatibilityReportReviewAuthor
+  author: CompatibilityReportReviewAuthor | null
   createdAt: Date
   performance: CompatibilityReportReviewPerformance | null
   notes: string | null
@@ -64,7 +64,7 @@ interface ReviewAuthorSource {
 }
 
 interface CompatibilityReportReviewSourceBase {
-  authorId: string
+  authorId: string | null
   game: CompatibilityReportReviewGame
   emulator: CompatibilityReportReviewEmulator
   author?: ReviewAuthorSource | null
@@ -91,9 +91,12 @@ export type CompatibilityReportReviewSource =
 
 function toReviewAuthor(
   source: CompatibilityReportReviewSourceBase,
-): CompatibilityReportReviewAuthor {
+): CompatibilityReportReviewAuthor | null {
+  const id = source.author?.id ?? source.authorId
+  if (!id) return null
+
   return {
-    id: source.author?.id ?? source.authorId,
+    id,
     name: source.author?.name ?? null,
   }
 }

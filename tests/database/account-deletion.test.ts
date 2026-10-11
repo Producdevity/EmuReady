@@ -1,10 +1,16 @@
 import { randomUUID } from 'node:crypto'
+import { setTimeout } from 'node:timers/promises'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { AccountDeletionRepository } from '@/features/accounts/server/account-deletion.repository'
-import { ANONYMOUS_AUTHOR_ID } from '@/features/accounts/shared/anonymous-author'
+import { canUserAutoApprove } from '@/lib/trust/service'
 import { createPrismaClient } from '@/server/prisma-client'
+import { GamesRepository } from '@/server/repositories/games.repository'
+import { ListingsRepository } from '@/server/repositories/listings.repository'
+import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
+import { ActivityService } from '@/server/services/activity.service'
+import { updateListingVoteCounts } from '@/server/utils/vote-counts'
 import { calculateWilsonScore } from '@/utils/wilson-score'
-import { ApprovalStatus, PcOs } from '@orm/client'
+import { ApprovalStatus, PcOs, Role, TrustAction } from '@orm/client'
 
 const databaseUrl = new URL(process.env.DATABASE_URL ?? '')
 if (
@@ -16,7 +22,26 @@ if (
 
 const db = createPrismaClient()
 const accounts = new AccountDeletionRepository(db)
+const listings = new ListingsRepository(db)
+const pcListings = new PcListingsRepository(db)
+const games = new GamesRepository(db)
+const activity = new ActivityService(db)
 const prefix = `account-deletion-${randomUUID()}`
+const previousUpdate = new Date('2000-01-01T00:00:00Z')
+
+async function waitForBlockedTransaction(blockingPid: number) {
+  const deadline = Date.now() + 5_000
+  while (Date.now() < deadline) {
+    const [result] = await db.$queryRaw<{ blocked: boolean }[]>`
+      SELECT EXISTS (
+        SELECT 1 FROM pg_stat_activity WHERE ${blockingPid} = ANY(pg_blocking_pids(pid))
+      ) AS blocked
+    `
+    if (result?.blocked) return
+    await setTimeout(10)
+  }
+  throw new Error('Account deletion did not wait for the competing vote transaction')
+}
 
 async function createFixtures() {
   const owner = await db.user.create({
@@ -52,6 +77,19 @@ async function createFixtures() {
   const pcReport = await db.pcListing.create({
     data: { ...reportData, cpuId: cpu.id, memorySize: 16, os: PcOs.LINUX, osVersion: 'test' },
   })
+  const pcReportWithoutVotes = await db.pcListing.create({
+    data: {
+      ...reportData,
+      cpuId: cpu.id,
+      memorySize: 16,
+      os: PcOs.LINUX,
+      osVersion: 'test',
+      upvoteCount: 0,
+      downvoteCount: 0,
+      voteCount: 0,
+      updatedAt: previousUpdate,
+    },
+  })
   await db.vote.createMany({
     data: [
       { listingId: report.id, userId: owner.id, value: true },
@@ -65,7 +103,13 @@ async function createFixtures() {
     ],
   })
   const comment = await db.comment.create({
-    data: { listingId: report.id, userId: other.id, content: 'Keep this comment', score: 1 },
+    data: {
+      listingId: report.id,
+      userId: other.id,
+      content: 'Keep this comment',
+      score: 1,
+      updatedAt: previousUpdate,
+    },
   })
   const pcComment = await db.pcListingComment.create({
     data: {
@@ -73,6 +117,7 @@ async function createFixtures() {
       userId: other.id,
       content: 'Keep this PC comment',
       score: -1,
+      updatedAt: previousUpdate,
     },
   })
   await db.commentVote.create({ data: { userId: owner.id, commentId: comment.id, value: true } })
@@ -109,6 +154,7 @@ async function createFixtures() {
     performance,
     report,
     pcReport,
+    pcReportWithoutVotes,
     comment,
     pcComment,
     removedComment,
@@ -154,7 +200,7 @@ describe('account deletion against PostgreSQL', () => {
       await db.pcListing.findUniqueOrThrow({ where: { id: fixtures.pcReport.id } }),
     ]) {
       expect(report).toMatchObject({
-        authorId: ANONYMOUS_AUTHOR_ID,
+        authorId: null,
         notes: 'Retain this report',
         status: ApprovalStatus.APPROVED,
         upvoteCount: 0,
@@ -162,28 +208,51 @@ describe('account deletion against PostgreSQL', () => {
         voteCount: 1,
       })
     }
-    expect(
+    for (const comment of [
       await db.comment.findUniqueOrThrow({ where: { id: fixtures.comment.id } }),
-    ).toMatchObject({ score: 0 })
-    expect(
       await db.pcListingComment.findUniqueOrThrow({ where: { id: fixtures.pcComment.id } }),
-    ).toMatchObject({ score: 0 })
+    ]) {
+      expect(comment.score).toBe(0)
+      expect(comment.updatedAt.getTime()).toBeGreaterThan(previousUpdate.getTime())
+    }
     expect(await db.comment.findUnique({ where: { id: fixtures.removedComment.id } })).toBeNull()
     expect(await db.listing.findUniqueOrThrow({ where: { id: fixtures.report.id } })).toMatchObject(
       { pinnedCommentId: null, pinnedByUserId: null },
     )
     expect(await db.badge.findUniqueOrThrow({ where: { id: fixtures.badge.id } })).toMatchObject({
-      createdBy: ANONYMOUS_AUTHOR_ID,
+      createdBy: null,
     })
     expect(
       await db.userBan.findFirstOrThrow({ where: { userId: fixtures.other.id } }),
-    ).toMatchObject({ bannedById: ANONYMOUS_AUTHOR_ID })
+    ).toMatchObject({ bannedById: null })
     expect(
       await db.verifiedDeveloper.findFirstOrThrow({ where: { userId: fixtures.other.id } }),
-    ).toMatchObject({ verifiedBy: ANONYMOUS_AUTHOR_ID })
+    ).toMatchObject({ verifiedBy: null })
     expect(
       await db.userBadge.findFirstOrThrow({ where: { userId: fixtures.other.id } }),
-    ).toMatchObject({ assignedBy: ANONYMOUS_AUTHOR_ID })
+    ).toMatchObject({ assignedBy: null })
+    expect(await listings.byIdWithAccess(fixtures.report.id)).toMatchObject({ author: null })
+    expect(await pcListings.getByIdWithDetails(fixtures.pcReport.id)).toMatchObject({
+      author: null,
+    })
+    const reportWithoutVotes = await db.pcListing.findUniqueOrThrow({
+      where: { id: fixtures.pcReportWithoutVotes.id },
+    })
+    expect(reportWithoutVotes).toMatchObject({ authorId: null, voteCount: 0 })
+    expect(reportWithoutVotes.updatedAt.getTime()).toBeGreaterThan(previousUpdate.getTime())
+    const game = await games.byId(fixtures.game.id)
+    expect(game?.listings).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: fixtures.report.id })]),
+    )
+    expect(game?.pcListings).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: fixtures.pcReport.id })]),
+    )
+    expect(await activity.getRecentListings('24h', 100, Role.USER)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: fixtures.report.id, authorId: null }),
+        expect.objectContaining({ id: fixtures.pcReport.id, authorId: null }),
+      ]),
+    )
     expect(await accounts.deleteAccount({ clerkId: fixtures.owner.clerkId })).toBeNull()
   })
 
@@ -235,51 +304,127 @@ describe('account deletion against PostgreSQL', () => {
     await db.pcListingVote.create({
       data: { pcListingId: pcReport.id, userId: fixtures.other.id, value: true },
     })
+    const comment = await db.comment.create({
+      data: {
+        listingId: report.id,
+        userId: fixtures.other.id,
+        content: 'Nullified vote must stay excluded',
+        score: 1,
+        votes: {
+          create: [
+            { userId: banned.id, value: true, nullifiedAt: new Date() },
+            { userId: fixtures.other.id, value: true },
+          ],
+        },
+      },
+    })
+    const pcComment = await db.pcListingComment.create({
+      data: {
+        pcListingId: pcReport.id,
+        userId: fixtures.other.id,
+        content: 'Nullified vote must stay excluded',
+        score: 1,
+        votes: {
+          create: [
+            { userId: banned.id, value: false, nullifiedAt: new Date() },
+            { userId: fixtures.other.id, value: true },
+          ],
+        },
+      },
+    })
+    const authorBefore = await db.user.findUniqueOrThrow({ where: { id: fixtures.other.id } })
     await accounts.deleteAccount({ id: banned.id })
+    expect(await db.user.findUniqueOrThrow({ where: { id: fixtures.other.id } })).toMatchObject({
+      trustScore: authorBefore.trustScore,
+    })
     expect(await db.listing.findUniqueOrThrow({ where: { id: report.id } })).toMatchObject({
-      authorId: ANONYMOUS_AUTHOR_ID,
+      authorId: null,
       status: ApprovalStatus.PENDING,
       voteCount: 1,
       upvoteCount: 1,
       successRate: calculateWilsonScore(1, 0),
       downvoteCount: 0,
+    })
+    expect(await db.comment.findUniqueOrThrow({ where: { id: comment.id } })).toMatchObject({
+      score: 1,
+    })
+    expect(
+      await db.pcListingComment.findUniqueOrThrow({ where: { id: pcComment.id } }),
+    ).toMatchObject({
+      score: 1,
     })
     expect(await db.pcListing.findUniqueOrThrow({ where: { id: pcReport.id } })).toMatchObject({
-      authorId: ANONYMOUS_AUTHOR_ID,
+      authorId: null,
       status: ApprovalStatus.PENDING,
       voteCount: 1,
       upvoteCount: 1,
       successRate: calculateWilsonScore(1, 0),
       downvoteCount: 0,
     })
+    await expect(listings.byIdWithAccess(report.id)).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    expect(await pcListings.getByIdWithDetails(pcReport.id)).toBeNull()
+    const game = await games.byId(fixtures.game.id)
+    expect(game?.listings).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: report.id })]),
+    )
+    expect(game?.pcListings).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: pcReport.id })]),
+    )
+    const recentReports = await activity.getRecentListings('24h', 100, Role.USER)
+    expect(recentReports).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: report.id })]),
+    )
+    expect(recentReports).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: pcReport.id })]),
+    )
   })
 
   it('removes a voting history spanning multiple batches for both report types', async () => {
     const voter = await db.user.create({
       data: { clerkId: `${prefix}-prolific`, email: `${prefix}-prolific@example.invalid` },
     })
-    const reportIds = Array.from({ length: 1001 }, () => randomUUID())
-    const pcReportIds = Array.from({ length: 1001 }, () => randomUUID())
+    const authors = Array.from({ length: 1001 }, () => ({
+      id: randomUUID(),
+      reportId: randomUUID(),
+      pcReportId: randomUUID(),
+    }))
+    const authorIds = authors.map((author) => author.id)
+    const reportIds = authors.map((author) => author.reportId)
+    const pcReportIds = authors.map((author) => author.pcReportId)
+    await db.user.createMany({
+      data: authors.map((author) => ({
+        id: author.id,
+        clerkId: `${prefix}-${author.id}`,
+        email: `${prefix}-${author.id}@example.invalid`,
+        trustScore: 250,
+      })),
+    })
     const reportData = {
       gameId: fixtures.game.id,
       emulatorId: fixtures.emulator.id,
       performanceId: fixtures.performance.id,
-      authorId: fixtures.other.id,
       upvoteCount: 1,
       downvoteCount: 1,
       voteCount: 2,
     }
     await db.listing.createMany({
-      data: reportIds.map((id) => ({ ...reportData, id, deviceId: fixtures.device.id })),
+      data: authors.map((author) => ({
+        ...reportData,
+        id: author.reportId,
+        authorId: author.id,
+        deviceId: fixtures.device.id,
+      })),
     })
     await db.pcListing.createMany({
-      data: pcReportIds.map((id) => ({
+      data: authors.map((author) => ({
         ...reportData,
-        id,
+        id: author.pcReportId,
+        authorId: author.id,
         cpuId: fixtures.cpu.id,
         memorySize: 16,
         os: PcOs.LINUX,
         osVersion: 'test',
+        updatedAt: previousUpdate,
       })),
     })
     await db.vote.createMany({
@@ -315,16 +460,187 @@ describe('account deletion against PostgreSQL', () => {
           downvoteCount: 0,
           voteCount: 1,
           successRate: calculateWilsonScore(1, 0),
+          updatedAt: { gt: previousUpdate },
         },
       }),
     ).toBe(pcReportIds.length)
+    expect(await db.user.count({ where: { id: { in: authorIds }, trustScore: 249 } })).toBe(
+      authors.length,
+    )
+    expect(
+      await db.trustActionLog.count({
+        where: { userId: { in: authorIds }, action: TrustAction.VOTE_CHANGE_REVERSAL, weight: -1 },
+      }),
+    ).toBe(authors.length)
   })
 
-  it('rejects deletion of the shared anonymous principal without losing reports', async () => {
-    await expect(accounts.deleteAccount({ id: ANONYMOUS_AUTHOR_ID })).rejects.toThrow(
-      'cannot be deleted',
+  it.each([true, false])(
+    'reverses received trust for all four active vote types (%s)',
+    async (value) => {
+      const voter = await db.user.create({
+        data: {
+          clerkId: `${prefix}-trust-voter-${value}`,
+          email: `${prefix}-trust-voter-${value}@example.invalid`,
+        },
+      })
+      const author = await db.user.create({
+        data: {
+          clerkId: `${prefix}-trust-author-${value}`,
+          email: `${prefix}-trust-author-${value}@example.invalid`,
+          trustScore: value ? 250 : 249,
+        },
+      })
+      const reportData = {
+        gameId: fixtures.game.id,
+        emulatorId: fixtures.emulator.id,
+        performanceId: fixtures.performance.id,
+        authorId: author.id,
+        upvoteCount: value ? 1 : 0,
+        downvoteCount: value ? 0 : 1,
+        voteCount: 1,
+        votes: { create: { userId: voter.id, value } },
+      }
+      const report = await db.listing.create({
+        data: { ...reportData, deviceId: fixtures.device.id },
+      })
+      const pcReport = await db.pcListing.create({
+        data: {
+          ...reportData,
+          cpuId: fixtures.cpu.id,
+          memorySize: 16,
+          os: PcOs.LINUX,
+          osVersion: 'test',
+        },
+      })
+      const supporters = await db.user.createManyAndReturn({
+        data: Array.from({ length: value ? 4 : 5 }, (_, index) => ({
+          clerkId: `${prefix}-trust-supporter-${value}-${index}`,
+          email: `${prefix}-trust-supporter-${value}-${index}@example.invalid`,
+        })),
+        select: { id: true },
+      })
+      const commentData = {
+        userId: author.id,
+        content: 'Retained comment',
+        score: value ? 5 : 4,
+        votes: {
+          create: [
+            { userId: voter.id, value },
+            ...supporters.map((supporter) => ({ userId: supporter.id, value: true })),
+          ],
+        },
+      }
+      const comment = await db.comment.create({ data: { ...commentData, listingId: report.id } })
+      const pcComment = await db.pcListingComment.create({
+        data: { ...commentData, pcListingId: pcReport.id },
+      })
+      if (value) {
+        await db.trustActionLog.createMany({
+          data: [comment, pcComment].map((entry) => ({
+            userId: author.id,
+            action: TrustAction.HELPFUL_COMMENT,
+            weight: 3,
+            metadata: { commentId: entry.id, score: 5, threshold: 5 },
+          })),
+        })
+      }
+
+      await Promise.all([
+        accounts.deleteAccount({ id: voter.id }),
+        accounts.deleteAccount({ id: voter.id }),
+      ])
+      const expectedTrust = value ? 242 : 259
+      expect(await db.user.findUniqueOrThrow({ where: { id: author.id } })).toMatchObject({
+        trustScore: expectedTrust,
+      })
+      expect(await canUserAutoApprove(author.id, db)).toBe(!value)
+      expect(await db.comment.findUniqueOrThrow({ where: { id: comment.id } })).toMatchObject({
+        score: value ? 4 : 5,
+      })
+      expect(
+        await db.pcListingComment.findUniqueOrThrow({ where: { id: pcComment.id } }),
+      ).toMatchObject({ score: value ? 4 : 5 })
+      const logs = await db.trustActionLog.findMany({ where: { userId: author.id } })
+      expect(logs.filter((log) => log.action === TrustAction.VOTE_CHANGE_REVERSAL)).toMatchObject([
+        {
+          weight: value ? -8 : 4,
+          metadata: { reason: 'Account deletion vote removal', reversed: true },
+        },
+      ])
+      expect(logs.filter((log) => log.action === TrustAction.HELPFUL_COMMENT)).toHaveLength(2)
+      expect(JSON.stringify(logs)).not.toContain(voter.id)
+      expect(await accounts.deleteAccount({ id: voter.id })).toBeNull()
+      expect(await db.user.findUniqueOrThrow({ where: { id: author.id } })).toMatchObject({
+        trustScore: expectedTrust,
+      })
+    },
+  )
+
+  it('retries a report-write conflict without losing another user’s concurrent vote', async () => {
+    const authorBefore = await db.user.findUniqueOrThrow({ where: { id: fixtures.other.id } })
+    const voter = await db.user.create({
+      data: { clerkId: `${prefix}-concurrent`, email: `${prefix}-concurrent@example.invalid` },
+    })
+    const report = await db.listing.create({
+      data: {
+        gameId: fixtures.game.id,
+        deviceId: fixtures.device.id,
+        emulatorId: fixtures.emulator.id,
+        performanceId: fixtures.performance.id,
+        authorId: fixtures.other.id,
+        upvoteCount: 1,
+        voteCount: 1,
+        successRate: calculateWilsonScore(1, 0),
+        votes: { create: { userId: voter.id, value: true } },
+      },
+    })
+    const writerReady = Promise.withResolvers<number>()
+    const releaseWriter = Promise.withResolvers<void>()
+    const writer = db.$transaction(
+      async (tx) => {
+        try {
+          await tx.vote.create({
+            data: { listingId: report.id, userId: fixtures.other.id, value: false },
+          })
+          await updateListingVoteCounts(tx, report.id, 'create', false)
+          const [connection] = await tx.$queryRaw<{ pid: number }[]>`SELECT pg_backend_pid() AS pid`
+          if (!connection) throw new Error('Missing PostgreSQL backend PID')
+          writerReady.resolve(connection.pid)
+          await releaseWriter.promise
+        } catch (error) {
+          writerReady.reject(error)
+          throw error
+        }
+      },
+      { timeout: 15_000 },
     )
-    expect(await db.listing.count({ where: { id: fixtures.report.id } })).toBe(1)
-    expect(await db.pcListing.count({ where: { id: fixtures.pcReport.id } })).toBe(1)
+    const writerResult = Promise.allSettled([writer])
+    let deletionResult: ReturnType<typeof Promise.allSettled> | undefined
+    try {
+      const blockingPid = await writerReady.promise
+      deletionResult = Promise.allSettled([accounts.deleteAccount({ id: voter.id })])
+      await waitForBlockedTransaction(blockingPid)
+      releaseWriter.resolve()
+      expect((await writerResult)[0]).toMatchObject({ status: 'fulfilled' })
+      expect((await deletionResult)[0]).toMatchObject({ status: 'fulfilled' })
+    } finally {
+      releaseWriter.resolve()
+      await writerResult
+      await deletionResult
+    }
+
+    expect(await db.user.findUnique({ where: { id: voter.id } })).toBeNull()
+    expect(await db.vote.findMany({ where: { listingId: report.id } })).toMatchObject([
+      { userId: fixtures.other.id, value: false },
+    ])
+    expect(await db.listing.findUniqueOrThrow({ where: { id: report.id } })).toMatchObject({
+      upvoteCount: 0,
+      downvoteCount: 1,
+      voteCount: 1,
+      successRate: calculateWilsonScore(0, 1),
+    })
+    expect(await db.user.findUniqueOrThrow({ where: { id: fixtures.other.id } })).toMatchObject({
+      trustScore: authorBefore.trustScore - 2,
+    })
   })
 })

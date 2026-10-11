@@ -133,7 +133,9 @@ export const mobilePcListingsRouter = createMobileTRPCRouter({
     const verifiedPairs = pcListings.length
       ? await ctx.prisma.verifiedDeveloper.findMany({
           where: {
-            OR: pcListings.map((l) => ({ userId: l.authorId, emulatorId: l.emulatorId })),
+            OR: pcListings.flatMap((l) =>
+              l.authorId ? [{ userId: l.authorId, emulatorId: l.emulatorId }] : [],
+            ),
           },
           select: { userId: true, emulatorId: true },
         })

@@ -1,23 +1,29 @@
+import { isClerkAPIResponseError } from '@clerk/nextjs/errors'
 import { revalidateTag } from 'next/cache'
-import {
-  invalidateListingsSeo,
-  invalidatePcListingsSeo,
-  invalidateUser,
-} from '@/server/cache/invalidation'
 import { type AccountDeletionRepository } from './account-deletion.repository'
 
 export class AccountDeletionService {
   constructor(private readonly accounts: AccountDeletionRepository) {}
 
-  async deleteAccount(identity: Parameters<AccountDeletionRepository['deleteAccount']>[0]) {
-    const deleted = await this.accounts.deleteAccount(identity)
-    if (deleted) {
-      await invalidateUser(deleted.id)
-      await invalidateListingsSeo(deleted.listings)
-      await invalidatePcListingsSeo(deleted.pcListings)
-      revalidateTag(`user-${deleted.id}`, { expire: 0 })
+  async deleteAccount(userId: string) {
+    const identity = await this.accounts.findClerkIdentity(userId)
+    if (identity) {
+      const { clerkClient } = await import('@clerk/nextjs/server')
+      const clerk = await clerkClient()
+      try {
+        await clerk.users.deleteUser(identity.clerkId)
+      } catch (error) {
+        // A previous attempt or the user may already have removed the Clerk identity.
+        if (!(isClerkAPIResponseError(error) && error.status === 404)) throw error
+      }
     }
-    // Deletion must not serve the previous author's identity during background revalidation.
+    await this.deleteAccountData({ id: userId })
+  }
+
+  async deleteAccountData(identity: Parameters<AccountDeletionRepository['deleteAccount']>[0]) {
+    await this.accounts.deleteAccount(identity)
+    // A webhook retry must expire identities even after the database account is gone.
+    revalidateTag('users', { expire: 0 })
     revalidateTag('listings', { expire: 0 })
     revalidateTag('pc-listings', { expire: 0 })
   }

@@ -514,7 +514,7 @@ function UserDetailsModal(props: Props) {
                             Reason: {banStatusQuery.data.ban.reason}
                           </p>
                           <p className="text-xs text-red-700 dark:text-red-300">
-                            Banned by: {banStatusQuery.data.ban.bannedBy.name ?? 'Unknown'}
+                            Banned by: {banStatusQuery.data.ban.bannedBy?.name ?? 'Deleted account'}
                           </p>
                           {banStatusQuery.data.ban.expiresAt && (
                             <p className="text-xs text-red-700 dark:text-red-300">

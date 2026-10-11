@@ -311,7 +311,7 @@ function FeedCard(props: { item: FeedItem }) {
               </Badge>
             ) : null}
             <span className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-              {props.item.data.author.profileImage && (
+              {props.item.data.author?.profileImage && (
                 <Image
                   src={props.item.data.author.profileImage}
                   alt=""
@@ -322,12 +322,16 @@ function FeedCard(props: { item: FeedItem }) {
                 />
               )}
               by{' '}
-              <Link
-                href={`/users/${props.item.data.author.id}`}
-                className="pointer-events-auto font-medium text-blue-600 hover:underline dark:text-blue-400"
-              >
-                {props.item.data.author.name || 'Anonymous'}
-              </Link>
+              {props.item.data.author ? (
+                <Link
+                  href={`/users/${props.item.data.author.id}`}
+                  className="pointer-events-auto font-medium text-blue-600 hover:underline dark:text-blue-400"
+                >
+                  {props.item.data.author.name || 'Anonymous'}
+                </Link>
+              ) : (
+                'Anonymous'
+              )}
             </span>
             <span className="text-xs text-gray-400 dark:text-gray-500">
               <LocalizedDate date={props.item.data.createdAt} format="timeAgo" />

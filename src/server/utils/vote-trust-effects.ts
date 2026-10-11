@@ -1,3 +1,4 @@
+import { TRUST_CONFIG } from '@/lib/trust/config'
 import { TrustService } from '@/lib/trust/service'
 import { type ListingType } from '@/schemas/common'
 import { TrustAction, type PrismaClient, type Prisma } from '@orm/client'
@@ -102,8 +103,6 @@ interface CommentVoteTrustParams {
   scoreChange: number
 }
 
-const HELPFUL_THRESHOLD = 5
-
 /**
  * Applies trust effects when a comment vote is created, changed, or removed.
  * Works for both handheld and PC listing comments.
@@ -187,7 +186,10 @@ export async function handleCommentVoteTrustEffects(params: CommentVoteTrustPara
 
   // Helpful comment bonus when crossing the threshold
   const previousScore = updatedScore - scoreChange
-  if (previousScore < HELPFUL_THRESHOLD && updatedScore >= HELPFUL_THRESHOLD) {
+  if (
+    previousScore < TRUST_CONFIG.HELPFUL_COMMENT_THRESHOLD &&
+    updatedScore >= TRUST_CONFIG.HELPFUL_COMMENT_THRESHOLD
+  ) {
     await trustService.logAction({
       userId: commentAuthorId,
       action: TrustAction.HELPFUL_COMMENT,
@@ -195,7 +197,7 @@ export async function handleCommentVoteTrustEffects(params: CommentVoteTrustPara
         commentId,
         [parentKey]: parentEntityId,
         score: updatedScore,
-        threshold: HELPFUL_THRESHOLD,
+        threshold: TRUST_CONFIG.HELPFUL_COMMENT_THRESHOLD,
       },
     })
   }

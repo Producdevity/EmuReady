@@ -1,3 +1,5 @@
+import { isClerkAPIResponseError } from '@clerk/nextjs/errors'
+import { clerkClient, type User } from '@clerk/nextjs/server'
 import { verifyWebhook } from '@clerk/nextjs/webhooks'
 import { NextResponse } from 'next/server'
 import { AccountDeletionRepository } from '@/features/accounts/server/account-deletion.repository'
@@ -21,27 +23,38 @@ interface ClerkWebhookEvent {
 }
 
 async function handleUserCreated(data: ClerkWebhookEvent['data']) {
-  const primaryEmail = data.primary_email_address_id
-    ? data.email_addresses.find((email) => email.id === data.primary_email_address_id)
-    : data.email_addresses[0]
-
-  if (!primaryEmail) {
-    console.error('❌ No primary email found for user:', data.id)
-    return
-  }
-
-  const role = (data.public_metadata?.role as Role) ?? Role.USER
-
   const existingUser = await prisma.user.findUnique({
     where: { clerkId: data.id },
     select: { id: true },
   })
   if (existingUser) return
 
+  const clerk = await clerkClient()
+  let clerkUser: User
+  try {
+    // Webhook delivery order is not guaranteed; a late creation must not restore deleted data.
+    clerkUser = await clerk.users.getUser(data.id)
+  } catch (error) {
+    if (isClerkAPIResponseError(error) && error.status === 404) return
+    throw error
+  }
+
+  const primaryEmail = clerkUser.primaryEmailAddressId
+    ? clerkUser.emailAddresses.find((email) => email.id === clerkUser.primaryEmailAddressId)
+    : clerkUser.emailAddresses[0]
+
+  if (!primaryEmail) {
+    console.error('❌ No primary email found for user:', data.id)
+    return
+  }
+
+  const role =
+    Object.values(Role).find((role) => role === clerkUser.publicMetadata.role) ?? Role.USER
+
   // Normalize username to lowercase for consistency
   let displayName: string | null = null
-  if (data.username) {
-    const sanitizedUsername = data.username.trim().toLowerCase()
+  if (clerkUser.username) {
+    const sanitizedUsername = clerkUser.username.trim().toLowerCase()
     // Validate username: lowercase alphanumeric, underscores, hyphens, 3-30 chars
     const isValidUsername = /^[a-z0-9_-]{3,30}$/.test(sanitizedUsername)
 
@@ -49,7 +62,7 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
       displayName = sanitizedUsername
     } else {
       console.warn(
-        `⚠️ Invalid username format during user creation: "${data.username}" (normalized: "${sanitizedUsername}") for user ${data.id}. Creating user without username.`,
+        `⚠️ Invalid username format during user creation: "${clerkUser.username}" (normalized: "${sanitizedUsername}") for user ${data.id}. Creating user without username.`,
       )
     }
   }
@@ -58,9 +71,9 @@ async function handleUserCreated(data: ClerkWebhookEvent['data']) {
     const user = await prisma.user.create({
       data: {
         clerkId: data.id,
-        email: primaryEmail.email_address,
+        email: primaryEmail.emailAddress,
         name: displayName,
-        profileImage: data.image_url ?? null,
+        profileImage: clerkUser.imageUrl ?? null,
         role: role,
         settings: { create: {} },
       },
@@ -155,7 +168,7 @@ async function handleUserUpdated(data: ClerkWebhookEvent['data']) {
 
 async function handleUserDeleted(data: ClerkWebhookEvent['data']) {
   try {
-    await new AccountDeletionService(new AccountDeletionRepository(prisma)).deleteAccount({
+    await new AccountDeletionService(new AccountDeletionRepository(prisma)).deleteAccountData({
       clerkId: data.id,
     })
   } catch (error) {

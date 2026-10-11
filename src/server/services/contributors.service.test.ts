@@ -1,5 +1,4 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
-import { ANONYMOUS_AUTHOR_ID } from '@/features/accounts/shared/anonymous-author'
 import {
   aggregateContributions,
   getTopContributorsRaw,
@@ -95,16 +94,6 @@ describe('contributors.service', () => {
     expect(top[0]?.breakdown.total).toBe(2)
     expect(top[1]?.userId).toBe('user-2')
     expect(top[1]?.breakdown.total).toBe(1)
-  })
-
-  it('excludes retained anonymous reports from the contributor leaderboard', async () => {
-    prisma.$queryRawTyped.mockResolvedValue([
-      { userId: ANONYMOUS_AUTHOR_ID, listings: 200, total: 200 },
-      { userId: 'active-contributor', listings: 2, total: 2 },
-    ])
-    expect((await getTopContributorsRaw(prisma, 'all_time', 1)).map((row) => row.userId)).toEqual([
-      'active-contributor',
-    ])
   })
 
   it('returns zeroed contribution breakdown when user has no records', async () => {

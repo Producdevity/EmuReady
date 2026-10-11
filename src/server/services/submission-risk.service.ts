@@ -22,7 +22,7 @@ interface CustomFieldValueForRisk {
 
 export interface SubmissionForRisk {
   id: string
-  authorId: string
+  authorId: string | null
   customFieldValues?: readonly CustomFieldValueForRisk[] | null
 }
 
@@ -127,6 +127,7 @@ async function batchGetAuthorCredibility(
   }
 
   for (const row of listingApprovals) {
+    if (!row.authorId) continue
     const credibility = credibilityMap.get(row.authorId) ?? { trustScore: 0, approvedListings: 0 }
     credibilityMap.set(row.authorId, {
       ...credibility,
@@ -135,6 +136,7 @@ async function batchGetAuthorCredibility(
   }
 
   for (const row of pcListingApprovals) {
+    if (!row.authorId) continue
     const credibility = credibilityMap.get(row.authorId) ?? { trustScore: 0, approvedListings: 0 }
     credibilityMap.set(row.authorId, {
       ...credibility,
@@ -198,7 +200,7 @@ export async function computeSubmissionRiskProfiles(
 
   const credibilityMap = await batchGetAuthorCredibility(
     prisma,
-    submissions.map((submission) => submission.authorId),
+    submissions.flatMap((submission) => (submission.authorId ? [submission.authorId] : [])),
   )
 
   for (const submission of submissions) {
@@ -206,8 +208,8 @@ export async function computeSubmissionRiskProfiles(
       submission.id,
       computeSubmissionRiskProfile(
         submission,
-        authorRiskProfiles.get(submission.authorId),
-        credibilityMap.get(submission.authorId),
+        submission.authorId ? authorRiskProfiles.get(submission.authorId) : undefined,
+        submission.authorId ? credibilityMap.get(submission.authorId) : undefined,
       ),
     )
   }

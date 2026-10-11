@@ -34,7 +34,7 @@ export function AuthorPanel(props: Props) {
       </div>
       <div className="text-center">
         <div className="font-semibold text-gray-900 dark:text-white">
-          {props.authorName ?? 'Unknown'}
+          {props.authorName ?? 'Anonymous'}
         </div>
         {props.bannedBadge}
       </div>

@@ -205,7 +205,7 @@ function ListingDetailsClient(props: Props) {
               listingId={props.listing?.id}
               gameId={props.listing?.game.id}
               systemId={props.listing?.game.system?.id}
-              listingOwnerId={props.listing?.authorId}
+              listingOwnerId={props.listing.authorId ?? undefined}
               emulatorId={props.listing?.emulatorId}
             />
           </div>
