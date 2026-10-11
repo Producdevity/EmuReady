@@ -1,5 +1,7 @@
 import { verifyWebhook } from '@clerk/nextjs/webhooks'
 import { NextResponse } from 'next/server'
+import { AccountDeletionRepository } from '@/features/accounts/server/account-deletion.repository'
+import { AccountDeletionService } from '@/features/accounts/server/account-deletion.service'
 import analytics from '@/lib/analytics'
 import { prisma } from '@/server/db'
 import { isPrismaError, PRISMA_ERROR_CODES } from '@/server/utils/prisma-errors'
@@ -153,7 +155,9 @@ async function handleUserUpdated(data: ClerkWebhookEvent['data']) {
 
 async function handleUserDeleted(data: ClerkWebhookEvent['data']) {
   try {
-    await prisma.user.deleteMany({ where: { clerkId: data.id } })
+    await new AccountDeletionService(new AccountDeletionRepository(prisma)).deleteAccount({
+      clerkId: data.id,
+    })
   } catch (error) {
     console.error('❌ Failed to delete user from database:', error)
     throw error

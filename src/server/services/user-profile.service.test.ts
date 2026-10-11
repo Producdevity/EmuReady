@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ANONYMOUS_AUTHOR_ID } from '@/features/accounts/shared/anonymous-author'
 import { Role, type PrismaClient } from '@orm/client'
 import {
   checkProfileAccess,
@@ -35,6 +36,13 @@ describe('user-profile.service', () => {
   })
 
   describe('checkProfileAccess', () => {
+    it('does not expose a profile for the anonymous report author', async () => {
+      expect(
+        await checkProfileAccess(prisma, ANONYMOUS_AUTHOR_ID, { currentUserRole: Role.ADMIN }),
+      ).toEqual({ accessible: false, reason: PROFILE_ACCESS_REASONS.NOT_FOUND })
+      expect(prisma.user.findUnique).not.toHaveBeenCalled()
+    })
+
     it('should return not_found when user is null', async () => {
       vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
 

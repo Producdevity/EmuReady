@@ -1,3 +1,4 @@
+import { ANONYMOUS_AUTHOR_ID } from '@/features/accounts/shared/anonymous-author'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { Role } from '@orm/client'
 import type { PrismaClient } from '@orm/client'
@@ -62,6 +63,10 @@ export async function checkProfileAccess(
   targetUserId: string,
   ctx: ProfileAccessContext,
 ): Promise<ProfileAccessResult> {
+  if (targetUserId === ANONYMOUS_AUTHOR_ID) {
+    return { accessible: false, reason: PROFILE_ACCESS_REASONS.NOT_FOUND }
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: targetUserId },
     select: {

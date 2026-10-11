@@ -1,4 +1,6 @@
 import * as Sentry from '@sentry/nextjs'
+import { AccountDeletionRepository } from '@/features/accounts/server/account-deletion.repository'
+import { AccountDeletionService } from '@/features/accounts/server/account-deletion.service'
 import analytics from '@/lib/analytics'
 import { ResourceError } from '@/lib/errors'
 import {
@@ -868,7 +870,9 @@ export const usersRouter = createTRPCRouter({
       // Prevent self-deletion
       if (input.userId === ctx.session.user.id) return ResourceError.user.cannotDeleteSelf()
 
-      await ctx.prisma.user.delete({ where: { id: input.userId } })
+      await new AccountDeletionService(new AccountDeletionRepository(ctx.prisma)).deleteAccount({
+        id: input.userId,
+      })
 
       return { success: true }
     }),

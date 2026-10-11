@@ -1,3 +1,4 @@
+import { ANONYMOUS_AUTHOR_ID } from '@/features/accounts/shared/anonymous-author'
 import { logger } from '@/lib/logger'
 import { prisma } from '@/server/db'
 import { notificationAnalyticsService } from '@/server/notifications/analyticsService'
@@ -699,6 +700,7 @@ export class NotificationService {
   }
 
   private async filterBannedUsers(userIds: string[]): Promise<string[]> {
+    userIds = userIds.filter((id) => id !== ANONYMOUS_AUTHOR_ID)
     if (userIds.length === 0) return []
 
     try {
@@ -734,6 +736,7 @@ export class NotificationService {
     userIds: string[],
     triggeringUserId?: string,
   ): Promise<string[]> {
+    userIds = userIds.filter((id) => id !== ANONYMOUS_AUTHOR_ID)
     if (userIds.length === 0 || !triggeringUserId) return userIds
 
     try {

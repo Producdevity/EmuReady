@@ -1,4 +1,5 @@
 import { startOfMonth, subDays } from 'date-fns'
+import { ANONYMOUS_AUTHOR_ID } from '@/features/accounts/shared/anonymous-author'
 import { ApprovalStatus, type PrismaClient, type Role } from '@orm/client'
 import { getTopContributors } from '@orm/sql'
 
@@ -125,13 +126,13 @@ export async function aggregateContributions(
   const listingWhere = {
     status: { in: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING] },
     ...(startDate ? { createdAt: { gte: startDate } } : {}),
-    ...(userIds ? { authorId: { in: userIds } } : {}),
+    authorId: { not: ANONYMOUS_AUTHOR_ID, ...(userIds ? { in: userIds } : {}) },
   }
 
   const pcListingWhere = {
     status: { in: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING] },
     ...(startDate ? { createdAt: { gte: startDate } } : {}),
-    ...(userIds ? { authorId: { in: userIds } } : {}),
+    authorId: { not: ANONYMOUS_AUTHOR_ID, ...(userIds ? { in: userIds } : {}) },
   }
 
   const gameWhere = {
@@ -205,10 +206,14 @@ export async function getTopContributorsRaw(
 ): Promise<RawContributor[]> {
   const startDate = resolveContributorTimeframe(timeframe)
 
-  const results = await prisma.$queryRawTyped(getTopContributors(startDate ?? null, limit))
+  const results = await prisma.$queryRawTyped(getTopContributors(startDate ?? null, limit + 1))
 
   return results
-    .filter((row): row is typeof row & { userId: string } => row.userId !== null)
+    .filter(
+      (row): row is typeof row & { userId: string } =>
+        row.userId !== null && row.userId !== ANONYMOUS_AUTHOR_ID,
+    )
+    .slice(0, limit)
     .map((row) => ({
       userId: row.userId,
       breakdown: {

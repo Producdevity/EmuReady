@@ -5,6 +5,7 @@ import type * as ClerkWebhooks from '@clerk/nextjs/webhooks'
 
 const mocks = vi.hoisted(() => ({
   verifyWebhook: vi.fn(),
+  deleteAccount: vi.fn(),
   user: {
     create: vi.fn(),
     deleteMany: vi.fn(),
@@ -37,6 +38,12 @@ vi.mock('@/lib/analytics', () => ({
   },
 }))
 
+vi.mock('@/features/accounts/server/account-deletion.service', () => ({
+  AccountDeletionService: class {
+    deleteAccount = mocks.deleteAccount
+  },
+}))
+
 const request = new NextRequest('http://localhost/api/webhooks/clerk', { method: 'POST' })
 
 function createdEvent() {
@@ -59,6 +66,7 @@ describe('Clerk webhook route', () => {
     mocks.verifyWebhook.mockReset()
     mocks.user.create.mockReset()
     mocks.user.deleteMany.mockReset()
+    mocks.deleteAccount.mockReset()
     mocks.user.findUnique.mockReset()
     mocks.user.update.mockReset()
     mocks.analytics.signedUp.mockReset()
@@ -134,13 +142,21 @@ describe('Clerk webhook route', () => {
       type: 'user.deleted',
       data: { id: 'user_clerk_1', email_addresses: [] },
     })
-    mocks.user.deleteMany.mockResolvedValueOnce({ count: 0 })
+    mocks.deleteAccount.mockResolvedValueOnce(undefined)
 
     const response = await POST(request)
 
     expect(response.status).toBe(200)
-    expect(mocks.user.deleteMany).toHaveBeenCalledWith({
-      where: { clerkId: 'user_clerk_1' },
+    expect(mocks.deleteAccount).toHaveBeenCalledWith({ clerkId: 'user_clerk_1' })
+  })
+  it('does not acknowledge a deletion whose transaction failed', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    mocks.verifyWebhook.mockResolvedValueOnce({
+      type: 'user.deleted',
+      data: { id: 'user_clerk_1' },
     })
+    mocks.deleteAccount.mockRejectedValueOnce(new Error('Database unavailable'))
+    expect((await POST(request)).status).toBe(500)
+    consoleError.mockRestore()
   })
 })
