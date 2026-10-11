@@ -1,0 +1,119 @@
+name: Container image
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the verified image to GHCR
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: container-image-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  image:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: container-production
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/emuready_build
+      DATABASE_DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/emuready_build
+      NEXT_TELEMETRY_DISABLED: "1"
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: emuready_build
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d emuready_build"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Validate public build configuration
+        env:
+          PUBLIC_BUILD_ENV: ${{ vars.CONTAINER_PUBLIC_BUILD_ENV }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, re
+
+          config = json.loads(os.environ['PUBLIC_BUILD_ENV'])
+          if not isinstance(config, dict):
+              raise SystemExit('CONTAINER_PUBLIC_BUILD_ENV must be a JSON object')
+          declared = set(re.findall(r'^ARG ([A-Z0-9_]+)', pathlib.Path('Dockerfile').read_text(), re.M))
+          allowed = {key for key in declared if key.startswith('NEXT_PUBLIC_') or key == 'NEXT_IMAGE_UNOPTIMIZED'}
+          if set(config) - allowed:
+              raise SystemExit('Only public arguments declared in Dockerfile are accepted')
+          if any(not isinstance(value, str) or any(c in value for c in '\r\n\0') for value in config.values()):
+              raise SystemExit('Build values must be single-line strings')
+          if config.get('NEXT_PUBLIC_APP_URL') != 'https://www.emuready.com' or config.get('NEXT_PUBLIC_APP_ENV') != 'production':
+              raise SystemExit('Expected final production URL and environment')
+          if not config.get('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', '').startswith('pk_live_'):
+              raise SystemExit('Expected the production Clerk publishable key')
+          args = [item for key, value in sorted(config.items()) for item in ('--build-arg', f'{key}={value}')]
+          pathlib.Path(os.environ['RUNNER_TEMP'], 'container-build-args').write_bytes(('\0'.join(args) + '\0').encode())
+          PY
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare disposable build database
+        run: |
+          pnpm exec prisma migrate deploy
+          pnpm db:generate
+
+      - name: Run unit tests
+        run: pnpm test:ci
+
+      - name: Build production image
+        id: image
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          tag="${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mapfile -d '' -t build_args < "$RUNNER_TEMP/container-build-args"
+          docker build --platform linux/amd64 --network host --target app \
+            --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --build-arg "BUILD_DATABASE_URL=$DATABASE_URL" \
+            --build-arg "BUILD_DATABASE_DIRECT_URL=$DATABASE_DIRECT_URL" \
+            --build-arg "NEXT_BUILD_ID=$GITHUB_SHA" \
+            "${build_args[@]}" --tag "$image:$tag" .
+          test "$(docker image inspect "$image:$tag" --format '{{.Architecture}}')" = amd64
+          test "$(docker image inspect "$image:$tag" --format '{{.Config.User}}')" = nextjs
+          printf 'name=%s\ntag=%s\n' "$image" "$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Publish image
+        if: inputs.publish
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE: ${{ steps.image.outputs.name }}
+          TAG: ${{ steps.image.outputs.tag }}
+        run: |
+          trap 'docker logout ghcr.io >/dev/null 2>&1' EXIT
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          docker push "$IMAGE:$TAG"
+          digest=$(docker image inspect "$IMAGE:$TAG" --format '{{index .RepoDigests 0}}')
+          printf 'Deploy this immutable image through Coolify Docker Image:\n\n`%s`\n' "$digest" >> "$GITHUB_STEP_SUMMARY"
