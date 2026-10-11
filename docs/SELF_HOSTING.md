@@ -12,7 +12,10 @@ EmuReady runs as a standalone Next.js container behind Coolify and Cloudflare. S
 - Keep the real `DATABASE_URL`, `DATABASE_DIRECT_URL`, and other runtime-only secrets, such as `CLERK_SECRET_KEY`, out of the build phase. Backups and environment files must remain excluded from the Docker context.
 - For a release containing migrations, build the `migrator` target from the same commit and run it with `DATABASE_DIRECT_URL` before deploying the `app` image.
 
-The VPS currently builds from source in Coolify. Staging uses the GitHub App webhook to deploy its configured branch; production is configured for manual deployments. Publishing prebuilt immutable images remains deferred.
+Use the manual [Container image workflow](container-image.md) to build and publish
+images on GitHub runners, then deploy their immutable digests through Coolify's
+Docker Image build pack. Disable source auto-deployment to keep builds off the
+application VPS. Image publication does not deploy or apply hosted migrations.
 
 ## Coolify application
 

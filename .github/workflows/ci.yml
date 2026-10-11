@@ -57,6 +57,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Test container build configuration
+        run: python3 -m unittest discover -s scripts -p container_build_config_test.py
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
 
