@@ -8,16 +8,18 @@ EmuReady runs as a standalone Next.js container behind Coolify and Cloudflare. S
 - Supply all `NEXT_PUBLIC_*` values while building. Runtime values cannot change the browser bundle.
 - Set `BUILD_DATABASE_URL` to a migrated, disposable Postgres database because Prisma TypedSQL generation introspects the schema. Never use production or a restored production backup for this. Apply the existing migrations to an empty database; seeds are unnecessary.
 - Optionally set `BUILD_DATABASE_DIRECT_URL` for that same disposable database. It defaults to `BUILD_DATABASE_URL`. The builder maps these names to Prisma's `DATABASE_URL` and `DATABASE_DIRECT_URL` only for `pnpm build`, and fails if `BUILD_DATABASE_URL` is missing.
-- In Coolify, make `BUILD_DATABASE_URL` and `BUILD_DATABASE_DIRECT_URL` build-only variables and enable **Use Docker Build Secrets**. Ordinary Docker build arguments expose their values in image metadata.
 - Keep the real `DATABASE_URL`, `DATABASE_DIRECT_URL`, and other runtime-only secrets, such as `CLERK_SECRET_KEY`, out of the build phase. Backups and environment files must remain excluded from the Docker context.
 - For a release containing migrations, build the `migrator` target from the same commit and run it with `DATABASE_DIRECT_URL` before deploying the `app` image.
 
-The VPS currently builds from source in Coolify. Staging uses the GitHub App webhook to deploy its configured branch; production is configured for manual deployments. Publishing prebuilt immutable images remains deferred.
+Use the manual [Container image workflow](container-image.md) to build and publish
+images on GitHub runners, then deploy their immutable digests through Coolify's
+Docker Image build pack. Disable source auto-deployment to keep builds off the
+application VPS. Image publication does not deploy or apply hosted migrations.
 
 ## Coolify application
 
-- Use the Dockerfile build pack, target `app`, and exposed port `3000`.
-- Set `NEXT_BUILD_ID=$SOURCE_COMMIT` and enable **Include Source Commit in Build**.
+- Use the Docker Image build pack with the verified immutable digest and exposed port `3000`.
+- Set runtime `APP_VERSION` to the exact source commit. The image workflow sets `NEXT_BUILD_ID` while building.
 - Use `/api/health/ready` for deployment health checks and `/api/health/live` for process liveness.
 
 ## Production configuration
@@ -30,7 +32,6 @@ The VPS currently builds from source in Coolify. Staging uses the GitHub App web
 
 - Provision an isolated staging upload bucket, scoped token, and hostname before enabling upload testing in staging.
 - Make APK objects private so entitlement checks cannot be bypassed with a known public R2 URL.
-- Move builds to GitHub-hosted Actions, publish immutable images to GHCR, and have Coolify deploy them by digest. Do not run the build runner on the application VPS.
 - Replace the current `staging` default branch and `master` production convention with a documented release and promotion flow.
 - Consolidate the duplicate mobile tRPC paths and remove the unused transport.
 - Define how authored handheld and PC Compatibility Reports are retained when a Clerk user is deleted; their required author relations currently block deletion (observed as `Listing_authorId_fkey`).
