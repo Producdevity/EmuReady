@@ -142,7 +142,7 @@ function UserInfoSection(props: {
             rel="noopener noreferrer"
             className="text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300"
           >
-            {props.author.name || 'Anonymous'}
+            {props.author.name || 'Unknown'}
           </Link>
         ) : (
           <span>Anonymous</span>

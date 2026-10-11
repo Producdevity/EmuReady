@@ -124,7 +124,9 @@ function ReportDetailsModal(props: Props) {
                   Author
                 </label>
                 <p className="text-sm text-gray-900 dark:text-white">
-                  {report.compatibilityReport.author?.name || 'Anonymous'}
+                  {report.compatibilityReport.author
+                    ? report.compatibilityReport.author.name || 'Unknown'
+                    : 'Anonymous'}
                 </p>
               </div>
             </div>

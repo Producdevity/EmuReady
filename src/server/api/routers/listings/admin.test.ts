@@ -319,6 +319,79 @@ describe('listing admin approval', () => {
       },
     })
   })
+
+  it('bulk approves an anonymous report and rejects a banned author even without a ban reason', async () => {
+    const anonymousReport = {
+      id: LISTING_ID,
+      authorId: null,
+      author: null,
+      status: ApprovalStatus.PENDING,
+      gameId: '00000000-0000-4000-a000-000000000030',
+      deviceId: '00000000-0000-4000-a000-000000000031',
+      emulatorId: '00000000-0000-4000-a000-000000000032',
+    }
+    const bannedAuthorReport = {
+      ...anonymousReport,
+      id: LISTING_ID_B,
+      authorId: AUTHOR_ID,
+      author: { id: AUTHOR_ID, userBans: [{ reason: '' }] },
+    }
+    const tx = {
+      listing: {
+        findMany: vi.fn().mockResolvedValueOnce([anonymousReport, bannedAuthorReport]),
+        update: vi
+          .fn()
+          .mockResolvedValueOnce({ ...bannedAuthorReport, status: ApprovalStatus.REJECTED }),
+        updateMany: vi.fn().mockResolvedValueOnce({ count: 1 }),
+      },
+    }
+    Object.assign(prisma, {
+      user: { findUnique: vi.fn().mockResolvedValueOnce({ id: ADMIN_ID }) },
+      $transaction: vi.fn(async (callback: (transaction: typeof tx) => Promise<unknown>) =>
+        callback(tx),
+      ),
+    })
+    const { caller } = createCaller()
+
+    expect(await caller.bulkApprove({ listingIds: [LISTING_ID, LISTING_ID_B] })).toMatchObject({
+      success: true,
+      approvedCount: 1,
+      rejectedCount: 1,
+      skippedCount: 0,
+    })
+    expect(tx.listing.update).toHaveBeenCalledExactlyOnceWith({
+      where: { id: LISTING_ID_B },
+      data: {
+        status: ApprovalStatus.REJECTED,
+        processedByUserId: ADMIN_ID,
+        processedAt: expect.any(Date),
+        processedNotes:
+          'Automatically rejected during bulk approval: User is currently banned (No reason provided)',
+      },
+    })
+    expect(tx.listing.updateMany).toHaveBeenCalledExactlyOnceWith({
+      where: { id: { in: [LISTING_ID] } },
+      data: {
+        status: ApprovalStatus.APPROVED,
+        processedByUserId: ADMIN_ID,
+        processedAt: expect.any(Date),
+        processedNotes: null,
+      },
+    })
+    expect(mockApplyTrustAction).not.toHaveBeenCalled()
+    expect(notificationEventEmitter.emitNotificationEvent).toHaveBeenCalledExactlyOnceWith({
+      eventType: 'LISTING_APPROVED',
+      entityType: 'listing',
+      entityId: LISTING_ID,
+      triggeredBy: ADMIN_ID,
+      payload: {
+        listingId: LISTING_ID,
+        approvedBy: ADMIN_ID,
+        approvedAt: expect.any(Date),
+        bulk: true,
+      },
+    })
+  })
 })
 
 describe('listing admin processed reports', () => {

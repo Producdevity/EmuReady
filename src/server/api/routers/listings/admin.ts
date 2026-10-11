@@ -642,8 +642,7 @@ export const adminRouter = createTRPCRouter({
         // Auto-reject listings from banned users
         if (bannedUserListings.length > 0) {
           for (const listing of bannedUserListings) {
-            const banReason = listing.author?.userBans[0]?.reason
-            if (!banReason) continue
+            const banReason = listing.author?.userBans[0]?.reason || 'No reason provided'
             await tx.listing.update({
               where: { id: listing.id },
               data: {

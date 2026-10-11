@@ -350,7 +350,7 @@ function AdminUserBansPage() {
                     )}
                     {columnVisibility.isColumnVisible('bannedBy') && (
                       <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                        {ban.bannedBy?.name || 'Deleted account'}
+                        {ban.bannedBy ? ban.bannedBy.name || 'Unknown' : 'Deleted account'}
                       </td>
                     )}
                     {columnVisibility.isColumnVisible('bannedAt') && (

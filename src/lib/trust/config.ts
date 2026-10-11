@@ -2,6 +2,8 @@ import { findLast } from 'remeda'
 import { ms } from '@/utils/time'
 import { TrustAction } from '@orm'
 
+const HELPFUL_COMMENT_THRESHOLD = 5
+
 export const TRUST_ACTIONS = {
   [TrustAction.UPVOTE]: { weight: 1, description: 'Upvoted a listing' },
   [TrustAction.DOWNVOTE]: { weight: 1, description: 'Downvoted a listing' },
@@ -47,7 +49,7 @@ export const TRUST_ACTIONS = {
   },
   [TrustAction.HELPFUL_COMMENT]: {
     weight: 3,
-    description: 'Comment received significant upvotes (5+ threshold)',
+    description: `Comment received significant upvotes (${HELPFUL_COMMENT_THRESHOLD}+ threshold)`,
   },
   [TrustAction.ADMIN_ADJUSTMENT_POSITIVE]: {
     weight: 0, // Dynamic weight set by admin
@@ -80,7 +82,7 @@ export const TRUST_LEVELS = [
 export type TrustLevel = (typeof TRUST_LEVELS)[number]
 
 export const TRUST_CONFIG = {
-  HELPFUL_COMMENT_THRESHOLD: 5,
+  HELPFUL_COMMENT_THRESHOLD,
 
   // Minimum account age (in days) to be eligible for monthly active bonus
   MIN_ACCOUNT_AGE_FOR_BONUS: 30,

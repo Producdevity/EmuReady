@@ -149,7 +149,9 @@ export default function BadgeDetailsModal(props: Props) {
                 <div>
                   <span className="text-gray-600 dark:text-gray-400">Created by:</span>
                   <p className="mt-1">
-                    {badge.creator?.name || badge.creator?.email || 'Deleted account'}
+                    {badge.creator
+                      ? badge.creator.name || badge.creator.email || 'Unknown'
+                      : 'Deleted account'}
                   </p>
                 </div>
                 <div>
@@ -197,9 +199,11 @@ export default function BadgeDetailsModal(props: Props) {
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500">
                           by{' '}
-                          {userBadge.assignedByUser?.name ||
-                            userBadge.assignedByUser?.email ||
-                            'Deleted account'}
+                          {userBadge.assignedByUser
+                            ? userBadge.assignedByUser.name ||
+                              userBadge.assignedByUser.email ||
+                              'Unknown'
+                            : 'Deleted account'}
                         </p>
                       </div>
                     </div>

@@ -298,9 +298,9 @@ function AdminVerifiedDevelopersPage() {
                   )}
                   {columnVisibility.isColumnVisible('verifier') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {verifiedDev.verifier?.name ||
-                        verifiedDev.verifier?.email ||
-                        'Deleted account'}
+                      {verifiedDev.verifier
+                        ? verifiedDev.verifier.name || verifiedDev.verifier.email || 'Unknown'
+                        : 'Deleted account'}
                     </td>
                   )}
                   {columnVisibility.isColumnVisible('verifiedAt') && (

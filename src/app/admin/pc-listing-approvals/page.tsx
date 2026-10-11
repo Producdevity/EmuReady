@@ -638,7 +638,7 @@ function PcListingApprovalsPage() {
                                 className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
                                 title="View user details"
                               >
-                                {listing.author.name || 'Anonymous'}
+                                {listing.author.name || 'Unknown'}
                               </Link>
                             ) : (
                               'Anonymous'

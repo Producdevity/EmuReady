@@ -295,7 +295,7 @@ function BanDetailsContent(props: { ban: UserBanWithDetails; onClose: () => void
                 Banned By
               </label>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {props.ban.bannedBy?.name || 'Deleted account'}
+                {props.ban.bannedBy ? props.ban.bannedBy.name || 'Unknown' : 'Deleted account'}
               </p>
             </div>
             <div>

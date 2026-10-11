@@ -91,6 +91,13 @@ function renderReviewModal(overrides: Partial<CompatibilityReportReviewItem> = {
 }
 
 describe('CompatibilityReportReviewModal', () => {
+  it('keeps an unnamed existing author linked instead of marking the report anonymous', () => {
+    renderReviewModal({ author: { id: 'author-1', name: null } })
+
+    expect(screen.getByRole('link', { name: 'Unknown' })).toHaveAttribute('href', '/users/author-1')
+    expect(screen.queryByText('Anonymous')).not.toBeInTheDocument()
+  })
+
   it('renders an anonymized report without a profile link', () => {
     render(
       <CompatibilityReportReviewModalAdapter

@@ -37,7 +37,7 @@ export interface ProcessedReportAccessors<TReport> {
   getEmulatorName: (report: TReport) => string
   getEmulatorLogo: (report: TReport) => string | null | undefined
   getAuthor: (report: TReport) => ProcessedReportUser | null | undefined
-  getProcessedByName: (report: TReport) => string | null | undefined
+  getProcessedBy: (report: TReport) => ProcessedReportUser | null | undefined
   getProcessedAt: (report: TReport) => Date | string | null | undefined
   getProcessedNotes: (report: TReport) => string | null | undefined
   getStatus: (report: TReport) => ApprovalStatus
