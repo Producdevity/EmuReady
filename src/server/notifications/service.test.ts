@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ANONYMOUS_AUTHOR_ID } from '@/features/accounts/shared/anonymous-author'
 import {
   DeliveryChannel,
   NotificationCategory,
@@ -229,6 +230,24 @@ describe('NotificationService', () => {
   })
 
   describe('getUsersForEvent', () => {
+    it('excludes the anonymous author from handheld and PC report recipients', async () => {
+      mockPrisma.listing.findUnique.mockResolvedValue(
+        makeListingRecord({ authorId: ANONYMOUS_AUTHOR_ID }),
+      )
+      mockPrisma.pcListing.findUnique.mockResolvedValue({ authorId: ANONYMOUS_AUTHOR_ID })
+      expect(await serviceInternals.getUsersForEvent(makeEvent())).toEqual([])
+      expect(
+        await serviceInternals.getUsersForEvent(
+          makeEvent({
+            eventType: NOTIFICATION_EVENTS.PC_LISTING_APPROVED,
+            entityType: 'pcListing',
+            entityId: 'pc-listing-1',
+            payload: { pcListingId: 'pc-listing-1' },
+          }),
+        ),
+      ).toEqual([])
+    })
+
     it('listing.approved returns the listing author', async () => {
       mockPrisma.listing.findUnique.mockResolvedValue(makeListingRecord())
 
@@ -604,6 +623,25 @@ describe('NotificationService', () => {
   })
 
   describe('createNotification', () => {
+    it.each([true, false])('skips anonymous recipients with immediate=%s', async (immediate) => {
+      expect(
+        await service.createNotification(
+          {
+            userId: ANONYMOUS_AUTHOR_ID,
+            type: NotificationType.FEATURE_ANNOUNCEMENT,
+            category: NotificationCategory.SYSTEM,
+            title: 'Release',
+            message: 'Release available',
+            deliveryChannel: DeliveryChannel.BOTH,
+          },
+          { immediate },
+        ),
+      ).toBeNull()
+      expect(mockPrisma.notification.create).not.toHaveBeenCalled()
+      expect(mockScheduleNotification).not.toHaveBeenCalled()
+      expect(mockSendNotificationEmail).not.toHaveBeenCalled()
+    })
+
     it('sends email for immediate BOTH delivery', async () => {
       const { NotificationService } = await import('./service')
       service = new NotificationService({ enableEmailDelivery: true })
@@ -639,6 +677,13 @@ describe('NotificationService', () => {
   })
 
   describe('createNotificationFromEvent', () => {
+    it('skips an anonymous report author before enriching or scheduling the event', async () => {
+      expect(await service.createNotificationFromEvent(makeEvent(), ANONYMOUS_AUTHOR_ID)).toBeNull()
+      expect(mockPrisma.listing.findUnique).not.toHaveBeenCalled()
+      expect(mockScheduleNotification).not.toHaveBeenCalled()
+      expect(mockPrisma.notification.create).not.toHaveBeenCalled()
+    })
+
     it('creates a scheduled listing approval notification from enriched listing data', async () => {
       mockPrisma.listing.findUnique.mockResolvedValue(
         makeListingRecord({

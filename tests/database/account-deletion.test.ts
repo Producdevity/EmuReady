@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { AccountDeletionRepository } from '@/features/accounts/server/account-deletion.repository'
 import { ANONYMOUS_AUTHOR_ID } from '@/features/accounts/shared/anonymous-author'
 import { createPrismaClient } from '@/server/prisma-client'
+import { calculateWilsonScore } from '@/utils/wilson-score'
 import { ApprovalStatus, PcOs } from '@orm/client'
 
 const databaseUrl = new URL(process.env.DATABASE_URL ?? '')
@@ -198,6 +199,9 @@ describe('account deletion against PostgreSQL', () => {
         performanceId: fixtures.performance.id,
         authorId: banned.id,
         status: ApprovalStatus.APPROVED,
+        voteCount: 1,
+        upvoteCount: 1,
+        successRate: calculateWilsonScore(1, 0),
       },
     })
     const pcReport = await db.pcListing.create({
@@ -211,6 +215,9 @@ describe('account deletion against PostgreSQL', () => {
         performanceId: fixtures.performance.id,
         authorId: banned.id,
         status: ApprovalStatus.APPROVED,
+        voteCount: 1,
+        upvoteCount: 1,
+        successRate: calculateWilsonScore(1, 0),
       },
     })
     await db.userBan.create({
@@ -222,21 +229,95 @@ describe('account deletion against PostgreSQL', () => {
     await db.pcListingVote.create({
       data: { pcListingId: pcReport.id, userId: banned.id, value: false, nullifiedAt: new Date() },
     })
+    await db.vote.create({
+      data: { listingId: report.id, userId: fixtures.other.id, value: true },
+    })
+    await db.pcListingVote.create({
+      data: { pcListingId: pcReport.id, userId: fixtures.other.id, value: true },
+    })
     await accounts.deleteAccount({ id: banned.id })
     expect(await db.listing.findUniqueOrThrow({ where: { id: report.id } })).toMatchObject({
       authorId: ANONYMOUS_AUTHOR_ID,
       status: ApprovalStatus.PENDING,
-      voteCount: 0,
-      upvoteCount: 0,
+      voteCount: 1,
+      upvoteCount: 1,
+      successRate: calculateWilsonScore(1, 0),
       downvoteCount: 0,
     })
     expect(await db.pcListing.findUniqueOrThrow({ where: { id: pcReport.id } })).toMatchObject({
       authorId: ANONYMOUS_AUTHOR_ID,
       status: ApprovalStatus.PENDING,
-      voteCount: 0,
-      upvoteCount: 0,
+      voteCount: 1,
+      upvoteCount: 1,
+      successRate: calculateWilsonScore(1, 0),
       downvoteCount: 0,
     })
+  })
+
+  it('removes a voting history spanning multiple batches for both report types', async () => {
+    const voter = await db.user.create({
+      data: { clerkId: `${prefix}-prolific`, email: `${prefix}-prolific@example.invalid` },
+    })
+    const reportIds = Array.from({ length: 1001 }, () => randomUUID())
+    const pcReportIds = Array.from({ length: 1001 }, () => randomUUID())
+    const reportData = {
+      gameId: fixtures.game.id,
+      emulatorId: fixtures.emulator.id,
+      performanceId: fixtures.performance.id,
+      authorId: fixtures.other.id,
+      upvoteCount: 1,
+      downvoteCount: 1,
+      voteCount: 2,
+    }
+    await db.listing.createMany({
+      data: reportIds.map((id) => ({ ...reportData, id, deviceId: fixtures.device.id })),
+    })
+    await db.pcListing.createMany({
+      data: pcReportIds.map((id) => ({
+        ...reportData,
+        id,
+        cpuId: fixtures.cpu.id,
+        memorySize: 16,
+        os: PcOs.LINUX,
+        osVersion: 'test',
+      })),
+    })
+    await db.vote.createMany({
+      data: reportIds.flatMap((listingId) => [
+        { listingId, userId: voter.id, value: true },
+        { listingId, userId: fixtures.other.id, value: false },
+      ]),
+    })
+    await db.pcListingVote.createMany({
+      data: pcReportIds.flatMap((pcListingId) => [
+        { pcListingId, userId: voter.id, value: false },
+        { pcListingId, userId: fixtures.other.id, value: true },
+      ]),
+    })
+    await accounts.deleteAccount({ id: voter.id })
+    expect(await db.user.findUnique({ where: { id: voter.id } })).toBeNull()
+    expect(
+      await db.listing.count({
+        where: {
+          id: { in: reportIds },
+          upvoteCount: 0,
+          downvoteCount: 1,
+          voteCount: 1,
+          successRate: calculateWilsonScore(0, 1),
+        },
+      }),
+    ).toBe(reportIds.length)
+    expect(
+      await db.pcListing.count({
+        where: {
+          id: { in: pcReportIds },
+          upvoteCount: 1,
+          downvoteCount: 0,
+          voteCount: 1,
+          successRate: calculateWilsonScore(1, 0),
+        },
+      }),
+    ).toBe(pcReportIds.length)
   })
 
   it('rejects deletion of the shared anonymous principal without losing reports', async () => {

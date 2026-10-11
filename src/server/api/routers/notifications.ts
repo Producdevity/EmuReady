@@ -119,7 +119,7 @@ export const notificationsRouter = createTRPCRouter({
           },
           { immediate: true }, // Admin system notifications should be delivered immediately
         )
-        notificationIds.push(notificationId)
+        if (notificationId !== null) notificationIds.push(notificationId)
       }
 
       return { success: true, notificationIds }

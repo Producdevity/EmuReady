@@ -55,7 +55,9 @@ export class NotificationService {
       immediate?: boolean
       scheduledFor?: Date
     } = {},
-  ): Promise<string> {
+  ): Promise<string | null> {
+    if (data.userId === ANONYMOUS_AUTHOR_ID) return null
+
     const rateLimitStatus = await notificationRateLimitService.checkRateLimit(
       data.userId,
       data.type,
@@ -100,6 +102,8 @@ export class NotificationService {
     eventData: NotificationEventData,
     userId: string,
   ): Promise<string | null> {
+    if (userId === ANONYMOUS_AUTHOR_ID) return null
+
     try {
       let notificationType = this.mapEventToNotificationType(eventData.eventType)
       if (eventData.eventType === 'listing.voted') {

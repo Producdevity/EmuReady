@@ -2,7 +2,7 @@ import { ANONYMOUS_AUTHOR_ID } from '@/features/accounts/shared/anonymous-author
 import { AppError } from '@/lib/errors'
 import { PrismaRepository } from '@/server/persistence/prisma.repository'
 import { isPrismaError, PRISMA_ERROR_CODES } from '@/server/utils/prisma-errors'
-import { updateListingVoteCounts, updatePcListingVoteCounts } from '@/server/utils/vote-counts'
+import { calculateWilsonScore } from '@/utils/wilson-score'
 import { ApprovalStatus, Prisma, Role, type PrismaClient } from '@orm/client'
 
 const retainedReportsSelect = {
@@ -124,40 +124,73 @@ export class AccountDeletionRepository extends PrismaRepository {
   }
 }
 
+const voteCountsSelect = {
+  id: true,
+  upvoteCount: true,
+  downvoteCount: true,
+} satisfies Prisma.ListingSelect
+
 async function removeVoteContributions(tx: Prisma.TransactionClient, userId: string) {
   const votes = await tx.vote.findMany({
     where: { userId, nullifiedAt: null },
-    select: { listingId: true, value: true },
+    select: { value: true, listing: { select: voteCountsSelect } },
   })
   const pcVotes = await tx.pcListingVote.findMany({
     where: { userId, nullifiedAt: null },
-    select: { pcListingId: true, value: true },
+    select: { value: true, pcListing: { select: voteCountsSelect } },
   })
-  const commentVotes = await tx.commentVote.findMany({
-    where: { userId, nullifiedAt: null, comment: { userId: { not: userId } } },
-    select: { commentId: true, value: true },
-  })
-  const pcCommentVotes = await tx.pcListingCommentVote.findMany({
-    where: { userId, nullifiedAt: null, comment: { userId: { not: userId } } },
-    select: { commentId: true, value: true },
-  })
+  await updateReportVoteCounts(
+    tx,
+    Prisma.sql`"Listing"`,
+    votes.map((vote) => voteRemovalRow(vote.listing, vote.value)),
+  )
+  await updateReportVoteCounts(
+    tx,
+    Prisma.sql`"pc_listings"`,
+    pcVotes.map((vote) => voteRemovalRow(vote.pcListing, vote.value)),
+  )
+  await tx.$executeRaw`
+    UPDATE "Comment" AS comment
+    SET "score" = comment."score" + CASE WHEN vote."value" THEN -1 ELSE 1 END,
+        "updatedAt" = NOW()
+    FROM "CommentVote" AS vote
+    WHERE vote."commentId" = comment."id" AND vote."userId" = ${userId}
+      AND vote."nullifiedAt" IS NULL AND comment."userId" <> ${userId}
+  `
+  await tx.$executeRaw`
+    UPDATE "pc_listing_comments" AS comment
+    SET "score" = comment."score" + CASE WHEN vote."value" THEN -1 ELSE 1 END,
+        "updatedAt" = NOW()
+    FROM "pc_listing_comment_votes" AS vote
+    WHERE vote."commentId" = comment."id" AND vote."userId" = ${userId}
+      AND vote."nullifiedAt" IS NULL AND comment."userId" <> ${userId}
+  `
+}
 
-  for (const vote of votes) {
-    await updateListingVoteCounts(tx, vote.listingId, 'delete', undefined, vote.value)
-  }
-  for (const vote of pcVotes) {
-    await updatePcListingVoteCounts(tx, vote.pcListingId, 'delete', undefined, vote.value)
-  }
-  for (const vote of commentVotes) {
-    await tx.comment.update({
-      where: { id: vote.commentId },
-      data: { score: { increment: vote.value ? -1 : 1 } },
-    })
-  }
-  for (const vote of pcCommentVotes) {
-    await tx.pcListingComment.update({
-      where: { id: vote.commentId },
-      data: { score: { increment: vote.value ? -1 : 1 } },
-    })
+function voteRemovalRow(
+  report: Prisma.ListingGetPayload<{ select: typeof voteCountsSelect }>,
+  value: boolean,
+) {
+  const upvotes = Math.max(0, report.upvoteCount - (value ? 1 : 0))
+  const downvotes = Math.max(0, report.downvoteCount - (value ? 0 : 1))
+  const removed = report.upvoteCount + report.downvoteCount - upvotes - downvotes
+  const score = calculateWilsonScore(upvotes, downvotes)
+  return Prisma.sql`(${report.id}, ${upvotes}::int, ${downvotes}::int, ${removed}::int, ${score}::double precision)`
+}
+
+async function updateReportVoteCounts(
+  tx: Prisma.TransactionClient,
+  table: Prisma.Sql,
+  rows: Prisma.Sql[],
+) {
+  for (let offset = 0; offset < rows.length; offset += 500) {
+    await tx.$executeRaw(Prisma.sql`
+      UPDATE ${table} AS report
+      SET "upvoteCount" = counts.upvotes, "downvoteCount" = counts.downvotes,
+          "voteCount" = report."voteCount" - counts.removed, "successRate" = counts.score
+      FROM (VALUES ${Prisma.join(rows.slice(offset, offset + 500))})
+        AS counts(id, upvotes, downvotes, removed, score)
+      WHERE report."id" = counts.id
+    `)
   }
 }
