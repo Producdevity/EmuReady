@@ -67,18 +67,20 @@ export const listingVerificationsRouter = createTRPCRouter({
     })
 
     // Award trust points to the listing author for developer verification
-    const trustService = new TrustService(ctx.prisma)
-    await trustService.logAction({
-      userId: listing.authorId,
-      action: TrustAction.LISTING_DEVELOPER_VERIFIED,
-      targetUserId: userId, // The developer who verified
-      metadata: {
-        listingId,
-        verifiedBy: userId,
-        emulatorId: listing.emulatorId,
-        gameTitle: listing.game.title,
-      },
-    })
+    if (listing.authorId) {
+      const trustService = new TrustService(ctx.prisma)
+      await trustService.logAction({
+        userId: listing.authorId,
+        action: TrustAction.LISTING_DEVELOPER_VERIFIED,
+        targetUserId: userId, // The developer who verified
+        metadata: {
+          listingId,
+          verifiedBy: userId,
+          emulatorId: listing.emulatorId,
+          gameTitle: listing.game.title,
+        },
+      })
+    }
 
     return verification
   }),

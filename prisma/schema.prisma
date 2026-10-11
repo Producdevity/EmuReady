@@ -450,7 +450,7 @@ model Listing {
   emulatorId        String
   performanceId     Int
   notes             String?
-  authorId          String
+  authorId          String?
   createdAt         DateTime       @default(now())
   status            ApprovalStatus @default(PENDING)
   processedAt       DateTime?
@@ -466,7 +466,7 @@ model Listing {
   voteCount     Int   @default(0)
   successRate   Float @default(0)
 
-  author                 User                            @relation(fields: [authorId], references: [id])
+  author                 User?                           @relation(fields: [authorId], references: [id], onDelete: SetNull)
   processedByUser        User?                           @relation("ListingsProcessedByAdmin", fields: [processedByUserId], references: [id])
   performance            PerformanceScale                @relation(fields: [performanceId], references: [id])
   emulator               Emulator                        @relation(fields: [emulatorId], references: [id])
@@ -832,12 +832,12 @@ model VerifiedDeveloper {
   userId     String
   emulatorId String
   verifiedAt DateTime @default(now())
-  verifiedBy String
+  verifiedBy String?
   notes      String?
 
   user     User     @relation("UserVerifiedDeveloper", fields: [userId], references: [id], onDelete: Cascade)
   emulator Emulator @relation(fields: [emulatorId], references: [id], onDelete: Cascade)
-  verifier User     @relation("VerifiedBy", fields: [verifiedBy], references: [id])
+  verifier User?    @relation("VerifiedBy", fields: [verifiedBy], references: [id], onDelete: SetNull)
 
   @@unique([userId, emulatorId])
   @@index([userId])
@@ -906,7 +906,7 @@ model ListingReport {
 model UserBan {
   id             String    @id @default(uuid())
   userId         String
-  bannedById     String
+  bannedById     String?
   reason         String
   notes          String?
   isActive       Boolean   @default(true)
@@ -919,7 +919,7 @@ model UserBan {
   updatedAt      DateTime  @updatedAt
 
   user       User  @relation("UserBans", fields: [userId], references: [id], onDelete: Cascade)
-  bannedBy   User  @relation("BansCreated", fields: [bannedById], references: [id])
+  bannedBy   User? @relation("BansCreated", fields: [bannedById], references: [id], onDelete: SetNull)
   unbannedBy User? @relation("BansLifted", fields: [unbannedById], references: [id])
 
   @@index([userId])
@@ -985,7 +985,7 @@ model PcListing {
   emulatorId        String
   performanceId     Int
   notes             String?
-  authorId          String
+  authorId          String?
   updatedAt         DateTime       @updatedAt
   createdAt         DateTime       @default(now())
   status            ApprovalStatus @default(PENDING)
@@ -1007,7 +1007,7 @@ model PcListing {
   voteCount     Int   @default(0)
   successRate   Float @default(0)
 
-  author          User             @relation(fields: [authorId], references: [id])
+  author          User?            @relation(fields: [authorId], references: [id], onDelete: SetNull)
   processedByUser User?            @relation("PcListingsProcessedByAdmin", fields: [processedByUserId], references: [id])
   performance     PerformanceScale @relation(fields: [performanceId], references: [id])
   emulator        Emulator         @relation(fields: [emulatorId], references: [id])
@@ -1190,11 +1190,11 @@ model Badge {
   color       String   @default("#3B82F6") // Default blue color
   icon        String? // Icon name or path
   isActive    Boolean  @default(true)
-  createdBy   String
+  createdBy   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  creator    User        @relation("BadgesCreatedBy", fields: [createdBy], references: [id])
+  creator    User?       @relation("BadgesCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
   userBadges UserBadge[]
 
   @@index([isActive])
@@ -1207,14 +1207,14 @@ model UserBadge {
   id         String        @id @default(uuid())
   userId     String
   badgeId    String
-  assignedBy String
+  assignedBy String?
   assignedAt DateTime      @default(now())
   notes      String?
   color      TailwindColor @default(blue)
 
   user           User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   badge          Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
-  assignedByUser User  @relation("BadgeAssignments", fields: [assignedBy], references: [id])
+  assignedByUser User? @relation("BadgeAssignments", fields: [assignedBy], references: [id], onDelete: SetNull)
 
   @@unique([userId, badgeId])
   @@index([userId])

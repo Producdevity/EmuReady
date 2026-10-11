@@ -174,7 +174,7 @@ export const mobileAdminRouter = createMobileTRPCRouter({
       }
 
       // Auto-reject if user is banned
-      if (listingToApprove.author.userBans.length > 0) {
+      if (listingToApprove.author && listingToApprove.author.userBans.length > 0) {
         const banReason = listingToApprove.author.userBans[0].reason
         await ctx.prisma.listing.update({
           where: { id: listingId },

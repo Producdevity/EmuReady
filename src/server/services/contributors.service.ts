@@ -125,13 +125,13 @@ export async function aggregateContributions(
   const listingWhere = {
     status: { in: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING] },
     ...(startDate ? { createdAt: { gte: startDate } } : {}),
-    ...(userIds ? { authorId: { in: userIds } } : {}),
+    authorId: { not: null, ...(userIds ? { in: userIds } : {}) },
   }
 
   const pcListingWhere = {
     status: { in: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING] },
     ...(startDate ? { createdAt: { gte: startDate } } : {}),
-    ...(userIds ? { authorId: { in: userIds } } : {}),
+    authorId: { not: null, ...(userIds ? { in: userIds } : {}) },
   }
 
   const gameWhere = {

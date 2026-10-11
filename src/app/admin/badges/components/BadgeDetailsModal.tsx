@@ -148,7 +148,11 @@ export default function BadgeDetailsModal(props: Props) {
                 </div>
                 <div>
                   <span className="text-gray-600 dark:text-gray-400">Created by:</span>
-                  <p className="mt-1">{badge.creator.name || badge.creator.email}</p>
+                  <p className="mt-1">
+                    {badge.creator
+                      ? badge.creator.name || badge.creator.email || 'Unknown'
+                      : 'Deleted account'}
+                  </p>
                 </div>
                 <div>
                   <span className="text-gray-600 dark:text-gray-400">Created at:</span>
@@ -194,7 +198,12 @@ export default function BadgeDetailsModal(props: Props) {
                           <LocalizedDate date={userBadge.assignedAt} format="date" />
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500">
-                          by {userBadge.assignedByUser.name || userBadge.assignedByUser.email}
+                          by{' '}
+                          {userBadge.assignedByUser
+                            ? userBadge.assignedByUser.name ||
+                              userBadge.assignedByUser.email ||
+                              'Unknown'
+                            : 'Deleted account'}
                         </p>
                       </div>
                     </div>

@@ -198,22 +198,18 @@ export class TrustService {
     const weight = TRUST_ACTIONS[action].weight
 
     const executeInTransaction = async (prismaCtx: TrustPrismaTransaction) => {
-      const currentUser = await prismaCtx.user.findUnique({
-        where: { id: userId },
-        select: { trustScore: true },
-      })
-
-      const currentTrustLevel = currentUser ? getTrustLevel(currentUser.trustScore) : null
-      const newTrustScore = (currentUser?.trustScore || 0) + weight
-      const newTrustLevel = getTrustLevel(newTrustScore)
-
-      await prismaCtx.user.update({
+      const updatedUser = await prismaCtx.user.update({
         where: { id: userId },
         data: {
-          trustScore: newTrustScore,
+          trustScore: { increment: weight },
           lastActiveAt: new Date(),
         },
+        select: { trustScore: true },
       })
+      const newTrustScore = updatedUser.trustScore
+      const previousTrustScore = newTrustScore - weight
+      const currentTrustLevel = getTrustLevel(previousTrustScore)
+      const newTrustLevel = getTrustLevel(newTrustScore)
 
       await prismaCtx.trustActionLog.create({
         data: {
@@ -226,7 +222,7 @@ export class TrustService {
 
       analytics.trust.trustScoreChanged({
         userId,
-        oldScore: currentUser?.trustScore || 0,
+        oldScore: previousTrustScore,
         newScore: newTrustScore,
         action,
         weight,
@@ -268,22 +264,18 @@ export class TrustService {
     if (reversalWeight === 0) return
 
     const executeInTransaction = async (prismaCtx: TrustPrismaTransaction) => {
-      const currentUser = await prismaCtx.user.findUnique({
-        where: { id: userId },
-        select: { trustScore: true },
-      })
-
-      const currentTrustLevel = currentUser ? getTrustLevel(currentUser.trustScore) : null
-      const newTrustScore = (currentUser?.trustScore ?? 0) + reversalWeight
-      const newTrustLevel = getTrustLevel(newTrustScore)
-
-      await prismaCtx.user.update({
+      const updatedUser = await prismaCtx.user.update({
         where: { id: userId },
         data: {
-          trustScore: newTrustScore,
+          trustScore: { increment: reversalWeight },
           lastActiveAt: new Date(),
         },
+        select: { trustScore: true },
       })
+      const newTrustScore = updatedUser.trustScore
+      const previousTrustScore = newTrustScore - reversalWeight
+      const currentTrustLevel = getTrustLevel(previousTrustScore)
+      const newTrustLevel = getTrustLevel(newTrustScore)
 
       await prismaCtx.trustActionLog.create({
         data: {
@@ -296,7 +288,7 @@ export class TrustService {
 
       analytics.trust.trustScoreChanged({
         userId,
-        oldScore: currentUser?.trustScore ?? 0,
+        oldScore: previousTrustScore,
         newScore: newTrustScore,
         action: TrustAction.VOTE_CHANGE_REVERSAL,
         weight: reversalWeight,

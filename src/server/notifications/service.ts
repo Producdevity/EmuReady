@@ -539,7 +539,7 @@ export class NotificationService {
             where: { id: eventData.payload.listingId },
             select: { authorId: true },
           })
-          if (listing && listing.authorId !== eventData.triggeredBy) {
+          if (listing?.authorId && listing.authorId !== eventData.triggeredBy) {
             userIds.push(listing.authorId)
           }
         }
@@ -616,7 +616,7 @@ export class NotificationService {
             where: { id: eventData.payload.listingId },
             select: { authorId: true, deviceId: true, device: { select: { socId: true } } },
           })
-          if (listing) {
+          if (listing?.authorId) {
             userIds.push(listing.authorId)
           }
         }
@@ -628,7 +628,7 @@ export class NotificationService {
             where: { id: eventData.payload.pcListingId },
             select: { authorId: true },
           })
-          if (pcListing) {
+          if (pcListing?.authorId) {
             userIds.push(pcListing.authorId)
           }
         }
@@ -640,7 +640,7 @@ export class NotificationService {
             where: { id: eventData.payload.listingId },
             select: { authorId: true },
           })
-          if (listing) {
+          if (listing?.authorId) {
             userIds.push(listing.authorId)
           }
         }
@@ -652,7 +652,7 @@ export class NotificationService {
             where: { id: eventData.payload.pcListingId },
             select: { authorId: true },
           })
-          if (pcListing) {
+          if (pcListing?.authorId) {
             userIds.push(pcListing.authorId)
           }
         }

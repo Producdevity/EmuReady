@@ -8,6 +8,7 @@ import analytics from '@/lib/analytics'
 import { getSerializableAppError } from '@/lib/app-error-cause'
 import { AppError, ERROR_CODES } from '@/lib/errors'
 import { prisma } from '@/server/db'
+import { SessionUsersRepository } from '@/server/repositories/session-users.repository'
 import { hasDeveloperAccessToEmulator } from '@/server/utils/permissions'
 import { type Nullable } from '@/types/utils'
 import { hasPermissionInContext, PERMISSIONS } from '@/utils/permission-system'
@@ -39,17 +40,9 @@ const createInnerTRPCContext = (opts: CreateContextOptions & { headers?: Headers
  * Creates a session from a Clerk user ID, with auto-creation fallback
  */
 async function createSessionFromClerkUserId(userId: string): Promise<Nullable<Session>> {
+  const sessionUsers = new SessionUsersRepository(prisma)
   // Find user in database - they should exist due to webhook sync
-  let user = await prisma.user.findUnique({
-    where: { clerkId: userId },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      settings: { select: { showNsfw: true } },
-    },
-  })
+  let user = await sessionUsers.findByClerkId(userId)
 
   // If the user doesn't exist, create them automatically
   // This handles cases where webhooks aren't configured or during development
@@ -70,22 +63,11 @@ async function createSessionFromClerkUserId(userId: string): Promise<Nullable<Se
 
         if (primaryEmail) {
           console.log(`🔧 Auto-creating user with clerkId ${userId} in database`)
-          user = await prisma.user.create({
-            data: {
-              clerkId: userId,
-              email: primaryEmail.email_address,
-              name: clerkData.username || clerkData.first_name || null,
-              profileImage: clerkData.image_url || null,
-              role: Role.USER,
-              settings: { create: {} },
-            },
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              role: true,
-              settings: { select: { showNsfw: true } },
-            },
+          user = await sessionUsers.createForClerkUser({
+            clerkId: userId,
+            email: primaryEmail.email_address,
+            name: clerkData.username || clerkData.first_name || null,
+            profileImage: clerkData.image_url || null,
           })
         }
       }

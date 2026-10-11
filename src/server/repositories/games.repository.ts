@@ -1,6 +1,6 @@
 import { PAGINATION } from '@/data/constants'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
-import { buildShadowBanFilter } from '@/server/utils/query-builders'
+import { buildReportAuthorVisibilityFilter } from '@/server/utils/query-builders'
 import { normalizeGameTitle } from '@/server/utils/steamGameBatcher'
 import { hasRolePermission } from '@/utils/permissions'
 import { normalizeString } from '@/utils/text'
@@ -398,16 +398,16 @@ export class GamesRepository extends BaseRepository {
     canSeeBannedUsers = false,
   ): Promise<Prisma.GameGetPayload<{ include: typeof GamesRepository.includes.full }> | null> {
     // Build shadow ban filter once
-    const shadowBanFilter = canSeeBannedUsers ? undefined : buildShadowBanFilter(null)
+    const authorVisibility = canSeeBannedUsers ? undefined : buildReportAuthorVisibilityFilter(null)
 
     const listingsWhere: Prisma.ListingWhereInput = {
       status: ApprovalStatus.APPROVED,
-      ...(shadowBanFilter && { author: shadowBanFilter }),
+      ...(authorVisibility && { AND: [authorVisibility] }),
     }
 
     const pcListingsWhere: Prisma.PcListingWhereInput = {
       status: ApprovalStatus.APPROVED,
-      ...(shadowBanFilter && { author: shadowBanFilter }),
+      ...(authorVisibility && { AND: [authorVisibility] }),
     }
 
     // Build the include based on the static full include shape

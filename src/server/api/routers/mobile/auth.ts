@@ -1,4 +1,6 @@
 import { createClerkClient } from '@clerk/backend'
+import { AccountDeletionRepository } from '@/features/accounts/server/account-deletion.repository'
+import { AccountDeletionService } from '@/features/accounts/server/account-deletion.service'
 import { ResourceError } from '@/lib/errors'
 import {
   DeleteMobileAccountSchema,
@@ -115,16 +117,9 @@ export const mobileAuthRouter = createMobileTRPCRouter({
   deleteAccount: mobileProtectedProcedure
     .input(DeleteMobileAccountSchema)
     .mutation(async ({ ctx }) => {
-      const userId = ctx.session.user.id
-
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: userId },
-        select: { clerkId: true },
-      })
-
-      if (!user?.clerkId) return ResourceError.user.notFound()
-
-      await clerkClient.users.deleteUser(user.clerkId)
+      await new AccountDeletionService(new AccountDeletionRepository(ctx.prisma)).deleteAccount(
+        ctx.session.user.id,
+      )
 
       return { success: true, message: 'Account deleted successfully' }
     }),

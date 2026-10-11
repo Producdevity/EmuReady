@@ -60,6 +60,7 @@ SELECT
   c."lastContributionAt"
 FROM combined c
 WHERE c.total > 0
+  AND c."userId" IS NOT NULL
   AND c."userId" NOT IN (SELECT "userId" FROM active_bans)
 ORDER BY c.total DESC, c."lastContributionAt" DESC NULLS LAST
 LIMIT $2

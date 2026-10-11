@@ -19,19 +19,28 @@ describe('PC listing repository query builders', () => {
           { status: ApprovalStatus.APPROVED },
           { status: ApprovalStatus.PENDING, authorId: USER_ID },
         ],
-        author: {
-          OR: [
-            { id: USER_ID },
-            {
-              userBans: {
-                none: {
-                  isActive: true,
-                  OR: [{ expiresAt: null }, { expiresAt: { gt: expect.any(Date) } }],
+        AND: [
+          {
+            OR: [
+              { authorId: null, status: ApprovalStatus.APPROVED },
+              {
+                author: {
+                  OR: [
+                    { id: USER_ID },
+                    {
+                      userBans: {
+                        none: {
+                          isActive: true,
+                          OR: [{ expiresAt: null }, { expiresAt: { gt: expect.any(Date) } }],
+                        },
+                      },
+                    },
+                  ],
                 },
               },
-            },
-          ],
-        },
+            ],
+          },
+        ],
       })
     })
 
@@ -71,6 +80,12 @@ describe('PC listing repository query builders', () => {
             OR: [
               { status: ApprovalStatus.APPROVED },
               { status: ApprovalStatus.PENDING, authorId: USER_ID },
+            ],
+          },
+          {
+            OR: [
+              { authorId: null, status: ApprovalStatus.APPROVED },
+              { author: expect.objectContaining({ OR: expect.any(Array) }) },
             ],
           },
         ],

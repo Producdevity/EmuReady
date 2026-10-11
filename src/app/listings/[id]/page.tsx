@@ -45,7 +45,7 @@ async function ListingPageContent(props: Props) {
     gameName: listing.game.title,
     emulatorName: listing.emulator.name,
     deviceName: `${listing.device.brand.name} ${listing.device.modelName}`,
-    authorName: listing.author.name || 'Anonymous',
+    authorName: listing.author?.name || 'Anonymous',
     datePublished: listing.createdAt.toISOString(),
     performanceRating: listing.performance.rank,
     compatibilityNotes: listing.notes || undefined,

@@ -271,7 +271,7 @@ function PcListingDetailsClient(props: Props) {
               pcListingId={props.pcListing.id}
               gameId={props.pcListing.game.id}
               systemId={props.pcListing.game.system?.id}
-              pcListingOwnerId={props.pcListing.authorId}
+              pcListingOwnerId={props.pcListing.authorId ?? undefined}
               emulatorId={props.pcListing.emulator.id}
             />
           </div>

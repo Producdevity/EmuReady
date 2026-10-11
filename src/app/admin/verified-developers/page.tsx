@@ -28,6 +28,7 @@ import { useColumnVisibility, type ColumnDefinition } from '@/hooks'
 import { useAdminTable } from '@/hooks/admin'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
+import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import EditVerifiedDeveloperModal from './components/EditVerifiedDeveloperModal'
@@ -44,28 +45,8 @@ const VERIFIED_DEVELOPERS_COLUMNS: ColumnDefinition[] = [
   { key: 'actions', label: 'Actions', alwaysVisible: true },
 ]
 
-type VerifiedDeveloper = {
-  id: string
-  emulatorId: string
-  notes: string | null
-  user: {
-    id: string
-    name: string | null
-    email: string
-    profileImage: string | null
-  }
-  emulator: {
-    id: string
-    name: string
-    logo: string | null
-  }
-  verifier: {
-    id: string
-    name: string | null
-    email: string
-  }
-  verifiedAt: Date
-}
+type VerifiedDeveloper =
+  RouterOutput['verifiedDevelopers']['getVerifiedDevelopers']['verifiedDevelopers'][number]
 
 function AdminVerifiedDevelopersPage() {
   const utils = api.useUtils()
@@ -317,7 +298,9 @@ function AdminVerifiedDevelopersPage() {
                   )}
                   {columnVisibility.isColumnVisible('verifier') && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {verifiedDev.verifier.name || verifiedDev.verifier.email}
+                      {verifiedDev.verifier
+                        ? verifiedDev.verifier.name || verifiedDev.verifier.email || 'Unknown'
+                        : 'Deleted account'}
                     </td>
                   )}
                   {columnVisibility.isColumnVisible('verifiedAt') && (

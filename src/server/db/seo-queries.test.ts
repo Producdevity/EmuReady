@@ -118,7 +118,7 @@ describe('SEO query cache metadata', () => {
     expect(cacheMocks.cacheTag).toHaveBeenCalledWith('sitemap', 'games')
   })
 
-  it('tags user metadata by user id', async () => {
+  it('tags user metadata for individual updates and account deletion retries', async () => {
     const user = {
       id: 'user-1',
       name: 'Author',
@@ -128,7 +128,7 @@ describe('SEO query cache metadata', () => {
 
     await expect(getUserForSEO('user-1')).resolves.toEqual(user)
 
-    expect(cacheMocks.cacheTag).toHaveBeenCalledWith('user-user-1')
+    expect(cacheMocks.cacheTag).toHaveBeenCalledWith('users', 'user-user-1')
     expect(cacheMocks.cacheLife).toHaveBeenCalledWith('seo-record')
   })
 

@@ -12,6 +12,7 @@ const mockLogAction = vi.fn().mockResolvedValue(undefined)
 const mockReverseLogAction = vi.fn().mockResolvedValue(undefined)
 const mockCheckSpamContent = vi.fn().mockResolvedValue(undefined)
 const mockRepositoryCreate = vi.fn()
+const mockRepositoryList = vi.fn()
 const mockRepositoryByIdWithAccess = vi.fn()
 const mockAttachReviewRiskProfileForViewer = vi.fn(
   async (params: { listing: { id: string; authorId: string }; userRole?: Role | null }) => ({
@@ -93,6 +94,7 @@ vi.mock('@/server/repositories/listings.repository', () => ({
   ListingsRepository: vi.fn().mockImplementation(function MockListingsRepository() {
     return {
       byIdWithAccess: mockRepositoryByIdWithAccess,
+      list: mockRepositoryList,
       create: mockRepositoryCreate,
       getExistingVote: vi.fn().mockResolvedValue(null),
     }
@@ -104,6 +106,8 @@ const { coreRouter } = await import('./core')
 const USER_ID = '00000000-0000-4000-a000-000000000001'
 const AUTHOR_ID = '00000000-0000-4000-a000-000000000002'
 const LISTING_ID = '00000000-0000-4000-a000-000000000010'
+const ANONYMOUS_LISTING_ID = '00000000-0000-4000-a000-000000000011'
+const EMULATOR_ID = '00000000-0000-4000-a000-000000000032'
 
 function createMockPrisma() {
   const mockTx = {
@@ -119,9 +123,13 @@ function createMockPrisma() {
       count: vi.fn().mockResolvedValue(1),
     },
     listing: {
+      findMany: vi.fn().mockResolvedValue([]),
       findUnique: vi.fn(),
       update: vi.fn().mockResolvedValue({}),
     },
+    listingDeveloperVerification: { findMany: vi.fn().mockResolvedValue([]) },
+    verifiedDeveloper: { findMany: vi.fn().mockResolvedValue([]) },
+    userBan: { findMany: vi.fn().mockResolvedValue([]) },
     user: {
       findUnique: vi.fn().mockResolvedValue({ id: USER_ID }),
     },
@@ -164,6 +172,138 @@ function createCaller(
 describe('handheld listings trust integration (core.ts)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  describe('get', () => {
+    it.each([Role.USER, Role.MODERATOR])(
+      'preserves anonymous reports and only enriches existing authors for %s',
+      async (role) => {
+        const anonymous = {
+          id: ANONYMOUS_LISTING_ID,
+          authorId: null,
+          author: null,
+          isVerifiedDeveloper: false,
+        }
+        const authored = {
+          id: LISTING_ID,
+          authorId: AUTHOR_ID,
+          author: { id: AUTHOR_ID, name: 'Report author' },
+          isVerifiedDeveloper: true,
+        }
+        const pagination = { page: 1, limit: 10, total: 2, pages: 1 }
+        mockRepositoryList.mockResolvedValueOnce({
+          listings: [anonymous, authored],
+          pagination,
+        })
+        const { caller, prisma } = createCaller({ role })
+        const verification = {
+          listingId: ANONYMOUS_LISTING_ID,
+          developer: { id: 'developer-1', name: 'Independent verifier' },
+        }
+        const ban = {
+          id: 'ban-1',
+          userId: AUTHOR_ID,
+          reason: 'Moderation reason',
+          bannedAt: new Date('2026-01-01T00:00:00Z'),
+        }
+        prisma.listingDeveloperVerification.findMany.mockResolvedValueOnce([verification])
+        prisma.userBan.findMany.mockResolvedValueOnce([ban])
+
+        const result = await caller.get({})
+
+        expect(result).toEqual({
+          listings: [
+            { ...anonymous, developerVerifications: [verification] },
+            {
+              ...authored,
+              author: {
+                ...authored.author,
+                ...(role === Role.MODERATOR ? { userBans: [ban] } : {}),
+              },
+              developerVerifications: [],
+            },
+          ],
+          pagination,
+        })
+        if (role === Role.MODERATOR) {
+          expect(prisma.userBan.findMany).toHaveBeenCalledWith(
+            expect.objectContaining({
+              where: expect.objectContaining({ userId: { in: [AUTHOR_ID] }, isActive: true }),
+            }),
+          )
+        } else {
+          expect(prisma.userBan.findMany).not.toHaveBeenCalled()
+        }
+      },
+    )
+  })
+
+  describe('featured', () => {
+    it('retains anonymous reports without transferring a surviving author developer status', async () => {
+      const { caller, prisma } = createCaller()
+      const anonymous = {
+        id: ANONYMOUS_LISTING_ID,
+        authorId: null,
+        author: null,
+        emulatorId: EMULATOR_ID,
+        successRate: 0.4,
+        upvoteCount: 7,
+        downvoteCount: 3,
+        voteCount: 10,
+      }
+      const authored = {
+        ...anonymous,
+        id: LISTING_ID,
+        authorId: AUTHOR_ID,
+        author: { id: AUTHOR_ID, name: 'Report author' },
+      }
+      prisma.listing.findMany.mockResolvedValueOnce([anonymous, authored])
+      prisma.verifiedDeveloper.findMany.mockResolvedValueOnce([
+        { userId: AUTHOR_ID, emulatorId: EMULATOR_ID },
+      ])
+
+      const result = await caller.featured()
+
+      expect(result).toEqual([
+        { ...anonymous, upVotes: 7, downVotes: 3, totalVotes: 10, isVerifiedDeveloper: false },
+        { ...authored, upVotes: 7, downVotes: 3, totalVotes: 10, isVerifiedDeveloper: true },
+      ])
+      expect(prisma.verifiedDeveloper.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { OR: [{ userId: AUTHOR_ID, emulatorId: EMULATOR_ID }] },
+        }),
+      )
+    })
+
+    it('returns an all-anonymous selection without querying a null user ID', async () => {
+      const { caller, prisma } = createCaller()
+      const reports = [ANONYMOUS_LISTING_ID, LISTING_ID].map((id) => ({
+        id,
+        authorId: null,
+        author: null,
+        emulatorId: EMULATOR_ID,
+        successRate: 0,
+        upvoteCount: 0,
+        downvoteCount: 0,
+        voteCount: 0,
+      }))
+      prisma.listing.findMany.mockResolvedValueOnce(reports)
+
+      const result = await caller.featured()
+
+      expect(result).toEqual(
+        reports.map((report) => ({
+          ...report,
+          upVotes: 0,
+          downVotes: 0,
+          totalVotes: 0,
+          isVerifiedDeveloper: false,
+        })),
+      )
+      expect(prisma.verifiedDeveloper.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { OR: [] } }),
+      )
+    })
   })
 
   describe('create', () => {

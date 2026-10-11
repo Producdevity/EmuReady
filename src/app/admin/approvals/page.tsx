@@ -583,10 +583,10 @@ function AdminApprovalsPage() {
                                 className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
                                 title="View user details"
                               >
-                                {listing.author.name}
+                                {listing.author.name || 'Unknown'}
                               </Link>
                             ) : (
-                              'N/A'
+                              'Anonymous'
                             )}
                           </span>
                           <ReviewRiskIndicator
@@ -662,15 +662,16 @@ function AdminApprovalsPage() {
                               disabled={rejectMutation.isPending}
                             />
                           )}
-                          {hasPermission(
-                            currentUserQuery.data?.permissions,
-                            PERMISSIONS.MANAGE_USERS,
-                          ) && (
-                            <ViewUserButton
-                              title="View User Details"
-                              href={`/admin/users?userId=${listing.author.id}`}
-                            />
-                          )}
+                          {listing.author &&
+                            hasPermission(
+                              currentUserQuery.data?.permissions,
+                              PERMISSIONS.MANAGE_USERS,
+                            ) && (
+                              <ViewUserButton
+                                title="View User Details"
+                                href={`/admin/users?userId=${listing.author.id}`}
+                              />
+                            )}
                           <ViewButton title="View Details" href={`/listings/${listing.id}`} />
                         </div>
                       </td>

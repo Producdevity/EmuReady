@@ -124,7 +124,9 @@ function ReportDetailsModal(props: Props) {
                   Author
                 </label>
                 <p className="text-sm text-gray-900 dark:text-white">
-                  {report.compatibilityReport.author.name || 'Unknown'}
+                  {report.compatibilityReport.author
+                    ? report.compatibilityReport.author.name || 'Unknown'
+                    : 'Anonymous'}
                 </p>
               </div>
             </div>
@@ -151,12 +153,17 @@ function ReportDetailsModal(props: Props) {
           <Button variant="outline" onClick={props.onClose}>
             Close
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => window.open(`/users/${report.compatibilityReport.author.id}`, '_blank')}
-          >
-            View User (Public)
-          </Button>
+          {report.compatibilityReport.author && (
+            <Button variant="outline" asChild>
+              <a
+                href={`/users/${report.compatibilityReport.author.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View User (Public)
+              </a>
+            </Button>
+          )}
           <Button onClick={() => window.open(report.compatibilityReport.href, '_blank')}>
             View Report
           </Button>

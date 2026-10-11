@@ -314,6 +314,28 @@ describe('review risk helpers', () => {
     })
   })
 
+  it('reviews anonymous reports independently without assigning another author risk', () => {
+    const candidates = [
+      { id: LISTING_ID, authorId: null, customFieldValues: [] },
+      { id: CLEAN_LISTING_ID, authorId: null, customFieldValues: [] },
+    ]
+    const profiles = {
+      authorRiskProfiles: new Map([[AUTHOR_ID, authorRiskProfile]]),
+      submissionRiskProfiles: new Map([[LISTING_ID, submissionRiskProfile]]),
+    }
+
+    expect(attachReviewRiskProfiles(candidates, profiles)).toMatchObject([
+      { id: LISTING_ID, authorRiskProfile: null, submissionRiskProfile },
+      {
+        id: CLEAN_LISTING_ID,
+        authorRiskProfile: null,
+        submissionRiskProfile: { signals: [], highestSeverity: null },
+      },
+    ])
+    expect(getRiskyReviewItemIds(candidates, profiles)).toEqual([LISTING_ID])
+    expect(getAutoRejectableReviewRiskItems(candidates, profiles)).toEqual([])
+  })
+
   it('attaches null profiles when review risk is hidden from non-reviewers', () => {
     expect(attachHiddenReviewRiskProfiles({ id: LISTING_ID, authorId: AUTHOR_ID })).toEqual({
       id: LISTING_ID,
@@ -338,6 +360,15 @@ describe('review risk helpers', () => {
       },
       select: { reason: true },
     })
+  })
+
+  it('does not look up account bans for an anonymous report', async () => {
+    const findMany = vi.fn()
+
+    await expect(
+      getActiveAuthorBansForReviewRisk({ userBan: { findMany } }, null),
+    ).resolves.toEqual([])
+    expect(findMany).not.toHaveBeenCalled()
   })
 
   it('uses reviewer roles as the single gate for detail risk visibility', () => {

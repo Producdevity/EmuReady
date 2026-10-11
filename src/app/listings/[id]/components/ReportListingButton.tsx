@@ -7,7 +7,7 @@ import ReportListingModal from './ReportListingModal'
 
 interface Props {
   listingId: string
-  authorId: string
+  authorId: string | null
   currentUserId?: string | null
   onSuccess?: () => void
 }

@@ -13,6 +13,7 @@ export const PRISMA_ERROR_CODES = {
 
   // Transaction errors
   TRANSACTION_FAILED: 'P2034',
+  RAW_QUERY_FAILED: 'P2010',
 
   // Connection errors
   CONNECTION_ERROR: 'P1000',
@@ -31,6 +32,32 @@ export type PrismaErrorCode = (typeof PRISMA_ERROR_CODES)[keyof typeof PRISMA_ER
  */
 export function isPrismaError(error: unknown, code: PrismaErrorCode): boolean {
   return error instanceof Error && 'code' in error && error.code === code
+}
+
+export function isRetryableTransactionError(error: unknown): boolean {
+  if (isPrismaError(error, PRISMA_ERROR_CODES.TRANSACTION_FAILED)) return true
+  if (
+    !(error instanceof Error) ||
+    !('code' in error) ||
+    error.code !== PRISMA_ERROR_CODES.RAW_QUERY_FAILED ||
+    !('meta' in error) ||
+    typeof error.meta !== 'object' ||
+    error.meta === null ||
+    !('driverAdapterError' in error.meta)
+  ) {
+    return false
+  }
+
+  const adapterError = error.meta.driverAdapterError
+  if (typeof adapterError !== 'object' || adapterError === null || !('cause' in adapterError)) {
+    return false
+  }
+
+  const cause = adapterError.cause
+  if (typeof cause !== 'object' || cause === null || !('originalCode' in cause)) return false
+
+  // Prisma's raw-query path preserves PostgreSQL conflicts inside P2010, rather than P2034.
+  return cause.originalCode === '40001' || cause.originalCode === '40P01'
 }
 
 /**

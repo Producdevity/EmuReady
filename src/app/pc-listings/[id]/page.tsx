@@ -49,7 +49,7 @@ async function PcListingPageContent(props: Props) {
     gameName: listing.game.title,
     emulatorName: 'PC',
     deviceName: `${listing.cpu.modelName}${listing.gpu ? ` / ${listing.gpu.modelName}` : ''}`,
-    authorName: listing.author.name || 'Anonymous',
+    authorName: listing.author?.name || 'Anonymous',
     datePublished: listing.createdAt.toISOString(),
     performanceRating: listing.performance.rank,
     compatibilityNotes: listing.notes || undefined,

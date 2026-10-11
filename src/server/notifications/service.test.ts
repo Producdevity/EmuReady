@@ -229,6 +229,27 @@ describe('NotificationService', () => {
   })
 
   describe('getUsersForEvent', () => {
+    it.each([
+      NOTIFICATION_EVENTS.LISTING_COMMENTED,
+      NOTIFICATION_EVENTS.LISTING_VOTED,
+      NOTIFICATION_EVENTS.LISTING_VERIFIED,
+      NOTIFICATION_EVENTS.LISTING_APPROVED,
+      NOTIFICATION_EVENTS.LISTING_REJECTED,
+      NOTIFICATION_EVENTS.PC_LISTING_APPROVED,
+      NOTIFICATION_EVENTS.PC_LISTING_REJECTED,
+    ])('does not target an anonymized report author for %s', async (eventType) => {
+      mockPrisma.listing.findUnique.mockResolvedValue({ ...makeListingRecord(), authorId: null })
+      mockPrisma.pcListing.findUnique.mockResolvedValue({ authorId: null })
+      expect(
+        await serviceInternals.getUsersForEvent(
+          makeEvent({
+            eventType,
+            payload: { listingId: 'listing-1', pcListingId: 'pc-listing-1' },
+          }),
+        ),
+      ).toEqual([])
+    })
+
     it('listing.approved returns the listing author', async () => {
       mockPrisma.listing.findUnique.mockResolvedValue(makeListingRecord())
 

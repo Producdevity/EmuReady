@@ -187,6 +187,7 @@ function ProcessedReportRow<TReport, TSortField extends string>(
   const reportId = props.accessors.getId(props.report)
   const reportHref = props.accessors.getViewHref(props.report)
   const author = props.accessors.getAuthor(props.report)
+  const processedBy = props.accessors.getProcessedBy(props.report)
   const processedAt = props.accessors.getProcessedAt(props.report)
   const status = props.accessors.getStatus(props.report)
   const gameTitle = props.accessors.getGameTitle(props.report)
@@ -254,10 +255,10 @@ function ProcessedReportRow<TReport, TSortField extends string>(
               href={`/admin/users?userId=${author.id}`}
               className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
             >
-              {author.name ?? 'N/A'}
+              {author.name || 'Unknown'}
             </Link>
           ) : (
-            'N/A'
+            'Anonymous'
           )}
         </td>
       )}
@@ -272,7 +273,7 @@ function ProcessedReportRow<TReport, TSortField extends string>(
       )}
       {props.columnVisibility.isColumnVisible('processedBy') && (
         <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-          {props.accessors.getProcessedByName(props.report) ?? 'N/A'}
+          {processedBy ? processedBy.name || 'Unknown' : processedAt ? 'Deleted account' : 'N/A'}
         </td>
       )}
       {props.columnVisibility.isColumnVisible('processedAt') && (

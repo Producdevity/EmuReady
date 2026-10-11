@@ -373,7 +373,9 @@ export default function AdminBadgesPage() {
                       )}
                       {columnVisibility.isColumnVisible('creator') && (
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-                          {badge.creator.name || badge.creator.email}
+                          {badge.creator
+                            ? badge.creator.name || badge.creator.email || 'Unknown'
+                            : 'Deleted account'}
                         </td>
                       )}
                       {columnVisibility.isColumnVisible('createdAt') && (

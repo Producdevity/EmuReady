@@ -7,7 +7,7 @@ import { paginate, calculateOffset } from '@/server/utils/pagination'
 import {
   buildNsfwFilter,
   buildArrayFilter,
-  buildShadowBanFilter,
+  buildReportAuthorVisibilityFilter,
   buildApprovalStatusFilter,
 } from '@/server/utils/query-builders'
 import { validateCustomFields } from '@/server/utils/validate-custom-fields'
@@ -57,7 +57,7 @@ export interface PendingListingsFilters {
 
 export interface ListingRiskCandidate {
   id: string
-  authorId: string
+  authorId: string | null
   author: { userBans: { reason: string }[] } | null
   customFieldValues: {
     value: unknown
@@ -110,7 +110,14 @@ export class ListingsRepository extends BaseRepository {
       device: { include: { brand: true, soc: true } },
       emulator: { include: { customFieldDefinitions: true } },
       performance: true,
-      author: { select: { id: true, name: true, profileImage: true, verifiedDeveloperBy: true } },
+      author: {
+        select: {
+          id: true,
+          name: true,
+          profileImage: true,
+          verifiedDeveloperFor: { select: { emulatorId: true } },
+        },
+      },
       comments: { include: { user: { select: { id: true, name: true, profileImage: true } } } },
       customFieldValues: {
         include: {
@@ -174,7 +181,7 @@ export class ListingsRepository extends BaseRepository {
       },
       emulator: { select: { id: true, name: true, logo: true } },
       performance: { select: { id: true, label: true, rank: true, description: true } },
-      author: { select: { id: true, trustScore: true, verifiedDeveloperBy: true } },
+      author: { select: { id: true, trustScore: true } },
       developerVerifications: { include: { developer: { select: { id: true, name: true } } } },
     } satisfies Prisma.ListingInclude,
   } as const
@@ -289,8 +296,13 @@ export class ListingsRepository extends BaseRepository {
     if (Object.keys(gameFilter).length > 0) where.game = gameFilter
 
     // Shadow ban filtering
-    const shadowBanFilter = buildShadowBanFilter(filters.userRole, filters.userId)
-    if (shadowBanFilter) where.author = shadowBanFilter
+    const authorVisibility = buildReportAuthorVisibilityFilter(filters.userRole, filters.userId)
+    if (authorVisibility) {
+      where.AND = [
+        ...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []),
+        authorVisibility,
+      ]
+    }
 
     // My listings filter
     if (filters.myListings && filters.userId) where.authorId = filters.userId
@@ -339,7 +351,11 @@ export class ListingsRepository extends BaseRepository {
     const verifiedPairs = listings.length
       ? await this.prisma.verifiedDeveloper.findMany({
           where: {
-            OR: listings.map((l) => ({ userId: l.authorId, emulatorId: l.emulatorId })),
+            OR: listings.flatMap((listing) =>
+              listing.authorId
+                ? [{ userId: listing.authorId, emulatorId: listing.emulatorId }]
+                : [],
+            ),
           },
           select: { userId: true, emulatorId: true },
         })
@@ -394,7 +410,7 @@ export class ListingsRepository extends BaseRepository {
 
     // Use materialized stats
     const isVerifiedDeveloper =
-      listing.author.verifiedDeveloperBy?.some((vd) => vd.emulatorId === listing.emulatorId) ||
+      listing.author?.verifiedDeveloperFor.some((vd) => vd.emulatorId === listing.emulatorId) ||
       false
 
     const upVotes = listing.upvoteCount
@@ -424,7 +440,9 @@ export class ListingsRepository extends BaseRepository {
    * and hides REJECTED listings.
    */
   async byIdWithAccess(id: string, userId?: string, canSeeBannedUsers: boolean = false) {
-    const shadowBanFilter = canSeeBannedUsers ? undefined : buildShadowBanFilter(null, userId)
+    const authorVisibility = canSeeBannedUsers
+      ? undefined
+      : buildReportAuthorVisibilityFilter(null, userId)
     const where: Prisma.ListingWhereInput = {
       id,
       ...(canSeeBannedUsers
@@ -432,7 +450,7 @@ export class ListingsRepository extends BaseRepository {
         : {
             NOT: { status: ApprovalStatus.REJECTED },
           }),
-      ...(shadowBanFilter && { author: shadowBanFilter }),
+      ...(authorVisibility && { AND: [authorVisibility] }),
     }
 
     const listing = await this.prisma.listing.findFirst({
@@ -454,7 +472,7 @@ export class ListingsRepository extends BaseRepository {
       : null
 
     const isVerifiedDeveloper =
-      listing.author.verifiedDeveloperBy?.some((vd) => vd.emulatorId === listing.emulatorId) ||
+      listing.author?.verifiedDeveloperFor.some((vd) => vd.emulatorId === listing.emulatorId) ||
       false
 
     const upVotes = listing.upvoteCount
@@ -696,7 +714,11 @@ export class ListingsRepository extends BaseRepository {
     const verifiedPairs = listings.length
       ? await this.prisma.verifiedDeveloper.findMany({
           where: {
-            OR: listings.map((l) => ({ userId: l.authorId, emulatorId: l.emulatorId })),
+            OR: listings.flatMap((listing) =>
+              listing.authorId
+                ? [{ userId: listing.authorId, emulatorId: listing.emulatorId }]
+                : [],
+            ),
           },
           select: { userId: true, emulatorId: true },
         })
@@ -866,13 +888,10 @@ export class ListingsRepository extends BaseRepository {
     }
 
     // Apply shadow ban filtering
-    const shadowBanFilter = buildShadowBanFilter(options?.userRole)
-    if (shadowBanFilter) {
-      where.author = shadowBanFilter
-    } else {
-      // Exclude listings from users with negative trust scores
-      where.author = { trustScore: { gte: 0 } }
-    }
+    const authorVisibility = buildReportAuthorVisibilityFilter(options?.userRole)
+    where.AND = [
+      authorVisibility ?? { OR: [{ authorId: null }, { author: { trustScore: { gte: 0 } } }] },
+    ]
 
     return this.prisma.listing.findMany({
       where,
@@ -914,13 +933,10 @@ export class ListingsRepository extends BaseRepository {
     }
 
     // Apply shadow ban filtering
-    const shadowBanFilter = buildShadowBanFilter(options?.userRole)
-    if (shadowBanFilter) {
-      where.author = shadowBanFilter
-    } else {
-      // Exclude listings from users with negative trust scores
-      where.author = { trustScore: { gte: 0 } }
-    }
+    const authorVisibility = buildReportAuthorVisibilityFilter(options?.userRole)
+    where.AND = [
+      authorVisibility ?? { OR: [{ authorId: null }, { author: { trustScore: { gte: 0 } } }] },
+    ]
 
     return this.prisma.listing.findMany({
       where,

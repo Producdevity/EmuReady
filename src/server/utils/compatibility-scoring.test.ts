@@ -180,6 +180,12 @@ describe('calculateListingScore', () => {
       expect(calculateListingScore(listing)).toBe(90)
     })
 
+    it('preserves anonymous report performance without an account trust boost', () => {
+      const listing = { ...createMockListing(2, 0, false, 0, 0, 50), author: null }
+
+      expect(calculateListingScore(listing)).toBe(85)
+    })
+
     it('should add verification boost to zero-vote listings', () => {
       const listing = createMockListing(2, 0, true, 0, 0, 0)
       // Great (85) + no trust (0) + verification (10) = 95

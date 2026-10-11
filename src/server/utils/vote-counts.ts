@@ -1,5 +1,5 @@
 import { calculateWilsonScore } from '@/utils/wilson-score'
-import { type Prisma } from '@orm/client'
+import { Prisma } from '@orm/client'
 
 type UpdateVoteOperation = 'create' | 'update' | 'delete'
 
@@ -13,10 +13,6 @@ type VoteUpdateData = {
 }
 
 type VoteModelDelegate = {
-  findUnique: (args: {
-    where: { id: string }
-    select: { upvoteCount: true; downvoteCount: true }
-  }) => Promise<VoteCounts | null>
   update: (args: { where: { id: string }; data: VoteUpdateData }) => Promise<unknown>
 }
 
@@ -28,7 +24,8 @@ const UPDATE_VOTE_OPERATIONS: UpdateVoteOperation[] = ['create', 'update', 'dele
  * Uses Wilson Score for confidence-weighted ranking
  */
 async function updateVoteCounts(
-  model: VoteModelDelegate,
+  tx: Prisma.TransactionClient,
+  reportType: 'handheld' | 'pc',
   entityId: string,
   operation: UpdateVoteOperation,
   newValue?: boolean,
@@ -88,11 +85,13 @@ async function updateVoteCounts(
   // Skip update if no changes
   if (upvoteDelta === 0 && downvoteDelta === 0 && voteCountDelta === 0) return
 
-  // Get current counts to calculate the new Wilson score
-  const current = await model.findUnique({
-    where: { id: entityId },
-    select: { upvoteCount: true, downvoteCount: true },
-  })
+  const table = reportType === 'handheld' ? Prisma.sql`"Listing"` : Prisma.sql`"pc_listings"`
+  const model: VoteModelDelegate = reportType === 'handheld' ? tx.listing : tx.pcListing
+  // Serialize counter changes without conflicting with vote-insert foreign key locks.
+  const [current] = await tx.$queryRaw<VoteCounts[]>(Prisma.sql`
+    SELECT "upvoteCount", "downvoteCount" FROM ${table}
+    WHERE "id" = ${entityId} FOR NO KEY UPDATE
+  `)
 
   if (!current) throw new Error(`Entity ${entityId} not found`)
 
@@ -129,7 +128,7 @@ export async function updateListingVoteCounts(
   newValue?: boolean,
   oldValue?: boolean,
 ): Promise<void> {
-  return updateVoteCounts(tx.listing, listingId, operation, newValue, oldValue)
+  return updateVoteCounts(tx, 'handheld', listingId, operation, newValue, oldValue)
 }
 
 /**
@@ -142,5 +141,5 @@ export async function updatePcListingVoteCounts(
   newValue?: boolean,
   oldValue?: boolean,
 ): Promise<void> {
-  return updateVoteCounts(tx.pcListing, pcListingId, operation, newValue, oldValue)
+  return updateVoteCounts(tx, 'pc', pcListingId, operation, newValue, oldValue)
 }

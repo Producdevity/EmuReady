@@ -190,7 +190,7 @@ export const adminRouter = createTRPCRouter({
     }
 
     // Auto-reject if user is banned
-    if (listingToApprove.author.userBans.length > 0) {
+    if (listingToApprove.author && listingToApprove.author.userBans.length > 0) {
       const banReason = listingToApprove.author.userBans[0].reason
       await ctx.prisma.listing.update({
         where: { id: listingId },
@@ -632,13 +632,17 @@ export const adminRouter = createTRPCRouter({
         }
 
         // Separate listings by banned/non-banned authors
-        const bannedUserListings = listingsToApprove.filter((l) => l.author.userBans.length > 0)
-        const validListings = listingsToApprove.filter((l) => l.author.userBans.length === 0)
+        const bannedUserListings = listingsToApprove.filter(
+          (l) => (l.author?.userBans.length ?? 0) > 0,
+        )
+        const validListings = listingsToApprove.filter(
+          (l) => (l.author?.userBans.length ?? 0) === 0,
+        )
 
         // Auto-reject listings from banned users
         if (bannedUserListings.length > 0) {
           for (const listing of bannedUserListings) {
-            const banReason = listing.author.userBans[0].reason
+            const banReason = listing.author?.userBans[0]?.reason || 'No reason provided'
             await tx.listing.update({
               where: { id: listing.id },
               data: {

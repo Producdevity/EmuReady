@@ -114,7 +114,7 @@ export async function getUserForSEO(id: string) {
     select: { id: true, name: true, profileImage: true },
   })
 
-  cacheTag(`user-${id}`)
+  cacheTag('users', `user-${id}`)
   cacheLife(user ? SEO_CACHE_PROFILE.RECORD : SEO_CACHE_PROFILE.MISS)
   return user
 }

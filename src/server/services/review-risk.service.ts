@@ -26,7 +26,7 @@ interface ReviewRiskProfiles {
 
 interface RiskOnlyReviewPageParams<
   TCandidate extends ReviewRiskCandidate,
-  TListing extends { id: string; authorId: string },
+  TListing extends { id: string; authorId: string | null },
 > {
   prisma: RiskPrismaClient
   page: number
@@ -35,7 +35,7 @@ interface RiskOnlyReviewPageParams<
   loadItemsByIds: (ids: string[]) => Promise<readonly TListing[]>
 }
 
-interface RiskOnlyReviewPage<TListing extends { id: string; authorId: string }> {
+interface RiskOnlyReviewPage<TListing extends { id: string; authorId: string | null }> {
   items: ReviewRiskEnriched<TListing>[]
   total: number
 }
@@ -63,18 +63,20 @@ interface ActiveAuthorBansPrismaClient {
   }
 }
 
-export type ReviewRiskEnriched<TListing extends { id: string; authorId: string }> = TListing & {
-  authorRiskProfile: AuthorRiskProfile
-  submissionRiskProfile: SubmissionRiskProfile
-}
+export type ReviewRiskEnriched<TListing extends { id: string; authorId: string | null }> =
+  TListing & {
+    authorRiskProfile: AuthorRiskProfile | null
+    submissionRiskProfile: SubmissionRiskProfile
+  }
 
-export type HiddenReviewRiskEnriched<TListing extends { id: string; authorId: string }> =
+export type HiddenReviewRiskEnriched<TListing extends { id: string; authorId: string | null }> =
   TListing & {
     authorRiskProfile: null
     submissionRiskProfile: null
   }
 
-function createEmptyAuthorRiskProfile(authorId: string): AuthorRiskProfile {
+function createEmptyAuthorRiskProfile(authorId: string | null): AuthorRiskProfile | null {
+  if (!authorId) return null
   return { authorId, signals: [], highestSeverity: null }
 }
 
@@ -83,7 +85,9 @@ function createEmptySubmissionRiskProfile(listingId: string): SubmissionRiskProf
 }
 
 function hasRiskSignals(candidate: ReviewRiskCandidate, profiles: ReviewRiskProfiles): boolean {
-  const authorRiskProfile = profiles.authorRiskProfiles.get(candidate.authorId)
+  const authorRiskProfile = candidate.authorId
+    ? profiles.authorRiskProfiles.get(candidate.authorId)
+    : undefined
   if (authorRiskProfile && authorRiskProfile.signals.length > 0) return true
 
   const submissionRiskProfile = profiles.submissionRiskProfiles.get(candidate.id)
@@ -138,7 +142,9 @@ export async function computeReviewRiskProfiles<TCandidate extends ReviewRiskCan
   prisma: RiskPrismaClient,
   candidates: readonly TCandidate[],
 ): Promise<ReviewRiskProfiles> {
-  const authorIds = [...new Set(candidates.map((candidate) => candidate.authorId))]
+  const authorIds = [
+    ...new Set(candidates.flatMap((candidate) => (candidate.authorId ? [candidate.authorId] : []))),
+  ]
   const authorRiskProfiles = await computeAuthorRiskProfiles(
     prisma,
     authorIds,
@@ -167,7 +173,9 @@ export function getAutoRejectableReviewRiskItems<TCandidate extends ReviewRiskCa
   profiles: ReviewRiskProfiles,
 ): AutoRejectReviewRiskItem[] {
   return candidates.flatMap((candidate) => {
-    const authorRiskProfile = profiles.authorRiskProfiles.get(candidate.authorId)
+    const authorRiskProfile = candidate.authorId
+      ? profiles.authorRiskProfiles.get(candidate.authorId)
+      : undefined
     const submissionRiskProfile = profiles.submissionRiskProfiles.get(candidate.id)
 
     if (
@@ -225,24 +233,25 @@ export async function getAutoRejectableReviewRiskPreviewForCandidates<
   return getAutoRejectableReviewRiskPreview(candidates, profiles)
 }
 
-export function attachReviewRiskProfiles<TListing extends { id: string; authorId: string }>(
+export function attachReviewRiskProfiles<TListing extends { id: string; authorId: string | null }>(
   listings: readonly TListing[],
   profiles: ReviewRiskProfiles,
 ): ReviewRiskEnriched<TListing>[] {
   return listings.map((listing) => ({
     ...listing,
-    authorRiskProfile:
-      profiles.authorRiskProfiles.get(listing.authorId) ??
-      createEmptyAuthorRiskProfile(listing.authorId),
+    authorRiskProfile: listing.authorId
+      ? (profiles.authorRiskProfiles.get(listing.authorId) ??
+        createEmptyAuthorRiskProfile(listing.authorId))
+      : null,
     submissionRiskProfile:
       profiles.submissionRiskProfiles.get(listing.id) ??
       createEmptySubmissionRiskProfile(listing.id),
   }))
 }
 
-export function attachHiddenReviewRiskProfiles<TListing extends { id: string; authorId: string }>(
-  listing: TListing,
-): HiddenReviewRiskEnriched<TListing> {
+export function attachHiddenReviewRiskProfiles<
+  TListing extends { id: string; authorId: string | null },
+>(listing: TListing): HiddenReviewRiskEnriched<TListing> {
   return {
     ...listing,
     authorRiskProfile: null,
@@ -251,7 +260,7 @@ export function attachHiddenReviewRiskProfiles<TListing extends { id: string; au
 }
 
 export async function attachReviewRiskProfile<
-  TListing extends { id: string; authorId: string },
+  TListing extends { id: string; authorId: string | null },
   TCandidate extends ReviewRiskCandidate,
 >(
   prisma: RiskPrismaClient,
@@ -272,8 +281,9 @@ export async function attachReviewRiskProfile<
 
 export async function getActiveAuthorBansForReviewRisk(
   prisma: ActiveAuthorBansPrismaClient,
-  authorId: string,
+  authorId: string | null,
 ): Promise<ExistingAuthorBan[]> {
+  if (!authorId) return []
   return await prisma.userBan.findMany({
     where: {
       userId: authorId,
@@ -309,7 +319,7 @@ export async function attachReviewRiskProfileForViewer<TListing extends Submissi
 
 export async function getRiskOnlyReviewPage<
   TCandidate extends ReviewRiskCandidate,
-  TListing extends { id: string; authorId: string },
+  TListing extends { id: string; authorId: string | null },
 >(params: RiskOnlyReviewPageParams<TCandidate, TListing>): Promise<RiskOnlyReviewPage<TListing>> {
   const candidates = await params.loadCandidates()
   const profiles = await computeReviewRiskProfiles(params.prisma, candidates)

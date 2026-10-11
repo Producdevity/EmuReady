@@ -127,19 +127,26 @@ function EmulatorInfoSection(props: {
   )
 }
 
-function UserInfoSection(props: { author: CompatibilityReportReviewAuthor; createdAt: Date }) {
+function UserInfoSection(props: {
+  author: CompatibilityReportReviewAuthor | null
+  createdAt: Date
+}) {
   return (
     <div>
       <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Submitted By</h3>
       <div>
-        <Link
-          href={`/users/${props.author.id}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300"
-        >
-          {props.author.name || 'Unknown'}
-        </Link>
+        {props.author ? (
+          <Link
+            href={`/users/${props.author.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-brand-500 hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300"
+          >
+            {props.author.name || 'Unknown'}
+          </Link>
+        ) : (
+          <span>Anonymous</span>
+        )}
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
           <LocalizedDate date={props.createdAt} format="dateTime" />
         </p>

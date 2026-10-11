@@ -127,6 +127,9 @@ jobs:
       - name: Unit tests
         run: pnpm test:ci
 
+      - name: Account deletion database tests
+        run: pnpm exec vitest run --config vitest.database.config.mts
+
   build:
     name: Production build
     runs-on: ubuntu-latest
