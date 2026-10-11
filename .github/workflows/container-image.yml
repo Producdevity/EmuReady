@@ -82,7 +82,7 @@ jobs:
 
       - name: Prepare disposable build database
         run: |
-          pnpm exec prisma migrate deploy
+          pnpm db:migrate:deploy
           pnpm db:generate
 
       - name: Run unit tests
