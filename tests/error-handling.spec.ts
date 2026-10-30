@@ -16,12 +16,14 @@ test.describe('Error Handling Tests', () => {
     await expect(page.getByText(/not found|does not exist|invalid|error/i).first()).toBeVisible()
   })
 
-  test('should show error UI when API requests fail', async ({ page }) => {
+  test('should keep the games page shell usable when API requests fail', async ({ page }) => {
     await page.route('**/api/trpc/**', (route) => route.abort('failed'))
 
     await page.goto('/games', { waitUntil: 'domcontentloaded' })
 
-    await expect(page.locator('main')).toBeVisible()
+    const gamesPage = new GamesPage(page)
+    await expect(gamesPage.pageHeading).toBeVisible()
+    await expect(gamesPage.searchInput).toBeEnabled()
   })
 
   test('should render page shell even when API is slow', async ({ page }) => {

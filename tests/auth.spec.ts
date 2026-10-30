@@ -148,7 +148,7 @@ test.describe('Auth Error Handling', () => {
     // Clerk's hosted form uses input name="identifier" then "password" — these
     // input names are part of Clerk's public API.
     await page.locator('input[name="identifier"]').fill('invalid-e2e-test@example.com')
-    await page.getByRole('button', { name: /continue/i }).click()
+    await page.getByRole('button', { name: 'Continue', exact: true }).click()
 
     // role="alert" is Clerk's stable error contract; internal classes are not.
     await expect(page.getByRole('alert').first()).toBeVisible()

@@ -16,3 +16,13 @@ it('injects the supplied build commit into client bundle configuration', async (
 
   expect(config).toHaveProperty('env._sentryRelease', revision)
 })
+
+it('preserves the SDK release fallback when the build identifier is empty', async () => {
+  vi.stubEnv('NEXT_PUBLIC_ENABLE_SENTRY', 'true')
+  vi.stubEnv('NEXT_BUILD_ID', '')
+  vi.stubEnv('SENTRY_RELEASE', 'fallback-release')
+
+  const config = (await import('../next.config')).default
+
+  expect(config).toHaveProperty('env._sentryRelease', 'fallback-release')
+})
