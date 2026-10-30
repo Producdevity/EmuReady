@@ -3,6 +3,7 @@ import { connection, type NextRequest } from 'next/server'
 import { appRouter } from '@/server/api/root'
 import { createAppRouterTRPCContext } from '@/server/api/trpc'
 import { getTRPCResponseCacheHeaders } from '@/server/api/trpc-cache'
+import { reportTRPCError } from '@/server/api/trpc-errors'
 
 const handler = async (req: NextRequest) => {
   return fetchRequestHandler({
@@ -10,12 +11,7 @@ const handler = async (req: NextRequest) => {
     req,
     router: appRouter,
     createContext: createAppRouterTRPCContext,
-    onError:
-      process.env.NODE_ENV === 'development'
-        ? ({ path, error }) => {
-            console.error(`❌ tRPC failed on ${path ?? '<no-path>'}: ${error.message}`)
-          }
-        : undefined,
+    onError: (options) => reportTRPCError(options.error, options.path),
     responseMeta(opts) {
       return {
         headers: getTRPCResponseCacheHeaders({

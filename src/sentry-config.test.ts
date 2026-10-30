@@ -15,7 +15,6 @@ async function loadSentryConfigs(overrides: Record<string, string>) {
   }
 
   await import('../sentry.server.config')
-  await import('../sentry.edge.config')
 }
 
 afterEach(() => {
@@ -24,7 +23,7 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-describe('Sentry server and edge config', () => {
+describe('Sentry server config', () => {
   it('does not initialize when the Sentry flag is disabled', async () => {
     await loadSentryConfigs({
       NODE_ENV: 'production',
@@ -35,17 +34,20 @@ describe('Sentry server and edge config', () => {
     expect(sentry.init).not.toHaveBeenCalled()
   })
 
-  it('initializes server and edge Sentry when the Sentry flag is enabled', async () => {
+  it.each(['production', 'staging'])('labels server errors for %s', async (environment) => {
     await loadSentryConfigs({
       NODE_ENV: 'production',
-      NEXT_PUBLIC_APP_ENV: 'production',
+      NEXT_PUBLIC_APP_ENV: environment,
       NEXT_PUBLIC_ENABLE_SENTRY: 'true',
+      APP_VERSION: 'test-release',
     })
 
-    expect(sentry.init).toHaveBeenCalledTimes(2)
+    expect(sentry.init).toHaveBeenCalledTimes(1)
     expect(sentry.init).toHaveBeenCalledWith(
       expect.objectContaining({
         dsn: expect.stringContaining('ingest.us.sentry.io'),
+        environment,
+        release: 'test-release',
       }),
     )
   })

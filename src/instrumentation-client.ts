@@ -1,23 +1,17 @@
-// This file configures the initialization of Sentry on the client.
-// The added config here will be used whenever a users loads a page in their browser.
-// https://docs.sentry.io/platforms/javascript/guides/nextjs/
-
 import * as Sentry from '@sentry/nextjs'
 import { env } from '@/lib/env'
 
 if (env.ENABLE_SENTRY) {
   Sentry.init({
     dsn: 'https://85ca585e45005d8786e361c3456518bf@o74828.ingest.us.sentry.io/4509717207318529',
-
+    environment: env.APP_ENV,
     integrations: [Sentry.replayIntegration()],
-
-    tracesSampleRate: 1,
+    sampleRate: 1,
+    tracesSampleRate: 0.1,
     enableLogs: true,
-
+    sendDefaultPii: false,
     replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
-
-    debug: false,
+    replaysOnErrorSampleRate: 1,
 
     beforeSend(event, hint) {
       const error = hint?.originalException
