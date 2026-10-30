@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/emuready_test"
@@ -60,6 +60,9 @@ jobs:
       - name: Test container build configuration
         run: python3 -m unittest discover -s scripts -p container_build_config_test.py
 
+      - name: Test release safety checks
+        run: python3 -m unittest discover -s scripts -p container_deploy_test.py
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
 
@@ -74,7 +77,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run database migrations
-        run: pnpm exec prisma migrate deploy
+        run: pnpm db:migrate:deploy
 
       - name: Generate Prisma client
         run: pnpm db:generate
@@ -122,7 +125,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run database migrations
-        run: pnpm exec prisma migrate deploy
+        run: pnpm db:migrate:deploy
 
       - name: Generate Prisma client
         run: pnpm db:generate
@@ -170,10 +173,28 @@ jobs:
         run: pnpm clean
 
       - name: Run database migrations
-        run: pnpm exec prisma migrate deploy
+        run: pnpm db:migrate:deploy
 
       - name: Generate Prisma client
         run: pnpm db:generate
 
       - name: Build
         run: pnpm build
+
+  browser-tests:
+    name: Browser tests
+    uses: ./.github/workflows/e2e-tests.yml
+    secrets: inherit
+
+  release:
+    name: Publish and deploy
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master')
+    needs: [quality, unit-tests, build, browser-tests]
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/container-image.yml
+    with:
+      publish: true
+      deploy: true
+    secrets: inherit
