@@ -326,6 +326,7 @@ const analyzedConfig = withBundleAnalyzer(nextConfig)
 const sentryBuildOptions = {
   org: 'hexelnet',
   project: 'emuready',
+  release: { name: nextBuildId },
   silent: !process.env.CI,
   widenClientFileUpload: true,
   sourcemaps: {

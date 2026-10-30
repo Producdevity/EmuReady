@@ -44,6 +44,22 @@ describe('tRPC server error reporting', () => {
     })
   })
 
+  it('reports a plain-object cause normalized by tRPC as an exception', async () => {
+    const error = new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      cause: { message: 'Provider connection failed', code: 'ECONNRESET' },
+    })
+    const response = await requestFailure(error)
+
+    expect(response.status).toBe(500)
+    expect(error.cause).toBeInstanceOf(Error)
+    expect(error.cause?.message).toBe('Provider connection failed')
+    expect(mocks.error).toHaveBeenCalledExactlyOnceWith('[tRPC] Server error', error.cause, {
+      procedure: 'probe',
+      code: 'INTERNAL_SERVER_ERROR',
+    })
+  })
+
   it.each([
     ['SERVICE_UNAVAILABLE', 503],
     ['GATEWAY_TIMEOUT', 504],
