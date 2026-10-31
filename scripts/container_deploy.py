@@ -74,14 +74,18 @@ def schema_digest(revision):
     return digest.hexdigest()
 
 
+def verify_branch_head(ref, revision):
+    remote = git('ls-remote', '--exit-code', 'origin', ref).decode().split()
+    if len(remote) != 2 or remote[0] != revision or remote[1] != ref:
+        raise ReleaseError('Branch advanced; refusing to deploy an outdated release')
+
+
 def preflight(ref, revision, application_uuid, api, public, approved_schema=None):
     if ref not in TARGETS or not re.fullmatch('[a-f0-9]{40}', revision):
         raise ReleaseError('Releases require an exact staging or master commit')
     if not re.fullmatch('[a-zA-Z0-9]{10,64}', application_uuid):
         raise ReleaseError('Set the target environment application UUID')
-    remote = git('ls-remote', '--exit-code', 'origin', ref).decode().split()
-    if len(remote) != 2 or remote[0] != revision or remote[1] != ref:
-        raise ReleaseError('Branch advanced; refusing to deploy an outdated release')
+    verify_branch_head(ref, revision)
     application = api.request(f'/applications/{application_uuid}')
     domains = application.get('fqdn', '')
     if not isinstance(domains, str) or TARGETS[ref] not in {url.strip().rstrip('/') for url in domains.split(',')}:
@@ -119,6 +123,7 @@ def deploy(ref, revision, application_uuid, image, api, public, approved_schema=
     application = preflight(ref, revision, application_uuid, api, public, approved_schema)
     previous_image = f'{IMAGE_NAME}@sha256:{application["docker_registry_image_tag"].removeprefix("sha256-")}'
     print(f'Previous image: {previous_image}', flush=True)
+    verify_branch_head(ref, revision)
     # Coolify restricts the deploy API's docker_tag override to preview deployments.
     api.request(f'/applications/{application_uuid}', 'PATCH', {
         'docker_registry_image_tag': image.split('@')[1].replace('sha256:', 'sha256-'),
@@ -147,17 +152,28 @@ def deploy(ref, revision, application_uuid, image, api, public, approved_schema=
         time.sleep(10)
     else:
         raise ReleaseError('Timed out waiting for Coolify; inspect the deployment before retrying')
+    last_error = 'No public health response received'
     for attempt in range(6):
         try:
             health = public.request('/api/health')
             ready = public.request('/api/health/ready')
-            if health.get('version') == revision and health.get('status') == 'healthy' and ready.get('status') == 'healthy':
+            if not isinstance(health, dict) or not isinstance(ready, dict):
+                raise ReleaseError('Expected public health responses to be JSON objects')
+            failures = []
+            if health.get('version') != revision:
+                failures.append('release version differs from the expected commit')
+            if health.get('status') != 'healthy':
+                failures.append('liveness is not healthy')
+            if ready.get('status') != 'healthy':
+                failures.append('readiness is not healthy')
+            if not failures:
                 return deployment_uuid
-        except ReleaseError:
-            pass
+            last_error = '; '.join(failures)
+        except ReleaseError as error:
+            last_error = str(error)
         if attempt < 5:
             time.sleep(10)
-    raise ReleaseError('Deployment finished, but public readiness and release version did not match')
+    raise ReleaseError(f'Deployment finished, but public readiness and release version did not match: {last_error}')
 
 
 def main():

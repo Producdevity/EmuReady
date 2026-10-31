@@ -95,6 +95,13 @@ class DeploymentTests(unittest.TestCase):
             self.deploy()
         self.assertEqual(self.api.calls, [])
 
+    def test_rechecks_branch_after_preflight_before_any_mutation(self):
+        self.branch.side_effect = [f'{REVISION}\t{REF}\n'.encode(), f'{OLD}\t{REF}\n'.encode()]
+        with self.assertRaisesRegex(release.ReleaseError, 'Branch advanced'):
+            self.deploy()
+        self.assert_no_writes()
+        self.assertEqual(self.branch.call_count, 2)
+
     def test_rejects_wrong_environment_without_mutation(self):
         self.api.application['git_branch'] = 'master'
         with self.assertRaisesRegex(release.ReleaseError, 'target'):
@@ -173,6 +180,29 @@ class DeploymentTests(unittest.TestCase):
         self.public.version = OLD
         with self.assertRaisesRegex(release.ReleaseError, 'release version did not match'):
             self.deploy()
+
+    def test_retries_non_object_health_json_without_repeating_the_deployment(self):
+        healthy = {'status': 'healthy'}
+        responses = [{**healthy, 'version': OLD}, [], healthy, {**healthy, 'version': REVISION}, healthy]
+        with patch.object(self.public, 'request', side_effect=responses):
+            self.assertEqual(self.deploy(), DEPLOYMENT)
+        self.assertEqual(sum(path == '/deploy' for path, _, _ in self.api.calls), 1)
+
+    def test_includes_the_last_transport_failure_in_the_readiness_error(self):
+        responses = [{'status': 'healthy', 'version': OLD}]
+        responses += [release.ReleaseError('GET request failed (HTTP 503)') for _ in range(6)]
+        with patch.object(self.public, 'request', side_effect=responses):
+            with self.assertRaisesRegex(release.ReleaseError, 'HTTP 503'):
+                self.deploy()
+
+    def test_includes_the_failed_health_gate_without_echoing_response_data(self):
+        responses = [{'status': 'healthy', 'version': OLD}]
+        responses += [{'status': 'healthy', 'version': REVISION}, {'status': 'private-upstream-detail'}] * 6
+        with patch.object(self.public, 'request', side_effect=responses):
+            with self.assertRaises(release.ReleaseError) as result:
+                self.deploy()
+        self.assertIn('readiness is not healthy', str(result.exception))
+        self.assertNotIn('private-upstream-detail', str(result.exception))
 
     def test_transport_keeps_credentials_out_of_process_arguments_and_does_not_follow_redirects(self):
         result = subprocess.CompletedProcess([], 0, stdout='{}\n200', stderr='')

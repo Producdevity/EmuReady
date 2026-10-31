@@ -8,7 +8,15 @@ staging; `master` deploys to production. DNS and hosted databases are not change
 Manual dispatch on `master` or `staging` builds and optionally publishes an image, with `publish`
 defaulting to false. Automatic deployment is called from CI after all checks pass.
 A branch that has advanced since the workflow started is rejected before
-deployment. A running release is not cancelled by a newer push.
+deployment, including a second head check immediately before selecting the image.
+GitHub and Coolify do not share an atomic revision lock: a merge after that check
+can briefly leave the earlier revision running until the next release finishes.
+A running release is not cancelled by a newer push.
+
+Authenticated browser CI runs for repository branches and their pull requests.
+Fork pull requests skip that job because GitHub does not provide repository
+secrets to them; browser tests still run after an accepted merge into `staging`
+or `master`, before publication or deployment.
 
 Create a GitHub Actions environment **variable** named `CONTAINER_PUBLIC_BUILD_ENV`
 containing a JSON object in each environment below. The workflow reads it through

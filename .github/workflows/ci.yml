@@ -187,6 +187,7 @@ jobs:
 
   browser-tests:
     name: Browser tests
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     uses: ./.github/workflows/e2e-tests.yml
     secrets: inherit
 
