@@ -67,4 +67,22 @@ describe('getSerializableAppError', () => {
     expect(getSerializableAppError('nope')).toBeNull()
     expect(getSerializableAppError(42)).toBeNull()
   })
+
+  it.each(['internal', 'database'] as const)(
+    'keeps %s diagnostics private while preserving the reported Error identity',
+    (kind) => {
+      const providerError = Object.assign(new Error('Provider failed'), {
+        code: 'PRIVATE_PROVIDER',
+      })
+      const diagnosticError = new Error('Operation failed', { cause: providerError })
+      const error = captureTrpcError(() => {
+        if (kind === 'database') AppError.databaseError('test operation', diagnosticError)
+        AppError.internalError('Operation failed', diagnosticError)
+      })
+
+      expect(error.cause).toBe(diagnosticError)
+      expect(diagnosticError.cause).toBe(providerError)
+      expect(roundTripAppError(error)).toBeNull()
+    },
+  )
 })

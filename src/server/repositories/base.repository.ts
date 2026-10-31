@@ -91,8 +91,10 @@ export abstract class BaseRepository {
         throw error
       }
       // Generic database error for unknown errors
-      logger.error('[BaseRepository] Database error', error, { context })
-      throw AppError.databaseError(context)
+      // Provider codes and metadata must not become a public appError payload.
+      const diagnosticError = new Error('Database operation failed', { cause: error })
+      logger.error('[BaseRepository] Database error', diagnosticError, { context })
+      throw AppError.databaseError(context, diagnosticError)
     }
   }
 

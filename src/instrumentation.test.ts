@@ -23,7 +23,7 @@ async function loadInstrumentation(runtime: string, enabled = true) {
   vi.stubEnv('NEXT_RUNTIME', runtime)
   vi.stubEnv('NEXT_PUBLIC_ENABLE_SENTRY', String(enabled))
   vi.stubEnv('NEXT_PHASE', '')
-  return import('../instrumentation')
+  return import('./instrumentation')
 }
 
 describe('server instrumentation entry point', () => {
