@@ -3,6 +3,8 @@ import {
   clearThreeDsCachesForTests,
   findThreeDsTitleIdForGameName,
   getBestThreeDsTitleIdMatch,
+  getThreeDsGamesStats,
+  refreshThreeDsGamesData,
 } from './threeDsGameSearch'
 
 const TITLES_URL = 'https://dantheman827.github.io/nus-info/titles.json'
@@ -107,6 +109,30 @@ describe('threeDsGameSearch', () => {
     await findThreeDsTitleIdForGameName('Tri Force Heroes')
 
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('shares the two dataset downloads between warmup and concurrent lookups', async () => {
+    const [, first, second, stats] = await Promise.all([
+      refreshThreeDsGamesData(),
+      findThreeDsTitleIdForGameName('Mario Party Star Rush'),
+      findThreeDsTitleIdForGameName('Mario Party Star Rush'),
+      getThreeDsGamesStats(),
+    ])
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(first[0]?.titleId).toBe('00040000001A5F00')
+    expect(second).toEqual(first)
+    expect(stats.totalGames).toBe(2)
+  })
+
+  it('allows another download after a failed load', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('Upstream unavailable'))
+
+    await expect(refreshThreeDsGamesData()).rejects.toThrow('Upstream unavailable')
+    const results = await findThreeDsTitleIdForGameName('Mario Party Star Rush')
+
+    expect(fetchMock).toHaveBeenCalledTimes(4)
+    expect(results[0]?.titleId).toBe('00040000001A5F00')
   })
 
   it('filters out non-3DS platform entries', async () => {
