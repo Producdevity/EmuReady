@@ -18,8 +18,13 @@ test.describe('Error Handling Tests', () => {
 
   test('should keep the games page shell usable when API requests fail', async ({ page }) => {
     await page.route('**/api/trpc/**', (route) => route.abort('failed'))
+    const failedGamesRequest = page.waitForEvent(
+      'requestfailed',
+      (request) => request.url().includes('/api/trpc/') && request.url().includes('games.get'),
+    )
 
     await page.goto('/games', { waitUntil: 'domcontentloaded' })
+    await failedGamesRequest
 
     const gamesPage = new GamesPage(page)
     await expect(gamesPage.pageHeading).toBeVisible()
