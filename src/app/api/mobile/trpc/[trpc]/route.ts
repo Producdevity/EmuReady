@@ -1,9 +1,11 @@
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import { connection, type NextRequest, NextResponse } from 'next/server'
 import { getCORSHeaders } from '@/lib/cors'
+import { logger } from '@/lib/logger'
 import { createMobileTRPCFetchContext } from '@/server/api/mobileContext'
 import { mobileRouter } from '@/server/api/routers/mobile'
 import { getTRPCResponseCacheHeaders, TRPC_PRIVATE_CACHE_CONTROL } from '@/server/api/trpc-cache'
+import { reportTRPCError } from '@/server/api/trpc-errors'
 
 // Get CORS headers with additional tRPC headers
 function getTRPCCorsHeaders(request: NextRequest) {
@@ -68,12 +70,7 @@ const handler = async (req: NextRequest) => {
       req: correctedRequest,
       router: mobileRouter,
       createContext: createMobileTRPCFetchContext,
-      onError:
-        process.env.NODE_ENV === 'development'
-          ? ({ path, error }: { path?: string; error: Error }) => {
-              console.error(`❌ Mobile tRPC failed on ${path ?? '<no-path>'}: ${error.message}`)
-            }
-          : undefined,
+      onError: (options) => reportTRPCError(options.error, options.path),
       responseMeta(opts) {
         return {
           headers: {
@@ -102,7 +99,7 @@ const handler = async (req: NextRequest) => {
     return response
   } catch (error) {
     // If anything fails, return an error response with CORS headers
-    console.error('Mobile tRPC handler error:', error)
+    logger.error('[Mobile tRPC] Handler error', error)
 
     // Server-side error filtering - don't expose details in production
     const errorMessage =

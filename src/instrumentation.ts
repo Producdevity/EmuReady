@@ -1,12 +1,13 @@
 import * as Sentry from '@sentry/nextjs'
+import { PHASE_PRODUCTION_BUILD } from 'next/constants'
 
 export async function register() {
+  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) return
+
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     await import('../sentry.server.config')
-  }
-
-  if (process.env.NEXT_RUNTIME === 'edge') {
-    await import('../sentry.edge.config')
+    const { initializeServerOnce } = await import('./server/init')
+    await initializeServerOnce()
   }
 }
 

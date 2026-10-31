@@ -1,58 +1,92 @@
-# Production container image
+# Container images
 
-The manual **Container image** workflow builds on a GitHub runner so compilation
-does not compete with applications on the VPS. It never calls Coolify or changes
-DNS. Publishing an image and deploying it are separate actions.
+Merges into `staging` and `master` run CI, including browser tests. Once all jobs
+pass, CI calls **Container image** to build on GitHub runners, publish to private
+GHCR, and deploy the immutable digest through Coolify. `staging` deploys to
+staging; `master` deploys to production. DNS and hosted databases are not changed.
 
-## Configure once
+Manual dispatch on `master` or `staging` builds and optionally publishes an image, with `publish`
+defaulting to false. Automatic deployment is called from CI after all checks pass.
+For automatic deployments, the branch head is checked before building and
+immediately before selecting the image. If it has advanced at either check, the release stops.
+GitHub and Coolify do not share an atomic revision lock: a merge after that check
+can briefly leave the earlier revision running until the next release finishes.
+A running release is not cancelled by a newer push, so Coolify verification can
+finish after image selection and deployment have started. The next release waits
+for it and must pass its own CI and deployment checks.
 
-Create a GitHub environment named `container-production`, restricted to `master`.
-Set its variable `CONTAINER_PUBLIC_BUILD_ENV` to a JSON object containing the
-production public build settings. Keys must be declared Dockerfile arguments
-starting with `NEXT_PUBLIC_`, or `NEXT_IMAGE_UNOPTIMIZED`. Values must be strings.
-Copy these from the reviewed production configuration, not the staging CI secrets.
-The workflow requires the final www URL, production environment and live Clerk
-publishable key. Changes to public settings require a new image.
+Authenticated browser CI runs for repository branches and their pull requests.
+Fork pull requests skip that job because GitHub does not provide repository
+secrets to them; browser tests still run after an accepted merge into `staging`
+or `master`, before publication or deployment.
 
-Do not supply application secrets or hosted database credentials. The workflow
-creates and migrates an empty PostgreSQL 15 service on the runner for Prisma
-TypedSQL, runs unit tests, then builds the `app` target including Next.js's normal
-TypeScript check. The database disappears with the runner.
+Create a GitHub Actions environment **variable** named `CONTAINER_PUBLIC_BUILD_ENV`
+containing a JSON object in each environment below. The workflow reads it through
+`vars`; configuring an environment secret instead will leave this value empty.
 
-## Build and publish
+| Branch | GitHub environment | Public URL | App environment | Clerk key prefix |
+| --- | --- | --- | --- | --- |
+| `master` | `container-production` | `https://www.emuready.com` | `production` | `pk_live_` |
+| `staging` | `container-staging` | `https://staging.emuready.com` | `staging` | `pk_test_` |
 
-Run the workflow on `master` after that exact commit's required CI passes.
-Leave `publish` false for a build check, or explicitly select it to publish to
-`ghcr.io/producdevity/emuready`. The image uses a unique commit/run/attempt tag and
-records the source revision. Copy the immutable digest from the run summary.
-The workflow has not established runtime or physical Android sign-in proof.
+Restrict each environment to its corresponding branch. Only public Dockerfile
+arguments are accepted. Supply the full Clerk publishable key in the JSON; the
+table shows only the required prefix. Never supply hosted database credentials or
+application secrets: the workflow migrates an empty PostgreSQL 15 database on the runner for
+Prisma generation. Public settings are baked into the image and require a rebuild
+when changed.
 
-Keep the GHCR package private unless public distribution is separately approved.
-For a private package, configure the VPS with a read-only package credential using
-stdin; never put the credential in application environment variables or logs.
+Each environment also needs a `COOLIFY_APPLICATION_UUID` variable and a
+`COOLIFY_TOKEN` secret. Use a team-scoped token with `read`, `write`, and `deploy`
+permissions. It inspects the non-sensitive application configuration, selects the
+image digest and source commit, triggers the deployment and reads its status.
+It does not need `root`, `read:sensitive` or `write:sensitive`. Store it only in
+the matching branch-restricted GitHub environment and rotate it before expiry.
 
-## Coolify deployment
+The deployment script refuses source build packs, the wrong branch/image
+repository, missing readiness checks and pre/post deployment commands. Disable
+runtime overrides for `APP_VERSION` and `NEXT_BUILD_ID` in Coolify: the image
+already embeds its source commit. The public `/api/health` version and readiness
+must match after Coolify finishes. A queued request alone is not success.
 
-Save the existing application settings and previous image before switching its
-build pack from `dockerfile` to `dockerimage`. Preserve runtime environment,
-domains, custom labels, port 3000, health checks, CA mount and persistent storage.
-Set runtime `APP_VERSION` to the image's exact source commit; do not retain a
-`$SOURCE_COMMIT` expression that depends on a Git-based Coolify build.
-Set the image name to `ghcr.io/producdevity/emuready` and pin the returned digest.
-Coolify 4.3.17 internally represents a digest in `docker_registry_image_tag` as
-`sha256-<hex>`; verify the displayed deployment target is `image@sha256:<hex>`.
-Ensure an inline Dockerfile is not configured because it takes precedence in
-this version's image-name selection. Do not preload an image into Dockerfile
-mode and assume that prevents another build.
+The schema and migration files are compared with the current public deployment's
+source commit. Any difference blocks deployment unless the exact schema digest
+has been approved after migration verification. The live version must identify
+an exact source commit; an unknown baseline must be investigated before release.
+This workflow migrates only its
+disposable runner database; the application does not migrate on startup.
 
-Deploy only with release authorization. Verify the running image digest, build
-identity, readiness, final-host routing, TLS, canonical URLs, downloads and auth
-behavior before approving public cutover. Production still uses the same Supabase
-database; this workflow never migrates it. Preserve Vercel as the public rollback.
+For a schema change, verify a fresh backup and obtain explicit approval before
+applying hosted migrations. Build the same-commit `migrator` target off the
+application VPS and follow
+[Self-hosting](SELF_HOSTING.md#build-and-release-contract). After the migration
+is verified, set the environment variable `CONTAINER_APPROVED_SCHEMA_DIGEST` to
+the exact digest printed by:
 
-Retain the previous container, image and generated Compose configuration until
-validation passes. Prepare its exact runtime restore before deployment; switching
-back to Dockerfile mode and clicking Deploy can start another build. Do not use
-that as a rollback shortcut, restore the shared database, or change public DNS.
+```sh
+GITHUB_SHA="$(git rev-parse HEAD)" python3 scripts/container_deploy.py --schema-digest
+```
 
-Reference: [Coolify Docker Image deployment](https://coolify.io/docs/applications/deployments/docker-image).
+This approval matches only that schema/migration file set; it does not authorize
+future changes. Never set it before the backup, approval and migration checks.
+
+Before deployment, configure GHCR authentication for the Docker account used by
+Coolify on every deployment server. Use a pull-only credential with `read:packages`
+and access to the private EmuReady package; track its expiration and rotate it
+before it expires. Verify that the server can pull the exact published digest.
+The workflow's GitHub token authenticates only the publishing runner.
+
+Deploy that immutable digest through Coolify's Docker Image build pack.
+Preserve runtime credentials, domains, labels, port 3000, health checks,
+certificate mounts and persistent storage. Disable
+source auto-deployment so pushes cannot start builds on the application VPS.
+The image supplies `APP_VERSION` from the exact build commit.
+
+If a release fails, inspect its deployment UUID and workflow logs before retrying.
+Coolify keeps the previous container when the new container fails readiness.
+The workflow prints the previous image selection for manual rollback; it does
+not apply database changes or initiate an extra rollback deployment.
+
+Verify image identity, readiness, TLS, canonical URLs, authentication and static
+assets before switching public DNS. Keep the existing Vercel deployments and
+aliases intact for rollback until the user explicitly approves retirement.

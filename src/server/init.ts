@@ -162,20 +162,19 @@ async function initThreeDsGameServiceWithRetry(): Promise<boolean> {
 export async function initializeServer(): Promise<void> {
   logger.info('🚀 Initializing server services...')
 
-  // Initialize services in parallel with individual error handling
-  const [notificationSuccess, switchGameSuccess, threeDsGameSuccess] = await Promise.all([
-    initNotificationServiceWithRetry(),
-    initSwitchGameServiceWithRetry(),
-    initThreeDsGameServiceWithRetry(),
-  ])
+  const notificationSuccess = await initNotificationServiceWithRetry()
 
-  // Log overall status
-  const allSuccess = notificationSuccess && switchGameSuccess && threeDsGameSuccess
-  if (allSuccess) {
-    logger.info('✅ All server services initialized successfully')
-  } else {
-    logger.warn('⚠️ Some services failed to initialize. They will be retried on next access.')
-  }
+  // Notification listeners must be registered before requests; catalog warmups can finish later.
+  void Promise.all([initSwitchGameServiceWithRetry(), initThreeDsGameServiceWithRetry()])
+    .then(([switchGameSuccess, threeDsGameSuccess]) => {
+      const allSuccess = notificationSuccess && switchGameSuccess && threeDsGameSuccess
+      if (allSuccess) {
+        logger.info('✅ All server services initialized successfully')
+      } else {
+        logger.warn('⚠️ Some services failed to initialize. They will be retried on next access.')
+      }
+    })
+    .catch((error: unknown) => logger.error('[init] Failed to initialize catalog services', error))
 }
 
 /**

@@ -224,19 +224,17 @@ test.describe('Accessibility Tests', () => {
     const listingsPage = new ListingsPage(page)
     await listingsPage.goto()
 
-    const tables = page.locator('table')
-    const tableCount = await tables.count()
-    expect(tableCount).toBeGreaterThan(0)
+    const table = page.getByRole('table').first()
+    await expect(table).toBeVisible()
+    const headers = table.locator('th')
+    await expect(headers.first()).toBeVisible()
 
-    const headerData = await tables
-      .first()
-      .locator('th')
-      .evaluateAll((elements) =>
-        elements.map((el) => ({
-          scope: el.getAttribute('scope'),
-          text: el.textContent,
-        })),
-      )
+    const headerData = await headers.evaluateAll((elements) =>
+      elements.map((el) => ({
+        scope: el.getAttribute('scope'),
+        text: el.textContent,
+      })),
+    )
 
     expect(headerData.length).toBeGreaterThan(0)
 
