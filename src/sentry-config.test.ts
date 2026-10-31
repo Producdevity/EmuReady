@@ -65,4 +65,14 @@ describe('Sentry server config', () => {
       }),
     )
   })
+
+  it('uses the shared environment fallback for an invalid app environment', async () => {
+    await loadSentryConfigs({
+      NODE_ENV: 'production',
+      NEXT_PUBLIC_APP_ENV: 'invalid',
+      NEXT_PUBLIC_ENABLE_SENTRY: 'true',
+    })
+
+    expect(sentry.init).toHaveBeenCalledWith(expect.objectContaining({ environment: 'local' }))
+  })
 })

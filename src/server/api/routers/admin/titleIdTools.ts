@@ -66,11 +66,9 @@ export const titleIdToolsRouter = createTRPCRouter({
       try {
         return await getTitleIdStats(input.platformId)
       } catch (error) {
-        console.error('Title ID stats fetch failed', error)
-        return AppError.internalError(
-          'Failed to fetch title ID statistics',
-          new Error('Title ID statistics failed', { cause: error }),
-        )
+        const diagnosticError = new Error('Title ID statistics failed', { cause: error })
+        logger.error('Title ID stats fetch failed', diagnosticError)
+        return AppError.internalError('Failed to fetch title ID statistics', diagnosticError)
       }
     }),
 
