@@ -90,3 +90,14 @@ not apply database changes or initiate an extra rollback deployment.
 Verify image identity, readiness, TLS, canonical URLs, authentication and static
 assets before switching public DNS. Keep the existing Vercel deployments and
 aliases intact for rollback until the user explicitly approves retirement.
+
+## Production promotions
+
+When master contains production fixes absent from staging, prepare a promotion
+branch from master and merge the reviewed staging revision. Resolve conflicts
+without reverting production dependencies or schema; include an upgrade or
+migration only when it is part of the approved release.
+
+Run CI on the resolved head before merging into master. The production workflow
+builds a new image from that merge commit with `container-production` settings;
+do not reuse an image built with staging settings.
