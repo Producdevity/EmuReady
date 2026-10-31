@@ -43,7 +43,7 @@ describe('server startup', () => {
     })
   })
 
-  it('records catalog startup failures without rejecting server startup', async () => {
+  it('records an initializer rejection without rejecting server startup', async () => {
     const upstreamError = new Error('Catalog unavailable')
     mocks.switchGame.mockRejectedValue(upstreamError)
     mocks.threeDsGame.mockResolvedValue()
