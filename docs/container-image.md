@@ -7,8 +7,8 @@ staging; `master` deploys to production. DNS and hosted databases are not change
 
 Manual dispatch on `master` or `staging` builds and optionally publishes an image, with `publish`
 defaulting to false. Automatic deployment is called from CI after all checks pass.
-The branch head is checked before building and immediately before selecting the
-image. If it has advanced at either check, the release stops.
+For automatic deployments, the branch head is checked before building and
+immediately before selecting the image. If it has advanced at either check, the release stops.
 GitHub and Coolify do not share an atomic revision lock: a merge after that check
 can briefly leave the earlier revision running until the next release finishes.
 A running release is not cancelled by a newer push, so Coolify verification can
