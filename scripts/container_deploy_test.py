@@ -28,6 +28,7 @@ class FakeApi:
         }
         self.variables = []
         self.status = 'finished'
+        self.poll_failures = 0
         self.calls = []
 
     def request(self, path, method='GET', payload=None):
@@ -37,6 +38,9 @@ class FakeApi:
         if path == '/deploy':
             return {'deployments': [{'resource_uuid': UUID, 'deployment_uuid': DEPLOYMENT}]}
         if path == '/deployments/' + DEPLOYMENT:
+            if self.poll_failures:
+                self.poll_failures -= 1
+                raise release.ReleaseError('GET request failed (HTTP 503)')
             return {'status': self.status}
         if path.endswith('/envs'):
             return self.variables
@@ -46,13 +50,14 @@ class FakeApi:
 class FakePublic:
     def __init__(self):
         self.version = REVISION
+        self.initial_version = OLD
         self.calls = 0
 
     def request(self, path):
         if path == '/api/health/ready':
             return {'status': 'healthy'}
         self.calls += 1
-        return {'status': 'healthy', 'version': OLD if self.calls == 1 else self.version}
+        return {'status': 'healthy', 'version': self.initial_version if self.calls == 1 else self.version}
 
 
 class DeploymentTests(unittest.TestCase):
@@ -108,6 +113,16 @@ class DeploymentTests(unittest.TestCase):
             self.deploy()
         self.assert_no_writes()
 
+    def test_accepts_whitespace_between_configured_domains(self):
+        self.api.application['fqdn'] = 'https://other.example, https://staging.emuready.com/ '
+        self.assertEqual(self.deploy(), DEPLOYMENT)
+
+    def test_rejects_a_null_image_selection_without_mutation(self):
+        self.api.application['docker_registry_image_tag'] = None
+        with self.assertRaisesRegex(release.ReleaseError, 'target'):
+            self.deploy()
+        self.assert_no_writes()
+
     def test_master_uses_the_production_application(self):
         ref = 'refs/heads/master'
         self.branch.return_value = f'{REVISION}\t{ref}\n'.encode()
@@ -133,6 +148,26 @@ class DeploymentTests(unittest.TestCase):
         with self.assertRaisesRegex(release.ReleaseError, 'status failed'):
             self.deploy()
         self.assertEqual(self.public.calls, 1)
+
+    def test_retries_a_transient_status_read_without_queuing_another_deployment(self):
+        self.api.poll_failures = 1
+        self.assertEqual(self.deploy(), DEPLOYMENT)
+        self.assertEqual(sum(path == '/deploy' for path, _, _ in self.api.calls), 1)
+        self.assertEqual(sum(path == '/deployments/' + DEPLOYMENT for path, _, _ in self.api.calls), 2)
+
+    def test_status_read_failures_remain_bounded_by_the_deadline(self):
+        self.api.poll_failures = 1
+        with patch.object(release.time, 'monotonic', side_effect=[0, 0, 901]):
+            with self.assertRaisesRegex(release.ReleaseError, 'Timed out waiting'):
+                self.deploy()
+        self.assertEqual(sum(path == '/deploy' for path, _, _ in self.api.calls), 1)
+
+    def test_schema_approval_does_not_bypass_an_unknown_live_source_commit(self):
+        self.public.initial_version = '0.0.0'
+        self.schema.side_effect = lambda revision: 'a' * 64 if revision == REVISION else SCHEMA_DIGEST(revision)
+        with self.assertRaisesRegex(release.ReleaseError, 'Cannot verify the deployed source/schema'):
+            self.deploy(approved_schema='a' * 64)
+        self.assert_no_writes()
 
     def test_old_healthy_public_release_does_not_count_as_success(self):
         self.public.version = OLD

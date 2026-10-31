@@ -28,7 +28,7 @@ jobs:
   image:
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 70
     environment: ${{ github.ref == 'refs/heads/master' && 'container-production' || 'container-staging' }}
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/emuready_build
@@ -104,6 +104,8 @@ jobs:
             "${build_args[@]}" --tag "$image:$tag" .
           test "$(docker image inspect "$image:$tag" --format '{{.Architecture}}')" = amd64
           test "$(docker image inspect "$image:$tag" --format '{{.Config.User}}')" = nextjs
+          docker run --rm --network none --entrypoint node "$image:$tag" \
+            -e 'const hook = require("./.next/server/instrumentation.js"); if (typeof hook.register !== "function" || typeof hook.onRequestError !== "function") process.exit(1)'
           printf 'name=%s\ntag=%s\n' "$image" "$tag" >> "$GITHUB_OUTPUT"
 
       - name: Publish image

@@ -5,7 +5,7 @@ pass, CI calls **Container image** to build on GitHub runners, publish to privat
 GHCR, and deploy the immutable digest through Coolify. `staging` deploys to
 staging; `master` deploys to production. DNS and hosted databases are not changed.
 
-Manual dispatch still builds and optionally publishes an image, with `publish`
+Manual dispatch on `master` or `staging` builds and optionally publishes an image, with `publish`
 defaulting to false. Automatic deployment is called from CI after all checks pass.
 A branch that has advanced since the workflow started is rejected before
 deployment. A running release is not cancelled by a newer push.
@@ -40,7 +40,10 @@ already embeds its source commit. The public `/api/health` version and readiness
 must match after Coolify finishes. A queued request alone is not success.
 
 The schema and migration files are compared with the current public deployment's
-source commit. Any difference blocks deployment. This workflow migrates only its
+source commit. Any difference blocks deployment unless the exact schema digest
+has been approved after migration verification. The live version must identify
+an exact source commit; an unknown baseline must be investigated before release.
+This workflow migrates only its
 disposable runner database; the application does not migrate on startup.
 
 For a schema change, verify a fresh backup and obtain explicit approval before

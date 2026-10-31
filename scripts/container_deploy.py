@@ -84,13 +84,13 @@ def preflight(ref, revision, application_uuid, api, public, approved_schema=None
         raise ReleaseError('Branch advanced; refusing to deploy an outdated release')
     application = api.request(f'/applications/{application_uuid}')
     domains = application.get('fqdn', '')
-    if not isinstance(domains, str) or TARGETS[ref] not in {url.rstrip('/') for url in domains.split(',')}:
+    if not isinstance(domains, str) or TARGETS[ref] not in {url.strip().rstrip('/') for url in domains.split(',')}:
         raise ReleaseError('Coolify application domains do not match the selected environment')
     if (application.get('uuid') != application_uuid
             or application.get('git_branch') != ref.removeprefix('refs/heads/')
             or application.get('build_pack') != 'dockerimage'
             or application.get('docker_registry_image_name') != IMAGE_NAME
-            or not re.fullmatch('sha256-[a-f0-9]{64}', application.get('docker_registry_image_tag', ''))
+            or not re.fullmatch('sha256-[a-f0-9]{64}', application.get('docker_registry_image_tag') or '')
             or application.get('health_check_path') != '/api/health/ready'
             or not application.get('health_check_enabled')
             or application.get('pre_deployment_command')
@@ -104,7 +104,11 @@ def preflight(ref, revision, application_uuid, api, public, approved_schema=None
     if deployed.get('status') != 'healthy':
         raise ReleaseError('The current application is not healthy; investigate before releasing')
     desired_schema = schema_digest(revision)
-    if schema_digest(deployed.get('version', '')) != desired_schema and approved_schema != desired_schema:
+    try:
+        deployed_schema = schema_digest(deployed.get('version', ''))
+    except ReleaseError as error:
+        raise ReleaseError('Cannot verify the deployed source/schema; restore its commit version or fetch its history before releasing') from error
+    if deployed_schema != desired_schema and approved_schema != desired_schema:
         raise ReleaseError('Database changes require an approved backup and migration before deployment')
     return application
 
@@ -129,7 +133,12 @@ def deploy(ref, revision, application_uuid, image, api, public, approved_schema=
     print(f'Deployment {deployment_uuid}', flush=True)
     deadline = time.monotonic() + 900
     while time.monotonic() < deadline:
-        deployment = api.request(f'/deployments/{deployment_uuid}')
+        try:
+            deployment = api.request(f'/deployments/{deployment_uuid}')
+        except ReleaseError as error:
+            print(f'Deployment status unavailable: {error}; retrying', flush=True)
+            time.sleep(10)
+            continue
         status = deployment.get('status')
         if status == 'finished':
             break
