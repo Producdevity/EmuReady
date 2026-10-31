@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getSerializableAppError } from '@/lib/app-error-cause'
-import { type PrismaClient } from '@orm/client'
+import { Prisma, type PrismaClient } from '@orm/client'
 import { BaseRepository } from './base.repository'
 
 const mocks = vi.hoisted(() => ({ error: vi.fn() }))
@@ -54,6 +54,28 @@ describe('BaseRepository', () => {
     const providerError = Object.assign(new Error('Connection failed'), {
       code: 'ECONNRESET',
       metadata: 'server-only diagnostic',
+    })
+    try {
+      await repository.execute(() => Promise.reject(providerError))
+      throw new Error('Expected the database operation to fail')
+    } catch (error) {
+      if (!(error instanceof TRPCError) || !error.cause) throw error
+      expect(error.message).toBe('Database error during test operation')
+      expect(error.cause.cause).toBe(providerError)
+      expect(getSerializableAppError(error.cause)).toBeNull()
+      expect(mocks.error).toHaveBeenCalledExactlyOnceWith(
+        '[BaseRepository] Database error',
+        error.cause,
+        { context: 'test operation' },
+      )
+    }
+  })
+
+  it('preserves unmapped Prisma failures for reporting without exposing their metadata', async () => {
+    const providerError = new Prisma.PrismaClientKnownRequestError('Column missing', {
+      code: 'P2022',
+      clientVersion: 'test',
+      meta: { column: 'private_column' },
     })
     try {
       await repository.execute(() => Promise.reject(providerError))

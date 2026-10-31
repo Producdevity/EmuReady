@@ -74,8 +74,6 @@ export abstract class BaseRepository {
             throw AppError.notFound(context)
           case 'P2003': // Foreign key constraint violation
             throw AppError.resourceInUse(context || 'Resource')
-          default:
-            throw AppError.databaseError(context)
         }
       }
       // Re-throw if it's already an AppError or ResourceError
