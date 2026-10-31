@@ -45,6 +45,7 @@ const FUSE_OPTIONS = {
 }
 
 const SWITCH_GAMES_URL = 'https://producdevity.github.io/switch-games-json/switchbrew_id_names.json'
+let switchGamesDataPromise: Promise<SwitchGameEntry[]> | null = null
 
 async function fetchSwitchGamesData(): Promise<SwitchGameEntry[]> {
   const response = await fetch(SWITCH_GAMES_URL, {
@@ -76,16 +77,21 @@ async function getSwitchGamesData(): Promise<SwitchGameEntry[]> {
   const cachedData = switchGamesDataCache.get(cacheKey)
   if (cachedData) return cachedData.data
 
-  try {
-    const freshData = await fetchSwitchGamesData()
-    switchGamesDataCache.set(cacheKey, { data: freshData, createdAt: new Date() })
-    return freshData
-  } catch (error) {
-    if (error instanceof Error) {
-      error.message = `Switch games data fetch failed: ${error.message}`
-    }
-    throw error
-  }
+  switchGamesDataPromise ??= fetchSwitchGamesData()
+    .then((freshData) => {
+      switchGamesDataCache.set(cacheKey, { data: freshData, createdAt: new Date() })
+      return freshData
+    })
+    .catch((error: unknown) => {
+      if (error instanceof Error) {
+        error.message = `Switch games data fetch failed: ${error.message}`
+      }
+      throw error
+    })
+    .finally(() => {
+      switchGamesDataPromise = null
+    })
+  return switchGamesDataPromise
 }
 
 async function getFuseInstance(): Promise<Fuse<SwitchGameEntry>> {
@@ -95,6 +101,8 @@ async function getFuseInstance(): Promise<Fuse<SwitchGameEntry>> {
   if (cachedFuse) return cachedFuse
 
   const gamesData = await getSwitchGamesData()
+  const readyFuse = switchGamesFuseCache.get(cacheKey)
+  if (readyFuse) return readyFuse
   const fuse = new Fuse(gamesData, FUSE_OPTIONS)
 
   switchGamesFuseCache.set(cacheKey, fuse)

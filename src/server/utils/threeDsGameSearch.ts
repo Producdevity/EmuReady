@@ -77,6 +77,7 @@ const FUSE_OPTIONS: IFuseOptions<ThreeDsGameEntry> = {
 
 const THREEDS_TITLES_URL = 'https://dantheman827.github.io/nus-info/titles.json'
 const THREEDS_TITLE_NAMES_URL = 'https://dantheman827.github.io/nus-info/title-names.json'
+let threeDsGamesDataPromise: Promise<ThreeDsGameEntry[]> | null = null
 
 const threeDsGamesDataCache = new LRUCache<string, CachedData<ThreeDsGameEntry[]>>({
   ttl: CACHE_DURATIONS.STATIC,
@@ -207,16 +208,21 @@ async function getThreeDsGamesData(): Promise<ThreeDsGameEntry[]> {
   const cached = threeDsGamesDataCache.get(cacheKey)
   if (cached) return cached.data
 
-  try {
-    const fresh = await fetchThreeDsGamesData()
-    threeDsGamesDataCache.set(cacheKey, { data: fresh, createdAt: new Date() })
-    return fresh
-  } catch (error) {
-    if (error instanceof Error) {
-      error.message = `3DS games data fetch failed: ${error.message}`
-    }
-    throw error
-  }
+  threeDsGamesDataPromise ??= fetchThreeDsGamesData()
+    .then((fresh) => {
+      threeDsGamesDataCache.set(cacheKey, { data: fresh, createdAt: new Date() })
+      return fresh
+    })
+    .catch((error: unknown) => {
+      if (error instanceof Error) {
+        error.message = `3DS games data fetch failed: ${error.message}`
+      }
+      throw error
+    })
+    .finally(() => {
+      threeDsGamesDataPromise = null
+    })
+  return threeDsGamesDataPromise
 }
 
 async function getFuseInstance(): Promise<Fuse<ThreeDsGameEntry>> {
@@ -225,6 +231,8 @@ async function getFuseInstance(): Promise<Fuse<ThreeDsGameEntry>> {
   if (cached) return cached
 
   const games = await getThreeDsGamesData()
+  const readyFuse = threeDsGamesFuseCache.get(cacheKey)
+  if (readyFuse) return readyFuse
   const fuse = new Fuse(games, FUSE_OPTIONS)
   threeDsGamesFuseCache.set(cacheKey, fuse)
   return fuse
