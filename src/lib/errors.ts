@@ -220,17 +220,18 @@ export class AppError {
   }
 
   // System errors
-  static internalError(message?: string): never {
+  static internalError(message?: string, cause?: Error): never {
     throw new TRPCError({
       code: ERROR_CODES.INTERNAL_SERVER_ERROR,
       message: message ?? 'An internal server error occurred',
+      cause,
     })
   }
 
-  static databaseError(operation?: string): never {
+  static databaseError(operation?: string, cause?: Error): never {
     const message = operation ? `Database error during ${operation}` : ERROR_MESSAGES.DATABASE_ERROR
 
-    throw new TRPCError({ code: ERROR_CODES.INTERNAL_SERVER_ERROR, message })
+    throw new TRPCError({ code: ERROR_CODES.INTERNAL_SERVER_ERROR, message, cause })
   }
 
   // Generic error thrower with custom code and message

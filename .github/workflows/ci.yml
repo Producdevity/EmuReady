@@ -177,3 +177,7 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Verify compiled server instrumentation
+        run: |
+          node -e 'const hook = require("./.next/server/instrumentation.js"); if (typeof hook.register !== "function" || typeof hook.onRequestError !== "function") process.exit(1)'
