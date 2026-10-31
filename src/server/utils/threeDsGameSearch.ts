@@ -77,7 +77,9 @@ const FUSE_OPTIONS: IFuseOptions<ThreeDsGameEntry> = {
 
 const THREEDS_TITLES_URL = 'https://dantheman827.github.io/nus-info/titles.json'
 const THREEDS_TITLE_NAMES_URL = 'https://dantheman827.github.io/nus-info/title-names.json'
+const FETCH_TIMEOUT_MS = 30_000
 let threeDsGamesDataPromise: Promise<ThreeDsGameEntry[]> | null = null
+let cacheGeneration = 0
 
 const threeDsGamesDataCache = new LRUCache<string, CachedData<ThreeDsGameEntry[]>>({
   ttl: CACHE_DURATIONS.STATIC,
@@ -137,12 +139,15 @@ function pickPreferredName(
 }
 
 async function fetchThreeDsGamesData(): Promise<ThreeDsGameEntry[]> {
+  const signal = AbortSignal.timeout(FETCH_TIMEOUT_MS)
   const [titlesResponse, titleNamesResponse] = await Promise.all([
     fetch(THREEDS_TITLES_URL, {
       headers: { 'User-Agent': 'EmuReady-3DSLookup/1.0' },
+      signal,
     }),
     fetch(THREEDS_TITLE_NAMES_URL, {
       headers: { 'User-Agent': 'EmuReady-3DSLookup/1.0' },
+      signal,
     }),
   ])
 
@@ -208,21 +213,20 @@ async function getThreeDsGamesData(): Promise<ThreeDsGameEntry[]> {
   const cached = threeDsGamesDataCache.get(cacheKey)
   if (cached) return cached.data
 
-  threeDsGamesDataPromise ??= fetchThreeDsGamesData()
+  if (threeDsGamesDataPromise) return threeDsGamesDataPromise
+  const generation = cacheGeneration
+  const load: ReturnType<typeof fetchThreeDsGamesData> = fetchThreeDsGamesData()
     .then((fresh) => {
-      threeDsGamesDataCache.set(cacheKey, { data: fresh, createdAt: new Date() })
+      if (generation === cacheGeneration) {
+        threeDsGamesDataCache.set(cacheKey, { data: fresh, createdAt: new Date() })
+      }
       return fresh
     })
-    .catch((error: unknown) => {
-      if (error instanceof Error) {
-        error.message = `3DS games data fetch failed: ${error.message}`
-      }
-      throw error
-    })
     .finally(() => {
-      threeDsGamesDataPromise = null
+      if (threeDsGamesDataPromise === load) threeDsGamesDataPromise = null
     })
-  return threeDsGamesDataPromise
+  threeDsGamesDataPromise = load
+  return load
 }
 
 async function getFuseInstance(): Promise<Fuse<ThreeDsGameEntry>> {
@@ -230,11 +234,12 @@ async function getFuseInstance(): Promise<Fuse<ThreeDsGameEntry>> {
   const cached = threeDsGamesFuseCache.get(cacheKey)
   if (cached) return cached
 
+  const generation = cacheGeneration
   const games = await getThreeDsGamesData()
   const readyFuse = threeDsGamesFuseCache.get(cacheKey)
   if (readyFuse) return readyFuse
   const fuse = new Fuse(games, FUSE_OPTIONS)
-  threeDsGamesFuseCache.set(cacheKey, fuse)
+  if (generation === cacheGeneration) threeDsGamesFuseCache.set(cacheKey, fuse)
   return fuse
 }
 
@@ -351,8 +356,7 @@ export async function getBestThreeDsTitleIdMatch(gameName: string): Promise<stri
 }
 
 export async function refreshThreeDsGamesData(): Promise<void> {
-  threeDsGamesDataCache.clear()
-  threeDsGamesFuseCache.clear()
+  clearThreeDsCaches()
   await getThreeDsGamesData()
   await getFuseInstance()
 }
@@ -389,7 +393,13 @@ export async function getThreeDsGamesStats(): Promise<{
   }
 }
 
-export function clearThreeDsCachesForTests(): void {
+function clearThreeDsCaches(): void {
+  cacheGeneration++
+  threeDsGamesDataPromise = null
   threeDsGamesDataCache.clear()
   threeDsGamesFuseCache.clear()
+}
+
+export function clearThreeDsCachesForTests(): void {
+  clearThreeDsCaches()
 }
