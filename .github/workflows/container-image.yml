@@ -1,6 +1,14 @@
 name: Container image
 
 on:
+  workflow_call:
+    inputs:
+      publish:
+        type: boolean
+        default: false
+      deploy:
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       publish:
@@ -20,7 +28,7 @@ jobs:
   image:
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 70
     environment: ${{ github.ref == 'refs/heads/master' && 'container-production' || 'container-staging' }}
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/emuready_build
@@ -45,6 +53,18 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+          fetch-depth: 0
+
+      - name: Check release target and database compatibility
+        if: inputs.deploy
+        env:
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_APPLICATION_UUID: ${{ vars.COOLIFY_APPLICATION_UUID }}
+          CONTAINER_APPROVED_SCHEMA_DIGEST: ${{ vars.CONTAINER_APPROVED_SCHEMA_DIGEST }}
+          PUBLISH_IMAGE: ${{ inputs.publish }}
+        run: |
+          test "$PUBLISH_IMAGE" = true
+          python3 scripts/container_deploy.py --preflight
 
       - uses: pnpm/action-setup@v6
 
@@ -84,9 +104,12 @@ jobs:
             "${build_args[@]}" --tag "$image:$tag" .
           test "$(docker image inspect "$image:$tag" --format '{{.Architecture}}')" = amd64
           test "$(docker image inspect "$image:$tag" --format '{{.Config.User}}')" = nextjs
+          docker run --rm --network none --entrypoint node "$image:$tag" \
+            -e 'const hook = require("./.next/server/instrumentation.js"); if (typeof hook.register !== "function" || typeof hook.onRequestError !== "function") process.exit(1)'
           printf 'name=%s\ntag=%s\n' "$image" "$tag" >> "$GITHUB_OUTPUT"
 
       - name: Publish image
+        id: publish
         if: inputs.publish
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -98,4 +121,14 @@ jobs:
           docker push "$IMAGE:$TAG"
           digest=$(docker buildx imagetools inspect "$IMAGE:$TAG" --format '{{json .Manifest}}' | jq -er '.digest')
           [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
-          printf 'Deploy this immutable image through Coolify Docker Image:\n\n`%s`\n' "$IMAGE@$digest" >> "$GITHUB_STEP_SUMMARY"
+          printf 'image=%s\n' "$IMAGE@$digest" >> "$GITHUB_OUTPUT"
+          printf 'Published immutable image:\n\n    %s\n' "$IMAGE@$digest" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Deploy and verify release
+        if: inputs.deploy
+        env:
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_APPLICATION_UUID: ${{ vars.COOLIFY_APPLICATION_UUID }}
+          CONTAINER_APPROVED_SCHEMA_DIGEST: ${{ vars.CONTAINER_APPROVED_SCHEMA_DIGEST }}
+          RELEASE_IMAGE: ${{ steps.publish.outputs.image }}
+        run: python3 scripts/container_deploy.py --image "$RELEASE_IMAGE"

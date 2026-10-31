@@ -9,17 +9,19 @@ EmuReady runs as a standalone Next.js container behind Coolify and Cloudflare. S
 - Set `BUILD_DATABASE_URL` to a migrated, disposable Postgres database because Prisma TypedSQL generation introspects the schema. Never use production or a restored production backup for this. Apply the existing migrations to an empty database; seeds are unnecessary.
 - Optionally set `BUILD_DATABASE_DIRECT_URL` for that same disposable database. It defaults to `BUILD_DATABASE_URL`. The builder maps these names to Prisma's `DATABASE_URL` and `DATABASE_DIRECT_URL` only for `pnpm build`, and fails if `BUILD_DATABASE_URL` is missing.
 - Keep the real `DATABASE_URL`, `DATABASE_DIRECT_URL`, and other runtime-only secrets, such as `CLERK_SECRET_KEY`, out of the build phase. Backups and environment files must remain excluded from the Docker context.
-- For a release containing migrations, build the `migrator` target from the same commit and run it with `DATABASE_DIRECT_URL` before deploying the `app` image.
+- For a release containing migrations, verify a fresh backup and obtain explicit approval, then build the `migrator` target from the same commit and run it with `DATABASE_DIRECT_URL` before deploying the `app` image.
 
-Use the manual [Container image workflow](container-image.md) to build and publish
-images on GitHub runners, then deploy their immutable digests through Coolify's
-Docker Image build pack. Disable source auto-deployment to keep builds off the
-application VPS. Image publication does not deploy or apply hosted migrations.
+CI calls the [Container image workflow](container-image.md) after quality and
+browser checks pass, then deploys its immutable digest through Coolify's Docker
+Image build pack. `staging` and `master` select separate GitHub environments and
+Coolify applications. Keep Coolify source auto-deployment disabled so builds stay
+on GitHub runners. Manual image publication remains available; hosted migrations
+require a separate approved operation.
 
 ## Coolify application
 
 - Use the Docker Image build pack with the verified immutable digest and exposed port `3000`.
-- Set runtime `APP_VERSION` to the exact source commit. The image workflow sets `NEXT_BUILD_ID` while building.
+- Use the image's embedded `APP_VERSION`; disable Coolify runtime overrides for `APP_VERSION` and `NEXT_BUILD_ID`. The image workflow supplies the exact source commit during the build.
 - Use `/api/health/ready` for deployment health checks and `/api/health/live` for process liveness.
 
 ## Production configuration
