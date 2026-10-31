@@ -87,6 +87,106 @@ describe('threeDsGameSearch', () => {
   afterEach(() => {
     clearThreeDsCachesForTests()
     global.fetch = originalFetch
+    vi.restoreAllMocks()
+  })
+
+  it.each(['headers', 'body'])(
+    'releases a load stalled while reading %s after its deadline',
+    async (phase) => {
+      const controller = new AbortController()
+      const deadline = new DOMException('Catalog deadline', 'TimeoutError')
+      const timeout = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal)
+      const network = Promise.withResolvers<Response>()
+      fetchMock.mockImplementation(async (_input, options) => {
+        const signal = options?.signal ?? controller.signal
+        if (phase === 'body') {
+          return new Response(
+            new ReadableStream<Uint8Array>({
+              start(stream) {
+                signal.addEventListener('abort', () => stream.error(signal.reason), { once: true })
+              },
+            }),
+          )
+        }
+        signal.addEventListener('abort', () => network.reject(signal.reason), { once: true })
+        return network.promise
+      })
+      const load = refreshThreeDsGamesData().catch((error: unknown) => error)
+
+      try {
+        expect(timeout).toHaveBeenCalledWith(30_000)
+        expect(fetchMock.mock.calls[0]?.[1]?.signal).toBe(controller.signal)
+        expect(fetchMock.mock.calls[1]?.[1]?.signal).toBe(controller.signal)
+        controller.abort(deadline)
+        expect(await load).toBe(deadline)
+        timeout.mockRestore()
+        fetchMock.mockImplementation(createFetchMock())
+        expect((await findThreeDsTitleIdForGameName('Mario Party Star Rush'))[0]?.titleId).toBe(
+          '00040000001A5F00',
+        )
+      } finally {
+        controller.abort(new Error('Test cleanup'))
+        if (phase === 'headers') network.reject(new Error('Test cleanup'))
+        await load
+      }
+    },
+  )
+
+  it.each([
+    { operation: 'refresh', oldFirst: true },
+    { operation: 'refresh', oldFirst: false },
+    { operation: 'clear', oldFirst: false },
+  ])('keeps refreshed data after $operation with oldFirst=$oldFirst', async (options) => {
+    const oldTitles = Promise.withResolvers<Response>()
+    const oldNames = Promise.withResolvers<Response>()
+    const freshTitles = Promise.withResolvers<Response>()
+    const freshNames = Promise.withResolvers<Response>()
+    const freshId = '00040000001A5F01'
+    const titles = { [freshId]: { title_id: freshId, platform_device: 'CTR' } }
+    const names = { [freshId]: { US: 'Mario Party Star Rush' } }
+    fetchMock
+      .mockReturnValueOnce(oldTitles.promise)
+      .mockReturnValueOnce(oldNames.promise)
+      .mockReturnValueOnce(freshTitles.promise)
+      .mockReturnValueOnce(freshNames.promise)
+    const lookup = findThreeDsTitleIdForGameName('Mario Party Star Rush')
+    if (options.operation === 'clear') clearThreeDsCachesForTests()
+    const reload =
+      options.operation === 'refresh'
+        ? refreshThreeDsGamesData()
+        : findThreeDsTitleIdForGameName('Mario Party Star Rush')
+
+    try {
+      expect(fetchMock).toHaveBeenCalledTimes(4)
+      if (options.oldFirst) {
+        oldTitles.resolve(createJsonResponse(sampleTitles))
+        oldNames.resolve(createJsonResponse(sampleNames))
+        await lookup
+        const concurrent = findThreeDsTitleIdForGameName('Mario Party Star Rush')
+        expect(fetchMock).toHaveBeenCalledTimes(4)
+        freshTitles.resolve(createJsonResponse(titles))
+        freshNames.resolve(createJsonResponse(names))
+        await Promise.all([reload, concurrent])
+      } else {
+        freshTitles.resolve(createJsonResponse(titles))
+        freshNames.resolve(createJsonResponse(names))
+        await reload
+        oldTitles.resolve(createJsonResponse(sampleTitles))
+        oldNames.resolve(createJsonResponse(sampleNames))
+        await lookup
+      }
+      expect((await findThreeDsTitleIdForGameName('Mario Party Star Rush'))[0]?.titleId).toBe(
+        freshId,
+      )
+      expect((await getThreeDsGamesStats()).totalGames).toBe(1)
+      expect(fetchMock).toHaveBeenCalledTimes(4)
+    } finally {
+      oldTitles.resolve(createJsonResponse(sampleTitles))
+      oldNames.resolve(createJsonResponse(sampleNames))
+      freshTitles.resolve(createJsonResponse(titles))
+      freshNames.resolve(createJsonResponse(names))
+      await Promise.allSettled([lookup, reload])
+    }
   })
 
   it('finds title IDs for matching Nintendo 3DS games', async () => {
