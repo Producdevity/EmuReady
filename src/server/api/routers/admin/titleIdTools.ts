@@ -46,8 +46,9 @@ export const titleIdToolsRouter = createTRPCRouter({
           bestMatch,
         }
       } catch (error) {
-        logger.error('Title ID search failed', error)
-        return AppError.internalError('Failed to search for title IDs')
+        const diagnosticError = new Error('Title ID search failed', { cause: error })
+        logger.error('Title ID search failed', diagnosticError)
+        return AppError.internalError('Failed to search for title IDs', diagnosticError)
       }
     }),
 
@@ -66,7 +67,10 @@ export const titleIdToolsRouter = createTRPCRouter({
         return await getTitleIdStats(input.platformId)
       } catch (error) {
         console.error('Title ID stats fetch failed', error)
-        return AppError.internalError('Failed to fetch title ID statistics')
+        return AppError.internalError(
+          'Failed to fetch title ID statistics',
+          new Error('Title ID statistics failed', { cause: error }),
+        )
       }
     }),
 

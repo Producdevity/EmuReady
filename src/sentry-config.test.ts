@@ -24,6 +24,20 @@ afterEach(() => {
 })
 
 describe('Sentry server config', () => {
+  it.each([undefined, ''])(
+    'preserves the SDK release fallback when APP_VERSION is %s',
+    async (version) => {
+      vi.resetModules()
+      vi.stubEnv('NEXT_PUBLIC_ENABLE_SENTRY', 'true')
+      vi.stubEnv('APP_VERSION', version)
+
+      await import('../sentry.server.config')
+
+      expect(sentry.init).toHaveBeenCalledTimes(1)
+      expect(sentry.init.mock.calls[0]?.[0]).not.toHaveProperty('release')
+    },
+  )
+
   it('does not initialize when the Sentry flag is disabled', async () => {
     await loadSentryConfigs({
       NODE_ENV: 'production',

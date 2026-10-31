@@ -30,9 +30,21 @@ async function requestFailure(error: Error) {
 
 afterEach(() => {
   vi.clearAllMocks()
+  vi.restoreAllMocks()
+  vi.unstubAllEnvs()
 })
 
 describe('tRPC server error reporting', () => {
+  it('keeps expected errors visible in development without sending them to Sentry', async () => {
+    vi.stubEnv('NODE_ENV', 'development')
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const response = await requestFailure(new TRPCError({ code: 'UNAUTHORIZED' }))
+
+    expect(response.status).toBe(401)
+    expect(consoleError).toHaveBeenCalledExactlyOnceWith('tRPC failed on probe: UNAUTHORIZED')
+    expect(mocks.error).not.toHaveBeenCalled()
+  })
+
   it('reports a handled HTTP 500 with its original cause and no request input', async () => {
     const error = new Error('Provider connection failed')
     const response = await requestFailure(error)

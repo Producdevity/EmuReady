@@ -1,6 +1,11 @@
+import { TRPCError } from '@trpc/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { getSerializableAppError } from '@/lib/app-error-cause'
 import { type PrismaClient } from '@orm/client'
 import { BaseRepository } from './base.repository'
+
+const mocks = vi.hoisted(() => ({ error: vi.fn() }))
+vi.mock('@/lib/logger', () => ({ logger: { error: mocks.error } }))
 
 vi.mock('@orm/client', async () => {
   const actual = await import('@orm/client')
@@ -21,6 +26,10 @@ type BatchQueryFn = (params: {
 }) => Promise<{ id: string }[]>
 
 class TestRepository extends BaseRepository {
+  execute(operation: () => Promise<unknown>) {
+    return this.handleDatabaseOperation(operation, 'test operation')
+  }
+
   async *iterateBatches<T extends { id: string }>(
     queryFn: (params: { cursor?: { id: string }; take: number; skip?: number }) => Promise<T[]>,
     batchSize?: number,
@@ -37,7 +46,29 @@ describe('BaseRepository', () => {
   let repository: TestRepository
 
   beforeEach(() => {
+    vi.clearAllMocks()
     repository = new TestRepository(createMockPrisma())
+  })
+
+  it('preserves the logged diagnostic cause without exposing provider metadata to clients', async () => {
+    const providerError = Object.assign(new Error('Connection failed'), {
+      code: 'ECONNRESET',
+      metadata: 'server-only diagnostic',
+    })
+    try {
+      await repository.execute(() => Promise.reject(providerError))
+      throw new Error('Expected the database operation to fail')
+    } catch (error) {
+      if (!(error instanceof TRPCError) || !error.cause) throw error
+      expect(error.message).toBe('Database error during test operation')
+      expect(error.cause.cause).toBe(providerError)
+      expect(getSerializableAppError(error.cause)).toBeNull()
+      expect(mocks.error).toHaveBeenCalledExactlyOnceWith(
+        '[BaseRepository] Database error',
+        error.cause,
+        { context: 'test operation' },
+      )
+    }
   })
 
   describe('cursorBatchIterator', () => {
