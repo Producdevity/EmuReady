@@ -45,10 +45,14 @@ const FUSE_OPTIONS = {
 }
 
 const SWITCH_GAMES_URL = 'https://producdevity.github.io/switch-games-json/switchbrew_id_names.json'
+const FETCH_TIMEOUT_MS = 30_000
+let switchGamesDataPromise: Promise<SwitchGameEntry[]> | null = null
+let cacheGeneration = 0
 
 async function fetchSwitchGamesData(): Promise<SwitchGameEntry[]> {
   const response = await fetch(SWITCH_GAMES_URL, {
     headers: { 'User-Agent': 'EmuReady-GameSearch/1.0' },
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   })
 
   if (!response.ok) {
@@ -76,16 +80,20 @@ async function getSwitchGamesData(): Promise<SwitchGameEntry[]> {
   const cachedData = switchGamesDataCache.get(cacheKey)
   if (cachedData) return cachedData.data
 
-  try {
-    const freshData = await fetchSwitchGamesData()
-    switchGamesDataCache.set(cacheKey, { data: freshData, createdAt: new Date() })
-    return freshData
-  } catch (error) {
-    if (error instanceof Error) {
-      error.message = `Switch games data fetch failed: ${error.message}`
-    }
-    throw error
-  }
+  if (switchGamesDataPromise) return switchGamesDataPromise
+  const generation = cacheGeneration
+  const load: ReturnType<typeof fetchSwitchGamesData> = fetchSwitchGamesData()
+    .then((freshData) => {
+      if (generation === cacheGeneration) {
+        switchGamesDataCache.set(cacheKey, { data: freshData, createdAt: new Date() })
+      }
+      return freshData
+    })
+    .finally(() => {
+      if (switchGamesDataPromise === load) switchGamesDataPromise = null
+    })
+  switchGamesDataPromise = load
+  return load
 }
 
 async function getFuseInstance(): Promise<Fuse<SwitchGameEntry>> {
@@ -94,10 +102,13 @@ async function getFuseInstance(): Promise<Fuse<SwitchGameEntry>> {
   const cachedFuse = switchGamesFuseCache.get(cacheKey)
   if (cachedFuse) return cachedFuse
 
+  const generation = cacheGeneration
   const gamesData = await getSwitchGamesData()
+  const readyFuse = switchGamesFuseCache.get(cacheKey)
+  if (readyFuse) return readyFuse
   const fuse = new Fuse(gamesData, FUSE_OPTIONS)
 
-  switchGamesFuseCache.set(cacheKey, fuse)
+  if (generation === cacheGeneration) switchGamesFuseCache.set(cacheKey, fuse)
   return fuse
 }
 
@@ -188,6 +199,8 @@ export async function getBestTitleIdMatch(gameName: string): Promise<string | nu
 
 export async function refreshSwitchGamesData(): Promise<void> {
   try {
+    cacheGeneration++
+    switchGamesDataPromise = null
     switchGamesDataCache.clear()
     switchGamesFuseCache.clear()
 

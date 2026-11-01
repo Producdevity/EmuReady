@@ -67,4 +67,51 @@ describe('getSerializableAppError', () => {
     expect(getSerializableAppError('nope')).toBeNull()
     expect(getSerializableAppError(42)).toBeNull()
   })
+
+  it.each(['internal', 'database'] as const)(
+    'does not serialize raw provider errors passed to %s failures',
+    (kind) => {
+      const providerError = Object.assign(new Error('Provider failed'), {
+        code: 'P2022',
+        meta: { column: 'private_column' },
+      })
+      const error = captureTrpcError(() => {
+        if (kind === 'database') AppError.databaseError('test operation', providerError)
+        AppError.internalError('Operation failed', providerError)
+      })
+
+      expect(error.cause).toBe(providerError)
+      expect(roundTripAppError(error)).toBeNull()
+    },
+  )
+
+  it('preserves submission-limit details for the client', () => {
+    const error = captureTrpcError(() => ResourceError.game.submissionLimitExceeded(10, 3, 2))
+
+    expect(roundTripAppError(error)).toEqual({
+      code: APP_ERROR_CODES.GAME_SUBMISSION_LIMIT_EXCEEDED,
+      gamesCount: 10,
+      listingsCount: 3,
+      buffer: 2,
+      reportsNeeded: 6,
+    })
+  })
+
+  it.each(['internal', 'database'] as const)(
+    'keeps %s diagnostics private while preserving the reported Error identity',
+    (kind) => {
+      const providerError = Object.assign(new Error('Provider failed'), {
+        code: 'PRIVATE_PROVIDER',
+      })
+      const diagnosticError = new Error('Operation failed', { cause: providerError })
+      const error = captureTrpcError(() => {
+        if (kind === 'database') AppError.databaseError('test operation', diagnosticError)
+        AppError.internalError('Operation failed', diagnosticError)
+      })
+
+      expect(error.cause).toBe(diagnosticError)
+      expect(diagnosticError.cause).toBe(providerError)
+      expect(roundTripAppError(error)).toBeNull()
+    },
+  )
 })

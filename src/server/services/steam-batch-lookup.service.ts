@@ -112,7 +112,8 @@ export async function lookupGamesBySteamAppIds(
   } catch (error) {
     if (error instanceof TRPCError) throw error
 
-    logger.error('Error in batch Steam App ID lookup', error)
-    return AppError.internalError('Failed to lookup games by Steam App IDs')
+    const diagnosticError = new Error('Steam App ID lookup failed', { cause: error })
+    logger.error('Error in batch Steam App ID lookup', diagnosticError)
+    return AppError.internalError('Failed to lookup games by Steam App IDs', diagnosticError)
   }
 }
