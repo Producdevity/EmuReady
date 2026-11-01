@@ -109,10 +109,22 @@ class DeploymentTests(unittest.TestCase):
         self.assert_no_writes()
 
     def test_rejects_deployment_commands_without_mutation(self):
-        self.api.application['pre_deployment_command'] = 'pnpm db:migrate:deploy'
-        with self.assertRaisesRegex(release.ReleaseError, 'target'):
-            self.deploy()
-        self.assert_no_writes()
+        for key in ('pre_deployment_command', 'post_deployment_command'):
+            with self.subTest(key=key):
+                self.api.application[key] = 'pnpm db:migrate:deploy'
+                with self.assertRaisesRegex(release.ReleaseError, 'target'):
+                    self.deploy()
+                self.assert_no_writes()
+                self.api.application.pop(key)
+
+    def test_rejects_non_object_health_json_before_mutation(self):
+        for response in ([], None, False, 'healthy'):
+            with self.subTest(response=response):
+                with patch.object(self.public, 'request', return_value=response):
+                    with self.assertRaisesRegex(release.ReleaseError, 'not healthy'):
+                        self.deploy()
+                self.assert_no_writes()
+                self.schema.assert_not_called()
 
     def test_rejects_the_wrong_public_domain_without_mutation(self):
         self.api.application['fqdn'] = 'https://www.emuready.com'

@@ -33,7 +33,13 @@ class ContainerBuildConfigTest(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         build_arguments({**expected, key: other[key]}, 'refs/heads/' + branch, DOCKERFILE)
 
-    def test_rejects_missing_or_prefix_only_key(self):
+    def test_rejects_omitted_clerk_key(self):
+        config = STAGING.copy()
+        config.pop('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY')
+        with self.assertRaises(ValueError):
+            build_arguments(config, 'refs/heads/staging', DOCKERFILE)
+
+    def test_rejects_empty_or_prefix_only_key(self):
         for key in ('', 'pk_test_'):
             with self.subTest(key=key):
                 with self.assertRaises(ValueError):

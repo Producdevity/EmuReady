@@ -105,7 +105,7 @@ def preflight(ref, revision, application_uuid, api, public, approved_schema=None
            for variable in variables):
         raise ReleaseError('Remove runtime version overrides so the image supplies its own commit')
     deployed = public.request('/api/health')
-    if deployed.get('status') != 'healthy':
+    if not isinstance(deployed, dict) or deployed.get('status') != 'healthy':
         raise ReleaseError('The current application is not healthy; investigate before releasing')
     desired_schema = schema_digest(revision)
     try:

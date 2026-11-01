@@ -84,8 +84,11 @@ The image supplies `APP_VERSION` from the exact build commit.
 
 If a release fails, inspect its deployment UUID and workflow logs before retrying.
 Coolify keeps the previous container when the new container fails readiness.
-The workflow prints the previous image selection for manual rollback; it does
-not apply database changes or initiate an extra rollback deployment.
+If image selection succeeds but queueing or readiness fails, Coolify can still
+point at the new digest. Inspect the queued/running deployment before manually
+restoring the printed previous image; a failed API response does not establish
+whether the deployment was accepted. The workflow does not apply database
+changes or initiate an extra rollback deployment.
 
 Verify image identity, readiness, TLS, canonical URLs, authentication and static
 assets before switching public DNS. Keep the existing Vercel deployments and
