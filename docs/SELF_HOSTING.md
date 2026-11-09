@@ -26,7 +26,9 @@ require a separate approved operation.
 
 ## Production configuration
 
-- Use the Supabase session pooler on port 5432. Outside Vercel, the app retains one warm connection and allows at most five by default; override the maximum with `connection_limit` in `DATABASE_URL`.
+- Use the Supabase session pooler on port 5432. The app shares one Prisma client per Node.js process, including across server bundles. Outside Vercel, its pool retains one warm connection and allows at most five by default; override the maximum with `connection_limit` in `DATABASE_URL`.
+- Budget connections for all overlapping processes, including old and new containers during rollout and other clients using the same database role. Two processes capped at five use at most ten sessions, leaving five under a session-pool limit of fifteen. Verify the actual Supabase limit and other clients before adding replicas or increasing the per-process maximum.
+- For the first replacement of a release without production client reuse, do not assume the old process is capped at five. If there is insufficient overlap headroom, use a planned non-overlapping replacement; subsequent rolling releases can use the shared-pool budget.
 - Store production user uploads in R2. Set `R2_UPLOADS_BUCKET`, `R2_UPLOADS_PUBLIC_BASE_URL`, and the matching `NEXT_PUBLIC_R2_UPLOADS_PUBLIC_BASE_URL` together. Keeping R2 credentials unset in staging prevents authenticated R2 API access and writes, but public objects remain readable when their URLs are known.
 - Set `TRUST_CF_CONNECTING_IP=true` only after the origin accepts web traffic exclusively through Cloudflare. Enabling it on a directly reachable origin lets clients forge the trusted header.
 
