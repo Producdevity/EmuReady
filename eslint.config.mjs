@@ -104,7 +104,7 @@ const eslintConfig = [
     ignores: [
       '*.log',
       '*.tsbuildinfo',
-      '.agents/**',
+      '**/.agents/**',
       '.clerk/**',
       '.husky/**',
       '.idea/**',
