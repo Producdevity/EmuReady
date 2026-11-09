@@ -20,6 +20,9 @@ const basePrisma =
     },
   })
 
+// Production server bundles can evaluate this module independently in the same process.
+globalForPrisma.prisma = basePrisma
+
 const extendedClient = basePrisma.$extends({
   query: {
     game: {
@@ -58,7 +61,3 @@ const extendedClient = basePrisma.$extends({
 
 export const prisma = extendedClient as unknown as PrismaClient
 export type ExtendedPrismaClient = typeof extendedClient
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = basePrisma
-}
