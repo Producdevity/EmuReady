@@ -31,6 +31,7 @@ function createWebServerEnv(): { [key: string]: string } {
  */
 export default defineConfig({
   testDir: './tests',
+  testIgnore: ['**/.agents/**'],
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI when test.only is left on. */
@@ -73,7 +74,12 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: ['**/auth.setup.ts', '**/global.setup.ts', '**/data-setup.spec.ts'],
+      testIgnore: [
+        '**/.agents/**',
+        '**/auth.setup.ts',
+        '**/global.setup.ts',
+        '**/data-setup.spec.ts',
+      ],
       dependencies: ['data-setup'],
     },
   ],

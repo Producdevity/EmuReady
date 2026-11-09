@@ -88,7 +88,8 @@ const featureLayerBoundaryZones = featureLayerRootNames.flatMap((featureRootName
 const featureToAppRouteBoundaryZone = {
   target: './src/features',
   from: './src/app',
-  message: 'Feature modules must not import from Next.js app routes. Compose features in app routes.',
+  message:
+    'Feature modules must not import from Next.js app routes. Compose features in app routes.',
 }
 
 const featureBoundaryZones = [
@@ -103,6 +104,7 @@ const eslintConfig = [
     ignores: [
       '*.log',
       '*.tsbuildinfo',
+      '**/.agents/**',
       '.clerk/**',
       '.husky/**',
       '.idea/**',
