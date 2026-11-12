@@ -185,7 +185,10 @@ export const customFieldDefinitionRouter = createTRPCRouter({
       if (newType === CustomFieldType.RANGE) {
         const rangeMin = input.rangeMin ?? fieldToUpdate.rangeMin
         const rangeMax = input.rangeMax ?? fieldToUpdate.rangeMax
-        if (rangeMin !== null && rangeMax !== null && rangeMin >= rangeMax) {
+        if (rangeMin === null || rangeMax === null) {
+          return ResourceError.customField.rangeMinMaxRequired()
+        }
+        if (rangeMin >= rangeMax) {
           return ResourceError.customField.rangeMinLessThanMax()
         }
       }

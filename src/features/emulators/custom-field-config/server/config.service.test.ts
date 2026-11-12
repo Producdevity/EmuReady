@@ -220,6 +220,46 @@ describe('custom field configuration service', () => {
       FIELD_ID,
     )
   })
+
+  it.each(['listingValues', 'pcListingValues'] as const)(
+    'preserves the meaning of range values used by %s',
+    async (kind) => {
+      const s = setup()
+      const existing = s.record.customFieldDefinitions[0]
+      if (!existing) throw new Error('Missing test field')
+      Object.assign(existing, {
+        type: CustomFieldType.RANGE,
+        options: null,
+        rangeMin: 0,
+        rangeMax: 16,
+        rangeUnit: 'GB',
+        defaultValue: 8,
+      })
+      existing._count[kind] = 1
+      const snapshot = toConfigSnapshot(s.record)
+      s.input.configuration = snapshot.configuration
+      s.input.expectedRevision = snapshot.revision
+      const field = s.input.configuration.fields[0]
+      if (!field) throw new Error('Missing test field')
+      field.rangeUnit = 'MB'
+      await expect(s.service.save(actor, s.input)).rejects.toThrow('Cannot change the unit')
+      expect(s.saveField).not.toHaveBeenCalled()
+      field.rangeUnit = 'GB'
+      await s.service.save(actor, s.input)
+      expect(s.saveField).toHaveBeenCalledWith(TARGET_ID, field, CATEGORY_ID, FIELD_ID)
+    },
+  )
+
+  it.each(['true', 'false'])('exports stored BOOLEAN string %s as a boolean', async (value) => {
+    const s = setup()
+    const field = s.record.customFieldDefinitions[0]
+    if (!field) throw new Error('Missing test field')
+    field.type = CustomFieldType.BOOLEAN
+    field.options = null
+    field.defaultValue = value
+    const snapshot = await s.service.get(actor, TARGET_ID)
+    expect(snapshot.configuration.fields[0]?.defaultValue).toBe(value === 'true')
+  })
   it('preserves field and category identity when renaming in JSON', async () => {
     const s = setup()
     const existing = s.record.customFieldDefinitions[0]

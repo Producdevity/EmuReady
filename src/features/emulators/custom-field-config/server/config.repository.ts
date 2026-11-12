@@ -66,7 +66,7 @@ export class CustomFieldConfigRepository extends PrismaRepository {
     }
   }
 
-  saveCategory(
+  async saveCategory(
     emulatorId: string,
     category: CustomFieldConfig['categories'][number],
     existingId?: string,

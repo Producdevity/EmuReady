@@ -24,6 +24,14 @@ function assertCompatibleField(previous: ConfigField, next: ConfigField) {
   }
   if (
     next.type === CustomFieldType.RANGE &&
+    (previous.rangeUnit ?? '') !== (next.rangeUnit ?? '')
+  ) {
+    return AppError.badRequest(
+      `Cannot change the unit of "${next.name}" because it has report values.`,
+    )
+  }
+  if (
+    next.type === CustomFieldType.RANGE &&
     ((next.rangeMin ?? 0) > (previous.rangeMin ?? 0) ||
       (next.rangeMax ?? 0) < (previous.rangeMax ?? 0) ||
       (next.rangeDecimals ?? 0) < (previous.rangeDecimals ?? 0))
