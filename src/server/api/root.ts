@@ -1,3 +1,4 @@
+import { customFieldConfigRouter } from '@/features/emulators/custom-field-config/server/config.router'
 import { cpuRouter } from '@/features/hardware/cpu/server/cpu.router'
 import { gpuRouter } from '@/features/hardware/gpu/server/gpu.router'
 import { createTRPCRouter } from '@/server/api/trpc'
@@ -65,6 +66,7 @@ export const appRouter = createTRPCRouter({
   notifications: notificationsRouter,
   customFieldCategories: customFieldCategoryRouter,
   customFieldDefinitions: customFieldDefinitionRouter,
+  customFieldConfigs: customFieldConfigRouter,
   customFieldTemplates: customFieldTemplateRouter,
   performanceScales: performanceScalesRouter,
   permissions: permissionsRouter,

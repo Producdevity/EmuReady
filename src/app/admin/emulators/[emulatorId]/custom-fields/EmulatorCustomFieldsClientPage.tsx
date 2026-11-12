@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import UnauthenticatedPage from '@/components/auth/UnauthenticatedPage'
 import { Button, LoadingSpinner } from '@/components/ui'
+import { CustomFieldConfigModal } from '@/features/emulators/custom-field-config/client/admin/CustomFieldConfigModal'
 import { api } from '@/lib/api'
 import { isTRPCNotFoundError } from '@/lib/trpc-client-errors'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
@@ -13,7 +14,6 @@ import { Role } from '@orm'
 import ApplyTemplatesModal from './components/ApplyTemplatesModal'
 import CustomFieldFormModal from './components/CustomFieldFormModal'
 import CustomFieldsDragAndDrop from './components/CustomFieldsDragAndDrop'
-import CustomFieldsJsonModal from './components/CustomFieldsJsonModal'
 import FeedbackCard from './components/FeedbackCard'
 
 interface Props {
@@ -175,11 +175,11 @@ export default function EmulatorCustomFieldsClientPage(props: Props) {
 
   return (
     <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-wrap gap-4 justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Custom Fields for {emulatorQuery.data.name}</h1>
-        <div className="flex space-x-3">
+        <div className="flex flex-wrap gap-3">
           <Button variant="outline" icon={FileJson} onClick={() => setIsJsonModalOpen(true)}>
-            View JSON
+            Copy / Edit JSON
           </Button>
           {canApplyTemplates && (
             <Button
@@ -223,12 +223,11 @@ export default function EmulatorCustomFieldsClientPage(props: Props) {
         />
       )}
 
-      {isJsonModalOpen && emulatorQuery.data && customFieldDefinitionsQuery.data && (
-        <CustomFieldsJsonModal
-          isOpen={isJsonModalOpen}
+      {isJsonModalOpen && (
+        <CustomFieldConfigModal
           onClose={() => setIsJsonModalOpen(false)}
           emulator={{ id: emulatorQuery.data.id, name: emulatorQuery.data.name }}
-          customFields={customFieldDefinitionsQuery.data}
+          onSaved={handleRefresh}
         />
       )}
     </div>
