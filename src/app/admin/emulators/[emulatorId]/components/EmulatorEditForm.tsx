@@ -26,7 +26,12 @@ const logoOptions = [
   'aethersx2.png',
   'aps3e.png',
   'armsx2.png',
+  'armsx3.webp',
+  'astris.webp',
+  'ax360e.webp',
   'azahar.png',
+  'bannerhub.webp',
+  'bizhawk.webp',
   'cemu.png',
   'citra.png',
   'citron.png',
@@ -34,28 +39,42 @@ const logoOptions = [
   'dolphin.png',
   'dolphin_mmjr.png',
   'drastic.png',
+  'droiddeck.webp',
   'duckstation.png',
   'eden.png',
+  'epsxe.webp',
   'exagear.png',
+  'fin.webp',
   'flycast.png',
   'gamefusion.png',
   'gamehub.png',
   'gamenative.png',
+  'hakux.webp',
   'horizon.png',
+  'idtech4amm.webp',
+  'joiplay.webp',
   'kenjinx.png',
+  'lemon.webp',
   'lemuroid.png',
+  'lichii.webp',
   'lime3ds.png',
   'mame.png',
+  'manicemu.webp',
   'melonds.png',
+  'melondualds.webp',
   'melonx.png',
   'micewine.png',
   'mobox.png',
   'nethersx2.png',
+  'nx.webp',
+  'openmw-ds.webp',
   'pcsx2.png',
+  'picpic.webp',
   'pluvia.png',
   'ppsspp.png',
   'redream.png',
   'retroarch.png',
+  'rmg.webp',
   'rpcs3.png',
   'rpcsx.png',
   'ryujinx.png',
@@ -64,14 +83,24 @@ const logoOptions = [
   'sudachi.png',
   'sumi.png',
   'torzu.png',
+  'touchhle.webp',
   'utm.png',
+  'vita3k-plus.webp',
   'vita3k.png',
+  'watermelonds.webp',
   'winlator.png',
+  'winnative.webp',
+  'wpr.webp',
+  'x1-box.webp',
+  'x360mobile.webp',
   'xbsx2.png',
   'xemu.png',
+  'xendroid-plus.webp',
+  'xendroid.webp',
   'xenia.png',
   'yaba.png',
   'yuzu.png',
+  'zomdroid.webp',
 ] as const
 
 function EmulatorEditForm(props: Props) {
@@ -227,11 +256,11 @@ function EmulatorEditForm(props: Props) {
               `}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              title={logoFileName.replace('.png', '')}
+              title={logoFileName.replace(/\.[^.]+$/, '')}
             >
               <EmulatorIcon
                 logo={logoFileName}
-                name={logoFileName.replace('.png', '')}
+                name={logoFileName.replace(/\.[^.]+$/, '')}
                 className="w-full"
                 showLogo={true}
                 size="sm"

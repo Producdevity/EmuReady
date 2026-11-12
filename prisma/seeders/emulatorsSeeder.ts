@@ -23,6 +23,11 @@ const emulators: EmulatorData[] = [
     logo: 'armsx2.png',
   },
   {
+    name: 'ARMSX3',
+    supportedSystemNames: ['Sony PlayStation 3'],
+    logo: 'armsx3.webp',
+  },
+  {
     name: 'Azahar',
     supportedSystemNames: ['Nintendo 3DS'],
     logo: 'azahar.png',
@@ -50,11 +55,20 @@ const emulators: EmulatorData[] = [
     logo: 'drastic.png',
   },
   {
+    name: 'DroidDeck',
+    supportedSystemNames: ['Microsoft Windows'],
+    logo: 'droiddeck.webp',
+  },
+  {
     name: 'DuckStation',
     supportedSystemNames: ['Sony PlayStation'],
     logo: 'duckstation.png',
   },
-  { name: 'Eden', supportedSystemNames: ['Nintendo Switch'], logo: 'eden.png' },
+  {
+    name: 'Eden',
+    supportedSystemNames: ['Nintendo Switch', 'Nintendo Switch 2'],
+    logo: 'eden.png',
+  },
   {
     name: 'ExaGear',
     supportedSystemNames: ['Microsoft Windows'],
@@ -79,6 +93,11 @@ const emulators: EmulatorData[] = [
     name: 'Horizon',
     supportedSystemNames: ['Microsoft Windows'],
     logo: 'horizon.png',
+  },
+  {
+    name: 'HakuX',
+    supportedSystemNames: ['Microsoft Xbox'],
+    logo: 'hakux.webp',
   },
   {
     name: 'Kenji-NX',
@@ -109,6 +128,11 @@ const emulators: EmulatorData[] = [
     name: 'NethersX2',
     supportedSystemNames: ['Sony PlayStation 2'],
     logo: 'nethersx2.png',
+  },
+  {
+    name: 'NX',
+    supportedSystemNames: ['Nintendo Switch', 'Nintendo Switch 2'],
+    logo: 'nx.webp',
   },
   {
     name: 'PCSX2',
@@ -180,6 +204,11 @@ const emulators: EmulatorData[] = [
     name: 'Torzu',
     supportedSystemNames: ['Nintendo Switch'],
     logo: 'torzu.png',
+  },
+  {
+    name: 'touchHLE',
+    supportedSystemNames: ['Apple iOS'],
+    logo: 'touchhle.webp',
   },
   {
     name: 'UTM',
