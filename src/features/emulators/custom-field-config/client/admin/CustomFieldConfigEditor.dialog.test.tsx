@@ -6,9 +6,7 @@ import { TARGET_ID } from '../../tests/fixtures'
 
 vi.mock('@/lib/api', () => ({
   api: {
-    useUtils: () => ({ customFieldConfigs: { get: { fetch: vi.fn() } } }),
     customFieldConfigs: {
-      sources: { useQuery: () => ({ data: [], isPending: false, isError: false }) },
       save: { useMutation: () => ({ mutateAsync: vi.fn(), isPending: false }) },
     },
   },
@@ -35,12 +33,12 @@ describe('configuration confirmation dialogs', () => {
         value: JSON.stringify({ version: 1, categories: [{ name: 'Graphics' }], fields: [] }),
       },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Apply to DroidDeck' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save JSON' }))
     expect(await screen.findByRole('alertdialog')).toBeInTheDocument()
     fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' })
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
     expect(screen.queryByText('Discard the JSON draft?')).not.toBeInTheDocument()
     expect(onClose).not.toHaveBeenCalled()
-    expect(screen.getByRole('button', { name: 'Apply to DroidDeck' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Save JSON' })).toBeEnabled()
   })
 })

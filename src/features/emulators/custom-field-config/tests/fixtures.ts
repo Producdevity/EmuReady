@@ -2,7 +2,7 @@ import { CustomFieldType } from '@orm'
 import { type ConfigEmulatorRecord } from '../server/persistence/config.prisma'
 
 export const TARGET_ID = '00000000-0000-4000-a000-000000000001'
-export const SOURCE_ID = '00000000-0000-4000-a000-000000000002'
+export const FIELD_ID = '00000000-0000-4000-a000-000000000002'
 export const CATEGORY_ID = '00000000-0000-4000-a000-000000000003'
 
 export function configRecord(): ConfigEmulatorRecord {
@@ -15,6 +15,7 @@ export function configRecord(): ConfigEmulatorRecord {
     ],
     customFieldDefinitions: [
       {
+        id: FIELD_ID,
         name: 'renderer',
         label: 'Renderer',
         type: CustomFieldType.SELECT,

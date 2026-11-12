@@ -21,13 +21,6 @@ export class CustomFieldConfigRepository extends PrismaRepository {
     })
   }
 
-  sources() {
-    return this.prisma.emulator.findMany({
-      select: { id: true, name: true },
-      orderBy: { name: 'asc' },
-    })
-  }
-
   async transaction<T>(
     operation: (repository: CustomFieldConfigRepository) => Promise<T>,
   ): Promise<T> {
@@ -42,11 +35,11 @@ export class CustomFieldConfigRepository extends PrismaRepository {
       )
     } catch (error) {
       if (error instanceof TRPCError) throw error
-      if (
-        isPrismaError(error, PRISMA_ERROR_CODES.TRANSACTION_FAILED) ||
-        isPrismaError(error, PRISMA_ERROR_CODES.UNIQUE_CONSTRAINT_VIOLATION)
-      ) {
+      if (isPrismaError(error, PRISMA_ERROR_CODES.TRANSACTION_FAILED)) {
         return AppError.conflict('The configuration changed while saving. Reload it and try again.')
+      }
+      if (isPrismaError(error, PRISMA_ERROR_CODES.UNIQUE_CONSTRAINT_VIOLATION)) {
+        return AppError.badRequest('A field or category name conflicts with another existing item.')
       }
       if (isPrismaError(error, PRISMA_ERROR_CODES.FOREIGN_KEY_CONSTRAINT_VIOLATION)) {
         return ResourceError.emulator.notFound()
@@ -55,17 +48,32 @@ export class CustomFieldConfigRepository extends PrismaRepository {
     }
   }
 
-  saveCategory(emulatorId: string, category: CustomFieldConfig['categories'][number]) {
-    return this.prisma.customFieldCategory.upsert({
-      where: { emulatorId_name: { emulatorId, name: category.name } },
-      create: { emulatorId, ...category },
-      update: { displayOrder: category.displayOrder },
-      select: { id: true },
-    })
+  saveCategory(
+    emulatorId: string,
+    category: CustomFieldConfig['categories'][number],
+    existingId?: string,
+  ) {
+    const data = { name: category.name, displayOrder: category.displayOrder }
+    return existingId
+      ? this.prisma.customFieldCategory.update({
+          where: { id: existingId, emulatorId },
+          data,
+          select: { id: true },
+        })
+      : this.prisma.customFieldCategory.create({
+          data: { emulatorId, ...data },
+          select: { id: true },
+        })
   }
 
-  saveField(emulatorId: string, field: ConfigField, categoryId: string | null) {
+  saveField(
+    emulatorId: string,
+    field: ConfigField,
+    categoryId: string | null,
+    existingId?: string,
+  ) {
     const data = {
+      name: field.name,
       label: field.label,
       type: field.type,
       categoryId,
@@ -81,11 +89,25 @@ export class CustomFieldConfigRepository extends PrismaRepository {
       categoryOrder: field.categoryOrder,
     } satisfies Prisma.CustomFieldDefinitionUncheckedUpdateInput
 
-    return this.prisma.customFieldDefinition.upsert({
-      where: { emulatorId_name: { emulatorId, name: field.name } },
-      create: { emulatorId, name: field.name, ...data },
-      update: data,
-      select: { id: true },
-    })
+    return existingId
+      ? this.prisma.customFieldDefinition.update({
+          where: { id: existingId, emulatorId },
+          data,
+          select: { id: true },
+        })
+      : this.prisma.customFieldDefinition.create({
+          data: { emulatorId, ...data },
+          select: { id: true },
+        })
+  }
+
+  async removeFields(emulatorId: string, ids: string[]) {
+    if (ids.length > 0)
+      await this.prisma.customFieldDefinition.deleteMany({ where: { emulatorId, id: { in: ids } } })
+  }
+
+  async removeCategories(emulatorId: string, ids: string[]) {
+    if (ids.length > 0)
+      await this.prisma.customFieldCategory.deleteMany({ where: { emulatorId, id: { in: ids } } })
   }
 }

@@ -179,7 +179,7 @@ export default function EmulatorCustomFieldsClientPage(props: Props) {
         <h1 className="text-3xl font-bold">Custom Fields for {emulatorQuery.data.name}</h1>
         <div className="flex flex-wrap gap-3">
           <Button variant="outline" icon={FileJson} onClick={() => setIsJsonModalOpen(true)}>
-            Copy / Edit JSON
+            Edit JSON
           </Button>
           {canApplyTemplates && (
             <Button

@@ -14,6 +14,7 @@ export const ConfigFieldSchema = CreateCustomFieldDefinitionSchema.omit({
   categoryId: true,
 })
   .extend({
+    id: z.string().uuid().optional(),
     name: CreateCustomFieldDefinitionSchema.shape.name.max(100),
     label: z.string().trim().min(1).max(200),
     category: categoryNameSchema.nullable().default(null),
@@ -88,7 +89,15 @@ export const CustomFieldConfigSchema = z
   .object({
     version: z.literal(1),
     categories: z
-      .array(z.object({ name: categoryNameSchema, displayOrder: orderSchema.default(0) }).strict())
+      .array(
+        z
+          .object({
+            id: z.string().uuid().optional(),
+            name: categoryNameSchema,
+            displayOrder: orderSchema.default(0),
+          })
+          .strict(),
+      )
       .max(100),
     fields: z.array(ConfigFieldSchema).max(500),
   })
@@ -96,6 +105,7 @@ export const CustomFieldConfigSchema = z
   .superRefine((config, ctx) => {
     for (const key of ['categories', 'fields'] as const) {
       const seen = new Set<string>()
+      const ids = new Set<string>()
       config[key].forEach((item, index) => {
         if (seen.has(item.name)) {
           ctx.addIssue({
@@ -104,6 +114,14 @@ export const CustomFieldConfigSchema = z
             message: 'Names must be unique.',
           })
         }
+        if (item.id && ids.has(item.id)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [key, index, 'id'],
+            message: 'IDs must be unique.',
+          })
+        }
+        if (item.id) ids.add(item.id)
         seen.add(item.name)
       })
     }
@@ -126,19 +144,15 @@ export const CustomFieldConfigSnapshotSchema = z.object({
   revision: z.string().regex(/^[a-f0-9]{64}$/),
 })
 
-export const ApplyCustomFieldConfigSchema = GetCustomFieldConfigSchema.extend({
+export const SaveCustomFieldConfigSchema = GetCustomFieldConfigSchema.extend({
   configuration: CustomFieldConfigSchema,
   expectedRevision: CustomFieldConfigSnapshotSchema.shape.revision,
 }).strict()
 
-export const CustomFieldConfigSourcesSchema = z.array(
-  z.object({ id: z.string().uuid(), name: z.string() }),
-)
-
 export type CustomFieldConfig = z.output<typeof CustomFieldConfigSchema>
 export type ConfigField = z.output<typeof ConfigFieldSchema>
 export type CustomFieldConfigSnapshot = z.output<typeof CustomFieldConfigSnapshotSchema>
-export type ApplyCustomFieldConfig = z.output<typeof ApplyCustomFieldConfigSchema>
+export type SaveCustomFieldConfig = z.output<typeof SaveCustomFieldConfigSchema>
 
 export function parseConfigJson(json: string) {
   try {

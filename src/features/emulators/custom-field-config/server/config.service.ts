@@ -2,10 +2,10 @@ import { AppError, ResourceError } from '@/lib/errors'
 import { requireActorPermission, type Actor } from '@/server/auth/actor'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { CustomFieldType } from '@orm'
-import { toConfigSnapshot } from './config.mapper'
+import { toConfigField, toConfigSnapshot } from './config.mapper'
 import { assertCanApplyConfig } from './config.policy'
 import { type CustomFieldConfigRepository } from './config.repository'
-import { type ApplyCustomFieldConfig, type ConfigField } from '../shared/config.schemas'
+import { type SaveCustomFieldConfig, type ConfigField } from '../shared/config.schemas'
 
 function assertCompatibleField(previous: ConfigField, next: ConfigField) {
   if (previous.type !== next.type)
@@ -34,13 +34,27 @@ function assertCompatibleField(previous: ConfigField, next: ConfigField) {
   }
 }
 
+function matchConfigItems<
+  Existing extends { id: string; name: string },
+  Incoming extends { id?: string; name: string },
+>(existing: Existing[], incoming: Incoming[]) {
+  const byId = new Map(existing.map((item) => [item.id, item]))
+  const byName = new Map(existing.map((item) => [item.name, item]))
+  const matched = new Set<string>()
+  const items = incoming.map((value) => {
+    const previous = (value.id ? byId.get(value.id) : undefined) ?? byName.get(value.name)
+    if (previous) {
+      if (matched.has(previous.id))
+        return AppError.badRequest(`Multiple JSON items match "${previous.name}".`)
+      matched.add(previous.id)
+    }
+    return { value, previous }
+  })
+  return { items, removed: existing.filter((item) => !matched.has(item.id)) }
+}
+
 export class CustomFieldConfigService {
   constructor(private readonly repository: CustomFieldConfigRepository) {}
-
-  sources(actor: Actor) {
-    requireActorPermission(actor, PERMISSIONS.MANAGE_CUSTOM_FIELDS)
-    return this.repository.sources()
-  }
 
   async get(actor: Actor, emulatorId: string) {
     requireActorPermission(actor, PERMISSIONS.MANAGE_CUSTOM_FIELDS)
@@ -49,7 +63,7 @@ export class CustomFieldConfigService {
     return toConfigSnapshot(emulator)
   }
 
-  apply(actor: Actor, input: ApplyCustomFieldConfig) {
+  save(actor: Actor, input: SaveCustomFieldConfig) {
     requireActorPermission(actor, PERMISSIONS.MANAGE_CUSTOM_FIELDS)
     return this.repository.transaction(async (repository) => {
       const emulator = await repository.getEmulator(input.emulatorId)
@@ -62,31 +76,48 @@ export class CustomFieldConfigService {
         )
       }
 
-      const existingFields = new Map(
-        emulator.customFieldDefinitions.map((field) => [field.name, field]),
+      const fields = matchConfigItems(emulator.customFieldDefinitions, input.configuration.fields)
+      const categories = matchConfigItems(
+        emulator.customFieldCategories,
+        input.configuration.categories,
       )
-      for (const field of input.configuration.fields) {
-        const existing = existingFields.get(field.name)
-        if (existing && existing._count.listingValues + existing._count.pcListingValues > 0) {
-          const previous = snapshot.configuration.fields.find(
-            (candidate) => candidate.name === field.name,
-          )
-          if (previous) assertCompatibleField(previous, field)
+      for (const field of fields.removed) {
+        if (field._count.listingValues + field._count.pcListingValues > 0) {
+          return AppError.badRequest(`Cannot remove "${field.name}" because it has report values.`)
+        }
+      }
+      for (const field of fields.items) {
+        if (
+          field.previous &&
+          field.previous._count.listingValues + field.previous._count.pcListingValues > 0
+        ) {
+          assertCompatibleField(toConfigField(field.previous), field.value)
         }
       }
 
-      const categories = new Map(
-        emulator.customFieldCategories.map((category) => [category.name, category.id]),
+      await repository.removeFields(
+        input.emulatorId,
+        fields.removed.map((field) => field.id),
       )
-      for (const category of input.configuration.categories) {
-        const saved = await repository.saveCategory(input.emulatorId, category)
-        categories.set(category.name, saved.id)
+      await repository.removeCategories(
+        input.emulatorId,
+        categories.removed.map((category) => category.id),
+      )
+      const categoryIds = new Map<string, string>()
+      for (const category of categories.items) {
+        const saved = await repository.saveCategory(
+          input.emulatorId,
+          category.value,
+          category.previous?.id,
+        )
+        categoryIds.set(category.value.name, saved.id)
       }
-      for (const field of input.configuration.fields) {
-        const categoryId = field.category === null ? null : categories.get(field.category)
+      for (const field of fields.items) {
+        const categoryId =
+          field.value.category === null ? null : categoryIds.get(field.value.category)
         if (categoryId === undefined)
-          return AppError.badRequest(`Unknown category: ${field.category}`)
-        await repository.saveField(input.emulatorId, field, categoryId)
+          return AppError.badRequest(`Unknown category: ${field.value.category}`)
+        await repository.saveField(input.emulatorId, field.value, categoryId, field.previous?.id)
       }
 
       const updated = await repository.getEmulator(input.emulatorId)

@@ -9,6 +9,7 @@ export const CONFIG_EMULATOR_SELECT = {
   },
   customFieldDefinitions: {
     select: {
+      id: true,
       name: true,
       label: true,
       type: true,

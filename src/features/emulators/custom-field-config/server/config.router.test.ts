@@ -46,8 +46,8 @@ describe('configuration transport', () => {
     expect(service).not.toHaveBeenCalled()
   })
 
-  it('rejects source IDs and invalid input at the API boundary', async () => {
-    const service = vi.spyOn(CustomFieldConfigService.prototype, 'apply')
+  it('rejects malformed IDs and invalid input at the API boundary', async () => {
+    const service = vi.spyOn(CustomFieldConfigService.prototype, 'save')
     const input = {
       emulatorId: TARGET_ID,
       expectedRevision: '0'.repeat(64),
@@ -65,9 +65,7 @@ describe('configuration transport', () => {
 
   it('uses the session actor when applying a valid configuration', async () => {
     const snapshot = toConfigSnapshot(configRecord())
-    const service = vi
-      .spyOn(CustomFieldConfigService.prototype, 'apply')
-      .mockResolvedValue(snapshot)
+    const service = vi.spyOn(CustomFieldConfigService.prototype, 'save').mockResolvedValue(snapshot)
     await caller().save({
       emulatorId: TARGET_ID,
       expectedRevision: snapshot.revision,

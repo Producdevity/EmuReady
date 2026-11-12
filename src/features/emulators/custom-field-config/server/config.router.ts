@@ -4,22 +4,14 @@ import { PERMISSIONS } from '@/utils/permission-system'
 import { CustomFieldConfigRepository } from './config.repository'
 import { CustomFieldConfigService } from './config.service'
 import {
-  ApplyCustomFieldConfigSchema,
+  SaveCustomFieldConfigSchema,
   CustomFieldConfigSnapshotSchema,
-  CustomFieldConfigSourcesSchema,
   GetCustomFieldConfigSchema,
 } from '../shared/config.schemas'
 
 const manageCustomFieldsProcedure = permissionProcedure(PERMISSIONS.MANAGE_CUSTOM_FIELDS)
 
 export const customFieldConfigRouter = createTRPCRouter({
-  sources: manageCustomFieldsProcedure
-    .output(CustomFieldConfigSourcesSchema)
-    .query(({ ctx }) =>
-      new CustomFieldConfigService(new CustomFieldConfigRepository(ctx.prisma)).sources(
-        createActorFromSession(ctx.session),
-      ),
-    ),
   get: manageCustomFieldsProcedure
     .input(GetCustomFieldConfigSchema)
     .output(CustomFieldConfigSnapshotSchema)
@@ -30,10 +22,10 @@ export const customFieldConfigRouter = createTRPCRouter({
       ),
     ),
   save: manageCustomFieldsProcedure
-    .input(ApplyCustomFieldConfigSchema)
+    .input(SaveCustomFieldConfigSchema)
     .output(CustomFieldConfigSnapshotSchema)
     .mutation(({ ctx, input }) =>
-      new CustomFieldConfigService(new CustomFieldConfigRepository(ctx.prisma)).apply(
+      new CustomFieldConfigService(new CustomFieldConfigRepository(ctx.prisma)).save(
         createActorFromSession(ctx.session),
         input,
       ),

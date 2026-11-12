@@ -35,7 +35,7 @@ describe('custom field configuration JSON', () => {
   })
 
   it.each([
-    { ...field, id: 'foreign-id' },
+    { ...field, id: 'not-a-uuid' },
     { ...field, categoryId: 'foreign-category' },
     { ...field, type: CustomFieldType.BOOLEAN, defaultValue: 'false' },
     { ...field, type: CustomFieldType.RANGE, rangeMin: 2, rangeMax: 1 },
@@ -93,5 +93,18 @@ describe('custom field configuration JSON', () => {
         }),
       ),
     ).toMatchObject({ success: false, error: expect.stringContaining('fields.0.options') })
+  })
+  it('rejects duplicate IDs even when names differ', () => {
+    const id = '00000000-0000-4000-a000-000000000099'
+    expect(
+      CustomFieldConfigSchema.safeParse({
+        version: 1,
+        categories: [],
+        fields: [
+          { ...field, id },
+          { ...field, id, name: 'second' },
+        ],
+      }).success,
+    ).toBe(false)
   })
 })

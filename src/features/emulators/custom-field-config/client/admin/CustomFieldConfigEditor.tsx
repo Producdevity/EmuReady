@@ -1,6 +1,6 @@
 'use client'
 
-import { Copy, Download, FileJson, Save } from 'lucide-react'
+import { Copy, FileJson, Save } from 'lucide-react'
 import { useState } from 'react'
 import { Button, Input, Modal, useConfirmDialog } from '@/components/ui'
 import { api } from '@/lib/api'
@@ -19,19 +19,15 @@ interface Props {
 export function CustomFieldConfigEditor(props: Props) {
   const [baseline, setBaseline] = useState(props.snapshot)
   const [json, setJson] = useState(() => JSON.stringify(props.snapshot.configuration, null, 2))
-  const [sourceId, setSourceId] = useState('')
-  const [isLoadingSource, setIsLoadingSource] = useState(false)
   const [isConfirming, setIsConfirming] = useState(false)
   const [error, setError] = useState('')
   const confirm = useConfirmDialog()
-  const utils = api.useUtils()
-  const sources = api.customFieldConfigs.sources.useQuery()
-  const apply = api.customFieldConfigs.save.useMutation()
+  const saveConfig = api.customFieldConfigs.save.useMutation()
   const parsed = parseConfigJson(json)
   const hasChanges = parsed.success
     ? JSON.stringify(parsed.data) !== JSON.stringify(baseline.configuration)
     : json !== JSON.stringify(baseline.configuration, null, 2)
-  const busy = apply.isPending || isLoadingSource || isConfirming
+  const busy = saveConfig.isPending || isConfirming
 
   async function ask(options: Parameters<typeof confirm>[0]) {
     setIsConfirming(true)
@@ -56,46 +52,22 @@ export function CustomFieldConfigEditor(props: Props) {
     props.onClose()
   }
 
-  async function loadSource() {
-    if (!sourceId || busy) return
-    if (
-      hasChanges &&
-      !(await ask({
-        title: 'Replace the JSON draft?',
-        description:
-          'Your unsaved draft will be replaced with the selected emulator’s configuration. No configuration is saved yet.',
-        confirmText: 'Load configuration',
-      }))
-    )
-      return
-    setIsLoadingSource(true)
-    setError('')
-    try {
-      const source = await utils.customFieldConfigs.get.fetch({ emulatorId: sourceId })
-      setJson(JSON.stringify(source.configuration, null, 2))
-    } catch (error) {
-      setError(getErrorMessage(error, 'Could not load the source configuration.'))
-    } finally {
-      setIsLoadingSource(false)
-    }
-  }
-
   async function save() {
     if (!parsed.success || !hasChanges || busy) return
     const approved = await ask({
-      title: `Apply configuration to ${props.emulator.name}?`,
+      title: `Save JSON for ${props.emulator.name}?`,
       description:
-        'Matching field and category names will be updated. New names will be added. Omitted items and existing report values will be kept.',
+        'The JSON replaces this emulator’s field and category setup. Omitted items will be removed. Fields used by reports cannot be removed or changed incompatibly.',
       details: [
         { label: 'Categories', value: String(parsed.data.categories.length) },
         { label: 'Fields', value: String(parsed.data.fields.length) },
       ],
-      confirmText: 'Apply configuration',
+      confirmText: 'Save JSON',
     })
     if (!approved) return
     setError('')
     try {
-      const saved = await apply.mutateAsync({
+      const saved = await saveConfig.mutateAsync({
         emulatorId: props.emulator.id,
         configuration: parsed.data,
         expectedRevision: baseline.revision,
@@ -121,47 +93,10 @@ export function CustomFieldConfigEditor(props: Props) {
     >
       <div className="space-y-4">
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Copy fields and categories from another emulator, or edit the JSON directly. Names
-          identify matching items. Omitted items and report values are kept. Use the field and
-          category controls to delete items.
+          Paste a setup or edit the JSON to change fields, attributes, categories and ordering. Keep
+          existing IDs when renaming items to preserve report values. Omitted items are removed;
+          fields used by reports are protected.
         </p>
-        <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
-          <div className="flex-1">
-            <label htmlFor="config-source" className="block text-sm font-medium mb-1">
-              Copy from emulator
-            </label>
-            <Input
-              as="select"
-              id="config-source"
-              value={sourceId}
-              disabled={busy || sources.isPending || sources.isError}
-              onChange={(event) => setSourceId(event.target.value)}
-            >
-              <option value="">Select an emulator</option>
-              {sources.data
-                ?.filter((source) => source.id !== props.emulator.id)
-                .map((source) => (
-                  <option key={source.id} value={source.id}>
-                    {source.name}
-                  </option>
-                ))}
-            </Input>
-          </div>
-          <Button
-            variant="outline"
-            icon={Download}
-            disabled={!sourceId || busy}
-            isLoading={isLoadingSource}
-            onClick={loadSource}
-          >
-            Load into editor
-          </Button>
-        </div>
-        {sources.isError && (
-          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
-            Could not load emulator choices. You can still paste JSON.
-          </p>
-        )}
         <div>
           <label htmlFor="custom-field-config-json" className="block text-sm font-medium mb-1">
             Configuration JSON
@@ -222,10 +157,10 @@ export function CustomFieldConfigEditor(props: Props) {
           <Button
             icon={Save}
             disabled={!parsed.success || !hasChanges || busy}
-            isLoading={apply.isPending}
+            isLoading={saveConfig.isPending}
             onClick={save}
           >
-            Apply to {props.emulator.name}
+            Save JSON
           </Button>
         </div>
       </div>
