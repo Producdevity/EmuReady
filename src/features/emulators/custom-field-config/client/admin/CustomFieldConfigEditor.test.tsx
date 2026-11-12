@@ -100,6 +100,34 @@ describe('configuration editor', () => {
     expect(mocks.apply).not.toHaveBeenCalled()
   })
 
+  it('accepts complete JSON beyond one million characters without a textarea cap', async () => {
+    showEditor()
+    const configuration = CustomFieldConfigSchema.parse({
+      version: 1,
+      categories: [],
+      fields: Array.from({ length: 101 }, (_, index) => ({
+        name: `field_${index}`,
+        label: `Field ${index}`,
+        type: CustomFieldType.TEXT,
+        defaultValue: 'a'.repeat(10_000),
+      })),
+    })
+    const json = JSON.stringify(configuration)
+    const editor = screen.getByLabelText('Configuration JSON')
+    expect(json.length).toBeGreaterThan(1_000_000)
+    expect(editor).not.toHaveAttribute('maxlength')
+    fireEvent.change(editor, { target: { value: json } })
+    expect(editor).toHaveValue(json)
+    fireEvent.click(screen.getByRole('button', { name: 'Save JSON' }))
+    await waitFor(() =>
+      expect(mocks.apply).toHaveBeenCalledWith({
+        emulatorId: TARGET_ID,
+        expectedRevision: target.revision,
+        configuration,
+      }),
+    )
+  })
+
   it('keeps the draft after a stale-revision error', async () => {
     showEditor()
     pasteJson()

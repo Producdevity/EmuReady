@@ -4,6 +4,7 @@ import { type ConfigEmulatorRecord } from './persistence/config.prisma'
 import {
   ConfigFieldSchema,
   CustomFieldConfigSchema,
+  supportsPlaceholder,
   type CustomFieldConfigSnapshot,
 } from '../shared/config.schemas'
 
@@ -15,8 +16,8 @@ export function toConfigField(field: ConfigEmulatorRecord['customFieldDefinition
     type: field.type,
     category: field.category?.name ?? null,
     options: field.type === CustomFieldType.SELECT ? (field.options ?? []) : [],
-    defaultValue: field.defaultValue,
-    placeholder: field.placeholder,
+    defaultValue: typeof field.defaultValue === 'object' ? null : field.defaultValue,
+    placeholder: supportsPlaceholder(field.type) ? field.placeholder : null,
     rangeMin: field.type === CustomFieldType.RANGE ? field.rangeMin : null,
     rangeMax: field.type === CustomFieldType.RANGE ? field.rangeMax : null,
     rangeUnit: field.type === CustomFieldType.RANGE ? field.rangeUnit : null,

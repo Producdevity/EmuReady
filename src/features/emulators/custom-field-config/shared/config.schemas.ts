@@ -5,6 +5,14 @@ import { CustomFieldType } from '@orm'
 const orderSchema = z.number().int().min(0).max(2_147_483_647)
 const categoryNameSchema = z.string().trim().min(1).max(100)
 
+export function supportsPlaceholder(type: CustomFieldType) {
+  return (
+    type === CustomFieldType.TEXT ||
+    type === CustomFieldType.TEXTAREA ||
+    type === CustomFieldType.URL
+  )
+}
+
 export const ConfigOptionSchema = z
   .object({ value: z.string().min(1).max(500), label: z.string().min(1).max(200) })
   .strict()
@@ -34,6 +42,10 @@ export const ConfigFieldSchema = CreateCustomFieldDefinitionSchema.omit({
   .superRefine((field, ctx) => {
     function issue(path: string, message: string) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: [path], message })
+    }
+
+    if (field.placeholder !== null && !supportsPlaceholder(field.type)) {
+      issue('placeholder', 'Only text, textarea and URL fields support placeholders.')
     }
 
     if (field.type === CustomFieldType.SELECT) {

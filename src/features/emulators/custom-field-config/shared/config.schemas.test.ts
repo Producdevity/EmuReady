@@ -31,6 +31,8 @@ describe('custom field configuration JSON', () => {
     })
     expect(result.fields[0]?.defaultValue).toBe(false)
     expect(result.fields[0]?.categoryOrder).toBe(2)
+    expect(result.fields[0]?.displayOrder).toBe(7)
+    expect(result.categories[0]?.displayOrder).toBe(4)
     expect(result.fields[1]?.defaultValue).toBe(0)
   })
 
@@ -38,6 +40,14 @@ describe('custom field configuration JSON', () => {
     { ...field, id: 'not-a-uuid' },
     { ...field, categoryId: 'foreign-category' },
     { ...field, type: CustomFieldType.BOOLEAN, defaultValue: 'false' },
+    { ...field, type: CustomFieldType.BOOLEAN, placeholder: 'Unsupported' },
+    {
+      ...field,
+      type: CustomFieldType.SELECT,
+      options: [{ value: 'a', label: 'A' }],
+      placeholder: 'Unsupported',
+    },
+    { ...field, type: CustomFieldType.RANGE, rangeMin: 0, rangeMax: 1, placeholder: 'Unsupported' },
     { ...field, type: CustomFieldType.RANGE, rangeMin: 2, rangeMax: 1 },
     { ...field, type: CustomFieldType.RANGE, rangeMin: 0, rangeMax: 1, defaultValue: 2 },
     { ...field, type: CustomFieldType.SELECT, options: [] },

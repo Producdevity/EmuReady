@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { TRPCError } from '@trpc/server'
 import { AppError, ResourceError } from '@/lib/errors'
 import {
@@ -45,6 +46,23 @@ export class CustomFieldConfigRepository extends PrismaRepository {
         return ResourceError.emulator.notFound()
       }
       return AppError.databaseError('apply custom field configuration')
+    }
+  }
+
+  async stageRenames(emulatorId: string, categoryIds: string[], fieldIds: string[]) {
+    for (const id of categoryIds) {
+      await this.prisma.customFieldCategory.update({
+        where: { id, emulatorId },
+        data: { name: `__config_${randomUUID()}` },
+        select: { id: true },
+      })
+    }
+    for (const id of fieldIds) {
+      await this.prisma.customFieldDefinition.update({
+        where: { id, emulatorId },
+        data: { name: `__config_${randomUUID()}` },
+        select: { id: true },
+      })
     }
   }
 

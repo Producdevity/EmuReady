@@ -8,6 +8,7 @@ Open an emulator’s custom fields page and choose **Edit JSON**. Paste a setup 
 
 - The JSON represents the complete configuration. Omitted unused fields and categories are removed.
 - Existing IDs identify fields/categories during edits and renames. Keep those IDs when renaming items.
+- Names can be swapped between existing fields or categories in one save.
 - Pasted items without a matching destination ID are matched by name or created with fresh IDs. IDs from another emulator are never used to modify its records.
 - Field IDs and existing Handheld/PC Report values are preserved when updating or renaming fields.
 - Removing fields with report values is blocked. Incompatible type changes, removed select options, and narrower ranges are also blocked for populated fields.
@@ -44,6 +45,8 @@ Categories include empty groups. `displayOrder` controls category/global field o
 ```
 
 The editor includes an `id` for each existing field and category. New items may omit it. Range fields use `rangeMin`, `rangeMax`, `rangeUnit`, and `rangeDecimals`. Text/URL fields may use `placeholder`. Boolean and numeric defaults retain their JSON types, including `false` and `0`. Unknown properties, duplicate names/IDs/options, ambiguous matches, dangling categories, invalid defaults, and invalid ranges are rejected.
+
+Persisted object/array defaults are exported as `null`, matching the existing field form. Placeholders on non-text fields are omitted as `null`; new JSON permits placeholders only on Text, Textarea and URL fields.
 
 ## Implementation and verification
 

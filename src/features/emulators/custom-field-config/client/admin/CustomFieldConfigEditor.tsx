@@ -106,7 +106,6 @@ export function CustomFieldConfigEditor(props: Props) {
             id="custom-field-config-json"
             value={json}
             rows={18}
-            maxLength={1_000_000}
             spellCheck={false}
             disabled={busy}
             aria-invalid={!parsed.success}

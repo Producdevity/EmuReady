@@ -26,10 +26,15 @@ function setup() {
     .spyOn(repository, 'transaction')
     .mockImplementation((operation) => operation(repository))
   const get = vi.spyOn(repository, 'getEmulator').mockResolvedValue(record)
-  const saveCategory = vi.spyOn(repository, 'saveCategory').mockResolvedValue({ id: CATEGORY_ID })
+  const saveCategory = vi
+    .spyOn(repository, 'saveCategory')
+    .mockImplementation(async (_emulatorId, category, existingId) => ({
+      id: existingId ?? `destination-${category.name}`,
+    }))
   const saveField = vi.spyOn(repository, 'saveField').mockResolvedValue({ id: FIELD_ID })
   const removeFields = vi.spyOn(repository, 'removeFields').mockResolvedValue(undefined)
   const removeCategories = vi.spyOn(repository, 'removeCategories').mockResolvedValue(undefined)
+  const stageRenames = vi.spyOn(repository, 'stageRenames').mockResolvedValue(undefined)
   const input: SaveCustomFieldConfig = {
     emulatorId: TARGET_ID,
     configuration: toConfigSnapshot(record).configuration,
@@ -44,6 +49,7 @@ function setup() {
     saveField,
     removeFields,
     removeCategories,
+    stageRenames,
     input,
     service: new CustomFieldConfigService(repository),
   }
@@ -65,14 +71,24 @@ describe('custom field configuration service', () => {
 
   it('maps pasted categories to destination IDs and removes omitted unused fields', async () => {
     const s = setup()
+    s.input.configuration.categories = [
+      { name: 'Video', displayOrder: 2 },
+      { name: 'Audio', displayOrder: 3 },
+    ]
     s.input.configuration.fields = [
       ConfigFieldSchema.parse({
         name: 'new_field',
         label: 'New',
         type: CustomFieldType.BOOLEAN,
         defaultValue: false,
-        category: 'Graphics',
+        category: 'Video',
         categoryOrder: 3,
+      }),
+      ConfigFieldSchema.parse({
+        name: 'audio_backend',
+        label: 'Audio backend',
+        type: CustomFieldType.TEXT,
+        category: 'Audio',
       }),
     ]
     await s.service.save(actor, s.input)
@@ -80,7 +96,13 @@ describe('custom field configuration service', () => {
     expect(s.saveField).toHaveBeenCalledWith(
       TARGET_ID,
       expect.objectContaining({ name: 'new_field', defaultValue: false, categoryOrder: 3 }),
-      CATEGORY_ID,
+      'destination-Video',
+      undefined,
+    )
+    expect(s.saveField).toHaveBeenCalledWith(
+      TARGET_ID,
+      expect.objectContaining({ name: 'audio_backend' }),
+      'destination-Audio',
       undefined,
     )
     expect(s.removeFields).toHaveBeenCalledWith(TARGET_ID, [FIELD_ID])
@@ -106,11 +128,17 @@ describe('custom field configuration service', () => {
       { code: 'FORBIDDEN' },
     )
     expect(s.saveCategory).not.toHaveBeenCalled()
+    await expect(
+      s.service.get({ ...actor, role: Role.DEVELOPER }, TARGET_ID),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' })
   })
 
   it('allows verified developers using the authenticated actor ID', async () => {
     const s = setup()
     s.record.verifiedDevelopers = [{ userId: actor.userId }]
+    await expect(s.service.get({ ...actor, role: Role.DEVELOPER }, TARGET_ID)).resolves.toEqual(
+      toConfigSnapshot(s.record),
+    )
     await s.service.save({ ...actor, role: Role.DEVELOPER }, s.input)
     expect(s.saveField).toHaveBeenCalledOnce()
   })
@@ -204,6 +232,13 @@ describe('custom field configuration service', () => {
     category.name = 'Video'
     category.displayOrder = 2
     await s.service.save(actor, s.input)
+    expect(s.stageRenames).toHaveBeenCalledWith(TARGET_ID, [CATEGORY_ID], [FIELD_ID])
+    expect(s.stageRenames.mock.invocationCallOrder[0]).toBeLessThan(
+      s.saveCategory.mock.invocationCallOrder[0] ?? 0,
+    )
+    expect(s.stageRenames.mock.invocationCallOrder[0]).toBeLessThan(
+      s.saveField.mock.invocationCallOrder[0] ?? 0,
+    )
     expect(s.removeFields).toHaveBeenCalledWith(TARGET_ID, [])
     expect(s.saveCategory).toHaveBeenCalledWith(
       TARGET_ID,
@@ -271,4 +306,18 @@ describe('custom field configuration service', () => {
     )
     expect(s.saveField).toHaveBeenCalledWith(TARGET_ID, field, null, FIELD_ID)
   })
+
+  it.each([{ value: 'vulkan' }, ['vulkan']])(
+    'exports invalid persisted object defaults as null like the field form',
+    async (defaultValue) => {
+      const s = setup()
+      const field = s.record.customFieldDefinitions[0]
+      if (!field) throw new Error('Missing test field')
+      field.defaultValue = defaultValue
+      field.placeholder = 'Unused select placeholder'
+      const snapshot = await s.service.get(actor, TARGET_ID)
+      expect(snapshot.configuration.fields[0]?.defaultValue).toBeNull()
+      expect(snapshot.configuration.fields[0]?.placeholder).toBeNull()
+    },
+  )
 })

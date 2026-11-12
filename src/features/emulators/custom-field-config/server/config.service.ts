@@ -3,7 +3,7 @@ import { requireActorPermission, type Actor } from '@/server/auth/actor'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { CustomFieldType } from '@orm'
 import { toConfigField, toConfigSnapshot } from './config.mapper'
-import { assertCanApplyConfig } from './config.policy'
+import { assertCanManageConfig } from './config.policy'
 import { type CustomFieldConfigRepository } from './config.repository'
 import { type SaveCustomFieldConfig, type ConfigField } from '../shared/config.schemas'
 
@@ -60,6 +60,7 @@ export class CustomFieldConfigService {
     requireActorPermission(actor, PERMISSIONS.MANAGE_CUSTOM_FIELDS)
     const emulator = await this.repository.getEmulator(emulatorId)
     if (!emulator) return ResourceError.emulator.notFound()
+    assertCanManageConfig(actor, emulator)
     return toConfigSnapshot(emulator)
   }
 
@@ -68,7 +69,7 @@ export class CustomFieldConfigService {
     return this.repository.transaction(async (repository) => {
       const emulator = await repository.getEmulator(input.emulatorId)
       if (!emulator) return ResourceError.emulator.notFound()
-      assertCanApplyConfig(actor, emulator)
+      assertCanManageConfig(actor, emulator)
       const snapshot = toConfigSnapshot(emulator)
       if (snapshot.revision !== input.expectedRevision) {
         return AppError.conflict(
@@ -102,6 +103,15 @@ export class CustomFieldConfigService {
       await repository.removeCategories(
         input.emulatorId,
         categories.removed.map((category) => category.id),
+      )
+      await repository.stageRenames(
+        input.emulatorId,
+        categories.items.flatMap((item) =>
+          item.previous && item.previous.name !== item.value.name ? [item.previous.id] : [],
+        ),
+        fields.items.flatMap((item) =>
+          item.previous && item.previous.name !== item.value.name ? [item.previous.id] : [],
+        ),
       )
       const categoryIds = new Map<string, string>()
       for (const category of categories.items) {
