@@ -401,6 +401,8 @@ export class ResourceError {
       AppError.forbidden('You can only approve PC listings for emulators you are verified for'),
     mustBeVerifiedToReject: () =>
       AppError.forbidden('You can only reject PC listings for emulators you are verified for'),
+    cannotApproveBannedUser: (banReason: string) =>
+      AppError.badRequest(`Cannot approve PC report: Author is currently banned (${banReason})`),
     bulkAlreadyProcessed: () =>
       AppError.conflict('Some selected PC reports were already processed. Refresh and try again.'),
   }

@@ -18,6 +18,7 @@ import { CommentsRepository } from '@/server/repositories/comments.repository'
 import { logAudit } from '@/server/services/audit.service'
 import { ListingCommentService } from '@/server/services/listing-comment.service'
 import { isUserBanned } from '@/server/utils/query-builders'
+import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { handleCommentVoteTrustEffects } from '@/server/utils/vote-trust-effects'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { canDeleteComment, canEditComment } from '@/utils/permissions'
@@ -254,7 +255,8 @@ export const commentsRouter = createTRPCRouter({
     // the same user could both read null and both attempt to insert,
     // producing a Prisma P2002 on the second. Keeping the read and write
     // under the same isolation avoids the race.
-    return await ctx.prisma.$transaction(async (tx) => {
+    const trustChanges: TrustScoreChange[] = []
+    const result = await ctx.prisma.$transaction(async (tx) => {
       const existingVote = await tx.commentVote.findUnique({
         where: { userId_commentId: { userId, commentId } },
       })
@@ -303,6 +305,7 @@ export const commentsRouter = createTRPCRouter({
       if (trustActionNeeded) {
         await handleCommentVoteTrustEffects({
           tx,
+          trustChanges,
           trustAction: trustActionNeeded,
           newValue: value,
           previousValue: existingVote?.value ?? null,
@@ -341,6 +344,8 @@ export const commentsRouter = createTRPCRouter({
 
       return voteResult
     })
+    for (const change of trustChanges) trackTrustScoreChange(change)
+    return result
   }),
 
   pinComment: protectedProcedure.input(PinCommentSchema).mutation(async ({ ctx, input }) => {
