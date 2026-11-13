@@ -103,6 +103,7 @@ export const CHAR_LIMITS = {
 export type PlatformKey =
   | 'apple_ios'
   | 'microsoft_windows'
+  | 'microsoft_windows_phone'
   | 'microsoft_xbox'
   | 'microsoft_xbox_360'
   | 'microsoft_xbox_one'
@@ -120,6 +121,7 @@ export type PlatformKey =
   | 'nintendo_switch_2'
   | 'nintendo_wii'
   | 'nintendo_wii_u'
+  | 'pico_8'
   | 'sega_dreamcast'
   | 'sega_gamegear'
   | 'sega_genesis'
@@ -138,6 +140,7 @@ export const PLATFORM_MAPPINGS: PlatformMappings = {
   tgdb: {
     apple_ios: 4915,
     microsoft_windows: 1,
+    microsoft_windows_phone: null,
     microsoft_xbox: 14,
     microsoft_xbox_360: 15,
     microsoft_xbox_one: 4920,
@@ -155,6 +158,7 @@ export const PLATFORM_MAPPINGS: PlatformMappings = {
     nintendo_switch_2: 5021,
     nintendo_wii: 9,
     nintendo_wii_u: 38,
+    pico_8: null,
     sega_dreamcast: 16,
     sega_gamegear: 20,
     sega_genesis: 36,
@@ -170,6 +174,7 @@ export const PLATFORM_MAPPINGS: PlatformMappings = {
   igdb: {
     apple_ios: 39,
     microsoft_windows: 6,
+    microsoft_windows_phone: 74,
     microsoft_xbox: 11,
     microsoft_xbox_360: 12,
     microsoft_xbox_one: 49,
@@ -187,6 +192,7 @@ export const PLATFORM_MAPPINGS: PlatformMappings = {
     nintendo_switch_2: 508,
     nintendo_wii: 5,
     nintendo_wii_u: 41,
+    pico_8: null,
     sega_dreamcast: 23,
     sega_gamegear: 35,
     sega_genesis: 29,
@@ -202,6 +208,7 @@ export const PLATFORM_MAPPINGS: PlatformMappings = {
   rawg: {
     apple_ios: 3,
     microsoft_windows: 4,
+    microsoft_windows_phone: null,
     microsoft_xbox: 80,
     microsoft_xbox_360: 14,
     microsoft_xbox_one: 1,
@@ -219,6 +226,7 @@ export const PLATFORM_MAPPINGS: PlatformMappings = {
     nintendo_switch_2: null,
     nintendo_wii: 11,
     nintendo_wii_u: 10,
+    pico_8: null,
     sega_dreamcast: null,
     sega_gamegear: null,
     sega_genesis: null,

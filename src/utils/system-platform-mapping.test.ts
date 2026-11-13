@@ -41,3 +41,40 @@ describe('Nintendo Switch platform mappings', () => {
     expect(getRAWGPlatformId('iOS')).toBe(3)
   })
 })
+
+describe('requested mobile and fantasy-console platforms', () => {
+  it.each(['Windows Phone', 'Microsoft Windows Phone', 'Windows Phone 8.1'])(
+    'keeps %s separate from desktop Windows',
+    (name) => {
+      expect(getIGDBPlatformId(name)).toBe(74)
+      expect(getIGDBPlatformId({ key: 'microsoft_windows_phone', name })).toBe(74)
+      expect(getTGDBPlatformId(name)).toBeNull()
+      expect(getRAWGPlatformId(name)).toBeNull()
+      expect(
+        buildGamesSearchQuery({
+          query: 'Halo: Spartan Assault',
+          platformId: getIGDBPlatformId(name),
+          limit: 10,
+          includeAllCategories: false,
+        }),
+      ).toContain('platforms = [74]')
+    },
+  )
+
+  it.each(['PICO-8', 'PICO 8', 'PICO8'])(
+    'recognizes %s without assigning an unrelated provider platform',
+    (name) => {
+      expect(systemNameToPlatformKey(name)).toBe('pico_8')
+      expect(getIGDBPlatformId(name)).toBeNull()
+      expect(getIGDBPlatformId({ key: 'pico_8', name })).toBeNull()
+      expect(getTGDBPlatformId(name)).toBeNull()
+      expect(getRAWGPlatformId(name)).toBeNull()
+    },
+  )
+
+  it('retains desktop Windows provider mappings', () => {
+    expect(getIGDBPlatformId('Microsoft Windows')).toBe(6)
+    expect(getTGDBPlatformId('Microsoft Windows')).toBe(1)
+    expect(getRAWGPlatformId('Microsoft Windows')).toBe(4)
+  })
+})
