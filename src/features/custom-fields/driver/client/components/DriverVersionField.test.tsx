@@ -60,7 +60,7 @@ it('submits a custom graphics-driver name instead of a fixed dropdown option', a
   const user = userEvent.setup()
   render(<Form />)
   await user.click(screen.getByLabelText('Graphics Driver *'))
-  await user.click(await screen.findByRole('option', { name: /Custom driver/i }))
+  await user.click(await screen.findByRole('button', { name: 'Enter a custom driver' }))
   const input = screen.getByLabelText('Graphics Driver *')
   expect(input).toHaveFocus()
   await user.type(input, 'StevenMXZ Turnip 8xx V15')
@@ -79,7 +79,7 @@ it('keeps custom entry available while the driver catalog is loading', async () 
   const user = userEvent.setup()
   render(<Form />)
   await user.click(screen.getByLabelText('Graphics Driver *'))
-  await user.click(await screen.findByRole('option', { name: /Custom driver/i }))
+  await user.click(await screen.findByRole('button', { name: 'Enter a custom driver' }))
   await user.type(screen.getByLabelText('Graphics Driver *'), 'Custom GPU driver')
   await user.click(screen.getByRole('button', { name: 'Submit' }))
   await waitFor(() =>
@@ -107,7 +107,7 @@ it('requires an actual driver name instead of submitting the custom-choice marke
   const user = userEvent.setup()
   render(<Form />)
   await user.click(screen.getByLabelText('Graphics Driver *'))
-  await user.click(await screen.findByRole('option', { name: /Custom driver/i }))
+  await user.click(await screen.findByRole('button', { name: 'Enter a custom driver' }))
   await user.click(screen.getByRole('button', { name: 'Submit' }))
   await screen.findByText('Graphics Driver is required')
   expect(screen.getByLabelText('Saved driver value')).toBeEmptyDOMElement()
@@ -139,7 +139,7 @@ it('does not rewrite explicit custom text when a matching release arrives', asyn
   const user = userEvent.setup()
   const view = render(<Form />)
   await user.click(screen.getByLabelText('Graphics Driver *'))
-  await user.click(await screen.findByRole('option', { name: /Custom driver/i }))
+  await user.click(await screen.findByRole('button', { name: 'Enter a custom driver' }))
   await user.type(screen.getByLabelText('Graphics Driver *'), 'known.zip')
   releases = [knownRelease]
   view.rerender(<Form />)
@@ -156,7 +156,7 @@ it('shows newly loaded releases in an already opened catalog', async () => {
   const user = userEvent.setup()
   const view = render(<Form />)
   await user.click(screen.getByLabelText('Graphics Driver *'))
-  await screen.findByRole('option', { name: /Custom driver/i })
+  await screen.findByRole('option', { name: 'Default System Driver' })
   releases = [knownRelease]
   loading = false
   view.rerender(<Form />)
@@ -191,4 +191,22 @@ it('focuses and describes the listed-driver control when validation fails', asyn
   expect(input).toHaveAttribute('aria-invalid', 'true')
   expect(input).toHaveAttribute('aria-describedby', error.id)
   expect(input).toHaveClass('border-red-300')
+})
+
+it('keeps custom entry available after an unmatched catalog search', async () => {
+  const user = userEvent.setup()
+  render(<Form />)
+  await user.type(screen.getByRole('combobox'), 'Unlisted experimental GPU')
+  await waitFor(() =>
+    expect(screen.queryByRole('option', { name: /Default System Driver/ })).not.toBeInTheDocument(),
+  )
+  await user.click(await screen.findByText(/^(Custom driver…|Enter a custom driver)$/))
+  await user.type(screen.getByLabelText('Graphics Driver *'), 'Unlisted experimental GPU')
+  await user.click(screen.getByRole('button', { name: 'Submit' }))
+  await waitFor(() =>
+    expect(mocks.submit).toHaveBeenCalledWith(
+      { driver: 'Unlisted experimental GPU' },
+      expect.anything(),
+    ),
+  )
 })

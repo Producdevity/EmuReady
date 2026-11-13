@@ -7,7 +7,6 @@ const baseOptions = [
   { label: 'Select for Non-Android Device', value: 'N/A', name: 'Select for Non-Android Device' },
   { label: 'Default System Driver', value: 'Default System Driver', name: 'Default System Driver' },
 ]
-const customOption = { label: 'Custom driver…', value: '__custom_driver__', name: 'Custom driver' }
 type DriverOption = DriverRelease | (typeof baseOptions)[number]
 
 interface Props {
@@ -27,12 +26,12 @@ export function DriverVersionInput(props: Props) {
   const { inputRef, ...input } = props
   const [customSelected, setCustomSelected] = useState(false)
   const options = useMemo(
-    () => [...baseOptions, ...(input.driverReleases ?? []), customOption],
+    () => [...baseOptions, ...(input.driverReleases ?? [])],
     [input.driverReleases],
   )
   const canonicalValue = reconcileDriverValue(input.value, input.driverReleases)
   const listedValue = canonicalValue ?? input.value
-  const isListed = options.some((option) => option !== customOption && option.value === listedValue)
+  const isListed = options.some((option) => option.value === listedValue)
   const customMode = customSelected || (input.value !== '' && !isListed)
   const onChange = input.onChange
 
@@ -75,30 +74,36 @@ export function DriverVersionInput(props: Props) {
   }
 
   return (
-    <Autocomplete<DriverOption>
-      id={input.id}
-      value={listedValue}
-      onChange={(value) => {
-        if (value === customOption.value) {
+    <div className="space-y-2">
+      <Autocomplete<DriverOption>
+        id={input.id}
+        value={listedValue}
+        onChange={(value) => onChange(value ?? '')}
+        onBlur={input.onBlur}
+        items={options}
+        inputRef={inputRef}
+        leftIcon={input.leftIcon}
+        optionToValue={(option) => option.value}
+        optionToLabel={(option) => option.label}
+        minCharsToTrigger={0}
+        debounceTime={300}
+        placeholder={input.placeholder}
+        inputClassName={input.className}
+        aria-describedby={input.errorId}
+        aria-invalid={input.errorId ? true : undefined}
+        filterKeys={['name', 'label', 'value']}
+      />
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => {
           setCustomSelected(true)
           onChange(isListed ? '' : input.value)
-        } else {
-          onChange(value ?? '')
-        }
-      }}
-      onBlur={input.onBlur}
-      items={options}
-      inputRef={inputRef}
-      leftIcon={input.leftIcon}
-      optionToValue={(option) => option.value}
-      optionToLabel={(option) => option.label}
-      minCharsToTrigger={0}
-      debounceTime={300}
-      placeholder={input.placeholder}
-      inputClassName={input.className}
-      aria-describedby={input.errorId}
-      aria-invalid={input.errorId ? true : undefined}
-      filterKeys={['name', 'label', 'value']}
-    />
+        }}
+      >
+        Enter a custom driver
+      </Button>
+    </div>
   )
 }
