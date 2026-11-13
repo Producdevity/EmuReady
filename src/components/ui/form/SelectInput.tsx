@@ -7,6 +7,7 @@ interface Option {
 }
 
 interface Props {
+  id?: string
   leftIcon?: ReactNode
   label: string
   hideLabel?: boolean
@@ -19,8 +20,13 @@ interface Props {
 export function SelectInput(props: Props) {
   return (
     <div>
-      {!props.hideLabel && <label className="block mb-1 font-medium">{props.label}</label>}
+      {!props.hideLabel && (
+        <label htmlFor={props.id} className="block mb-1 font-medium">
+          {props.label}
+        </label>
+      )}
       <Input
+        id={props.id}
         leftIcon={props.leftIcon}
         name={props.label}
         as="select"
