@@ -3,6 +3,7 @@ import { prisma } from '@/server/db'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { CustomFieldType, Role } from '@orm'
 import { toConfigSnapshot } from './config.mapper'
+import { CustomFieldConfigRepository } from './config.repository'
 import { CustomFieldConfigService } from './config.service'
 import { configRecord, TARGET_ID } from '../tests/fixtures'
 
@@ -36,6 +37,63 @@ describe('configuration transport', () => {
     const snapshot = toConfigSnapshot(configRecord())
     vi.spyOn(CustomFieldConfigService.prototype, 'get').mockResolvedValue(snapshot)
     await expect(caller().get({ emulatorId: TARGET_ID })).resolves.toEqual(snapshot)
+  })
+
+  it.each(['get', 'save'] as const)(
+    'names invalid stored fields in a BAD_REQUEST from %s',
+    async (operation) => {
+      const record = configRecord()
+      const snapshot = toConfigSnapshot(record)
+      const field = record.customFieldDefinitions[0]
+      if (!field) throw new Error('Missing custom field fixture')
+      field.defaultValue = 'removed-option'
+      vi.spyOn(CustomFieldConfigRepository.prototype, 'getEmulator').mockResolvedValue(record)
+      const saveField = vi.spyOn(CustomFieldConfigRepository.prototype, 'saveField')
+      const saveCategory = vi.spyOn(CustomFieldConfigRepository.prototype, 'saveCategory')
+      const request =
+        operation === 'get'
+          ? caller().get({ emulatorId: TARGET_ID })
+          : caller().save({
+              emulatorId: TARGET_ID,
+              expectedRevision: snapshot.revision,
+              configuration: snapshot.configuration,
+            })
+
+      await expect(request).rejects.toMatchObject({
+        code: 'BAD_REQUEST',
+        message: expect.stringContaining(field.name),
+      })
+      expect(saveField).not.toHaveBeenCalled()
+      expect(saveCategory).not.toHaveBeenCalled()
+    },
+  )
+
+  it('names invalid stored categories instead of returning an internal error', async () => {
+    const record = configRecord()
+    const category = record.customFieldCategories[0]
+    if (!category) throw new Error('Missing custom field category fixture')
+    category.name = 'x'.repeat(101)
+    vi.spyOn(CustomFieldConfigRepository.prototype, 'getEmulator').mockResolvedValue(record)
+
+    await expect(caller().get({ emulatorId: TARGET_ID })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: expect.stringContaining(category.name),
+    })
+  })
+
+  it('identifies the emulator when stored configuration violates cross-field rules', async () => {
+    const record = configRecord()
+    record.customFieldCategories.push({
+      id: '00000000-0000-4000-a000-000000000099',
+      name: 'Graphics',
+      displayOrder: 2,
+    })
+    vi.spyOn(CustomFieldConfigRepository.prototype, 'getEmulator').mockResolvedValue(record)
+
+    await expect(caller().get({ emulatorId: TARGET_ID })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: expect.stringContaining(TARGET_ID),
+    })
   })
 
   it('requires the management permission', async () => {

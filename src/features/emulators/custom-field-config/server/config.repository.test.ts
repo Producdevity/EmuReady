@@ -29,6 +29,18 @@ describe('configuration persistence', () => {
     })
   })
 
+  it('preserves an unexpected database failure as the configuration error cause', async () => {
+    const cause = new Error('Connection closed during commit')
+    database.$transaction.mockRejectedValue(cause)
+    const repository = new CustomFieldConfigRepository(prisma)
+
+    await expect(repository.transaction(async () => undefined)).rejects.toMatchObject({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Database error during apply custom field configuration',
+      cause,
+    })
+  })
+
   it('preserves field identity and false values, and clears nullable settings explicitly', async () => {
     const repository = new CustomFieldConfigRepository(prisma)
     const field = ConfigFieldSchema.parse({

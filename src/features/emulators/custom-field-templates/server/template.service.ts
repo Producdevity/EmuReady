@@ -1,6 +1,6 @@
 import { type z } from 'zod'
 import { AppError, ResourceError } from '@/lib/errors'
-import { createMutationSuccess } from '@/schemas/common'
+import { createMutationSuccess, SignedInt32Schema } from '@/schemas/common'
 import { type Actor } from '@/server/auth/actor'
 import { parseStoredTemplateField } from './template.mapper'
 import { assertCanReadTemplates, assertCanWriteTemplates } from './template.policy'
@@ -96,6 +96,22 @@ export class CustomFieldTemplateService {
           (max, field) => Math.max(max, field.displayOrder),
           -1,
         ) + 1
+      const newCategoryCount = new Set(
+        fields.flatMap((field) =>
+          field.categoryName && !categories.has(field.categoryName) ? [field.categoryName] : [],
+        ),
+      ).size
+      if (!SignedInt32Schema.safeParse(displayOrder + fields.length - 1).success)
+        return AppError.badRequest(
+          'Custom field ordering has no remaining space. Reorder existing fields before applying templates.',
+        )
+      if (
+        newCategoryCount > 0 &&
+        !SignedInt32Schema.safeParse(categoryOrder + newCategoryCount - 1).success
+      )
+        return AppError.badRequest(
+          'Category ordering has no remaining space. Reorder existing categories before applying templates.',
+        )
       for (const field of fields) {
         if (field.categoryName && !categories.has(field.categoryName)) {
           const category = await repository.createCategory(
