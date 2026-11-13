@@ -20,7 +20,7 @@ export const GetPcListingsSchema = z.object({
   memoryMin: z.number().int().positive().optional(),
   memoryMax: z.number().int().positive().optional(),
   searchTerm: z.string().optional(),
-  page: z.number().int().positive().default(1),
+  page: z.number().int().positive().safe().default(1),
   limit: z.number().int().positive().max(PAGINATION.PUBLIC_MAX_LIMIT_PC_LISTINGS).default(10),
   sortField: z
     .enum([

@@ -49,15 +49,19 @@ beforeEach(() => {
 })
 
 describe.each(catalogs)('$name pagination boundary', (catalog) => {
-  it.each([{ page: 1.5 }, { limit: 1.5 }, { page: -1 }, { limit: 0 }])(
-    'rejects %j before querying Prisma',
-    async (input) => {
-      await expect(catalog.get(input)).rejects.toMatchObject({ code: 'BAD_REQUEST' })
-      for (const read of [...Object.values(reads), ...Object.values(counts)]) {
-        expect(read).not.toHaveBeenCalled()
-      }
-    },
-  )
+  it.each([
+    { page: 1.5 },
+    { limit: 1.5 },
+    { page: -1 },
+    { limit: 0 },
+    { page: 1e40 },
+    { page: Number.MAX_SAFE_INTEGER + 1 },
+  ])('rejects %j before querying Prisma', async (input) => {
+    await expect(catalog.get(input)).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+    for (const read of [...Object.values(reads), ...Object.values(counts)]) {
+      expect(read).not.toHaveBeenCalled()
+    }
+  })
 
   it('rejects an excessive limit before querying Prisma', async () => {
     await expect(catalog.get({ limit: catalog.maxLimit + 1 })).rejects.toMatchObject({
@@ -83,14 +87,17 @@ describe.each(catalogs)('$name pagination boundary', (catalog) => {
   })
 })
 
-it.each([-1, 0.5])('rejects the game offset %s before querying Prisma', async (offset) => {
-  await expect(gamesRouter.createCaller(context).get({ offset })).rejects.toMatchObject({
-    code: 'BAD_REQUEST',
-  })
-  for (const read of [...Object.values(reads), ...Object.values(counts)]) {
-    expect(read).not.toHaveBeenCalled()
-  }
-})
+it.each([-1, 0.5, 1e40, Number.MAX_SAFE_INTEGER + 1])(
+  'rejects the game offset %s before querying Prisma',
+  async (offset) => {
+    await expect(gamesRouter.createCaller(context).get({ offset })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    })
+    for (const read of [...Object.values(reads), ...Object.values(counts)]) {
+      expect(read).not.toHaveBeenCalled()
+    }
+  },
+)
 
 it('preserves the games limit when the entire input is omitted', async () => {
   await gamesRouter.createCaller(context).get()

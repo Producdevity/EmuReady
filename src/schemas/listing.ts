@@ -17,7 +17,7 @@ export const GetListingsSchema = z.object({
   emulatorIds: z.array(z.string().uuid()).nullable().optional(),
   performanceIds: z.array(z.number()).nullable().optional(),
   searchTerm: z.string().nullable().optional(),
-  page: z.number().int().positive().default(1),
+  page: z.number().int().positive().safe().default(1),
   limit: z.number().int().positive().max(PAGINATION.PUBLIC_MAX_LIMIT_LISTINGS).default(10),
   sortField: z
     .enum([

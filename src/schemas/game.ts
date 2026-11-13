@@ -38,8 +38,8 @@ export const GetGamesSchema = z
     hideGamesWithNoListings: z.boolean().optional().default(false), // Keep for backward compatibility
     listingFilter: GameListingFilter.nullable().optional().default('withListings'),
     limit: z.number().int().positive().max(PAGINATION.MAX_LIMIT).default(100),
-    offset: z.number().int().min(0).default(0),
-    page: z.number().int().positive().optional(),
+    offset: z.number().int().min(0).safe().default(0),
+    page: z.number().int().positive().safe().optional(),
     sortField: GameSortField.nullable().optional(),
     sortDirection: SortDirectionSchema.nullable().optional(),
   })
