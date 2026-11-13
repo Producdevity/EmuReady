@@ -5,6 +5,10 @@
  * to avoid hardcoding values throughout transform functions
  */
 
+import {
+  DEFAULT_RESOLUTION_SETUP,
+  parseEdenResolutionMultiplier,
+} from '@/shared/emulator-config/eden/resolution'
 import type {
   CpuBackend,
   CpuAccuracy,
@@ -31,9 +35,6 @@ export const DEFAULT_CPU_ACCURACY: CpuAccuracy = 0 // Auto
 // Default GPU settings
 export const DEFAULT_GPU_BACKEND: GpuBackend = 1 // Vulkan
 export const DEFAULT_GPU_ACCURACY: GpuAccuracy = 0 // Normal
-
-// Default resolution (native 1x)
-export const DEFAULT_RESOLUTION_SETUP: ResolutionSetup = 2
 
 // Default rendering settings
 export const DEFAULT_SCALING_FILTER: ScalingFilter = 1 // Bilinear
@@ -165,36 +166,6 @@ export const AUDIO_OUTPUT_ENGINE_MAPPING: Record<string, AudioOutputEngine> = {
   Null: 3,
 }
 
-export const RESOLUTION_MULTIPLIER_MAPPING: Record<string, ResolutionSetup> = {
-  '0.25': 0,
-  '0.25x': 0,
-  '0.5': 0,
-  '0.5x': 0,
-  '0.75': 1,
-  '0.75x': 1,
-  '1x': 2,
-  native: 2,
-  '1': 2,
-  '1.0': 2,
-  '1.0x': 2,
-  '1.5': 3,
-  '1.5x': 3,
-  '2': 4,
-  '2x': 4,
-  '3': 5,
-  '3x': 5,
-  '4': 6,
-  '4x': 6,
-  '5': 7,
-  '5x': 7,
-  '6': 8,
-  '6x': 8,
-  '7': 9,
-  '7x': 9,
-  '8': 10,
-  '8x': 10,
-}
-
 // Values that indicate no custom GPU driver should be used
 export const NO_DRIVER_VALUES = [
   'N/A',
@@ -258,7 +229,7 @@ export const DEFAULT_CONFIG: Required<EdenConfig> = {
     nvdec_emulation: { use_global: true, value: 1 }, // CPU decoding
     fullscreen_mode: { use_global: true, value: 0 },
     aspect_ratio: { use_global: true, value: 0 }, // Default 16:9
-    resolution_setup: { use_global: true, value: 2 }, // 1x
+    resolution_setup: { use_global: true, value: DEFAULT_RESOLUTION_SETUP },
     scaling_filter: { use_global: true, value: 1 }, // Bilinear
     anti_aliasing: { use_global: true, value: 0 }, // None
     fsr_sharpening_slider: { use_global: true, value: 80 },
@@ -351,34 +322,7 @@ export const EdenDefaults = {
   },
 
   // Resolution parsing helpers
-  parseResolutionMultiplier: (value: string): ResolutionSetup | null => {
-    const resStr = value.trim().toLowerCase()
-
-    // Direct mapping lookup
-    if (RESOLUTION_MULTIPLIER_MAPPING[resStr] !== undefined) {
-      return RESOLUTION_MULTIPLIER_MAPPING[resStr]
-    }
-
-    // Pattern matching for multipliers like "2.5x"
-    const multiplierMatch = resStr.match(/^(\d+(?:\.\d+)?)\s*x(?:\s|$|\()/i)
-    if (multiplierMatch) {
-      const multiplier = parseFloat(multiplierMatch[1])
-      // Find closest match
-      if (multiplier <= 0.5) return 0
-      if (multiplier <= 0.75) return 1
-      if (multiplier <= 1.25) return 2
-      if (multiplier <= 1.75) return 3
-      if (multiplier <= 2.5) return 4
-      if (multiplier <= 3.5) return 5
-      if (multiplier <= 4.5) return 6
-      if (multiplier <= 5.5) return 7
-      if (multiplier <= 6.5) return 8
-      if (multiplier <= 7.5) return 9
-      return 10 as ResolutionSetup
-    }
-
-    return null
-  },
+  parseResolutionMultiplier: parseEdenResolutionMultiplier,
 
   isPixelResolution: (value: string): boolean => {
     const resStr = value.trim().toLowerCase()
