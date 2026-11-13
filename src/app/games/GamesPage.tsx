@@ -162,7 +162,7 @@ function GamesContent() {
         <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
           Games Library
         </h1>
-        {user && (
+        {user && userQuery.data && (
           <Button asChild variant="fancy">
             <Link href={addGameHref}>Add Game</Link>
           </Button>
@@ -211,7 +211,7 @@ function GamesContent() {
           />
         )}
 
-        {user && (
+        {user && userQuery.data && (
           <div className="mt-12 text-center">
             <Link
               href={addGameHref}

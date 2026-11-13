@@ -40,6 +40,7 @@ export class GamesPage extends BasePage {
   }
 
   async clickAddGame() {
+    await expect(this.addGameButton).toHaveAttribute('href', '/games/new')
     await this.addGameButton.click()
     await expect(this.page).toHaveURL('/games/new')
   }
