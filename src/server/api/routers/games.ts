@@ -1,3 +1,4 @@
+import { PAGINATION } from '@/data/constants'
 import { GameModerationRepository } from '@/features/games/moderation/server/game-moderation.repository'
 import {
   GameModerationService,
@@ -57,7 +58,6 @@ import { gameStatsCache } from '@/server/utils/cache'
 import { buildOrderBy, paginate } from '@/server/utils/pagination'
 import { isPrismaError, PRISMA_ERROR_CODES } from '@/server/utils/prisma-errors'
 import { buildSearchFilter } from '@/server/utils/query-builders'
-import { validatePagination, sanitizeInput } from '@/server/utils/security-validation'
 import { checkSpamContent } from '@/server/utils/spam-check'
 import { getSubmissionBalance } from '@/server/utils/submission-balance'
 import {
@@ -150,19 +150,15 @@ export const gamesRouter = createTRPCRouter({
     const effectiveListingFilter =
       input?.listingFilter ?? (input?.hideGamesWithNoListings ? 'withListings' : 'all')
 
-    // Validate pagination
-    const { limit } = validatePagination(undefined, input?.limit, 100)
+    const limit = input?.limit ?? PAGINATION.DEFAULT_LIMIT
 
     // For empty search with offset 0, we can optimize by returning fewer results initially
     const effectiveLimit =
       !input?.search && input?.offset === 0 && !input?.page ? Math.min(limit, 50) : limit
 
-    // Sanitize search term (plain text, not markdown)
-    const sanitizedSearch = input?.search ? sanitizeInput(input.search) : undefined
-
     const filters = {
       ...input,
-      search: sanitizedSearch,
+      search: input?.search?.trim() || undefined,
       listingFilter: effectiveListingFilter,
       limit: effectiveLimit,
       userRole: ctx.session?.user?.role,

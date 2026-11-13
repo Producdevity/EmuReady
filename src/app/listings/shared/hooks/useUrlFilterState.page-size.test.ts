@@ -1,5 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { GetListingsSchema } from '@/schemas/listing'
+import { GetPcListingsSchema } from '@/schemas/pcListing'
 import { useUrlFilterState } from './useUrlFilterState'
 
 let query = new URLSearchParams()
@@ -28,6 +30,46 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 afterEach(() => vi.restoreAllMocks())
+
+describe.each([
+  { name: 'handheld', config, schema: GetListingsSchema },
+  {
+    name: 'PC',
+    config: { basePath: '/pc-listings', storageKey: 'pc-page-size', maxLimit: 50 },
+    schema: GetPcListingsSchema,
+  },
+])('$name report URL pagination', (catalog) => {
+  it('keeps a safe calculated offset and normalizes the next page before querying', () => {
+    const page = Math.floor(Number.MAX_SAFE_INTEGER / 50) + 1
+    query = new URLSearchParams({ page: String(page), limit: '50' })
+    const { result, rerender } = renderHook(() => useUrlFilterState(catalog.config))
+    expect(result.current.page).toBe(page)
+    query = new URLSearchParams({ page: String(page + 1), limit: '50' })
+    rerender()
+    expect(result.current.page).toBe(1)
+    expect(
+      catalog.schema.safeParse({ page: result.current.page, limit: result.current.limit }).success,
+    ).toBe(true)
+  })
+
+  it.each([
+    { raw: '', page: 1 },
+    { raw: '3', page: 3 },
+    { raw: '2.7', page: 2 },
+    { raw: '0.5', page: 1 },
+    { raw: '-2', page: 1 },
+    { raw: 'invalid', page: 1 },
+    { raw: 'Infinity', page: 1 },
+    { raw: '1e30', page: 1 },
+  ])('normalizes page=$raw before the query', (testCase) => {
+    query = new URLSearchParams({ page: testCase.raw })
+    const { result } = renderHook(() => useUrlFilterState(catalog.config))
+    expect(result.current.page).toBe(testCase.page)
+    expect(
+      catalog.schema.safeParse({ page: result.current.page, limit: result.current.limit }).success,
+    ).toBe(true)
+  })
+})
 
 describe('report page size preference', () => {
   it('reads a saved page size without mirroring it into local state', () => {
