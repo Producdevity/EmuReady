@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import MarkdownIt from 'markdown-it'
 import { describe, expect, it } from 'vitest'
 import { CustomFieldType } from '@orm'
 import { ConfigFieldSchema, CustomFieldConfigSchema, parseConfigJson } from './config.schemas'
@@ -12,7 +13,8 @@ describe('custom field configuration JSON', () => {
       resolve(import.meta.dirname, '../../../../../docs/admin/custom-fields.md'),
       'utf8',
     )
-    const example = guide.replace(/\r?\n/g, lineEnding).match(/```json\r?\n([\s\S]*?)\r?\n```/)?.[1]
+    const tokens = new MarkdownIt().parse(guide.replace(/\r?\n/g, lineEnding), {})
+    const example = tokens.find((token) => token.type === 'fence' && token.info === 'json')?.content
     expect(parseConfigJson(example ?? '')).toMatchObject({ success: true })
   })
 
