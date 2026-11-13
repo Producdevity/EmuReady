@@ -112,7 +112,6 @@ vi.mock('@/server/api/utils/pinPermissions', () => ({
 }))
 
 vi.mock('@/server/utils/security-validation', () => ({
-  validatePagination: vi.fn((page, limit, max) => ({ page: page ?? 1, limit: limit ?? max ?? 20 })),
   sanitizeInput: vi.fn((value: string) => value.trim()),
 }))
 
