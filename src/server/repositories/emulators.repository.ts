@@ -13,6 +13,7 @@ export interface EmulatorFilters {
   sortField?: string | null
   sortDirection?: Prisma.SortOrder | null
   systemId?: string | null
+  verifiedDeveloperId?: string
 }
 
 type DetailedEmulatorListItem = Prisma.EmulatorGetPayload<{
@@ -150,6 +151,9 @@ export class EmulatorsRepository extends BaseRepository {
     } = filters
 
     const where = this.buildWhereClause(search, systemId)
+    if (filters.verifiedDeveloperId) {
+      where.verifiedDevelopers = { some: { userId: filters.verifiedDeveloperId } }
+    }
     const orderBy = this.buildOrderBy(sortField, sortDirection)
     const resolvedLimit = limit ?? PAGINATION.DEFAULT_LIMIT
     const actualOffset = calculateOffset({ page, offset }, resolvedLimit)

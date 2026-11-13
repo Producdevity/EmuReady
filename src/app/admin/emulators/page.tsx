@@ -60,11 +60,7 @@ function AdminEmulatorsPage() {
     storageKey: storageKeys.columnVisibility.adminEmulators,
   })
 
-  // Get current user to check permissions
   const userQuery = api.users.me.useQuery()
-  {
-    /* TODO: validate this permission*/
-  }
   const currentUserRole = userQuery.data?.role
   const currentUserId = userQuery.data?.id
   const userPermissions = userQuery.data?.permissions
@@ -77,7 +73,9 @@ function AdminEmulatorsPage() {
   )
   const canDeleteEmulators = isAdminOrHigher && hasManageEmulatorsPermission
 
-  const emulatorsStatsQuery = api.emulators.stats.useQuery()
+  const emulatorsStatsQuery = api.emulators.stats.useQuery(undefined, {
+    enabled: hasPermission(userPermissions, PERMISSIONS.VIEW_STATISTICS),
+  })
   const emulatorsQuery = api.emulators.getForAdmin.useQuery({
     search: table.search ?? undefined,
     sortField: table.sortField ?? undefined,
