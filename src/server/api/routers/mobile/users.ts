@@ -1,10 +1,10 @@
-import { ResourceError } from '@/lib/errors'
-import { GetUserByIdSchema } from '@/schemas/user'
-import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
 import {
   checkProfileAccess,
   PRIVATE_PROFILE_SETTINGS,
-} from '@/server/services/user-profile.service'
+} from '@/features/users/server/profile-access.service'
+import { GetUserByIdSchema } from '@/features/users/shared/user.schemas'
+import { ResourceError } from '@/lib/errors'
+import { createMobileTRPCRouter, mobilePublicProcedure } from '@/server/api/mobileContext'
 import { paginate } from '@/server/utils/pagination'
 import { ApprovalStatus, Prisma } from '@orm/client'
 
