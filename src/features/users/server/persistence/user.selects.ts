@@ -53,14 +53,19 @@ export const USER_LIMITED_PROFILE_SELECT = {
   },
 } satisfies Prisma.UserSelect
 
-export const USER_PUBLIC_PROFILE_SELECT = {
-  ...USER_LIMITED_PROFILE_SELECT,
-  bio: true,
-} satisfies Prisma.UserSelect
-
-export function moderatorProfileSelect(now: Date) {
+export function publicProfileSelect(votesWhere: Prisma.VoteWhereInput) {
   return {
-    ...USER_PUBLIC_PROFILE_SELECT,
+    ...USER_LIMITED_PROFILE_SELECT,
+    bio: true,
+    _count: {
+      select: { ...USER_LIMITED_PROFILE_SELECT._count.select, votes: { where: votesWhere } },
+    },
+  } satisfies Prisma.UserSelect
+}
+
+export function moderatorProfileSelect(now: Date, votesWhere: Prisma.VoteWhereInput) {
+  return {
+    ...publicProfileSelect(votesWhere),
     userBans: {
       where: { isActive: true, OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
       select: {
@@ -151,7 +156,7 @@ export const USER_UPDATE_SOURCE_SELECT = {
   clerkId: true,
 } satisfies Prisma.UserSelect
 
-export const USER_UPDATE_RESULT_SELECT = { id: true } satisfies Prisma.UserSelect
+export const USER_UPDATE_RESULT_SELECT = { name: true, bio: true } satisfies Prisma.UserSelect
 
 export const USER_ADMIN_LIST_SELECT = {
   id: true,

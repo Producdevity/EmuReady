@@ -44,12 +44,9 @@ function ProfileInformation(props: Props) {
   }
 
   const updateProfile = api.users.update.useMutation({
-    onSuccess: async (_result, variables) => {
+    onSuccess: async (result) => {
       setSavedProfile({
-        data: {
-          name: variables.name ?? profileData?.name ?? null,
-          bio: variables.bio ?? profileData?.bio ?? null,
-        },
+        data: result.profile,
         previousQueryData: props.userQuery.data,
       })
       try {

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { MutationSuccessSchema } from '@/schemas/common'
 import { PaginationResultSchema } from '@/schemas/pagination'
 import { ApprovalStatus, PcOs, Role, TailwindColor, TrustAction } from '@orm'
 
@@ -76,6 +77,10 @@ export const UserSessionOutputSchema = z
 export const OwnUserProfileOutputSchema = profileIdentity.extend({
   email: z.string(),
   _count: z.object({ listings: z.number() }),
+})
+
+export const UpdateUserOutputSchema = MutationSuccessSchema.extend({
+  profile: OwnUserProfileOutputSchema.pick({ name: true, bio: true }),
 })
 
 export const UserPrivacySettingsSchema = z.object({

@@ -172,3 +172,47 @@ it('retains an inverted memory draft and the last valid query until the range is
     expect.anything(),
   )
 })
+
+it.each([
+  {
+    edited: 'Minimum memory (GB)',
+    invalid: 'Maximum memory (GB)',
+    expected: { memoryMin: null, memoryMax: 32 },
+  },
+  {
+    edited: 'Maximum memory (GB)',
+    invalid: 'Minimum memory (GB)',
+    expected: { memoryMin: 16, memoryMax: null },
+  },
+])('applies a valid cleared $edited while the other draft is invalid', (testCase) => {
+  render(<Browser />)
+  fireEvent.click(screen.getByRole('button', { name: /PC/ }))
+  fireEvent.change(screen.getByLabelText('Minimum memory (GB)'), { target: { value: '16' } })
+  fireEvent.change(screen.getByLabelText('Maximum memory (GB)'), { target: { value: '32' } })
+  fireEvent.change(screen.getByLabelText(testCase.invalid), { target: { value: '1.5' } })
+  fireEvent.change(screen.getByLabelText(testCase.edited), { target: { value: '' } })
+  expect(screen.getByLabelText(testCase.edited)).toHaveValue(null)
+  expect(screen.getByLabelText(testCase.invalid)).toHaveAttribute('aria-invalid', 'true')
+  expect(mocks.pc).toHaveBeenLastCalledWith(
+    expect.objectContaining(testCase.expected),
+    expect.anything(),
+  )
+})
+
+it('validates an edited bound against the last applied range while the other draft is invalid', () => {
+  render(<Browser />)
+  fireEvent.click(screen.getByRole('button', { name: /PC/ }))
+  fireEvent.change(screen.getByLabelText('Minimum memory (GB)'), { target: { value: '16' } })
+  fireEvent.change(screen.getByLabelText('Maximum memory (GB)'), { target: { value: '32' } })
+  fireEvent.change(screen.getByLabelText('Maximum memory (GB)'), { target: { value: '1.5' } })
+  fireEvent.change(screen.getByLabelText('Minimum memory (GB)'), { target: { value: '64' } })
+  expect(mocks.pc).toHaveBeenLastCalledWith(
+    expect.objectContaining({ memoryMin: 16, memoryMax: 32 }),
+    expect.anything(),
+  )
+  fireEvent.change(screen.getByLabelText('Minimum memory (GB)'), { target: { value: '8' } })
+  expect(mocks.pc).toHaveBeenLastCalledWith(
+    expect.objectContaining({ memoryMin: 8, memoryMax: 32 }),
+    expect.anything(),
+  )
+})

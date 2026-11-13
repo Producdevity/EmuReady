@@ -210,6 +210,7 @@ describe.each(operations)('$name trust transaction', (operation) => {
       expect(trackTrustScoreChange).toHaveBeenCalledExactlyOnceWith(change)
       if (operation.audited)
         expect(logAudit).toHaveBeenCalledWith(prisma, expect.objectContaining({ actorId, headers }))
+      else expect(logAudit).not.toHaveBeenCalled()
     } finally {
       commit.resolve()
       await request

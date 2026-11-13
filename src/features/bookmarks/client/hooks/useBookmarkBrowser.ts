@@ -68,9 +68,20 @@ export function useBookmarkBrowser() {
   function changeMemory(field: keyof typeof initialMemoryDrafts, value: string) {
     const nextDrafts = { ...memoryDrafts, [field]: value }
     setMemoryDrafts(nextDrafts)
-    const parsed = parseMemoryDrafts(nextDrafts)
-    if (!parsed.success) return
-    setFilters((current) => ({ ...current, ...parsed.data }))
+    const fieldValue = BookmarkFiltersSchema.shape[field].safeParse(
+      value.trim() ? Number(value) : null,
+    )
+    if (!fieldValue.success) return
+    const otherField = field === 'memoryMin' ? 'memoryMax' : 'memoryMin'
+    const otherDraft = nextDrafts[otherField].trim()
+    const otherValue = BookmarkFiltersSchema.shape[otherField].safeParse(
+      otherDraft ? Number(otherDraft) : null,
+    )
+    const applied = otherValue.success
+      ? parseMemoryDrafts(nextDrafts)
+      : memoryDraftSchema.safeParse({ ...filters, [field]: fieldValue.data })
+    if (!applied.success) return
+    setFilters((current) => ({ ...current, ...applied.data }))
     setPage(1)
   }
 

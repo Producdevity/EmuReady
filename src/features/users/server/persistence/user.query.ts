@@ -47,7 +47,10 @@ export function profileActivityWhere(
   }
   const votes: Prisma.VoteWhereInput = {
     userId: input.userId,
-    ...(game ? { listing: { game } } : {}),
+    listing: {
+      ...(visibility.canViewBannedUsers ? {} : { NOT: { status: ApprovalStatus.REJECTED } }),
+      ...(game ? { game } : {}),
+    },
     OR: buildSearchFilter(input.votesSearch, [
       'listing.game.title',
       'listing.device.modelName',

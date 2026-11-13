@@ -50,16 +50,17 @@ export class UserRepository extends PrismaWriteRepository<WriteContext> {
     })
   }
 
-  publicProfile(userId: string, canViewBannedUsers: boolean) {
-    if (canViewBannedUsers) {
+  publicProfile(input: z.output<typeof GetUserByIdSchema>, visibility: ProfileVisibility) {
+    const votesWhere = profileActivityWhere({ ...input, votesSearch: undefined }, visibility).votes
+    if (visibility.canViewBannedUsers) {
       return this.prisma.user.findUnique({
-        where: { id: userId },
-        select: selects.moderatorProfileSelect(new Date()),
+        where: { id: input.userId },
+        select: selects.moderatorProfileSelect(new Date(), votesWhere),
       })
     }
     return this.prisma.user.findUnique({
-      where: { id: userId },
-      select: selects.USER_PUBLIC_PROFILE_SELECT,
+      where: { id: input.userId },
+      select: selects.publicProfileSelect(votesWhere),
     })
   }
 
