@@ -25,10 +25,6 @@ vi.mock('@/server/notifications/eventEmitter', () => ({
   },
 }))
 
-vi.mock('@/server/utils/security-validation', () => ({
-  sanitizeInput: vi.fn((value: string) => value.trim()),
-}))
-
 const { mobileListingReportsRouter } = await import('./listingReports')
 
 const USER_ID = '00000000-0000-4000-a000-000000000001'

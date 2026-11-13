@@ -26,4 +26,19 @@ describe('MarkdownRenderer', () => {
     expect(screen.getByText('bold').tagName).toBe('STRONG')
     expect(screen.getByText('code').tagName).toBe('CODE')
   })
+
+  it('escapes literal HTML in plain-text notes without changing their content', () => {
+    const content = 'resolution=1080 <3 <img src=x onerror=alert(1)>'
+    const { container } = render(<MarkdownRenderer content={content} fallbackToPlainText />)
+    expect(container.textContent).toBe(content)
+    expect(container.querySelector('img')).not.toBeInTheDocument()
+  })
+
+  it('sanitizes raw HTML and unsafe links at the Markdown rendering boundary', () => {
+    const content =
+      '**safe** <script>alert(1)</script> <img src=x onerror=alert(1)> [bad](javascript:alert(1))'
+    const { container } = render(<MarkdownRenderer content={content} fallbackToPlainText />)
+    expect(screen.getByText('safe').tagName).toBe('STRONG')
+    expect(container.querySelector('script, [onerror], a[href^="javascript:"]')).toBeNull()
+  })
 })

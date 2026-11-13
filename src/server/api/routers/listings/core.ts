@@ -31,7 +31,7 @@ import { attachReviewRiskProfileForViewer } from '@/server/services/review-risk.
 import { normalizeCustomFieldValues } from '@/server/utils/custom-field-values'
 import { getDriverVersions } from '@/server/utils/driver-versions'
 import { isUserBanned } from '@/server/utils/query-builders'
-import { sanitizeInput, validatePagination } from '@/server/utils/security-validation'
+import { validatePagination } from '@/server/utils/security-validation'
 import { checkSpamContent } from '@/server/utils/spam-check'
 import { withSavepoint } from '@/server/utils/transactions'
 import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
@@ -55,9 +55,6 @@ export const coreRouter = createTRPCRouter({
     // Validate and sanitize pagination
     const { page, limit } = validatePagination(input.page, input.limit, 100)
 
-    // Sanitize search term (plain text, not markdown)
-    const sanitizedSearchTerm = input.searchTerm ? sanitizeInput(input.searchTerm) : undefined
-
     // Map input to repository filters (convert null to undefined)
     const filters = {
       systemIds: input.systemIds || undefined,
@@ -65,7 +62,7 @@ export const coreRouter = createTRPCRouter({
       socIds: input.socIds || undefined,
       emulatorIds: input.emulatorIds || undefined,
       performanceIds: input.performanceIds || undefined,
-      search: sanitizedSearchTerm,
+      search: input.searchTerm?.trim() || undefined,
       page,
       limit,
       sortField: input.sortField || undefined,
