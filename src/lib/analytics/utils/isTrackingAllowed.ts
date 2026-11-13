@@ -1,17 +1,6 @@
-import { z } from 'zod'
 import storageKeys from '@/data/storageKeys'
 import { type AnalyticsCategory } from '@/lib/analytics/analytics.types'
-import { safeParseJSON } from '@/utils/client-validation'
-
-interface LocalPreferences {
-  analytics?: boolean
-  performance?: boolean
-}
-
-const LocalPreferencesSchema = z.object({
-  analytics: z.boolean().optional(),
-  performance: z.boolean().optional(),
-})
+import { CookiePreferencesSchema } from '@/schemas/preferences'
 
 /**
  * Check if analytics tracking is allowed based on cookie consent
@@ -24,17 +13,15 @@ export function isTrackingAllowed(category: AnalyticsCategory): boolean {
   try {
     // Must have explicit consent
     const hasConsented = localStorage.getItem(storageKeys.cookies.consent)
-    if (!hasConsented) return false
+    if (hasConsented !== 'true') return false
 
     // Read stored preferences
     const preferencesString = localStorage.getItem(storageKeys.cookies.preferences)
     if (!preferencesString) return false
 
-    const preferences = safeParseJSON<LocalPreferences>(
-      preferencesString,
-      LocalPreferencesSchema,
-      {},
-    )
+    const parsed = CookiePreferencesSchema.safeParse(JSON.parse(preferencesString))
+    if (!parsed.success) return false
+    const preferences = parsed.data
 
     // Gate by banner categories: performance controls only the 'performance' event category;
     // all other analytics events require analytics consent.

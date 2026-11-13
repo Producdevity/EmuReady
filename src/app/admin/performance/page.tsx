@@ -268,7 +268,6 @@ function AdminPerformancePage() {
         editId={performanceModal.scale?.id || null}
         scale={performanceModal.scale}
         onSuccess={() => {
-          setPerformanceModal({ isOpen: false })
           utils.performanceScales.get.invalidate().catch(console.error)
           utils.performanceScales.getWithCounts.invalidate().catch(console.error)
           utils.performanceScales.stats.invalidate().catch(console.error)

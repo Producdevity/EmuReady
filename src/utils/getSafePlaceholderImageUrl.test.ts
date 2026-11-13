@@ -7,6 +7,7 @@ describe('getSafePlaceholderImageUrl', () => {
     const result = getSafePlaceholderImageUrl(title)
 
     expect(result).toContain('https://placehold.co/')
+    expect(new URL(result).pathname).toBe('/400x300/9ca3af/1e293b/webp')
     expect(result).toContain(encodeURIComponent(title))
   })
 

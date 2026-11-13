@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { format } from 'date-fns'
+import { useState } from 'react'
 import {
   Button,
   Dialog,
@@ -9,7 +10,6 @@ import {
   DialogTitle,
   Input,
 } from '@/components/ui'
-import { API_KEY_LIMITS } from '@/data/constants'
 import { QuotaInputField } from './QuotaInputField'
 import { type AdminApiKeyRow } from './types'
 import { normalizeExpiration } from '../utils/normalize-expiration'
@@ -24,43 +24,50 @@ interface QuotaFormState {
 
 interface Props {
   keyId: string
-  keys: AdminApiKeyRow[]
+  keys: Pick<
+    AdminApiKeyRow,
+    'id' | 'name' | 'monthlyQuota' | 'weeklyQuota' | 'burstQuota' | 'expiresAt'
+  >[]
   isSubmitting: boolean
   onClose: () => void
   onSubmit: (state: QuotaFormState) => Promise<void>
 }
 
 export function AdminQuotaDialog(props: Props) {
-  const key = props.keys.find((item) => item.id === props.keyId) ?? null
+  const apiKey = props.keys.find((item) => item.id === props.keyId)
+  if (!apiKey) return null
+  return (
+    <QuotaForm
+      key={apiKey.id}
+      apiKey={apiKey}
+      isSubmitting={props.isSubmitting}
+      onClose={props.onClose}
+      onSubmit={props.onSubmit}
+    />
+  )
+}
+
+type FormProps = Omit<Props, 'keyId' | 'keys'> & { apiKey: Props['keys'][number] }
+
+function QuotaForm(props: FormProps) {
   const [state, setState] = useState<QuotaFormState>(() => ({
-    id: props.keyId,
-    monthlyQuota: key?.monthlyQuota ?? API_KEY_LIMITS.DEFAULT_MONTHLY,
-    weeklyQuota: key?.weeklyQuota ?? API_KEY_LIMITS.DEFAULT_WEEKLY,
-    burstQuota: key?.burstQuota ?? API_KEY_LIMITS.DEFAULT_BURST_PER_MINUTE,
-    expiresAt: key?.expiresAt ? new Date(key.expiresAt).toISOString().slice(0, 16) : null,
+    id: props.apiKey.id,
+    monthlyQuota: props.apiKey.monthlyQuota,
+    weeklyQuota: props.apiKey.weeklyQuota,
+    burstQuota: props.apiKey.burstQuota,
+    expiresAt: props.apiKey.expiresAt
+      ? format(new Date(props.apiKey.expiresAt), "yyyy-MM-dd'T'HH:mm")
+      : null,
   }))
   const [dateError, setDateError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!key) return
-    setState({
-      id: key.id,
-      monthlyQuota: key.monthlyQuota,
-      weeklyQuota: key.weeklyQuota,
-      burstQuota: key.burstQuota,
-      expiresAt: key.expiresAt ? new Date(key.expiresAt).toISOString().slice(0, 16) : null,
-    })
-    setDateError(null)
-  }, [key])
-
   return (
-    <Dialog open={Boolean(key)} onOpenChange={(open) => (!open ? props.onClose() : null)}>
+    <Dialog open={true} onOpenChange={(open) => (!open ? props.onClose() : null)}>
       <DialogContent className="w-full max-w-3xl">
         <DialogHeader>
           <DialogTitle>Update quotas</DialogTitle>
           <DialogDescription>
-            Adjust request ceilings and optional expiry for{' '}
-            <strong>{key?.name ?? 'this key'}</strong>.
+            Adjust request ceilings and optional expiry for <strong>{props.apiKey.name}</strong>.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 sm:grid-cols-3">

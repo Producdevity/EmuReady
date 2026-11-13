@@ -1,4 +1,3 @@
-import { AppError } from '@/lib/errors'
 import { TRUST_LEVELS } from '@/lib/trust/config'
 import { TrustService, applyMonthlyActiveBonus } from '@/lib/trust/service'
 import {
@@ -7,141 +6,27 @@ import {
   ManualTrustAdjustmentSchema,
   RunMonthlyActiveBonusSchema,
 } from '@/schemas/trust'
-import { createTRPCRouter, protectedProcedure } from '@/server/api/trpc'
-import { prisma } from '@/server/db'
-import { paginate } from '@/server/utils/pagination'
-import { hasRolePermission } from '@/utils/permissions'
-import { type Prisma, Role } from '@orm/client'
+import { createTRPCRouter, protectedProcedure, superAdminProcedure } from '@/server/api/trpc'
+import { TrustAdminRepository } from '@/server/repositories/trust-admin.repository'
+import { TrustAdminService } from '@/server/services/trust-admin.service'
 
 export const trustRouter = createTRPCRouter({
-  // Get trust logs for admin dashboard (SUPER_ADMIN only)
-  // TODO: use procedure to restrict access. (check ui to ensure it matches)
-  getTrustLogs: protectedProcedure.input(GetTrustLogsSchema).query(async ({ ctx, input }) => {
-    if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-      return AppError.insufficientRole(Role.SUPER_ADMIN)
-    }
-
-    // TODO: abstract into repository or service
-    const { page, limit, sortField, sortDirection, search, action } = input
-    const actualOffset = (page - 1) * limit
-
-    // Build where clause
-    const where: Prisma.TrustActionLogWhereInput = {}
-    if (search) {
-      where.user = {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { email: { contains: search, mode: 'insensitive' } },
-        ],
-      }
-    }
-    if (action) {
-      where.action = action
-    }
-
-    // Build orderBy clause
-    const orderBy: Prisma.TrustActionLogOrderByWithRelationInput = {}
-    if (sortField && sortDirection) {
-      if (sortField === 'createdAt') {
-        orderBy.createdAt = sortDirection
-      } else if (sortField === 'action') {
-        orderBy.action = sortDirection
-      } else if (sortField === 'weight') {
-        orderBy.weight = sortDirection
-      } else if (sortField === 'user.trustScore') {
-        orderBy.user = { trustScore: sortDirection }
-      }
-    } else {
-      orderBy.createdAt = 'desc'
-    }
-
-    const [logs, total] = await Promise.all([
-      prisma.trustActionLog.findMany({
-        where,
-        orderBy,
-        skip: actualOffset,
-        take: limit,
-        include: {
-          user: {
-            select: { id: true, name: true, email: true, trustScore: true },
-          },
-        },
-      }),
-      prisma.trustActionLog.count({ where }),
-    ])
-
-    const pagination = paginate({ total: total, page, limit: limit })
-
-    return {
-      logs,
-      pagination,
-    }
+  getTrustLogs: superAdminProcedure.input(GetTrustLogsSchema).query(async ({ ctx, input }) => {
+    return new TrustAdminRepository(ctx.prisma).listLogs(input)
   }),
 
-  // Get trust system statistics (SUPER_ADMIN only)
-  // TODO: use procedure to restrict access. (check ui to ensure it matches)
-  getTrustStats: protectedProcedure.input(GetTrustStatsSchema).query(async ({ ctx }) => {
-    if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-      return AppError.insufficientRole(Role.SUPER_ADMIN)
-    }
-
-    const [totalActions, totalUsers, levelDistribution] = await Promise.all([
-      prisma.trustActionLog.count(),
-      prisma.user.count(),
-      prisma.user.groupBy({
-        by: ['trustScore'],
-        _count: { id: true },
-        orderBy: { trustScore: 'asc' },
-      }),
-    ])
-
-    // Convert level distribution to a more useful format
-    const levelCounts = TRUST_LEVELS.map((level, index) => {
-      const nextLevel = TRUST_LEVELS[index + 1]
-      const count = levelDistribution
-        .filter((item) => {
-          return (
-            item.trustScore >= level.minScore &&
-            (!nextLevel || item.trustScore < nextLevel.minScore)
-          )
-        })
-        .reduce((sum, item) => sum + item._count.id, 0)
-
-      return {
-        name: level.name,
-        minScore: level.minScore,
-        count,
-      }
-    })
-
-    return {
-      totalActions,
-      totalUsers,
-      levelDistribution: levelCounts,
-    }
+  getTrustStats: superAdminProcedure.input(GetTrustStatsSchema).query(async ({ ctx }) => {
+    const repository = new TrustAdminRepository(ctx.prisma)
+    return new TrustAdminService(repository).statistics()
   }),
 
-  // Run monthly active bonus (SUPER_ADMIN only)
-  // TODO: use procedure to restrict access. (check ui to ensure it matches)
-  runMonthlyActiveBonus: protectedProcedure
+  runMonthlyActiveBonus: superAdminProcedure
     .input(RunMonthlyActiveBonusSchema)
-    .mutation(async ({ ctx }) => {
-      if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        return AppError.insufficientRole(Role.SUPER_ADMIN)
-      }
+    .mutation(async () => applyMonthlyActiveBonus()),
 
-      return await applyMonthlyActiveBonus()
-    }),
-
-  // Manual trust score adjustment (SUPER_ADMIN only)
-  // TODO: use procedure to restrict access. (check ui to esnure it matches)
-  adjustTrustScore: protectedProcedure
+  adjustTrustScore: superAdminProcedure
     .input(ManualTrustAdjustmentSchema)
     .mutation(async ({ ctx, input }) => {
-      if (!hasRolePermission(ctx.session.user.role, Role.SUPER_ADMIN)) {
-        return AppError.insufficientRole(Role.SUPER_ADMIN)
-      }
-
       await new TrustService(ctx.prisma).applyManualAdjustment({
         userId: input.userId,
         adjustment: input.adjustment,

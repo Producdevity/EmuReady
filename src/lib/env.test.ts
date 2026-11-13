@@ -35,6 +35,21 @@ afterEach(() => {
 })
 
 describe('env', () => {
+  it.each(['', '   '])(
+    'uses an absolute repository URL for blank GitHub configuration (%j)',
+    async (value) => {
+      const { env } = await loadEnv({ NEXT_PUBLIC_GITHUB_URL: value })
+      expect(new URL(env.GITHUB_REQUEST_HARDWARE_URL).toString()).toBe(
+        'https://github.com/Producdevity/EmuReady/issues/new?template=feature_request.yml',
+      )
+    },
+  )
+
+  it('uses the configured repository for hardware requests', async () => {
+    const { env } = await loadEnv({ NEXT_PUBLIC_GITHUB_URL: 'https://github.com/example/fork' })
+    expect(new URL(env.GITHUB_REQUEST_HARDWARE_URL).pathname).toBe('/example/fork/issues/new')
+  })
+
   it('uses explicit public app env for public production checks', async () => {
     const { env } = await loadEnv({
       [ENV_KEYS.nodeEnv]: ENV_VALUES.production,

@@ -18,7 +18,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Plus, Trash2, GripVertical } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { toSnakeCase } from 'remeda'
 import { type z } from 'zod'
 import { Button, ErrorFallback, Input, LoadingSpinner, Modal } from '@/components/ui'
@@ -28,8 +28,10 @@ import {
   supportsPlaceholder,
 } from '@/features/emulators/shared/custom-field-attributes.schemas'
 import { api } from '@/lib/api'
+import toast from '@/lib/toast'
 import { FilterValueSchema, type FilterValue } from '@/schemas/common'
 import { type RouterOutput } from '@/types/trpc'
+import getErrorMessage from '@/utils/getErrorMessage'
 import { CustomFieldType } from '@orm'
 
 type TemplateField = z.output<typeof TemplateFieldSchema> & {
@@ -162,7 +164,11 @@ function SortableTemplateOptionItem({
 }
 
 type TemplateRecord = RouterOutput['customFieldTemplates']['byId']
-type FormProps = Omit<Props, 'isOpen'> & { template: TemplateRecord | null }
+type Mutations = {
+  createMutation: ReturnType<typeof api.customFieldTemplates.create.useMutation>
+  updateMutation: ReturnType<typeof api.customFieldTemplates.update.useMutation>
+}
+type FormProps = Omit<Props, 'isOpen'> & Mutations & { template: TemplateRecord | null }
 
 function initialFields(template: TemplateRecord | null): TemplateField[] {
   return (
@@ -184,60 +190,99 @@ function initialFields(template: TemplateRecord | null): TemplateField[] {
         placeholder: field.placeholder ?? '',
         isRequired: field.isRequired,
         displayOrder: field.displayOrder,
-        rangeMin: field.rangeMin ?? 0,
-        rangeMax: field.rangeMax ?? 100,
-        rangeUnit: field.rangeUnit ?? '',
-        rangeDecimals: field.rangeDecimals ?? 0,
+        rangeMin: field.rangeMin,
+        rangeMax: field.rangeMax,
+        rangeUnit: field.rangeUnit,
+        rangeDecimals: field.rangeDecimals,
       }
     }) ?? []
   )
 }
 
 function CustomFieldTemplateFormModal(props: Props) {
-  const templateQuery = api.customFieldTemplates.byId.useQuery(
-    { id: props.templateIdToEdit ?? '' },
-    { enabled: Boolean(props.templateIdToEdit) && props.isOpen },
-  )
-  const template =
-    props.templateIdToEdit && templateQuery.data?.id === props.templateIdToEdit
-      ? templateQuery.data
-      : null
+  const createMutation = api.customFieldTemplates.create.useMutation()
+  const updateMutation = api.customFieldTemplates.update.useMutation()
+  const isPending = createMutation.isPending || updateMutation.isPending
+  function closeModal() {
+    if (!isPending) props.onClose()
+  }
   return (
     <Modal
       isOpen={props.isOpen}
-      onClose={props.onClose}
+      onClose={closeModal}
+      hideCloseButton={isPending}
       title={props.templateIdToEdit ? 'Edit Template' : 'Create Template'}
       closeOnBackdropClick={false}
       closeOnEscape={false}
       size="3xl"
     >
-      {props.templateIdToEdit && !template && templateQuery.isError ? (
-        <ErrorFallback
-          error={templateQuery.error}
-          resetErrorBoundary={() => {
-            void templateQuery.refetch()
-          }}
-        />
-      ) : props.templateIdToEdit && !template ? (
-        <LoadingSpinner text="Loading template..." />
-      ) : (
-        <TemplateForm
-          key={`${props.isOpen}:${props.templateIdToEdit ?? 'new'}`}
+      {props.isOpen && (
+        <TemplateSession
+          key={props.templateIdToEdit ?? 'new'}
           templateIdToEdit={props.templateIdToEdit}
-          onClose={props.onClose}
-          template={template}
+          onClose={closeModal}
+          createMutation={createMutation}
+          updateMutation={updateMutation}
         />
       )}
     </Modal>
   )
 }
 
+const TEMPLATE_NOT_FOUND = { message: 'Template not found' }
+
+function TemplateSession(props: Omit<Props, 'isOpen'> & Mutations) {
+  const query = api.customFieldTemplates.byId.useQuery(
+    { id: props.templateIdToEdit ?? '' },
+    { enabled: Boolean(props.templateIdToEdit) },
+  )
+  const [template, setTemplate] = useState<TemplateRecord | null>(null)
+  if (
+    !template &&
+    !query.isFetching &&
+    !query.isError &&
+    query.data &&
+    query.data.id === props.templateIdToEdit
+  )
+    setTemplate(query.data)
+  if (props.templateIdToEdit && !template) {
+    if (query.isError || (query.isSuccess && !query.isFetching && query.data === null)) {
+      return (
+        <ErrorFallback
+          error={query.error ?? TEMPLATE_NOT_FOUND}
+          resetErrorBoundary={() => {
+            void query.refetch()
+          }}
+        />
+      )
+    }
+    return <LoadingSpinner text="Loading template..." />
+  }
+  return (
+    <TemplateForm
+      templateIdToEdit={props.templateIdToEdit}
+      onClose={props.onClose}
+      template={template}
+      createMutation={props.createMutation}
+      updateMutation={props.updateMutation}
+    />
+  )
+}
+
 function TemplateForm(props: FormProps) {
+  const { createMutation, updateMutation } = props
+  const active = useRef(false)
+  useEffect(() => {
+    active.current = true
+    return () => {
+      active.current = false
+    }
+  }, [])
   const [templateName, setTemplateName] = useState(props.template?.name ?? '')
   const [templateDescription, setTemplateDescription] = useState(props.template?.description ?? '')
   const [fields, setFields] = useState<TemplateField[]>(() => initialFields(props.template))
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const isSubmitting = createMutation.isPending || updateMutation.isPending
 
   const utils = api.useUtils()
 
@@ -255,23 +300,11 @@ function TemplateForm(props: FormProps) {
         .invalidate({ id: props.templateIdToEdit })
         .catch(console.error)
     }
-    props.onClose()
+    toast.success(
+      props.templateIdToEdit ? 'Template updated successfully!' : 'Template created successfully!',
+    )
+    if (active.current) props.onClose()
   }
-
-  const createMutation = api.customFieldTemplates.create.useMutation({
-    onSuccess: handleSaved,
-    onError: (error) => {
-      setErrors({ general: error.message })
-      setIsSubmitting(false)
-    },
-  })
-  const updateMutation = api.customFieldTemplates.update.useMutation({
-    onSuccess: handleSaved,
-    onError: (error) => {
-      setErrors({ general: error.message })
-      setIsSubmitting(false)
-    },
-  })
 
   function validateForm() {
     const newErrors: { [key: string]: string } = {}
@@ -371,12 +404,11 @@ function TemplateForm(props: FormProps) {
     return Object.keys(newErrors).length === 0
   }
 
-  function handleSubmit(ev: FormEvent) {
+  async function handleSubmit(ev: FormEvent) {
     ev.preventDefault()
 
     if (!validateForm() || isSubmitting) return
 
-    setIsSubmitting(true)
     setErrors({})
 
     const templateData = {
@@ -392,7 +424,7 @@ function TemplateForm(props: FormProps) {
           field.type === CustomFieldType.SELECT
             ? field.options.filter((opt) => opt.value.trim() && opt.label.trim())
             : undefined,
-        defaultValue: field.defaultValue ?? null,
+        defaultValue: field.defaultValue,
         placeholder: supportsPlaceholder(field.type) ? field.placeholder || undefined : undefined,
         isRequired: field.isRequired,
         displayOrder: index,
@@ -404,13 +436,18 @@ function TemplateForm(props: FormProps) {
       })),
     }
 
-    if (props.templateIdToEdit) {
-      updateMutation.mutate({
-        id: props.templateIdToEdit,
-        ...templateData,
-      })
-    } else {
-      createMutation.mutate(templateData)
+    try {
+      if (props.templateIdToEdit) {
+        await updateMutation.mutateAsync({
+          id: props.templateIdToEdit,
+          ...templateData,
+        })
+      } else {
+        await createMutation.mutateAsync(templateData)
+      }
+      handleSaved()
+    } catch (error) {
+      if (active.current) setErrors({ general: getErrorMessage(error) })
     }
   }
 
@@ -797,7 +834,11 @@ function TemplateForm(props: FormProps) {
                   ) : field.type === CustomFieldType.BOOLEAN ? (
                     <Input
                       as="select"
-                      value={field.defaultValue === null ? '' : String(field.defaultValue)}
+                      value={
+                        field.defaultValue === null || field.defaultValue === undefined
+                          ? ''
+                          : String(field.defaultValue)
+                      }
                       onChange={(ev) =>
                         updateField(fieldIndex, {
                           defaultValue: ev.target.value === '' ? null : ev.target.value === 'true',

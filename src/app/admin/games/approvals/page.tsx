@@ -37,6 +37,7 @@ import { useAdminTable } from '@/hooks/admin'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
+import { BooleanPreferenceSchema } from '@/schemas/preferences'
 import { type RouterOutput } from '@/types/trpc'
 import { type Nullable } from '@/types/utils'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -100,6 +101,7 @@ function GameApprovalsPage() {
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
     storageKeys.showSystemIcons,
     true,
+    BooleanPreferenceSchema,
   )
 
   const pendingGamesQuery = api.games.getPendingGames.useQuery({

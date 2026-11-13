@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { prisma } from '@/server/db'
 import { CustomFieldType, Role, type Prisma } from '@orm'
 import { CustomFieldTemplateRepository } from './template.repository'
@@ -30,9 +30,29 @@ const transaction = vi.hoisted(() => ({
   customFieldCategory: { create: vi.fn() },
   customFieldDefinition: { create: vi.fn() },
 }))
-const database = vi.hoisted(() => ({ ...transaction, $transaction: vi.fn() }))
+const database = vi.hoisted(() => ({
+  $transaction: vi.fn(),
+  customFieldTemplate: {
+    findUnique: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+  emulator: { findUnique: vi.fn() },
+  customFieldCategory: { create: vi.fn() },
+  customFieldDefinition: { create: vi.fn() },
+}))
 vi.mock('@/server/db', () => ({ prisma: database }))
 vi.unmock('@orm')
+
+const transactionClient: Prisma.TransactionClient = {
+  ...prisma,
+  customFieldTemplate: { ...prisma.customFieldTemplate, ...transaction.customFieldTemplate },
+  emulator: { ...prisma.emulator, ...transaction.emulator },
+  customFieldCategory: { ...prisma.customFieldCategory, ...transaction.customFieldCategory },
+  customFieldDefinition: { ...prisma.customFieldDefinition, ...transaction.customFieldDefinition },
+}
 
 function service() {
   return new CustomFieldTemplateService(new CustomFieldTemplateRepository(prisma))
@@ -57,8 +77,10 @@ const rangeInput = {
 beforeEach(() => {
   vi.resetAllMocks()
   database.$transaction.mockImplementation(
-    (operation: (tx: Prisma.TransactionClient) => Promise<unknown>) => operation(prisma),
+    (operation: (tx: Prisma.TransactionClient) => Promise<unknown>) => operation(transactionClient),
   )
+  database.customFieldTemplate.create.mockResolvedValue({ id: TEMPLATE_ID })
+  database.customFieldTemplate.update.mockResolvedValue({ id: TEMPLATE_ID })
   transaction.customFieldTemplate.findUnique.mockResolvedValue(template())
   transaction.customFieldTemplate.findMany.mockResolvedValue([template()])
   transaction.customFieldTemplate.create.mockResolvedValue({ id: TEMPLATE_ID })
@@ -73,6 +95,14 @@ beforeEach(() => {
   transaction.customFieldDefinition.create.mockResolvedValue({ id: TEMPLATE_ID })
 })
 
+afterEach(() => {
+  expect(database.customFieldTemplate.findUnique).not.toHaveBeenCalled()
+  expect(database.customFieldTemplate.findMany).not.toHaveBeenCalled()
+  expect(database.emulator.findUnique).not.toHaveBeenCalled()
+  expect(database.customFieldCategory.create).not.toHaveBeenCalled()
+  expect(database.customFieldDefinition.create).not.toHaveBeenCalled()
+})
+
 describe('template attribute persistence', () => {
   it.each(['create', 'update'] as const)(
     'preserves numeric range and category settings on %s',
@@ -85,7 +115,7 @@ describe('template attribute persistence', () => {
           actor,
           UpdateCustomFieldTemplateSchema.parse({ ...input, id: TEMPLATE_ID }),
         )
-      expect(transaction.customFieldTemplate[operation]).toHaveBeenCalledWith(
+      expect(database.customFieldTemplate[operation]).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             fields: expect.objectContaining({ create: [expect.objectContaining(rangeInput)] }),

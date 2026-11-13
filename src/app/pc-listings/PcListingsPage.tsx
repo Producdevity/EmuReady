@@ -32,6 +32,11 @@ import {
   ViewButton,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
+import BookmarkButton from '@/features/bookmarks/client/components/BookmarkButton'
+import {
+  useBulkBookmarkStatuses,
+  getBookmarkStatus,
+} from '@/features/bookmarks/client/hooks/useBulkBookmarkStatuses'
 import { getCpuLabel } from '@/features/hardware/cpu/shared/cpu-format'
 import { getGpuLabel } from '@/features/hardware/gpu/shared/gpu-format'
 import {
@@ -42,6 +47,7 @@ import {
 } from '@/hooks'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { BooleanPreferenceSchema } from '@/schemas/preferences'
 import { type RouterInput } from '@/types/trpc'
 import { filterNullAndEmpty } from '@/utils/filter'
 import {
@@ -80,6 +86,7 @@ function PcListingsPage() {
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
     storageKeys.showSystemIcons,
     true,
+    BooleanPreferenceSchema,
   )
 
   const {
@@ -124,6 +131,13 @@ function PcListingsPage() {
   const listingsQuery = api.pcListings.get.useQuery(filterParams, {
     placeholderData: (previous) => previous,
   })
+
+  const bookmarks = useBulkBookmarkStatuses(
+    'pcListing',
+    (listingsQuery.data?.pcListings ?? [])
+      .filter((report) => report.status === ApprovalStatus.APPROVED)
+      .map((report) => report.id),
+  )
 
   const handleCpuChange = (values: string[]) => {
     listingsState.setCpuIds(values)
@@ -605,6 +619,13 @@ function PcListingsPage() {
                         {columnVisibility.isColumnVisible('actions') && (
                           <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-end gap-2">
+                              {listing.status === ApprovalStatus.APPROVED && (
+                                <BookmarkButton
+                                  type="pcListing"
+                                  pcListingId={listing.id}
+                                  status={getBookmarkStatus(bookmarks, listing.id)}
+                                />
+                              )}
                               {isAdmin && (
                                 <EditButton
                                   href={`/admin/pc-listings/${listing.id}/edit`}
