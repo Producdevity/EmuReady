@@ -1,7 +1,7 @@
 'use client'
 
 import { Award, X } from 'lucide-react'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, type RefObject } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,13 @@ interface Props {
 }
 
 export default function UserBadgeModal(props: Props) {
+  const modalActive = useRef(false)
+  useEffect(() => {
+    modalActive.current = true
+    return () => {
+      modalActive.current = false
+    }
+  }, [])
   const assignBadgeMutation = api.badges.assignToUser.useMutation()
   const removeBadgeMutation = api.badges.removeFromUser.useMutation()
   const isPending = assignBadgeMutation.isPending || removeBadgeMutation.isPending
@@ -52,6 +59,7 @@ export default function UserBadgeModal(props: Props) {
           <UserBadgeForm
             key={`${props.isOpen}:${props.user.id}`}
             user={props.user}
+            modalActive={modalActive}
             onClose={closeModal}
             onSuccess={props.onSuccess}
             assignBadgeMutation={assignBadgeMutation}
@@ -65,6 +73,7 @@ export default function UserBadgeModal(props: Props) {
 
 type FormProps = Omit<Props, 'isOpen' | 'user'> & {
   user: User
+  modalActive: RefObject<boolean>
   assignBadgeMutation: ReturnType<typeof api.badges.assignToUser.useMutation>
   removeBadgeMutation: ReturnType<typeof api.badges.removeFromUser.useMutation>
 }
@@ -83,6 +92,8 @@ function UserBadgeForm(props: FormProps) {
   const [selectedBadgeId, setSelectedBadgeId] = useState<string | null>(null)
   const [selectedColor, setSelectedColor] = useState<TailwindColor>(TailwindColor.blue)
   const [page, setPage] = useState(1)
+  const [knownPages, setKnownPages] =
+    useState<RouterOutput['badges']['get']['pagination']['pages']>(1)
   const badgesQuery = api.badges.get.useQuery(
     { isActive: true, limit: 100, page, sortField: 'name', sortDirection: 'asc' },
     { placeholderData: (previous) => previous },
@@ -102,27 +113,36 @@ function UserBadgeForm(props: FormProps) {
     const lastPage = Math.max(1, badgesQuery.data.pagination.pages)
     if (page > lastPage) {
       setPage(lastPage)
+      setKnownPages(lastPage)
       setSelectedBadgeId(null)
     }
   }
 
+  const badges = badgesQuery.data?.badges ?? []
+  const userBadges = userBadgesQuery.data?.userBadges ?? []
+  const assignedBadgeIds = new Set(userBadges.map((badge) => badge.badge.id))
+  const availableBadges = badges.filter((badge) => !assignedBadgeIds.has(badge.id))
+  const selectedBadge = availableBadges.find((badge) => badge.id === selectedBadgeId)
+
   async function handleAssignBadge() {
-    if (fieldsDisabled || !selectedBadgeId) return
+    if (fieldsDisabled || !selectedBadge) return
     try {
       await props.assignBadgeMutation.mutateAsync({
         userId: props.user.id,
-        badgeId: selectedBadgeId,
+        badgeId: selectedBadge.id,
         color: selectedColor,
       })
     } catch (error) {
-      if (active.current)
+      if (props.modalActive.current)
         toast.error(`Failed to assign badge to ${userLabel}: ${getErrorMessage(error)}`)
       return
     }
-    props.onSuccess()
+    if (props.modalActive.current) {
+      toast.success(`Badge assigned to ${userLabel}`)
+      props.onSuccess()
+    }
     void utils.users.getUserById.invalidate({ userId: props.user.id }).catch(console.error)
     if (active.current) {
-      toast.success(`Badge assigned to ${userLabel}`)
       setSelectedBadgeId(null)
       setSelectedColor(TailwindColor.blue)
     }
@@ -133,19 +153,16 @@ function UserBadgeForm(props: FormProps) {
     try {
       await props.removeBadgeMutation.mutateAsync({ userId: props.user.id, userBadgeId })
     } catch (error) {
-      if (active.current)
+      if (props.modalActive.current)
         toast.error(`Failed to remove badge from ${userLabel}: ${getErrorMessage(error)}`)
       return
     }
-    if (active.current) toast.success(`Badge removed from ${userLabel}`)
-    props.onSuccess()
+    if (props.modalActive.current) {
+      toast.success(`Badge removed from ${userLabel}`)
+      props.onSuccess()
+    }
     void utils.users.getUserById.invalidate({ userId: props.user.id }).catch(console.error)
   }
-
-  const badges = badgesQuery.data?.badges ?? []
-  const userBadges = userBadgesQuery.data?.userBadges ?? []
-  const assignedBadgeIds = new Set(userBadges.map((badge) => badge.badge.id))
-  const availableBadges = badges.filter((badge) => !assignedBadgeIds.has(badge.id))
 
   return (
     <>
@@ -237,37 +254,31 @@ function UserBadgeForm(props: FormProps) {
               <SelectInput
                 id={selectorId}
                 label="Badge"
-                value={selectedBadgeId ?? ''}
+                value={selectedBadge?.id ?? ''}
                 onChange={(event) => setSelectedBadgeId(event.target.value || null)}
                 options={availableBadges}
               />
 
-              {selectedBadgeId && (
+              {selectedBadge && (
                 <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  {(() => {
-                    const selectedBadge = badges.find((b) => b.id === selectedBadgeId)
-                    if (!selectedBadge) return null
-                    return (
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
-                          style={{ backgroundColor: selectedBadge.color }}
-                        >
-                          {selectedBadge.icon || selectedBadge.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900 dark:text-white">
-                            {selectedBadge.name}
-                          </div>
-                          {selectedBadge.description && (
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                              {selectedBadge.description}
-                            </div>
-                          )}
-                        </div>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                      style={{ backgroundColor: selectedBadge.color }}
+                    >
+                      {selectedBadge.icon || selectedBadge.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        {selectedBadge.name}
                       </div>
-                    )
-                  })()}
+                      {selectedBadge.description && (
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {selectedBadge.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -282,7 +293,7 @@ function UserBadgeForm(props: FormProps) {
                 icon={Award}
                 onClick={handleAssignBadge}
                 isLoading={props.assignBadgeMutation.isPending}
-                disabled={!selectedBadgeId || isPending}
+                disabled={!selectedBadge || isPending}
                 className="w-full"
               >
                 Assign Badge
@@ -296,20 +307,22 @@ function UserBadgeForm(props: FormProps) {
             <p className="text-gray-500 dark:text-gray-400">No unassigned badges on this page.</p>
           </div>
         )}
-        {badgesQuery.data && (
-          <Pagination
-            page={badgesQuery.data.pagination.page}
-            totalPages={badgesQuery.data.pagination.pages}
-            totalItems={badgesQuery.data.pagination.total}
-            itemsPerPage={badgesQuery.data.pagination.limit}
-            onPageChange={(nextPage) => {
-              if (nextPage !== page) {
-                setPage(nextPage)
-                setSelectedBadgeId(null)
-              }
-            }}
-          />
-        )}
+      </fieldset>
+
+      <fieldset disabled={isPending} className="min-w-0">
+        <Pagination
+          page={page}
+          totalPages={badgesQuery.data?.pagination.pages ?? knownPages}
+          totalItems={badgesQuery.data?.pagination.total}
+          itemsPerPage={100}
+          onPageChange={(nextPage) => {
+            if (nextPage !== page) {
+              setKnownPages(badgesQuery.data?.pagination.pages ?? knownPages)
+              setPage(nextPage)
+              setSelectedBadgeId(null)
+            }
+          }}
+        />
       </fieldset>
 
       <DialogFooter>

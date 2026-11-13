@@ -267,6 +267,51 @@ describe('badge assignment sessions', () => {
     expect(modal.onSuccess).not.toHaveBeenCalled()
   })
 
+  it.each(['assignment', 'catalog'] as const)(
+    'blocks a selected badge that becomes unavailable after a background %s refresh',
+    (change) => {
+      const modal = renderModal()
+      fireEvent.change(screen.getByRole('combobox'), { target: { value: uuid(1) } })
+      if (change === 'assignment') assigned.set(firstUser.id, [assignedBadge(1)])
+      else catalog = [badge(2)]
+      modal.update({ user: { ...firstUser } })
+      expect(screen.queryByRole('option', { name: 'Badge 001' })).not.toBeInTheDocument()
+      expect(screen.getByRole('combobox')).toHaveValue('')
+      expect(screen.getByRole('button', { name: 'Assign Badge' })).toBeDisabled()
+      fireEvent.click(screen.getByRole('button', { name: 'Assign Badge' }))
+      expect(mocks.assign).not.toHaveBeenCalled()
+    },
+  )
+
+  it('suppresses recipient details and callbacks after the entire modal unmounts', async () => {
+    const modal = renderModal()
+    modal.update({ user: { ...firstUser, name: '', email: 'private@example.com' } })
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: uuid(1) } })
+    fireEvent.click(screen.getByRole('button', { name: 'Assign Badge' }))
+    await waitFor(() => expect(mocks.assign).toHaveBeenCalledOnce())
+    modal.view.unmount()
+    await act(async () => mocks.completion.resolve())
+    await waitFor(() => expect(mocks.refreshedUsers).toHaveBeenCalledWith(firstUser.id))
+    expect(toast.success).not.toHaveBeenCalled()
+    expect(toast.error).not.toHaveBeenCalled()
+    expect(modal.onSuccess).not.toHaveBeenCalled()
+  })
+
+  it('reports a failed write for its original recipient when the target changes', async () => {
+    const modal = renderModal()
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: uuid(1) } })
+    fireEvent.click(screen.getByRole('button', { name: 'Assign Badge' }))
+    await waitFor(() => expect(mocks.assign).toHaveBeenCalledOnce())
+    modal.update({ user: secondUser })
+    await act(async () => mocks.completion.reject(new Error('Assignment unavailable')))
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(
+        'Failed to assign badge to First user: Assignment unavailable',
+      ),
+    )
+    expect(modal.onSuccess).not.toHaveBeenCalled()
+  })
+
   it.each(['assign', 'remove'] as const)(
     'refreshes the submitted user after a pending %s and target change',
     async (operation) => {
@@ -283,6 +328,9 @@ describe('badge assignment sessions', () => {
       await act(async () => mocks.completion.resolve())
       await waitFor(() =>
         expect(mocks.refreshedUsers).toHaveBeenCalledExactlyOnceWith(firstUser.id),
+      )
+      expect(toast.success).toHaveBeenCalledWith(
+        operation === 'assign' ? 'Badge assigned to First user' : 'Badge removed from First user',
       )
       expect(
         screen.getByRole('heading', { name: /Manage Badges for Second user/ }),
@@ -351,6 +399,21 @@ describe('badge catalog pagination', () => {
     expect(mocks.catalogFetch).toHaveBeenCalledTimes(2)
     expect(mocks.catalogFetch).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }))
     expect(mocks.profileFetch).not.toHaveBeenCalled()
+  })
+
+  it('can return to a cached page after the requested page fails', async () => {
+    liveQueries = true
+    failCatalog = true
+    catalog = Array.from({ length: 101 }, (_, index) => badge(index + 1))
+    renderModal()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Go to next page' })[0])
+    await screen.findByRole('alert')
+    const previous = screen.getAllByRole('button', { name: 'Go to previous page' })[0]
+    expect(previous).toBeEnabled()
+    fireEvent.click(previous)
+    await screen.findByRole('option', { name: 'Badge 001' })
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(mocks.catalogFetch).toHaveBeenCalledOnce()
   })
 
   it('keeps a draft and blocks writes until a failed background profile query is retried', async () => {
