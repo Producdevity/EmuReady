@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { SystemIcon } from '@/components/icons'
 import { Badge, LocalizedDate, PerformanceBadge, SuccessRateBar } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import BookmarkButton from './BookmarkButton'
+import { type BookmarkStatus } from '../hooks/useBulkBookmarkStatuses'
 import type { RouterOutput } from '@/types/trpc'
 
 type VisibleListingResult = Extract<
@@ -20,19 +22,10 @@ type VisiblePcResult = Extract<
 type ListingBookmarkItem = VisibleListingResult['items'][number]
 type PcListingBookmarkItem = VisiblePcResult['items'][number]
 
-interface HandheldProps {
-  item: ListingBookmarkItem
-  variant: 'handheld'
-  index: number
-}
-
-interface PcProps {
-  item: PcListingBookmarkItem
-  variant: 'pc'
-  index: number
-}
-
-type Props = HandheldProps | PcProps
+type Props = { index: number; status: BookmarkStatus } & (
+  | { variant: 'handheld'; item: ListingBookmarkItem }
+  | { variant: 'pc'; item: PcListingBookmarkItem }
+)
 
 function BookmarkCard(props: Props) {
   const isPC = props.variant === 'pc'
@@ -46,20 +39,17 @@ function BookmarkCard(props: Props) {
 
   return (
     <motion.div
+      className={cn(
+        'group relative rounded-2xl border transition-[translate,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl',
+        'border-gray-200/70 bg-white dark:border-white/[0.06] dark:bg-gray-800/60',
+        accentColor === 'blue' && 'hover:border-blue-300 dark:hover:border-blue-500/30',
+        accentColor === 'purple' && 'hover:border-purple-300 dark:hover:border-purple-500/30',
+      )}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: props.index * 0.04 }}
     >
-      <Link
-        href={href}
-        className={cn(
-          'group relative flex flex-col gap-3 overflow-hidden rounded-2xl border p-5 transition-all duration-300',
-          'border-gray-200/70 bg-white hover:-translate-y-1 hover:shadow-xl',
-          'dark:border-white/[0.06] dark:bg-gray-800/60',
-          accentColor === 'blue' && 'hover:border-blue-300 dark:hover:border-blue-500/30',
-          accentColor === 'purple' && 'hover:border-purple-300 dark:hover:border-purple-500/30',
-        )}
-      >
+      <Link href={href} className="relative flex flex-col gap-3 overflow-hidden rounded-2xl p-5">
         <div className="flex items-start gap-4">
           <div className="relative flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-gray-100 ring-1 ring-gray-200/80 dark:bg-gray-900/80 dark:ring-white/10">
             {listing.game?.system?.key ? (
@@ -143,7 +133,7 @@ function BookmarkCard(props: Props) {
           ) : null}
         </div>
 
-        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+        <div className="flex items-center justify-between pr-10 text-xs text-gray-500 dark:text-gray-400">
           <div className="flex items-center gap-1.5">
             <Bookmark className="size-3 text-amber-400" />
             <LocalizedDate date={props.item.createdAt} format="timeAgo" />
@@ -157,6 +147,17 @@ function BookmarkCard(props: Props) {
           )}
         </div>
       </Link>
+      <div className="absolute bottom-3 right-3">
+        {props.variant === 'handheld' ? (
+          <BookmarkButton type="listing" listingId={props.item.listing.id} status={props.status} />
+        ) : (
+          <BookmarkButton
+            type="pcListing"
+            pcListingId={props.item.pcListing.id}
+            status={props.status}
+          />
+        )}
+      </div>
     </motion.div>
   )
 }
