@@ -36,6 +36,10 @@ import { PLATFORM_MAPPINGS, type PlatformKey } from '@/data/constants'
 export function systemNameToPlatformKey(systemName: string): PlatformKey | null {
   const normalized = systemName.toLowerCase().trim()
 
+  if (normalized === 'ios' || normalized === 'apple ios' || normalized === 'iphone os') {
+    return 'apple_ios'
+  }
+
   // Microsoft Windows/PC
   if (normalized.includes('windows') || normalized.includes('pc') || normalized === 'win') {
     return 'microsoft_windows'
@@ -60,6 +64,9 @@ export function systemNameToPlatformKey(systemName: string): PlatformKey | null 
   }
 
   // Nintendo
+  if (normalized.includes('switch 2')) {
+    return 'nintendo_switch_2'
+  }
   if (normalized.includes('switch')) {
     return 'nintendo_switch'
   }

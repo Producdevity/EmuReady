@@ -150,6 +150,15 @@ function createContentSecurityPolicy(): string {
 const nextConfig: NextConfig = {
   output: 'standalone',
 
+  async rewrites() {
+    return [
+      {
+        source: '/assets/emulators/:logo.png',
+        destination: '/assets/emulators/:logo.webp',
+      },
+    ]
+  },
+
   // Keep build identity stable and protect clients from version skew while
   // Coolify briefly overlaps the old and new containers during deployment.
   ...(nextBuildId ? { deploymentId: nextBuildId, generateBuildId: () => nextBuildId } : {}),

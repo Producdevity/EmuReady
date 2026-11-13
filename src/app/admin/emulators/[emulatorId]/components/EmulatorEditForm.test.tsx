@@ -91,6 +91,12 @@ const mockMutate = vi.fn()
 const mockInvalidate = vi.fn()
 
 describe('EmulatorEditForm', () => {
+  it('marks the WebP option selected for a stored PNG filename', () => {
+    render(<EmulatorEditForm emulator={{ ...mockEmulator, logo: 'retroarch.png' }} />)
+    expect(screen.getByTitle('retroarch')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText('Using: retroarch.png')).toBeInTheDocument()
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
 
@@ -200,7 +206,7 @@ describe('EmulatorEditForm', () => {
     fireEvent.click(retroarchLogo)
 
     await waitFor(() => {
-      expect(screen.getByText('Using: retroarch.png')).toBeInTheDocument()
+      expect(screen.getByText('Using: retroarch.webp')).toBeInTheDocument()
     })
   })
 
@@ -332,7 +338,7 @@ describe('EmulatorEditForm', () => {
     })
 
     // Verify the logo was actually selected
-    expect(screen.getByText('Using: retroarch.png')).toBeInTheDocument()
+    expect(screen.getByText('Using: retroarch.webp')).toBeInTheDocument()
   })
 
   it('enables save button when logo is cleared', async () => {
@@ -378,7 +384,7 @@ describe('EmulatorEditForm', () => {
       expect(mockMutate).toHaveBeenCalledWith({
         id: 'test-emulator-id',
         name: 'Test Emulator', // Name unchanged
-        logo: 'retroarch.png', // Logo changed
+        logo: 'retroarch.webp', // Logo changed
       })
     })
   })
