@@ -19,6 +19,10 @@ const systems: SystemData[] = [
     tgdbPlatformId: PLATFORM_MAPPINGS.tgdb.microsoft_windows ?? undefined,
   },
   {
+    name: 'Microsoft Windows Phone',
+    key: 'microsoft_windows_phone',
+  },
+  {
     name: 'Microsoft Xbox 360',
     key: 'microsoft_xbox_360',
     tgdbPlatformId: PLATFORM_MAPPINGS.tgdb.microsoft_xbox_360 ?? undefined,
@@ -67,6 +71,10 @@ const systems: SystemData[] = [
     name: 'Nintendo Wii',
     key: 'nintendo_wii',
     tgdbPlatformId: PLATFORM_MAPPINGS.tgdb.nintendo_wii ?? undefined,
+  },
+  {
+    name: 'PICO-8',
+    key: 'pico_8',
   },
   {
     name: 'Sega Dreamcast',

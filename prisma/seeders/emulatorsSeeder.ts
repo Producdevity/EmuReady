@@ -28,9 +28,24 @@ const emulators: EmulatorData[] = [
     logo: 'armsx3.webp',
   },
   {
+    name: 'Astris',
+    supportedSystemNames: ['Nintendo Switch'],
+    logo: 'astris.webp',
+  },
+  {
     name: 'Azahar',
     supportedSystemNames: ['Nintendo 3DS'],
     logo: 'azahar.webp',
+  },
+  {
+    name: 'aX360e',
+    supportedSystemNames: ['Microsoft Xbox 360'],
+    logo: 'ax360e.webp',
+  },
+  {
+    name: 'BannerHub v6',
+    supportedSystemNames: ['Microsoft Windows'],
+    logo: 'bannerhub.webp',
   },
   { name: 'Cemu', supportedSystemNames: ['Nintendo Wii U'], logo: 'cemu.webp' },
   { name: 'Citra', supportedSystemNames: ['Nintendo 3DS'], logo: 'citra.webp' },
@@ -75,6 +90,22 @@ const emulators: EmulatorData[] = [
     logo: 'exagear.webp',
   },
   {
+    name: 'ePSXe',
+    supportedSystemNames: ['Sony PlayStation'],
+    logo: 'epsxe.webp',
+  },
+  {
+    name: 'Fin',
+    supportedSystemNames: [
+      'Nintendo GameCube',
+      'Nintendo Wii',
+      'Nintendo Wii U',
+      'Nintendo 3DS',
+      'Nintendo DS',
+    ],
+    logo: 'fin.webp',
+  },
+  {
     name: 'Flycast',
     supportedSystemNames: ['Sega Dreamcast'],
     logo: 'flycast.webp',
@@ -100,6 +131,11 @@ const emulators: EmulatorData[] = [
     logo: 'hakux.webp',
   },
   {
+    name: 'JoiPlay',
+    supportedSystemNames: ['Microsoft Windows'],
+    logo: 'joiplay.webp',
+  },
+  {
     name: 'Kenji-NX',
     supportedSystemNames: ['Nintendo Switch'],
     logo: 'kenjinx.webp',
@@ -113,6 +149,11 @@ const emulators: EmulatorData[] = [
       'Sony PlayStation Portable',
     ],
     logo: 'lemuroid.webp',
+  },
+  {
+    name: 'Lemon',
+    supportedSystemNames: ['Nintendo Switch'],
+    logo: 'lemon.webp',
   },
   {
     name: 'MiceWine',
@@ -143,6 +184,11 @@ const emulators: EmulatorData[] = [
     name: 'PPSSPP',
     supportedSystemNames: ['Sony PlayStation Portable'],
     logo: 'ppsspp.webp',
+  },
+  {
+    name: 'PicPic',
+    supportedSystemNames: ['PICO-8'],
+    logo: 'picpic.webp',
   },
   {
     name: 'Pluvia',
@@ -179,6 +225,11 @@ const emulators: EmulatorData[] = [
     name: 'Ryujinx',
     supportedSystemNames: ['Nintendo Switch'],
     logo: 'ryujinx.webp',
+  },
+  {
+    name: "Rosalie's Mupen GUI",
+    supportedSystemNames: ['Nintendo 64'],
+    logo: 'rmg.webp',
   },
   {
     name: 'ShadPS4',
@@ -221,9 +272,34 @@ const emulators: EmulatorData[] = [
     logo: 'vita3k.webp',
   },
   {
+    name: 'Vita3K+',
+    supportedSystemNames: ['Sony PlayStation Vita'],
+    logo: 'vita3k-plus.webp',
+  },
+  {
+    name: 'WatermelonDS',
+    supportedSystemNames: ['Nintendo DS'],
+    logo: 'watermelonds.webp',
+  },
+  {
     name: 'Winlator',
     supportedSystemNames: ['Microsoft Windows'],
     logo: 'winlator.webp',
+  },
+  {
+    name: 'WinNative',
+    supportedSystemNames: ['Microsoft Windows'],
+    logo: 'winnative.webp',
+  },
+  {
+    name: 'WPR',
+    supportedSystemNames: ['Microsoft Windows Phone'],
+    logo: 'wpr.webp',
+  },
+  {
+    name: 'X1 BOX',
+    supportedSystemNames: ['Microsoft Xbox'],
+    logo: 'x1-box.webp',
   },
   {
     name: 'XBSX2',
@@ -234,6 +310,16 @@ const emulators: EmulatorData[] = [
     name: 'Xenia',
     supportedSystemNames: ['Microsoft Xbox 360'],
     logo: 'xenia.webp',
+  },
+  {
+    name: 'XenDroid',
+    supportedSystemNames: ['Microsoft Xbox 360'],
+    logo: 'xendroid.webp',
+  },
+  {
+    name: 'Xendroid+',
+    supportedSystemNames: ['Microsoft Xbox 360'],
+    logo: 'xendroid-plus.webp',
   },
   { name: 'Xemu', supportedSystemNames: ['Microsoft Xbox'], logo: 'xemu.webp' },
   {
