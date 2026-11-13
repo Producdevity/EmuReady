@@ -11,11 +11,13 @@ import {
   Shield,
   Users,
   Bookmark,
+  ClipboardList,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect } from 'react'
 import { Button, PageSkeletonLoading } from '@/components/ui'
+import { ReportHistory } from '@/features/reports/history/client/ReportHistory'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { hasRolePermission } from '@/utils/permissions'
@@ -54,6 +56,11 @@ const baseTabs = [
     id: 'bookmarks',
     label: 'Bookmarks',
     icon: <Bookmark className="w-4 h-4" />,
+  },
+  {
+    id: 'reports',
+    label: 'My Reports',
+    icon: <ClipboardList className="w-4 h-4" />,
   },
   {
     id: 'privacy',
@@ -167,6 +174,8 @@ function ProfilePage() {
           {activeTab === 'profile' && <ProfileInformation userQuery={userQuery} />}
 
           {activeTab === 'account' && <AccountSettings />}
+
+          {activeTab === 'reports' && <ReportHistory />}
 
           {activeTab === 'privacy' && <PrivacySettings preferencesQuery={preferencesQuery} />}
 

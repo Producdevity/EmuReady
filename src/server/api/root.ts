@@ -2,6 +2,7 @@ import { bookmarksRouter } from '@/features/bookmarks/server/bookmarks.router'
 import { customFieldConfigRouter } from '@/features/emulators/custom-field-config/server/config.router'
 import { cpuRouter } from '@/features/hardware/cpu/server/cpu.router'
 import { gpuRouter } from '@/features/hardware/gpu/server/gpu.router'
+import { reportHistoryRouter } from '@/features/reports/history/server/history.router'
 import { usersRouter } from '@/features/users/server/user.router'
 import { createTRPCRouter } from '@/server/api/trpc'
 import { accountRouter } from './routers/account'
@@ -45,6 +46,7 @@ import { verifiedDevelopersRouter } from './routers/verifiedDevelopers'
 import { voteInvestigationRouter } from './routers/voteInvestigation'
 
 export const appRouter = createTRPCRouter({
+  reportHistory: reportHistoryRouter,
   account: accountRouter,
   activity: activityRouter,
   listings: listingsRouter,
