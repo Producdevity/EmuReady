@@ -12,7 +12,11 @@ export function useUrlSearch(debounceMs = 300): [string, (value: string) => void
   const [draft, setDraft] = useState({ pathname, search, value: search })
 
   if (draft.pathname !== pathname || draft.search !== search) {
-    setDraft({ pathname, search, value: search })
+    setDraft({
+      pathname,
+      search,
+      value: draft.pathname === pathname && draft.value.trim() === search ? draft.value : search,
+    })
   }
 
   useEffect(() => {

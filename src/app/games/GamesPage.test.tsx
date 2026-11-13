@@ -136,4 +136,18 @@ describe('games library search navigation', () => {
 
     expect(mocks.replace).not.toHaveBeenCalled()
   })
+
+  it('preserves a typed space when its normalized search returns from navigation', () => {
+    const view = render(<GamesPage />)
+    fireEvent.change(screen.getByLabelText('Game search'), { target: { value: 'Dark ' } })
+    act(() => vi.advanceTimersByTime(500))
+    mocks.params = new URLSearchParams('search=Dark')
+    view.rerender(<GamesPage />)
+
+    expect(screen.getByLabelText('Game search')).toHaveValue('Dark ')
+
+    fireEvent.change(screen.getByLabelText('Game search'), { target: { value: 'Dark Souls' } })
+    act(() => vi.advanceTimersByTime(500))
+    expect(mocks.replace).toHaveBeenLastCalledWith('/games?search=Dark+Souls', { scroll: false })
+  })
 })
