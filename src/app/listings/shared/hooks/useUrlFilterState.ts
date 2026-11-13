@@ -19,7 +19,8 @@ export function useUrlFilterState<TSortField extends string>(config: Config) {
   const searchParams = useSearchParams()
   const [searchInput, setSearchInternal, search] = useUrlSearch(300)
 
-  const page = Math.max(1, Number(searchParams.get('page')) || 1)
+  const urlPage = Math.floor(Number(searchParams.get('page')))
+  const page = Number.isSafeInteger(urlPage) && urlPage > 0 ? urlPage : 1
   const sortField = (searchParams.get('sortField') as TSortField) ?? null
   const sortDirection = (searchParams.get('sortDirection') as SortDirection) ?? null
   const myListings = searchParams.get('myListings') === 'true'
