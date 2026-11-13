@@ -53,6 +53,38 @@ const gameProps = {
 }
 
 describe('Autocomplete async response ordering', () => {
+  it('does not select stale async options during the debounce window', async () => {
+    vi.useFakeTimers()
+    const onChange = vi.fn()
+    const loadItems = vi.fn(async (query: string) =>
+      mockStaticItems.filter((item) => !query || item.id === '2'),
+    )
+    render(<Autocomplete {...defaultProps} loadItems={loadItems} onChange={onChange} />)
+    try {
+      await act(async () => {})
+      const input = screen.getByRole('combobox')
+      fireEvent.focus(input)
+      expect(screen.getByRole('option', { name: 'Apple' })).toBeInTheDocument()
+      fireEvent.change(input, { target: { value: 'Ba' } })
+      expect(loadItems).not.toHaveBeenCalledWith('Ba')
+      fireEvent.keyDown(input, { key: 'ArrowDown' })
+      fireEvent.keyDown(input, { key: 'Enter' })
+      expect(onChange).not.toHaveBeenCalled()
+      expect(input).toHaveValue('Ba')
+      expect(input).not.toHaveAttribute('aria-activedescendant')
+      expect(screen.queryByRole('option')).not.toBeInTheDocument()
+
+      await act(async () => vi.advanceTimersByTime(300))
+      expect(loadItems).toHaveBeenCalledWith('Ba')
+      expect(screen.getByRole('option', { name: 'Banana' })).toBeInTheDocument()
+      fireEvent.keyDown(input, { key: 'ArrowDown' })
+      fireEvent.keyDown(input, { key: 'Enter' })
+      expect(onChange).toHaveBeenCalledExactlyOnceWith('2')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it.each(['debounce', 'request'] as const)(
     'discards a pending %s when the parent selects another option',
     async (stage) => {
@@ -436,6 +468,74 @@ describe('Autocomplete Component', () => {
       await waitFor(() => {
         expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
       })
+    })
+
+    it('submits the form instead of selecting a dismissed option and can reopen with arrows', async () => {
+      const onChange = vi.fn()
+      const onSubmit = vi.fn()
+      render(
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            onSubmit()
+          }}
+        >
+          <Autocomplete {...defaultProps} items={mockStaticItems} onChange={onChange} />
+        </form>,
+      )
+      const input = screen.getByRole('combobox')
+      await user.click(input)
+      await user.keyboard('{ArrowDown}{Escape}{Enter}')
+      expect(onChange).not.toHaveBeenCalled()
+      expect(onSubmit).toHaveBeenCalledOnce()
+      expect(input).not.toHaveAttribute('aria-activedescendant')
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+
+      await user.keyboard('{ArrowDown}{ArrowDown}{Enter}')
+      expect(onChange).toHaveBeenCalledExactlyOnceWith('1')
+      expect(onSubmit).toHaveBeenCalledOnce()
+    })
+
+    it('does not schedule a lookup for Enter while the dropdown is closed', async () => {
+      render(<Autocomplete {...defaultProps} items={mockStaticItems} />)
+      const input = screen.getByRole('combobox')
+      await user.click(input)
+      await user.keyboard('{Escape}')
+      vi.useFakeTimers()
+      fireEvent.keyDown(input, { key: 'Enter' })
+      await act(() => vi.advanceTimersByTimeAsync(300))
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    })
+
+    it('does not select hidden prior results while an async lookup is loading', async () => {
+      const pending = Promise.withResolvers<TestOption[]>()
+      const onChange = vi.fn()
+      const loadItems = vi.fn((query: string) =>
+        query ? pending.promise : Promise.resolve(mockStaticItems),
+      )
+      render(
+        <Autocomplete
+          {...defaultProps}
+          loadItems={loadItems}
+          debounceTime={0}
+          onChange={onChange}
+        />,
+      )
+      try {
+        const input = screen.getByRole('combobox')
+        await user.click(input)
+        await screen.findByRole('option', { name: 'Apple' })
+        await user.type(input, 'Ba')
+        await waitFor(() => expect(loadItems).toHaveBeenCalledWith('Ba'))
+        expect(screen.queryByRole('option')).not.toBeInTheDocument()
+        fireEvent.keyDown(input, { key: 'ArrowDown' })
+        fireEvent.keyDown(input, { key: 'Enter' })
+        expect(onChange).not.toHaveBeenCalled()
+        expect(input).not.toHaveAttribute('aria-activedescendant')
+        expect(input).toHaveValue('Ba')
+      } finally {
+        await act(async () => pending.resolve([]))
+      }
     })
 
     it('should close dropdown on Tab', async () => {

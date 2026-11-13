@@ -9,7 +9,6 @@ import { canUserAutoApprove } from '@/lib/trust/service'
 import { EMULATOR_VERSION_FIELD_NAME } from '@/schemas/submissionRisk'
 import { computeVoteCounts } from '@/server/utils/moderator-info'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
-import { sanitizeInput } from '@/server/utils/security-validation'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { calculateWilsonScore } from '@/utils/wilson-score'
 import { Prisma, ApprovalStatus, type PcOs, Role } from '@orm/client'
@@ -726,7 +725,7 @@ export class PcListingsRepository extends BaseRepository {
         memorySize,
         os,
         osVersion,
-        notes: notes ? sanitizeInput(notes) : (notes ?? null),
+        notes: notes?.trim() ?? null,
         authorId,
         status,
         successRate: calculateWilsonScore(0, 0),

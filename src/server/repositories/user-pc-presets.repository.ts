@@ -1,9 +1,4 @@
 import { ResourceError } from '@/lib/errors'
-import {
-  validateRequired,
-  validateStringFormat,
-  ValidationPatterns,
-} from '@/server/utils/security-validation'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { type Prisma, Role } from '@orm/client'
 import { BaseRepository } from './base.repository'
@@ -141,10 +136,6 @@ export class UserPcPresetsRepository extends BaseRepository {
         | typeof UserPcPresetsRepository.includes.limited
     }>
   > {
-    validateRequired(data.userId, 'userId')
-    validateRequired(data.name, 'preset name')
-    validateStringFormat(data.userId, ValidationPatterns.UUID, 'userId', 'UUID format')
-
     // Check for duplicate name
     const exists = await this.existsByName(data.userId, data.name)
     if (exists) throw ResourceError.pcPreset.alreadyExists(data.name)

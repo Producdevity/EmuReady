@@ -9,7 +9,6 @@ import {
   revalidateByTag,
 } from '@/server/cache/invalidation'
 import { gameStatsCache } from '@/server/utils/cache'
-import { validateNonEmptyArray } from '@/server/utils/security-validation'
 import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus, TrustAction } from '@orm'
@@ -69,7 +68,6 @@ export class GameModerationService {
 
   private async reviewPending(actor: Actor, gameIds: string[], status: GameModerationStatus) {
     const user = requireActorPermission(actor, PERMISSIONS.APPROVE_GAMES)
-    validateNonEmptyArray(gameIds, 'gameIds')
     const committed = await this.repository.transaction(async (repository, transaction) => {
       const trustChanges: TrustScoreChange[] = []
       const games = await repository.pending(gameIds)
