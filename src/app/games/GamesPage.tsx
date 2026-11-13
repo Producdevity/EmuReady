@@ -193,12 +193,12 @@ function GamesContent() {
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 px-4">
-      <div className="max-w-7xl mx-auto flex justify-between items-center mb-8">
+      <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4 mb-8">
         <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
           Games Library
         </h1>
         {user && (
-          <Button asChild variant="fancy" className="hidden md:inline-flex">
+          <Button asChild variant="fancy">
             <Link href={addGameHref}>Add Game</Link>
           </Button>
         )}
