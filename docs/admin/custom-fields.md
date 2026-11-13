@@ -33,7 +33,7 @@ The JSON describes the complete setup. Omitted unused fields and categories are 
 
 - Keep the exported `id` when renaming an existing field or category. This preserves its identity and report values. New items may omit IDs; pasted items without a matching destination ID are matched by name or created.
 - A field's `category` is a category name, or `null` for no group. Update field references when renaming a category. Empty categories are allowed.
-- `displayOrder` controls category and global field order. `categoryOrder` controls order within a category.
+- A category's `displayOrder` controls category order; uncategorized fields appear last. Within a group, fields sort by `categoryOrder`, then by field `displayOrder` to break ties.
 - Use JSON booleans and numbers for Boolean and Range defaults, including `false` and `0`. A Select default must match an option's `value`.
 - Range settings use `rangeMin`, `rangeMax`, `rangeUnit` and `rangeDecimals`. Text, Textarea and URL fields may use `placeholder`.
 
