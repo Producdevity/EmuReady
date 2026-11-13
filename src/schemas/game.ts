@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { PAGINATION } from '@/data/constants'
 import { HumanVerificationTokenSchema } from '@/features/human-verification/shared/schema'
-import { SortDirectionSchema } from '@/schemas/common'
+import { SignedInt32Schema, SortDirectionSchema } from '@/schemas/common'
 import { ApprovalStatus } from '@orm'
 
 export const GameSortField = z.enum([
@@ -62,7 +62,7 @@ export const GetGamesSchema = z
 export const GetGameByIdSchema = z.object({ id: z.string().uuid() })
 
 export const CheckExistingByTgdbIdsSchema = z.object({
-  tgdbGameIds: z.array(z.number()),
+  tgdbGameIds: z.array(SignedInt32Schema),
 })
 
 export const CheckExistingByNamesAndSystemsSchema = z.object({
@@ -88,7 +88,7 @@ export const CreateGameSchema = z.object({
   imageUrl: OptionalGameImageUrlSchema,
   boxartUrl: OptionalGameImageUrlSchema,
   bannerUrl: OptionalGameImageUrlSchema,
-  tgdbGameId: z.number().nullable().optional(), // TODO: store in metadata
+  tgdbGameId: SignedInt32Schema.nullable().optional(), // TODO: store in metadata
   igdbGameId: z.number().nullable().optional(), // TODO: For IGDB game creation (stored in metadata for now)
   isErotic: z.boolean().optional(),
 })
@@ -100,7 +100,7 @@ export const UpdateGameSchema = z.object({
   imageUrl: OptionalGameImageUrlSchema,
   boxartUrl: OptionalGameImageUrlSchema,
   bannerUrl: OptionalGameImageUrlSchema,
-  tgdbGameId: z.number().optional(),
+  tgdbGameId: SignedInt32Schema.optional(),
   isErotic: z.boolean().optional(),
 })
 
