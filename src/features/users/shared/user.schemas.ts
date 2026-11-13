@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { PAGINATION, CHAR_LIMITS } from '@/data/constants'
 import { SortDirectionSchema } from '@/schemas/common'
+import { refinePaginationOffset } from '@/schemas/pagination'
 import { Role } from '@orm'
 
 export const UserSortField = z.enum([
@@ -20,31 +21,49 @@ export const GetAllUsersSchema = z
     search: z.string().nullable().optional(),
     sortField: UserSortField.nullable().optional(),
     sortDirection: SortDirectionSchema.nullable().optional(),
-    page: z.number().int().min(1).default(1),
+    page: z.number().int().safe().min(1).default(1),
     limit: z.number().int().min(1).max(PAGINATION.MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
-export const GetUserByIdSchema = z.object({
-  userId: z.string().uuid(),
-  // Pagination for listings
-  listingsPage: z.number().int().min(1).default(1),
-  listingsLimit: z.number().int().min(1).max(50).default(12),
-  listingsSearch: z.string().optional(),
-  listingsDevice: z.string().optional(),
-  listingsEmulator: z.string().optional(),
-  // Pagination for PC listings
-  pcListingsPage: z.number().int().min(1).default(1),
-  pcListingsLimit: z.number().int().min(1).max(50).default(12),
-  pcListingsSearch: z.string().optional(),
-  // Pagination for votes
-  votesPage: z.number().int().min(1).default(1),
-  votesLimit: z.number().int().min(1).max(50).default(12),
-  votesSearch: z.string().optional(),
-  // Pagination for trust actions
-  trustActionsPage: z.number().int().min(1).default(1),
-  trustActionsLimit: z.number().int().min(1).max(50).default(10),
-})
+export const GetUserByIdSchema = z
+  .object({
+    userId: z.string().uuid(),
+    // Pagination for listings
+    listingsPage: z.number().int().safe().min(1).default(1),
+    listingsLimit: z.number().int().min(1).max(50).default(12),
+    listingsSearch: z.string().optional(),
+    listingsDevice: z.string().optional(),
+    listingsEmulator: z.string().optional(),
+    // Pagination for PC listings
+    pcListingsPage: z.number().int().safe().min(1).default(1),
+    pcListingsLimit: z.number().int().min(1).max(50).default(12),
+    pcListingsSearch: z.string().optional(),
+    // Pagination for votes
+    votesPage: z.number().int().safe().min(1).default(1),
+    votesLimit: z.number().int().min(1).max(50).default(12),
+    votesSearch: z.string().optional(),
+    // Pagination for trust actions
+    trustActionsPage: z.number().int().safe().min(1).default(1),
+    trustActionsLimit: z.number().int().min(1).max(50).default(10),
+  })
+  .superRefine((input, context) => {
+    refinePaginationOffset({ page: input.listingsPage, limit: input.listingsLimit }, context, [
+      'listingsPage',
+    ])
+    refinePaginationOffset({ page: input.pcListingsPage, limit: input.pcListingsLimit }, context, [
+      'pcListingsPage',
+    ])
+    refinePaginationOffset({ page: input.votesPage, limit: input.votesLimit }, context, [
+      'votesPage',
+    ])
+    refinePaginationOffset(
+      { page: input.trustActionsPage, limit: input.trustActionsLimit },
+      context,
+      ['trustActionsPage'],
+    )
+  })
 
 export const UpdateUserSchema = z.object({
   name: z.string().min(1).optional(),
@@ -64,7 +83,7 @@ export const DeleteUserSchema = z.object({
 
 export const SearchUsersSchema = z.object({
   query: z.string().optional(),
-  limit: z.number().min(1).max(50).default(20),
+  limit: z.number().int().min(1).max(50).default(20),
   minRole: z.nativeEnum(Role).optional(),
 })
 
@@ -72,13 +91,15 @@ export const GetUserSocialOverviewSchema = z.object({
   userId: z.string().uuid(),
 })
 
-export const AdminGetSocialListSchema = z.object({
-  userId: z.string().uuid(),
-  section: z.enum(['followers', 'following', 'friends', 'blocked']),
-  search: z.string().optional(),
-  page: z.number().int().min(1).default(1),
-  limit: z.number().int().min(1).max(50).default(10),
-})
+export const AdminGetSocialListSchema = z
+  .object({
+    userId: z.string().uuid(),
+    section: z.enum(['followers', 'following', 'friends', 'blocked']),
+    search: z.string().optional(),
+    page: z.number().int().safe().min(1).default(1),
+    limit: z.number().int().min(1).max(50).default(10),
+  })
+  .superRefine(refinePaginationOffset)
 
 export const IsVerifiedDeveloperSchema = z.object({
   emulatorId: z.string().uuid(),

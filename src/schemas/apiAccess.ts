@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { SortDirectionSchema } from '@/schemas/common'
+import { refinePaginationOffset } from '@/schemas/pagination'
 import { ApiUsagePeriod } from '@orm'
 
 const quotaValueSchema = z.number().int().positive().max(1_000_000_000)
@@ -43,17 +44,20 @@ export const UpdateApiKeyQuotaSchema = z.object({
   expiresAt: z.string().datetime().nullable().optional(),
 })
 
-export const ListApiKeysSchema = z.object({
+const listApiKeysSchema = z.object({
   search: z.string().trim().max(200).optional(),
   userId: z.string().uuid().optional(),
   includeRevoked: z.boolean().optional(),
   limit: z.number().int().positive().max(100).optional(),
-  page: z.number().int().positive().optional(),
+  page: z.number().int().safe().positive().optional(),
   sortField: ApiKeySortFieldSchema.optional(),
   sortDirection: SortDirectionSchema.optional(),
 })
 
-export const DeveloperListApiKeysSchema = ListApiKeysSchema.omit({ userId: true })
+export const ListApiKeysSchema = listApiKeysSchema.superRefine(refinePaginationOffset)
+export const DeveloperListApiKeysSchema = listApiKeysSchema
+  .omit({ userId: true })
+  .superRefine(refinePaginationOffset)
 
 export const GetApiKeyUsageSchema = z.object({
   id: z.string().uuid(),

@@ -5,6 +5,7 @@ import {
   LookupPaginationInputSchema,
   PaginationInputSchema,
   PaginationResultSchema,
+  refinePaginationOffset,
 } from '@/schemas/pagination'
 
 export const CpuSortFieldSchema = z.enum(['brand', 'modelName', 'pcListings'])
@@ -17,6 +18,7 @@ export const GetCpusSchema = z
     sortDirection: SortDirectionSchema.optional(),
   })
   .merge(PaginationInputSchema)
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export const GetCpuOptionsSchema = z
@@ -32,18 +34,19 @@ export const MobileGetCpusSchema = z
   .object({
     search: z.string().optional(),
     brandId: z.string().uuid().optional(),
-    limit: z.number().default(PAGINATION.DEFAULT_LIMIT),
-    offset: z.number().default(0),
-    page: z.number().optional(),
+    limit: z.number().int().safe().min(1).default(PAGINATION.DEFAULT_LIMIT),
+    offset: z.number().int().safe().default(0),
+    page: z.number().int().safe().min(1).optional(),
     sortField: CpuSortFieldSchema.optional(),
     sortDirection: SortDirectionSchema.optional(),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export const MobilePcListingCpusSchema = z.object({
   search: z.string().optional(),
   brandId: z.string().uuid().optional(),
-  limit: z.number().min(1).max(PAGINATION.MAX_LIMIT).default(LOOKUP_PAGINATION.DEFAULT_LIMIT),
+  limit: z.number().int().min(1).max(PAGINATION.MAX_LIMIT).default(LOOKUP_PAGINATION.DEFAULT_LIMIT),
 })
 
 export const GetCpuByIdSchema = z.object({ id: z.string().uuid() })

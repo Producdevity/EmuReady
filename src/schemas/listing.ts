@@ -3,6 +3,7 @@ import { PAGINATION } from '@/data/constants'
 import { HumanVerificationTokenSchema } from '@/features/human-verification/shared/schema'
 import { JsonValueSchema, ListingType, SignedInt32Schema } from '@/schemas/common'
 import { CreateListingBaseSchema } from '@/schemas/listingCreate'
+import { refinePaginationOffset } from '@/schemas/pagination'
 import { REVIEW_RISK_FILTERS, ReviewRiskFilterSchema } from '@/schemas/submissionRisk'
 import { ApprovalStatus } from '@orm'
 
@@ -52,8 +53,8 @@ export const GetListingModeratorInfoSchema = z.object({
 export const GetPendingListingsSchema = z
   .object({
     search: z.string().nullable().optional(),
-    page: z.number().default(1),
-    limit: z.number().default(PAGINATION.DEFAULT_LIMIT),
+    page: z.number().int().safe().default(1),
+    limit: z.number().int().safe().default(PAGINATION.DEFAULT_LIMIT),
     sortField: z
       .enum([
         'game.title',
@@ -68,30 +69,35 @@ export const GetPendingListingsSchema = z
     sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
     riskFilter: ReviewRiskFilterSchema.default(REVIEW_RISK_FILTERS.ALL),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export const DeleteListingSchema = z.object({ id: z.string().uuid() })
 
-export const GetProcessedSchema = z.object({
-  page: z.number().default(1),
-  limit: z.number().default(10),
-  filterStatus: z.nativeEnum(ApprovalStatus).nullable().optional(),
-  search: z.string().nullable().optional(),
-  sortField: z
-    .enum([
-      'processedAt',
-      'createdAt',
-      'status',
-      'game.title',
-      'game.system.name',
-      'device',
-      'emulator.name',
-      'author.name',
-    ])
-    .nullable()
-    .optional(),
-  sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
-})
+export const GetProcessedSchema = z
+  .object({
+    page: z.number().int().safe().default(1),
+    limit: z.number().int().safe().default(10),
+    filterStatus: z.nativeEnum(ApprovalStatus).nullable().optional(),
+    search: z.string().nullable().optional(),
+    sortField: z
+      .enum([
+        'processedAt',
+        'createdAt',
+        'status',
+        'game.title',
+        'game.system.name',
+        'device',
+        'emulator.name',
+        'author.name',
+      ])
+      .nullable()
+      .optional(),
+    sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
+  })
+  .superRefine((input, context) =>
+    refinePaginationOffset({ offset: (input.page - 1) * input.limit }, context, ['page']),
+  )
 
 export const OverrideApprovalStatusSchema = z.object({
   listingId: z.string().uuid(),
@@ -167,28 +173,30 @@ export const UnverifyListingSchema = z.object({
 })
 
 // Admin schemas for listing management
-export const GetAllListingsAdminSchema = z.object({
-  page: z.number().int().positive().default(1),
-  limit: z.number().int().positive().max(PAGINATION.MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
-  sortField: z
-    .enum([
-      'game.title',
-      'game.system.name',
-      'device',
-      'emulator.name',
-      'performance.rank',
-      'author.name',
-      'createdAt',
-      'status',
-    ])
-    .nullable()
-    .optional(),
-  sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
-  search: z.string().min(1).nullable().optional(),
-  statusFilter: z.nativeEnum(ApprovalStatus).nullable().optional(),
-  systemFilter: z.string().uuid().nullable().optional(),
-  emulatorFilter: z.string().uuid().nullable().optional(),
-})
+export const GetAllListingsAdminSchema = z
+  .object({
+    page: z.number().int().safe().positive().default(1),
+    limit: z.number().int().positive().max(PAGINATION.MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
+    sortField: z
+      .enum([
+        'game.title',
+        'game.system.name',
+        'device',
+        'emulator.name',
+        'performance.rank',
+        'author.name',
+        'createdAt',
+        'status',
+      ])
+      .nullable()
+      .optional(),
+    sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
+    search: z.string().min(1).nullable().optional(),
+    statusFilter: z.nativeEnum(ApprovalStatus).nullable().optional(),
+    systemFilter: z.string().uuid().nullable().optional(),
+    emulatorFilter: z.string().uuid().nullable().optional(),
+  })
+  .superRefine(refinePaginationOffset)
 
 export const GetListingForEditSchema = z.object({
   id: z.string().uuid(),
