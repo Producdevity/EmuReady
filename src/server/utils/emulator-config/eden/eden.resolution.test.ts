@@ -52,13 +52,22 @@ describe('Eden resolution INI contract', () => {
     }
   })
 
-  it.each([11, 12])('accepts raw enum index %s without narrowing it to the old range', (setup) => {
+  it.each(upstreamResolutions)('accepts the raw numeric enum index $setup', (resolution) => {
     const config = convertToEdenConfig({
       gameId: 'game',
       listingId: 'report',
-      customFieldValues: [{ customFieldDefinition: resolutionField, value: setup }],
+      customFieldValues: [{ customFieldDefinition: resolutionField, value: resolution.setup }],
     })
-    expect(config.Renderer?.resolution_setup?.value).toBe(setup)
+    expect(config.Renderer?.resolution_setup?.value).toBe(resolution.setup)
+  })
+
+  it.each(['2', '2x'])('keeps the string %s as a multiplier', (value) => {
+    const config = convertToEdenConfig({
+      gameId: 'game',
+      listingId: 'report',
+      customFieldValues: [{ customFieldDefinition: resolutionField, value }],
+    })
+    expect(config.Renderer?.resolution_setup?.value).toBe(6)
   })
 
   it('caps an overflowing multiplier at the largest supported scale', () => {

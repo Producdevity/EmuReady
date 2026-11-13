@@ -122,6 +122,12 @@ export interface EdenConfigInput {
  * @param value
  */
 function resolutionParser(value: unknown): ResolutionSetup | undefined {
+  if (typeof value === 'number' && Number.isInteger(value)) {
+    return (
+      EDEN_RESOLUTION_SCALES.find((scale) => scale.setup === value)?.setup ??
+      EdenDefaults.getDefaultResolutionSetup()
+    )
+  }
   const resStr = String(value)
 
   // First try using the helper function
