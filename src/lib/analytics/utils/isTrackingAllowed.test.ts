@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import storageKeys from '@/data/storageKeys'
 import { isTrackingAllowed } from './isTrackingAllowed'
 
@@ -20,22 +20,27 @@ class MemoryStorage {
 }
 
 describe('isTrackingAllowed', () => {
-  const originalWindow = globalThis.window
-  const originalLocalStorage = (globalThis as any).localStorage
   const mem = new MemoryStorage()
 
   beforeEach(() => {
-    // Simulate browser environment
-    ;(globalThis as any).window = {} as Window
-    ;(globalThis as any).localStorage = mem
+    vi.stubGlobal('localStorage', mem)
     mem.clear()
   })
 
-  afterEach(() => {
-    // Restore environment
-    ;(globalThis as any).window = originalWindow
-    ;(globalThis as any).localStorage = originalLocalStorage
-  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  it.each(['false', '0', 'null', 'invalid'])(
+    'blocks all categories when consent is %s',
+    (consent) => {
+      mem.setItem(storageKeys.cookies.consent, consent)
+      mem.setItem(
+        storageKeys.cookies.preferences,
+        JSON.stringify({ analytics: true, performance: true }),
+      )
+      expect(isTrackingAllowed('filter')).toBe(false)
+      expect(isTrackingAllowed('performance')).toBe(false)
+    },
+  )
 
   it('blocks all categories when no consent is present', () => {
     expect(isTrackingAllowed('performance')).toBe(false)

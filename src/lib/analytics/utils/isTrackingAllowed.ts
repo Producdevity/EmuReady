@@ -24,7 +24,7 @@ export function isTrackingAllowed(category: AnalyticsCategory): boolean {
   try {
     // Must have explicit consent
     const hasConsented = localStorage.getItem(storageKeys.cookies.consent)
-    if (!hasConsented) return false
+    if (hasConsented !== 'true') return false
 
     // Read stored preferences
     const preferencesString = localStorage.getItem(storageKeys.cookies.preferences)
