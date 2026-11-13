@@ -103,7 +103,7 @@ export default function BookmarkBrowser(props: Props) {
                 step={1}
                 value={browser.memoryDrafts.memoryMin}
                 onChange={(event) => browser.changeMemory('memoryMin', event.target.value)}
-                aria-invalid={browser.memoryErrors.memoryMin || undefined}
+                aria-invalid={Boolean(browser.memoryErrors.memoryMin) || undefined}
                 aria-describedby={
                   browser.memoryErrors.memoryMin ? `${minMemoryId}-error` : undefined
                 }
@@ -113,7 +113,7 @@ export default function BookmarkBrowser(props: Props) {
                   id={`${minMemoryId}-error`}
                   className="mt-1 text-sm text-red-600 dark:text-red-400"
                 >
-                  Enter a positive whole number.
+                  {browser.memoryErrors.memoryMin}
                 </p>
               )}
             </div>
@@ -128,7 +128,7 @@ export default function BookmarkBrowser(props: Props) {
                 step={1}
                 value={browser.memoryDrafts.memoryMax}
                 onChange={(event) => browser.changeMemory('memoryMax', event.target.value)}
-                aria-invalid={browser.memoryErrors.memoryMax || undefined}
+                aria-invalid={Boolean(browser.memoryErrors.memoryMax) || undefined}
                 aria-describedby={
                   browser.memoryErrors.memoryMax ? `${maxMemoryId}-error` : undefined
                 }
@@ -138,7 +138,7 @@ export default function BookmarkBrowser(props: Props) {
                   id={`${maxMemoryId}-error`}
                   className="mt-1 text-sm text-red-600 dark:text-red-400"
                 >
-                  Enter a positive whole number.
+                  {browser.memoryErrors.memoryMax}
                 </p>
               )}
             </div>

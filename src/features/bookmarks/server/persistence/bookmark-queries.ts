@@ -7,6 +7,7 @@ import { ApprovalStatus, Prisma } from '@orm'
 
 function reportFilters(input: z.output<typeof GetListingBookmarksSchema>) {
   const game: Prisma.GameWhereInput = {
+    status: ApprovalStatus.APPROVED,
     ...(input.search
       ? { title: { contains: input.search, mode: Prisma.QueryMode.insensitive } }
       : {}),
@@ -14,7 +15,7 @@ function reportFilters(input: z.output<typeof GetListingBookmarksSchema>) {
   }
   return {
     status: ApprovalStatus.APPROVED,
-    game: input.search || input.systemIds.length ? game : undefined,
+    game,
     emulatorId: input.emulatorIds.length ? { in: input.emulatorIds } : undefined,
     performanceId: input.performanceIds.length ? { in: input.performanceIds } : undefined,
   }

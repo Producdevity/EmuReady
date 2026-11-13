@@ -213,10 +213,19 @@ export class BookmarkRepository extends BaseRepository {
 
       const [listingBookmarks, pcListingBookmarks] = await Promise.all([
         this.prisma.listingBookmark.count({
-          where: { userId, listing: { status: ApprovalStatus.APPROVED } },
+          where: {
+            userId,
+            listing: { status: ApprovalStatus.APPROVED, game: { status: ApprovalStatus.APPROVED } },
+          },
         }),
         this.prisma.pcListingBookmark.count({
-          where: { userId, pcListing: { status: ApprovalStatus.APPROVED } },
+          where: {
+            userId,
+            pcListing: {
+              status: ApprovalStatus.APPROVED,
+              game: { status: ApprovalStatus.APPROVED },
+            },
+          },
         }),
       ])
 

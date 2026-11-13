@@ -241,7 +241,7 @@ function UserDetailsPage() {
     activityTabs.push({
       id: 'votes',
       label: 'Votes',
-      count: userQuery.data?.votes.pagination.total ?? 0,
+      count: userQuery.data?._count?.votes ?? 0,
     })
   }
   if (showBookmarksTab) {
@@ -737,6 +737,7 @@ function UserDetailsPage() {
               {activeTab === 'bookmarks' && bookmarkCounts && (
                 <UserBookmarksSection
                   userId={userId}
+                  ownProfile={isOwnProfile}
                   handheldCount={bookmarkCounts.listingBookmarks}
                   pcCount={bookmarkCounts.pcListingBookmarks}
                 />

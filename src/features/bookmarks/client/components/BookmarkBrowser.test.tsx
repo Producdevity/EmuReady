@@ -149,3 +149,26 @@ it.each(['Minimum memory (GB)', 'Maximum memory (GB)'])(
     )
   },
 )
+
+it('retains an inverted memory draft and the last valid query until the range is corrected', () => {
+  render(<Browser />)
+  fireEvent.click(screen.getByRole('button', { name: /PC/ }))
+  const minimum = screen.getByLabelText('Minimum memory (GB)')
+  const maximum = screen.getByLabelText('Maximum memory (GB)')
+  fireEvent.change(minimum, { target: { value: '16' } })
+  fireEvent.change(maximum, { target: { value: '32' } })
+  fireEvent.change(minimum, { target: { value: '64' } })
+  expect(minimum).toHaveValue(64)
+  expect(maximum).toHaveAttribute('aria-invalid', 'true')
+  expect(maximum).toHaveAccessibleDescription('Maximum memory must be at least minimum memory.')
+  expect(mocks.pc).toHaveBeenLastCalledWith(
+    expect.objectContaining({ memoryMin: 16, memoryMax: 32 }),
+    expect.anything(),
+  )
+  fireEvent.change(maximum, { target: { value: '64' } })
+  expect(maximum).not.toHaveAttribute('aria-invalid')
+  expect(mocks.pc).toHaveBeenLastCalledWith(
+    expect.objectContaining({ memoryMin: 64, memoryMax: 64 }),
+    expect.anything(),
+  )
+})

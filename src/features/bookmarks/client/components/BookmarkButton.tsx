@@ -37,7 +37,7 @@ function BookmarkButton(props: Props) {
           disabled={disabled && !isStatusError}
           aria-disabled={disabled}
           whileTap={disabled ? undefined : { scale: 0.85 }}
-          aria-pressed={isBookmarked}
+          aria-pressed={isStatusPending || isStatusError ? undefined : isBookmarked}
           aria-label={actionLabel}
           className={cn(
             'relative flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-200 outline-none',

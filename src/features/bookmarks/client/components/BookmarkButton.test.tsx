@@ -86,9 +86,18 @@ it('keeps the unavailable status explanation keyboard-accessible without permitt
   render(<BookmarkButton type="listing" listingId={id} />)
   const button = screen.getByRole('button', { name: 'Bookmark status unavailable' })
   expect(button).toHaveAttribute('aria-disabled', 'true')
+  expect(button).not.toHaveAttribute('aria-pressed')
   act(() => button.focus())
   expect(button).toHaveFocus()
   expect(await screen.findByRole('tooltip')).toHaveTextContent('Bookmark status unavailable')
   fireEvent.click(button)
   expect(state.handleToggle).not.toHaveBeenCalled()
+})
+
+it('does not announce a bookmark state before status resolution', () => {
+  state.isStatusPending = true
+  render(<BookmarkButton type="listing" listingId={id} />)
+  const button = screen.getByRole('button')
+  expect(button).toBeDisabled()
+  expect(button).not.toHaveAttribute('aria-pressed')
 })

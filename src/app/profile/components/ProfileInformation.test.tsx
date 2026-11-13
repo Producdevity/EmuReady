@@ -175,6 +175,17 @@ describe('profile information draft', () => {
       )
       expect(toast.success).not.toHaveBeenCalled()
       expect(toast.error).not.toHaveBeenCalled()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(screen.getByText('My saved name')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
+      expect(screen.getByDisplayValue('My saved name')).toBeInTheDocument()
+
+      act(() => {
+        queryClient.setQueryData(['profile'], { ...profile, name: 'Latest server name' })
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(await screen.findByText('Latest server name', { selector: 'p' })).toBeInTheDocument()
     } finally {
       queryClient.clear()
       errorLog.mockRestore()

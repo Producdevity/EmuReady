@@ -24,19 +24,34 @@ function ProfileInformation(props: Props) {
     name: '',
     bio: '',
   })
+  const [savedProfile, setSavedProfile] = useState<{
+    data: UserProfileData
+    previousQueryData: Props['userQuery']['data']
+  } | null>(null)
+  const profileData =
+    savedProfile && savedProfile.previousQueryData === props.userQuery.data
+      ? savedProfile.data
+      : props.userQuery.data
 
   const utils = api.useUtils()
 
   function handleEditToggle() {
     setFormData({
-      name: props.userQuery.data?.name ?? '',
-      bio: props.userQuery.data?.bio ?? '',
+      name: profileData?.name ?? '',
+      bio: profileData?.bio ?? '',
     })
     setIsEditing(!isEditing)
   }
 
   const updateProfile = api.users.update.useMutation({
-    onSuccess: async () => {
+    onSuccess: async (_result, variables) => {
+      setSavedProfile({
+        data: {
+          name: variables.name ?? profileData?.name ?? null,
+          bio: variables.bio ?? profileData?.bio ?? null,
+        },
+        previousQueryData: props.userQuery.data,
+      })
       try {
         await utils.users.getProfile.invalidate(undefined, undefined, { throwOnError: true })
         toast.success('Profile updated successfully!')
@@ -57,10 +72,10 @@ function ProfileInformation(props: Props) {
   }
 
   const handleFormReset = () => {
-    if (props.userQuery.data) {
+    if (profileData) {
       setFormData({
-        name: props.userQuery.data.name ?? '',
-        bio: props.userQuery.data.bio ?? '',
+        name: profileData.name ?? '',
+        bio: profileData.bio ?? '',
       })
     }
     setIsEditing(false)
@@ -116,9 +131,7 @@ function ProfileInformation(props: Props) {
               className="w-full"
             />
           ) : (
-            <p className="text-gray-900 dark:text-white">
-              {props.userQuery.data?.name || 'Not set'}
-            </p>
+            <p className="text-gray-900 dark:text-white">{profileData?.name || 'Not set'}</p>
           )}
         </div>
 
@@ -137,7 +150,7 @@ function ProfileInformation(props: Props) {
             />
           ) : (
             <p className="text-gray-900 dark:text-white">
-              {props.userQuery.data?.bio || 'No bio added yet'}
+              {profileData?.bio || 'No bio added yet'}
             </p>
           )}
         </div>

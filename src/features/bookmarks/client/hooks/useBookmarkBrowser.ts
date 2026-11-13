@@ -1,16 +1,26 @@
 'use client'
 
 import { useState } from 'react'
-import { type z } from 'zod'
+import { z } from 'zod'
 import { UI_CONSTANTS } from '@/data/constants'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
-import { BookmarkFiltersSchema } from '../../shared/bookmark-filters.schemas'
+import {
+  BookmarkFiltersSchema,
+  refineBookmarkMemoryRange,
+} from '../../shared/bookmark-filters.schemas'
 
 const initialFilters = BookmarkFiltersSchema.parse({})
 const initialMemoryDrafts = { memoryMin: '', memoryMax: '' }
+const memoryDraftSchema = BookmarkFiltersSchema.pick({
+  memoryMin: true,
+  memoryMax: true,
+}).superRefine(refineBookmarkMemoryRange)
 
-function parseMemoryDraft(field: keyof typeof initialMemoryDrafts, value: string) {
-  return BookmarkFiltersSchema.shape[field].safeParse(value.trim() ? Number(value) : null)
+function parseMemoryDrafts(drafts: typeof initialMemoryDrafts) {
+  return memoryDraftSchema.safeParse({
+    memoryMin: drafts.memoryMin.trim() ? Number(drafts.memoryMin) : null,
+    memoryMax: drafts.memoryMax.trim() ? Number(drafts.memoryMax) : null,
+  })
 }
 
 export function useBookmarkBrowser() {
@@ -56,16 +66,25 @@ export function useBookmarkBrowser() {
   }
 
   function changeMemory(field: keyof typeof initialMemoryDrafts, value: string) {
-    setMemoryDrafts((current) => ({ ...current, [field]: value }))
-    const parsed = parseMemoryDraft(field, value)
+    const nextDrafts = { ...memoryDrafts, [field]: value }
+    setMemoryDrafts(nextDrafts)
+    const parsed = parseMemoryDrafts(nextDrafts)
     if (!parsed.success) return
-    setFilters((current) => ({ ...current, [field]: parsed.data }))
+    setFilters((current) => ({ ...current, ...parsed.data }))
     setPage(1)
   }
 
+  const memoryValidation = parseMemoryDrafts(memoryDrafts)
+  function memoryError(field: keyof typeof initialMemoryDrafts) {
+    if (memoryValidation.success) return undefined
+    const issue = memoryValidation.error.issues.find((issue) => issue.path[0] === field)
+    if (!issue) return undefined
+    return issue.code === z.ZodIssueCode.custom ? issue.message : 'Enter a positive whole number.'
+  }
+
   const memoryErrors = {
-    memoryMin: !parseMemoryDraft('memoryMin', memoryDrafts.memoryMin).success,
-    memoryMax: !parseMemoryDraft('memoryMax', memoryDrafts.memoryMax).success,
+    memoryMin: memoryError('memoryMin'),
+    memoryMax: memoryError('memoryMax'),
   }
 
   const hasFilters = Boolean(
