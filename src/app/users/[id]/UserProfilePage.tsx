@@ -233,26 +233,20 @@ function UserDetailsPage() {
     : 0
   const showBookmarksTab = bookmarkCounts !== null && totalBookmarks > 0
 
-  const activityTabs = useMemo(() => {
-    const tabs = [
-      { id: 'listings', label: 'Handheld', count: userQuery.data?._count?.listings ?? 0 },
-      { id: 'pcListings', label: 'PC', count: userQuery.data?._count?.pcListings ?? 0 },
-    ]
-    if (showVotesTab) {
-      tabs.push({ id: 'votes', label: 'Votes', count: userQuery.data?.voteSummary?.total ?? 0 })
-    }
-    if (showBookmarksTab) {
-      tabs.push({ id: 'bookmarks', label: 'Bookmarks', count: totalBookmarks })
-    }
-    return tabs
-  }, [
-    userQuery.data?._count?.listings,
-    userQuery.data?._count?.pcListings,
-    showVotesTab,
-    userQuery.data?.voteSummary?.total,
-    showBookmarksTab,
-    totalBookmarks,
-  ])
+  const activityTabs = [
+    { id: 'listings', label: 'Handheld', count: userQuery.data?._count?.listings ?? 0 },
+    { id: 'pcListings', label: 'PC', count: userQuery.data?._count?.pcListings ?? 0 },
+  ]
+  if (showVotesTab) {
+    activityTabs.push({
+      id: 'votes',
+      label: 'Votes',
+      count: userQuery.data?.votes.pagination.total ?? 0,
+    })
+  }
+  if (showBookmarksTab) {
+    activityTabs.push({ id: 'bookmarks', label: 'Bookmarks', count: totalBookmarks })
+  }
 
   if (userQuery.isPending) return <UserProfilePageSkeleton />
 
@@ -489,7 +483,7 @@ function UserDetailsPage() {
                           {(voteSummary?.total ?? 0).toLocaleString()}
                         </p>
                         <p className="text-sm font-medium text-indigo-700 dark:text-indigo-200">
-                          Votes Cast
+                          Votes Received
                         </p>
                       </div>
                     </div>
