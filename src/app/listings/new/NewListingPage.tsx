@@ -19,6 +19,7 @@ import '@/shared/emulator-config/azahar'
 import '@/shared/emulator-config/gamenative'
 import { Button, LoadingSpinner } from '@/components/ui'
 import { CACHE_DURATIONS, LOOKUP_PAGINATION } from '@/data/constants'
+import { reconcileDriverValue } from '@/features/custom-fields/driver/shared/driver-version'
 import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
@@ -46,7 +47,6 @@ import { useGameLoader, useEmulatorLoader, usePreSelectedGame, useFormKeyDown } 
 import createDynamicListingSchema from './form-schemas/createDynamicListingSchema'
 import listingFormSchema from './form-schemas/listingFormSchema'
 import { useEmulatorConfigImporter } from './hooks/useEmulatorConfigImporter'
-import { reconcileDriverValue } from '../components/shared/custom-fields/driverVersionUtils'
 
 export type ListingFormValues = RouterInput['listings']['create']
 

@@ -3,8 +3,8 @@ import {
   findDriverReleaseByFilename,
   reconcileDriverValue,
   normalizeFilename,
-} from './driverVersionUtils'
-import type { DriverRelease } from './hooks/useDriverVersions'
+} from './driver-version'
+import type { DriverRelease } from '@/types/driver-versions'
 
 const releases: DriverRelease[] = [
   {
