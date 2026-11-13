@@ -199,7 +199,7 @@ export const UpdateListingAdminSchema = z.object({
   gameId: z.string().uuid(),
   deviceId: z.string().uuid(),
   emulatorId: z.string().uuid(),
-  performanceId: z.number(),
+  performanceId: CreateListingBaseSchema.shape.performanceId,
   notes: z.string().nullable().optional(),
   status: z.nativeEnum(ApprovalStatus),
   customFieldValues: z
@@ -215,7 +215,7 @@ export const UpdateListingAdminSchema = z.object({
 
 export const UpdateListingUserSchema = z.object({
   id: z.string().uuid(),
-  performanceId: z.number(),
+  performanceId: CreateListingBaseSchema.shape.performanceId,
   notes: z.string().max(5000).nullable().optional(),
   customFieldValues: z
     .array(

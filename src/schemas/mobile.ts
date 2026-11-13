@@ -328,7 +328,7 @@ export const UpdateListingSchema = z.object({
   gameId: z.string().uuid().optional(),
   deviceId: z.string().uuid().optional(),
   emulatorId: z.string().uuid().optional(),
-  performanceId: z.number().optional(),
+  performanceId: CreateListingBaseSchema.shape.performanceId.optional(),
   notes: z.string().optional(),
   customFieldValues: z
     .array(z.union([CustomFieldValueSchema, SimplifiedCustomFieldValueSchema]))
@@ -589,8 +589,8 @@ export const UpdatePcListingSchema = z.object({
   cpuId: z.string().uuid().optional(),
   gpuId: z.string().uuid().optional(),
   emulatorId: z.string().uuid().optional(),
-  performanceId: z.number().optional(),
-  memorySize: z.number().min(1).max(256).optional(),
+  performanceId: CreatePcListingBaseSchema.shape.performanceId.optional(),
+  memorySize: CreatePcListingBaseSchema.shape.memorySize.optional(),
   os: z.nativeEnum(PcOs).optional(),
   osVersion: z.string().min(1).optional(),
   notes: z.string().optional(),

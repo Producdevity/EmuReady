@@ -97,3 +97,46 @@ describe('generated mobile numeric input contracts', () => {
     },
   )
 })
+
+describe('generated report integer input contracts', () => {
+  const file = resolve(import.meta.dirname, '../../../public/api-docs/mobile-openapi.json')
+  const schemas = z
+    .object({ components: z.object({ schemas: z.record(z.unknown()) }) })
+    .parse(JSON.parse(readFileSync(file, 'utf8'))).components.schemas
+
+  it.each([
+    'CreateListingSchema',
+    'UpdateListingSchema',
+    'CreatePcListingSchema',
+    'UpdatePcListingSchema',
+  ])('documents persisted performance ID bounds for %s', (name) => {
+    expect(schemas[name]).toMatchObject({
+      properties: {
+        performanceId: { type: 'integer', minimum: -2_147_483_648, maximum: 2_147_483_647 },
+      },
+    })
+  })
+
+  it('documents bounded integer memory while keeping PC update fields optional', () => {
+    expect(schemas.UpdatePcListingSchema).toMatchObject({
+      properties: { memorySize: { type: 'integer', minimum: 1, maximum: 256 } },
+      required: ['id'],
+    })
+  })
+
+  it.each(['CreatePcListingSchema', 'UpdatePcListingSchema'])(
+    'documents inclusive memory bounds for %s without an invalid numeric exclusive bound',
+    (name) => {
+      const schema = z
+        .object({ properties: z.object({ memorySize: z.record(z.unknown()) }) })
+        .parse(schemas[name])
+      expect(schema.properties.memorySize).toMatchObject({
+        type: 'integer',
+        minimum: 1,
+        maximum: 256,
+      })
+      expect(schema.properties.memorySize).not.toHaveProperty('exclusiveMinimum')
+      expect(schema.properties.memorySize).not.toHaveProperty('exclusiveMaximum')
+    },
+  )
+})

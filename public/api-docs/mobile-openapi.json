@@ -1809,7 +1809,9 @@
             "format": "uuid"
           },
           "performanceId": {
-            "type": "number"
+            "type": "integer",
+            "minimum": -2147483648,
+            "maximum": 2147483647
           },
           "notes": {
             "anyOf": [
@@ -1945,7 +1947,9 @@
             "format": "uuid"
           },
           "performanceId": {
-            "type": "number"
+            "type": "integer",
+            "minimum": -2147483648,
+            "maximum": 2147483647
           },
           "notes": {
             "type": "string"
@@ -2536,11 +2540,12 @@
             "format": "uuid"
           },
           "performanceId": {
-            "type": "number"
+            "type": "integer",
+            "minimum": -2147483648,
+            "maximum": 2147483647
           },
           "memorySize": {
             "type": "integer",
-            "exclusiveMinimum": 0,
             "minimum": 1,
             "maximum": 256
           },
@@ -2684,10 +2689,12 @@
             "format": "uuid"
           },
           "performanceId": {
-            "type": "number"
+            "type": "integer",
+            "minimum": -2147483648,
+            "maximum": 2147483647
           },
           "memorySize": {
-            "type": "number",
+            "type": "integer",
             "minimum": 1,
             "maximum": 256
           },

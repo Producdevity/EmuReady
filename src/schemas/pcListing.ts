@@ -161,7 +161,7 @@ export const UpdatePcListingAdminSchema = z.object({
   cpuId: z.string().uuid(),
   gpuId: z.string().uuid().optional(), // Optional for integrated graphics
   emulatorId: z.string().uuid(),
-  performanceId: z.number(),
+  performanceId: CreatePcListingBaseSchema.shape.performanceId,
   memorySize: z.number().int().positive().min(1).max(256),
   os: z.nativeEnum(PcOs),
   osVersion: z.string().min(1),
@@ -179,7 +179,7 @@ export const UpdatePcListingAdminSchema = z.object({
 
 export const UpdatePcListingUserSchema = z.object({
   id: z.string().uuid(),
-  performanceId: z.coerce.number(),
+  performanceId: z.coerce.number().pipe(CreatePcListingBaseSchema.shape.performanceId),
   memorySize: z.coerce.number().int().positive().min(1).max(256),
   os: z.nativeEnum(PcOs),
   osVersion: z.string().min(1),
