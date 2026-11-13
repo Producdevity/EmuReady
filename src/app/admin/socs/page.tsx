@@ -106,7 +106,6 @@ function AdminSoCsPage() {
 
   const handleModalSuccess = () => {
     invalidateSocQueries()
-    closeModal()
   }
 
   const handleDelete = async (id: string, name: string) => {

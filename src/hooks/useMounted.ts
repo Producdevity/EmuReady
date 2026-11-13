@@ -1,13 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
+
+function subscribe() {
+  return () => {}
+}
+
+function getClientSnapshot() {
+  return true
+}
+
+function getServerSnapshot() {
+  return false
+}
 
 function useMounted(): boolean {
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  return mounted
+  return useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot)
 }
 
 export default useMounted

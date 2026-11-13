@@ -19,6 +19,7 @@ import '@/shared/emulator-config/azahar'
 import '@/shared/emulator-config/gamenative'
 import { Button, LoadingSpinner } from '@/components/ui'
 import { CACHE_DURATIONS, LOOKUP_PAGINATION } from '@/data/constants'
+import { reconcileDriverValue } from '@/features/custom-fields/driver/shared/driver-version'
 import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
@@ -46,7 +47,6 @@ import { useGameLoader, useEmulatorLoader, usePreSelectedGame, useFormKeyDown } 
 import createDynamicListingSchema from './form-schemas/createDynamicListingSchema'
 import listingFormSchema from './form-schemas/listingFormSchema'
 import { useEmulatorConfigImporter } from './hooks/useEmulatorConfigImporter'
-import { reconcileDriverValue } from '../components/shared/custom-fields/driverVersionUtils'
 
 export type ListingFormValues = RouterInput['listings']['create']
 
@@ -332,25 +332,16 @@ function AddListingPage() {
     }
   }, [])
 
-  const selectedGameId = useWatch({ control: form.control, name: 'gameId' })
-  const { isInitialGameLoaded } = usePreSelectedGame({
+  usePreSelectedGame({
     gameIdFromUrl,
-    form,
-    onGameSelect: setSelectedGame,
+    onGameSelect: (game) => {
+      form.setValue('gameId', game.id)
+      setSelectedGame(game)
+    },
     onSearchTermChange: setGameSearchTerm,
   })
 
   const { handleKeyDown } = useFormKeyDown()
-
-  // Update selected game when gameId changes (but not during initial load)
-  useEffect(() => {
-    if (isInitialGameLoaded && selectedGameId && !selectedGame) {
-      loadGameItems(gameSearchTerm).then((games) => {
-        const game = games.find((g) => g.id === selectedGameId)
-        if (game) setSelectedGame(game)
-      })
-    }
-  }, [selectedGameId, selectedGame, gameSearchTerm, loadGameItems, isInitialGameLoaded])
 
   // Clear emulator when game changes and load initial emulators
   useEffect(() => {

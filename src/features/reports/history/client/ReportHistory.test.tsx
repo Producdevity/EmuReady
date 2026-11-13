@@ -13,6 +13,7 @@ import { GetReportHistorySchema } from '../shared/history.schemas'
 const requests: RouterInput['reportHistory']['get'][] = []
 let failQuery = false
 let emptyResult = false
+let total = 21
 
 function wrapper() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -30,25 +31,26 @@ function wrapper() {
             return
           }
           const result: RouterOutput['reportHistory']['get'] = {
-            items: emptyResult
-              ? []
-              : Object.values(ApprovalStatus).map((status, index) => ({
-                  id: `00000000-0000-4000-a000-00000000000${index}`,
-                  status,
-                  title: `${input.kind === 'pc' ? 'PC' : 'Handheld'} game ${index + 1}`,
-                  systemName: 'Nintendo Switch 2',
-                  emulatorName: 'NX',
-                  hardwareLabel: input.kind === 'pc' ? 'AMD Ryzen 7 · 32 GB RAM' : 'AYN Odin 2',
-                  createdAt: new Date('2026-11-01T12:00:00.000Z'),
-                })),
+            items:
+              emptyResult || input.page > Math.ceil(total / input.limit)
+                ? []
+                : Object.values(ApprovalStatus).map((status, index) => ({
+                    id: `00000000-0000-4000-a000-00000000000${index}`,
+                    status,
+                    title: `${input.kind === 'pc' ? 'PC' : 'Handheld'} game ${index + 1}`,
+                    systemName: 'Nintendo Switch 2',
+                    emulatorName: 'NX',
+                    hardwareLabel: input.kind === 'pc' ? 'AMD Ryzen 7 · 32 GB RAM' : 'AYN Odin 2',
+                    createdAt: new Date('2026-11-01T12:00:00.000Z'),
+                  })),
             pagination: {
-              total: emptyResult ? 0 : 21,
+              total: emptyResult ? 0 : total,
               page: input.page,
-              pages: emptyResult ? 0 : 2,
+              pages: emptyResult ? 0 : Math.ceil(total / input.limit),
               limit: input.limit,
               offset: (input.page - 1) * input.limit,
               hasPreviousPage: input.page > 1,
-              hasNextPage: !emptyResult && input.page < 2,
+              hasNextPage: !emptyResult && input.page < Math.ceil(total / input.limit),
             },
           }
           observer.next({ result: { data: result } })
@@ -72,6 +74,7 @@ beforeEach(() => {
   requests.length = 0
   failQuery = false
   emptyResult = false
+  total = 21
 })
 
 describe('private report history', () => {
@@ -134,6 +137,26 @@ describe('private report history', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(screen.queryByText('Loading your reports…')).not.toBeInTheDocument()
   })
+
+  it.each(['handheld', 'pc'] as const)(
+    'recovers the last available %s page when reports are removed between page requests',
+    async (kind) => {
+      render(<ReportHistory />, { wrapper: wrapper() })
+      await screen.findByText('Handheld game 1')
+      if (kind === 'pc') {
+        fireEvent.click(screen.getByRole('tab', { name: 'PC Reports' }))
+        await screen.findByText('PC game 1')
+      }
+      total = 20
+      fireEvent.click(screen.getAllByRole('button', { name: 'Go to next page' })[0])
+      await waitFor(() =>
+        expect(requests.some((input) => input.kind === kind && input.page === 2)).toBe(true),
+      )
+      await waitFor(() => expect(requests.at(-1)).toMatchObject({ kind, page: 1 }))
+      await screen.findByText(kind === 'pc' ? 'PC game 1' : 'Handheld game 1')
+      expect(screen.queryByText('No reports match these filters.')).not.toBeInTheDocument()
+    },
+  )
 
   it('retries a failed history request', async () => {
     failQuery = true

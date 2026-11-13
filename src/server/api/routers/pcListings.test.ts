@@ -72,6 +72,7 @@ vi.mock('@/server/cache/invalidation', () => ({
 vi.mock('@/lib/analytics', () => ({
   default: {
     engagement: { comment: vi.fn(), vote: vi.fn(), commentVote: vi.fn() },
+    userJourney: { firstTimeAction: vi.fn() },
     listing: { created: vi.fn() },
   },
 }))
@@ -168,11 +169,21 @@ const COMMENT_ID = '00000000-0000-4000-a000-000000000020'
 
 function createMockPrisma() {
   const mockTx = {
+    trustActionLog: { findMany: vi.fn().mockResolvedValue([{ id: 'first-vote-action' }]) },
+    vote: { count: vi.fn().mockResolvedValue(0) },
     pcListingVote: {
-      create: vi.fn().mockResolvedValue({ userId: USER_ID, pcListingId: LISTING_ID, value: true }),
+      create: vi
+        .fn()
+        .mockResolvedValue({ id: 'vote-1', userId: USER_ID, pcListingId: LISTING_ID, value: true }),
       delete: vi.fn().mockResolvedValue(undefined),
-      update: vi.fn().mockResolvedValue({ userId: USER_ID, pcListingId: LISTING_ID, value: false }),
+      update: vi.fn().mockResolvedValue({
+        id: 'vote-1',
+        userId: USER_ID,
+        pcListingId: LISTING_ID,
+        value: false,
+      }),
       findUnique: vi.fn().mockResolvedValue(null),
+      count: vi.fn().mockResolvedValue(1),
     },
     pcListingCommentVote: {
       create: vi.fn().mockResolvedValue({ userId: USER_ID, commentId: COMMENT_ID, value: true }),

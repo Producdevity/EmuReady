@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { Database, Zap, Link, X, Check, Sparkles } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { ImageRenderer, Input, Button } from '@/components/ui'
 import getImageUrl from '@/utils/getImageUrl'
 import { getGameImageUrlValidationError } from '@/utils/imageUrls'
@@ -32,38 +32,30 @@ const imageServiceMap: Record<ImageService, ImageService> = {
 }
 
 export function AdminImageSelectorSwitcher(props: Props) {
+  const selectedImageUrl = props.selectedImageUrl ?? ''
   const [selectedService, setSelectedService] = useState<ImageService>(imageServiceMap.url)
-  const [manualUrl, setManualUrl] = useState(props.selectedImageUrl || '')
-  const [isValidUrl, setIsValidUrl] = useState(false)
+  const [manualUrl, setManualUrl] = useState(selectedImageUrl)
+  const [previousSelectedImageUrl, setPreviousSelectedImageUrl] = useState(selectedImageUrl)
   const [showApplied, setShowApplied] = useState(false)
 
-  useEffect(() => {
-    const selectedImageUrl = props.selectedImageUrl ?? ''
-    setManualUrl(selectedImageUrl)
-    setIsValidUrl(selectedImageUrl ? !getGameImageUrlValidationError(selectedImageUrl) : false)
-  }, [props.selectedImageUrl])
-
-  const validateUrl = (url: string) => {
-    const isValid = !getGameImageUrlValidationError(url)
-    setIsValidUrl(isValid)
-    return isValid
+  if (selectedImageUrl !== previousSelectedImageUrl) {
+    setPreviousSelectedImageUrl(selectedImageUrl)
+    if (manualUrl === previousSelectedImageUrl) setManualUrl(selectedImageUrl)
   }
 
-  const handleManualUrlChange = (url: string) => {
-    setManualUrl(url)
-    const trimmedUrl = url.trim()
-    return trimmedUrl ? validateUrl(trimmedUrl) : setIsValidUrl(false)
-  }
+  const isValidUrl = Boolean(manualUrl.trim()) && !getGameImageUrlValidationError(manualUrl)
 
   const handleManualUrlSubmit = () => {
     const trimmedUrl = manualUrl.trim()
-    if (trimmedUrl && validateUrl(trimmedUrl)) {
+    if (trimmedUrl && isValidUrl) {
+      setManualUrl(trimmedUrl)
       props.onImageSelect(trimmedUrl)
       setShowApplied(true)
       setTimeout(() => {
         setShowApplied(false)
       }, 1500)
     } else if (trimmedUrl === '') {
+      setManualUrl('')
       props.onImageSelect('')
     } else {
       props.onError?.(getGameImageUrlValidationError(trimmedUrl) ?? 'Invalid image URL')
@@ -72,7 +64,6 @@ export function AdminImageSelectorSwitcher(props: Props) {
 
   const handleClearUrl = () => {
     setManualUrl('')
-    setIsValidUrl(false)
     props.onImageSelect('')
   }
 
@@ -240,7 +231,7 @@ export function AdminImageSelectorSwitcher(props: Props) {
                 <div className="flex gap-2">
                   <Input
                     value={manualUrl}
-                    onChange={(e) => handleManualUrlChange(e.target.value)}
+                    onChange={(e) => setManualUrl(e.target.value)}
                     placeholder={props.placeholder || 'https://example.com/image.jpg'}
                     className={`flex-1 transition-all duration-200 ${
                       manualUrl.trim() && !isValidUrl

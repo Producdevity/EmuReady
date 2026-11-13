@@ -34,7 +34,7 @@ function GameCard(props: Props) {
           fill
           className="object-cover"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          loading={props.eagerLoad ? 'eager' : undefined}
+          loading={props.eagerLoad ? 'eager' : 'lazy'}
           unoptimized
         />
       </div>

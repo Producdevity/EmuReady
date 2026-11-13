@@ -26,7 +26,7 @@ interface RangeConfigProps {
   rangeMax?: number
   rangeUnit?: string
   rangeDecimals?: number
-  defaultValue?: number | null
+  defaultValue?: number | string | null
   errors?: {
     rangeMin?: string
     rangeMax?: string

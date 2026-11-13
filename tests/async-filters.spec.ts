@@ -127,6 +127,7 @@ async function selectAsyncFilterOption(
 
   await expect(page).toHaveURL(new RegExp(`[?&]${expectedParam}=`))
   await expect(filterButton).toContainText(fixture.label)
+  await expect(option).toBeFocused()
 
   await page.keyboard.press('Escape')
   await expect(filterButton).toHaveAttribute('aria-expanded', 'false')

@@ -1,11 +1,10 @@
 import { z } from 'zod'
+import { ListingType } from '@/schemas/common'
 import { PaginationResultSchema } from '@/schemas/pagination'
 import { ApprovalStatus } from '@orm'
 
-export const ReportHistoryKindSchema = z.enum(['handheld', 'pc'])
-
 export const GetReportHistorySchema = z.object({
-  kind: ReportHistoryKindSchema.default('handheld'),
+  kind: ListingType.default('handheld'),
   page: z.number().int().positive().default(1),
   limit: z.number().int().min(1).max(50).default(20),
   search: z.string().trim().max(100).default(''),

@@ -7655,32 +7655,61 @@
                           "success": true,
                           "results": [
                             {
-                              "game_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                              "steam_app_id": "220",
-                              "title": "Half-Life 2",
-                              "performance": {
-                                "id": 1,
-                                "label": "Perfect",
-                                "rank": 1,
-                                "description": null
-                              },
-                              "emulator": {
-                                "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                                "name": "GameHub",
-                                "logo": null
-                              },
-                              "device": {
-                                "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                                "modelName": "Steam Deck",
-                                "soc": null
-                              },
-                              "listing": {
-                                "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                                "notes": "Runs well",
-                                "upvoteCount": 4,
-                                "downvoteCount": 1,
-                                "voteCount": 5,
-                                "successRate": 0.8
+                              "steamAppId": "220",
+                              "matchStrategy": "metadata",
+                              "game": {
+                                "id": "00000000-0000-4000-8000-000000000001",
+                                "title": "Half-Life 2",
+                                "systemId": "00000000-0000-4000-8000-000000000002",
+                                "imageUrl": null,
+                                "boxartUrl": null,
+                                "bannerUrl": null,
+                                "tgdbGameId": null,
+                                "metadata": {
+                                  "steamAppId": "220"
+                                },
+                                "isErotic": false,
+                                "status": "APPROVED",
+                                "createdAt": "2025-01-01T00:00:00.000Z",
+                                "system": {
+                                  "id": "00000000-0000-4000-8000-000000000002",
+                                  "name": "Microsoft Windows",
+                                  "key": "microsoft_windows"
+                                },
+                                "_count": {
+                                  "listings": 1
+                                },
+                                "listings": [
+                                  {
+                                    "id": "00000000-0000-4000-8000-000000000005",
+                                    "gameId": "00000000-0000-4000-8000-000000000001",
+                                    "deviceId": "00000000-0000-4000-8000-000000000003",
+                                    "emulatorId": "00000000-0000-4000-8000-000000000004",
+                                    "performanceId": 1,
+                                    "notes": "Runs well",
+                                    "upvoteCount": 4,
+                                    "downvoteCount": 1,
+                                    "voteCount": 5,
+                                    "successRate": 0.8,
+                                    "device": {
+                                      "id": "00000000-0000-4000-8000-000000000003",
+                                      "modelName": "Steam Deck",
+                                      "soc": null
+                                    },
+                                    "emulator": {
+                                      "id": "00000000-0000-4000-8000-000000000004",
+                                      "name": "GameNative",
+                                      "logo": null
+                                    },
+                                    "performance": {
+                                      "id": 1,
+                                      "label": "Perfect",
+                                      "rank": 1,
+                                      "description": null
+                                    },
+                                    "customFieldValues": []
+                                  }
+                                ]
                               }
                             }
                           ],

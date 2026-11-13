@@ -1,28 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
+
+function getServerSnapshot() {
+  return false
+}
 
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false)
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      const media = window.matchMedia(query)
+      media.addEventListener('change', onChange)
+      return () => media.removeEventListener('change', onChange)
+    },
+    [query],
+  )
+  const getSnapshot = useCallback(() => window.matchMedia(query).matches, [query])
 
-  useEffect(() => {
-    // Only run on client side
-    if (typeof window === 'undefined') return
-
-    const media = window.matchMedia(query)
-
-    // Set initial value
-    setMatches(media.matches)
-
-    // Create listener function
-    const listener = (event: MediaQueryListEvent) => {
-      setMatches(event.matches)
-    }
-
-    // Add listener
-    media.addEventListener('change', listener)
-
-    // Cleanup
-    return () => media.removeEventListener('change', listener)
-  }, [query])
-
-  return matches
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }

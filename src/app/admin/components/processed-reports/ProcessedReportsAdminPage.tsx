@@ -23,6 +23,7 @@ import {
   useLocalStorage,
   type ColumnDefinition,
 } from '@/hooks'
+import { BooleanPreferenceSchema } from '@/schemas/preferences'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
 import { ApprovalStatus, Role } from '@orm'
@@ -64,6 +65,7 @@ export function ProcessedReportsAdminPage<TReport, TSortField extends string>(
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
     storageKeys.showSystemIcons,
     true,
+    BooleanPreferenceSchema,
   )
   const emulatorLogos = useEmulatorLogos()
   const [showOverrideModal, setShowOverrideModal] = useState(false)

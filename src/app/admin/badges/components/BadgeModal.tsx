@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState, useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 import {
   Dialog,
@@ -52,6 +52,8 @@ export default function BadgeModal({ isOpen, onClose, badge, onSuccess }: Props)
       isActive: true,
     },
   })
+
+  const isActive = useWatch({ control: form.control, name: 'isActive' })
 
   // Update form values when badge prop changes
   useEffect(() => {
@@ -187,7 +189,7 @@ export default function BadgeModal({ isOpen, onClose, badge, onSuccess }: Props)
 
             <div className="flex items-center gap-3">
               <Toggle
-                checked={form.watch('isActive')}
+                checked={isActive}
                 onChange={(checked: boolean) => form.setValue('isActive', checked)}
               />
               <label

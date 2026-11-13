@@ -1,7 +1,7 @@
 'use client'
 
 import { CheckCircle, XCircle, Trash2, ExternalLink } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button, Input } from '@/components/ui'
 import { logger } from '@/lib/logger'
 
@@ -39,10 +39,15 @@ export function BulkActions(props: BulkActionsProps) {
   const [rejectionNotes, setRejectionNotes] = useState('')
   const [showRejectInput, setShowRejectInput] = useState(false)
   const [openedTabsCount, setOpenedTabsCount] = useState(0)
+  const [previousSelection, setPreviousSelection] = useState(props.selectedIds)
 
-  useEffect(() => {
+  if (
+    previousSelection.length !== props.selectedIds.length ||
+    previousSelection.some((id, index) => id !== props.selectedIds[index])
+  ) {
+    setPreviousSelection(props.selectedIds)
     setOpenedTabsCount(0)
-  }, [props.selectedIds.length])
+  }
 
   const handleAction = async (
     actionFn: (ids: string[], notes?: string) => Promise<void>,

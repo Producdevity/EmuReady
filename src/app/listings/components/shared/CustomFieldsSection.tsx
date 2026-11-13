@@ -14,6 +14,7 @@ import { Badge, Button } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useLocalStorage } from '@/hooks'
 import { cn } from '@/lib/utils'
+import { BooleanPreferenceSchema } from '@/schemas/preferences'
 import { sortCustomFieldsByCategory } from '@/utils/sortCustomFields'
 
 interface Props {
@@ -30,6 +31,7 @@ export function CustomFieldsSection(props: Props) {
   const [hideDefaults, setHideDefaults] = useLocalStorage(
     storageKeys.hideDefaultCustomFields,
     false,
+    BooleanPreferenceSchema,
   )
   const [isToggling, setIsToggling] = useState(false)
 

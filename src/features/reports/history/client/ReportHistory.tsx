@@ -15,9 +15,9 @@ import {
 } from '@/components/ui'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { api } from '@/lib/api'
+import { ListingType } from '@/schemas/common'
 import { getApprovalStatusVariant } from '@/utils/badge-colors'
 import { ApprovalStatus } from '@orm'
-import { ReportHistoryKindSchema } from '../shared/history.schemas'
 
 const statusLabels: Record<ApprovalStatus, string> = {
   [ApprovalStatus.APPROVED]: 'Approved',
@@ -26,7 +26,7 @@ const statusLabels: Record<ApprovalStatus, string> = {
 }
 
 export function ReportHistory() {
-  const [kind, setKind] = useState<z.output<typeof ReportHistoryKindSchema>>('handheld')
+  const [kind, setKind] = useState<z.output<typeof ListingType>>('handheld')
   const [status, setStatus] = useState<ApprovalStatus>()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -38,6 +38,10 @@ export function ReportHistory() {
     page,
     limit: 20,
   })
+  if (!history.isFetching && !history.error && history.data?.pagination.page === page) {
+    const lastPage = Math.max(1, history.data.pagination.pages)
+    if (page > lastPage) setPage(lastPage)
+  }
 
   return (
     <Card className="space-y-6">
@@ -57,7 +61,7 @@ export function ReportHistory() {
         ]}
         activeTab={kind}
         onTabChange={(value) => {
-          setKind(ReportHistoryKindSchema.parse(value))
+          setKind(ListingType.parse(value))
           setPage(1)
         }}
       />

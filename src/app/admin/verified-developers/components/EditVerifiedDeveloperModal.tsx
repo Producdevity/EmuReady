@@ -1,32 +1,16 @@
 'use client'
 
-import { useState, useEffect, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Button, Input, Modal, SelectInput } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
+import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 
-interface VerifiedDeveloper {
-  id: string
-  emulatorId: string
-  notes: string | null
-  user: {
-    id: string
-    name: string | null
-    email: string
-    profileImage: string | null
-  }
-  emulator: {
-    id: string
-    name: string
-    logo: string | null
-  }
-  verifier: {
-    id: string
-    name: string | null
-    email: string
-  }
-  verifiedAt: Date
+type VerifiedDeveloperRecord =
+  RouterOutput['verifiedDevelopers']['getVerifiedDevelopers']['verifiedDevelopers'][number]
+type VerifiedDeveloper = Pick<VerifiedDeveloperRecord, 'id' | 'emulatorId' | 'notes'> & {
+  user: Pick<VerifiedDeveloperRecord['user'], 'name' | 'email'>
 }
 
 interface Props {
@@ -37,8 +21,37 @@ interface Props {
 }
 
 function EditVerifiedDeveloperModal(props: Props) {
-  const [emulatorId, setEmulatorId] = useState('')
-  const [notes, setNotes] = useState('')
+  const mutation = api.verifiedDevelopers.updateVerifiedDeveloper.useMutation()
+  function closeModal() {
+    if (!mutation.isPending) props.onClose()
+  }
+  if (!props.verifiedDeveloper) return null
+  return (
+    <VerifiedDeveloperForm
+      key={`${props.isOpen}:${props.verifiedDeveloper.id}`}
+      {...props}
+      verifiedDeveloper={props.verifiedDeveloper}
+      mutation={mutation}
+      onClose={closeModal}
+    />
+  )
+}
+
+type FormProps = Omit<Props, 'verifiedDeveloper'> & {
+  verifiedDeveloper: VerifiedDeveloper
+  mutation: ReturnType<typeof api.verifiedDevelopers.updateVerifiedDeveloper.useMutation>
+}
+
+function VerifiedDeveloperForm(props: FormProps) {
+  const active = useRef(false)
+  useEffect(() => {
+    active.current = true
+    return () => {
+      active.current = false
+    }
+  }, [])
+  const [emulatorId, setEmulatorId] = useState(props.verifiedDeveloper.emulatorId)
+  const [notes, setNotes] = useState(props.verifiedDeveloper.notes ?? '')
   const [error, setError] = useState('')
 
   const emulatorsQuery = api.emulators.get.useQuery({
@@ -47,23 +60,14 @@ function EditVerifiedDeveloperModal(props: Props) {
     sortDirection: 'asc',
   })
 
-  const updateVerifiedDeveloperMutation =
-    api.verifiedDevelopers.updateVerifiedDeveloper.useMutation()
-
-  // Reset form when modal opens or verified developer changes
-  useEffect(() => {
-    if (props.isOpen && props.verifiedDeveloper) {
-      setEmulatorId(props.verifiedDeveloper.emulatorId)
-      setNotes(props.verifiedDeveloper.notes || '')
-      setError('')
-    }
-  }, [props.isOpen, props.verifiedDeveloper])
+  const updateVerifiedDeveloperMutation = props.mutation
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
+    if (updateVerifiedDeveloperMutation.isPending) return
     setError('')
 
-    if (!props.verifiedDeveloper || !emulatorId) {
+    if (!emulatorId) {
       setError('Please select an emulator')
       return
     }
@@ -77,15 +81,12 @@ function EditVerifiedDeveloperModal(props: Props) {
 
       toast.success('Verified developer updated successfully!')
       props.onSuccess()
+      if (active.current) props.onClose()
     } catch (err) {
       const errorMessage = getErrorMessage(err)
-      setError(errorMessage)
+      if (active.current) setError(errorMessage)
       toast.error(`Failed to update verified developer: ${errorMessage}`)
     }
-  }
-
-  if (!props.verifiedDeveloper) {
-    return null
   }
 
   const emulatorOptions = [
@@ -100,6 +101,8 @@ function EditVerifiedDeveloperModal(props: Props) {
     <Modal
       isOpen={props.isOpen}
       onClose={props.onClose}
+      hideCloseButton={updateVerifiedDeveloperMutation.isPending}
+      closeOnEscape={!updateVerifiedDeveloperMutation.isPending}
       title="Edit Verified Developer"
       size="md"
       closeOnBackdropClick={false}

@@ -24,6 +24,7 @@ import {
   getSystemNames,
   getEmulatorNames,
   getPerformanceLabels,
+  getSelectedOptionNames,
 } from '@/app/listings/shared/utils/selectedLabels'
 import { Button } from '@/components/ui'
 import { type Option } from '@/components/ui/form/async-multi-select/AsyncMultiSelect'
@@ -74,13 +75,13 @@ function ListingsFiltersSidebar(props: FiltersProps) {
 
   const handleDeviceChange = (values: string[], selectedOptions: Option[]) => {
     props.onDeviceChange(values)
-    const names = selectedOptions.map((option) => option.name)
+    const names = getSelectedOptionNames(selectedOptions, values)
     filterAnalytics.devices(values, names)
   }
 
   const handleSocChange = (values: string[], selectedOptions: Option[]) => {
     props.onSocChange(values)
-    const names = selectedOptions.map((option) => option.name)
+    const names = getSelectedOptionNames(selectedOptions, values)
     filterAnalytics.socs(values, names)
   }
 
@@ -332,7 +333,7 @@ function ListingsFiltersSidebar(props: FiltersProps) {
             </p>
             <div className="flex gap-2">
               <Link
-                href="/profile?tab=socs"
+                href="/profile?tab=devices"
                 className="inline-flex items-center gap-1 text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium"
               >
                 <Settings2 className="w-3 h-3" />
