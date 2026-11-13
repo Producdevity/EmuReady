@@ -97,12 +97,16 @@ describe.each(['handheld', 'pc'] as const)('%s committed decision effects', (rep
     )
   })
 
-  it('tracks the committed net trust change', async () => {
+  it('tracks the committed reconciliation actions with their own weights', async () => {
     await completeReportApproval({
       ...input(ApprovalStatus.APPROVED),
       trustChange: {
         userId: 'author-1',
         action: TrustAction.LISTING_APPROVED,
+        entries: [
+          { action: TrustAction.ADMIN_ADJUSTMENT_POSITIVE, weight: 8 },
+          { action: TrustAction.LISTING_APPROVED, weight: 6 },
+        ],
         delta: 14,
         oldScore: 92,
         newScore: 106,
@@ -110,10 +114,10 @@ describe.each(['handheld', 'pc'] as const)('%s committed decision effects', (rep
     })
     expect(analytics.trust.trustScoreChanged).toHaveBeenCalledWith({
       userId: 'author-1',
-      oldScore: 92,
+      oldScore: 100,
       newScore: 106,
       action: TrustAction.LISTING_APPROVED,
-      weight: 14,
+      weight: 6,
     })
   })
 })

@@ -87,6 +87,7 @@ export async function applyTrustAction(params: ApplyTrustActionParams): Promise<
         oldLevel: resolveTrustLevelName(currentTrustLevel),
         newLevel: resolveTrustLevelName(newTrustLevel),
         score: newTrustScore,
+        direction: weight > 0 ? 'up' : 'down',
       })
     }
   })
@@ -241,6 +242,7 @@ export class TrustService {
           oldLevel: resolveTrustLevelName(currentTrustLevel),
           newLevel: resolveTrustLevelName(newTrustLevel),
           score: newTrustScore,
+          direction: weight > 0 ? 'up' : 'down',
         })
       }
     }
@@ -311,6 +313,7 @@ export class TrustService {
           oldLevel: resolveTrustLevelName(currentTrustLevel),
           newLevel: resolveTrustLevelName(newTrustLevel),
           score: newTrustScore,
+          direction: reversalWeight > 0 ? 'up' : 'down',
         })
       }
     }
@@ -394,6 +397,7 @@ export class TrustService {
           oldLevel: resolveTrustLevelName(currentTrustLevel),
           newLevel: resolveTrustLevelName(newTrustLevel),
           score: newTrustScore,
+          direction: adjustment > 0 ? 'up' : 'down',
         })
       }
     }
@@ -445,6 +449,7 @@ export class TrustService {
         oldLevel: string
         newLevel: string
         score: number
+        direction: 'up' | 'down'
       }[] = []
 
       for (const [userId, adjustment] of foundEntries) {
@@ -492,6 +497,7 @@ export class TrustService {
             oldLevel: resolveTrustLevelName(currentTrustLevel),
             newLevel: resolveTrustLevelName(newTrustLevel),
             score: newTrustScore,
+            direction: adjustment > 0 ? 'up' : 'down',
           })
         }
       }

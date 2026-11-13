@@ -59,6 +59,7 @@ export class ApprovalTrustService {
     return {
       userId: input.authorId,
       action: action ?? compensationAction,
+      entries: entries.map((entry) => ({ action: entry.action, weight: entry.weight })),
       delta,
       oldScore: newScore - delta,
       newScore,

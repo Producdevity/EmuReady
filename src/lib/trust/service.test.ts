@@ -254,6 +254,7 @@ describe('TrustService.applyBulkManualAdjustments', () => {
       oldLevel: 'Newcomer',
       newLevel: 'Contributor',
       score: 105,
+      direction: 'up',
     })
   })
 
@@ -624,6 +625,7 @@ describe('TrustService.reverseLogAction', () => {
       oldLevel: 'Contributor',
       newLevel: 'Newcomer',
       score: 99,
+      direction: 'down',
     })
   })
 })
