@@ -25,7 +25,7 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
       return repo.update(ctx.session.user.id, input)
     }),
 
-  // TODO: Find out if this is even used or needed, since we use bulkUpdateDevices on web
+  // Individual device writes remain part of the documented public mobile API.
   addDevice: mobileProtectedProcedure
     .input(AddDevicePreferenceSchema)
     .mutation(async ({ ctx, input }) => {
@@ -33,7 +33,6 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
       return repo.addDevice(ctx.session.user.id, input.deviceId)
     }),
 
-  // TODO: Find out if this is even used or needed, since we use bulkUpdateDevices on web
   removeDevice: mobileProtectedProcedure
     .input(RemoveDevicePreferenceSchema)
     .mutation(async ({ ctx, input }) => {
