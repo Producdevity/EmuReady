@@ -34,6 +34,7 @@ import { isUserBanned } from '@/server/utils/query-builders'
 import { validatePagination } from '@/server/utils/security-validation'
 import { checkSpamContent } from '@/server/utils/spam-check'
 import { withSavepoint } from '@/server/utils/transactions'
+import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { validateCustomFields } from '@/server/utils/validate-custom-fields'
 import { updateListingVoteCounts } from '@/server/utils/vote-counts'
 import { handleListingVoteTrustEffects } from '@/server/utils/vote-trust-effects'
@@ -258,6 +259,7 @@ export const coreRouter = createTRPCRouter({
     if (!userExists) return ResourceError.user.notInDatabase(userId)
 
     // Use a single transaction to avoid race conditions
+    const trustChanges: TrustScoreChange[] = []
     const voteResult = await ctx.prisma.$transaction(async (tx) => {
       // Check for existing vote with row-level lock (SELECT ... FOR UPDATE equivalent)
       const existingVote = await tx.vote.findUnique({
@@ -306,6 +308,7 @@ export const coreRouter = createTRPCRouter({
 
       await handleListingVoteTrustEffects({
         tx,
+        trustChanges,
         action: result.action,
         currentValue: input.value,
         previousValue: result.previousValue,
@@ -318,6 +321,7 @@ export const coreRouter = createTRPCRouter({
       return result
     })
 
+    for (const change of trustChanges) trackTrustScoreChange(change)
     const voteEffects = new VoteEffectsService(new VoteEffectsRepository(ctx.prisma))
     await voteEffects.afterCommit({
       listingId: input.listingId,

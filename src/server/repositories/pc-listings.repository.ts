@@ -990,58 +990,6 @@ export class PcListingsRepository extends BaseRepository {
     return orderBy
   }
 
-  /**
-   * Approve a PC listing
-   */
-  async approve(
-    pcListingId: string,
-    processedByUserId: string,
-  ): Promise<
-    Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.default }>
-  > {
-    return this.prisma.pcListing.update({
-      where: { id: pcListingId },
-      data: {
-        status: ApprovalStatus.APPROVED,
-        processedAt: new Date(),
-        processedByUserId,
-      },
-      include: PcListingsRepository.includes.forList,
-    })
-  }
-
-  /**
-   * Reject a PC listing
-   */
-  async reject(
-    pcListingId: string,
-    processedByUserId: string,
-    processedNotes?: string,
-  ): Promise<
-    Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.default }>
-  > {
-    return this.prisma.pcListing.update({
-      where: { id: pcListingId },
-      data: {
-        status: ApprovalStatus.REJECTED,
-        processedAt: new Date(),
-        processedByUserId,
-        processedNotes,
-      },
-      include: PcListingsRepository.includes.forList,
-    })
-  }
-
-  /**
-   * Check if a developer is verified for an emulator
-   */
-  async isDeveloperVerifiedForEmulator(userId: string, emulatorId: string): Promise<boolean> {
-    const verified = await this.prisma.verifiedDeveloper.findUnique({
-      where: { userId_emulatorId: { userId, emulatorId } },
-    })
-    return !!verified
-  }
-
   private static readonly moderatorInfoUserSelect = {
     id: true,
     name: true,

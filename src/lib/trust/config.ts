@@ -51,11 +51,11 @@ export const TRUST_ACTIONS = {
   },
   [TrustAction.ADMIN_ADJUSTMENT_POSITIVE]: {
     weight: 0, // Dynamic weight set by admin
-    description: 'Manual trust score increase by admin',
+    description: 'Administrative trust score increase',
   },
   [TrustAction.ADMIN_ADJUSTMENT_NEGATIVE]: {
     weight: 0, // Dynamic weight set by admin
-    description: 'Manual trust score decrease by admin',
+    description: 'Administrative trust score decrease',
   },
   [TrustAction.VOTE_NULLIFICATION_REVERSAL]: {
     weight: 0,

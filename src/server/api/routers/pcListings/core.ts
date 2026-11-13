@@ -35,15 +35,17 @@ import { PcListingsRepository } from '@/server/repositories/pc-listings.reposito
 import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
 import { attachReviewRiskProfileForViewer } from '@/server/services/review-risk.service'
 import { normalizeCustomFieldValues } from '@/server/utils/custom-field-values'
+import { toPrismaCustomFieldValue } from '@/server/utils/prisma-json'
 import { isUserBanned } from '@/server/utils/query-builders'
 import { validatePagination } from '@/server/utils/security-validation'
 import { checkSpamContent } from '@/server/utils/spam-check'
+import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
 import { handleListingVoteTrustEffects } from '@/server/utils/vote-trust-effects'
 import { PERMISSIONS, roleIncludesRole } from '@/utils/permission-system'
 import { hasRolePermission, isModerator } from '@/utils/permissions'
 import { ApprovalStatus, Role, TrustAction, type PcListingVote } from '@orm'
-import { invalidatePcListingStatsCache, toPrismaCustomFieldValue } from './utils'
+import { invalidatePcListingStatsCache } from './utils'
 
 export const coreRouter = createTRPCRouter({
   get: publicProcedure.input(GetPcListingsSchema).query(async ({ ctx, input }) => {
@@ -406,6 +408,7 @@ export const coreRouter = createTRPCRouter({
 
     if (!pcListing) return ResourceError.pcListing.notFound()
 
+    const trustChanges: TrustScoreChange[] = []
     const voteResult = await ctx.prisma.$transaction(async (tx) => {
       const existingVote = await tx.pcListingVote.findUnique({
         where: { userId_pcListingId: { userId, pcListingId } },
@@ -440,6 +443,7 @@ export const coreRouter = createTRPCRouter({
 
       await handleListingVoteTrustEffects({
         tx,
+        trustChanges,
         action: result.action,
         currentValue: value,
         previousValue: result.previousValue,
@@ -452,6 +456,7 @@ export const coreRouter = createTRPCRouter({
       return result
     })
 
+    for (const change of trustChanges) trackTrustScoreChange(change)
     const voteEffects = new VoteEffectsService(new VoteEffectsRepository(ctx.prisma))
     await voteEffects.afterCommit({
       listingId: pcListingId,
