@@ -1,5 +1,4 @@
-import { UserRepository } from '@/features/users/server/user.repository'
-import { UserService } from '@/features/users/server/user.service'
+import { createUserService } from '@/features/users/server/user.service'
 import {
   AdminGetSocialListSchema,
   DeleteUserSchema,
@@ -52,42 +51,29 @@ export const usersRouter = createTRPCRouter({
   topContributorsSummary: publicProcedure
     .input(GetTopContributorsSummarySchema)
     .output(TopContributorsOutputSchema)
-    .query(({ ctx, input }) =>
-      new UserService(new UserRepository(ctx.prisma)).topContributorsSummary(input.limit),
-    ),
+    .query(({ ctx, input }) => createUserService(ctx.prisma).topContributorsSummary(input.limit)),
   getProfile: protectedProcedure
     .output(OwnUserProfileOutputSchema)
     .query(({ ctx }) =>
-      new UserService(new UserRepository(ctx.prisma)).getProfile(
-        createActorFromSession(ctx.session),
-      ),
+      createUserService(ctx.prisma).getProfile(createActorFromSession(ctx.session)),
     ),
   getUserById: publicProcedure
     .input(GetUserByIdSchema)
     .output(PublicUserProfileOutputSchema)
     .query(({ ctx, input }) =>
-      new UserService(new UserRepository(ctx.prisma)).getUserById(
-        createActorFromSession(ctx.session),
-        input,
-      ),
+      createUserService(ctx.prisma).getUserById(createActorFromSession(ctx.session), input),
     ),
   update: protectedProcedure
     .input(UpdateUserSchema)
     .output(MutationSuccessSchema)
     .mutation(({ ctx, input }) =>
-      new UserService(new UserRepository(ctx.prisma)).update(
-        createActorFromSession(ctx.session),
-        input,
-      ),
+      createUserService(ctx.prisma).update(createActorFromSession(ctx.session), input),
     ),
   get: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
     .input(GetAllUsersSchema)
     .output(AdminUsersOutputSchema)
     .query(({ ctx, input }) =>
-      new UserService(new UserRepository(ctx.prisma)).getAdminUsers(
-        createActorFromSession(ctx.session),
-        input,
-      ),
+      createUserService(ctx.prisma).getAdminUsers(createActorFromSession(ctx.session), input),
     ),
   getSocialOverview: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
     .input(GetUserSocialOverviewSchema)
@@ -110,42 +96,31 @@ export const usersRouter = createTRPCRouter({
   stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS)
     .output(UserStatisticsOutputSchema)
     .query(({ ctx }) =>
-      new UserService(new UserRepository(ctx.prisma)).statistics(
-        createActorFromSession(ctx.session),
-      ),
+      createUserService(ctx.prisma).statistics(createActorFromSession(ctx.session)),
     ),
   updateRole: permissionProcedure(PERMISSIONS.CHANGE_USER_ROLES)
     .input(UpdateUserRoleSchema)
     .output(MutationSuccessSchema)
     .mutation(({ ctx, input }) =>
-      new UserService(new UserRepository(ctx.prisma)).updateRole(
-        createActorFromSession(ctx.session),
-        input,
-      ),
+      createUserService(ctx.prisma).updateRole(createActorFromSession(ctx.session), input),
     ),
   delete: manageUsersProcedure
     .input(DeleteUserSchema)
     .output(MutationSuccessSchema)
     .mutation(({ ctx, input }) =>
-      new UserService(new UserRepository(ctx.prisma)).delete(
-        createActorFromSession(ctx.session),
-        input.userId,
-      ),
+      createUserService(ctx.prisma).delete(createActorFromSession(ctx.session), input.userId),
     ),
   searchUsers: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
     .input(SearchUsersSchema)
     .output(SearchUsersOutputSchema)
     .query(({ ctx, input }) =>
-      new UserService(new UserRepository(ctx.prisma)).search(
-        createActorFromSession(ctx.session),
-        input,
-      ),
+      createUserService(ctx.prisma).search(createActorFromSession(ctx.session), input),
     ),
   isVerifiedDeveloper: protectedProcedure
     .input(IsVerifiedDeveloperSchema)
     .output(VerifiedDeveloperOutputSchema)
     .query(({ ctx, input }) =>
-      new UserService(new UserRepository(ctx.prisma)).isVerifiedDeveloper(
+      createUserService(ctx.prisma).isVerifiedDeveloper(
         createActorFromSession(ctx.session),
         input.emulatorId,
       ),

@@ -156,7 +156,7 @@ export class UserRepository extends PrismaWriteRepository<WriteContext> {
     return { devices, emulators }
   }
 
-  async voteSummary(userId: string) {
+  async receivedReportVoteSummary(userId: string) {
     const groups = await Promise.all([
       this.prisma.vote.groupBy({
         by: ['value'],

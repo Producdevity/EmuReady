@@ -162,7 +162,9 @@ describe('user profile transport', () => {
         for (const call of database.user.findUnique.mock.calls.slice(-2)) {
           expect(call[0]).toMatchObject({
             select: {
-              userBans: { where: { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] } },
+              userBans: {
+                where: { isActive: true, OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+              },
             },
           })
         }
@@ -261,11 +263,41 @@ describe('user profile transport', () => {
     )
   })
 
-  it('does not fetch a hidden voting activity page', async () => {
+  it.each([true, false])(
+    'hides cast votes while preserving received report feedback (anonymous: %s)',
+    async (anonymous) => {
+      preparePublicProfile({ showVotingActivity: false })
+      database.vote.groupBy.mockResolvedValue([{ value: true, _count: { _all: 2 } }])
+      database.pcListingVote.groupBy.mockResolvedValue([{ value: false, _count: { _all: 1 } }])
+      const result = await caller({ anonymous }).getUserById({ userId: targetId })
+      expect(result.votes.items).toEqual([])
+      expect(result.voteSummary).toEqual({ total: 3, upvotes: 2, downvotes: 1 })
+      expect(result._count.votes).toBe(0)
+      expect(database.vote.findMany).not.toHaveBeenCalled()
+      expect(database.vote.groupBy).toHaveBeenCalledWith({
+        by: ['value'],
+        where: { listing: { authorId: targetId } },
+        _count: { _all: true },
+      })
+      expect(database.pcListingVote.groupBy).toHaveBeenCalledWith({
+        by: ['value'],
+        where: { pcListing: { authorId: targetId } },
+        _count: { _all: true },
+      })
+    },
+  )
+
+  it.each([
+    { userId: targetId, role: Role.USER },
+    { userId, role: Role.MODERATOR },
+  ])('retains voting summaries for an authorized viewer ($role)', async (viewer) => {
     preparePublicProfile({ showVotingActivity: false })
-    const result = await caller().getUserById({ userId: targetId })
-    expect(result.votes.items).toEqual([])
-    expect(database.vote.findMany).not.toHaveBeenCalled()
+    database.vote.groupBy.mockResolvedValue([{ value: true, _count: { _all: 2 } }])
+    database.pcListingVote.groupBy.mockResolvedValue([{ value: false, _count: { _all: 1 } }])
+    const result = await caller(viewer).getUserById({ userId: targetId })
+    expect(result.voteSummary).toEqual({ total: 3, upvotes: 2, downvotes: 1 })
+    expect(result._count.votes).toBe(1)
+    expect(database.vote.findMany).toHaveBeenCalled()
   })
 
   it('validates handheld and PC profile DTOs through the actual router', async () => {

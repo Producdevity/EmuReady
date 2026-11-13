@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/nextjs'
 import { type z } from 'zod'
-import { type UserRepository } from '@/features/users/server/user.repository'
+import { UserRepository } from '@/features/users/server/user.repository'
 import {
   type GetUserByIdSchema,
   type GetAllUsersSchema,
@@ -14,6 +14,7 @@ import { type MutationSuccess } from '@/schemas/common'
 import { requireActorPermission, requireUserActor, type Actor } from '@/server/auth/actor'
 import { invalidateUser } from '@/server/cache/invalidation'
 import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
+import { type PrismaRepositoryClient } from '@/server/persistence/prisma.repository'
 import {
   buildTopContributorsSummary,
   EMPTY_TOP_CONTRIBUTORS_SUMMARY,
@@ -82,6 +83,7 @@ export class UserService {
       return {
         ...user,
         ...PRIVATE_PROFILE_SETTINGS,
+        _count: { ...user._count, votes: 0 },
         bio: null,
         listings: paginatedResponse({ items: [], total: 0, page: 1, limit: input.listingsLimit }),
         votes: paginatedResponse({ items: [], total: 0, page: 1, limit: input.votesLimit }),
@@ -131,11 +133,12 @@ export class UserService {
       this.repository.profileTrustActions(input),
       this.repository.profileFilterOptions(input.userId),
       this.repository.contributionBreakdown(input.userId),
-      this.repository.voteSummary(input.userId),
+      this.repository.receivedReportVoteSummary(input.userId),
     ])
     return {
       ...user,
       ...access.privacySettings,
+      _count: { ...user._count, votes: showVotes ? user._count.votes : 0 },
       listings,
       pcListings,
       votes,
@@ -266,4 +269,8 @@ export class UserService {
   isVerifiedDeveloper(actor: Actor, emulatorId: string) {
     return this.repository.isVerifiedDeveloper(requireUserActor(actor).userId, emulatorId)
   }
+}
+
+export function createUserService(prisma: PrismaRepositoryClient): UserService {
+  return new UserService(new UserRepository(prisma))
 }

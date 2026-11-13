@@ -54,33 +54,8 @@ export const USER_LIMITED_PROFILE_SELECT = {
 } satisfies Prisma.UserSelect
 
 export const USER_PUBLIC_PROFILE_SELECT = {
-  id: true,
-  name: true,
+  ...USER_LIMITED_PROFILE_SELECT,
   bio: true,
-  profileImage: true,
-  role: true,
-  trustScore: true,
-  createdAt: true,
-  userBadges: {
-    where: { badge: { isActive: true } },
-    select: {
-      id: true,
-      assignedAt: true,
-      color: true,
-      badge: { select: { id: true, name: true, description: true, color: true, icon: true } },
-    },
-    orderBy: { assignedAt: Prisma.SortOrder.desc },
-  },
-  _count: {
-    select: {
-      listings: true,
-      pcListings: true,
-      submittedGames: true,
-      votes: true,
-      followers: true,
-      following: true,
-    },
-  },
 } satisfies Prisma.UserSelect
 
 export function moderatorProfileSelect(now: Date) {
