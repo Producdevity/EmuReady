@@ -23,13 +23,14 @@ interface Props {
 function PatreonAttempt(props: Props) {
   const router = useRouter()
   const isMounted = useMounted()
-  const [wasCodeUsed] = useState(() =>
-    Boolean(
-      props.code &&
-        typeof window !== 'undefined' &&
-        window.sessionStorage.getItem(`patreon_oauth_code:${props.code}`),
-    ),
-  )
+  const [wasCodeUsed] = useState(() => {
+    if (!props.code || typeof window === 'undefined') return false
+    try {
+      return Boolean(window.sessionStorage.getItem(`patreon_oauth_code:${props.code}`))
+    } catch {
+      return false
+    }
+  })
   const [status, setStatus] = useState<'pending' | 'success' | 'error'>('pending')
   const [message, setMessage] = useState<string>('Finishing Patreon linking…')
   const mutate = api.entitlements.linkPatreonCallback.useMutation()
@@ -47,8 +48,12 @@ function PatreonAttempt(props: Props) {
   useEffect(() => {
     if (startedRef.current || !props.code || !props.state || wasCodeUsed) return
     // OAuth authorization codes can be redeemed only once.
-    window.sessionStorage.setItem(`patreon_oauth_code:${props.code}`, '1')
     startedRef.current = true
+    try {
+      window.sessionStorage.setItem(`patreon_oauth_code:${props.code}`, '1')
+    } catch {
+      // Browser storage can be unavailable; the in-memory guard still applies.
+    }
 
     mutate
       .mutateAsync({ code: props.code, state: props.state })

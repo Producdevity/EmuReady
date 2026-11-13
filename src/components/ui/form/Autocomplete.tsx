@@ -250,25 +250,16 @@ export function Autocomplete<T extends AutocompleteOptionBase>(props: Props<T>) 
   const handleKeyDown = (ev: KeyboardEvent<HTMLInputElement>) => {
     if (disabled) return
 
-    if (!isOpen && (ev.key === 'ArrowDown' || ev.key === 'ArrowUp')) {
-      // Open dropdown and trigger search
-      if (!loadItems && staticItems && staticItems.length > 0) {
-        performSearch(inputValue).catch(console.error)
-      } else if (loadItems && inputValue.length >= minCharsToTrigger) {
-        performSearch(inputValue).catch(console.error)
+    if (!isOpen) {
+      if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+        ev.preventDefault()
+        if (!loadItems && staticItems && staticItems.length > 0) {
+          performSearch(inputValue).catch(console.error)
+        } else if (loadItems && inputValue.length >= minCharsToTrigger) {
+          performSearch(inputValue).catch(console.error)
+        }
       }
       return
-    }
-
-    if (!isOpen && ev.key !== 'Tab') {
-      // If closed and user types more, trigger search
-      if (inputValue.length >= minCharsToTrigger && !loadItems) {
-        // for static items, re-filter
-        debouncedSearch(inputValue)
-      } else if (inputValue.length >= minCharsToTrigger && loadItems) {
-        // for dynamic, user typing should re-trigger if desired
-        // or rely on input change handler
-      }
     }
 
     switch (ev.key) {
@@ -281,7 +272,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>(props: Props<T>) 
         setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : suggestions.length - 1))
         break
       case 'Enter':
-        if (highlightedIndex >= 0 && suggestions[highlightedIndex]) {
+        if (!isLoading && highlightedIndex >= 0 && suggestions[highlightedIndex]) {
           ev.preventDefault()
           handleOptionClick(suggestions[highlightedIndex])
         }
@@ -506,7 +497,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>(props: Props<T>) 
           aria-expanded={isOpen}
           aria-controls={isOpen ? 'autocomplete-list' : undefined}
           aria-activedescendant={
-            highlightedIndex >= 0 && suggestions[highlightedIndex]
+            isOpen && !isLoading && highlightedIndex >= 0 && suggestions[highlightedIndex]
               ? createSafeId(optionToValue(suggestions[highlightedIndex]), highlightedIndex)
               : undefined
           }

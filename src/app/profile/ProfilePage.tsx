@@ -154,7 +154,7 @@ function ProfilePage() {
 
   if (!user) return <ProfilePageUnauthenticated />
 
-  if (userQuery.error) return <ProfilePageError />
+  if (userQuery.error && !userQuery.data) return <ProfilePageError />
 
   // Filter tabs based on user permissions
   const visibleTabs = baseTabs.filter((tab) =>
