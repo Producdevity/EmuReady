@@ -149,3 +149,46 @@ it('does not rewrite explicit custom text when a matching release arrives', asyn
     expect(mocks.submit).toHaveBeenCalledWith({ driver: 'known.zip' }, expect.anything()),
   )
 })
+
+it('shows newly loaded releases in an already opened catalog', async () => {
+  loading = true
+  releases = null
+  const user = userEvent.setup()
+  const view = render(<Form />)
+  await user.click(screen.getByLabelText('Graphics Driver *'))
+  await screen.findByRole('option', { name: /Custom driver/i })
+  releases = [knownRelease]
+  loading = false
+  view.rerender(<Form />)
+  expect(await screen.findByRole('option', { name: 'Known Turnip release' })).toBeVisible()
+})
+
+it('shows and edits a saved custom value while the catalog is loading', async () => {
+  loading = true
+  releases = null
+  const user = userEvent.setup()
+  render(<Form initialDriver="Saved custom driver" />)
+  const input = screen.getByLabelText('Graphics Driver *')
+  expect(input).toHaveValue('Saved custom driver')
+  await user.clear(input)
+  await user.type(input, 'Updated pending driver')
+  await user.click(screen.getByRole('button', { name: 'Submit' }))
+  await waitFor(() =>
+    expect(mocks.submit).toHaveBeenCalledWith(
+      { driver: 'Updated pending driver' },
+      expect.anything(),
+    ),
+  )
+})
+
+it('focuses and describes the listed-driver control when validation fails', async () => {
+  const user = userEvent.setup()
+  render(<Form />)
+  await user.click(screen.getByRole('button', { name: 'Submit' }))
+  const error = await screen.findByText('Graphics Driver is required')
+  const input = screen.getByRole('combobox', { name: 'Graphics Driver *' })
+  expect(input).toHaveFocus()
+  expect(input).toHaveAttribute('aria-invalid', 'true')
+  expect(input).toHaveAttribute('aria-describedby', error.id)
+  expect(input).toHaveClass('border-red-300')
+})

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode, type Ref } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Autocomplete, Button, Input } from '@/components/ui'
 import { type DriverRelease } from '@/types/driver-versions'
 import { reconcileDriverValue } from '../../shared/driver-version'
@@ -15,7 +15,7 @@ interface Props {
   value: string
   onChange: (value: string) => void
   onBlur: () => void
-  inputRef: Ref<HTMLElement>
+  inputRef: (input: HTMLInputElement | null) => void
   driverReleases: DriverRelease[] | null
   placeholder: string
   leftIcon: ReactNode
@@ -27,32 +27,18 @@ export function DriverVersionInput(props: Props) {
   const { inputRef, ...input } = props
   const [customSelected, setCustomSelected] = useState(false)
   const options = useMemo(
-    () => [...baseOptions, ...(input.driverReleases ?? [])],
+    () => [...baseOptions, ...(input.driverReleases ?? []), customOption],
     [input.driverReleases],
   )
   const canonicalValue = reconcileDriverValue(input.value, input.driverReleases)
   const listedValue = canonicalValue ?? input.value
-  const isListed = options.some((option) => option.value === listedValue)
-  const customMode =
-    customSelected || (input.value !== '' && input.driverReleases !== null && !isListed)
+  const isListed = options.some((option) => option !== customOption && option.value === listedValue)
+  const customMode = customSelected || (input.value !== '' && !isListed)
   const onChange = input.onChange
 
   useEffect(() => {
     if (canonicalValue && !customMode) onChange(canonicalValue)
   }, [canonicalValue, customMode, onChange])
-
-  const loadItems = useCallback(
-    async (query: string): Promise<DriverOption[]> => {
-      const normalized = query.toLowerCase()
-      const matches = options.filter((option) =>
-        [option.label, option.value, option.name].some((value) =>
-          value.toLowerCase().includes(normalized),
-        ),
-      )
-      return [...matches, customOption]
-    },
-    [options],
-  )
 
   if (customMode) {
     return (
@@ -101,14 +87,17 @@ export function DriverVersionInput(props: Props) {
         }
       }}
       onBlur={input.onBlur}
-      loadItems={loadItems}
+      items={options}
+      inputRef={inputRef}
       leftIcon={input.leftIcon}
       optionToValue={(option) => option.value}
       optionToLabel={(option) => option.label}
       minCharsToTrigger={0}
       debounceTime={300}
       placeholder={input.placeholder}
-      className={input.className}
+      inputClassName={input.className}
+      aria-describedby={input.errorId}
+      aria-invalid={input.errorId ? true : undefined}
       filterKeys={['name', 'label', 'value']}
     />
   )
