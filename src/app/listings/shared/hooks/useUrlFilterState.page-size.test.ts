@@ -1,5 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { PAGINATION } from '@/data/constants'
+import toast from '@/lib/toast'
 import { GetListingsSchema } from '@/schemas/listing'
 import { GetPcListingsSchema } from '@/schemas/pcListing'
 import { useUrlFilterState } from './useUrlFilterState'
@@ -72,6 +74,16 @@ describe.each([
 })
 
 describe('report page size preference', () => {
+  it.each(['0', '-5', '2.5', 'null', '"25"'])(
+    'silently defaults an invalid stored page size %s',
+    (stored) => {
+      storage.set('page-size', stored)
+      const { result } = renderHook(() => useUrlFilterState(config))
+      expect(result.current.limit).toBe(PAGINATION.PUBLIC_DEFAULT_LIMIT)
+      expect(toast.warning).not.toHaveBeenCalled()
+    },
+  )
+
   it('reads a saved page size without mirroring it into local state', () => {
     storage.set('page-size', '25')
     const { result } = renderHook(() => useUrlFilterState(config))

@@ -54,7 +54,7 @@ export function DriverVersionInput(props: Props) {
           }}
           onBlur={input.onBlur}
           leftIcon={input.leftIcon}
-          placeholder="Enter your graphics driver name and version"
+          placeholder={input.placeholder}
           className={input.className}
           aria-required={input.required}
           aria-describedby={input.errorId}

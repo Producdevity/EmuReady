@@ -189,15 +189,10 @@ export default function BadgeModal({ isOpen, onClose, badge, onSuccess }: Props)
 
             <div className="flex items-center gap-3">
               <Toggle
+                label="Active"
                 checked={isActive}
                 onChange={(checked: boolean) => form.setValue('isActive', checked)}
               />
-              <label
-                htmlFor="isActive"
-                className="text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                Active
-              </label>
             </div>
           </div>
 

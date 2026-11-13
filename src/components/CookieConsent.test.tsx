@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import storageKeys from '@/data/storageKeys'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
+import toast from '@/lib/toast'
 import { BooleanPreferenceSchema } from '@/schemas/preferences'
 import CookieConsent from './CookieConsent'
 
@@ -17,6 +18,7 @@ Object.defineProperty(window, 'localStorage', {
 })
 
 beforeEach(() => {
+  vi.clearAllMocks()
   storage.clear()
   vi.useFakeTimers()
 })
@@ -49,6 +51,7 @@ describe('cookie banner storage updates', () => {
         act(() => vi.advanceTimersByTime(2000))
         fireEvent.click(screen.getByRole('button', { name: 'Necessary Only' }))
         expect(screen.getByRole('alert')).toHaveTextContent('Please try again')
+        expect(toast.warning).not.toHaveBeenCalled()
         expect(screen.getByRole('button', { name: 'Necessary Only' })).toBeInTheDocument()
         writer.mockRestore()
         fireEvent.click(screen.getByRole('button', { name: 'Necessary Only' }))
