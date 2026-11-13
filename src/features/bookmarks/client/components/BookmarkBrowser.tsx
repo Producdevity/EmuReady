@@ -101,14 +101,21 @@ export default function BookmarkBrowser(props: Props) {
                 type="number"
                 min={1}
                 step={1}
-                value={filters.memoryMin ?? ''}
-                onChange={(event) =>
-                  browser.changeFilters({
-                    ...filters,
-                    memoryMin: event.target.value ? Number(event.target.value) : null,
-                  })
+                value={browser.memoryDrafts.memoryMin}
+                onChange={(event) => browser.changeMemory('memoryMin', event.target.value)}
+                aria-invalid={browser.memoryErrors.memoryMin || undefined}
+                aria-describedby={
+                  browser.memoryErrors.memoryMin ? `${minMemoryId}-error` : undefined
                 }
               />
+              {browser.memoryErrors.memoryMin && (
+                <p
+                  id={`${minMemoryId}-error`}
+                  className="mt-1 text-sm text-red-600 dark:text-red-400"
+                >
+                  Enter a positive whole number.
+                </p>
+              )}
             </div>
             <div>
               <label htmlFor={maxMemoryId} className="block mb-1 text-sm font-medium">
@@ -119,14 +126,21 @@ export default function BookmarkBrowser(props: Props) {
                 type="number"
                 min={1}
                 step={1}
-                value={filters.memoryMax ?? ''}
-                onChange={(event) =>
-                  browser.changeFilters({
-                    ...filters,
-                    memoryMax: event.target.value ? Number(event.target.value) : null,
-                  })
+                value={browser.memoryDrafts.memoryMax}
+                onChange={(event) => browser.changeMemory('memoryMax', event.target.value)}
+                aria-invalid={browser.memoryErrors.memoryMax || undefined}
+                aria-describedby={
+                  browser.memoryErrors.memoryMax ? `${maxMemoryId}-error` : undefined
                 }
               />
+              {browser.memoryErrors.memoryMax && (
+                <p
+                  id={`${maxMemoryId}-error`}
+                  className="mt-1 text-sm text-red-600 dark:text-red-400"
+                >
+                  Enter a positive whole number.
+                </p>
+              )}
             </div>
           </>
         )}

@@ -7,12 +7,18 @@ import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { BookmarkFiltersSchema } from '../../shared/bookmark-filters.schemas'
 
 const initialFilters = BookmarkFiltersSchema.parse({})
+const initialMemoryDrafts = { memoryMin: '', memoryMax: '' }
+
+function parseMemoryDraft(field: keyof typeof initialMemoryDrafts, value: string) {
+  return BookmarkFiltersSchema.shape[field].safeParse(value.trim() ? Number(value) : null)
+}
 
 export function useBookmarkBrowser() {
   const [variant, setVariant] = useState<'handheld' | 'pc'>('handheld')
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState(initialFilters)
+  const [memoryDrafts, setMemoryDrafts] = useState(initialMemoryDrafts)
   const debouncedSearch = useDebouncedValue(search, UI_CONSTANTS.DEBOUNCE_DELAY)
 
   function changeSearch(value: string) {
@@ -26,20 +32,45 @@ export function useBookmarkBrowser() {
   }
 
   function changeVariant(value: typeof variant) {
+    if (value === variant) return
     setVariant(value)
     setPage(1)
     setSearch('')
-    setFilters(initialFilters)
+    setMemoryDrafts(initialMemoryDrafts)
+    setFilters((current) => ({
+      ...current,
+      deviceIds: [],
+      socIds: [],
+      cpuIds: [],
+      gpuIds: [],
+      memoryMin: null,
+      memoryMax: null,
+    }))
   }
 
   function clearFilters() {
     setSearch('')
+    setMemoryDrafts(initialMemoryDrafts)
     setFilters(initialFilters)
     setPage(1)
   }
 
+  function changeMemory(field: keyof typeof initialMemoryDrafts, value: string) {
+    setMemoryDrafts((current) => ({ ...current, [field]: value }))
+    const parsed = parseMemoryDraft(field, value)
+    if (!parsed.success) return
+    setFilters((current) => ({ ...current, [field]: parsed.data }))
+    setPage(1)
+  }
+
+  const memoryErrors = {
+    memoryMin: !parseMemoryDraft('memoryMin', memoryDrafts.memoryMin).success,
+    memoryMax: !parseMemoryDraft('memoryMax', memoryDrafts.memoryMax).success,
+  }
+
   const hasFilters = Boolean(
     search ||
+      Object.values(memoryDrafts).some(Boolean) ||
       Object.values(filters).some(
         (value) => (Array.isArray(value) && value.length) || typeof value === 'number',
       ),
@@ -50,7 +81,10 @@ export function useBookmarkBrowser() {
     page,
     setPage,
     search,
-    debouncedSearch,
+    debouncedSearch: search === '' ? '' : debouncedSearch,
+    memoryDrafts,
+    memoryErrors,
+    changeMemory,
     filters,
     hasFilters,
     changeVariant,

@@ -114,3 +114,36 @@ describe('bookmark filter controls', () => {
     )
   })
 })
+
+it.each(['Minimum memory (GB)', 'Maximum memory (GB)'])(
+  'retains invalid drafts without sending an invalid %s query',
+  (label) => {
+    render(<Browser />)
+    fireEvent.click(screen.getByRole('button', { name: /PC/ }))
+    const input = screen.getByLabelText(label)
+    const field = label.startsWith('Minimum') ? 'memoryMin' : 'memoryMax'
+    fireEvent.change(input, { target: { value: '16' } })
+    for (const value of ['0', '-1', '1.5']) {
+      fireEvent.change(input, { target: { value } })
+      expect(input).toHaveValue(Number(value))
+      expect(input).toHaveAttribute('aria-invalid', 'true')
+      expect(input).toHaveAccessibleDescription('Enter a positive whole number.')
+      expect(mocks.pc).toHaveBeenLastCalledWith(
+        expect.objectContaining({ [field]: 16 }),
+        expect.anything(),
+      )
+    }
+    fireEvent.change(input, { target: { value: '32' } })
+    expect(input).not.toHaveAttribute('aria-invalid', 'true')
+    expect(mocks.pc).toHaveBeenLastCalledWith(
+      expect.objectContaining({ [field]: 32 }),
+      expect.anything(),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+    expect(input).toHaveValue(null)
+    expect(mocks.pc).toHaveBeenLastCalledWith(
+      expect.objectContaining({ [field]: null }),
+      expect.anything(),
+    )
+  },
+)
