@@ -24,6 +24,7 @@ import {
   getSystemNames,
   getEmulatorNames,
   getPerformanceLabels,
+  getSelectedOptionNames,
 } from '@/app/listings/shared/utils/selectedLabels'
 import { Button } from '@/components/ui'
 import { type Option } from '@/components/ui/form/async-multi-select/AsyncMultiSelect'
@@ -74,13 +75,13 @@ function ListingsFiltersSidebar(props: FiltersProps) {
 
   const handleDeviceChange = (values: string[], selectedOptions: Option[]) => {
     props.onDeviceChange(values)
-    const names = selectedOptions.map((option) => option.name)
+    const names = getSelectedOptionNames(selectedOptions, values)
     filterAnalytics.devices(values, names)
   }
 
   const handleSocChange = (values: string[], selectedOptions: Option[]) => {
     props.onSocChange(values)
-    const names = selectedOptions.map((option) => option.name)
+    const names = getSelectedOptionNames(selectedOptions, values)
     filterAnalytics.socs(values, names)
   }
 
