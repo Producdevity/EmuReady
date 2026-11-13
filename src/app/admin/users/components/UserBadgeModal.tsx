@@ -18,6 +18,7 @@ import {
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
+import { getBadgeColor } from '@/utils/badge-colors'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { TailwindColor } from '@orm'
 
@@ -211,7 +212,9 @@ function UserBadgeForm(props: FormProps) {
                   <div className="flex items-center gap-3">
                     <div
                       className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
-                      style={{ backgroundColor: userBadge.color || userBadge.badge.color }}
+                      style={{
+                        backgroundColor: getBadgeColor(userBadge.color || userBadge.badge.color),
+                      }}
                     >
                       {userBadge.badge.icon || userBadge.badge.name.charAt(0).toUpperCase()}
                     </div>

@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { getBadgeColor } from '@/utils/badge-colors'
 
 interface Props {
   name: string
@@ -31,7 +32,7 @@ export function UserBadgeItem(props: Props) {
           'rounded-full flex items-center justify-center text-white font-bold',
           config.circle,
         )}
-        style={{ backgroundColor: props.color }}
+        style={{ backgroundColor: getBadgeColor(props.color) }}
       >
         {props.icon?.charAt(0) || props.name.charAt(0).toUpperCase()}
       </div>
