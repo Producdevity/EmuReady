@@ -69,7 +69,15 @@ export const GetPendingListingsSchema = z
     sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
     riskFilter: ReviewRiskFilterSchema.default(REVIEW_RISK_FILTERS.ALL),
   })
-  .superRefine(refinePaginationOffset)
+  .superRefine((input, context) =>
+    refinePaginationOffset(
+      input.riskFilter === REVIEW_RISK_FILTERS.RISKY
+        ? { offset: (input.page - 1) * input.limit }
+        : input,
+      context,
+      ['page'],
+    ),
+  )
   .optional()
 
 export const DeleteListingSchema = z.object({ id: z.string().uuid() })

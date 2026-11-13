@@ -68,7 +68,15 @@ export const GetPendingPcListingsSchema = z
     sortDirection: z.enum(['asc', 'desc']).optional(),
     riskFilter: ReviewRiskFilterSchema.default(REVIEW_RISK_FILTERS.ALL),
   })
-  .superRefine(refinePaginationOffset)
+  .superRefine((input, context) =>
+    refinePaginationOffset(
+      input.riskFilter === REVIEW_RISK_FILTERS.RISKY
+        ? { offset: (input.page - 1) * input.limit }
+        : input,
+      context,
+      ['page'],
+    ),
+  )
   .optional()
 
 export const DeletePcListingSchema = z.object({ id: z.string().uuid() })

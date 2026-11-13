@@ -243,13 +243,44 @@ describe.each(pages)('$name pagination', (query) => {
   it.each([1.5, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER + 1, -1])(
     'rejects fractional, unsafe or negative effective skip from page %s',
     async (page) => {
-      await expect(query.run(page, 20)).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+      await expect(query.run(page, 20)).rejects.toMatchObject({
+        code: 'BAD_REQUEST',
+        cause: { issues: expect.arrayContaining([expect.objectContaining({ path: ['page'] })]) },
+      })
       expectNoDatabaseCalls()
     },
   )
 })
 
 describe('legacy pagination forwarding', () => {
+  it.each(['handheld', 'pc'])(
+    'rejects the negative direct %s risk-only offset before database access',
+    async (variant) => {
+      const query = variant === 'handheld' ? handheld.getPending : pc.getPending
+      await expect(query({ page: 0, limit: 20, riskFilter: 'risky' })).rejects.toMatchObject({
+        code: 'BAD_REQUEST',
+        cause: { issues: expect.arrayContaining([expect.objectContaining({ path: ['page'] })]) },
+      })
+      expectNoDatabaseCalls()
+    },
+  )
+
+  it.each(['handheld', 'pc'])(
+    'preserves normal %s pending page-zero normalization and reverse take',
+    async (variant) => {
+      const query = variant === 'handheld' ? handheld.getPending : pc.getPending
+      const model = variant === 'handheld' ? models.listing : models.pcListing
+      await query({ page: 0, limit: 20 })
+      expect(model.findMany).toHaveBeenLastCalledWith(
+        expect.objectContaining({ skip: 0, take: 20 }),
+      )
+      await query({ page: 1, limit: -5 })
+      expect(model.findMany).toHaveBeenLastCalledWith(
+        expect.objectContaining({ skip: -0, take: -5 }),
+      )
+    },
+  )
+
   it('preserves brand defaults, large safe values and reverse take', async () => {
     await brands.get()
     expect(models.deviceBrand.findMany).toHaveBeenLastCalledWith(
