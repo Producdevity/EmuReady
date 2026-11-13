@@ -6,12 +6,16 @@ import {
   UpdatePerformanceScaleSchema,
   DeletePerformanceScaleSchema,
 } from '@/schemas/performanceScale'
-import { createTRPCRouter, publicProcedure, permissionProcedure } from '@/server/api/trpc'
+import {
+  createTRPCRouter,
+  publicProcedure,
+  manageSystemsProcedure,
+  viewStatisticsProcedure,
+} from '@/server/api/trpc'
 import { PerformanceScalesRepository } from '@/server/repositories/performance-scales.repository'
-import { PERMISSIONS } from '@/utils/permission-system'
 
 export const performanceScalesRouter = createTRPCRouter({
-  stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
+  stats: viewStatisticsProcedure.query(async ({ ctx }) => {
     const repository = new PerformanceScalesRepository(ctx.prisma)
     return repository.stats()
   }),
@@ -32,14 +36,14 @@ export const performanceScalesRouter = createTRPCRouter({
     return scale ? scale : ResourceError.performanceScale.notFound()
   }),
 
-  create: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
+  create: manageSystemsProcedure
     .input(CreatePerformanceScaleSchema)
     .mutation(async ({ ctx, input }) => {
       const repository = new PerformanceScalesRepository(ctx.prisma)
       return repository.create(input)
     }),
 
-  update: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
+  update: manageSystemsProcedure
     .input(UpdatePerformanceScaleSchema)
     .mutation(async ({ ctx, input }) => {
       const repository = new PerformanceScalesRepository(ctx.prisma)
@@ -47,7 +51,7 @@ export const performanceScalesRouter = createTRPCRouter({
       return repository.updateByNumericId(id, data)
     }),
 
-  delete: permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
+  delete: manageSystemsProcedure
     .input(DeletePerformanceScaleSchema)
     .mutation(async ({ ctx, input }) => {
       const repository = new PerformanceScalesRepository(ctx.prisma)
