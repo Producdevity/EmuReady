@@ -193,6 +193,23 @@ describe('user profile transport', () => {
     expect(database.user.findUnique).not.toHaveBeenCalled()
   })
 
+  it('returns a preserved active ban after its issuing moderator was deleted', async () => {
+    const ban = {
+      id: targetId,
+      reason: 'Existing moderation decision',
+      expiresAt: null,
+      bannedBy: null,
+      createdAt,
+    }
+    database.user.findUnique
+      .mockResolvedValueOnce(accessRecord({}, true))
+      .mockResolvedValueOnce({ ...profile, userBans: [ban] })
+
+    const result = await caller({ role: Role.MODERATOR }).getUserById({ userId: targetId })
+
+    expect(result.userBans).toEqual([ban])
+  })
+
   it('reads only consumed owner-profile fields using the authenticated ID', async () => {
     database.user.findUnique.mockResolvedValue({
       ...profile,

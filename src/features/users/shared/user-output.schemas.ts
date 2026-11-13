@@ -98,7 +98,7 @@ export const PublicUserProfileOutputSchema = profileIdentity
           id: z.string().uuid(),
           reason: z.string(),
           expiresAt: z.date().nullable(),
-          bannedBy: z.object({ name: z.string().nullable() }),
+          bannedBy: z.object({ name: z.string().nullable() }).nullable(),
           createdAt: z.date(),
         }),
       )
