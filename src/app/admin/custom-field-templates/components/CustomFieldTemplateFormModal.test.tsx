@@ -89,6 +89,42 @@ beforeEach(() => {
 })
 
 describe('template form sessions', () => {
+  it.each([
+    { bound: 'minimum', value: '2', initialDefault: 1.5, expected: null },
+    { bound: 'maximum', value: '1', initialDefault: 1.5, expected: null },
+    { bound: 'minimum', value: '0', initialDefault: 1.5, expected: 1.5 },
+    { bound: 'maximum', value: '3', initialDefault: 1.5, expected: 1.5 },
+    { bound: 'maximum', value: '1', initialDefault: '1.5', expected: null },
+  ])('reconciles default $initialDefault when editing the $bound to $value', async (testCase) => {
+    template = record('template-1', 'Graphics')
+    const field = template.fields[0]
+    if (!field) throw new Error('Missing fixture field')
+    template.fields = [
+      {
+        ...field,
+        type: CustomFieldType.RANGE,
+        options: null,
+        defaultValue: testCase.initialDefault,
+        rangeMin: 0.25,
+        rangeMax: 4,
+        rangeDecimals: 2,
+      },
+    ]
+    render(<CustomFieldTemplateFormModal isOpen templateIdToEdit="template-1" onClose={onClose} />)
+    fireEvent.change(screen.getByPlaceholderText(testCase.bound === 'minimum' ? '0' : '100'), {
+      target: { value: testCase.value },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Update Template' }))
+    await waitFor(() =>
+      expect(saving.submit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fields: [expect.objectContaining({ defaultValue: testCase.expected })],
+        }),
+      ),
+    )
+    await act(async () => saving.completion.resolve())
+  })
+
   it.each(['edit', 'remove'] as const)(
     'clears a dropdown default when its selected option is changed by %s',
     async (operation) => {

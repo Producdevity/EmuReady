@@ -297,7 +297,10 @@ describe('custom field configuration service', () => {
       field.rangeMin = 0
       field.rangeMax = 4
       field.defaultValue = value
-      await expect(s.service.get(actor, TARGET_ID)).rejects.toThrow()
+      await expect(s.service.get(actor, TARGET_ID)).rejects.toMatchObject({
+        name: 'ZodError',
+        issues: expect.arrayContaining([expect.objectContaining({ path: ['defaultValue'] })]),
+      })
       expect(s.saveField).not.toHaveBeenCalled()
     },
   )

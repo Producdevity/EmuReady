@@ -3,6 +3,7 @@ import { CustomFieldType } from '@orm'
 import {
   CustomFieldAttributesSchema,
   CustomFieldOptionSchema,
+  normalizeRangeDefault,
   validateCustomFieldAttributes,
 } from '../../shared/custom-field-attributes.schemas'
 
@@ -33,8 +34,7 @@ export const TemplateFieldSchema = CustomFieldAttributesSchema.extend({
     if (field.type === CustomFieldType.SELECT)
       return { ...field, defaultValue: field.defaultValue.trim() }
     if (field.type !== CustomFieldType.RANGE) return field
-    const value = field.defaultValue.trim() ? Number(field.defaultValue) : NaN
-    return Number.isFinite(value) ? { ...field, defaultValue: value } : field
+    return { ...field, defaultValue: normalizeRangeDefault(field.defaultValue) }
   })
   .superRefine(validateCustomFieldAttributes)
 

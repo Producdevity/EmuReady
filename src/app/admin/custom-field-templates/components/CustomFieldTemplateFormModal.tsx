@@ -25,6 +25,7 @@ import { Button, ErrorFallback, Input, LoadingSpinner, Modal } from '@/component
 import { type TemplateFieldSchema } from '@/features/emulators/custom-field-templates/shared/template.schemas'
 import {
   CustomFieldAttributesSchema,
+  normalizeRangeDefault,
   supportsPlaceholder,
 } from '@/features/emulators/shared/custom-field-attributes.schemas'
 import { api } from '@/lib/api'
@@ -187,7 +188,8 @@ function initialFields(template: TemplateRecord | null): TemplateField[] {
         categoryName: field.categoryName ?? '',
         categoryOrder: field.categoryOrder,
         options: options.success ? options.data : [],
-        defaultValue,
+        defaultValue:
+          field.type === CustomFieldType.RANGE ? normalizeRangeDefault(defaultValue) : defaultValue,
         placeholder: field.placeholder ?? '',
         isRequired: field.isRequired,
         displayOrder: field.displayOrder,
@@ -506,6 +508,14 @@ function TemplateForm(props: FormProps) {
         if (
           updated.type === CustomFieldType.SELECT &&
           !updated.options.some((option) => option.value === updated.defaultValue)
+        )
+          updated.defaultValue = null
+        if (
+          updated.type === CustomFieldType.RANGE &&
+          (updates.rangeMin !== undefined || updates.rangeMax !== undefined) &&
+          typeof updated.defaultValue === 'number' &&
+          ((updated.rangeMin !== null && updated.defaultValue < updated.rangeMin) ||
+            (updated.rangeMax !== null && updated.defaultValue > updated.rangeMax))
         )
           updated.defaultValue = null
         return updated

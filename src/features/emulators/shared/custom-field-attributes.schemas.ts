@@ -31,6 +31,14 @@ export const CustomFieldAttributesSchema = CreateCustomFieldDefinitionSchema.pic
   })
   .strict()
 
+export function normalizeRangeDefault(
+  value: z.output<typeof CustomFieldAttributesSchema>['defaultValue'],
+) {
+  if (typeof value !== 'string') return value
+  const number = value.trim() ? Number(value) : NaN
+  return Number.isFinite(number) ? number : value
+}
+
 export function validateCustomFieldAttributes(
   field: z.output<typeof CustomFieldAttributesSchema>,
   ctx: z.RefinementCtx,
