@@ -1,7 +1,7 @@
 'use client'
 
 import { Users, FileText, MessageSquare, AlertTriangle, Ban } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { AdminQuickNavigation } from '@/app/admin/components/AdminQuickNavigation'
 import { ErrorBoundary } from '@/app/admin/components/ErrorBoundary'
 import { ADMIN_ROUTES } from '@/app/admin/config/routes'
@@ -20,17 +20,6 @@ import {
 import { CriticalActions } from './components/CriticalActions'
 import { PlatformStats } from './components/PlatformStats'
 
-type DashboardSection = 'users' | 'listings' | 'comments' | 'reports' | 'bans' | 'stats'
-
-const createRefreshState = (): Record<DashboardSection, boolean> => ({
-  users: false,
-  listings: false,
-  comments: false,
-  reports: false,
-  bans: false,
-  stats: false,
-})
-
 interface Props {
   userRole: Role
   navItems: AdminNavItem[]
@@ -44,9 +33,6 @@ export function AdminDashboard(props: Props) {
   const [reportsTimeRange, setReportsTimeRange] = useState<TimeRange>('24h')
   const [bansTimeRange, setBansTimeRange] = useState<TimeRange>('24h')
   const [statsTimeRange] = useState<TimeRange>('24h')
-
-  const [refreshingSections, setRefreshingSections] =
-    useState<Record<DashboardSection, boolean>>(createRefreshState)
 
   const dashboardQuery = api.activity.dashboard.useQuery(
     {
@@ -67,35 +53,10 @@ export function AdminDashboard(props: Props) {
   const showUsers = dashboardQuery.data?.permissions.canSeeUsers ?? false
   const showReports = dashboardQuery.data?.permissions.canSeeReports ?? false
   const showBans = dashboardQuery.data?.permissions.canSeeBans ?? false
-  const [wasFetching, setWasFetching] = useState(dashboardQuery.isFetching)
 
-  if (wasFetching !== dashboardQuery.isFetching) {
-    setWasFetching(dashboardQuery.isFetching)
-    if (!dashboardQuery.isFetching) setRefreshingSections(createRefreshState())
+  function handleRefresh() {
+    void dashboardQuery.refetch({ throwOnError: false })
   }
-
-  const markSectionRefreshing = useCallback((section: DashboardSection) => {
-    setRefreshingSections((prev) => {
-      if (prev[section]) return prev
-      return { ...prev, [section]: true }
-    })
-  }, [])
-
-  const handleRefresh = useCallback(
-    (section: DashboardSection) => {
-      markSectionRefreshing(section)
-      void dashboardQuery.refetch({ throwOnError: false })
-    },
-    [dashboardQuery, markSectionRefreshing],
-  )
-
-  const handleTimeRangeChange = useCallback(
-    (section: DashboardSection, setter: (range: TimeRange) => void) => (range: TimeRange) => {
-      setter(range)
-      markSectionRefreshing(section)
-    },
-    [markSectionRefreshing],
-  )
 
   // Handle error state - show navigation but with error message for data
   const hasError = !!dashboardQuery.error
@@ -121,7 +82,7 @@ export function AdminDashboard(props: Props) {
             {dashboardQuery.error.message || 'An unexpected error occurred'}
           </p>
           <button
-            onClick={() => void dashboardQuery.refetch()}
+            onClick={handleRefresh}
             className="mt-3 text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
           >
             Try again
@@ -147,10 +108,10 @@ export function AdminDashboard(props: Props) {
               title="Recent Users"
               icon={<Users className="h-5 w-5 text-blue-500" />}
               timeRange={usersTimeRange}
-              onTimeRangeChange={handleTimeRangeChange('users', setUsersTimeRange)}
-              onRefresh={() => handleRefresh('users')}
+              onTimeRangeChange={setUsersTimeRange}
+              onRefresh={handleRefresh}
               isLoading={dashboardQuery.isLoading}
-              isRefreshing={refreshingSections.users}
+              isRefreshing={dashboardQuery.isFetching}
               viewAllHref={ADMIN_ROUTES.USERS}
             >
               <div className="space-y-2">
@@ -172,10 +133,10 @@ export function AdminDashboard(props: Props) {
             title="Recent Listings"
             icon={<FileText className="h-5 w-5 text-green-500" />}
             timeRange={listingsTimeRange}
-            onTimeRangeChange={handleTimeRangeChange('listings', setListingsTimeRange)}
-            onRefresh={() => handleRefresh('listings')}
+            onTimeRangeChange={setListingsTimeRange}
+            onRefresh={handleRefresh}
             isLoading={dashboardQuery.isLoading}
-            isRefreshing={refreshingSections.listings}
+            isRefreshing={dashboardQuery.isFetching}
             viewAllHref="/listings"
           >
             <div className="space-y-2">
@@ -196,10 +157,10 @@ export function AdminDashboard(props: Props) {
             title="Recent Comments"
             icon={<MessageSquare className="h-5 w-5 text-purple-500" />}
             timeRange={commentsTimeRange}
-            onTimeRangeChange={handleTimeRangeChange('comments', setCommentsTimeRange)}
-            onRefresh={() => handleRefresh('comments')}
+            onTimeRangeChange={setCommentsTimeRange}
+            onRefresh={handleRefresh}
             isLoading={dashboardQuery.isLoading}
-            isRefreshing={refreshingSections.comments}
+            isRefreshing={dashboardQuery.isFetching}
           >
             <div className="space-y-2">
               {dashboardQuery.data?.recentComments.length === 0 ? (
@@ -219,9 +180,9 @@ export function AdminDashboard(props: Props) {
             <PlatformStats
               stats={dashboardQuery.data.platformStats}
               timeRange={statsTimeRange}
-              onRefresh={() => handleRefresh('stats')}
+              onRefresh={handleRefresh}
               isLoading={dashboardQuery.isLoading}
-              isRefreshing={refreshingSections.stats}
+              isRefreshing={dashboardQuery.isFetching}
             />
           )}
 
@@ -231,10 +192,10 @@ export function AdminDashboard(props: Props) {
               title="Recent Reports"
               icon={<AlertTriangle className="h-5 w-5 text-orange-500" />}
               timeRange={reportsTimeRange}
-              onTimeRangeChange={handleTimeRangeChange('reports', setReportsTimeRange)}
-              onRefresh={() => handleRefresh('reports')}
+              onTimeRangeChange={setReportsTimeRange}
+              onRefresh={handleRefresh}
               isLoading={dashboardQuery.isLoading}
-              isRefreshing={refreshingSections.reports}
+              isRefreshing={dashboardQuery.isFetching}
               viewAllHref={ADMIN_ROUTES.REPORTS}
             >
               <div className="space-y-2">
@@ -257,10 +218,10 @@ export function AdminDashboard(props: Props) {
               title="Recent Bans"
               icon={<Ban className="h-5 w-5 text-red-500" />}
               timeRange={bansTimeRange}
-              onTimeRangeChange={handleTimeRangeChange('bans', setBansTimeRange)}
-              onRefresh={() => handleRefresh('bans')}
+              onTimeRangeChange={setBansTimeRange}
+              onRefresh={handleRefresh}
               isLoading={dashboardQuery.isLoading}
-              isRefreshing={refreshingSections.bans}
+              isRefreshing={dashboardQuery.isFetching}
               viewAllHref={ADMIN_ROUTES.USER_BANS}
             >
               <div className="space-y-2">
