@@ -48,6 +48,20 @@ async function selectFirstFilterOption(
 }
 
 test.describe('Filtering Tests', () => {
+  for (const route of ['/listings', '/pc-listings']) {
+    test(`keeps page scrolling enabled after collapsing desktop filters on ${route}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 1280, height: 800 })
+      await page.goto(route)
+      await page.getByRole('button', { name: 'Collapse filters', exact: true }).click()
+
+      await expect(page.getByRole('button', { name: 'Expand filters', exact: true })).toBeVisible()
+      await expect(page.locator('[aria-labelledby="mobile-filter-title"]')).toHaveCount(0)
+      await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden')
+    })
+  }
+
   test('should close a filter dropdown with Escape', async ({ page }) => {
     const listingsPage = new ListingsPage(page)
     await listingsPage.goto()
