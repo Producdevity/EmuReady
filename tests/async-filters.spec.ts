@@ -130,6 +130,7 @@ async function selectAsyncFilterOption(
   )
   await searchInput.fill(fixture.searchTerm)
   const response = await searchResponse
+  expect(response.ok(), `${fixture.procedure} returned status ${response.status()}`).toBe(true)
   await response.finished()
   await expect(
     page.getByTestId('async-multi-select-options').getByText('Loading…', { exact: true }),

@@ -175,7 +175,7 @@ describe('AsyncMultiSelect', () => {
     const option = screen.getByRole('checkbox', { name: 'Retroid Pocket 5' })
     option.focus()
 
-    view.rerender(<AsyncMultiSelect {...view.props} value={['device-1']} />)
+    view.rerender(<AsyncMultiSelect {...view.props} value={['device-1']} options={[...options]} />)
 
     expect(option).toBeChecked()
     expect(option).toHaveFocus()
