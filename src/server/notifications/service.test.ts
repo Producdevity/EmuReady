@@ -229,6 +229,45 @@ describe('NotificationService', () => {
   })
 
   describe('getUsersForEvent', () => {
+    it.each([NOTIFICATION_EVENTS.LISTING_VOTED, NOTIFICATION_EVENTS.LISTING_COMMENTED])(
+      'routes PC engagement event %s to its report author',
+      async (eventType) => {
+        mockPrisma.pcListing.findUnique.mockResolvedValue({ authorId: 'pc-author-1' })
+
+        const users = await serviceInternals.getUsersForEvent(
+          makeEvent({
+            eventType,
+            entityType: 'pcListing',
+            entityId: 'pc-listing-1',
+            triggeredBy: 'voter-1',
+            payload: { pcListingId: 'pc-listing-1', voteValue: true },
+          }),
+        )
+
+        expect(users).toEqual(['pc-author-1'])
+        expect(mockPrisma.pcListing.findUnique).toHaveBeenCalledWith({
+          where: { id: 'pc-listing-1' },
+          select: { authorId: true },
+        })
+        expect(mockPrisma.listing.findUnique).not.toHaveBeenCalled()
+      },
+    )
+
+    it('excludes the actor from PC engagement recipients', async () => {
+      mockPrisma.pcListing.findUnique.mockResolvedValue({ authorId: 'voter-1' })
+
+      const users = await serviceInternals.getUsersForEvent(
+        makeEvent({
+          eventType: NOTIFICATION_EVENTS.LISTING_VOTED,
+          entityType: 'pcListing',
+          triggeredBy: 'voter-1',
+          payload: { pcListingId: 'pc-listing-1' },
+        }),
+      )
+
+      expect(users).toEqual([])
+    })
+
     it('listing.approved returns the listing author', async () => {
       mockPrisma.listing.findUnique.mockResolvedValue(makeListingRecord())
 

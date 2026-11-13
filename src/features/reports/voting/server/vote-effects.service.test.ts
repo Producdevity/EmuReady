@@ -1,16 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import analytics from '@/lib/analytics'
+import { logger } from '@/lib/logger'
 import { prisma } from '@/server/db'
 import { notificationEventEmitter } from '@/server/notifications/eventEmitter'
+import { TrustAction } from '@orm'
 import { VoteEffectsRepository } from './vote-effects.repository'
 import { VoteEffectsService } from './vote-effects.service'
 
 const database = vi.hoisted(() => ({
-  vote: { count: vi.fn() },
-  pcListingVote: { count: vi.fn() },
+  trustActionLog: { findMany: vi.fn() },
 }))
 
 vi.mock('@/server/db', () => ({ prisma: database }))
+vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn() } }))
 vi.mock('@/lib/analytics', () => ({
   default: {
     engagement: { vote: vi.fn() },
@@ -34,9 +36,8 @@ describe.each(['handheld', 'pc'] as const)('%s committed vote effects', (listing
   }
 
   beforeEach(() => {
-    vi.clearAllMocks()
-    database.vote.count.mockResolvedValue(listingType === 'handheld' ? 1 : 0)
-    database.pcListingVote.count.mockResolvedValue(listingType === 'pc' ? 1 : 0)
+    vi.resetAllMocks()
+    database.trustActionLog.findMany.mockResolvedValue([{ id: 'first-vote-action' }])
   })
 
   it('notifies and tracks a new vote using the correct report context', async () => {
@@ -71,8 +72,9 @@ describe.each(['handheld', 'pc'] as const)('%s committed vote effects', (listing
       voteValue: true,
       previousVote: false,
     })
-    expect(database.vote.count).not.toHaveBeenCalled()
-    expect(database.pcListingVote.count).not.toHaveBeenCalled()
+    expect(database.trustActionLog.findMany).not.toHaveBeenCalled()
+    expect(analytics.userJourney.firstTimeAction).not.toHaveBeenCalled()
+    expect(logger.error).not.toHaveBeenCalled()
   })
 
   it('tracks removal without sending a vote notification', async () => {
@@ -83,15 +85,85 @@ describe.each(['handheld', 'pc'] as const)('%s committed vote effects', (listing
       voteValue: null,
       previousVote: true,
     })
-    expect(database.vote.count).not.toHaveBeenCalled()
+    expect(database.trustActionLog.findMany).not.toHaveBeenCalled()
+    expect(analytics.userJourney.firstTimeAction).not.toHaveBeenCalled()
+    expect(logger.error).not.toHaveBeenCalled()
   })
 
-  it('counts both report types before recording a first vote', async () => {
-    database.vote.count.mockResolvedValue(1)
-    database.pcListingVote.count.mockResolvedValue(1)
+  it('uses retained vote history so removing all votes does not repeat the milestone', async () => {
+    database.trustActionLog.findMany.mockResolvedValue([
+      { id: 'earlier-vote-action' },
+      { id: 'current-vote-action' },
+    ])
     await service.afterCommit({ ...base, action: 'created', previousValue: null })
-    expect(database.vote.count).toHaveBeenCalledWith({ where: { userId: base.userId } })
-    expect(database.pcListingVote.count).toHaveBeenCalledWith({ where: { userId: base.userId } })
+    expect(database.trustActionLog.findMany).toHaveBeenCalledWith({
+      where: { userId: base.userId, action: { in: [TrustAction.UPVOTE, TrustAction.DOWNVOTE] } },
+      select: { id: true },
+      take: 2,
+    })
     expect(analytics.userJourney.firstTimeAction).not.toHaveBeenCalled()
+  })
+
+  it('does not identify missing vote history as a first vote', async () => {
+    database.trustActionLog.findMany.mockResolvedValue([])
+    await service.afterCommit({ ...base, action: 'created', previousValue: null })
+    expect(analytics.userJourney.firstTimeAction).not.toHaveBeenCalled()
+  })
+
+  it('returns the committed result when reading vote history fails', async () => {
+    const error = new Error('History unavailable')
+    database.trustActionLog.findMany.mockRejectedValue(error)
+
+    await expect(
+      service.afterCommit({ ...base, action: 'created', previousValue: null }),
+    ).resolves.toBeUndefined()
+
+    expect(notificationEventEmitter.emitNotificationEvent).toHaveBeenCalledOnce()
+    expect(analytics.engagement.vote).toHaveBeenCalledOnce()
+    expect(analytics.userJourney.firstTimeAction).not.toHaveBeenCalled()
+    expect(logger.error).toHaveBeenCalledWith('Committed vote milestone analytics failed', error)
+  })
+
+  it('continues analytics if a notification listener throws', async () => {
+    const error = new Error('Listener failed')
+    vi.mocked(notificationEventEmitter.emitNotificationEvent).mockImplementation(() => {
+      throw error
+    })
+
+    await expect(
+      service.afterCommit({ ...base, action: 'created', previousValue: null }),
+    ).resolves.toBeUndefined()
+
+    expect(analytics.engagement.vote).toHaveBeenCalledOnce()
+    expect(analytics.userJourney.firstTimeAction).toHaveBeenCalledOnce()
+    expect(logger.error).toHaveBeenCalledWith('Committed vote notification failed', error)
+  })
+
+  it('continues milestone tracking if engagement analytics throws', async () => {
+    const error = new Error('Analytics failed')
+    vi.mocked(analytics.engagement.vote).mockImplementation(() => {
+      throw error
+    })
+
+    await expect(
+      service.afterCommit({ ...base, action: 'created', previousValue: null }),
+    ).resolves.toBeUndefined()
+
+    expect(notificationEventEmitter.emitNotificationEvent).toHaveBeenCalledOnce()
+    expect(analytics.userJourney.firstTimeAction).toHaveBeenCalledOnce()
+    expect(logger.error).toHaveBeenCalledWith('Committed vote analytics failed', error)
+  })
+
+  it('returns the committed result if milestone analytics throws', async () => {
+    const error = new Error('Milestone failed')
+    vi.mocked(analytics.userJourney.firstTimeAction).mockImplementation(() => {
+      throw error
+    })
+
+    await expect(
+      service.afterCommit({ ...base, action: 'created', previousValue: null }),
+    ).resolves.toBeUndefined()
+
+    expect(logger.error).toHaveBeenCalledWith('Committed vote milestone analytics failed', error)
   })
 })
