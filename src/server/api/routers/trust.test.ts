@@ -190,6 +190,21 @@ describe('trust router permission checks', () => {
       const result = await createCaller(Role.SUPER_ADMIN).getTrustStats({})
       expect(result.levelDistribution.map((level) => level.count)).toEqual([5, 4, 5, 0, 0, 6])
     })
+
+    it('includes users with negative scores in the Newcomer total', async () => {
+      mockPrismaUserCount.mockResolvedValueOnce(5)
+      mockPrismaUserGroupBy.mockResolvedValueOnce([
+        { trustScore: -10, _count: { id: 3 } },
+        { trustScore: 100, _count: { id: 2 } },
+      ])
+
+      const result = await createCaller(Role.SUPER_ADMIN).getTrustStats({})
+
+      expect(result.levelDistribution.map((level) => level.count)).toEqual([3, 2, 0, 0, 0, 0])
+      expect(result.levelDistribution.reduce((total, level) => total + level.count, 0)).toBe(
+        result.totalUsers,
+      )
+    })
   })
 
   describe('runMonthlyActiveBonus (SUPER_ADMIN only)', () => {

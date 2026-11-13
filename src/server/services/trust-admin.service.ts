@@ -1,4 +1,4 @@
-import { TRUST_LEVELS } from '@/lib/trust/config'
+import { getTrustLevel, TRUST_LEVELS } from '@/lib/trust/config'
 import type { TrustAdminRepository } from '@/server/repositories/trust-admin.repository'
 
 export class TrustAdminService {
@@ -6,14 +6,9 @@ export class TrustAdminService {
 
   async statistics() {
     const data = await this.repository.statistics()
-    const levelDistribution = TRUST_LEVELS.map((level, index) => {
-      const nextLevel = TRUST_LEVELS[index + 1]
+    const levelDistribution = TRUST_LEVELS.map((level) => {
       const count = data.scoreDistribution
-        .filter(
-          (item) =>
-            item.trustScore >= level.minScore &&
-            (!nextLevel || item.trustScore < nextLevel.minScore),
-        )
+        .filter((item) => getTrustLevel(item.trustScore).name === level.name)
         .reduce((sum, item) => sum + item._count.id, 0)
 
       return { name: level.name, minScore: level.minScore, count }
