@@ -173,7 +173,7 @@ export const devices: DeviceData[] = [
   { brandName: 'OnePlus', modelName: 'Open', socName: 'Snapdragon 8 Gen 2' },
 
   // OPPO
-  { brandName: 'OPPO', modelName: 'Find X9 Pro', socName: 'Dimensity 9500' },
+  { brandName: 'Oppo', modelName: 'Find X9 Pro', socName: 'Dimensity 9500' },
 
   // Pimax
   { brandName: 'Pimax', modelName: 'Portal', socName: 'Snapdragon 8 Gen 2' },

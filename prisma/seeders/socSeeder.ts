@@ -156,6 +156,10 @@ export const socs: SoCData[] = [
   {
     name: 'Snapdragon 855+',
     manufacturer: 'Qualcomm',
+    architecture: 'ARM64',
+    processNode: '7nm',
+    cpuCores: 8,
+    gpuModel: 'Adreno 640',
   },
   {
     name: 'Snapdragon 855',
@@ -168,6 +172,10 @@ export const socs: SoCData[] = [
   {
     name: 'Snapdragon 782G',
     manufacturer: 'Qualcomm',
+    architecture: 'ARM64',
+    processNode: '6nm',
+    cpuCores: 8,
+    gpuModel: 'Adreno 642L',
   },
   {
     name: 'Snapdragon 750G',
@@ -212,6 +220,10 @@ export const socs: SoCData[] = [
   {
     name: 'Snapdragon 665',
     manufacturer: 'Qualcomm',
+    architecture: 'ARM64',
+    processNode: '11nm',
+    cpuCores: 8,
+    gpuModel: 'Adreno 610',
   },
   {
     name: 'Snapdragon 662',
@@ -362,6 +374,9 @@ export const socs: SoCData[] = [
   {
     name: 'Helio P22T',
     manufacturer: 'MediaTek',
+    architecture: 'ARM64',
+    cpuCores: 8,
+    gpuModel: 'PowerVR GE8320',
   },
   {
     name: 'Helio P22',
@@ -1104,6 +1119,10 @@ export const socs: SoCData[] = [
   {
     name: 'Dimensity 8000',
     manufacturer: 'MediaTek',
+    architecture: 'ARM64',
+    processNode: '5nm',
+    cpuCores: 8,
+    gpuModel: 'Mali-G610 MC6',
   },
   {
     name: 'Dimensity 8050',
@@ -1116,6 +1135,7 @@ export const socs: SoCData[] = [
   {
     name: 'Dimensity 7350 Pro',
     manufacturer: 'MediaTek',
+    architecture: 'ARM64',
     processNode: '4nm',
     cpuCores: 8,
     gpuModel: 'Mali-G610 MC4',

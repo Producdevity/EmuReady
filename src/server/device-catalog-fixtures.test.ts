@@ -18,6 +18,12 @@ describe('device fixture integrity', () => {
     expect(keys.filter((key, index) => keys.indexOf(key) !== index)).toEqual([])
   })
 
+  it('uses consistent casing for each device brand', () => {
+    const names = [...new Set(devices.map((device) => device.brandName))]
+    const normalized = names.map((name) => name.toLowerCase())
+    expect(normalized.filter((name, index) => normalized.indexOf(name) !== index)).toEqual([])
+  })
+
   it('keeps the distinct OnePlus variants on their respective processor families', () => {
     const byModel = new Map(
       devices
