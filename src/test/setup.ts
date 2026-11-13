@@ -22,6 +22,7 @@ const ormMock = {
       values,
       text: strings.join('?'),
     }),
+    TransactionIsolationLevel: { Serializable: 'Serializable' },
     QueryMode: {
       default: 'default',
       insensitive: 'insensitive',
