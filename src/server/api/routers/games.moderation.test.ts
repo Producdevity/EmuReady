@@ -100,6 +100,36 @@ describe('game moderation transactions', () => {
     expect(root.$transaction).not.toHaveBeenCalled()
   })
 
+  it.each(['approve', 'reject'] as const)(
+    'rejects an empty bulk %s request at the API boundary',
+    async (decision) => {
+      const result =
+        decision === 'approve'
+          ? caller.bulkApproveGames({ gameIds: [] })
+          : caller.bulkRejectGames({ gameIds: [] })
+      await expect(result).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+      expect(root.$transaction).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each(['approve', 'reject'] as const)(
+    'refuses an empty bulk %s when called directly without changing trust or data',
+    async (decision) => {
+      const service = new GameModerationService(new GameModerationRepository(prisma))
+      const actor = createActorFromSession({
+        user: { id: adminId, role: Role.ADMIN, permissions: [PERMISSIONS.APPROVE_GAMES] },
+      })
+      models.game.findMany.mockResolvedValue([])
+      const result =
+        decision === 'approve' ? service.approveMany(actor, []) : service.rejectMany(actor, [])
+      await expect(result).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+      expect(models.game.updateMany).not.toHaveBeenCalled()
+      expect(models.trustActionLog.create).not.toHaveBeenCalled()
+      expect(analytics.trust.trustScoreChanged).not.toHaveBeenCalled()
+      expect(gameStatsCache.delete).not.toHaveBeenCalled()
+    },
+  )
+
   it('rewards and counts only the games still pending inside the transaction', async () => {
     const result = await caller.bulkApproveGames({ gameIds: [firstId, secondId] })
     expect(result.approvedCount).toBe(1)
