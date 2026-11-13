@@ -1,10 +1,8 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
+import { ReportApprovalService } from '@/features/reports/approval/server/report-approval.service'
 import { RISK_SIGNAL_TYPES } from '@/schemas/authorRisk'
 import { SUBMISSION_RISK_SIGNAL_TYPES } from '@/schemas/submissionRisk'
-import { invalidateListingSeo } from '@/server/cache/invalidation'
-import { notificationEventEmitter } from '@/server/notifications/eventEmitter'
-import { invalidateCatalogCompatibilityCacheForDevice } from '@/server/utils/cache/instances'
-import { ApprovalStatus, Role, TrustAction } from '@orm'
+import { ApprovalStatus, Role } from '@orm'
 import type * as AuthorRiskService from '@/server/services/author-risk.service'
 
 vi.unmock('@/server/api/trpc')
@@ -343,162 +341,72 @@ describe('listing admin processed reports', () => {
   })
 })
 
-describe('listing admin processed report status overrides', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
+describe('listing admin decision transport', () => {
+  beforeEach(() => vi.restoreAllMocks())
 
-  function setupPrisma() {
-    const listing = {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-    }
-    const prismaMock = prisma as unknown as {
-      listing: typeof listing
-    }
+  it.each(['approve', 'reject'] as const)(
+    'rejects a bulk %s request when nothing remains pending',
+    async (decision) => {
+      vi.spyOn(ReportApprovalService.prototype, 'reviewPending').mockResolvedValueOnce({
+        approvedCount: 0,
+        rejectedCount: 0,
+        skippedCount: 1,
+      })
+      const { caller } = createCaller({ role: Role.SUPER_ADMIN })
+      const request =
+        decision === 'approve'
+          ? caller.bulkApprove({ listingIds: [LISTING_ID] })
+          : caller.bulkReject({ listingIds: [LISTING_ID], notes: 'Invalid' })
+      await expect(request).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+    },
+  )
 
-    prismaMock.listing = listing
-
-    return { listing }
-  }
-
-  it('emits a rejection notification when a processed handheld report is overridden to rejected', async () => {
-    const processedAt = new Date('2026-06-01T12:00:00.000Z')
-    const { listing } = setupPrisma()
-    listing.findUnique.mockResolvedValueOnce({
-      id: LISTING_ID,
-      status: ApprovalStatus.APPROVED,
-      gameId: '00000000-0000-4000-a000-000000000030',
-      deviceId: '00000000-0000-4000-a000-000000000031',
-      emulatorId: '00000000-0000-4000-a000-000000000032',
-      authorId: AUTHOR_ID,
-      processedNotes: 'Old notes',
-    })
-    listing.update.mockResolvedValueOnce({
+  it('passes an override to the shared workflow and returns its declared receipt', async () => {
+    const change = vi.spyOn(ReportApprovalService.prototype, 'changeStatus').mockResolvedValueOnce({
       id: LISTING_ID,
       status: ApprovalStatus.REJECTED,
-      processedAt,
+      processedAt: new Date(),
     })
-
     const { caller } = createCaller({ role: Role.SUPER_ADMIN })
-
-    await caller.overrideStatus({
-      listingId: LISTING_ID,
-      newStatus: ApprovalStatus.REJECTED,
-      overrideNotes: 'Incorrect report',
-    })
-
-    expect(listing.update).toHaveBeenCalledWith({
-      where: { id: LISTING_ID },
-      data: {
-        status: ApprovalStatus.REJECTED,
-        processedByUserId: ADMIN_ID,
-        processedAt: expect.any(Date),
-        processedNotes: 'Incorrect report',
-      },
-    })
-    expect(invalidateListingSeo).toHaveBeenCalledWith({
-      id: LISTING_ID,
-      gameId: '00000000-0000-4000-a000-000000000030',
-      deviceId: '00000000-0000-4000-a000-000000000031',
-      emulatorId: '00000000-0000-4000-a000-000000000032',
-    })
-    expect(invalidateCatalogCompatibilityCacheForDevice).toHaveBeenCalledWith(
-      '00000000-0000-4000-a000-000000000031',
+    await expect(
+      caller.overrideStatus({
+        listingId: LISTING_ID,
+        newStatus: ApprovalStatus.REJECTED,
+        overrideNotes: 'Incorrect report',
+      }),
+    ).resolves.toMatchObject({ id: LISTING_ID, status: ApprovalStatus.REJECTED })
+    expect(change).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reportId: LISTING_ID,
+        reportType: 'handheld',
+        intent: 'override',
+        notes: 'Incorrect report',
+        actor: expect.objectContaining({ id: ADMIN_ID }),
+      }),
     )
-    expect(mockApplyTrustAction).toHaveBeenCalledWith({
-      userId: AUTHOR_ID,
-      action: TrustAction.LISTING_REJECTED,
-      context: {
-        listingId: LISTING_ID,
-        adminUserId: ADMIN_ID,
-        reason: 'Incorrect report',
-      },
-    })
-    expect(notificationEventEmitter.emitNotificationEvent).toHaveBeenCalledWith({
-      eventType: 'LISTING_REJECTED',
-      entityType: 'listing',
-      entityId: LISTING_ID,
-      triggeredBy: ADMIN_ID,
-      payload: {
-        listingId: LISTING_ID,
-        rejectedBy: ADMIN_ID,
-        rejectedAt: processedAt,
-        rejectionReason: 'Incorrect report',
-      },
-    })
   })
 
-  it('clears processed metadata without emitting a notification when overriding to pending', async () => {
-    const { listing } = setupPrisma()
-    listing.findUnique.mockResolvedValueOnce({
-      id: LISTING_ID,
-      status: ApprovalStatus.REJECTED,
-      gameId: '00000000-0000-4000-a000-000000000030',
-      deviceId: '00000000-0000-4000-a000-000000000031',
-      emulatorId: '00000000-0000-4000-a000-000000000032',
-      authorId: AUTHOR_ID,
-      processedNotes: 'Rejected notes',
-    })
-    listing.update.mockResolvedValueOnce({
-      id: LISTING_ID,
-      status: ApprovalStatus.PENDING,
-    })
-
-    const { caller } = createCaller({ role: Role.SUPER_ADMIN })
-
-    await caller.overrideStatus({
-      listingId: LISTING_ID,
-      newStatus: ApprovalStatus.PENDING,
-    })
-
-    expect(listing.update).toHaveBeenCalledWith({
-      where: { id: LISTING_ID },
-      data: {
-        status: ApprovalStatus.PENDING,
-        processedByUserId: null,
-        processedAt: null,
-        processedNotes: null,
-      },
-    })
-    expect(invalidateListingSeo).not.toHaveBeenCalled()
-    expect(mockApplyTrustAction).not.toHaveBeenCalled()
-    expect(notificationEventEmitter.emitNotificationEvent).not.toHaveBeenCalled()
-  })
-
-  it('invalidates public handheld report caches when resetting an approved report to pending', async () => {
-    const { listing } = setupPrisma()
-    listing.findUnique.mockResolvedValueOnce({
-      id: LISTING_ID,
-      status: ApprovalStatus.APPROVED,
-      gameId: '00000000-0000-4000-a000-000000000030',
-      deviceId: '00000000-0000-4000-a000-000000000031',
-      emulatorId: '00000000-0000-4000-a000-000000000032',
-    })
-    listing.update.mockResolvedValueOnce({
-      id: LISTING_ID,
-      status: ApprovalStatus.PENDING,
-    })
-
+  it('delegates resetting to Pending using the authenticated moderator', async () => {
+    const change = vi
+      .spyOn(ReportApprovalService.prototype, 'changeStatus')
+      .mockResolvedValueOnce({ id: LISTING_ID, status: ApprovalStatus.PENDING, processedAt: null })
     const { caller } = createCaller({ role: Role.MODERATOR })
-
     await caller.resetToPending({ listingId: LISTING_ID })
-
-    expect(invalidateListingSeo).toHaveBeenCalledWith({
-      id: LISTING_ID,
-      gameId: '00000000-0000-4000-a000-000000000030',
-      deviceId: '00000000-0000-4000-a000-000000000031',
-      emulatorId: '00000000-0000-4000-a000-000000000032',
-    })
-    expect(invalidateCatalogCompatibilityCacheForDevice).toHaveBeenCalledWith(
-      '00000000-0000-4000-a000-000000000031',
+    expect(change).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reportId: LISTING_ID,
+        reportType: 'handheld',
+        newStatus: ApprovalStatus.PENDING,
+        intent: 'reset',
+        actor: expect.objectContaining({ id: ADMIN_ID }),
+      }),
     )
-    expect(notificationEventEmitter.emitNotificationEvent).not.toHaveBeenCalled()
   })
 })
 
 describe('listing admin auto risk rejection', () => {
   beforeEach(() => {
+    vi.restoreAllMocks()
     vi.clearAllMocks()
     mockComputeAuthorRiskProfiles.mockResolvedValue(new Map())
     mockComputeSubmissionRiskProfiles.mockResolvedValue(new Map())
@@ -532,6 +440,9 @@ describe('listing admin auto risk rejection', () => {
 
   it('rejects pending handheld reports with high author risk or high submission risk with author risk', async () => {
     const { tx } = setupPrisma()
+    const review = vi
+      .spyOn(ReportApprovalService.prototype, 'reviewPending')
+      .mockResolvedValueOnce({ approvedCount: 0, rejectedCount: 2, skippedCount: 0 })
     const highSubmissionOnlyListing = {
       id: LISTING_ID,
       authorId: CLEAN_AUTHOR_ID,
@@ -643,50 +554,21 @@ describe('listing admin auto risk rejection', () => {
     const result = await caller.autoRejectRisky()
 
     expect(mockGetPendingListingRiskCandidates).toHaveBeenCalledWith({})
-    expect(tx.listing.findMany).toHaveBeenCalledWith({
-      where: {
-        id: { in: [LISTING_ID_C, LISTING_ID_D] },
-        status: ApprovalStatus.PENDING,
-      },
-      select: { id: true, authorId: true, deviceId: true },
-    })
-    expect(tx.listing.updateMany).toHaveBeenCalledTimes(2)
-    expect(tx.listing.updateMany).toHaveBeenCalledWith({
-      where: { id: LISTING_ID_C, status: ApprovalStatus.PENDING },
-      data: expect.objectContaining({
-        status: ApprovalStatus.REJECTED,
-        processedByUserId: ADMIN_ID,
-        processedNotes:
-          'Automatically rejected by review risk bulk action: submission risk high severity; author risk low severity (1 signal).',
-      }),
-    })
-    expect(tx.listing.updateMany).toHaveBeenCalledWith({
-      where: { id: LISTING_ID_D, status: ApprovalStatus.PENDING },
-      data: expect.objectContaining({
-        status: ApprovalStatus.REJECTED,
-        processedByUserId: ADMIN_ID,
-        processedNotes:
-          'Automatically rejected by review risk bulk action: author risk high severity (1 signal).',
-      }),
-    })
-    expect(mockApplyTrustAction).toHaveBeenCalledWith(
+    expect(review).toHaveBeenCalledWith(
       expect.objectContaining({
-        userId: AUTHOR_ID,
-        context: expect.objectContaining({
-          listingId: LISTING_ID_C,
-          reason:
+        reportIds: [LISTING_ID_C, LISTING_ID_D],
+        reportType: 'handheld',
+        newStatus: ApprovalStatus.REJECTED,
+        notesById: new Map([
+          [
+            LISTING_ID_C,
             'Automatically rejected by review risk bulk action: submission risk high severity; author risk low severity (1 signal).',
-        }),
-      }),
-    )
-    expect(mockApplyTrustAction).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: HIGH_RISK_AUTHOR_ID,
-        context: expect.objectContaining({
-          listingId: LISTING_ID_D,
-          reason:
+          ],
+          [
+            LISTING_ID_D,
             'Automatically rejected by review risk bulk action: author risk high severity (1 signal).',
-        }),
+          ],
+        ]),
       }),
     )
     expect(result).toMatchObject({
@@ -694,59 +576,6 @@ describe('listing admin auto risk rejection', () => {
       rejectedCount: 2,
       skippedCount: 0,
     })
-  })
-
-  it('keeps handheld auto-rejection successful when trust action emission fails', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    const { tx } = setupPrisma()
-
-    mockGetPendingListingRiskCandidates.mockResolvedValueOnce([
-      {
-        id: LISTING_ID_D,
-        authorId: HIGH_RISK_AUTHOR_ID,
-        author: { userBans: [] },
-        customFieldValues: [],
-      },
-    ])
-    mockComputeAuthorRiskProfiles.mockResolvedValue(
-      new Map([
-        [
-          HIGH_RISK_AUTHOR_ID,
-          {
-            authorId: HIGH_RISK_AUTHOR_ID,
-            highestSeverity: 'high',
-            signals: [
-              {
-                type: RISK_SIGNAL_TYPES.ACTIVE_BAN,
-                severity: 'high',
-                label: 'Active Ban',
-                description: 'Banned for spam',
-              },
-            ],
-          },
-        ],
-      ]),
-    )
-    tx.listing.findMany.mockResolvedValueOnce([
-      { id: LISTING_ID_D, authorId: HIGH_RISK_AUTHOR_ID, deviceId: 'device-4' },
-    ])
-    mockApplyTrustAction.mockRejectedValueOnce(new Error('trust failed'))
-
-    const { caller } = createCaller({ role: Role.ADMIN })
-
-    await expect(caller.autoRejectRisky()).resolves.toMatchObject({
-      success: true,
-      rejectedCount: 1,
-      skippedCount: 0,
-    })
-    expect(consoleError).toHaveBeenCalledWith(
-      'Some trust actions failed during review-risk handheld auto-rejection:',
-      expect.arrayContaining([
-        expect.objectContaining({ status: 'rejected', reason: expect.any(Error) }),
-      ]),
-    )
-
-    consoleError.mockRestore()
   })
 
   it('returns the admin-only auto-reject preview count', async () => {

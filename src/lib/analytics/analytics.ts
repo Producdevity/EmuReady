@@ -993,12 +993,16 @@ const analytics = {
       oldLevel: string
       newLevel: string
       score: number
+      direction: 'up' | 'down'
     }) => {
-      const { userId, ...metadata } = params
+      const { userId, direction, ...metadata } = params
 
       sendAnalyticsEvent({
         category: ANALYTICS_CATEGORIES.TRUST,
-        action: TRUST_ACTIONS_ANALYTICS.TRUST_LEVEL_UP,
+        action:
+          direction === 'up'
+            ? TRUST_ACTIONS_ANALYTICS.TRUST_LEVEL_UP
+            : TRUST_ACTIONS_ANALYTICS.TRUST_LEVEL_DOWN,
         userId,
         metadata,
       })
