@@ -1,5 +1,8 @@
+import { type z } from 'zod'
+import { UserRepository } from '@/features/users/server/user.repository'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { Role } from '@orm/client'
+import { Role } from '@orm'
+import { type UserPrivacySettingsSchema } from '../shared/user-output.schemas'
 import type { PrismaClient } from '@orm/client'
 
 interface ProfileAccessContext {
@@ -8,14 +11,7 @@ interface ProfileAccessContext {
   showNsfw?: boolean
 }
 
-interface PrivacySettings {
-  profilePublic: boolean
-  showVotingActivity: boolean
-  allowFollows: boolean
-  allowFriendRequests: boolean
-  followersVisible: boolean
-  followingVisible: boolean
-}
+type PrivacySettings = z.output<typeof UserPrivacySettingsSchema>
 
 export const PROFILE_ACCESS_REASONS = {
   NOT_FOUND: 'not_found',
@@ -62,30 +58,15 @@ export async function checkProfileAccess(
   targetUserId: string,
   ctx: ProfileAccessContext,
 ): Promise<ProfileAccessResult> {
-  const user = await prisma.user.findUnique({
-    where: { id: targetUserId },
-    select: {
-      id: true,
-      userBans: {
-        where: {
-          isActive: true,
-          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-        },
-        select: { id: true },
-      },
-      settings: {
-        select: {
-          profilePublic: true,
-          showVotingActivity: true,
-          allowFollows: true,
-          allowFriendRequests: true,
-          followersVisible: true,
-          followingVisible: true,
-        },
-      },
-    },
-  })
+  const user = await new UserRepository(prisma).profileAccessRecord(targetUserId)
+  return evaluateProfileAccess(user, targetUserId, ctx)
+}
 
+export function evaluateProfileAccess(
+  user: Awaited<ReturnType<UserRepository['profileAccessRecord']>>,
+  targetUserId: string,
+  ctx: ProfileAccessContext,
+): ProfileAccessResult {
   if (!user) return { accessible: false, reason: PROFILE_ACCESS_REASONS.NOT_FOUND }
 
   const isBanned = user.userBans.length > 0

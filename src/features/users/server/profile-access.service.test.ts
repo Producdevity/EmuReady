@@ -1,25 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Role, type PrismaClient } from '@orm/client'
+import { prisma } from '@/server/db'
+import { Role } from '@orm/client'
 import {
   checkProfileAccess,
   PRIVATE_PROFILE_SETTINGS,
   PROFILE_ACCESS_REASONS,
-} from './user-profile.service'
+} from './profile-access.service'
 
-function createMockPrisma() {
-  return {
-    user: {
-      findUnique: vi.fn(),
-    },
-  } as unknown as PrismaClient
-}
+const database = vi.hoisted(() => ({ user: { findUnique: vi.fn() } }))
+vi.mock('@/server/db', () => ({ prisma: database }))
 
-describe('user-profile.service', () => {
-  let prisma: PrismaClient
-
-  beforeEach(() => {
-    prisma = createMockPrisma()
-  })
+describe('profile access service', () => {
+  beforeEach(() => vi.resetAllMocks())
 
   describe('PRIVATE_PROFILE_SETTINGS', () => {
     it('should have all fields set to false', () => {
@@ -36,7 +28,7 @@ describe('user-profile.service', () => {
 
   describe('checkProfileAccess', () => {
     it('should return not_found when user is null', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
+      database.user.findUnique.mockResolvedValueOnce(null)
 
       const result = await checkProfileAccess(prisma, 'missing-id', {})
 
@@ -44,11 +36,11 @@ describe('user-profile.service', () => {
     })
 
     it('should return banned when user has active ban and viewer is not mod', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      database.user.findUnique.mockResolvedValueOnce({
         id: 'banned-user',
         userBans: [{ id: 'ban-1' }],
         settings: null,
-      } as never)
+      })
 
       const result = await checkProfileAccess(prisma, 'banned-user', {
         currentUserRole: Role.USER,
@@ -58,11 +50,11 @@ describe('user-profile.service', () => {
     })
 
     it('should return accessible with isBanned when user has active ban but viewer is MODERATOR', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      database.user.findUnique.mockResolvedValueOnce({
         id: 'banned-user',
         userBans: [{ id: 'ban-1' }],
         settings: null,
-      } as never)
+      })
 
       const result = await checkProfileAccess(prisma, 'banned-user', {
         currentUserRole: Role.MODERATOR,
@@ -76,11 +68,11 @@ describe('user-profile.service', () => {
     })
 
     it('should return private when profilePublic: false and viewer is not owner/mod', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      database.user.findUnique.mockResolvedValueOnce({
         id: 'private-user',
         userBans: [],
         settings: { profilePublic: false },
-      } as never)
+      })
 
       const result = await checkProfileAccess(prisma, 'private-user', {
         currentUserId: 'other-user',
@@ -91,11 +83,11 @@ describe('user-profile.service', () => {
     })
 
     it('should return accessible when profile is private but viewer is the owner', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      database.user.findUnique.mockResolvedValueOnce({
         id: 'private-user',
         userBans: [],
         settings: { profilePublic: false },
-      } as never)
+      })
 
       const result = await checkProfileAccess(prisma, 'private-user', {
         currentUserId: 'private-user',
@@ -109,11 +101,11 @@ describe('user-profile.service', () => {
     })
 
     it('should return accessible when profile is private but viewer is MODERATOR', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      database.user.findUnique.mockResolvedValueOnce({
         id: 'private-user',
         userBans: [],
         settings: { profilePublic: false },
-      } as never)
+      })
 
       const result = await checkProfileAccess(prisma, 'private-user', {
         currentUserId: 'mod-user',
@@ -127,7 +119,7 @@ describe('user-profile.service', () => {
     })
 
     it('should hydrate privacy settings from user.settings', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      database.user.findUnique.mockResolvedValueOnce({
         id: 'user-1',
         userBans: [],
         settings: {
@@ -138,7 +130,7 @@ describe('user-profile.service', () => {
           followersVisible: false,
           followingVisible: true,
         },
-      } as never)
+      })
 
       const result = await checkProfileAccess(prisma, 'user-1', {})
 
@@ -156,11 +148,11 @@ describe('user-profile.service', () => {
     })
 
     it('should default all privacy settings to true when user.settings is null', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      database.user.findUnique.mockResolvedValueOnce({
         id: 'user-1',
         userBans: [],
         settings: null,
-      } as never)
+      })
 
       const result = await checkProfileAccess(prisma, 'user-1', {})
 
@@ -178,11 +170,11 @@ describe('user-profile.service', () => {
     })
 
     it('should set showNsfw from ctx when true', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      database.user.findUnique.mockResolvedValueOnce({
         id: 'user-1',
         userBans: [],
         settings: null,
-      } as never)
+      })
 
       const result = await checkProfileAccess(prisma, 'user-1', { showNsfw: true })
 
@@ -193,11 +185,11 @@ describe('user-profile.service', () => {
     })
 
     it('should set showNsfw to false when ctx.showNsfw is undefined', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      database.user.findUnique.mockResolvedValueOnce({
         id: 'user-1',
         userBans: [],
         settings: null,
-      } as never)
+      })
 
       const result = await checkProfileAccess(prisma, 'user-1', {})
 
@@ -208,9 +200,9 @@ describe('user-profile.service', () => {
     })
 
     it('should set canViewBannedUsers true for MODERATOR, false for USER', async () => {
-      vi.mocked(prisma.user.findUnique)
-        .mockResolvedValueOnce({ id: 'u1', userBans: [], settings: null } as never)
-        .mockResolvedValueOnce({ id: 'u1', userBans: [], settings: null } as never)
+      database.user.findUnique
+        .mockResolvedValueOnce({ id: 'u1', userBans: [], settings: null })
+        .mockResolvedValueOnce({ id: 'u1', userBans: [], settings: null })
 
       const modResult = await checkProfileAccess(prisma, 'u1', {
         currentUserRole: Role.MODERATOR,
@@ -224,11 +216,11 @@ describe('user-profile.service', () => {
     })
 
     it('should set isOwner true when currentUserId matches targetUserId', async () => {
-      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      database.user.findUnique.mockResolvedValueOnce({
         id: 'user-1',
         userBans: [],
         settings: null,
-      } as never)
+      })
 
       const result = await checkProfileAccess(prisma, 'user-1', {
         currentUserId: 'user-1',
