@@ -32,6 +32,14 @@ export async function completeReportApproval(input: ApprovalEffectsInput): Promi
     if (report.reportType === 'handheld') await invalidateListingSeo(report)
     else await invalidatePcListingSeo(report)
   }
+  notifyReportDecision(input)
+}
+
+export function notifyReportDecision(
+  input: Pick<ApprovalEffectsInput, 'report' | 'updated' | 'actorId' | 'notes'>,
+): void {
+  const report = input.report
+  const status = input.updated.status
   if (status === ApprovalStatus.PENDING) return
   const approved = status === ApprovalStatus.APPROVED
   try {

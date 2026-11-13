@@ -58,21 +58,25 @@ class NotificationTemplateEngine {
 
   private initializeTemplates(): void {
     // Engagement notifications
-    this.templates.set(NotificationType.LISTING_COMMENT, (context) => ({
-      title: 'New comment on your listing',
-      message: `${context.userName || 'Someone'} commented on your listing${context.listingTitle ? ` "${context.listingTitle}"` : ''}${context.commentText ? `: "${sanitizeText(context.commentText)}"` : ''}`,
-      actionUrl:
-        context.listingId && context.commentId
-          ? `/listings/${context.listingId}#comment-${context.commentId}`
-          : context.listingId
-            ? `/listings/${context.listingId}`
-            : undefined,
-      metadata: {
-        listingId: context.listingId,
-        commentId: context.commentId,
-        commentText: context.commentText,
-      },
-    }))
+    this.templates.set(NotificationType.LISTING_COMMENT, (context) => {
+      const reportUrl = context.listingId
+        ? `/listings/${context.listingId}`
+        : context.pcListingId
+          ? `/pc-listings/${context.pcListingId}`
+          : undefined
+      return {
+        title: 'New comment on your compatibility report',
+        message: `${context.userName || 'Someone'} commented on your compatibility report${context.listingTitle ? ` "${context.listingTitle}"` : ''}${context.commentText ? `: "${sanitizeText(context.commentText)}"` : ''}`,
+        actionUrl:
+          reportUrl && context.commentId ? `${reportUrl}#comment-${context.commentId}` : reportUrl,
+        metadata: {
+          listingId: context.listingId,
+          pcListingId: context.pcListingId,
+          commentId: context.commentId,
+          commentText: context.commentText,
+        },
+      }
+    })
 
     this.templates.set(NotificationType.LISTING_VOTE_UP, (context) => ({
       title: 'Your listing received an upvote',
