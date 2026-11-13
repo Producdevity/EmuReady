@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'framer-motion'
 import { Save, X, ExternalLink } from 'lucide-react'
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { EmulatorIcon, GitHubIcon } from '@/components/icons'
 import { Button, Input } from '@/components/ui'
 import { api } from '@/lib/api'
@@ -126,7 +126,7 @@ function EmulatorEditForm(props: Props) {
     },
   })
 
-  const { register, handleSubmit, formState, setValue, watch } = useForm<UpdateEmulatorFormData>({
+  const { register, handleSubmit, formState, setValue, control } = useForm<UpdateEmulatorFormData>({
     resolver: zodResolver(updateEmulatorSchema),
     defaultValues: {
       name: props.emulator.name,
@@ -138,7 +138,10 @@ function EmulatorEditForm(props: Props) {
     },
   })
 
-  const watchedLogo = watch('logo')
+  const [watchedLogo, watchedName, watchedDescription] = useWatch({
+    control,
+    name: ['logo', 'name', 'description'] as const,
+  })
   const selectedLogo = watchedLogo?.replace(/\.png$/, '.webp')
 
   const onSubmit = (data: UpdateEmulatorFormData) => {
@@ -212,7 +215,7 @@ function EmulatorEditForm(props: Props) {
           <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <EmulatorIcon
               logo={watchedLogo}
-              name={watch('name')}
+              name={watchedName}
               showLogo={!!watchedLogo}
               size="lg"
             />
@@ -297,7 +300,7 @@ function EmulatorEditForm(props: Props) {
           Description
         </label>
         <MarkdownEditor
-          value={watch('description') || ''}
+          value={watchedDescription || ''}
           onChange={(value) =>
             setValue('description', value, {
               shouldValidate: true,

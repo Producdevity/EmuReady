@@ -14,6 +14,7 @@ import { LoadingSpinner } from '@/components/ui'
 import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
 import { api } from '@/lib/api'
 import { logger } from '@/lib/logger'
+import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasRolePermission } from '@/utils/permissions'
 import { Role } from '@orm'
@@ -22,7 +23,7 @@ import { useGameSearch } from './hooks/useGameSearch'
 import { extractBoxartUrl } from './utils/boxartHelpers'
 import { handleGameCreationError } from './utils/gameCreationErrors'
 import NotSignedInMessage from '../components/NotSignedInMessage'
-import type { TGDBGame, TGDBGamesByNameResponse } from '@/types/tgdb'
+import type { TGDBGame } from '@/types/tgdb'
 
 interface TGDBGameResult extends BaseGameResult {
   id: string
@@ -68,15 +69,20 @@ function TGDBSearchContent() {
   const urlQuery = searchParams.get('q') ?? ''
   const urlSystemId = searchParams.get('system') ?? ''
 
-  const [searchResults, setSearchResults] = useState<{
-    games: TGDBGameResult[]
-    count: number
+  const [submittedSearch, setSubmittedSearch] = useState<{
+    urlKey: string
+    systemId: string | null
+    input: RouterInput['tgdb']['searchGames']
   } | null>(null)
+  const urlKey = JSON.stringify([urlQuery, urlSystemId || null])
+  const [previousUrlKey, setPreviousUrlKey] = useState(urlKey)
+  if (previousUrlKey !== urlKey) {
+    setPreviousUrlKey(urlKey)
+    if (submittedSearch?.urlKey !== urlKey) setSubmittedSearch(null)
+  }
   const [selectedGame, setSelectedGame] = useState<TGDBGameWithBoxart | null>(null)
-  const [searchResponse, setSearchResponse] = useState<TGDBGamesByNameResponse | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSelecting, setIsSelecting] = useState(false)
-  const [isSearching, setIsSearching] = useState(false)
 
   const utils = api.useUtils()
   const userQuery = api.users.me.useQuery(undefined, {
@@ -86,71 +92,55 @@ function TGDBSearchContent() {
   const submitWithHumanVerification = useSubmitWithHumanVerification()
   const systemsQuery = api.systems.get.useQuery()
 
+  const selectedSystem = systemsQuery.data?.find((system) => system.id === urlSystemId)
+  const searchInput =
+    submittedSearch?.input ??
+    (urlQuery && selectedSystem ? { query: urlQuery, systemKey: selectedSystem.key } : null)
+  const searchQuery = api.tgdb.searchGames.useQuery(searchInput ?? { query: '' }, {
+    enabled: Boolean(user && searchInput),
+    refetchOnWindowFocus: false,
+    retry: false,
+  })
+  const searchResponse = searchQuery.data ?? null
+  const searchResults = useMemo(() => {
+    if (!searchResponse) return null
+    return {
+      games: (searchResponse.data?.games ?? []).map((game) => {
+        const enrichedGame: TGDBGameWithBoxart = {
+          ...game,
+          boxart: extractBoxartUrl(game, searchResponse) || undefined,
+          platform_name: typeof game.platform === 'string' ? game.platform : undefined,
+          genre_names:
+            Array.isArray(game.genres) && typeof game.genres[0] === 'string'
+              ? game.genres.map(String)
+              : undefined,
+        }
+        return mapTGDBToBaseGame(enrichedGame)
+      }),
+      count: searchResponse.data?.count ?? 0,
+    }
+  }, [searchResponse])
+  const currentSystemId = submittedSearch?.systemId ?? urlSystemId
   const { existingGames, updateSearchParams } = useGameSearch({
     searchResults,
-    urlSystemId,
+    urlSystemId: currentSystemId,
   })
 
-  const handleSearch = useCallback(
-    async (query: string, _platformId: number | null, systemId: string | null) => {
-      setIsSearching(true)
-
-      updateSearchParams(query, systemId)
-
-      const selectedSystem = systemId ? systemsQuery.data?.find((s) => s.id === systemId) : null
-
-      try {
-        const results = await utils.tgdb.searchGames.fetch({
-          query,
-          systemKey: selectedSystem?.key,
-        })
-
-        setSearchResponse(results) // Store for modal
-
-        // Map TGDB games to our unified format
-        const gameData = results.data?.games ?? []
-        const mappedGames = gameData.map((game) => {
-          const boxartUrl = extractBoxartUrl(game, results)
-
-          const enrichedGame: TGDBGameWithBoxart = {
-            ...game,
-            boxart: boxartUrl || undefined,
-            platform_name: typeof game.platform === 'string' ? game.platform : undefined,
-            genre_names:
-              Array.isArray(game.genres) &&
-              game.genres.length > 0 &&
-              typeof game.genres[0] === 'string'
-                ? game.genres.map(String)
-                : undefined,
-          }
-          return mapTGDBToBaseGame(enrichedGame)
-        })
-        setSearchResults({
-          games: mappedGames,
-          count: results.data?.count ?? 0,
-        })
-      } catch (error) {
-        logger.error('Search error:', error)
-        toast.error(getErrorMessage(error, 'Failed to search games'))
-      } finally {
-        setIsSearching(false)
-      }
-    },
-    [utils, updateSearchParams, systemsQuery.data],
-  )
-
-  // Auto-search on page load if URL has parameters
-  useEffect(() => {
-    if (urlQuery && systemsQuery.data && !searchResults) {
-      const selectedSystem = urlSystemId
-        ? systemsQuery.data.find((system) => system.id === urlSystemId)
-        : null
-
-      if (selectedSystem) {
-        handleSearch(urlQuery, null, selectedSystem.id).catch(console.error)
-      }
+  function handleSearch(query: string, _platformId: number | null, systemId: string | null) {
+    const system = systemsQuery.data?.find((item) => item.id === systemId)
+    const input = { query, systemKey: system?.key }
+    setSubmittedSearch({ urlKey: JSON.stringify([query, systemId]), systemId, input })
+    updateSearchParams(query, systemId)
+    if (searchInput?.query === query && searchInput.systemKey === input.systemKey) {
+      void searchQuery.refetch()
     }
-  }, [urlQuery, urlSystemId, systemsQuery.data, searchResults, handleSearch])
+  }
+
+  useEffect(() => {
+    if (!searchQuery.error) return
+    logger.error('Search error:', searchQuery.error)
+    toast.error(getErrorMessage(searchQuery.error, 'Failed to search games'))
+  }, [searchQuery.error])
 
   const handleGamePreview = useCallback(
     (game: BaseGameResult) => {
@@ -241,12 +231,13 @@ function TGDBSearchContent() {
         />
 
         <GameSearchForm
+          key={urlKey}
           provider="tgdb"
           onSearch={handleSearch}
           systems={systemsQuery.data ?? []}
           initialQuery={urlQuery}
           initialSystemId={urlSystemId}
-          isSearching={isSearching}
+          isSearching={searchQuery.isFetching}
           showModeratorFeatures={isModeratorOrHigher}
         />
 
@@ -256,7 +247,7 @@ function TGDBSearchContent() {
             results={searchResults}
             onGameSelect={handleGamePreview}
             existingGames={existingGames}
-            currentSystemId={urlSystemId}
+            currentSystemId={currentSystemId}
           />
         )}
 
@@ -267,7 +258,7 @@ function TGDBSearchContent() {
           onClose={() => setIsModalOpen(false)}
           onSelect={(game) => {
             const gameWithBoxart = { ...game, boxart: selectedGame?.boxart }
-            handleGameSelect(gameWithBoxart, urlSystemId)
+            handleGameSelect(gameWithBoxart, currentSystemId)
           }}
           isSelecting={isSelecting}
         />

@@ -1,4 +1,5 @@
 import { renderHook, act } from '@testing-library/react'
+import { useState } from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { useCommunitySupportBanner } from './useCommunitySupportBanner'
 
@@ -14,8 +15,17 @@ vi.mock('@/data/storageKeys', () => ({
   },
 }))
 
+function useLocalStorageMock() {
+  const [dismissed, setDismissed] = useState(mockLocalDismissed)
+  function setValue(value: boolean) {
+    mockSetLocalDismissed(value)
+    setDismissed(value)
+  }
+  return [dismissed, setValue, mockIsHydrated] as const
+}
+
 vi.mock('@/hooks/useLocalStorage', () => ({
-  useLocalStorage: vi.fn(() => [mockLocalDismissed, mockSetLocalDismissed, mockIsHydrated]),
+  useLocalStorage: vi.fn(useLocalStorageMock),
 }))
 
 vi.mock('@/lib/analytics', () => ({

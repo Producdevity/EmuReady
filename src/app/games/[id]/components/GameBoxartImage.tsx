@@ -2,7 +2,7 @@
 
 import { useUser } from '@clerk/nextjs'
 import { Edit3, Image as ImageIconLucide, Copy } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Button, OptimizedImage, Modal } from '@/components/ui'
 import { AdminImageSelectorSwitcher } from '@/components/ui/image-selectors'
 import { api } from '@/lib/api'
@@ -27,16 +27,35 @@ const DEFAULT_HEIGHT = 400
 
 type ImageField = 'imageUrl' | 'boxartUrl' | 'bannerUrl'
 
+function imageUrls(game: Pick<Game, ImageField>) {
+  return {
+    imageUrl: game.imageUrl ?? '',
+    boxartUrl: game.boxartUrl ?? '',
+    bannerUrl: game.bannerUrl ?? '',
+  }
+}
+
 export function GameBoxartImage(props: Props) {
+  return <GameBoxartContent key={props.game.id} {...props} />
+}
+
+function GameBoxartContent(props: Props) {
   const { user } = useUser()
   const [activeImageType, setActiveImageType] = useState<ImageField>('imageUrl')
   const [showModal, setShowModal] = useState(false)
   const [selectedUrl, setSelectedUrl] = useState<string>('')
-  const [displayUrls, setDisplayUrls] = useState<Record<ImageField, string>>({
-    imageUrl: props.game.imageUrl ?? '',
-    boxartUrl: props.game.boxartUrl ?? '',
-    bannerUrl: props.game.bannerUrl ?? '',
-  })
+  const [imageUpdate, setImageUpdate] = useState<{
+    source: Pick<Game, ImageField>
+    urls: ReturnType<typeof imageUrls>
+  } | null>(null)
+  if (
+    imageUpdate &&
+    (imageUpdate.source.imageUrl !== props.game.imageUrl ||
+      imageUpdate.source.boxartUrl !== props.game.boxartUrl ||
+      imageUpdate.source.bannerUrl !== props.game.bannerUrl)
+  )
+    setImageUpdate(null)
+  const displayUrls = imageUpdate?.urls ?? imageUrls(props.game)
 
   const utils = api.useUtils()
   const userQuery = api.users.me.useQuery(undefined, {
@@ -48,11 +67,7 @@ export function GameBoxartImage(props: Props) {
       toast.success('Game image updated successfully')
       setSelectedUrl('')
       if (updated) {
-        setDisplayUrls({
-          imageUrl: updated.imageUrl ?? '',
-          boxartUrl: updated.boxartUrl ?? '',
-          bannerUrl: updated.bannerUrl ?? '',
-        })
+        setImageUpdate({ source: props.game, urls: imageUrls(updated) })
       }
       try {
         await utils.games.byId.invalidate({ id: props.game.id })
@@ -102,15 +117,6 @@ export function GameBoxartImage(props: Props) {
 
   const getFieldValue = (field: ImageField) => displayUrls[field] || ''
 
-  // Sync local display when server data changes
-  useEffect(() => {
-    setDisplayUrls({
-      imageUrl: props.game.imageUrl ?? '',
-      boxartUrl: props.game.boxartUrl ?? '',
-      bannerUrl: props.game.bannerUrl ?? '',
-    })
-  }, [props.game.imageUrl, props.game.boxartUrl, props.game.bannerUrl])
-
   const getFieldLabel = (field: ImageField) => {
     const labels = {
       imageUrl: 'Cover Image',
@@ -124,7 +130,7 @@ export function GameBoxartImage(props: Props) {
     const activeImageUrl = getFieldValue(activeImageType)
     return activeImageUrl
       ? getImageUrl(activeImageUrl, props.game.title)
-      : getGameImageUrl(props.game)
+      : getGameImageUrl({ ...props.game, ...displayUrls })
   }
 
   const availableImageTypes: ImageField[] = ['imageUrl', 'boxartUrl', 'bannerUrl']

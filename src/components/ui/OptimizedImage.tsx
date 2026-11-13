@@ -1,7 +1,7 @@
 'use client'
 
 import { type ImageProps } from 'next/image'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import getImageUrl from '@/utils/getImageUrl'
 import { ImageRenderer } from './ImageRenderer'
@@ -38,16 +38,20 @@ export function OptimizedImage(props: Props) {
   const [error, setError] = useState(false)
 
   const fallbackSrc = props.fallbackSrc ?? '/placeholder/game.svg'
+  const [previousSrc, setPreviousSrc] = useState(props.src)
+  const [previousFallbackSrc, setPreviousFallbackSrc] = useState(fallbackSrc)
+
+  if (props.src !== previousSrc || fallbackSrc !== previousFallbackSrc) {
+    setPreviousSrc(props.src)
+    setPreviousFallbackSrc(fallbackSrc)
+    setIsLoading(true)
+    setError(false)
+  }
 
   const resolveSrc = (): string => {
     if (error) return fallbackSrc
     return getImageUrl(props.src, null)
   }
-
-  useEffect(() => {
-    setIsLoading(true)
-    setError(false)
-  }, [props.src, fallbackSrc])
 
   const handleError = () => {
     setIsLoading(false)

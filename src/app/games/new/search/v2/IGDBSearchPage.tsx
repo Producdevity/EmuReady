@@ -3,7 +3,7 @@
 import { useUser } from '@clerk/nextjs'
 import { AlertTriangle } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, useCallback, useEffect, Suspense } from 'react'
+import { useState, useCallback, useEffect, useMemo, Suspense } from 'react'
 import { toast } from 'sonner'
 import {
   GameSearchForm,
@@ -15,6 +15,7 @@ import { LoadingSpinner, useConfirmDialog } from '@/components/ui'
 import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
 import { api } from '@/lib/api'
 import { logger } from '@/lib/logger'
+import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasRolePermission } from '@/utils/permissions'
 import { getIGDBPlatformId } from '@/utils/system-platform-mapping'
@@ -44,14 +45,20 @@ function IGDBSearchContent() {
   const urlQuery = searchParams.get('q') ?? ''
   const urlSystemId = searchParams.get('system') ?? ''
 
-  const [searchResults, setSearchResults] = useState<{
-    games: IGDBGameResult[]
-    count: number
+  const [submittedSearch, setSubmittedSearch] = useState<{
+    urlKey: string
+    systemId: string
+    input: RouterInput['igdb']['searchGames']
   } | null>(null)
+  const urlKey = JSON.stringify([urlQuery, urlSystemId || null])
+  const [previousUrlKey, setPreviousUrlKey] = useState(urlKey)
+  if (previousUrlKey !== urlKey) {
+    setPreviousUrlKey(urlKey)
+    if (submittedSearch?.urlKey !== urlKey) setSubmittedSearch(null)
+  }
   const [selectedGame, setSelectedGame] = useState<IGDBGameResult | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSelecting, setIsSelecting] = useState(false)
-  const [isSearching, setIsSearching] = useState(false)
 
   const utils = api.useUtils()
   const userQuery = api.users.me.useQuery(undefined, {
@@ -62,56 +69,54 @@ function IGDBSearchContent() {
   const systemsQuery = api.systems.get.useQuery()
   const confirm = useConfirmDialog()
 
+  const selectedSystem = systemsQuery.data?.find((system) => system.id === urlSystemId)
+  const searchInput =
+    submittedSearch?.input ??
+    (urlQuery && selectedSystem
+      ? { query: urlQuery, platformId: getIGDBPlatformId(selectedSystem), limit: 20 }
+      : null)
+  const searchQuery = api.igdb.searchGames.useQuery(searchInput ?? { query: '', limit: 20 }, {
+    enabled: Boolean(user && searchInput),
+    refetchOnWindowFocus: false,
+    retry: false,
+  })
+  const searchResults = useMemo(
+    () =>
+      searchQuery.data
+        ? {
+            games: searchQuery.data.games.map((game) => ({
+              ...game,
+              summary: game.summary ?? null,
+            })),
+            count: searchQuery.data.count,
+          }
+        : null,
+    [searchQuery.data],
+  )
+  const currentSystemId = submittedSearch?.systemId ?? urlSystemId
   const { existingGames, updateSearchParams } = useGameSearch({
     searchResults,
-    urlSystemId,
+    urlSystemId: currentSystemId,
   })
 
-  const handleSearch = useCallback(
-    async (query: string, platformId: number | null, systemId: string | null) => {
-      if (!systemId) {
-        toast.warning('Please select a system before searching for games')
-        return
-      }
-
-      setIsSearching(true)
-
-      updateSearchParams(query, systemId) // Update URL with search parameters
-
-      try {
-        const results = await utils.igdb.searchGames.fetch({
-          query,
-          platformId,
-          limit: 20,
-        })
-        setSearchResults({
-          games: results.games.map((game) => ({
-            ...game,
-            summary: game.summary ?? null,
-          })),
-          count: results.count,
-        })
-      } catch (error) {
-        logger.error('Search error:', error)
-        toast.error(getErrorMessage(error, 'Failed to search games'))
-      } finally {
-        setIsSearching(false)
-      }
-    },
-    [utils, updateSearchParams],
-  )
-
-  // Auto-search on page load if URL has parameters
-  useEffect(() => {
-    if (urlQuery && urlSystemId && systemsQuery.data && !searchResults) {
-      const selectedSystem = systemsQuery.data.find((system) => system.id === urlSystemId)
-
-      if (selectedSystem) {
-        const igdbPlatformId = getIGDBPlatformId(selectedSystem)
-        void handleSearch(urlQuery, igdbPlatformId, selectedSystem.id)
-      }
+  function handleSearch(query: string, platformId: number | null, systemId: string | null) {
+    if (!systemId) {
+      toast.warning('Please select a system before searching for games')
+      return
     }
-  }, [urlQuery, urlSystemId, systemsQuery.data, searchResults, handleSearch])
+    const input = { query, platformId, limit: 20 }
+    setSubmittedSearch({ urlKey: JSON.stringify([query, systemId]), systemId, input })
+    updateSearchParams(query, systemId)
+    if (searchInput?.query === query && searchInput.platformId === platformId) {
+      void searchQuery.refetch()
+    }
+  }
+
+  useEffect(() => {
+    if (!searchQuery.error) return
+    logger.error('Search error:', searchQuery.error)
+    toast.error(getErrorMessage(searchQuery.error, 'Failed to search games'))
+  }, [searchQuery.error])
 
   const showGameCreatedConfirmation = useCallback(
     async (gameId: string) => {
@@ -205,16 +210,17 @@ function IGDBSearchContent() {
         />
 
         <GameSearchForm
+          key={urlKey}
           provider="igdb"
           onSearch={handleSearch}
           systems={systemsQuery.data ?? []}
           initialQuery={urlQuery}
           initialSystemId={urlSystemId}
-          isSearching={isSearching}
+          isSearching={searchQuery.isFetching}
           showModeratorFeatures={isModeratorOrHigher}
         />
 
-        {searchResults && !urlSystemId && (
+        {searchResults && !currentSystemId && (
           <div className="mt-8 p-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
             <div className="flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
@@ -229,13 +235,13 @@ function IGDBSearchContent() {
           </div>
         )}
 
-        {searchResults && urlSystemId && (
+        {searchResults && currentSystemId && (
           <GameSearchResults<IGDBGameResult>
             provider="igdb"
             results={searchResults}
             onGameSelect={handleGamePreview}
             existingGames={existingGames}
-            currentSystemId={urlSystemId}
+            currentSystemId={currentSystemId}
           />
         )}
 
@@ -247,7 +253,7 @@ function IGDBSearchContent() {
           systems={systemsQuery.data ?? []}
           isSelecting={isSelecting}
           existingGames={existingGames}
-          currentSystemId={urlSystemId}
+          currentSystemId={currentSystemId}
         />
       </div>
     </div>

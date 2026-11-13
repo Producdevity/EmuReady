@@ -1,11 +1,27 @@
-import { renderHook } from '@testing-library/react'
+import { render, renderHook, screen } from '@testing-library/react'
+import { createElement } from 'react'
+import { renderToString } from 'react-dom/server'
 import { describe, it, expect } from 'vitest'
 import useMounted from './useMounted'
 
 describe('useMounted', () => {
+  it('uses the server snapshot during SSR and hydration, then displays the client snapshot', () => {
+    function MountedIndicator() {
+      return useMounted() ? 'Client content' : 'Server content'
+    }
+    const element = createElement(MountedIndicator)
+    const markup = renderToString(element)
+    expect(markup).toBe('Server content')
+    const container = document.createElement('div')
+    container.innerHTML = markup
+    document.body.append(container)
+
+    render(element, { container, hydrate: true })
+    expect(screen.getByText('Client content')).toBeInTheDocument()
+  })
+
   it('should return true after mount in test environment', () => {
     const { result } = renderHook(() => useMounted())
-    // In test environment, useEffect runs immediately
     expect(result.current).toBe(true)
   })
 
@@ -33,12 +49,8 @@ describe('useMounted', () => {
   })
 
   it('should be useful for preventing hydration mismatches in real environment', () => {
-    // This test documents the intended behavior even though in test environment
-    // the hook returns true immediately due to how useEffect works in tests
     const { result } = renderHook(() => useMounted())
 
-    // In real browser environment, this would start as false and become true after mount
-    // In test environment, it's true immediately
     expect(typeof result.current).toBe('boolean')
     expect(result.current).toBe(true)
   })

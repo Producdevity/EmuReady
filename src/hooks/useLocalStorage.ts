@@ -1,80 +1,137 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, useSyncExternalStore } from 'react'
 import { type z } from 'zod'
 import toast from '@/lib/toast'
-import { safeParseJSON } from '@/utils/client-validation'
+import useMounted from './useMounted'
+
+interface Draft<T> {
+  key: string
+  snapshot: string | null | undefined
+  value: T
+}
+
+function serverSnapshot() {
+  return undefined
+}
+
+function parseStoredValue<T>(
+  snapshot: string | null | undefined,
+  schema: z.ZodType<T, z.ZodTypeDef, unknown>,
+) {
+  if (snapshot == null) return { success: false as const, error: null }
+  try {
+    const value: unknown = JSON.parse(snapshot)
+    return schema.safeParse(value)
+  } catch (error) {
+    return { success: false as const, error }
+  }
+}
 
 export function useLocalStorage<T>(
   key: string,
   initialValue: T,
+  schema: z.ZodType<T, z.ZodTypeDef, unknown>,
   enabled = true,
-  schema?: z.ZodSchema<T>,
 ) {
-  const [isHydrated, setIsHydrated] = useState(false)
+  const [draft, setDraft] = useState<Draft<T> | null>(null)
+  const draftRef = useRef<Draft<T> | null>(null)
+  const isHydrated = useMounted()
 
-  const [storedValue, setStoredValue] = useState<T>(initialValue)
-
-  // Use a ref to store the current value to avoid circular dependencies
-  const storedValueRef = useRef(storedValue)
-  storedValueRef.current = storedValue
-
-  useEffect(() => {
-    if (!enabled) {
-      setIsHydrated(true)
-      return
-    }
-
-    setIsHydrated(true)
-
-    // Try to read from localStorage again after hydration
+  const getSnapshot = useCallback(() => {
+    if (!enabled || typeof window === 'undefined') return undefined
     try {
-      const item = window.localStorage.getItem(key)
-      if (item) {
-        const parsed = schema
-          ? safeParseJSON(item, schema, storedValueRef.current)
-          : JSON.parse(item)
-        setStoredValue(parsed)
-      }
-    } catch (error) {
-      // Don't throw, just log and continue with current value
-      console.error(`Error reading localStorage key "${key}":`, (error as Error).message)
-
-      // Only show user-facing error for JSON parsing issues with existing data
-      try {
-        const item = window.localStorage.getItem(key)
-        if (item !== null && typeof item === 'string') {
-          // We have data but can't parse it
-          toast.warning('Failed to load your preferences. Please refresh the page to try again.')
-        }
-      } catch {
-        // If even getting the item fails, just ignore
-      }
+      return window.localStorage.getItem(key)
+    } catch {
+      return undefined
     }
-  }, [key, enabled, schema])
+  }, [enabled, key])
 
-  const setValue = useCallback(
-    (value: T | ((val: T) => T)) => {
-      if (!enabled) {
-        // When disabled, only update local state, no localStorage
-        const valueToStore = value instanceof Function ? value(storedValueRef.current) : value
-        setStoredValue(valueToStore)
-        return
-      }
-
-      try {
-        const valueToStore = value instanceof Function ? value(storedValueRef.current) : value
-        setStoredValue(valueToStore)
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem(key, JSON.stringify(valueToStore))
+  const subscribe = useCallback(
+    (notify: () => void) => {
+      if (!enabled || typeof window === 'undefined') return () => {}
+      function onStorage(event: StorageEvent) {
+        if (event.key !== null && event.key !== key) return
+        const currentDraft = draftRef.current
+        if (currentDraft && (currentDraft.key !== key || currentDraft.snapshot !== getSnapshot())) {
+          draftRef.current = null
+          setDraft(null)
         }
-      } catch (error) {
-        console.warn(`Error setting localStorage key "${key}":`, error)
-        toast.warning('Failed to save your preferences. Please try again.')
-        // Re-throw so calling code can handle it too
-        throw error
+        notify()
       }
+      window.addEventListener('storage', onStorage)
+      return () => window.removeEventListener('storage', onStorage)
     },
-    [key, enabled],
+    [enabled, getSnapshot, key],
   )
 
-  return [storedValue, setValue, isHydrated] as const
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, serverSnapshot)
+  const parsed = useMemo(() => parseStoredValue(snapshot, schema), [snapshot, schema])
+  const value =
+    draft?.key === key && draft.snapshot === snapshot
+      ? draft.value
+      : parsed.success
+        ? parsed.data
+        : initialValue
+
+  useEffect(() => {
+    if (!enabled || typeof window === 'undefined') return
+    if (!parsed.success && parsed.error) {
+      console.error(
+        `Error reading localStorage key "${key}":`,
+        parsed.error instanceof Error ? parsed.error.message : parsed.error,
+      )
+      toast.warning('Failed to load your preferences. Please refresh the page to try again.')
+    } else if (snapshot === undefined) {
+      try {
+        window.localStorage.getItem(key)
+      } catch (error) {
+        console.error(
+          `Error reading localStorage key "${key}":`,
+          error instanceof Error ? error.message : error,
+        )
+      }
+    }
+  }, [enabled, key, parsed, snapshot])
+
+  const setValue = useCallback(
+    (update: T | ((previous: T) => T)) => {
+      let nextSnapshot = getSnapshot()
+      const previousDraft = draftRef.current
+      const stored = parseStoredValue(nextSnapshot, schema)
+      const previousValue =
+        previousDraft?.key === key && previousDraft.snapshot === nextSnapshot
+          ? previousDraft.value
+          : stored.success
+            ? stored.data
+            : initialValue
+      const nextValue = update instanceof Function ? update(previousValue) : update
+      let failed = false
+      let failure: unknown
+      try {
+        if (enabled && typeof window !== 'undefined') {
+          const serialized = JSON.stringify(nextValue)
+          if (serialized === undefined) window.localStorage.removeItem(key)
+          else window.localStorage.setItem(key, serialized)
+          nextSnapshot = serialized ?? null
+        }
+      } catch (error) {
+        failed = true
+        failure = error
+      }
+      const nextDraft = { key, snapshot: nextSnapshot, value: nextValue }
+      draftRef.current = nextDraft
+      setDraft(nextDraft)
+      if (failed) {
+        console.warn(`Error setting localStorage key "${key}":`, failure)
+        toast.warning('Failed to save your preferences. Please try again.')
+        throw failure
+      }
+      if (enabled && typeof window !== 'undefined') {
+        // Browsers send storage events to other documents; notify this document too.
+        window.dispatchEvent(new StorageEvent('storage', { key }))
+      }
+    },
+    [enabled, getSnapshot, initialValue, key, schema],
+  )
+
+  return [value, setValue, isHydrated] as const
 }

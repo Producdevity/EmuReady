@@ -1,32 +1,16 @@
 'use client'
 
-import { useState, useEffect, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Button, Input, Modal, SelectInput } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
+import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 
-interface VerifiedDeveloper {
-  id: string
-  emulatorId: string
-  notes: string | null
-  user: {
-    id: string
-    name: string | null
-    email: string
-    profileImage: string | null
-  }
-  emulator: {
-    id: string
-    name: string
-    logo: string | null
-  }
-  verifier: {
-    id: string
-    name: string | null
-    email: string
-  }
-  verifiedAt: Date
+type VerifiedDeveloperRecord =
+  RouterOutput['verifiedDevelopers']['getVerifiedDevelopers']['verifiedDevelopers'][number]
+type VerifiedDeveloper = Pick<VerifiedDeveloperRecord, 'id' | 'emulatorId' | 'notes'> & {
+  user: Pick<VerifiedDeveloperRecord['user'], 'name' | 'email'>
 }
 
 interface Props {
@@ -37,8 +21,21 @@ interface Props {
 }
 
 function EditVerifiedDeveloperModal(props: Props) {
-  const [emulatorId, setEmulatorId] = useState('')
-  const [notes, setNotes] = useState('')
+  if (!props.verifiedDeveloper) return null
+  return (
+    <VerifiedDeveloperForm
+      key={`${props.isOpen}:${props.verifiedDeveloper.id}`}
+      {...props}
+      verifiedDeveloper={props.verifiedDeveloper}
+    />
+  )
+}
+
+type FormProps = Omit<Props, 'verifiedDeveloper'> & { verifiedDeveloper: VerifiedDeveloper }
+
+function VerifiedDeveloperForm(props: FormProps) {
+  const [emulatorId, setEmulatorId] = useState(props.verifiedDeveloper.emulatorId)
+  const [notes, setNotes] = useState(props.verifiedDeveloper.notes ?? '')
   const [error, setError] = useState('')
 
   const emulatorsQuery = api.emulators.get.useQuery({
@@ -50,20 +47,11 @@ function EditVerifiedDeveloperModal(props: Props) {
   const updateVerifiedDeveloperMutation =
     api.verifiedDevelopers.updateVerifiedDeveloper.useMutation()
 
-  // Reset form when modal opens or verified developer changes
-  useEffect(() => {
-    if (props.isOpen && props.verifiedDeveloper) {
-      setEmulatorId(props.verifiedDeveloper.emulatorId)
-      setNotes(props.verifiedDeveloper.notes || '')
-      setError('')
-    }
-  }, [props.isOpen, props.verifiedDeveloper])
-
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
     setError('')
 
-    if (!props.verifiedDeveloper || !emulatorId) {
+    if (!emulatorId) {
       setError('Please select an emulator')
       return
     }
@@ -82,10 +70,6 @@ function EditVerifiedDeveloperModal(props: Props) {
       setError(errorMessage)
       toast.error(`Failed to update verified developer: ${errorMessage}`)
     }
-  }
-
-  if (!props.verifiedDeveloper) {
-    return null
   }
 
   const emulatorOptions = [

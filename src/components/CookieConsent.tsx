@@ -3,18 +3,21 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Settings, Shield, BarChart3, Target, Cookie, Check } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { type z } from 'zod'
 import { Button } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { cn } from '@/lib/utils'
+import {
+  SavedCookiePreferencesSchema,
+  type CookiePreferencesSchema,
+  BooleanPreferenceSchema,
+  NullableStringPreferenceSchema,
+} from '@/schemas/preferences'
 
 type CookieCategory = 'necessary' | 'analytics' | 'performance'
 
-interface CookiePreferences {
-  necessary: boolean
-  analytics: boolean
-  performance: boolean
-}
+type CookiePreferences = z.output<typeof CookiePreferencesSchema>
 
 const DEFAULT_PREFERENCES: CookiePreferences = {
   necessary: true, // Always required
@@ -73,42 +76,39 @@ function CookieConsent() {
   const [savedPreferences, setSavedPreferences] = useLocalStorage<CookiePreferences | null>(
     storageKeys.cookies.preferences,
     null,
+    SavedCookiePreferencesSchema,
   )
   const [hasConsented, setHasConsented] = useLocalStorage<boolean>(
     storageKeys.cookies.consent,
     false,
+    BooleanPreferenceSchema,
   )
-  const [, setConsentDate] = useLocalStorage<string | null>(storageKeys.cookies.consentDate, null)
+  const [, setConsentDate] = useLocalStorage<string | null>(
+    storageKeys.cookies.consentDate,
+    null,
+    NullableStringPreferenceSchema,
+  )
   const [, setAnalyticsEnabled] = useLocalStorage<boolean>(
     storageKeys.cookies.analyticsEnabled,
     false,
+    BooleanPreferenceSchema,
   )
   const [, setPerformanceEnabled] = useLocalStorage<boolean>(
     storageKeys.cookies.performanceEnabled,
     false,
+    BooleanPreferenceSchema,
   )
-  const [preferences, setPreferences] = useState<CookiePreferences>(
-    savedPreferences || DEFAULT_PREFERENCES,
-  )
-  const [hasInteracted, setHasInteracted] = useState(false)
+  const [draftPreferences, setDraftPreferences] = useState<CookiePreferences | null>(null)
+  const preferences = draftPreferences ?? savedPreferences ?? DEFAULT_PREFERENCES
+  const [hasInteractedLocally, setHasInteractedLocally] = useState(false)
+  const hasInteracted = savedPreferences !== null || hasInteractedLocally
 
   useEffect(() => {
-    // Check if user has already made a choice
-    if (savedPreferences) {
-      setPreferences(savedPreferences)
-      setHasInteracted(true)
-    }
-
-    // Show banner if user hasn't consented yet
     if (!hasConsented && !hasInteracted) {
-      // Small delay to avoid being too aggressive
-      const timer = setTimeout(() => {
-        setIsVisible(true)
-      }, 2000)
-
+      const timer = setTimeout(() => setIsVisible(true), 2000)
       return () => clearTimeout(timer)
     }
-  }, [hasInteracted, savedPreferences, hasConsented])
+  }, [hasConsented, hasInteracted])
 
   const savePreferences = (newPreferences: CookiePreferences) => {
     setSavedPreferences(newPreferences)
@@ -119,9 +119,9 @@ function CookieConsent() {
     setAnalyticsEnabled(newPreferences.analytics)
     setPerformanceEnabled(newPreferences.performance)
 
-    setPreferences(newPreferences)
+    setDraftPreferences(newPreferences)
     setIsVisible(false)
-    setHasInteracted(true)
+    setHasInteractedLocally(true)
   }
 
   const handleAcceptAll = () => {
@@ -136,13 +136,13 @@ function CookieConsent() {
   const handleCategoryToggle = (category: CookieCategory) => {
     if (category === 'necessary') return // Cannot disable necessary cookies
 
-    setPreferences((prev) => ({
-      ...prev,
-      [category]: !prev[category],
-    }))
+    setDraftPreferences((previous) => {
+      const current = previous ?? preferences
+      return { ...current, [category]: !current[category] }
+    })
   }
 
-  if (!isVisible) return null
+  if (!isVisible || hasConsented) return null
 
   return (
     <AnimatePresence>

@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useMemo, useState } from 'react'
 import { Button, Input, RoleBadge, Toggle } from '@/components/ui'
 import { Autocomplete } from '@/components/ui/form/Autocomplete'
 import { API_KEY_LIMITS } from '@/data/constants'
@@ -64,11 +64,6 @@ export function AdminCreateKeyForm(props: Props) {
   const [selectedUser, setSelectedUser] = useState<UserOption | null>(null)
   const [savedQuotas, setSavedQuotas] = useState<SavedQuotas>(DEFAULT_SAVED_QUOTAS)
   const [dateError, setDateError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!selectedUser) return
-    setFormState((prev) => ({ ...prev, userId: selectedUser.id }))
-  }, [selectedUser])
 
   const isSystemKey = formState.isSystemKey
   const quotaDisplayState = useMemo(() => {

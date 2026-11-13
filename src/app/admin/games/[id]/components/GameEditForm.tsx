@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { Button, Input, Autocomplete } from '@/components/ui'
 import { AdminImageSelectorSwitcher } from '@/components/ui/image-selectors'
 import { api } from '@/lib/api'
@@ -48,7 +48,7 @@ export function GameEditForm(props: Props) {
     },
   })
 
-  const { register, handleSubmit, formState, setValue, watch } = useForm<
+  const { register, handleSubmit, formState, setValue, control } = useForm<
     UpdateGameFormInput,
     unknown,
     UpdateGameInput
@@ -64,6 +64,12 @@ export function GameEditForm(props: Props) {
     },
     mode: 'onChange', // Enable validation on change to track form state
   })
+
+  const [systemId, gameTitle, imageUrl, boxartUrl, bannerUrl] = useWatch({
+    control,
+    name: ['systemId', 'title', 'imageUrl', 'boxartUrl', 'bannerUrl'] as const,
+  })
+  const selectedSystem = systemsQuery.data?.find((system) => system.id === systemId)
 
   const onSubmit = (data: UpdateGameInput) => {
     setIsSubmitting(true)
@@ -95,7 +101,7 @@ export function GameEditForm(props: Props) {
           System
         </label>
         <Autocomplete
-          value={watch('systemId')}
+          value={systemId}
           onChange={(value) => setValue('systemId', value ?? '')}
           items={systemsQuery.data ?? []}
           optionToValue={(system) => system.id}
@@ -113,13 +119,10 @@ export function GameEditForm(props: Props) {
       <div>
         <AdminImageSelectorSwitcher
           label="Game Image (optional)"
-          gameTitle={watch('title')}
-          systemName={systemsQuery.data?.find((system) => system.id === watch('systemId'))?.name}
-          tgdbPlatformId={
-            systemsQuery.data?.find((system) => system.id === watch('systemId'))?.tgdbPlatformId ||
-            undefined
-          }
-          selectedImageUrl={watch('imageUrl')}
+          gameTitle={gameTitle}
+          systemName={selectedSystem?.name}
+          tgdbPlatformId={selectedSystem?.tgdbPlatformId || undefined}
+          selectedImageUrl={imageUrl}
           onImageSelect={(url) => setValue('imageUrl', url, { shouldValidate: true })}
           onError={(error) => console.error('Image selection error:', error)}
           placeholder="https://example.com/game-image.jpg"
@@ -134,13 +137,10 @@ export function GameEditForm(props: Props) {
       <div>
         <AdminImageSelectorSwitcher
           label="Boxart Image (optional)"
-          gameTitle={watch('title')}
-          systemName={systemsQuery.data?.find((system) => system.id === watch('systemId'))?.name}
-          tgdbPlatformId={
-            systemsQuery.data?.find((system) => system.id === watch('systemId'))?.tgdbPlatformId ||
-            undefined
-          }
-          selectedImageUrl={watch('boxartUrl')}
+          gameTitle={gameTitle}
+          systemName={selectedSystem?.name}
+          tgdbPlatformId={selectedSystem?.tgdbPlatformId || undefined}
+          selectedImageUrl={boxartUrl}
           onImageSelect={(url) => setValue('boxartUrl', url, { shouldValidate: true })}
           onError={(error) => console.error('Boxart selection error:', error)}
           placeholder="https://example.com/boxart-image.jpg"
@@ -155,13 +155,10 @@ export function GameEditForm(props: Props) {
       <div>
         <AdminImageSelectorSwitcher
           label="Banner Image (optional)"
-          gameTitle={watch('title')}
-          systemName={systemsQuery.data?.find((system) => system.id === watch('systemId'))?.name}
-          tgdbPlatformId={
-            systemsQuery.data?.find((system) => system.id === watch('systemId'))?.tgdbPlatformId ||
-            undefined
-          }
-          selectedImageUrl={watch('bannerUrl')}
+          gameTitle={gameTitle}
+          systemName={selectedSystem?.name}
+          tgdbPlatformId={selectedSystem?.tgdbPlatformId || undefined}
+          selectedImageUrl={bannerUrl}
           onImageSelect={(url) => setValue('bannerUrl', url, { shouldValidate: true })}
           onError={(error) => console.error('Banner selection error:', error)}
           placeholder="https://example.com/banner-image.jpg"
