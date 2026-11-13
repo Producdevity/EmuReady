@@ -97,6 +97,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
   const listRef = useRef<HTMLUListElement>(null)
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastStaticLenRef = useRef<number>(staticItems?.length ?? 0)
+  const requestSequenceRef = useRef(0)
 
   // Load initial items from server if loadItems is provided (only once)
   useEffect(() => {
@@ -104,9 +105,16 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
     setHasInitialLoad(true)
 
     if (debounceTime < 200) return
+    const requestSequence = ++requestSequenceRef.current
     loadItems('')
-      .then(setSuggestions)
-      .catch((error) => console.error('Error fetching/filtering suggestions:', error))
+      .then((results) => {
+        if (requestSequence === requestSequenceRef.current) setSuggestions(results)
+      })
+      .catch((error) => {
+        if (requestSequence === requestSequenceRef.current) {
+          console.error('Error fetching/filtering suggestions:', error)
+        }
+      })
   }, [loadItems, hasInitialLoad, debounceTime])
 
   // Effect to update inputValue when the external `value` prop changes (controlled mode only)
@@ -138,7 +146,8 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
   }, [value, staticItems, optionToValue, optionToLabel, suggestions, loadItems, isUserTyping])
 
   const performSearch = useCallback(
-    async (query: string) => {
+    async (query: string, requestSequence = ++requestSequenceRef.current) => {
+      if (requestSequence !== requestSequenceRef.current) return
       // For static items, allow showing all items when query is empty
       // For async loading, allow showing initial results even with empty query
       if (
@@ -147,6 +156,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
         !(staticItems && query.length === 0)
       ) {
         setSuggestions([])
+        setIsLoading(false)
         setIsOpen(query.length > 0) // Keep open if user is typing but below threshold
         return
       }
@@ -179,11 +189,12 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
           }
         }
 
-        // Update suggestions and loading state together to prevent race condition
+        if (requestSequence !== requestSequenceRef.current) return
         setSuggestions(newSuggestions)
         setIsLoading(false)
         setHasSearched(true)
       } catch (error) {
+        if (requestSequence !== requestSequenceRef.current) return
         console.error('Error fetching/filtering suggestions:', error)
         setSuggestions([])
         setIsLoading(false)
@@ -197,18 +208,19 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
   )
 
   const debouncedSearch = useCallback(
-    (query: string) => {
+    (query: string, requestSequence = ++requestSequenceRef.current) => {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current)
       }
       debounceTimeoutRef.current = setTimeout(() => {
-        performSearch(query).catch(console.error)
+        performSearch(query, requestSequence).catch(console.error)
       }, debounceTime)
     },
     [performSearch, debounceTime],
   )
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const requestSequence = ++requestSequenceRef.current
     const newQuery = e.target.value
     setInputValue(newQuery)
     setIsUserTyping(true)
@@ -222,6 +234,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
     }, debounceTime + 100)
 
     if (newQuery.length === 0) {
+      setIsLoading(false)
       // Clear selection when input is completely empty
       if (value != null) {
         onChange(null)
@@ -248,7 +261,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
         }
       }
 
-      debouncedSearch(newQuery)
+      debouncedSearch(newQuery, requestSequence)
     }
   }
 
