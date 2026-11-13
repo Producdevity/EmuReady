@@ -1,14 +1,12 @@
 import { z } from 'zod'
-import { JsonValueSchema } from '@/schemas/common'
+import { JsonValueSchema, SignedInt32Schema } from '@/schemas/common'
 import { PcOs } from '@orm'
-
-const PerformanceScaleIdSchema = z.number().int().min(-2_147_483_648).max(2_147_483_647)
 
 export const CreateListingBaseSchema = z.object({
   gameId: z.string().uuid(),
   deviceId: z.string().uuid(),
   emulatorId: z.string().uuid(),
-  performanceId: PerformanceScaleIdSchema,
+  performanceId: SignedInt32Schema,
   notes: z.string().max(5000).nullable().optional(),
   customFieldValues: z
     .array(
@@ -26,7 +24,7 @@ export const CreatePcListingBaseSchema = z.object({
   cpuId: z.string().uuid(),
   gpuId: z.string().uuid().optional(),
   emulatorId: z.string().uuid(),
-  performanceId: PerformanceScaleIdSchema,
+  performanceId: SignedInt32Schema,
   memorySize: z.number().int().min(1).max(256),
   os: z.nativeEnum(PcOs),
   osVersion: z.string().min(1),

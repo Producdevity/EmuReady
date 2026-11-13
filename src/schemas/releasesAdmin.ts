@@ -1,8 +1,9 @@
 import { z } from 'zod'
+import { SignedInt32Schema } from '@/schemas/common'
 
 export const AdminCreateReleaseSchema = z.object({
   channel: z.enum(['stable', 'beta']),
-  versionCode: z.number().int().positive(),
+  versionCode: SignedInt32Schema.positive(),
   versionName: z.string().min(1).max(50),
   fileKey: z.string().min(1),
   fileSha256: z.string().min(32),

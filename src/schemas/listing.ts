@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { PAGINATION } from '@/data/constants'
 import { HumanVerificationTokenSchema } from '@/features/human-verification/shared/schema'
-import { JsonValueSchema, ListingType } from '@/schemas/common'
+import { JsonValueSchema, ListingType, SignedInt32Schema } from '@/schemas/common'
 import { CreateListingBaseSchema } from '@/schemas/listingCreate'
 import { REVIEW_RISK_FILTERS, ReviewRiskFilterSchema } from '@/schemas/submissionRisk'
 import { ApprovalStatus } from '@orm'
@@ -16,7 +16,7 @@ export const GetListingsSchema = z
     deviceIds: z.array(z.string().uuid()).nullable().optional(),
     socIds: z.array(z.string().uuid()).nullable().optional(),
     emulatorIds: z.array(z.string().uuid()).nullable().optional(),
-    performanceIds: z.array(z.number()).nullable().optional(),
+    performanceIds: z.array(SignedInt32Schema).nullable().optional(),
     searchTerm: z.string().nullable().optional(),
     page: z.number().int().positive().safe().default(1),
     limit: z.number().int().positive().max(PAGINATION.PUBLIC_MAX_LIMIT_LISTINGS).default(10),

@@ -104,6 +104,27 @@ describe('generated report integer input contracts', () => {
     .object({ components: z.object({ schemas: z.record(z.unknown()) }) })
     .parse(JSON.parse(readFileSync(file, 'utf8'))).components.schemas
 
+  it('documents bounded integer performance filters while retaining string inputs', () => {
+    expect(schemas.GetListingsSchema).toMatchObject({
+      anyOf: [
+        {},
+        {
+          properties: {
+            performanceIds: {
+              type: 'array',
+              items: {
+                anyOf: [
+                  { type: 'integer', minimum: -2_147_483_648, maximum: 2_147_483_647 },
+                  { type: 'string' },
+                ],
+              },
+            },
+          },
+        },
+      ],
+    })
+  })
+
   it.each([
     'CreateListingSchema',
     'UpdateListingSchema',

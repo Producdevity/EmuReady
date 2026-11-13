@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { PAGINATION, CHAR_LIMITS } from '@/data/constants'
 import { HumanVerificationTokenSchema } from '@/features/human-verification/shared/schema'
-import { JsonValueSchema, SortDirectionSchema } from '@/schemas/common'
+import { JsonValueSchema, SignedInt32Schema, SortDirectionSchema } from '@/schemas/common'
 import { CreatePcListingBaseSchema } from '@/schemas/listingCreate'
 import { REVIEW_RISK_FILTERS, ReviewRiskFilterSchema } from '@/schemas/submissionRisk'
 import { ApprovalStatus, PcOs, ReportReason, ReportStatus } from '@orm'
@@ -16,10 +16,10 @@ export const GetPcListingsSchema = z
     cpuIds: z.array(z.string().uuid()).optional(),
     gpuIds: z.array(z.string().uuid()).optional(),
     emulatorIds: z.array(z.string().uuid()).optional(),
-    performanceIds: z.array(z.number()).optional(),
+    performanceIds: z.array(SignedInt32Schema).optional(),
     osFilter: z.array(z.nativeEnum(PcOs)).optional(),
-    memoryMin: z.number().int().positive().optional(),
-    memoryMax: z.number().int().positive().optional(),
+    memoryMin: SignedInt32Schema.positive().optional(),
+    memoryMax: SignedInt32Schema.positive().optional(),
     searchTerm: z.string().optional(),
     page: z.number().int().positive().safe().default(1),
     limit: z.number().int().positive().max(PAGINATION.PUBLIC_MAX_LIMIT_PC_LISTINGS).default(10),
