@@ -22,6 +22,20 @@ export function useBulkBookmarkStatuses(type: 'listing' | 'pcListing', ids: stri
   )
   const statuses: Record<string, boolean> = {}
   for (const query of queries) Object.assign(statuses, query.data?.statuses)
-  const isPending = queries.some((query) => query.isPending)
-  return { statuses, isPending }
+  const isPending = queries.some((query) => query.isPending || query.isFetching)
+  const isError = queries.some((query) => query.isError)
+  return { statuses, isPending, isError }
 }
+
+export function getBookmarkStatus(
+  bookmarks: ReturnType<typeof useBulkBookmarkStatuses>,
+  reportId: string,
+) {
+  return {
+    isBookmarked: bookmarks.statuses[reportId] ?? false,
+    isPending: bookmarks.isPending,
+    isError: bookmarks.isError,
+  }
+}
+
+export type BookmarkStatus = ReturnType<typeof getBookmarkStatus>

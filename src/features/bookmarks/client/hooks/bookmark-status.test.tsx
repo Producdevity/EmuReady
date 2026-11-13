@@ -1,27 +1,31 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { TRPCClientError, type TRPCLink } from '@trpc/client'
+import { getQueryKey } from '@trpc/react-query'
 import { observable } from '@trpc/server/observable'
 import { type PropsWithChildren } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '@/lib/api'
 import { type AppRouter } from '@/types/trpc'
 import { useBookmarkToggle } from './useBookmarkToggle'
-import { useBulkBookmarkStatuses } from './useBulkBookmarkStatuses'
+import { useBulkBookmarkStatuses, getBookmarkStatus } from './useBulkBookmarkStatuses'
 
 let signedIn = true
 let saved = true
 let rejectMutation = false
+let rejectStatus = false
+let statusGate: Promise<void> | null = null
 const operations: { path: string; input: unknown }[] = []
 const toast = vi.hoisted(() => ({ error: vi.fn() }))
 vi.mock('@clerk/nextjs', () => ({ useUser: () => ({ user: signedIn ? { id: 'viewer' } : null }) }))
 vi.mock('@/lib/toast', () => ({ default: toast }))
 const reportId = '00000000-0000-4000-a000-000000000001'
 
-function wrapper() {
-  const queryClient = new QueryClient({
+function wrapper(
+  queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  })
+  }),
+) {
   const link: TRPCLink<AppRouter> =
     () =>
     ({ op }) =>
@@ -34,6 +38,8 @@ function wrapper() {
             saved = !op.path.endsWith('Unbookmark') && !op.path.endsWith('.unbookmark')
             return { success: true }
           }
+          if (statusGate) await statusGate
+          if (rejectStatus) throw new Error('Bookmark status unavailable')
           if (op.path.includes('getBulk')) return { statuses: { [reportId]: saved } }
           return { isBookmarked: saved }
         }
@@ -70,6 +76,8 @@ beforeEach(() => {
   signedIn = true
   saved = true
   rejectMutation = false
+  rejectStatus = false
+  statusGate = null
   operations.length = 0
   vi.clearAllMocks()
 })
@@ -79,12 +87,59 @@ describe.each(['listing', 'pcListing'] as const)('%s bookmark status', (type) =>
     const bulk = useBulkBookmarkStatuses(type, [reportId])
     return useBookmarkToggle(
       type === 'listing' ? { type, listingId: reportId } : { type, pcListingId: reportId },
-      {
-        isBookmarked: bulk.statuses[reportId] ?? false,
-        isPending: bulk.isPending,
-      },
+      getBookmarkStatus(bulk, reportId),
     )
   }
+
+  it('blocks toggles when the batch status read fails', async () => {
+    rejectStatus = true
+    const { result } = renderHook(useControlledBookmark, { wrapper: wrapper() })
+    await waitFor(() => expect(result.current.isStatusError).toBe(true))
+    act(() => result.current.handleToggle())
+    expect(operations).toHaveLength(1)
+    expect(saved).toBe(true)
+  })
+
+  it('blocks toggles when an individual status read fails', async () => {
+    rejectStatus = true
+    const { result } = renderHook(
+      () =>
+        useBookmarkToggle(
+          type === 'listing' ? { type, listingId: reportId } : { type, pcListingId: reportId },
+        ),
+      { wrapper: wrapper() },
+    )
+    await waitFor(() => expect(result.current.isStatusError).toBe(true))
+    act(() => result.current.handleToggle())
+    expect(operations).toHaveLength(1)
+    expect(saved).toBe(true)
+  })
+
+  it('blocks toggles while cached batch statuses are being refreshed', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const { result } = renderHook(useControlledBookmark, { wrapper: wrapper(queryClient) })
+    await waitFor(() => expect(result.current.isStatusPending).toBe(false))
+    const gate = Promise.withResolvers<void>()
+    statusGate = gate.promise
+    try {
+      act(() => {
+        void queryClient.invalidateQueries({
+          queryKey: getQueryKey(
+            type === 'listing'
+              ? api.bookmarks.getBulkListingBookmarkStatuses
+              : api.bookmarks.getBulkPcListingBookmarkStatuses,
+          ),
+        })
+      })
+      await waitFor(() => expect(result.current.isStatusPending).toBe(true))
+      expect(result.current.isBookmarked).toBe(true)
+      act(() => result.current.handleToggle())
+      expect(operations).toHaveLength(2)
+    } finally {
+      gate.resolve()
+    }
+    await waitFor(() => expect(result.current.isStatusPending).toBe(false))
+  })
 
   it('uses batch status and refreshes it after toggling without per-report reads', async () => {
     const { result } = renderHook(useControlledBookmark, { wrapper: wrapper() })

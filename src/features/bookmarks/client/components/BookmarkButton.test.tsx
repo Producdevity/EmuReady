@@ -9,6 +9,7 @@ const state = vi.hoisted(() => ({
   isBookmarked: true,
   isPending: false,
   isStatusPending: false,
+  isStatusError: false,
   handleToggle: vi.fn(),
 }))
 vi.mock('../hooks/useBookmarkToggle', () => ({ useBookmarkToggle: () => state }))
@@ -17,6 +18,9 @@ const id = '00000000-0000-4000-a000-000000000001'
 beforeEach(() => {
   vi.clearAllMocks()
   state.isPending = false
+  state.isStatusPending = false
+  state.isStatusError = false
+  state.isBookmarked = true
 })
 
 describe('bookmark actions', () => {
@@ -48,7 +52,7 @@ describe('bookmark actions', () => {
       <BookmarkCard
         variant="handheld"
         index={0}
-        status={{ isBookmarked: true, isPending: false }}
+        status={{ isBookmarked: true, isPending: false, isError: false }}
         item={{
           id,
           createdAt: new Date(),
@@ -75,4 +79,13 @@ describe('bookmark actions', () => {
     expect(button.closest('a')).toBeNull()
     expect(screen.getByRole('link')).toHaveAttribute('href', `/listings/${id}`)
   })
+})
+
+it('explains an unavailable bookmark status and prevents writes', () => {
+  state.isStatusError = true
+  render(<BookmarkButton type="listing" listingId={id} />)
+  const button = screen.getByRole('button', { name: 'Bookmark status unavailable' })
+  expect(button).toBeDisabled()
+  fireEvent.click(button)
+  expect(state.handleToggle).not.toHaveBeenCalled()
 })

@@ -33,7 +33,10 @@ import {
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
 import BookmarkButton from '@/features/bookmarks/client/components/BookmarkButton'
-import { useBulkBookmarkStatuses } from '@/features/bookmarks/client/hooks/useBulkBookmarkStatuses'
+import {
+  useBulkBookmarkStatuses,
+  getBookmarkStatus,
+} from '@/features/bookmarks/client/hooks/useBulkBookmarkStatuses'
 import { getCpuLabel } from '@/features/hardware/cpu/shared/cpu-format'
 import { getGpuLabel } from '@/features/hardware/gpu/shared/gpu-format'
 import {
@@ -618,10 +621,7 @@ function PcListingsPage() {
                                 <BookmarkButton
                                   type="pcListing"
                                   pcListingId={listing.id}
-                                  status={{
-                                    isBookmarked: bookmarks.statuses[listing.id] ?? false,
-                                    isPending: bookmarks.isPending,
-                                  }}
+                                  status={getBookmarkStatus(bookmarks, listing.id)}
                                 />
                               )}
                               {isAdmin && (

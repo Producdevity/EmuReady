@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { type RouterInput } from '@/types/trpc'
 import BookmarkBrowser from './BookmarkBrowser'
 import { useBookmarkBrowser } from '../hooks/useBookmarkBrowser'
+import type * as BulkBookmarkStatuses from '../hooks/useBulkBookmarkStatuses'
 
 const mocks = vi.hoisted(() => {
   const data = { visibility: 'visible', items: [], pagination: { page: 1, pages: 1, total: 0 } }
@@ -21,8 +22,9 @@ const mocks = vi.hoisted(() => {
 })
 const userId = '00000000-0000-4000-a000-000000000001'
 const systemId = '00000000-0000-4000-a000-000000000002'
-vi.mock('../hooks/useBulkBookmarkStatuses', () => ({
-  useBulkBookmarkStatuses: () => ({ statuses: {}, isPending: false }),
+vi.mock('../hooks/useBulkBookmarkStatuses', async (importOriginal) => ({
+  ...(await importOriginal<typeof BulkBookmarkStatuses>()),
+  useBulkBookmarkStatuses: () => ({ statuses: {}, isPending: false, isError: false }),
 }))
 vi.mock('@/lib/api', () => ({
   api: {

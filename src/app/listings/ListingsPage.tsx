@@ -32,7 +32,10 @@ import { VerifiedDeveloperBadge } from '@/components/ui/VerifiedDeveloperBadge'
 import { CACHE_DURATIONS } from '@/data/constants'
 import storageKeys from '@/data/storageKeys'
 import BookmarkButton from '@/features/bookmarks/client/components/BookmarkButton'
-import { useBulkBookmarkStatuses } from '@/features/bookmarks/client/hooks/useBulkBookmarkStatuses'
+import {
+  useBulkBookmarkStatuses,
+  getBookmarkStatus,
+} from '@/features/bookmarks/client/hooks/useBulkBookmarkStatuses'
 import {
   useEmulatorLogos,
   useLocalStorage,
@@ -649,10 +652,7 @@ function ListingsPage() {
                                 <BookmarkButton
                                   type="listing"
                                   listingId={listing.id}
-                                  status={{
-                                    isBookmarked: bookmarks.statuses[listing.id] ?? false,
-                                    isPending: bookmarks.isPending,
-                                  }}
+                                  status={getBookmarkStatus(bookmarks, listing.id)}
                                 />
                               )}
                               {isAdmin && (

@@ -1,14 +1,14 @@
 'use client'
 
 import { keepPreviousData } from '@tanstack/react-query'
+import { useEffect, type ReactNode } from 'react'
 import { type z } from 'zod'
 import { ErrorFallback, LoadingSpinner, Pagination } from '@/components/ui'
 import { api } from '@/lib/api'
 import BookmarkCard from './BookmarkCard'
 import SearchEmptyState from './SearchEmptyState'
 import { type BookmarkFiltersSchema } from '../../shared/bookmark-filters.schemas'
-import { useBulkBookmarkStatuses } from '../hooks/useBulkBookmarkStatuses'
-import type { ReactNode } from 'react'
+import { useBulkBookmarkStatuses, getBookmarkStatus } from '../hooks/useBulkBookmarkStatuses'
 
 interface Props {
   variant: 'handheld' | 'pc'
@@ -60,6 +60,19 @@ function BookmarkGrid(props: Props) {
     ids,
   )
 
+  const { page, onPageChange } = props
+  useEffect(() => {
+    if (
+      query.isError ||
+      query.isFetching ||
+      query.isPlaceholderData ||
+      query.data?.visibility !== 'visible'
+    )
+      return
+    const lastPage = Math.max(1, query.data.pagination.pages)
+    if (page > lastPage) onPageChange(lastPage)
+  }, [page, onPageChange, query.data, query.isError, query.isFetching, query.isPlaceholderData])
+
   if (query.isError) {
     return (
       <ErrorFallback
@@ -98,10 +111,7 @@ function BookmarkGrid(props: Props) {
           item={item}
           variant="handheld"
           index={index}
-          status={{
-            isBookmarked: bookmarks.statuses[item.listing.id] ?? false,
-            isPending: bookmarks.isPending,
-          }}
+          status={getBookmarkStatus(bookmarks, item.listing.id)}
         />
       ))
     }
@@ -112,10 +122,7 @@ function BookmarkGrid(props: Props) {
           item={item}
           variant="pc"
           index={index}
-          status={{
-            isBookmarked: bookmarks.statuses[item.pcListing.id] ?? false,
-            isPending: bookmarks.isPending,
-          }}
+          status={getBookmarkStatus(bookmarks, item.pcListing.id)}
         />
       ))
     }

@@ -5,6 +5,7 @@ import { STALE_TIMES } from '@/data/constants'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { type BookmarkStatus } from './useBulkBookmarkStatuses'
 
 interface ListingBookmarkConfig {
   type: 'listing'
@@ -18,10 +19,7 @@ interface PcListingBookmarkConfig {
 
 export type BookmarkConfig = ListingBookmarkConfig | PcListingBookmarkConfig
 
-export function useBookmarkToggle(
-  config: BookmarkConfig,
-  status?: { isBookmarked: boolean; isPending: boolean },
-) {
+export function useBookmarkToggle(config: BookmarkConfig, status?: BookmarkStatus) {
   const { user } = useUser()
   const utils = api.useUtils()
   const [optimisticBookmarked, setOptimisticBookmarked] = useState<boolean | null>(null)
@@ -115,8 +113,11 @@ export function useBookmarkToggle(
     ? bookmarkMutation.isPending || unbookmarkMutation.isPending
     : pcBookmarkMutation.isPending || pcUnbookmarkMutation.isPending
 
+  const isStatusPending = status?.isPending ?? (statusQuery.isPending || statusQuery.isFetching)
+  const isStatusError = status?.isError ?? statusQuery.isError
+
   const handleToggle = () => {
-    if (isPending) return
+    if (!user || isPending || isStatusPending || isStatusError) return
 
     setOptimisticBookmarked(!isBookmarked)
 
@@ -139,7 +140,8 @@ export function useBookmarkToggle(
     user,
     isBookmarked,
     isPending,
-    isStatusPending: status?.isPending ?? statusQuery.isPending,
+    isStatusPending,
+    isStatusError,
     handleToggle,
   }
 }
