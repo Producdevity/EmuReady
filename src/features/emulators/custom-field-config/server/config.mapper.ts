@@ -1,10 +1,10 @@
 import { createHash } from 'node:crypto'
 import { CustomFieldType } from '@orm'
 import { type ConfigEmulatorRecord } from './persistence/config.prisma'
+import { supportsPlaceholder } from '../../shared/custom-field-attributes.schemas'
 import {
   ConfigFieldSchema,
   CustomFieldConfigSchema,
-  supportsPlaceholder,
   type CustomFieldConfigSnapshot,
 } from '../shared/config.schemas'
 
