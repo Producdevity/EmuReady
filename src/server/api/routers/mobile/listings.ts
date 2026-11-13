@@ -1,3 +1,5 @@
+import { VoteEffectsRepository } from '@/features/reports/voting/server/vote-effects.repository'
+import { VoteEffectsService } from '@/features/reports/voting/server/vote-effects.service'
 import analytics from '@/lib/analytics'
 import { AppError, ResourceError } from '@/lib/errors'
 import {
@@ -296,22 +298,16 @@ export const mobileListingsRouter = createMobileTRPCRouter({
     })
 
     for (const change of trustChanges) trackTrustScoreChange(change)
-    // Notify listing author on new votes / direction changes; skip on toggle-off.
-    if (voteResult.action === 'created' || voteResult.action === 'updated') {
-      if (voteResult.vote && 'id' in voteResult.vote) {
-        notificationEventEmitter.emitNotificationEvent({
-          eventType: NOTIFICATION_EVENTS.LISTING_VOTED,
-          entityType: 'listing',
-          entityId: input.listingId,
-          triggeredBy: userId,
-          payload: {
-            listingId: input.listingId,
-            voteId: voteResult.vote.id,
-            voteValue: input.value,
-          },
-        })
-      }
-    }
+    const voteEffects = new VoteEffectsService(new VoteEffectsRepository(ctx.prisma))
+    await voteEffects.afterCommit({
+      listingId: input.listingId,
+      listingType: 'handheld',
+      userId,
+      action: voteResult.action,
+      voteId: voteResult.action === 'deleted' ? null : voteResult.vote.id,
+      value: input.value,
+      previousValue: voteResult.previousValue,
+    })
 
     return voteResult.vote
   }),

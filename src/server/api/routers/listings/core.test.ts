@@ -84,11 +84,6 @@ vi.mock('@/server/services/review-risk.service', () => ({
   attachReviewRiskProfileForViewer: mockAttachReviewRiskProfileForViewer,
 }))
 
-vi.mock('@/server/utils/security-validation', () => ({
-  validatePagination: vi.fn((page, limit, max) => ({ page: page ?? 1, limit: limit ?? max ?? 20 })),
-  sanitizeInput: vi.fn((s: string) => s),
-}))
-
 vi.mock('@/server/repositories/listings.repository', () => ({
   ListingsRepository: vi.fn().mockImplementation(function MockListingsRepository() {
     return {

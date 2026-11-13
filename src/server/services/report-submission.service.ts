@@ -1,6 +1,5 @@
 import { ResourceError } from '@/lib/errors'
 import { emitReportCreatedNotification } from '@/server/notifications/reportEvents'
-import { sanitizeInput } from '@/server/utils/security-validation'
 import { type PrismaClient, type ReportReason } from '@orm/client'
 
 type CreateListingReportInput = {
@@ -17,16 +16,10 @@ type CreatePcListingReportInput = {
   reportedById: string
 }
 
-function sanitizeOptionalDescription(description: string | undefined): string | undefined {
-  return description ? sanitizeInput(description) : description
-}
-
 export class ReportSubmissionService {
   constructor(private readonly prisma: PrismaClient) {}
 
   async createListingReport(input: CreateListingReportInput) {
-    const sanitizedDescription = sanitizeOptionalDescription(input.description)
-
     const listing = await this.prisma.listing.findUnique({
       where: { id: input.listingId },
       select: { authorId: true },
@@ -54,7 +47,7 @@ export class ReportSubmissionService {
         listingId: input.listingId,
         reportedById: input.reportedById,
         reason: input.reason,
-        description: sanitizedDescription,
+        description: input.description?.trim(),
       },
       include: {
         listing: {
@@ -77,8 +70,6 @@ export class ReportSubmissionService {
   }
 
   async createPcListingReport(input: CreatePcListingReportInput) {
-    const sanitizedDescription = sanitizeOptionalDescription(input.description)
-
     const pcListing = await this.prisma.pcListing.findUnique({
       where: { id: input.pcListingId },
       select: { authorId: true },
@@ -106,7 +97,7 @@ export class ReportSubmissionService {
         pcListingId: input.pcListingId,
         reportedById: input.reportedById,
         reason: input.reason,
-        description: sanitizedDescription,
+        description: input.description?.trim(),
       },
       include: {
         pcListing: {

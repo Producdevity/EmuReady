@@ -1,14 +1,16 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { GetGamesSchema } from '@/schemas/game'
 import GamesPage from './GamesPage'
 import type GameFilters from './components/GameFilters'
+import type { RouterInput } from '@/types/trpc'
 import type { ComponentProps } from 'react'
 
 const mocks = vi.hoisted(() => ({
   params: new URLSearchParams('search=Zelda'),
   replace: vi.fn(),
   push: vi.fn(),
-  queryGames: vi.fn(),
+  queryGames: vi.fn<(input: RouterInput['games']['get']) => unknown>(),
 }))
 
 vi.mock('next/navigation', () => ({
@@ -40,6 +42,26 @@ describe('games library search navigation', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it.each([
+    { raw: '2.7', page: 2 },
+    { raw: '-1', page: 1 },
+    { raw: 'invalid', page: 1 },
+    { raw: String(Number.MAX_SAFE_INTEGER), page: 1 },
+    { raw: String(Number.MAX_SAFE_INTEGER + 1), page: 1 },
+    {
+      raw: String(Math.floor(Number.MAX_SAFE_INTEGER / 12) + 1),
+      page: Math.floor(Number.MAX_SAFE_INTEGER / 12) + 1,
+    },
+    { raw: String(Math.floor(Number.MAX_SAFE_INTEGER / 12) + 2), page: 1 },
+  ])('normalizes the URL page $raw before querying', (testCase) => {
+    mocks.params = new URLSearchParams({ page: testCase.raw })
+    render(<GamesPage />)
+    expect(mocks.queryGames).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: testCase.page, limit: 12 }),
+    )
+    expect(GetGamesSchema.safeParse(mocks.queryGames.mock.lastCall?.[0]).success).toBe(true)
   })
 
   it('uses the newly navigated search without writing the previous search back to the URL', () => {

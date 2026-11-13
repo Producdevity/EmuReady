@@ -21,6 +21,7 @@ function GamesContent() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const limit = 12
 
   const getInitialSystemId = () => {
     const urlSystemId = searchParams.get('systemId')
@@ -30,7 +31,11 @@ function GamesContent() {
   const getInitialPage = () => {
     const urlPage = searchParams.get('page')
     const pageNum = urlPage ? parseInt(urlPage, 10) : 1
-    return !isNaN(pageNum) && pageNum > 0 ? pageNum : 1
+    return Number.isSafeInteger(pageNum) &&
+      pageNum > 0 &&
+      Number.isSafeInteger((pageNum - 1) * limit)
+      ? pageNum
+      : 1
   }
 
   const getInitialHideGames = () => {
@@ -58,7 +63,6 @@ function GamesContent() {
   const listingFilter = getInitialListingFilter()
 
   const [inputValue, setInputValue, search] = useUrlSearch(500)
-  const limit = 12
 
   // Update URL params whenever the state changes
   const updateUrlParams = useCallback(
