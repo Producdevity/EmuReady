@@ -23,41 +23,38 @@ test.describe('Admin Dashboard', () => {
   })
 
   test('should display dashboard statistics', async ({ page }) => {
-    const mainContent = page.locator('main').first()
+    const mainContent = page.getByRole('main').last()
     await expect(mainContent).toBeVisible()
 
-    const statValues = mainContent.locator('text=/\\d+/')
-    await expect(statValues.first()).toBeVisible()
-
-    const statCount = await statValues.count()
-    expect(statCount).toBeGreaterThan(0)
+    await expect(mainContent.getByRole('heading', { name: 'Platform Stats' })).toBeVisible()
+    for (const label of ['New Users:', 'Handheld Reports:', 'PC Reports:']) {
+      const statRow = mainContent.getByText(label, { exact: true }).locator('..')
+      await expect(statRow.getByText(/^\d+$/)).toBeVisible()
+    }
   })
 
   test('should show time range filter buttons', async ({ page }) => {
-    const timeRangeButtons = page.locator('button').filter({ hasText: /24h|48h|7d/i })
+    const timeRangeButtons = page.getByRole('button', { name: /^(24h|48h|7d)$/ })
     await expect(timeRangeButtons.first()).toBeVisible()
 
     for (const range of ['24h', '48h', '7d']) {
-      const rangeButton = page
-        .locator('button')
-        .filter({ hasText: new RegExp(range, 'i') })
-        .first()
+      const rangeButton = page.getByRole('button', { name: range, exact: true }).first()
       await expect(rangeButton).toBeVisible()
     }
   })
 
   test('should switch time ranges on activity cards', async ({ page }) => {
-    const timeRangeButtons = page.locator('button').filter({ hasText: /24h|48h|7d/i })
-    await expect(timeRangeButtons.first()).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Recent Users', exact: true })).toBeVisible()
 
-    for (const range of ['24h', '48h', '7d']) {
-      const rangeButton = page
-        .locator('button')
-        .filter({ hasText: new RegExp(range, 'i') })
-        .first()
+    for (const range of ['48h', '7d']) {
+      const rangeButton = page.getByRole('button', { name: range, exact: true }).first()
+      const dashboardResponse = page.waitForResponse(
+        (response) => response.url().includes('activity.dashboard') && response.status() === 200,
+      )
       await rangeButton.click()
-      await page.waitForLoadState('domcontentloaded')
-      await expect(page.locator('main').first()).toBeVisible()
+      await dashboardResponse
+      await expect(page.getByRole('button', { name: 'Refresh', exact: true }).first()).toBeEnabled()
+      await expect(page.getByRole('main').last()).toBeVisible()
     }
   })
 
@@ -84,7 +81,7 @@ test.describe('Admin Dashboard', () => {
 
     const quickNav = page.locator('[data-testid="admin-nav"]')
     await expect(quickNav).toBeVisible()
-    await expect(page.locator('main').first()).toBeVisible()
+    await expect(page.getByRole('main').last()).toBeVisible()
   })
 
   test('should show user menu button', async ({ page }) => {
@@ -111,11 +108,14 @@ test.describe('Admin Dashboard Data Visualizations', () => {
   })
 
   test('should have a refresh button on activity cards', async ({ page }) => {
-    const refreshButton = page.locator('button[aria-label="Refresh"]').first()
+    const refreshButton = page.getByRole('button', { name: 'Refresh', exact: true }).first()
     await expect(refreshButton).toBeVisible()
 
+    const dashboardResponse = page.waitForResponse(
+      (response) => response.url().includes('activity.dashboard') && response.status() === 200,
+    )
     await refreshButton.click()
-    await page.waitForLoadState('domcontentloaded')
-    await expect(page.locator('main').first()).toBeVisible()
+    await dashboardResponse
+    await expect(refreshButton).toBeEnabled()
   })
 })
