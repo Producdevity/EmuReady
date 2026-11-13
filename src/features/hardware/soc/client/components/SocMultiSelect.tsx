@@ -17,7 +17,7 @@ interface Props {
   maxDisplayed?: number
 }
 
-export default function AsyncSocFilterSelect(props: Props) {
+export default function SocMultiSelect(props: Props) {
   const [query, setQuery] = useState('')
   const [pageOffsets, setPageOffsets] = useState([0])
 

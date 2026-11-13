@@ -2,15 +2,15 @@
 
 import { type UseQueryResult } from '@tanstack/react-query'
 import { Smartphone, Cpu, Settings } from 'lucide-react'
-import { useCallback, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { AnimatedToggle } from '@/components/ui'
+import DeviceMultiSelect from '@/features/hardware/device/client/components/DeviceMultiSelect'
+import SocMultiSelect from '@/features/hardware/soc/client/components/SocMultiSelect'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
-import DeviceSelector from './DeviceSelector'
-import SocSelector from './SocSelector'
 
 type UserPreferencesData = RouterOutput['userPreferences']['get']
 
@@ -20,6 +20,8 @@ interface Props {
 
 function DeviceAndSocPreferences(props: Props) {
   const utils = api.useUtils()
+  const [deviceDraft, setDeviceDraft] = useState<string[] | null>(null)
+  const [socDraft, setSocDraft] = useState<string[] | null>(null)
 
   const updatePreferences = api.userPreferences.update.useMutation({
     onSuccess: () => {
@@ -39,8 +41,10 @@ function DeviceAndSocPreferences(props: Props) {
   })
 
   const bulkUpdateDevices = api.userPreferences.bulkUpdateDevices.useMutation({
-    onSuccess: () => {
-      invalidatePreferences()
+    scope: { id: 'hardware-preferences' },
+    onSuccess: async (_data, variables) => {
+      await invalidatePreferences()
+      setDeviceDraft((current) => clearSavedSelection(current, variables.deviceIds))
       toast.success('Device preferences updated successfully!')
 
       analytics.user.preferencesUpdated({
@@ -49,15 +53,18 @@ function DeviceAndSocPreferences(props: Props) {
         action: 'updated',
       })
     },
-    onError: (error) => {
+    onError: (error, variables) => {
+      setDeviceDraft((current) => clearSavedSelection(current, variables.deviceIds))
       console.error('Error updating device preferences:', error)
       toast.error(`Failed to update device preferences: ${getErrorMessage(error)}`)
     },
   })
 
   const bulkUpdateSocs = api.userPreferences.bulkUpdateSocs.useMutation({
-    onSuccess: () => {
-      invalidatePreferences()
+    scope: { id: 'hardware-preferences' },
+    onSuccess: async (_data, variables) => {
+      await invalidatePreferences()
+      setSocDraft((current) => clearSavedSelection(current, variables.socIds))
       toast.success('SOC preferences updated successfully!')
 
       analytics.user.preferencesUpdated({
@@ -66,14 +73,15 @@ function DeviceAndSocPreferences(props: Props) {
         action: 'updated',
       })
     },
-    onError: (error) => {
+    onError: (error, variables) => {
+      setSocDraft((current) => clearSavedSelection(current, variables.socIds))
       console.error('Error updating SOC preferences:', error)
       toast.error(`Failed to update SOC preferences: ${getErrorMessage(error)}`)
     },
   })
 
   const invalidatePreferences = () => {
-    Promise.all([
+    return Promise.all([
       utils.userPreferences.get.invalidate(),
       utils.users.me.invalidate(),
       utils.listings.get.invalidate(),
@@ -87,56 +95,15 @@ function DeviceAndSocPreferences(props: Props) {
     updatePreferences.mutate({ [key]: value })
   }
 
-  const deviceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const socTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  function handleDevicesChange(deviceIds: string[]) {
+    setDeviceDraft(deviceIds)
+    bulkUpdateDevices.mutate({ deviceIds })
+  }
 
-  useEffect(() => {
-    return () => {
-      if (deviceTimeoutRef.current) {
-        clearTimeout(deviceTimeoutRef.current)
-      }
-      if (socTimeoutRef.current) {
-        clearTimeout(socTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  const handleDevicesChange = useCallback(
-    (
-      devices: {
-        id: string
-        modelName: string
-        brand: { id: string; name: string }
-        soc?: { id: string; name: string; manufacturer: string } | null
-      }[],
-    ) => {
-      const deviceIds = devices.map((device) => device.id)
-
-      if (deviceTimeoutRef.current) {
-        clearTimeout(deviceTimeoutRef.current)
-      }
-
-      deviceTimeoutRef.current = setTimeout(() => {
-        bulkUpdateDevices.mutate({ deviceIds })
-      }, 500)
-    },
-    [bulkUpdateDevices],
-  )
-
-  const handleSocsChange = useCallback(
-    (socs: typeof selectedSocs) => {
-      const socIds = socs.map((soc) => soc.id)
-
-      if (socTimeoutRef.current) {
-        clearTimeout(socTimeoutRef.current)
-      }
-
-      socTimeoutRef.current = setTimeout(() => {
-        bulkUpdateSocs.mutate({ socIds })
-      }, 500)
-    },
-    [bulkUpdateSocs],
-  )
+  function handleSocsChange(socIds: string[]) {
+    setSocDraft(socIds)
+    bulkUpdateSocs.mutate({ socIds })
+  }
 
   if (props.preferencesQuery.isPending) {
     return (
@@ -168,8 +135,9 @@ function DeviceAndSocPreferences(props: Props) {
 
   const { data: preferences } = props.preferencesQuery
 
-  const selectedDevices = preferences.devicePreferences?.map((pref) => pref.device) || []
-  const selectedSocs = preferences.socPreferences?.map((pref) => pref.soc) || []
+  const selectedDeviceIds =
+    deviceDraft ?? preferences.devicePreferences.map((pref) => pref.device.id)
+  const selectedSocIds = socDraft ?? preferences.socPreferences.map((pref) => pref.soc.id)
 
   return (
     <div className="space-y-8">
@@ -247,7 +215,13 @@ function DeviceAndSocPreferences(props: Props) {
           and filter relevant content.
         </p>
 
-        <DeviceSelector selectedDevices={selectedDevices} onDevicesChange={handleDevicesChange} />
+        <DeviceMultiSelect
+          label="Preferred devices"
+          value={selectedDeviceIds}
+          onChange={handleDevicesChange}
+          placeholder="Select your devices"
+          maxDisplayed={3}
+        />
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
@@ -261,10 +235,22 @@ function DeviceAndSocPreferences(props: Props) {
           reports to show performance data most relevant to you.
         </p>
 
-        <SocSelector selectedSocs={selectedSocs} onSocsChange={handleSocsChange} />
+        <SocMultiSelect
+          label="Preferred SoCs"
+          value={selectedSocIds}
+          onChange={handleSocsChange}
+          placeholder="Select your SoCs"
+          maxDisplayed={3}
+        />
       </div>
     </div>
   )
+}
+
+function clearSavedSelection(current: string[] | null, saved: string[]): string[] | null {
+  return current?.length === saved.length && current.every((id) => saved.includes(id))
+    ? null
+    : current
 }
 
 export default DeviceAndSocPreferences

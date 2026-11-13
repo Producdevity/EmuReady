@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest'
 import { LOOKUP_PAGINATION } from '@/data/constants'
-import type AsyncDeviceFilterSelectComponent from './AsyncDeviceFilterSelect'
+import type DeviceMultiSelectComponent from './DeviceMultiSelect'
 
 const apiMocks = vi.hoisted(() => ({
   useQueries: vi.fn(),
@@ -17,7 +17,7 @@ vi.mock('@/lib/api', () => ({
   },
 }))
 
-let AsyncDeviceFilterSelect: typeof AsyncDeviceFilterSelectComponent
+let DeviceMultiSelect: typeof DeviceMultiSelectComponent
 
 interface OptionsInput {
   search?: string
@@ -100,9 +100,9 @@ function setupApiMocks() {
   }))
 }
 
-describe('AsyncDeviceFilterSelect', () => {
+describe('DeviceMultiSelect', () => {
   beforeAll(async () => {
-    ;({ default: AsyncDeviceFilterSelect } = await import('./AsyncDeviceFilterSelect'))
+    ;({ default: DeviceMultiSelect } = await import('./DeviceMultiSelect'))
   })
 
   beforeEach(() => {
@@ -111,9 +111,7 @@ describe('AsyncDeviceFilterSelect', () => {
   })
 
   it('loads devices through the slim options endpoint and selected labels through getByIds', () => {
-    render(
-      <AsyncDeviceFilterSelect label="Devices" value={['device-selected']} onChange={vi.fn()} />,
-    )
+    render(<DeviceMultiSelect label="Devices" value={['device-selected']} onChange={vi.fn()} />)
 
     expect(screen.getByText('Steam Deck OLED')).toBeInTheDocument()
     expect(apiMocks.devicesGetByIdsUseQuery).toHaveBeenCalledWith(
@@ -133,7 +131,7 @@ describe('AsyncDeviceFilterSelect', () => {
     vi.useFakeTimers()
 
     try {
-      render(<AsyncDeviceFilterSelect label="Devices" value={[]} onChange={vi.fn()} />)
+      render(<DeviceMultiSelect label="Devices" value={[]} onChange={vi.fn()} />)
 
       fireEvent.click(screen.getByRole('button', { name: 'Devices multi-select' }))
       expect(screen.getByText('Retroid Pocket 5')).toBeInTheDocument()
@@ -152,7 +150,7 @@ describe('AsyncDeviceFilterSelect', () => {
     vi.useFakeTimers()
 
     try {
-      render(<AsyncDeviceFilterSelect label="Devices" value={[]} onChange={vi.fn()} />)
+      render(<DeviceMultiSelect label="Devices" value={[]} onChange={vi.fn()} />)
 
       fireEvent.click(screen.getByRole('button', { name: 'Devices multi-select' }))
       fireEvent.change(screen.getByPlaceholderText('Search devices...'), {
@@ -173,7 +171,7 @@ describe('AsyncDeviceFilterSelect', () => {
   })
 
   it('requests the next page when scrolled near the bottom', () => {
-    render(<AsyncDeviceFilterSelect label="Devices" value={[]} onChange={vi.fn()} />)
+    render(<DeviceMultiSelect label="Devices" value={[]} onChange={vi.fn()} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Devices multi-select' }))
     const scrollContainer = screen.getByTestId('async-multi-select-options')
