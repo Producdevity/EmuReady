@@ -40,6 +40,57 @@ afterEach(() => {
 })
 
 describe('Patreon callback attempts', () => {
+  it.each(['getter', 'write'] as const)(
+    'links once in Strict Mode when session storage %s is blocked',
+    async (failure) => {
+      const descriptor = Object.getOwnPropertyDescriptor(window, 'sessionStorage')
+      if (failure === 'getter') {
+        Object.defineProperty(window, 'sessionStorage', {
+          configurable: true,
+          get() {
+            throw new DOMException('Storage blocked', 'SecurityError')
+          },
+        })
+      } else {
+        vi.spyOn(window.sessionStorage, 'setItem').mockImplementation(() => {
+          throw new DOMException('Storage blocked', 'QuotaExceededError')
+        })
+      }
+      try {
+        await act(async () => {
+          render(
+            <StrictMode>
+              <PatreonCallbackPage />
+            </StrictMode>,
+          )
+        })
+        expect(link).toHaveBeenCalledExactlyOnceWith({ code: 'code-one', state: 'state-one' })
+        expect(
+          screen.getByText('Patreon linked. You now have lifetime downloads!'),
+        ).toBeInTheDocument()
+        act(() => vi.advanceTimersByTime(2000))
+        expect(navigation.replace).toHaveBeenCalledExactlyOnceWith('/profile?tab=downloads')
+      } finally {
+        if (descriptor) Object.defineProperty(window, 'sessionStorage', descriptor)
+      }
+    },
+  )
+
+  it('shows a rejected callback when writing the storage marker fails', async () => {
+    vi.spyOn(window.sessionStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('Storage blocked', 'QuotaExceededError')
+    })
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    link.mockRejectedValueOnce(new Error('Authorization failed'))
+    await act(async () => {
+      render(<PatreonCallbackPage />)
+    })
+    expect(link).toHaveBeenCalledOnce()
+    expect(screen.getByText('Authorization failed')).toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(2000))
+    expect(navigation.replace).not.toHaveBeenCalled()
+  })
+
   it('displays missing parameters without starting an authorization request', () => {
     query = new URLSearchParams()
     render(<PatreonCallbackPage />)

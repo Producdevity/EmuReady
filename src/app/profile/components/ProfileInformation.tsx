@@ -36,10 +36,15 @@ function ProfileInformation(props: Props) {
   }
 
   const updateProfile = api.users.update.useMutation({
-    onSuccess: () => {
-      utils.users.getProfile.invalidate().catch(console.error)
-      toast.success('Profile updated successfully!')
-      setIsEditing(false)
+    onSuccess: async () => {
+      try {
+        await utils.users.getProfile.invalidate(undefined, undefined, { throwOnError: true })
+        toast.success('Profile updated successfully!')
+        setIsEditing(false)
+      } catch (error) {
+        console.error('Error refreshing the saved profile:', error)
+        toast.warning('Profile saved, but it could not be refreshed. Your draft is still open.')
+      }
     },
     onError: (error) => {
       console.error('Error updating profile:', error)
