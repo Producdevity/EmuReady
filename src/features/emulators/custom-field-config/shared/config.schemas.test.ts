@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { CustomFieldType } from '@orm'
 import { ConfigFieldSchema, CustomFieldConfigSchema, parseConfigJson } from './config.schemas'
@@ -7,7 +8,10 @@ const field = { name: 'renderer', label: 'Renderer', type: CustomFieldType.TEXT 
 
 describe('custom field configuration JSON', () => {
   it('accepts the JSON example in the admin guide', () => {
-    const guide = readFileSync('docs/admin/custom-fields.md', 'utf8')
+    const guide = readFileSync(
+      resolve(import.meta.dirname, '../../../../../docs/admin/custom-fields.md'),
+      'utf8',
+    )
     const example = guide.match(/```json\n([\s\S]*?)\n```/)?.[1]
     expect(parseConfigJson(example ?? '')).toMatchObject({ success: true })
   })
