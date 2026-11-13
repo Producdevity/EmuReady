@@ -372,12 +372,20 @@ export const GetListingsSchema = z
   .object({
     page: z
       .number()
+      .int()
+      .safe()
       .min(1)
       .default(1)
       .nullable()
       .transform((val) => val ?? 1)
       .describe('Page number for pagination'),
-    limit: z.number().min(1).max(50).default(20).describe('Number of results per page (1-50)'),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(50)
+      .default(20)
+      .describe('Number of results per page (1-50)'),
     gameIds: z.array(z.string().uuid()).optional().describe('Filter by game IDs'),
     systemIds: z.array(z.string().uuid()).optional().describe('Filter by system IDs'),
     deviceIds: z.array(z.string().uuid()).optional().describe('Filter by device IDs'),
@@ -393,6 +401,10 @@ export const GetListingsSchema = z
       .optional()
       .describe('Search listings by game name'),
   })
+  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
+    message: 'Pagination offset exceeds the supported range',
+    path: ['page'],
+  })
   .optional()
   .describe('Get listings with optional filters and pagination')
 
@@ -404,11 +416,17 @@ export const GetGamesSchema = z
     systemId: z.string().uuid().optional(),
     page: z
       .number()
+      .int()
+      .safe()
       .min(1)
       .default(1)
       .nullable()
       .transform((val) => val ?? 1),
-    limit: z.number().min(1).max(50).default(20),
+    limit: z.number().int().min(1).max(50).default(20),
+  })
+  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
+    message: 'Pagination offset exceeds the supported range',
+    path: ['page'],
   })
   .optional()
 
@@ -570,34 +588,41 @@ export const UpdatePcListingSchema = z.object({
     .optional(),
 })
 
-export const GetPcListingsSchema = z.object({
-  page: z
-    .number()
-    .min(1)
-    .default(1)
-    .nullable()
-    .transform((val) => val ?? 1),
-  limit: z.number().min(1).max(50).default(20),
-  gameId: z.string().uuid().optional(),
-  systemId: z.string().uuid().optional(),
-  cpuId: z.string().uuid().optional(),
-  gpuId: z.string().uuid().optional(),
-  emulatorId: z.string().uuid().optional(),
-  os: z.nativeEnum(PcOs).optional(),
-  search: z.string().max(MOBILE_SEARCH_QUERY_MAX_LENGTH).optional(),
-  minMemory: z.number().min(1).max(256).optional(),
-  maxMemory: z.number().min(1).max(256).optional(),
-})
+export const GetPcListingsSchema = z
+  .object({
+    page: z
+      .number()
+      .int()
+      .safe()
+      .min(1)
+      .default(1)
+      .nullable()
+      .transform((val) => val ?? 1),
+    limit: z.number().int().min(1).max(50).default(20),
+    gameId: z.string().uuid().optional(),
+    systemId: z.string().uuid().optional(),
+    cpuId: z.string().uuid().optional(),
+    gpuId: z.string().uuid().optional(),
+    emulatorId: z.string().uuid().optional(),
+    os: z.nativeEnum(PcOs).optional(),
+    search: z.string().max(MOBILE_SEARCH_QUERY_MAX_LENGTH).optional(),
+    minMemory: z.number().min(1).max(256).optional(),
+    maxMemory: z.number().min(1).max(256).optional(),
+  })
+  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
+    message: 'Pagination offset exceeds the supported range',
+    path: ['page'],
+  })
 
 export const GetPcPresetsSchema = z.object({
-  limit: z.number().min(1).max(50).default(20),
+  limit: z.number().int().min(1).max(50).default(20),
 })
 
 export const CreatePcPresetSchema = z.object({
   name: z.string().min(1).max(50),
   cpuId: z.string().uuid(),
   gpuId: z.string().uuid(),
-  memorySize: z.number().min(1).max(256),
+  memorySize: z.number().int().min(1).max(256),
   os: z.nativeEnum(PcOs),
   osVersion: z.string().min(1),
 })
@@ -607,7 +632,7 @@ export const UpdatePcPresetSchema = z.object({
   name: z.string().min(1).max(50).optional(),
   cpuId: z.string().uuid().optional(),
   gpuId: z.string().uuid().optional(),
-  memorySize: z.number().min(1).max(256).optional(),
+  memorySize: z.number().int().min(1).max(256).optional(),
   os: z.nativeEnum(PcOs).optional(),
   osVersion: z.string().min(1).optional(),
 })
