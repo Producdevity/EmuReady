@@ -7,12 +7,12 @@ import { ConfigFieldSchema, CustomFieldConfigSchema, parseConfigJson } from './c
 const field = { name: 'renderer', label: 'Renderer', type: CustomFieldType.TEXT }
 
 describe('custom field configuration JSON', () => {
-  it('accepts the JSON example in the admin guide', () => {
+  it.each(['\n', '\r\n'])('accepts the guide example with line ending %j', (lineEnding) => {
     const guide = readFileSync(
       resolve(import.meta.dirname, '../../../../../docs/admin/custom-fields.md'),
       'utf8',
     )
-    const example = guide.match(/```json\n([\s\S]*?)\n```/)?.[1]
+    const example = guide.replace(/\r?\n/g, lineEnding).match(/```json\r?\n([\s\S]*?)\r?\n```/)?.[1]
     expect(parseConfigJson(example ?? '')).toMatchObject({ success: true })
   })
 
