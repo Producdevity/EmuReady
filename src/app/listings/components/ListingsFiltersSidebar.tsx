@@ -332,7 +332,7 @@ function ListingsFiltersSidebar(props: FiltersProps) {
             </p>
             <div className="flex gap-2">
               <Link
-                href="/profile?tab=socs"
+                href="/profile?tab=devices"
                 className="inline-flex items-center gap-1 text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg transition-colors font-medium"
               >
                 <Settings2 className="w-3 h-3" />
