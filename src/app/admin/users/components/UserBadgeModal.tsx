@@ -79,6 +79,7 @@ function UserBadgeForm(props: FormProps) {
   }, [])
   const selectorId = useId()
   const utils = api.useUtils()
+  const userLabel = props.user.name || props.user.email
   const [selectedBadgeId, setSelectedBadgeId] = useState<string | null>(null)
   const [selectedColor, setSelectedColor] = useState<TailwindColor>(TailwindColor.blue)
   const [page, setPage] = useState(1)
@@ -88,8 +89,10 @@ function UserBadgeForm(props: FormProps) {
   )
   const userBadgesQuery = api.users.getUserById.useQuery({ userId: props.user.id })
   const isPending = props.assignBadgeMutation.isPending || props.removeBadgeMutation.isPending
+  const hasQueryError = Boolean(badgesQuery.error || userBadgesQuery.error)
   const fieldsDisabled =
     isPending ||
+    hasQueryError ||
     !badgesQuery.data ||
     !userBadgesQuery.data ||
     badgesQuery.isFetching ||
@@ -112,15 +115,14 @@ function UserBadgeForm(props: FormProps) {
         color: selectedColor,
       })
     } catch (error) {
-      toast.error(
-        `Failed to assign badge to ${props.user.name ?? props.user.email}: ${getErrorMessage(error)}`,
-      )
+      if (active.current)
+        toast.error(`Failed to assign badge to ${userLabel}: ${getErrorMessage(error)}`)
       return
     }
-    toast.success(`Badge assigned to ${props.user.name ?? props.user.email}`)
     props.onSuccess()
     void utils.users.getUserById.invalidate({ userId: props.user.id }).catch(console.error)
     if (active.current) {
+      toast.success(`Badge assigned to ${userLabel}`)
       setSelectedBadgeId(null)
       setSelectedColor(TailwindColor.blue)
     }
@@ -131,12 +133,11 @@ function UserBadgeForm(props: FormProps) {
     try {
       await props.removeBadgeMutation.mutateAsync({ userId: props.user.id, userBadgeId })
     } catch (error) {
-      toast.error(
-        `Failed to remove badge from ${props.user.name ?? props.user.email}: ${getErrorMessage(error)}`,
-      )
+      if (active.current)
+        toast.error(`Failed to remove badge from ${userLabel}: ${getErrorMessage(error)}`)
       return
     }
-    toast.success(`Badge removed from ${props.user.name ?? props.user.email}`)
+    if (active.current) toast.success(`Badge removed from ${userLabel}`)
     props.onSuccess()
     void utils.users.getUserById.invalidate({ userId: props.user.id }).catch(console.error)
   }
@@ -151,12 +152,28 @@ function UserBadgeForm(props: FormProps) {
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
           <Award className="w-5 h-5" />
-          Manage Badges for {props.user.name || props.user.email}
+          Manage Badges for {userLabel}
         </DialogTitle>
         <DialogDescription>
           Choose a badge and display color, or remove an assigned badge.
         </DialogDescription>
       </DialogHeader>
+
+      {hasQueryError && (
+        <div role="alert" className="space-y-3">
+          <p className="text-red-600 dark:text-red-400">Badge details are unavailable.</p>
+          <Button
+            variant="outline"
+            disabled={isPending || badgesQuery.isFetching || userBadgesQuery.isFetching}
+            onClick={() => {
+              if (badgesQuery.error) void badgesQuery.refetch().catch(console.error)
+              if (userBadgesQuery.error) void userBadgesQuery.refetch().catch(console.error)
+            }}
+          >
+            Try again
+          </Button>
+        </div>
+      )}
 
       <fieldset disabled={fieldsDisabled} className="min-w-0 space-y-6 overflow-y-auto">
         <div>

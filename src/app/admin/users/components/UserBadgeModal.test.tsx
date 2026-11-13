@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider, useMutation } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, useMutation, useQuery } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { type ComponentProps, type PropsWithChildren } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -16,10 +16,76 @@ const mocks = vi.hoisted(() => ({
   assign: vi.fn(),
   remove: vi.fn(),
   refreshedUsers: vi.fn(),
+  catalogFetch: vi.fn(),
+  profileFetch: vi.fn(),
   completion: Promise.withResolvers<void>(),
 }))
 let catalog: RouterOutput['badges']['get']['badges'] = []
 const assigned = new Map<string, AssignedBadges>()
+let liveQueries = false
+let failCatalog = false
+let failProfile = false
+
+function catalogResponse(input: RouterInput['badges']['get']) {
+  const page = input.page ?? 1
+  const limit = input.limit ?? 20
+  return {
+    badges: catalog.slice((page - 1) * limit, page * limit),
+    pagination: {
+      page,
+      limit,
+      total: catalog.length,
+      pages: Math.ceil(catalog.length / limit),
+    },
+  }
+}
+
+function useCatalogQuery(
+  input: RouterInput['badges']['get'],
+  options?: Parameters<typeof api.badges.get.useQuery>[1],
+) {
+  const query = useQuery({
+    queryKey: ['catalog', input],
+    enabled: liveQueries,
+    retry: false,
+    staleTime: Infinity,
+    initialData: liveQueries && (input.page ?? 1) === 1 ? catalogResponse(input) : undefined,
+    placeholderData: options?.placeholderData ? (previous) => previous : undefined,
+    queryFn: async () => {
+      mocks.catalogFetch(input)
+      if (failCatalog) throw new Error('Catalog unavailable')
+      return catalogResponse(input)
+    },
+  })
+  return liveQueries
+    ? query
+    : { data: catalogResponse(input), isPending: false, isFetching: false, error: null }
+}
+
+function useUserBadgesQuery(input: RouterInput['users']['getUserById']) {
+  const data = { userBadges: assigned.get(input.userId) ?? [] }
+  const query = useQuery({
+    queryKey: ['profile', input.userId],
+    enabled: liveQueries,
+    retry: false,
+    staleTime: Infinity,
+    initialData: liveQueries ? data : undefined,
+    queryFn: async () => {
+      mocks.profileFetch(input.userId)
+      if (failProfile) throw new Error('Profile unavailable')
+      return { userBadges: assigned.get(input.userId) ?? [] }
+    },
+  })
+  return liveQueries
+    ? query
+    : {
+        data,
+        isPending: false,
+        isFetching: false,
+        error: null,
+        refetch: async () => mocks.refreshedUsers(input.userId),
+      }
+}
 
 function useAssign(options?: AssignOptions) {
   return useMutation({
@@ -67,37 +133,12 @@ vi.mock('@/lib/api', () => ({
       },
     }),
     badges: {
-      get: {
-        useQuery: (input: RouterInput['badges']['get']) => {
-          const page = input.page ?? 1
-          const limit = input.limit ?? 20
-          return {
-            data: {
-              badges: catalog.slice((page - 1) * limit, page * limit),
-              pagination: {
-                page,
-                limit,
-                total: catalog.length,
-                pages: Math.ceil(catalog.length / limit),
-              },
-            },
-            isPending: false,
-            isFetching: false,
-          }
-        },
-      },
+      get: { useQuery: useCatalogQuery },
       assignToUser: { useMutation: useAssign },
       removeFromUser: { useMutation: useRemove },
     },
     users: {
-      getUserById: {
-        useQuery: (input: RouterInput['users']['getUserById']) => ({
-          data: { userBadges: assigned.get(input.userId) ?? [] },
-          isPending: false,
-          isFetching: false,
-          refetch: async () => mocks.refreshedUsers(input.userId),
-        }),
-      },
+      getUserById: { useQuery: useUserBadgesQuery },
     },
   },
 }))
@@ -135,21 +176,22 @@ function assignedBadge(index: number): AssignedBadges[number] {
 const firstUser = { id: uuid(200), name: 'First user', email: 'first@example.com' }
 const secondUser = { id: uuid(201), name: 'Second user', email: 'second@example.com' }
 
-function wrapper() {
-  const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } })
+function wrapper(queryClient: QueryClient) {
   return function Wrapper(props: PropsWithChildren) {
     return <QueryClientProvider client={queryClient}>{props.children}</QueryClientProvider>
   }
 }
 
 function renderModal() {
+  const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } })
   const callbacks = { onClose: vi.fn(), onSuccess: vi.fn() }
   const view = render(<UserBadgeModal {...callbacks} isOpen user={firstUser} />, {
-    wrapper: wrapper(),
+    wrapper: wrapper(queryClient),
   })
   return {
     ...callbacks,
     view,
+    queryClient,
     update(props: Partial<ComponentProps<typeof UserBadgeModal>>) {
       view.rerender(<UserBadgeModal {...callbacks} isOpen user={firstUser} {...props} />)
     },
@@ -160,6 +202,9 @@ beforeEach(() => {
   vi.clearAllMocks()
   catalog = [badge(1), badge(2)]
   assigned.clear()
+  liveQueries = false
+  failCatalog = false
+  failProfile = false
   mocks.completion = Promise.withResolvers<void>()
 })
 
@@ -289,5 +334,45 @@ describe('badge catalog pagination', () => {
     modal.update({ user: { ...firstUser } })
     expect(screen.getByRole('option', { name: 'Badge 001' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Go to previous page' })).not.toBeInTheDocument()
+  })
+
+  it('retries a failed new page using the real query observer', async () => {
+    liveQueries = true
+    failCatalog = true
+    catalog = Array.from({ length: 101 }, (_, index) => badge(index + 1))
+    renderModal()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Go to next page' })[0])
+    await screen.findByRole('alert')
+    expect(mocks.assign).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeEnabled()
+    failCatalog = false
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    await screen.findByRole('option', { name: 'Badge 101' })
+    expect(mocks.catalogFetch).toHaveBeenCalledTimes(2)
+    expect(mocks.catalogFetch).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }))
+    expect(mocks.profileFetch).not.toHaveBeenCalled()
+  })
+
+  it('keeps a draft and blocks writes until a failed background profile query is retried', async () => {
+    liveQueries = true
+    const modal = renderModal()
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: uuid(1) } })
+    fireEvent.click(screen.getByRole('button', { name: 'Purple' }))
+    failProfile = true
+    await act(async () => {
+      await modal.queryClient.refetchQueries({ queryKey: ['profile', firstUser.id] })
+    })
+    await screen.findByRole('alert')
+    expect(screen.getByRole('combobox')).toHaveValue(uuid(1))
+    expect(screen.getByText('Selected: Purple')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Assign Badge' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeEnabled()
+    failProfile = false
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Assign Badge' })).toBeEnabled())
+    expect(screen.getByRole('combobox')).toHaveValue(uuid(1))
+    expect(screen.getByText('Selected: Purple')).toBeInTheDocument()
+    expect(mocks.profileFetch).toHaveBeenCalledTimes(2)
+    expect(mocks.catalogFetch).not.toHaveBeenCalled()
   })
 })
