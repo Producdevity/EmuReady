@@ -31,6 +31,11 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/Tooltip
 import { VerifiedDeveloperBadge } from '@/components/ui/VerifiedDeveloperBadge'
 import { CACHE_DURATIONS } from '@/data/constants'
 import storageKeys from '@/data/storageKeys'
+import BookmarkButton from '@/features/bookmarks/client/components/BookmarkButton'
+import {
+  useBulkBookmarkStatuses,
+  getBookmarkStatus,
+} from '@/features/bookmarks/client/hooks/useBulkBookmarkStatuses'
 import {
   useEmulatorLogos,
   useLocalStorage,
@@ -39,6 +44,7 @@ import {
 } from '@/hooks'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { BooleanPreferenceSchema } from '@/schemas/preferences'
 import { type RouterInput } from '@/types/trpc'
 import { filterNullAndEmpty } from '@/utils/filter'
 import {
@@ -76,6 +82,7 @@ function ListingsPage() {
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
     storageKeys.showSystemIcons,
     true,
+    BooleanPreferenceSchema,
   )
 
   // Preferred hardware filters (devices/SoCs)
@@ -133,6 +140,13 @@ function ListingsPage() {
   const listingsQuery = api.listings.get.useQuery(filterParams, {
     placeholderData: (previous) => previous,
   })
+
+  const bookmarks = useBulkBookmarkStatuses(
+    'listing',
+    (listingsQuery.data?.listings ?? [])
+      .filter((report) => report.status === ApprovalStatus.APPROVED)
+      .map((report) => report.id),
+  )
 
   const handleSystemChange = useCallback(
     (values: string[]) => {
@@ -636,6 +650,13 @@ function ListingsPage() {
                         {columnVisibility.isColumnVisible('actions') && (
                           <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-end gap-2">
+                              {listing.status === ApprovalStatus.APPROVED && (
+                                <BookmarkButton
+                                  type="listing"
+                                  listingId={listing.id}
+                                  status={getBookmarkStatus(bookmarks, listing.id)}
+                                />
+                              )}
                               {isAdmin && (
                                 <EditButton
                                   href={`/admin/listings/${listing.id}/edit`}

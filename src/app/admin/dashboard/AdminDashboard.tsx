@@ -1,7 +1,7 @@
 'use client'
 
 import { Users, FileText, MessageSquare, AlertTriangle, Ban } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { AdminQuickNavigation } from '@/app/admin/components/AdminQuickNavigation'
 import { ErrorBoundary } from '@/app/admin/components/ErrorBoundary'
 import { ADMIN_ROUTES } from '@/app/admin/config/routes'
@@ -67,6 +67,12 @@ export function AdminDashboard(props: Props) {
   const showUsers = dashboardQuery.data?.permissions.canSeeUsers ?? false
   const showReports = dashboardQuery.data?.permissions.canSeeReports ?? false
   const showBans = dashboardQuery.data?.permissions.canSeeBans ?? false
+  const [wasFetching, setWasFetching] = useState(dashboardQuery.isFetching)
+
+  if (wasFetching !== dashboardQuery.isFetching) {
+    setWasFetching(dashboardQuery.isFetching)
+    if (!dashboardQuery.isFetching) setRefreshingSections(createRefreshState())
+  }
 
   const markSectionRefreshing = useCallback((section: DashboardSection) => {
     setRefreshingSections((prev) => {
@@ -90,12 +96,6 @@ export function AdminDashboard(props: Props) {
     },
     [markSectionRefreshing],
   )
-
-  useEffect(() => {
-    if (!dashboardQuery.isFetching) {
-      setRefreshingSections(createRefreshState())
-    }
-  }, [dashboardQuery.isFetching])
 
   // Handle error state - show navigation but with error message for data
   const hasError = !!dashboardQuery.error

@@ -1,10 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import storageKeys from '@/data/storageKeys'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import analytics from '@/lib/analytics'
 import { env } from '@/lib/env'
+import { BooleanPreferenceSchema } from '@/schemas/preferences'
 
 interface UseCommunitySupportBannerOptions {
   variant: 'home' | 'list' | 'detail'
@@ -12,26 +13,25 @@ interface UseCommunitySupportBannerOptions {
 }
 
 export function useCommunitySupportBanner(options: UseCommunitySupportBannerOptions) {
-  const [isVisible, setIsVisible] = useState(false)
   const shownAtRef = useRef<number>(0)
 
   const [localDismissed, setLocalDismissed, isHydrated] = useLocalStorage(
     storageKeys.popups.supportBannerDismissed,
     false,
+    BooleanPreferenceSchema,
   )
 
-  useEffect(() => {
-    if (!isHydrated) return
-    if (localDismissed) return
+  const isVisible = isHydrated && !localDismissed
 
-    setIsVisible(true)
+  useEffect(() => {
+    if (!isVisible) return
     shownAtRef.current = Date.now()
 
     analytics.engagement.supportBannerShown({
       variant: options.variant,
       page: options.page,
     })
-  }, [isHydrated, localDismissed, options.variant, options.page])
+  }, [isVisible, options.variant, options.page])
 
   const getTimeToInteraction = useCallback(() => {
     if (shownAtRef.current === 0) return 0
@@ -39,7 +39,6 @@ export function useCommunitySupportBanner(options: UseCommunitySupportBannerOpti
   }, [])
 
   const dismiss = useCallback(() => {
-    setIsVisible(false)
     setLocalDismissed(true)
 
     analytics.engagement.supportBannerDismissed({

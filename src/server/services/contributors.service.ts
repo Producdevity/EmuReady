@@ -1,6 +1,7 @@
 import { startOfMonth, subDays } from 'date-fns'
-import { ApprovalStatus, type PrismaClient, type Role } from '@orm/client'
+import { ApprovalStatus, type Role } from '@orm/client'
 import { getTopContributors } from '@orm/sql'
+import type { PrismaRepositoryClient } from '@/server/persistence/prisma.repository'
 
 export type ContributorTimeframe = 'all_time' | 'this_month' | 'this_week'
 
@@ -116,7 +117,7 @@ function mergeContribution(
 }
 
 export async function aggregateContributions(
-  prisma: PrismaClient,
+  prisma: PrismaRepositoryClient,
   options: AggregateOptions = {},
 ): Promise<AggregateResult> {
   const { startDate, userIds } = options
@@ -199,7 +200,7 @@ export async function aggregateContributions(
  * Excludes banned users at the database level.
  */
 export async function getTopContributorsRaw(
-  prisma: PrismaClient,
+  prisma: PrismaRepositoryClient,
   timeframe: ContributorTimeframe,
   limit: number,
 ): Promise<RawContributor[]> {
@@ -269,7 +270,7 @@ export function buildTopContributorsSummary(
 }
 
 export async function getUserContributionBreakdown(
-  prisma: PrismaClient,
+  prisma: PrismaRepositoryClient,
   userId: string,
 ): Promise<ContributionBreakdown> {
   const contributions = await aggregateContributions(prisma, { userIds: [userId] })

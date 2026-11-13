@@ -3,7 +3,7 @@
 import { Search, Monitor, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, useEffect, useMemo, type ChangeEvent, Suspense } from 'react'
+import { useState, useMemo, type ChangeEvent, Suspense } from 'react'
 import { isEmpty } from 'remeda'
 import { EmulatorIcon } from '@/components/icons'
 import {
@@ -24,8 +24,6 @@ import EmulatorViewModal from './components/EmulatorViewModal'
 
 type EmulatorSortField = 'name'
 type EmulatorData = RouterOutput['emulators']['get']['emulators'][number]
-type EmulatorByIdData = RouterOutput['emulators']['byId']
-type EmulatorUnion = EmulatorData | EmulatorByIdData
 
 const EMULATORS_COLUMNS: ColumnDefinition[] = [
   { key: 'name', label: 'Emulator', defaultVisible: true },
@@ -41,7 +39,6 @@ function EmulatorsPage() {
   const [page, setPage] = useState(1)
   const [sortField, setSortField] = useState<EmulatorSortField>('name')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
-  const [selectedEmulator, setSelectedEmulator] = useState<EmulatorUnion | null>(null)
 
   const columnVisibility = useColumnVisibility(EMULATORS_COLUMNS, {
     storageKey: storageKeys.columnVisibility.emulators,
@@ -73,31 +70,30 @@ function EmulatorsPage() {
 
   // Fetch single emulator if it's in URL but not in current page
   const singleEmulatorQuery = api.emulators.byId.useQuery(
-    { id: emulatorIdFromUrl! },
+    { id: emulatorIdFromUrl ?? '' },
     {
       enabled: !!emulatorIdFromUrl && !emulatorInCurrentPage,
     },
   )
 
-  // Set selected emulator from either the list or the single query
-  useEffect(() => {
-    if (!emulatorIdFromUrl) {
-      setSelectedEmulator(null)
-      return
-    }
+  const availableEmulator =
+    emulatorInCurrentPage ??
+    (singleEmulatorQuery.data?.id === emulatorIdFromUrl ? (singleEmulatorQuery.data ?? null) : null)
 
-    const emulator = emulatorInCurrentPage || singleEmulatorQuery.data
-    if (emulator) {
-      setSelectedEmulator(emulator)
-    }
-  }, [emulatorIdFromUrl, emulatorInCurrentPage, singleEmulatorQuery.data])
+  const [lastSelectedEmulator, setLastSelectedEmulator] = useState<typeof availableEmulator>(null)
+  if (availableEmulator && availableEmulator.id !== lastSelectedEmulator?.id)
+    setLastSelectedEmulator(availableEmulator)
+  const selectedEmulator =
+    availableEmulator ??
+    (!singleEmulatorQuery.isError && lastSelectedEmulator?.id === emulatorIdFromUrl
+      ? lastSelectedEmulator
+      : null)
 
   const openModal = (emulator: EmulatorData) => {
     // Update URL with emulator ID
     const params = new URLSearchParams(searchParams.toString())
     params.set('emulatorId', emulator.id)
     router.replace(`/emulators?${params.toString()}`)
-    setSelectedEmulator(emulator)
   }
 
   const closeModal = () => {
@@ -106,7 +102,6 @@ function EmulatorsPage() {
     params.delete('emulatorId')
     const query = params.toString()
     router.replace(`/emulators${query ? `?${query}` : ''}`)
-    setSelectedEmulator(null)
   }
 
   const handleSort = (field: string) => {

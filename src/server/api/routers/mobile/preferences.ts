@@ -1,3 +1,4 @@
+import { checkProfileAccess } from '@/features/users/server/profile-access.service'
 import { ResourceError } from '@/lib/errors'
 import {
   AddDevicePreferenceSchema,
@@ -10,7 +11,6 @@ import {
 } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobileProtectedProcedure } from '@/server/api/mobileContext'
 import { UserPreferencesRepository } from '@/server/repositories/user-preferences.repository'
-import { checkProfileAccess } from '@/server/services/user-profile.service'
 
 export const mobilePreferencesRouter = createMobileTRPCRouter({
   get: mobileProtectedProcedure.query(async ({ ctx }) => {
