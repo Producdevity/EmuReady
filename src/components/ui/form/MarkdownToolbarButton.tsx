@@ -16,6 +16,7 @@ export function MarkdownToolbarButton(props: Props) {
       type="button"
       onClick={props.onClick}
       title={props.title}
+      aria-label={props.title}
       className={cn(
         'p-2 rounded-md transition-colors duration-150',
         'text-gray-600 dark:text-gray-400',

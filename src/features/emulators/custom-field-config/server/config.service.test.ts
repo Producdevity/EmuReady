@@ -69,6 +69,35 @@ describe('custom field configuration service', () => {
     expect(result.configuration.fields[0]?.id).toBe(FIELD_ID)
   })
 
+  it('exports and saves signed field and category orders without changing their identity', async () => {
+    const s = setup()
+    const category = s.record.customFieldCategories[0]
+    const field = s.record.customFieldDefinitions[0]
+    if (!category || !field) throw new Error('Missing custom field fixture')
+    category.displayOrder = -2_147_483_648
+    field.displayOrder = -2
+    field.categoryOrder = -1
+    const snapshot = await s.service.get(actor, TARGET_ID)
+
+    await s.service.save(actor, {
+      emulatorId: TARGET_ID,
+      configuration: snapshot.configuration,
+      expectedRevision: snapshot.revision,
+    })
+
+    expect(s.saveCategory).toHaveBeenCalledWith(
+      TARGET_ID,
+      expect.objectContaining({ id: CATEGORY_ID, displayOrder: -2_147_483_648 }),
+      CATEGORY_ID,
+    )
+    expect(s.saveField).toHaveBeenCalledWith(
+      TARGET_ID,
+      expect.objectContaining({ id: FIELD_ID, displayOrder: -2, categoryOrder: -1 }),
+      CATEGORY_ID,
+      FIELD_ID,
+    )
+  })
+
   it('maps pasted categories to destination IDs and removes omitted unused fields', async () => {
     const s = setup()
     s.input.configuration.categories = [
@@ -298,8 +327,8 @@ describe('custom field configuration service', () => {
       field.rangeMax = 4
       field.defaultValue = value
       await expect(s.service.get(actor, TARGET_ID)).rejects.toMatchObject({
-        name: 'ZodError',
-        issues: expect.arrayContaining([expect.objectContaining({ path: ['defaultValue'] })]),
+        code: 'BAD_REQUEST',
+        message: expect.stringContaining(field.name),
       })
       expect(s.saveField).not.toHaveBeenCalled()
     },

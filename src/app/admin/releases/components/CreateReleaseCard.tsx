@@ -327,10 +327,12 @@ export default function CreateReleaseCard() {
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <label className="inline-flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300">
-            <Toggle checked={autoPublish} onChange={setAutoPublish} size="sm" />
-            <span>Auto‑publish latest.json</span>
-          </label>
+          <Toggle
+            checked={autoPublish}
+            onChange={setAutoPublish}
+            size="sm"
+            label="Auto-publish latest.json"
+          />
           <Button
             variant="outline"
             onClick={() => {

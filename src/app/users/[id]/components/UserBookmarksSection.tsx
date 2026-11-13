@@ -4,6 +4,7 @@ import BookmarkBrowser from '@/app/profile/components/bookmarks/BookmarkBrowser'
 
 interface Props {
   userId: string
+  ownProfile?: boolean
   handheldCount: number
   pcCount: number
 }

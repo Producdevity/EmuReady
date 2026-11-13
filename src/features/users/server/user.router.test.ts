@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { GetUserByIdSchema } from '@/features/users/shared/user.schemas'
 import { prisma } from '@/server/db'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus, Role, PcOs, TailwindColor } from '@orm'
+import { evaluateProfileAccess } from './profile-access.service'
 import { UserRepository } from './user.repository'
 import { createUsersRouter } from './user.router'
 import { UserService } from './user.service'
@@ -87,7 +89,13 @@ const report = {
 }
 
 function caller(
-  options: { userId?: string; role?: Role; permissions?: string[]; anonymous?: boolean } = {},
+  options: {
+    userId?: string
+    role?: Role
+    permissions?: string[]
+    anonymous?: boolean
+    showNsfw?: boolean
+  } = {},
 ) {
   return usersRouter.createCaller({
     prisma,
@@ -101,7 +109,7 @@ function caller(
             email: null,
             role: options.role ?? Role.USER,
             permissions: options.permissions ?? [],
-            showNsfw: false,
+            showNsfw: options.showNsfw ?? false,
           },
         },
   })
@@ -164,7 +172,11 @@ describe('user profile transport', () => {
         const now = new Date(time)
         vi.setSystemTime(now)
         await repository.profileAccessRecord(targetId)
-        await repository.publicProfile(targetId, true)
+        const visibility = evaluateProfileAccess(accessRecord(), targetId, {
+          currentUserRole: Role.MODERATOR,
+        })
+        if (!visibility.accessible) throw new Error('Expected moderator profile access')
+        await repository.publicProfile(GetUserByIdSchema.parse({ userId: targetId }), visibility)
         for (const call of database.user.findUnique.mock.calls.slice(-2)) {
           expect(call[0]).toMatchObject({
             select: {
@@ -273,6 +285,48 @@ describe('user profile transport', () => {
       }),
     )
   })
+
+  it.each([
+    { role: Role.USER, showNsfw: false },
+    { role: Role.USER, showNsfw: true },
+    { role: Role.MODERATOR, showNsfw: false },
+    { role: Role.MODERATOR, showNsfw: true },
+  ])(
+    'uses the visible cast-vote predicate for the list and search-independent count ($role, NSFW:$showNsfw)',
+    async (viewer) => {
+      preparePublicProfile()
+      database.vote.count.mockResolvedValue(0)
+      const result = await caller(viewer).getUserById({ userId: targetId, votesSearch: 'Mario' })
+      const listing = {
+        ...(viewer.role === Role.MODERATOR ? {} : { NOT: { status: ApprovalStatus.REJECTED } }),
+        ...(viewer.showNsfw ? {} : { game: { isErotic: false } }),
+      }
+      expect(database.user.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          select: expect.objectContaining({
+            _count: {
+              select: expect.objectContaining({
+                votes: { where: { userId: targetId, listing, OR: undefined } },
+              }),
+            },
+          }),
+        }),
+      )
+      const searchedWhere = expect.objectContaining({
+        userId: targetId,
+        listing,
+        OR: expect.arrayContaining([
+          { listing: { game: { title: { contains: 'Mario', mode: 'insensitive' } } } },
+        ]),
+      })
+      expect(database.vote.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: searchedWhere }),
+      )
+      expect(database.vote.count).toHaveBeenCalledWith({ where: searchedWhere })
+      expect(result.votes.pagination.total).toBe(0)
+      expect(result._count.votes).toBe(1)
+    },
+  )
 
   it('allows owners to view private profiles and approved or pending reports', async () => {
     preparePublicProfile({ profilePublic: false })
@@ -534,6 +588,29 @@ describe('user administration and edits', () => {
     expect(database.user.findUnique).toHaveBeenCalledTimes(1)
   })
 
+  it('returns only the canonical persisted name and bio after a profile write', async () => {
+    database.user.findUnique.mockResolvedValue({
+      id: userId,
+      email: 'owner@example.com',
+      clerkId: null,
+    })
+    database.user.findFirst.mockResolvedValue(null)
+    database.user.update.mockResolvedValue({ name: 'Saved name', bio: 'Persisted bio' })
+    await expect(
+      caller().update({ name: '  Saved name  ', bio: '<b>Submitted bio</b>' }),
+    ).resolves.toEqual({
+      success: true,
+      profile: { name: 'Saved name', bio: 'Persisted bio' },
+    })
+    expect(database.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: userId },
+        data: expect.objectContaining({ name: 'Saved name' }),
+        select: { name: true, bio: true },
+      }),
+    )
+  })
+
   it('writes profile changes only to the current user and clears the bio', async () => {
     database.user.findUnique.mockResolvedValue({
       id: userId,
@@ -541,9 +618,12 @@ describe('user administration and edits', () => {
       clerkId: 'user_clerk',
     })
     database.user.findFirst.mockResolvedValue(null)
-    database.user.update.mockResolvedValue({ id: userId })
+    database.user.update.mockResolvedValue({ name: 'New Name', bio: null })
     const input = { name: 'New Name', bio: '', userId: targetId }
-    await expect(caller().update(input)).resolves.toEqual({ success: true })
+    await expect(caller().update(input)).resolves.toEqual({
+      success: true,
+      profile: { name: 'New Name', bio: null },
+    })
     expect(database.user.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: userId },
@@ -560,10 +640,13 @@ describe('user administration and edits', () => {
       clerkId: 'user_clerk',
     })
     database.user.findFirst.mockResolvedValue(null)
-    database.user.update.mockResolvedValue({ id: userId })
+    database.user.update.mockResolvedValue({ name: 'New Name', bio: null })
     effects.updateClerk.mockRejectedValue(new Error('Clerk unavailable'))
     const log = vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    await expect(caller().update({ name: 'New Name' })).resolves.toEqual({ success: true })
+    await expect(caller().update({ name: 'New Name' })).resolves.toEqual({
+      success: true,
+      profile: { name: 'New Name', bio: null },
+    })
     expect(database.user.update).toHaveBeenCalledTimes(1)
     log.mockRestore()
   })

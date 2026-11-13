@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { type z } from 'zod'
+import { PAGINATION } from '@/data/constants'
 import { bookmarksRouter } from '@/features/bookmarks/server/bookmarks.router'
 import { BookmarkFiltersSchema } from '@/features/bookmarks/shared/bookmark-filters.schemas'
 import { CreateCustomFieldCategorySchema } from '@/schemas/customFieldCategory'
@@ -225,6 +226,22 @@ describe.each(operations)('$name', (operation) => {
 })
 
 describe('preserved stored integer contracts', () => {
+  it('rejects an oversized TGDB lookup batch before database access', async () => {
+    await expect(
+      games.checkExistingByTgdbIds({
+        tgdbGameIds: Array.from({ length: PAGINATION.MAX_LIMIT + 1 }, (_, index) => index),
+      }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+    expectNoDatabaseCalls()
+  })
+
+  it.each([0, PAGINATION.MAX_LIMIT])('accepts a TGDB lookup batch of %s IDs', async (size) => {
+    await games.checkExistingByTgdbIds({
+      tgdbGameIds: Array.from({ length: size }, (_, index) => index),
+    })
+    expect(database.game.findMany).toHaveBeenCalledOnce()
+  })
+
   it.each([-2_147_483_648, -1, 0, 2_147_483_647])(
     'passes signed ID %s to Prisma unchanged',
     async (value) => {

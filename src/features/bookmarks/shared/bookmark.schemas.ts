@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import { PAGINATION } from '@/data/constants'
-import { BookmarkFiltersSchema } from '@/features/bookmarks/shared/bookmark-filters.schemas'
+import {
+  BookmarkFiltersSchema,
+  refineBookmarkMemoryRange,
+} from '@/features/bookmarks/shared/bookmark-filters.schemas'
 import { refinePaginationOffset } from '@/schemas/pagination'
 
 const listingIdSchema = z.object({
@@ -19,6 +22,7 @@ const bookmarkListSchema = z
     search: z.string().max(100).optional(),
   })
   .merge(BookmarkFiltersSchema)
+  .superRefine(refineBookmarkMemoryRange)
   .superRefine(refinePaginationOffset)
 
 export const BookmarkListingSchema = listingIdSchema

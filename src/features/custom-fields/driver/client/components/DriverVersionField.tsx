@@ -25,11 +25,9 @@ export default function DriverVersionField<TFieldValues extends FieldValues>(
   props: Props<TFieldValues>,
 ) {
   const driverVersions = useDriverVersions()
-  const helperMessage =
-    driverVersions.errorMessage ??
-    (driverVersions.rateLimited
-      ? 'GitHub rate limit exceeded. Select a default option or enter a custom driver.'
-      : null)
+  const helperMessage = driverVersions.rateLimited
+    ? 'GitHub rate limit exceeded. Select a default option or enter a custom driver.'
+    : driverVersions.errorMessage
 
   return (
     <div key={props.fieldDef.id} className="mb-4">

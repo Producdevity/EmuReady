@@ -1,29 +1,37 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { invalidateListingSeo, invalidatePcListingSeo } from '@/server/cache/invalidation'
+import { invalidateListingsSeo, invalidatePcListingsSeo } from '@/server/cache/invalidation'
 import { prisma } from '@/server/db'
+import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
 import { trackTrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus, PcOs, Role, type UserBan } from '@orm'
 import { ApprovalTrustRepository } from './approval-trust.repository'
 import { ReportAdminEditService } from './report-admin-edit.service'
 import { ReportApprovalRepository } from './report-approval.repository'
+import type * as NotificationEvents from '@/server/notifications/eventEmitter'
 
 vi.mock('@/server/db', () => ({ prisma: {} }))
 vi.mock('@/server/utils/trust-score-analytics', () => ({ trackTrustScoreChange: vi.fn() }))
 vi.mock('@/server/cache/invalidation', () => ({
   invalidateListingSeo: vi.fn(),
   invalidatePcListingSeo: vi.fn(),
+  invalidateListingsSeo: vi.fn(),
+  invalidatePcListingsSeo: vi.fn(),
+}))
+vi.mock('@/server/notifications/eventEmitter', async (importOriginal) => ({
+  ...(await importOriginal<typeof NotificationEvents>()),
+  notificationEventEmitter: { emitNotificationEvent: vi.fn() },
 }))
 vi.mock('@/server/utils/cache/instances', () => ({
   listingStatsCache: { delete: vi.fn() },
   invalidateCatalogCompatibilityCacheForDevice: vi.fn(),
 }))
 
-function setup() {
+function setup(status: ApprovalStatus = ApprovalStatus.REJECTED) {
   const userBans: Pick<UserBan, 'reason' | 'expiresAt'>[] = []
   const common = {
     id: 'report-1',
-    status: ApprovalStatus.REJECTED,
+    status,
     authorId: 'author-1',
     gameId: 'old-game',
     emulatorId: 'emulator-1',
@@ -132,14 +140,16 @@ describe('admin report edits', () => {
       try {
         await vi.waitFor(() => expect(run.append).toHaveBeenCalledOnce())
         expect(trackTrustScoreChange).not.toHaveBeenCalled()
-        expect(invalidateListingSeo).not.toHaveBeenCalled()
-        expect(invalidatePcListingSeo).not.toHaveBeenCalled()
+        expect(invalidateListingsSeo).not.toHaveBeenCalled()
+        expect(invalidatePcListingsSeo).not.toHaveBeenCalled()
+        expect(notificationEventEmitter.emitNotificationEvent).not.toHaveBeenCalled()
       } finally {
         commit.resolve()
       }
       await edit
       expect(run.transaction).toHaveBeenCalledOnce()
       expect(trackTrustScoreChange).toHaveBeenCalledOnce()
+      expect(notificationEventEmitter.emitNotificationEvent).toHaveBeenCalledOnce()
       expect(reportType === 'handheld' ? run.updateHandheld : run.updatePc).toHaveBeenCalledOnce()
     },
   )
@@ -154,9 +164,9 @@ describe('admin report edits', () => {
         expect.objectContaining({ weight: 6 }),
       ]),
     )
-    expect(invalidateListingSeo).toHaveBeenCalledWith(
+    expect(invalidateListingsSeo).toHaveBeenCalledWith([
       expect.objectContaining({ gameId: 'new-game', deviceId: 'new-device' }),
-    )
+    ])
     expect(trackTrustScoreChange).toHaveBeenCalledWith(
       expect.objectContaining({ delta: 14, oldScore: 92, newScore: 106 }),
     )
@@ -175,9 +185,9 @@ describe('admin report edits', () => {
         expect.objectContaining({ weight: 6 }),
       ]),
     )
-    expect(invalidatePcListingSeo).toHaveBeenCalledWith(
+    expect(invalidatePcListingsSeo).toHaveBeenCalledWith([
       expect.objectContaining({ gameId: 'new-game', cpuId: 'new-cpu' }),
-    )
+    ])
   })
 
   it('does not change trust when the report status is unchanged', async () => {
@@ -197,8 +207,71 @@ describe('admin report edits', () => {
     ).rejects.toThrow('Invalid custom field')
     expect(run.append).not.toHaveBeenCalled()
     expect(trackTrustScoreChange).not.toHaveBeenCalled()
-    expect(invalidateListingSeo).not.toHaveBeenCalled()
+    expect(invalidateListingsSeo).not.toHaveBeenCalled()
+    expect(notificationEventEmitter.emitNotificationEvent).not.toHaveBeenCalled()
   })
+
+  it.each(['handheld', 'pc'] as const)(
+    'deduplicates public %s revalidation while retaining old and new targets',
+    async (reportType) => {
+      const run = setup(ApprovalStatus.APPROVED)
+      if (reportType === 'handheld') {
+        await run.service.updateHandheld({ ...run.input, deviceId: 'new-device' }, run.actor)
+        expect(invalidateListingsSeo).toHaveBeenCalledExactlyOnceWith([
+          expect.objectContaining({ gameId: 'old-game', deviceId: 'old-device' }),
+          expect.objectContaining({ gameId: 'new-game', deviceId: 'new-device' }),
+        ])
+      } else {
+        await run.service.updatePc(
+          { ...run.input, cpuId: 'new-cpu', os: PcOs.WINDOWS, osVersion: '11', memorySize: 16 },
+          run.actor,
+        )
+        expect(invalidatePcListingsSeo).toHaveBeenCalledExactlyOnceWith([
+          expect.objectContaining({ gameId: 'old-game', cpuId: 'old-cpu' }),
+          expect.objectContaining({ gameId: 'new-game', cpuId: 'new-cpu' }),
+        ])
+      }
+      expect(notificationEventEmitter.emitNotificationEvent).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each(['handheld', 'pc'] as const)(
+    'notifies a committed %s rejection but does not notify a reset to Pending',
+    async (reportType) => {
+      const run = setup(ApprovalStatus.APPROVED)
+      const statuses = [ApprovalStatus.REJECTED, ApprovalStatus.PENDING]
+      for (const status of statuses) {
+        if (reportType === 'handheld') {
+          await run.service.updateHandheld(
+            { ...run.input, status, deviceId: 'new-device' },
+            run.actor,
+          )
+        } else {
+          await run.service.updatePc(
+            {
+              ...run.input,
+              status,
+              cpuId: 'new-cpu',
+              os: PcOs.WINDOWS,
+              osVersion: '11',
+              memorySize: 16,
+            },
+            run.actor,
+          )
+        }
+      }
+      expect(notificationEventEmitter.emitNotificationEvent).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          eventType:
+            reportType === 'handheld'
+              ? NOTIFICATION_EVENTS.LISTING_REJECTED
+              : NOTIFICATION_EVENTS.PC_LISTING_REJECTED,
+          entityId: 'report-1',
+          triggeredBy: run.actor.id,
+        }),
+      )
+    },
+  )
 
   it('rejects unauthorized handheld edits before writing', async () => {
     const run = setup()

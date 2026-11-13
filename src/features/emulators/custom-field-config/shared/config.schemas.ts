@@ -1,12 +1,20 @@
 import { z } from 'zod'
+import { SignedInt32Schema } from '@/schemas/common'
 import { CreateCustomFieldDefinitionSchema } from '@/schemas/customFieldDefinition'
 import {
   CustomFieldAttributesSchema,
   validateCustomFieldAttributes,
 } from '../../shared/custom-field-attributes.schemas'
 
-const orderSchema = z.number().int().min(0).max(2_147_483_647)
 const categoryNameSchema = z.string().trim().min(1).max(100)
+
+export const ConfigCategorySchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    name: categoryNameSchema,
+    displayOrder: SignedInt32Schema.default(0),
+  })
+  .strict()
 
 export const ConfigFieldSchema = CreateCustomFieldDefinitionSchema.omit({
   emulatorId: true,
@@ -18,8 +26,8 @@ export const ConfigFieldSchema = CreateCustomFieldDefinitionSchema.omit({
     name: CreateCustomFieldDefinitionSchema.shape.name.max(100),
     label: z.string().trim().min(1).max(200),
     category: categoryNameSchema.nullable().default(null),
-    displayOrder: orderSchema.default(0),
-    categoryOrder: orderSchema.default(0),
+    displayOrder: SignedInt32Schema.default(0),
+    categoryOrder: SignedInt32Schema.default(0),
   })
   .strict()
   .superRefine(validateCustomFieldAttributes)
@@ -27,17 +35,7 @@ export const ConfigFieldSchema = CreateCustomFieldDefinitionSchema.omit({
 export const CustomFieldConfigSchema = z
   .object({
     version: z.literal(1),
-    categories: z
-      .array(
-        z
-          .object({
-            id: z.string().uuid().optional(),
-            name: categoryNameSchema,
-            displayOrder: orderSchema.default(0),
-          })
-          .strict(),
-      )
-      .max(100),
+    categories: z.array(ConfigCategorySchema).max(100),
     fields: z.array(ConfigFieldSchema).max(500),
   })
   .strict()

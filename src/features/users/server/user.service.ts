@@ -26,7 +26,10 @@ import { hasPermission, PERMISSIONS, roleIncludesRole } from '@/utils/permission
 import { sanitizeBio } from '@/utils/sanitization'
 import { Role } from '@orm'
 import { evaluateProfileAccess, PRIVATE_PROFILE_SETTINGS } from './profile-access.service'
-import { type PublicUserProfileOutputSchema } from '../shared/user-output.schemas'
+import {
+  type PublicUserProfileOutputSchema,
+  type UpdateUserOutputSchema,
+} from '../shared/user-output.schemas'
 
 export class UserService {
   constructor(
@@ -108,7 +111,7 @@ export class UserService {
       }
     }
 
-    const user = await this.repository.publicProfile(input.userId, access.canViewBannedUsers)
+    const user = await this.repository.publicProfile(input, access)
     if (!user) return ResourceError.user.notFound()
     const showVotes = access.isOwner || access.isMod || access.privacySettings.showVotingActivity
     const [
@@ -159,7 +162,10 @@ export class UserService {
     }
   }
 
-  async update(actor: Actor, input: z.output<typeof UpdateUserSchema>): Promise<MutationSuccess> {
+  async update(
+    actor: Actor,
+    input: z.output<typeof UpdateUserSchema>,
+  ): Promise<z.output<typeof UpdateUserOutputSchema>> {
     const actorUser = requireUserActor(actor)
     const user = await this.repository.updateSource(actorUser.userId)
     if (!user) return ResourceError.user.notFound()
@@ -185,7 +191,7 @@ export class UserService {
         console.error('Failed to sync username to Clerk:', error)
       }
     }
-    await this.repository.updateProfile(actorUser.userId, {
+    const profile = await this.repository.updateProfile(actorUser.userId, {
       ...(input.name !== undefined && { name: input.name.trim() || null }),
       ...(input.email && { email: input.email }),
       ...(input.profileImage && { profileImage: input.profileImage }),
@@ -193,7 +199,7 @@ export class UserService {
       lastActiveAt: new Date(),
     })
     await invalidateUser(actorUser.userId)
-    return { success: true }
+    return { success: true, profile }
   }
 
   getAdminUsers(actor: Actor, input: z.output<typeof GetAllUsersSchema>) {

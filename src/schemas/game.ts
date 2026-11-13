@@ -63,7 +63,7 @@ export const GetGamesSchema = z
 export const GetGameByIdSchema = z.object({ id: z.string().uuid() })
 
 export const CheckExistingByTgdbIdsSchema = z.object({
-  tgdbGameIds: z.array(SignedInt32Schema),
+  tgdbGameIds: z.array(SignedInt32Schema).max(PAGINATION.MAX_LIMIT),
 })
 
 export const CheckExistingByNamesAndSystemsSchema = z.object({

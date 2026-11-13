@@ -9,14 +9,21 @@ export function useUrlSearch(debounceMs = 300): [string, (value: string) => void
   const serializedParams = searchParams.toString()
   const latestParams = useRef(serializedParams)
   const pendingUpdate = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [draft, setDraft] = useState({ pathname, search, value: search })
+  const [pendingSearch, setPendingSearch] = useState<string | null>(null)
+  const [draft, setDraft] = useState({ pathname, search, value: search, navigationVersion: 0 })
 
   if (draft.pathname !== pathname || draft.search !== search) {
+    const ownNavigation = draft.pathname === pathname && pendingSearch === search
     setDraft({
       pathname,
       search,
-      value: draft.pathname === pathname && draft.value.trim() === search ? draft.value : search,
+      value:
+        ownNavigation || (draft.pathname === pathname && draft.value.trim() === search)
+          ? draft.value
+          : search,
+      navigationVersion: draft.navigationVersion + (ownNavigation ? 0 : 1),
     })
+    setPendingSearch(null)
   }
 
   useEffect(() => {
@@ -30,29 +37,35 @@ export function useUrlSearch(debounceMs = 300): [string, (value: string) => void
         pendingUpdate.current = null
       }
     }
-  }, [pathname, search])
+  }, [draft.navigationVersion])
 
   const setSearch = useCallback(
     (value: string) => {
-      setDraft({ pathname, search, value })
+      setDraft((current) => ({ ...current, pathname, search, value }))
       if (pendingUpdate.current !== null) clearTimeout(pendingUpdate.current)
 
       function updateUrl() {
         pendingUpdate.current = null
         const params = new URLSearchParams(latestParams.current)
         const normalized = value.trim()
+        if (
+          normalized === (params.get('search') ?? '') &&
+          (pendingSearch === null || pendingSearch === normalized)
+        )
+          return
         if (normalized) params.set('search', normalized)
         else params.delete('search')
         params.delete('page')
 
         const query = params.toString()
+        setPendingSearch(normalized)
         router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
       }
 
       if (debounceMs > 0) pendingUpdate.current = setTimeout(updateUrl, debounceMs)
       else updateUrl()
     },
-    [debounceMs, pathname, router, search],
+    [debounceMs, pathname, pendingSearch, router, search],
   )
 
   return [draft.value, setSearch, search]

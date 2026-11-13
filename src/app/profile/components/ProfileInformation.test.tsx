@@ -99,7 +99,7 @@ describe('profile information draft', () => {
     let completion: unknown
     act(() => {
       completion = complete(
-        { success: true },
+        { success: true, profile: { name: 'My saved name', bio: 'Original bio' } },
         { name: 'My saved name', bio: 'Original bio' },
         undefined,
         { client: new QueryClient(), meta: undefined, mutationKey: undefined },
@@ -150,15 +150,18 @@ describe('profile information draft', () => {
       )
       fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
       fireEvent.change(screen.getByPlaceholderText('Enter your name'), {
-        target: { value: 'My saved name' },
+        target: { value: '  My saved name  ' },
+      })
+      fireEvent.change(screen.getByPlaceholderText('Tell us about yourself'), {
+        target: { value: '<b>Submitted bio</b>' },
       })
       fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
       const complete = onSuccess
       if (!complete) throw new Error('Expected a profile success callback')
       await act(async () => {
         await complete(
-          { success: true },
-          { name: 'My saved name', bio: 'Original bio' },
+          { success: true, profile: { name: 'My saved name', bio: 'Persisted bio' } },
+          { name: '  My saved name  ', bio: '<b>Submitted bio</b>' },
           undefined,
           { client: queryClient, meta: undefined, mutationKey: undefined },
         )
@@ -166,7 +169,7 @@ describe('profile information draft', () => {
       await waitFor(() => expect(profileQueryError).toHaveBeenCalledOnce())
       expect(fetchProfile).toHaveBeenCalledOnce()
       expect(queryClient.getQueryData(['profile'])).toEqual(profile)
-      expect(screen.getByDisplayValue('My saved name')).toBeInTheDocument()
+      expect(screen.getByPlaceholderText('Enter your name')).toHaveValue('  My saved name  ')
       expect(
         screen.queryByText('Error loading profile. Please try again later.'),
       ).not.toBeInTheDocument()
@@ -175,6 +178,19 @@ describe('profile information draft', () => {
       )
       expect(toast.success).not.toHaveBeenCalled()
       expect(toast.error).not.toHaveBeenCalled()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(screen.getByText('My saved name', { selector: 'p' }).textContent).toBe('My saved name')
+      expect(screen.getByText('Persisted bio', { selector: 'p' })).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
+      expect(screen.getByDisplayValue('My saved name')).toBeInTheDocument()
+      expect(screen.getByDisplayValue('Persisted bio')).toBeInTheDocument()
+
+      act(() => {
+        queryClient.setQueryData(['profile'], { ...profile, name: 'Latest server name' })
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(await screen.findByText('Latest server name', { selector: 'p' })).toBeInTheDocument()
     } finally {
       queryClient.clear()
       errorLog.mockRestore()

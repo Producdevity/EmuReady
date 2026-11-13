@@ -113,11 +113,11 @@ function CookieConsent() {
     setDraftPreferences(newPreferences)
     setSaveError(null)
     try {
-      setSavedPreferences(newPreferences)
-      setConsentDate(new Date().toISOString())
-      setAnalyticsEnabled(newPreferences.analytics)
-      setPerformanceEnabled(newPreferences.performance)
-      setHasConsented(true)
+      setSavedPreferences(newPreferences, { notifyOnError: false })
+      setConsentDate(new Date().toISOString(), { notifyOnError: false })
+      setAnalyticsEnabled(newPreferences.analytics, { notifyOnError: false })
+      setPerformanceEnabled(newPreferences.performance, { notifyOnError: false })
+      setHasConsented(true, { notifyOnError: false })
       setIsVisible(false)
     } catch {
       setSaveError('Your cookie preferences could not be saved. Please try again.')

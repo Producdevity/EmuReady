@@ -27,6 +27,7 @@ import {
   UserSessionOutputSchema,
   TopContributorsOutputSchema,
   OwnUserProfileOutputSchema,
+  UpdateUserOutputSchema,
   PublicUserProfileOutputSchema,
   AdminUsersOutputSchema,
   UserSocialOverviewOutputSchema,
@@ -67,7 +68,7 @@ export function createUsersRouter(createUserService: (prisma: PrismaClient) => U
       ),
     update: protectedProcedure
       .input(UpdateUserSchema)
-      .output(MutationSuccessSchema)
+      .output(UpdateUserOutputSchema)
       .mutation(({ ctx, input }) =>
         createUserService(ctx.prisma).update(createActorFromSession(ctx.session), input),
       ),

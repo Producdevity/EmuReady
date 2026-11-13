@@ -18,12 +18,11 @@ import {
 } from '@/server/api/trpc'
 import { UserBansRepository } from '@/server/repositories/user-bans.repository'
 import { logAudit, buildDiff } from '@/server/services/audit.service'
+import { withTrustScoreTransaction } from '@/server/services/trust-score-transaction.service'
 import { nullifyUserVotes, restoreUserVotes } from '@/server/services/vote-nullification.service'
-import { withRetryTransaction } from '@/server/utils/transactions'
-import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
-import { AuditAction, AuditEntityType, Prisma, Role } from '@orm/client'
+import { AuditAction, AuditEntityType, Role } from '@orm/client'
 
 export const userBansRouter = createTRPCRouter({
   stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
@@ -83,10 +82,9 @@ export const userBansRouter = createTRPCRouter({
       return AppError.badRequest('Expiration date must be in the future')
     }
 
-    const { created, nullificationResult, trustChanges } = await withRetryTransaction(
+    const { created, nullificationResult } = await withTrustScoreTransaction(
       ctx.prisma,
-      async (tx) => {
-        const trustChanges: TrustScoreChange[] = []
+      async (tx, trustChanges) => {
         const transactionRepository = new UserBansRepository(tx)
         const { isBanned } = await transactionRepository.checkBanStatus(userId)
         if (isBanned) return ResourceError.userBan.alreadyBanned()
@@ -115,12 +113,10 @@ export const userBansRouter = createTRPCRouter({
           })
         }
 
-        return { created: ban, nullificationResult: nullResult, trustChanges }
+        return { created: ban, nullificationResult: nullResult }
       },
-      { timeout: 120_000, isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     )
 
-    for (const change of trustChanges) trackTrustScoreChange(change)
     void logAudit(ctx.prisma, {
       actorId: ctx.session.user.id,
       action: AuditAction.BAN,
@@ -227,10 +223,9 @@ export const userBansRouter = createTRPCRouter({
       isActive: ban.isActive,
     }
 
-    const { lifted, restorationResult, trustChanges } = await withRetryTransaction(
+    const { lifted, restorationResult } = await withTrustScoreTransaction(
       ctx.prisma,
-      async (tx) => {
-        const trustChanges: TrustScoreChange[] = []
+      async (tx, trustChanges) => {
         const liftedBan = await new UserBansRepository(tx).lift(id, unbannedById, notes)
 
         let restoreResult: Awaited<ReturnType<typeof restoreUserVotes>> | null = null
@@ -244,12 +239,10 @@ export const userBansRouter = createTRPCRouter({
           })
         }
 
-        return { lifted: liftedBan, restorationResult: restoreResult, trustChanges }
+        return { lifted: liftedBan, restorationResult: restoreResult }
       },
-      { timeout: 120_000, isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     )
 
-    for (const change of trustChanges) trackTrustScoreChange(change)
     const next = {
       reason: lifted.reason,
       notes: lifted.notes ?? null,
