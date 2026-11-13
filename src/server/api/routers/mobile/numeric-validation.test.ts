@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { GetMyVerificationsSchema } from '@/schemas/mobile'
 import { prisma } from '@/server/db'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { PcOs, type Prisma, Role } from '@orm'
 import { mobileAdminRouter } from './admin'
+import { mobileDevelopersRouter } from './developers'
 import { mobileDevicesRouter } from './devices'
 import { mobileEmulatorsRouter } from './emulators'
 import { mobileGamesRouter } from './games'
@@ -25,6 +27,7 @@ const db = vi.hoisted(() => ({
   notification: { findMany: vi.fn(), count: vi.fn() },
   listingReport: { findMany: vi.fn(), count: vi.fn() },
   userBan: { findMany: vi.fn(), count: vi.fn() },
+  listingDeveloperVerification: { findMany: vi.fn(), count: vi.fn() },
   userPcPreset: {
     findMany: vi.fn(),
     findFirst: vi.fn(),
@@ -83,6 +86,10 @@ const userContext = {
   },
 }
 const presets = mobilePcPresetsRouter.createCaller(userContext)
+const developer = mobileDevelopersRouter.createCaller({
+  ...userContext,
+  session: { user: { ...userContext.session.user, role: Role.DEVELOPER } },
+})
 const admin = mobileAdminRouter.createCaller({
   ...userContext,
   session: {
@@ -153,6 +160,15 @@ const catalogs = [
     maxLimit: 100,
   },
 ]
+const paginatedCatalogs = [
+  ...catalogs,
+  {
+    name: 'developer verifications',
+    get: developer.getMyVerifications,
+    read: db.listingDeveloperVerification.findMany,
+    maxLimit: 100,
+  },
+]
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -165,6 +181,7 @@ beforeEach(() => {
     db.notification,
     db.listingReport,
     db.userBan,
+    db.listingDeveloperVerification,
   ]) {
     catalog.findMany.mockResolvedValue([])
     catalog.count.mockResolvedValue(0)
@@ -184,7 +201,7 @@ function expectNoDatabaseCalls() {
   }
 }
 
-describe.each(catalogs)('mobile $name pagination', (catalog) => {
+describe.each(paginatedCatalogs)('mobile $name pagination', (catalog) => {
   it.each([
     { page: 1.5 },
     { limit: 20.5 },
@@ -201,8 +218,8 @@ describe.each(catalogs)('mobile $name pagination', (catalog) => {
     expectNoDatabaseCalls()
   })
 
-  it.each([{}, { page: null }])('preserves first-page defaults for %j', async (input) => {
-    const response = await catalog.get(input)
+  it('preserves first-page defaults', async () => {
+    const response = await catalog.get({})
     expect(catalog.read).toHaveBeenCalledWith(expect.objectContaining({ skip: 0, take: 20 }))
     expect(response.pagination).toEqual({
       total: 0,
@@ -234,6 +251,29 @@ describe.each(catalogs)('mobile $name pagination', (catalog) => {
     })
     expectNoDatabaseCalls()
   })
+})
+
+it('preserves optional, non-nullable developer pagination fields', () => {
+  expect(GetMyVerificationsSchema.parse({})).toEqual({})
+  expect(GetMyVerificationsSchema.safeParse({ page: null }).success).toBe(false)
+  expect(GetMyVerificationsSchema.safeParse({ limit: null }).success).toBe(false)
+  expect(GetMyVerificationsSchema.safeParse(undefined).success).toBe(false)
+})
+
+it.each(catalogs)('normalizes a null mobile $name page to the first page', async (catalog) => {
+  const response = await catalog.get({ page: null })
+  expect(catalog.read).toHaveBeenCalledWith(expect.objectContaining({ skip: 0, take: 20 }))
+  expect(response.pagination).toMatchObject({ page: 1, limit: 20, offset: 0 })
+})
+
+it('retains developer authorization before querying verifications', async () => {
+  await expect(
+    mobileDevelopersRouter.createCaller(context).getMyVerifications({}),
+  ).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
+  await expect(
+    mobileDevelopersRouter.createCaller(userContext).getMyVerifications({}),
+  ).rejects.toMatchObject({ code: 'FORBIDDEN' })
+  expectNoDatabaseCalls()
 })
 
 it('preserves omitted game and handheld catalog inputs', async () => {

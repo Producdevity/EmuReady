@@ -582,10 +582,15 @@ export const GetListingVerificationsSchema = z.object({
   listingId: z.string().uuid(),
 })
 
-export const GetMyVerificationsSchema = z.object({
-  limit: z.number().min(1).max(100).optional(),
-  page: z.number().min(1).optional(),
-})
+export const GetMyVerificationsSchema = z
+  .object({
+    limit: z.number().int().min(1).max(100).optional(),
+    page: z.number().int().safe().min(1).optional(),
+  })
+  .refine((input) => Number.isSafeInteger(((input.page ?? 1) - 1) * (input.limit ?? 20)), {
+    message: 'Pagination offset exceeds the supported range',
+    path: ['page'],
+  })
 
 // PC Listings schemas
 export const CreatePcListingSchema = CreatePcListingBaseSchema
