@@ -40,14 +40,35 @@ test.describe('Game Form - Authenticated Admin', () => {
   test('should navigate to game form from games page', async ({ page }) => {
     const gamesPage = new GamesPage(page)
     const gameForm = new GameFormPage(page)
+    const requestHeld = Promise.withResolvers<void>()
+    const releaseResponse = Promise.withResolvers<void>()
+    await page.route(
+      (url) => url.pathname.includes('/api/trpc/') && url.pathname.includes('users.me'),
+      async (route) => {
+        const response = await route.fetch()
+        requestHeld.resolve()
+        await releaseResponse.promise
+        await route.fulfill({ response })
+      },
+    )
 
-    await gamesPage.goto()
+    try {
+      await gamesPage.goto()
+      await requestHeld.promise
+      await expect(gamesPage.pageHeading).toBeVisible()
+      await expect(gamesPage.addGameButton).toHaveCount(0)
+      await expect(page.getByRole('link', { name: 'Add a Game', exact: true })).toHaveCount(0)
+      releaseResponse.resolve()
 
-    await expect(gamesPage.addGameButton).toBeVisible()
-    await gamesPage.clickAddGame()
+      await expect(gamesPage.addGameButton).toBeVisible()
+      await gamesPage.clickAddGame()
 
-    await expect(gameForm.form).toBeVisible()
-    await expect(gameForm.titleInput).toBeVisible()
+      await expect(gameForm.form).toBeVisible()
+      await expect(gameForm.titleInput).toBeVisible()
+    } finally {
+      releaseResponse.resolve()
+      await page.unrouteAll({ behavior: 'wait' })
+    }
   })
 })
 
