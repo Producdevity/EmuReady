@@ -24,7 +24,9 @@ export class ListingsPage extends BasePage {
   }
 
   get listingItems() {
-    return this.page.locator('table tbody tr')
+    return this.page.locator('table tbody tr').filter({
+      has: this.page.locator('a[href^="/listings/"]:not([href^="/listings/new"])'),
+    })
   }
 
   get firstListingDeviceCell() {
