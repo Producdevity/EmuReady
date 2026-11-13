@@ -20,7 +20,7 @@ export function PageWithMetadata(props: Props) {
           id={`structured-data-${index}`}
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(data),
+            __html: JSON.stringify(data).replace(/</g, '\\u003c'),
           }}
         />
       ))}

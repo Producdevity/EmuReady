@@ -21,6 +21,7 @@ import { Button, LoadingSpinner } from '@/components/ui'
 import { CACHE_DURATIONS, LOOKUP_PAGINATION } from '@/data/constants'
 import { reconcileDriverValue } from '@/features/custom-fields/driver/shared/driver-version'
 import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
+import { useLastEmulatorSettings } from '@/features/reports/last-settings/client/useLastEmulatorSettings'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { MarkdownEditor } from '@/lib/dynamic-imports'
@@ -290,6 +291,15 @@ function AddListingPage() {
   const configUploadInputId = `${selectedEmulatorSlug || 'emulator'}-config-upload`
 
   const currentUserQuery = api.users.me.useQuery()
+  const currentSettings = useWatch({ control: form.control, name: 'customFieldValues' })
+  const lastSettings = useLastEmulatorSettings({
+    userId: currentUserQuery.data?.id,
+    emulatorId: selectedEmulatorId,
+    fields: parsedCustomFields,
+    enabled: customFieldDefinitionsQuery.isSuccess && !customFieldDefinitionsQuery.isFetching,
+    values: currentSettings,
+    blocked: Boolean(form.formState.dirtyFields.customFieldValues) || importSummary !== null,
+  })
 
   const loadDeviceItems = useCallback(
     async (query: string): Promise<DeviceOption[]> => {
@@ -379,15 +389,28 @@ function AddListingPage() {
     form.setValue('customFieldValues', newCustomValues)
   }, [customFieldIdsKey, form, parsedCustomFields])
 
-  const createListingMutation = api.listings.create.useMutation({
-    onSuccess: async (data) => {
+  const createListingMutation = api.listings.create.useMutation()
+
+  const onSubmit = async (data: ListingFormValues) => {
+    if (!currentUserQuery.data?.id) {
+      return toast.error('You must be signed in to create a Compatibility Report.')
+    }
+
+    try {
+      const result = await submitWithHumanVerification((humanVerificationToken) =>
+        createListingMutation.mutateAsync({
+          ...data,
+          humanVerificationToken,
+        }),
+      )
+      lastSettings.remember(result.authorId, result.emulatorId, data.customFieldValues)
       analytics.listing.created({
-        listingId: data?.id,
-        gameId: data?.gameId,
+        listingId: result.id,
+        gameId: result.gameId,
         systemId: selectedGame?.system.id,
-        emulatorId: data?.emulatorId,
-        deviceId: data?.deviceId,
-        performanceId: data?.performanceId,
+        emulatorId: result.emulatorId,
+        deviceId: result.deviceId,
+        performanceId: result.performanceId,
       })
 
       if (currentUserQuery.data?.id) {
@@ -400,27 +423,12 @@ function AddListingPage() {
 
       // Invalidate queries to refresh data
       await utils.listings.get.invalidate()
-      if (data?.gameId) {
-        await utils.games.byId.invalidate({ id: data.gameId })
+      if (result.gameId) {
+        await utils.games.byId.invalidate({ id: result.gameId })
       }
 
       toast.success('Handheld Report successfully submitted for review!')
       router.push('/listings')
-    },
-  })
-
-  const onSubmit = async (data: ListingFormValues) => {
-    if (!currentUserQuery.data?.id) {
-      return toast.error('You must be signed in to create a Compatibility Report.')
-    }
-
-    try {
-      await submitWithHumanVerification((humanVerificationToken) =>
-        createListingMutation.mutateAsync({
-          ...data,
-          humanVerificationToken,
-        }),
-      )
     } catch (error) {
       toast.error(`Error creating Handheld Report: ${getErrorMessage(error)}`)
     }
@@ -494,6 +502,7 @@ function AddListingPage() {
                 selectedEmulator={selectedEmulator}
                 onEmulatorSelect={(emulator) => {
                   setSelectedEmulator(emulator)
+                  setImportFeedback(EMPTY_IMPORT_FEEDBACK)
                   if (!emulator) {
                     form.setValue('emulatorId', '')
                     form.setValue('customFieldValues', [])
@@ -604,6 +613,28 @@ function AddListingPage() {
               !customFieldDefinitionsQuery.isPending &&
               parsedCustomFields.length > 0 && (
                 <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
+                  {lastSettings.available && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mb-4"
+                      disabled={form.formState.isSubmitting}
+                      onClick={() => {
+                        const values = lastSettings.apply(
+                          form.getValues('customFieldValues'),
+                          form.getFieldState('customFieldValues').isDirty,
+                        )
+                        if (values)
+                          form.setValue('customFieldValues', values, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          })
+                      }}
+                    >
+                      Use last settings
+                    </Button>
+                  )}
                   <CustomFieldsFormSection
                     parsedCustomFields={parsedCustomFields}
                     control={form.control}

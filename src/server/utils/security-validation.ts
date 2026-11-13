@@ -15,16 +15,3 @@ export function validatePagination(
 
   return { page: validPage, limit: validLimit }
 }
-
-/**
- * Sanitizes user input to prevent XSS and injection
- * Removes potentially dangerous characters
- * TODO: Replace denylist sanitization with field-specific escaping or a sanitizer library; see #442.
- */
-export function sanitizeInput(input: string): string {
-  return input
-    .replace(/[<>]/g, '') // Remove HTML brackets
-    .replace(/javascript:/gi, '') // Remove javascript: protocol
-    .replace(/on\w+=/gi, '') // Remove event handlers
-    .trim()
-}
