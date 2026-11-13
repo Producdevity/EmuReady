@@ -25,6 +25,7 @@ import { LOOKUP_PAGINATION } from '@/data/constants'
 import { PC_OS_OPTIONS } from '@/data/pc-os'
 import { getCpuLabel } from '@/features/hardware/cpu/shared/cpu-format'
 import { getGpuLabel } from '@/features/hardware/gpu/shared/gpu-format'
+import { HardwareRequestLink } from '@/features/hardware/requests/client/HardwareRequestLink'
 import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
@@ -422,6 +423,7 @@ function AddPcListingPage() {
                       />
                     )}
                   />
+                  <HardwareRequestLink hardwareType="CPU" />
                   {form.formState.errors.cpuId && (
                     <p className="mt-1 text-sm text-red-600">
                       {form.formState.errors.cpuId.message}
@@ -450,6 +452,7 @@ function AddPcListingPage() {
                       />
                     )}
                   />
+                  <HardwareRequestLink hardwareType="GPU" />
                   {form.formState.errors.gpuId && (
                     <p className="mt-1 text-sm text-red-600">
                       {form.formState.errors.gpuId.message}
