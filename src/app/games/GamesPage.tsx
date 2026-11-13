@@ -3,10 +3,10 @@
 import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import { useState, useEffect, useCallback, useRef, Suspense, type ChangeEvent } from 'react'
+import { useCallback, Suspense, type ChangeEvent } from 'react'
 import { isDefined } from 'remeda'
 import { Pagination, LoadingSpinner, Button } from '@/components/ui'
-import useDebouncedValue from '@/hooks/useDebouncedValue'
+import { useUrlSearch } from '@/hooks/useUrlState'
 import { api } from '@/lib/api'
 import { filterNullAndEmpty } from '@/utils/filter'
 import { hasRolePermission } from '@/utils/permissions'
@@ -57,19 +57,13 @@ function GamesContent() {
   const hideGamesWithNoListings = getInitialHideGames()
   const listingFilter = getInitialListingFilter()
 
-  // Get search from URL directly
-  const search = searchParams.get('search') || ''
-
-  // Only use local state for the input while typing
-  const [inputValue, setInputValue] = useState(search)
-  const debouncedSearch = useDebouncedValue(inputValue, 500)
+  const [inputValue, setInputValue, search] = useUrlSearch(500)
   const limit = 12
 
   // Update URL params whenever the state changes
   const updateUrlParams = useCallback(
     (
       updates: {
-        search?: string
         systemId?: string
         page?: number
         hideNoListings?: boolean
@@ -89,7 +83,6 @@ function GamesContent() {
       }
 
       // Apply updates
-      if (updates.search !== undefined) setParam('search', updates.search.trim(), '')
       if (updates.systemId !== undefined) setParam('systemId', updates.systemId, '')
       if (updates.page !== undefined) setParam('page', updates.page.toString(), '1')
       if (updates.hideNoListings !== undefined) {
@@ -114,7 +107,7 @@ function GamesContent() {
 
   const gamesQuery = api.games.get.useQuery(
     filterNullAndEmpty({
-      search: debouncedSearch.trim() || undefined,
+      search: search.trim() || undefined,
       systemId: systemId || undefined,
       hideGamesWithNoListings,
       listingFilter,
@@ -126,40 +119,8 @@ function GamesContent() {
   const games = gamesQuery.data?.games ?? []
   const pagination = gamesQuery.data?.pagination
 
-  // Update URL when debounced search changes
-  useEffect(() => {
-    if (debouncedSearch !== search) {
-      updateUrlParams({ search: debouncedSearch, page: 1 })
-    }
-  }, [debouncedSearch, search, updateUrlParams])
-
-  // Update input when URL changes (browser back/forward)
-  const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
-  const isTypingRef = useRef(false)
-  const prevSearchRef = useRef(search)
-
-  useEffect(() => {
-    // Only sync from URL if it's an external change (browser navigation)
-    if (search !== prevSearchRef.current && !isTypingRef.current) {
-      setInputValue(search)
-    }
-    prevSearchRef.current = search
-  }, [search])
-
   const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
-    const newInputValue = ev.target.value
-    setInputValue(newInputValue)
-    isTypingRef.current = true
-
-    // Clear existing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
-    }
-
-    // Set new timeout to clear typing flag
-    typingTimeoutRef.current = setTimeout(() => {
-      isTypingRef.current = false
-    }, 600)
+    setInputValue(ev.target.value)
   }
 
   const handleSystemChange = (value: string | null) => {
