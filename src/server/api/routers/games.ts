@@ -40,6 +40,7 @@ import {
   revalidateByTag,
 } from '@/server/cache/invalidation'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
+import { assertCanEditOwnPendingGame } from '@/server/policies/game-edit.policy'
 import { assertGameImageUrlsAllowed } from '@/server/policies/game-image-url.policy'
 import { GamesRepository } from '@/server/repositories/games.repository'
 import { gameStatsCache } from '@/server/utils/cache'
@@ -443,21 +444,13 @@ export const gamesRouter = createTRPCRouter({
 
       if (!existingGame) return ResourceError.game.notFound()
 
-      // Verify ownership and pending status
-      // TODO: maybe move this into a middleware of some sort
-      if (existingGame!.submittedBy !== ctx.session.user.id) {
-        return ResourceError.game.canOnlyEditOwn()
-      }
-
-      if (existingGame!.status !== ApprovalStatus.PENDING) {
-        return ResourceError.game.canOnlyEditPending()
-      }
+      assertCanEditOwnPendingGame(existingGame, ctx.session.user.id)
 
       assertGameImageUrlsAllowed(data, ctx.session.user)
 
-      await validateGameConflicts(ctx.prisma, id, data, existingGame!)
+      await validateGameConflicts(ctx.prisma, id, data, existingGame)
 
-      const result = await performGameUpdate(ctx.prisma, id, data, existingGame!)
+      const result = await performGameUpdate(ctx.prisma, id, data, existingGame)
 
       // Queue SEO cache invalidation (non-blocking)
       Promise.all([
