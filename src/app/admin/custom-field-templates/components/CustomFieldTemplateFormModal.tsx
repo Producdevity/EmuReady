@@ -229,8 +229,6 @@ function CustomFieldTemplateFormModal(props: Props) {
   )
 }
 
-const TEMPLATE_NOT_FOUND = { message: 'Template not found' }
-
 function TemplateSession(props: Omit<Props, 'isOpen'> & Mutations) {
   const query = api.customFieldTemplates.byId.useQuery(
     { id: props.templateIdToEdit ?? '' },
@@ -246,10 +244,10 @@ function TemplateSession(props: Omit<Props, 'isOpen'> & Mutations) {
   )
     setTemplate(query.data)
   if (props.templateIdToEdit && !template) {
-    if (query.isError || (query.isSuccess && !query.isFetching && query.data === null)) {
+    if (query.isError) {
       return (
         <ErrorFallback
-          error={query.error ?? TEMPLATE_NOT_FOUND}
+          error={query.error}
           resetErrorBoundary={() => {
             void query.refetch()
           }}

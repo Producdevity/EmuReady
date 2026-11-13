@@ -6,7 +6,7 @@ import { CustomFieldType } from '@orm'
 import CustomFieldTemplateFormModal from './CustomFieldTemplateFormModal'
 
 type Template = RouterOutput['customFieldTemplates']['byId']
-let template: Template | null | undefined
+let template: Template | undefined
 let error: Error | null
 let fetching = false
 const refetch = vi.fn()
@@ -41,7 +41,6 @@ vi.mock('@/lib/api', () => ({
           data: template,
           error,
           isError: Boolean(error),
-          isSuccess: template !== undefined && !error,
           isFetching: fetching,
           refetch,
         }),
@@ -207,9 +206,9 @@ describe('template form sessions', () => {
   })
 
   it('shows a not-found result when the requested template was deleted', () => {
-    template = null
+    error = new Error('Custom field template not found')
     render(<CustomFieldTemplateFormModal isOpen templateIdToEdit="template-1" onClose={onClose} />)
-    expect(screen.getByText('Template not found')).toBeInTheDocument()
+    expect(screen.getByText('Custom field template not found')).toBeInTheDocument()
     expect(screen.queryByText('Loading template...')).not.toBeInTheDocument()
   })
 
