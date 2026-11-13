@@ -79,6 +79,25 @@ function record(id: string, name: string): Template {
     ],
   }
 }
+
+function rangeRecord(defaultValue: number | string): Template {
+  const result = record('template-1', 'Graphics')
+  const field = result.fields[0]
+  if (!field) throw new Error('Missing fixture field')
+  result.fields = [
+    {
+      ...field,
+      type: CustomFieldType.RANGE,
+      options: null,
+      defaultValue,
+      rangeMin: -100,
+      rangeMax: 100,
+      rangeDecimals: 2,
+    },
+  ]
+  return result
+}
+
 const onClose = vi.fn()
 beforeEach(() => {
   template = undefined
@@ -90,28 +109,40 @@ beforeEach(() => {
 
 describe('template form sessions', () => {
   it.each([
-    { bound: 'minimum', value: '2', initialDefault: 1.5, expected: null },
-    { bound: 'maximum', value: '1', initialDefault: 1.5, expected: null },
-    { bound: 'minimum', value: '0', initialDefault: 1.5, expected: 1.5 },
-    { bound: 'maximum', value: '3', initialDefault: 1.5, expected: 1.5 },
-    { bound: 'maximum', value: '1', initialDefault: '1.5', expected: null },
-  ])('reconciles default $initialDefault when editing the $bound to $value', async (testCase) => {
-    template = record('template-1', 'Graphics')
-    const field = template.fields[0]
-    if (!field) throw new Error('Missing fixture field')
-    template.fields = [
-      {
-        ...field,
-        type: CustomFieldType.RANGE,
-        options: null,
-        defaultValue: testCase.initialDefault,
-        rangeMin: 0.25,
-        rangeMax: 4,
-        rangeDecimals: 2,
-      },
-    ]
+    { bound: 'minimum', intermediate: '-1', final: '-1000', defaultValue: -50 },
+    { bound: 'maximum', intermediate: '1', final: '1000', defaultValue: 50 },
+  ])('preserves a range default during intermediate $bound edits', async (testCase) => {
+    template = rangeRecord(testCase.defaultValue)
     render(<CustomFieldTemplateFormModal isOpen templateIdToEdit="template-1" onClose={onClose} />)
-    fireEvent.change(screen.getByPlaceholderText(testCase.bound === 'minimum' ? '0' : '100'), {
+    const bound = screen.getByPlaceholderText(testCase.bound === 'minimum' ? '0' : '100')
+    const defaultInput = screen.getByRole('spinbutton', { name: 'Accuracy default value' })
+    fireEvent.change(bound, { target: { value: testCase.intermediate } })
+    expect(defaultInput).toHaveValue(testCase.defaultValue)
+    fireEvent.change(bound, { target: { value: testCase.final } })
+    fireEvent.click(screen.getByRole('button', { name: 'Update Template' }))
+    await waitFor(() =>
+      expect(saving.submit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fields: [expect.objectContaining({ defaultValue: testCase.defaultValue })],
+        }),
+      ),
+    )
+    await act(async () => saving.completion.resolve())
+  })
+
+  it.each([
+    { value: '', expected: null },
+    { value: '5', expected: 5 },
+  ])('allows repairing an excluded range default with $value', async (testCase) => {
+    template = rangeRecord(50)
+    render(<CustomFieldTemplateFormModal isOpen templateIdToEdit="template-1" onClose={onClose} />)
+    fireEvent.change(screen.getByPlaceholderText('100'), { target: { value: '10' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Update Template' }))
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Default value must be a number within the range',
+    )
+    expect(saving.submit).not.toHaveBeenCalled()
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Accuracy default value' }), {
       target: { value: testCase.value },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Update Template' }))
@@ -120,6 +151,19 @@ describe('template form sessions', () => {
         expect.objectContaining({
           fields: [expect.objectContaining({ defaultValue: testCase.expected })],
         }),
+      ),
+    )
+    await act(async () => saving.completion.resolve())
+  })
+
+  it('loads a historical range string as an editable numeric default', async () => {
+    template = rangeRecord('1.5')
+    render(<CustomFieldTemplateFormModal isOpen templateIdToEdit="template-1" onClose={onClose} />)
+    expect(screen.getByRole('spinbutton', { name: 'Accuracy default value' })).toHaveValue(1.5)
+    fireEvent.click(screen.getByRole('button', { name: 'Update Template' }))
+    await waitFor(() =>
+      expect(saving.submit).toHaveBeenCalledWith(
+        expect.objectContaining({ fields: [expect.objectContaining({ defaultValue: 1.5 })] }),
       ),
     )
     await act(async () => saving.completion.resolve())

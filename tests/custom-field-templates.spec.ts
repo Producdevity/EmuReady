@@ -145,6 +145,22 @@ test.describe('Custom field template attributes', () => {
           select: { defaultValue: true },
         }),
       ).resolves.toEqual({ defaultValue: '0' })
+
+      await page.reload()
+      await page.getByPlaceholder('Search templates...').fill(copyName)
+      const edit = page.getByRole('button', { name: 'Edit', exact: true })
+      await expect(edit).toHaveCount(1)
+      await edit.click()
+      const defaultInput = page.getByRole('spinbutton', { name: 'Resolution default value' })
+      await expect(defaultInput).toHaveValue('0')
+      await defaultInput.fill('0.5')
+      await page.getByRole('button', { name: 'Update Template', exact: true }).click()
+      await expect
+        .poll(async () => {
+          const edited = await client.customFieldTemplates.byId.query({ id: copied.id })
+          return edited.fields.find((field) => field.name === 'resolution')?.defaultValue
+        })
+        .toBe(0.5)
     } finally {
       try {
         await prisma.$transaction([

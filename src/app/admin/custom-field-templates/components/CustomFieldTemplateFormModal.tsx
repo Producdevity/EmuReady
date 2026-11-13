@@ -368,6 +368,17 @@ function TemplateForm(props: FormProps) {
           newErrors[`field-${index}-rangeMax`] = 'Maximum value must be greater than minimum value'
         }
 
+        if (
+          field.defaultValue !== null &&
+          (typeof field.defaultValue !== 'number' ||
+            !Number.isFinite(field.defaultValue) ||
+            field.defaultValue < min ||
+            field.defaultValue > max)
+        ) {
+          newErrors[`field-${index}-defaultValue`] =
+            'Default value must be a number within the range'
+        }
+
         if (field.rangeUnit && field.rangeUnit.length > 10) {
           newErrors[`field-${index}-rangeUnit`] = 'Unit must be 10 characters or less'
         }
@@ -508,14 +519,6 @@ function TemplateForm(props: FormProps) {
         if (
           updated.type === CustomFieldType.SELECT &&
           !updated.options.some((option) => option.value === updated.defaultValue)
-        )
-          updated.defaultValue = null
-        if (
-          updated.type === CustomFieldType.RANGE &&
-          (updates.rangeMin !== undefined || updates.rangeMax !== undefined) &&
-          typeof updated.defaultValue === 'number' &&
-          ((updated.rangeMin !== null && updated.defaultValue < updated.rangeMin) ||
-            (updated.rangeMax !== null && updated.defaultValue > updated.rangeMax))
         )
           updated.defaultValue = null
         return updated
@@ -897,6 +900,46 @@ function TemplateForm(props: FormProps) {
                   <h3 className="text-md font-medium text-gray-700 dark:text-gray-300">
                     Range Configuration
                   </h3>
+                  <div>
+                    <label
+                      htmlFor={`field-${fieldIndex}-range-default`}
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                    >
+                      Default Value (Optional)
+                    </label>
+                    <Input
+                      id={`field-${fieldIndex}-range-default`}
+                      type="number"
+                      step="any"
+                      aria-label={`${field.label} default value`}
+                      aria-invalid={!!errors[`field-${fieldIndex}-defaultValue`]}
+                      aria-describedby={
+                        errors[`field-${fieldIndex}-defaultValue`]
+                          ? `field-${fieldIndex}-range-default-error`
+                          : undefined
+                      }
+                      value={field.defaultValue === null ? '' : String(field.defaultValue)}
+                      onChange={(ev) =>
+                        updateField(fieldIndex, {
+                          defaultValue: ev.target.value === '' ? null : Number(ev.target.value),
+                        })
+                      }
+                      className={
+                        errors[`field-${fieldIndex}-defaultValue`]
+                          ? 'border-red-300 dark:border-red-600'
+                          : ''
+                      }
+                    />
+                    {errors[`field-${fieldIndex}-defaultValue`] && (
+                      <p
+                        id={`field-${fieldIndex}-range-default-error`}
+                        className="text-red-500 text-xs mt-1"
+                        role="alert"
+                      >
+                        {errors[`field-${fieldIndex}-defaultValue`]}
+                      </p>
+                    )}
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
