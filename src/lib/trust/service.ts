@@ -1,17 +1,10 @@
-import { z } from 'zod'
-import analytics from '@/lib/analytics'
-import { ResourceError } from '@/lib/errors'
+import { AppError, ResourceError } from '@/lib/errors'
 import { prisma } from '@/server/db'
-import { validateData } from '@/server/utils/validation'
+import { TrustScoreRepository } from '@/server/repositories/trust-score.repository'
+import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { TrustAction } from '@orm'
-import { type Prisma } from '@orm/client'
-import { TRUST_ACTIONS, TRUST_CONFIG, getTrustLevel, hasTrustLevel } from './config'
-
-const UNKNOWN_TRUST_LEVEL_NAME = 'Unranked'
-
-function resolveTrustLevelName(level: ReturnType<typeof getTrustLevel> | null): string {
-  return level?.name ?? UNKNOWN_TRUST_LEVEL_NAME
-}
+import { type Prisma, type PrismaClient } from '@orm/client'
+import { TRUST_ACTIONS, TRUST_CONFIG, hasTrustLevel } from './config'
 
 interface TrustActionContext {
   listingId?: string
@@ -21,7 +14,7 @@ interface TrustActionContext {
   adminUserId?: string
   reason?: string
   voterId?: string
-  metadata?: Record<string, unknown>
+  metadata?: Prisma.InputJsonObject
 }
 
 interface ApplyTrustActionParams {
@@ -35,61 +28,10 @@ interface AutoApprovalPrismaClient {
 }
 
 export async function applyTrustAction(params: ApplyTrustActionParams): Promise<void> {
-  const { userId, action, context = {} } = params
-
-  if (!TRUST_ACTIONS[action]) {
-    throw new Error(`Invalid trust action: ${action}`)
-  }
-
-  const weight = TRUST_ACTIONS[action].weight
-
-  await prisma.$transaction(async (tx) => {
-    const currentUser = await tx.user.findUnique({
-      where: { id: userId },
-      select: { trustScore: true },
-    })
-
-    const currentTrustLevel = currentUser ? getTrustLevel(currentUser.trustScore) : null
-    const newTrustScore = (currentUser?.trustScore || 0) + weight
-    const newTrustLevel = getTrustLevel(newTrustScore)
-
-    await tx.user.update({
-      where: { id: userId },
-      data: {
-        trustScore: { increment: weight },
-        lastActiveAt: new Date(),
-      },
-    })
-
-    await tx.trustActionLog.create({
-      data: {
-        userId,
-        action,
-        weight,
-        metadata: validateData(z.record(z.unknown()), context || {}) as Prisma.InputJsonValue,
-      },
-    })
-
-    analytics.trust.trustScoreChanged({
-      userId,
-      oldScore: currentUser?.trustScore || 0,
-      newScore: newTrustScore,
-      action,
-      weight,
-    })
-
-    const previousLevel = currentTrustLevel?.name ?? null
-    const nextLevel = newTrustLevel.name ?? null
-
-    if (previousLevel !== nextLevel) {
-      analytics.trust.trustLevelChanged({
-        userId,
-        oldLevel: resolveTrustLevelName(currentTrustLevel),
-        newLevel: resolveTrustLevelName(newTrustLevel),
-        score: newTrustScore,
-        direction: weight > 0 ? 'up' : 'down',
-      })
-    }
+  await new TrustService(prisma).logAction({
+    userId: params.userId,
+    action: params.action,
+    metadata: params.context ? { ...params.context } : undefined,
   })
 }
 
@@ -167,162 +109,84 @@ export async function applyMonthlyActiveBonus(): Promise<{
   return { processedUsers, errors }
 }
 
-export interface TrustPrismaTransaction {
-  user: Pick<Prisma.TransactionClient['user'], 'findUnique' | 'findMany' | 'update'>
-  trustActionLog: Pick<Prisma.TransactionClient['trustActionLog'], 'create' | 'createMany'>
-}
-
-export type TrustPrismaClient = TrustPrismaTransaction & {
-  $transaction?<T>(fn: (tx: TrustPrismaTransaction) => Promise<T>): Promise<T>
-}
-
-/**
- * TrustService class for managing trust actions.
- * Accepts either a PrismaClient (creates its own transactions) or a
- * TransactionClient (participates in an outer transaction).
- */
 export class TrustService {
-  constructor(private readonly prisma: TrustPrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) {}
+
+  static inTransaction(transaction: Prisma.TransactionClient, changes: TrustScoreChange[]) {
+    return new TrustActionService(new TrustScoreRepository(transaction), changes)
+  }
+
+  private async run<T>(operation: (service: TrustActionService) => Promise<T>): Promise<T> {
+    const committed = await this.prisma.$transaction(async (transaction) => {
+      const changes: TrustScoreChange[] = []
+      const result = await operation(TrustService.inTransaction(transaction, changes))
+      return { result, changes }
+    })
+    for (const change of committed.changes) trackTrustScoreChange(change)
+    return committed.result
+  }
+
+  logAction(params: Parameters<TrustActionService['logAction']>[0]) {
+    return this.run((service) => service.logAction(params))
+  }
+
+  reverseLogAction(params: Parameters<TrustActionService['reverseLogAction']>[0]) {
+    return this.run((service) => service.reverseLogAction(params))
+  }
+
+  applyManualAdjustment(params: Parameters<TrustActionService['applyManualAdjustment']>[0]) {
+    return this.run((service) => service.applyManualAdjustment(params))
+  }
+
+  applyBulkManualAdjustments(
+    params: Parameters<TrustActionService['applyBulkManualAdjustments']>[0],
+  ) {
+    return this.run((service) => service.applyBulkManualAdjustments(params))
+  }
+}
+
+class TrustActionService {
+  constructor(
+    private readonly repository: TrustScoreRepository,
+    private readonly changes: TrustScoreChange[],
+  ) {}
 
   async logAction(params: {
     userId: string
     action: TrustAction
     targetUserId?: string
-    metadata?: Record<string, unknown>
+    metadata?: Prisma.InputJsonObject
   }): Promise<void> {
-    const { userId, action, metadata } = params
-
-    if (!TRUST_ACTIONS[action]) {
-      throw new Error(`Invalid trust action: ${action}`)
-    }
-
-    const weight = TRUST_ACTIONS[action].weight
-
-    const executeInTransaction = async (prismaCtx: TrustPrismaTransaction) => {
-      const currentUser = await prismaCtx.user.findUnique({
-        where: { id: userId },
-        select: { trustScore: true },
-      })
-
-      const currentTrustLevel = currentUser ? getTrustLevel(currentUser.trustScore) : null
-      const newTrustScore = (currentUser?.trustScore || 0) + weight
-      const newTrustLevel = getTrustLevel(newTrustScore)
-
-      await prismaCtx.user.update({
-        where: { id: userId },
-        data: {
-          trustScore: { increment: weight },
-          lastActiveAt: new Date(),
-        },
-      })
-
-      await prismaCtx.trustActionLog.create({
-        data: {
-          userId,
-          action,
-          weight,
-          metadata: metadata as Prisma.InputJsonValue,
-        },
-      })
-
-      analytics.trust.trustScoreChanged({
-        userId,
-        oldScore: currentUser?.trustScore || 0,
-        newScore: newTrustScore,
-        action,
-        weight,
-      })
-
-      const previousLevel = currentTrustLevel?.name ?? null
-      const nextLevel = newTrustLevel.name ?? null
-
-      if (previousLevel !== nextLevel) {
-        analytics.trust.trustLevelChanged({
-          userId,
-          oldLevel: resolveTrustLevelName(currentTrustLevel),
-          newLevel: resolveTrustLevelName(newTrustLevel),
-          score: newTrustScore,
-          direction: weight > 0 ? 'up' : 'down',
-        })
-      }
-    }
-
-    if (this.prisma.$transaction) {
-      await this.prisma.$transaction(executeInTransaction)
-    } else {
-      await executeInTransaction(this.prisma)
-    }
+    if (!TRUST_ACTIONS[params.action])
+      return AppError.badRequest(`Invalid trust action: ${params.action}`)
+    this.changes.push(
+      await this.repository.appendAction({
+        userId: params.userId,
+        action: params.action,
+        weight: TRUST_ACTIONS[params.action].weight,
+        metadata: params.metadata,
+      }),
+    )
   }
 
   async reverseLogAction(params: {
     userId: string
     originalAction: TrustAction
     targetUserId?: string
-    metadata?: Record<string, unknown>
+    metadata?: Prisma.InputJsonObject
   }): Promise<void> {
-    const { userId, originalAction, metadata = {} } = params
-
-    if (!TRUST_ACTIONS[originalAction]) {
-      throw new Error(`Invalid trust action: ${originalAction}`)
-    }
-
-    const reversalWeight = -TRUST_ACTIONS[originalAction].weight
-    if (reversalWeight === 0) return
-
-    const executeInTransaction = async (prismaCtx: TrustPrismaTransaction) => {
-      const currentUser = await prismaCtx.user.findUnique({
-        where: { id: userId },
-        select: { trustScore: true },
-      })
-
-      const currentTrustLevel = currentUser ? getTrustLevel(currentUser.trustScore) : null
-      const newTrustScore = (currentUser?.trustScore ?? 0) + reversalWeight
-      const newTrustLevel = getTrustLevel(newTrustScore)
-
-      await prismaCtx.user.update({
-        where: { id: userId },
-        data: {
-          trustScore: { increment: reversalWeight },
-          lastActiveAt: new Date(),
-        },
-      })
-
-      await prismaCtx.trustActionLog.create({
-        data: {
-          userId,
-          action: TrustAction.VOTE_CHANGE_REVERSAL,
-          weight: reversalWeight,
-          metadata: { ...metadata, originalAction, reversed: true } as Prisma.InputJsonValue,
-        },
-      })
-
-      analytics.trust.trustScoreChanged({
-        userId,
-        oldScore: currentUser?.trustScore ?? 0,
-        newScore: newTrustScore,
+    if (!TRUST_ACTIONS[params.originalAction])
+      return AppError.badRequest(`Invalid trust action: ${params.originalAction}`)
+    const weight = -TRUST_ACTIONS[params.originalAction].weight
+    if (weight === 0) return
+    this.changes.push(
+      await this.repository.appendAction({
+        userId: params.userId,
         action: TrustAction.VOTE_CHANGE_REVERSAL,
-        weight: reversalWeight,
-      })
-
-      const previousLevel = currentTrustLevel?.name ?? null
-      const nextLevel = newTrustLevel.name ?? null
-
-      if (previousLevel !== nextLevel) {
-        analytics.trust.trustLevelChanged({
-          userId,
-          oldLevel: resolveTrustLevelName(currentTrustLevel),
-          newLevel: resolveTrustLevelName(newTrustLevel),
-          score: newTrustScore,
-          direction: reversalWeight > 0 ? 'up' : 'down',
-        })
-      }
-    }
-
-    if (this.prisma.$transaction) {
-      await this.prisma.$transaction(executeInTransaction)
-    } else {
-      await executeInTransaction(this.prisma)
-    }
+        weight,
+        metadata: { ...params.metadata, originalAction: params.originalAction, reversed: true },
+      }),
+    )
   }
 
   async applyManualAdjustment(params: {
@@ -331,82 +195,26 @@ export class TrustService {
     reason: string
     adminUserId: string
   }): Promise<void> {
-    const { userId, adjustment, reason, adminUserId } = params
-
-    if (adjustment === 0) {
-      throw ResourceError.trust.adjustmentCannotBeZero()
-    }
-
-    const executeAdjustment = async (prismaCtx: TrustPrismaTransaction) => {
-      const currentUser = await prismaCtx.user.findUnique({
-        where: { id: userId },
-        select: { trustScore: true, name: true, email: true },
-      })
-
-      if (!currentUser) {
-        throw ResourceError.user.notFound()
-      }
-
-      const currentTrustLevel = getTrustLevel(currentUser.trustScore)
-      const newTrustScore = currentUser.trustScore + adjustment
-      const newTrustLevel = getTrustLevel(newTrustScore)
-
-      const action =
-        adjustment > 0
-          ? TrustAction.ADMIN_ADJUSTMENT_POSITIVE
-          : TrustAction.ADMIN_ADJUSTMENT_NEGATIVE
-
-      await prismaCtx.user.update({
-        where: { id: userId },
-        data: {
-          trustScore: { increment: adjustment },
-          lastActiveAt: new Date(),
+    if (params.adjustment === 0) return ResourceError.trust.adjustmentCannotBeZero()
+    if (!(await this.repository.findAdjustmentTarget(params.userId)))
+      return ResourceError.user.notFound()
+    const admin = await this.repository.findAdministrator(params.adminUserId)
+    this.changes.push(
+      await this.repository.appendAction({
+        userId: params.userId,
+        action:
+          params.adjustment > 0
+            ? TrustAction.ADMIN_ADJUSTMENT_POSITIVE
+            : TrustAction.ADMIN_ADJUSTMENT_NEGATIVE,
+        weight: params.adjustment,
+        metadata: {
+          reason: params.reason,
+          adminUserId: params.adminUserId,
+          adminName: admin?.name || admin?.email || 'Unknown Admin',
+          adjustment: params.adjustment,
         },
-      })
-
-      const admin = await prismaCtx.user.findUnique({
-        where: { id: adminUserId },
-        select: { name: true, email: true },
-      })
-
-      await prismaCtx.trustActionLog.create({
-        data: {
-          userId,
-          action,
-          weight: adjustment,
-          metadata: {
-            reason,
-            adminUserId,
-            adminName: admin?.name || admin?.email || 'Unknown Admin',
-            adjustment,
-          },
-        },
-      })
-
-      analytics.trust.trustScoreChanged({
-        userId,
-        oldScore: currentUser.trustScore,
-        newScore: newTrustScore,
-        action,
-        weight: adjustment,
-      })
-
-      if ((currentTrustLevel.name ?? null) !== (newTrustLevel.name ?? null)) {
-        analytics.trust.trustLevelChanged({
-          userId,
-          oldLevel: resolveTrustLevelName(currentTrustLevel),
-          newLevel: resolveTrustLevelName(newTrustLevel),
-          score: newTrustScore,
-          direction: adjustment > 0 ? 'up' : 'down',
-        })
-      }
-    }
-
-    if (this.prisma.$transaction) {
-      await this.prisma.$transaction(executeAdjustment)
-    } else {
-      await executeAdjustment(this.prisma)
-    }
+      }),
+    )
   }
 
   async applyBulkManualAdjustments(params: {
@@ -414,106 +222,30 @@ export class TrustService {
     reason: string
     adminUserId: string
   }): Promise<number> {
-    const { adjustments, reason, adminUserId } = params
-
-    const nonZeroEntries = [...adjustments.entries()].filter(([, adj]) => adj !== 0)
-    if (nonZeroEntries.length === 0) return 0
-
-    const userIds = nonZeroEntries.map(([id]) => id)
-
-    const executeBulk = async (prismaCtx: TrustPrismaTransaction) => {
-      const users = await prismaCtx.user.findMany({
-        where: { id: { in: userIds } },
-        select: { id: true, trustScore: true },
-      })
-
-      const userMap = new Map(users.map((u) => [u.id, u.trustScore]))
-      const foundEntries = nonZeroEntries.filter(([id]) => userMap.has(id))
-      if (foundEntries.length === 0) return 0
-
-      const admin = await prismaCtx.user.findUnique({
-        where: { id: adminUserId },
-        select: { name: true, email: true },
-      })
-      const adminName = admin?.name || admin?.email || 'Unknown Admin'
-
-      const logEntries: {
-        userId: string
-        action: TrustAction
-        weight: number
-        metadata: Prisma.InputJsonValue
-      }[] = []
-
-      const levelChanges: {
-        userId: string
-        oldLevel: string
-        newLevel: string
-        score: number
-        direction: 'up' | 'down'
-      }[] = []
-
-      for (const [userId, adjustment] of foundEntries) {
-        const currentScore = userMap.get(userId) ?? 0
-        const newTrustScore = currentScore + adjustment
-
-        const action =
+    const entries = [...params.adjustments].filter(([, adjustment]) => adjustment !== 0)
+    if (entries.length === 0) return 0
+    const users = await this.repository.findAdjustmentTargets(entries.map(([id]) => id))
+    const found = new Set(users.map((user) => user.id))
+    const selected = entries.filter(([id]) => found.has(id))
+    if (selected.length === 0) return 0
+    const admin = await this.repository.findAdministrator(params.adminUserId)
+    const changes = await this.repository.appendBulkActions(
+      selected.map(([userId, adjustment]) => ({
+        userId,
+        action:
           adjustment > 0
             ? TrustAction.ADMIN_ADJUSTMENT_POSITIVE
-            : TrustAction.ADMIN_ADJUSTMENT_NEGATIVE
-
-        await prismaCtx.user.update({
-          where: { id: userId },
-          data: {
-            trustScore: { increment: adjustment },
-            lastActiveAt: new Date(),
-          },
-        })
-
-        logEntries.push({
-          userId,
-          action,
-          weight: adjustment,
-          metadata: {
-            reason,
-            adminUserId,
-            adminName,
-            adjustment,
-          },
-        })
-
-        analytics.trust.trustScoreChanged({
-          userId,
-          oldScore: currentScore,
-          newScore: newTrustScore,
-          action,
-          weight: adjustment,
-        })
-
-        const currentTrustLevel = getTrustLevel(currentScore)
-        const newTrustLevel = getTrustLevel(newTrustScore)
-        if ((currentTrustLevel.name ?? null) !== (newTrustLevel.name ?? null)) {
-          levelChanges.push({
-            userId,
-            oldLevel: resolveTrustLevelName(currentTrustLevel),
-            newLevel: resolveTrustLevelName(newTrustLevel),
-            score: newTrustScore,
-            direction: adjustment > 0 ? 'up' : 'down',
-          })
-        }
-      }
-
-      await prismaCtx.trustActionLog.createMany({ data: logEntries })
-
-      for (const change of levelChanges) {
-        analytics.trust.trustLevelChanged(change)
-      }
-
-      return foundEntries.length
-    }
-
-    if (this.prisma.$transaction) {
-      return this.prisma.$transaction(executeBulk)
-    }
-    return executeBulk(this.prisma)
+            : TrustAction.ADMIN_ADJUSTMENT_NEGATIVE,
+        weight: adjustment,
+        metadata: {
+          reason: params.reason,
+          adminUserId: params.adminUserId,
+          adminName: admin?.name || admin?.email || 'Unknown Admin',
+          adjustment,
+        },
+      })),
+    )
+    this.changes.push(...changes)
+    return changes.length
   }
 }

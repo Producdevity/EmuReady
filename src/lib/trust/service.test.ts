@@ -1,6 +1,8 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
+import { prisma } from '@/server/db'
+import { type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { TrustAction } from '@orm'
-import type { TrustPrismaTransaction } from './service'
+import { type Prisma } from '@orm/client'
 
 vi.mock('@/lib/analytics', () => ({
   default: {
@@ -11,18 +13,25 @@ vi.mock('@/lib/analytics', () => ({
   },
 }))
 
+const database = vi.hoisted(() => ({
+  $transaction: vi.fn(),
+  user: { findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
+  trustActionLog: { create: vi.fn(), createMany: vi.fn() },
+}))
+vi.mock('@/server/db', () => ({ prisma: database }))
+
 function createMockPrismaCtx() {
-  return {
-    user: {
-      findMany: vi.fn().mockResolvedValue([]),
-      findUnique: vi.fn().mockResolvedValue(null),
-      update: vi.fn().mockResolvedValue({}),
-    },
-    trustActionLog: {
-      create: vi.fn().mockResolvedValue({}),
-      createMany: vi.fn().mockResolvedValue({ count: 0 }),
-    },
-  }
+  database.user.findMany.mockReset().mockResolvedValue([])
+  database.user.findUnique.mockReset().mockResolvedValue(null)
+  database.user.update.mockReset().mockResolvedValue({ trustScore: 50 })
+  database.trustActionLog.create.mockReset().mockResolvedValue({})
+  database.trustActionLog.createMany.mockReset().mockResolvedValue({ count: 0 })
+  database.$transaction
+    .mockReset()
+    .mockImplementation(async (operation: (tx: Prisma.TransactionClient) => Promise<unknown>) =>
+      operation(prisma),
+    )
+  return database
 }
 
 type MockPrismaCtx = ReturnType<typeof createMockPrismaCtx>
@@ -66,7 +75,7 @@ describe('TrustService.applyBulkManualAdjustments', () => {
 
   async function createService() {
     const { TrustService } = await import('./service')
-    return new TrustService(prismaCtx)
+    return new TrustService(prisma)
   }
 
   it('returns 0 and makes no DB calls for an empty map', async () => {
@@ -100,6 +109,7 @@ describe('TrustService.applyBulkManualAdjustments', () => {
   })
 
   it('skips non-existent users gracefully', async () => {
+    prismaCtx.user.update.mockResolvedValue({ trustScore: 40 })
     prismaCtx.user.findMany.mockResolvedValue([{ id: 'user-1', trustScore: 50 }])
     prismaCtx.user.findUnique.mockResolvedValue({ name: 'Admin', email: 'admin@test.com' })
 
@@ -119,6 +129,7 @@ describe('TrustService.applyBulkManualAdjustments', () => {
     expect(prismaCtx.user.update).toHaveBeenCalledWith({
       where: { id: 'user-1' },
       data: { trustScore: { increment: -10 }, lastActiveAt: expect.any(Date) },
+      select: { trustScore: true },
     })
   })
 
@@ -140,6 +151,7 @@ describe('TrustService.applyBulkManualAdjustments', () => {
   })
 
   it('applies a single adjustment correctly', async () => {
+    prismaCtx.user.update.mockResolvedValue({ trustScore: 40 })
     prismaCtx.user.findMany.mockResolvedValue([{ id: 'user-1', trustScore: 50 }])
     prismaCtx.user.findUnique.mockResolvedValue({ name: 'Admin', email: 'admin@test.com' })
 
@@ -156,6 +168,7 @@ describe('TrustService.applyBulkManualAdjustments', () => {
     expect(prismaCtx.user.update).toHaveBeenCalledWith({
       where: { id: 'user-1' },
       data: { trustScore: { increment: -10 }, lastActiveAt: expect.any(Date) },
+      select: { trustScore: true },
     })
 
     expect(prismaCtx.trustActionLog.createMany).toHaveBeenCalledWith({
@@ -209,6 +222,7 @@ describe('TrustService.applyBulkManualAdjustments', () => {
   })
 
   it('allows negative trust scores when adjustment exceeds current score (no clamping)', async () => {
+    prismaCtx.user.update.mockResolvedValue({ trustScore: -95 })
     prismaCtx.user.findMany.mockResolvedValue([{ id: 'user-1', trustScore: 5 }])
     prismaCtx.user.findUnique.mockResolvedValue({ name: 'Admin', email: 'admin@test.com' })
 
@@ -224,6 +238,7 @@ describe('TrustService.applyBulkManualAdjustments', () => {
     expect(prismaCtx.user.update).toHaveBeenCalledWith({
       where: { id: 'user-1' },
       data: { trustScore: { increment: -100 }, lastActiveAt: expect.any(Date) },
+      select: { trustScore: true },
     })
 
     const logData = prismaCtx.trustActionLog.createMany.mock.calls[0][0].data as {
@@ -235,6 +250,7 @@ describe('TrustService.applyBulkManualAdjustments', () => {
   })
 
   it('emits trustLevelChanged analytics when level changes', async () => {
+    prismaCtx.user.update.mockResolvedValue({ trustScore: 105 })
     const analytics = (await import('@/lib/analytics')).default
 
     prismaCtx.user.findMany.mockResolvedValue([{ id: 'user-1', trustScore: 95 }])
@@ -259,6 +275,7 @@ describe('TrustService.applyBulkManualAdjustments', () => {
   })
 
   it('does not emit trustLevelChanged when level stays the same', async () => {
+    prismaCtx.user.update.mockResolvedValue({ trustScore: 60 })
     const analytics = (await import('@/lib/analytics')).default
 
     prismaCtx.user.findMany.mockResolvedValue([{ id: 'user-1', trustScore: 50 }])
@@ -276,22 +293,11 @@ describe('TrustService.applyBulkManualAdjustments', () => {
     expect(analytics.trust.trustLevelChanged).not.toHaveBeenCalled()
   })
 
-  it('wraps in $transaction when prisma has it', async () => {
-    let transactionCallCount = 0
-    const mockTransaction = async <T>(fn: (ctx: TrustPrismaTransaction) => Promise<T>) => {
-      transactionCallCount++
-      return fn(prismaCtx)
-    }
-    const prismaWithTx = {
-      ...prismaCtx,
-      $transaction: mockTransaction,
-    }
-
+  it('owns the transaction for root-client operations', async () => {
     prismaCtx.user.findMany.mockResolvedValue([{ id: 'user-1', trustScore: 50 }])
     prismaCtx.user.findUnique.mockResolvedValue({ name: 'Admin', email: 'admin@test.com' })
 
-    const { TrustService } = await import('./service')
-    const service = new TrustService(prismaWithTx)
+    const service = await createService()
 
     await service.applyBulkManualAdjustments({
       adjustments: new Map([['user-1', 5]]),
@@ -299,14 +305,16 @@ describe('TrustService.applyBulkManualAdjustments', () => {
       adminUserId: 'admin-1',
     })
 
-    expect(transactionCallCount).toBe(1)
+    expect(prismaCtx.$transaction).toHaveBeenCalledOnce()
   })
 
-  it('calls execute directly when prisma is a transaction client (no $transaction)', async () => {
+  it('records changes without opening a transaction for an explicit transaction owner', async () => {
     prismaCtx.user.findMany.mockResolvedValue([{ id: 'user-1', trustScore: 50 }])
     prismaCtx.user.findUnique.mockResolvedValue({ name: 'Admin', email: 'admin@test.com' })
 
-    const service = await createService()
+    const { TrustService } = await import('./service')
+    const changes: TrustScoreChange[] = []
+    const service = TrustService.inTransaction(prisma, changes)
 
     const result = await service.applyBulkManualAdjustments({
       adjustments: new Map([['user-1', 5]]),
@@ -316,6 +324,10 @@ describe('TrustService.applyBulkManualAdjustments', () => {
 
     expect(result).toBe(1)
     expect(prismaCtx.user.update).toHaveBeenCalled()
+    expect(prismaCtx.$transaction).not.toHaveBeenCalled()
+    expect(changes).toHaveLength(1)
+    const analytics = (await import('@/lib/analytics')).default
+    expect(analytics.trust.trustScoreChanged).not.toHaveBeenCalled()
   })
 
   it('uses positive action type for positive adjustments', async () => {
@@ -383,7 +395,7 @@ describe('TrustService.applyManualAdjustment', () => {
 
   async function createService() {
     const { TrustService } = await import('./service')
-    return new TrustService(prismaCtx)
+    return new TrustService(prisma)
   }
 
   it('throws when adjustment is zero', async () => {
@@ -414,6 +426,7 @@ describe('TrustService.applyManualAdjustment', () => {
   })
 
   it('allows negative trust score when adjustment goes below zero (no clamping)', async () => {
+    prismaCtx.user.update.mockResolvedValue({ trustScore: -95 })
     prismaCtx.user.findUnique
       .mockResolvedValueOnce({ trustScore: 5, name: 'User', email: 'user@test.com' })
       .mockResolvedValueOnce({ name: 'Admin', email: 'admin@test.com' })
@@ -430,6 +443,7 @@ describe('TrustService.applyManualAdjustment', () => {
     expect(prismaCtx.user.update).toHaveBeenCalledWith({
       where: { id: 'user-1' },
       data: { trustScore: { increment: -100 }, lastActiveAt: expect.any(Date) },
+      select: { trustScore: true },
     })
   })
 
@@ -472,10 +486,11 @@ describe('TrustService.reverseLogAction', () => {
 
   async function createService() {
     const { TrustService } = await import('./service')
-    return new TrustService(prismaCtx)
+    return new TrustService(prisma)
   }
 
   it('negates positive action weight (LISTING_RECEIVED_UPVOTE: +2 → -2)', async () => {
+    prismaCtx.user.update.mockResolvedValue({ trustScore: 8 })
     prismaCtx.user.findUnique.mockResolvedValue({ trustScore: 10 })
     const service = await createService()
 
@@ -488,6 +503,7 @@ describe('TrustService.reverseLogAction', () => {
     expect(prismaCtx.user.update).toHaveBeenCalledWith({
       where: { id: 'author-1' },
       data: { trustScore: { increment: -2 }, lastActiveAt: expect.any(Date) },
+      select: { trustScore: true },
     })
     expect(prismaCtx.trustActionLog.create).toHaveBeenCalledWith({
       data: {
@@ -504,6 +520,7 @@ describe('TrustService.reverseLogAction', () => {
   })
 
   it('negates negative action weight (COMMENT_RECEIVED_DOWNVOTE: -1 → +1)', async () => {
+    prismaCtx.user.update.mockResolvedValue({ trustScore: 11 })
     prismaCtx.user.findUnique.mockResolvedValue({ trustScore: 5 })
     const service = await createService()
 
@@ -516,6 +533,7 @@ describe('TrustService.reverseLogAction', () => {
     expect(prismaCtx.user.update).toHaveBeenCalledWith({
       where: { id: 'author-1' },
       data: { trustScore: { increment: 1 }, lastActiveAt: expect.any(Date) },
+      select: { trustScore: true },
     })
     expect(prismaCtx.trustActionLog.create).toHaveBeenCalledWith({
       data: {
@@ -532,6 +550,7 @@ describe('TrustService.reverseLogAction', () => {
   })
 
   it('allows negative trust score on reversal (no clamping)', async () => {
+    prismaCtx.user.update.mockResolvedValue({ trustScore: -2 })
     prismaCtx.user.findUnique.mockResolvedValue({ trustScore: 1 })
     const service = await createService()
 
@@ -545,6 +564,7 @@ describe('TrustService.reverseLogAction', () => {
     expect(prismaCtx.user.update).toHaveBeenCalledWith({
       where: { id: 'author-1' },
       data: { trustScore: { increment: -2 }, lastActiveAt: expect.any(Date) },
+      select: { trustScore: true },
     })
   })
 
@@ -573,29 +593,9 @@ describe('TrustService.reverseLogAction', () => {
     ).rejects.toThrow('Invalid trust action')
   })
 
-  it('wraps in $transaction when prisma has it', async () => {
-    let transactionCallCount = 0
-    const mockTransaction = async <T>(fn: (ctx: TrustPrismaTransaction) => Promise<T>) => {
-      transactionCallCount++
-      return fn(prismaCtx)
-    }
-    const prismaWithTx = { ...prismaCtx, $transaction: mockTransaction }
+  it('owns the transaction for root-client operations', async () => {
     prismaCtx.user.findUnique.mockResolvedValue({ trustScore: 10 })
 
-    const { TrustService } = await import('./service')
-    const service = new TrustService(prismaWithTx)
-
-    await service.reverseLogAction({
-      userId: 'user-1',
-      originalAction: TrustAction.LISTING_RECEIVED_UPVOTE,
-      metadata: {},
-    })
-
-    expect(transactionCallCount).toBe(1)
-  })
-
-  it('calls execute directly when prisma is a transaction client (no $transaction)', async () => {
-    prismaCtx.user.findUnique.mockResolvedValue({ trustScore: 10 })
     const service = await createService()
 
     await service.reverseLogAction({
@@ -604,10 +604,30 @@ describe('TrustService.reverseLogAction', () => {
       metadata: {},
     })
 
+    expect(prismaCtx.$transaction).toHaveBeenCalledOnce()
+  })
+
+  it('records changes without opening a transaction for an explicit transaction owner', async () => {
+    prismaCtx.user.findUnique.mockResolvedValue({ trustScore: 10 })
+    const { TrustService } = await import('./service')
+    const changes: TrustScoreChange[] = []
+    const service = TrustService.inTransaction(prisma, changes)
+
+    await service.reverseLogAction({
+      userId: 'user-1',
+      originalAction: TrustAction.LISTING_RECEIVED_UPVOTE,
+      metadata: {},
+    })
+
     expect(prismaCtx.user.update).toHaveBeenCalled()
+    expect(prismaCtx.$transaction).not.toHaveBeenCalled()
+    expect(changes).toHaveLength(1)
+    const analytics = (await import('@/lib/analytics')).default
+    expect(analytics.trust.trustScoreChanged).not.toHaveBeenCalled()
   })
 
   it('emits trustLevelChanged when crossing a level boundary', async () => {
+    prismaCtx.user.update.mockResolvedValue({ trustScore: 99 })
     const analytics = (await import('@/lib/analytics')).default
 
     prismaCtx.user.findUnique.mockResolvedValue({ trustScore: 101 })

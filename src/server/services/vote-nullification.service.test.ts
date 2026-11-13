@@ -13,12 +13,14 @@ vi.mock('@/server/services/audit.service', () => ({
 const mockApplyManualAdjustment = vi.fn()
 const mockApplyBulkManualAdjustments = vi.fn()
 vi.mock('@/lib/trust/service', () => ({
-  TrustService: vi.fn().mockImplementation(function MockTrustService() {
-    return {
-      applyManualAdjustment: (...args: unknown[]) => mockApplyManualAdjustment(...args),
-      applyBulkManualAdjustments: (...args: unknown[]) => mockApplyBulkManualAdjustments(...args),
-    }
-  }),
+  TrustService: {
+    inTransaction: () => {
+      return {
+        applyManualAdjustment: (...args: unknown[]) => mockApplyManualAdjustment(...args),
+        applyBulkManualAdjustments: (...args: unknown[]) => mockApplyBulkManualAdjustments(...args),
+      }
+    },
+  },
 }))
 
 vi.mock('@/utils/wilson-score', () => ({
@@ -159,6 +161,7 @@ describe('vote-nullification.service', () => {
   describe('nullifyUserVotes', () => {
     it('returns zero counts when user has no active votes', async () => {
       const result = await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam voting',
@@ -188,6 +191,7 @@ describe('vote-nullification.service', () => {
       prisma.vote.findMany.mockResolvedValue(votes)
 
       const result = await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam voting',
@@ -206,6 +210,7 @@ describe('vote-nullification.service', () => {
       prisma.pcListingVote.findMany.mockResolvedValue(votes)
 
       const result = await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam voting',
@@ -226,6 +231,7 @@ describe('vote-nullification.service', () => {
       prisma.pcListingCommentVote.findMany.mockResolvedValue(pcCommentVotes)
 
       const result = await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam',
@@ -242,6 +248,7 @@ describe('vote-nullification.service', () => {
       prisma.vote.findMany.mockResolvedValue([makeHandheldVote()])
 
       const result = await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam',
@@ -261,6 +268,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam',
@@ -283,6 +291,7 @@ describe('vote-nullification.service', () => {
         makePcVote({ id: 'pv-1', pcListingId: 'pc-listing-1', value: true }),
       ])
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam',
@@ -310,6 +319,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam',
@@ -332,6 +342,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam',
@@ -351,6 +362,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam',
@@ -372,6 +384,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam',
@@ -392,6 +405,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam',
@@ -414,6 +428,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam',
@@ -437,6 +452,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam',
@@ -457,6 +473,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam',
@@ -477,6 +494,7 @@ describe('vote-nullification.service', () => {
 
       await expect(
         nullifyUserVotes(prisma as unknown as PrismaClient, {
+          trustChanges: [],
           userId: USER_ID,
           adminUserId: ADMIN_ID,
           reason: 'Spam',
@@ -492,6 +510,7 @@ describe('vote-nullification.service', () => {
       prisma.vote.findMany.mockResolvedValue(votes)
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Mass spam',
@@ -514,6 +533,7 @@ describe('vote-nullification.service', () => {
       ])
 
       const result = await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam',
@@ -530,6 +550,7 @@ describe('vote-nullification.service', () => {
       prisma.pcListingVote.findMany.mockResolvedValue([makePcVote()])
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam voting',
@@ -559,6 +580,7 @@ describe('vote-nullification.service', () => {
       ])
 
       const result = await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam',
@@ -577,6 +599,7 @@ describe('vote-nullification.service', () => {
   describe('restoreUserVotes', () => {
     it('returns zero counts when user has no nullified votes', async () => {
       const result = await restoreUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Wrongful ban',
@@ -602,6 +625,7 @@ describe('vote-nullification.service', () => {
       prisma.vote.findMany.mockResolvedValue(nullifiedVotes)
 
       const result = await restoreUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Wrongful ban',
@@ -619,6 +643,7 @@ describe('vote-nullification.service', () => {
       prisma.pcListingVote.findMany.mockResolvedValue(nullifiedVotes)
 
       const result = await restoreUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Wrongful ban',
@@ -640,6 +665,7 @@ describe('vote-nullification.service', () => {
       ])
 
       const result = await restoreUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Wrongful ban',
@@ -662,6 +688,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Wrongful ban',
@@ -688,6 +715,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Wrongful ban',
@@ -709,6 +737,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Wrongful ban',
@@ -735,6 +764,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Wrongful ban',
@@ -757,6 +787,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Wrongful ban',
@@ -780,6 +811,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Wrongful ban',
@@ -803,6 +835,7 @@ describe('vote-nullification.service', () => {
       prisma.vote.findMany.mockResolvedValue(votes)
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Wrongful ban',
@@ -823,6 +856,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Wrongful ban reversed',
@@ -855,6 +889,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Wrongful ban',
@@ -884,6 +919,7 @@ describe('vote-nullification.service', () => {
       prisma.commentVote.findMany.mockResolvedValue(commentVotes)
 
       const nullifyResult = await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam',
@@ -912,6 +948,7 @@ describe('vote-nullification.service', () => {
       prisma.commentVote.findMany.mockResolvedValue(nullifiedCommentVotes)
 
       const restoreResult = await restoreUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Ban lifted',
@@ -941,6 +978,7 @@ describe('vote-nullification.service', () => {
       prisma.vote.findMany.mockResolvedValue([vote])
 
       await nullifyUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Spam',
@@ -961,6 +999,7 @@ describe('vote-nullification.service', () => {
       ])
 
       await restoreUserVotes(prisma as unknown as PrismaClient, {
+        trustChanges: [],
         userId: USER_ID,
         adminUserId: ADMIN_ID,
         reason: 'Ban lifted',

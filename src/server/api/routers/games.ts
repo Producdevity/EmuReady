@@ -64,7 +64,8 @@ import {
   getBestThreeDsTitleIdMatch,
   getThreeDsGamesStats,
 } from '@/server/utils/threeDsGameSearch'
-import { transactionalBatch } from '@/server/utils/transactions'
+import { withRetryTransaction } from '@/server/utils/transactions'
+import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { ApprovalStatus, Role, TrustAction } from '@orm/client'
 import type { Prisma } from '@orm/client'
@@ -577,6 +578,7 @@ export const gamesRouter = createTRPCRouter({
       return ResourceError.game.alreadyProcessed()
     }
 
+    const trustChanges: TrustScoreChange[] = []
     const result = await ctx.prisma.$transaction(async (tx) => {
       const updatedGame = await tx.game.update({
         where: { id },
@@ -594,7 +596,7 @@ export const gamesRouter = createTRPCRouter({
 
       // Award trust points to the game submitter
       if (game.submittedBy) {
-        const trustService = new TrustService(tx)
+        const trustService = TrustService.inTransaction(tx, trustChanges)
 
         if (status === ApprovalStatus.APPROVED) {
           await trustService.logAction({
@@ -624,6 +626,7 @@ export const gamesRouter = createTRPCRouter({
       return updatedGame
     })
 
+    for (const change of trustChanges) trackTrustScoreChange(change)
     // Invalidate cache when game status changes
     gameStatsCache.delete(GAME_STATS_CACHE_KEY)
 
@@ -660,48 +663,39 @@ export const gamesRouter = createTRPCRouter({
         return AppError.badRequest('No valid pending games found to approve')
       }
 
-      await transactionalBatch(ctx.prisma, [
-        {
-          name: 'approve-games',
-          execute: async (tx) => {
-            const result = await tx.game.updateMany({
-              where: { id: { in: gameIds }, status: ApprovalStatus.PENDING },
-              data: {
-                status: ApprovalStatus.APPROVED,
+      const trustChanges = await withRetryTransaction(ctx.prisma, async (tx) => {
+        const trustChanges: TrustScoreChange[] = []
+        await tx.game.updateMany({
+          where: { id: { in: gameIds }, status: ApprovalStatus.PENDING },
+          data: {
+            status: ApprovalStatus.APPROVED,
+            approvedBy: adminUserId,
+            approvedAt: new Date(),
+          },
+        })
+
+        // Award trust points to submitters
+        const trustService = TrustService.inTransaction(tx, trustChanges)
+        for (const game of gamesToApprove) {
+          if (game.submittedBy) {
+            await trustService.logAction({
+              userId: game.submittedBy,
+              action: TrustAction.GAME_SUBMISSION_APPROVED,
+              metadata: {
+                gameId: game.id,
+                gameTitle: game.title,
+                systemId: game.systemId,
                 approvedBy: adminUserId,
-                approvedAt: new Date(),
+                bulkOperation: true,
               },
             })
+          }
+        }
 
-            // Award trust points to submitters
-            const trustService = new TrustService(tx)
-            for (const game of gamesToApprove) {
-              if (game.submittedBy) {
-                await trustService.logAction({
-                  userId: game.submittedBy,
-                  action: TrustAction.GAME_SUBMISSION_APPROVED,
-                  metadata: {
-                    gameId: game.id,
-                    gameTitle: game.title,
-                    systemId: game.systemId,
-                    approvedBy: adminUserId,
-                    bulkOperation: true,
-                  },
-                })
-              }
-            }
-
-            return result
-          },
-        },
-        {
-          name: 'clear-cache',
-          execute: async () => {
-            gameStatsCache.delete(GAME_STATS_CACHE_KEY)
-            return Promise.resolve()
-          },
-        },
-      ])
+        return trustChanges
+      })
+      for (const change of trustChanges) trackTrustScoreChange(change)
+      gameStatsCache.delete(GAME_STATS_CACHE_KEY)
       Promise.all([
         ...gameIds.map((id) => invalidateGameRelatedContent(id)),
         ...gameIds.map((id) => revalidateByTag(`game-${id}`)),
@@ -727,7 +721,8 @@ export const gamesRouter = createTRPCRouter({
       // Validate array is not empty
       validateNonEmptyArray(gameIds, 'gameIds')
 
-      return ctx.prisma.$transaction(async (tx) => {
+      const trustChanges: TrustScoreChange[] = []
+      const result = await ctx.prisma.$transaction(async (tx) => {
         // Get all games to reject and verify they are pending
         const gamesToReject = await tx.game.findMany({
           where: { id: { in: gameIds }, status: ApprovalStatus.PENDING },
@@ -750,7 +745,7 @@ export const gamesRouter = createTRPCRouter({
         })
 
         // Apply trust penalties to submitters
-        const trustService = new TrustService(tx)
+        const trustService = TrustService.inTransaction(tx, trustChanges)
         for (const game of gamesToReject) {
           if (game.submittedBy) {
             await trustService.logAction({
@@ -767,15 +762,15 @@ export const gamesRouter = createTRPCRouter({
           }
         }
 
-        // Invalidate cache
-        gameStatsCache.delete(GAME_STATS_CACHE_KEY)
-
         return {
           success: true,
           rejectedCount: gamesToReject.length,
           message: `Successfully rejected ${gamesToReject.length} game(s)`,
         }
       })
+      for (const change of trustChanges) trackTrustScoreChange(change)
+      gameStatsCache.delete(GAME_STATS_CACHE_KEY)
+      return result
     }),
 
   // Nintendo Switch Title ID lookup endpoints

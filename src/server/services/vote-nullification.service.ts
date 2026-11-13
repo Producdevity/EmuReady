@@ -2,6 +2,7 @@ import { TRUST_ACTIONS } from '@/lib/trust/config'
 import { TrustService } from '@/lib/trust/service'
 import { type ListingType } from '@/schemas/common'
 import { logAudit } from '@/server/services/audit.service'
+import { type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { calculateWilsonScore } from '@/utils/wilson-score'
 import {
   AuditAction,
@@ -14,6 +15,7 @@ import {
 type PrismaClientOrTransaction = PrismaClient | Prisma.TransactionClient
 
 interface NullifyParams {
+  trustChanges: TrustScoreChange[]
   userId: string
   adminUserId: string
   reason: string
@@ -22,6 +24,7 @@ interface NullifyParams {
 }
 
 interface RestoreParams {
+  trustChanges: TrustScoreChange[]
   userId: string
   adminUserId: string
   reason: string
@@ -205,7 +208,7 @@ async function recalculateCommentScores(
 }
 
 export async function nullifyUserVotes(
-  prisma: PrismaClientOrTransaction,
+  prisma: Prisma.TransactionClient,
   params: NullifyParams,
 ): Promise<NullifyResult> {
   const { userId, adminUserId, reason, includeCommentVotes, headers } = params
@@ -331,7 +334,7 @@ export async function nullifyUserVotes(
   }
 
   // Apply trust adjustments using TrustService for transaction participation
-  const trustService = new TrustService(prisma)
+  const trustService = TrustService.inTransaction(prisma, params.trustChanges)
   const trustAdjustmentCount = await trustService.applyBulkManualAdjustments({
     adjustments: trustAdjustments,
     reason: `Vote nullification: ${reason}`,
@@ -339,7 +342,7 @@ export async function nullifyUserVotes(
   })
 
   // 5. Audit log
-  void logAudit(prisma, {
+  await logAudit(prisma, {
     actorId: adminUserId,
     action: AuditAction.NULLIFY_VOTES,
     entityType: AuditEntityType.VOTE,
@@ -369,7 +372,7 @@ export async function nullifyUserVotes(
 }
 
 export async function restoreUserVotes(
-  prisma: PrismaClientOrTransaction,
+  prisma: Prisma.TransactionClient,
   params: RestoreParams,
 ): Promise<RestoreResult> {
   const { userId, adminUserId, reason, headers } = params
@@ -486,7 +489,7 @@ export async function restoreUserVotes(
     }
   }
 
-  const trustService = new TrustService(prisma)
+  const trustService = TrustService.inTransaction(prisma, params.trustChanges)
   const trustAdjustmentCount = await trustService.applyBulkManualAdjustments({
     adjustments: trustAdjustments,
     reason: `Vote restoration: ${reason}`,
@@ -494,7 +497,7 @@ export async function restoreUserVotes(
   })
 
   // 5. Audit log
-  void logAudit(prisma, {
+  await logAudit(prisma, {
     actorId: adminUserId,
     action: AuditAction.RESTORE_VOTES,
     entityType: AuditEntityType.VOTE,

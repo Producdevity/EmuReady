@@ -16,6 +16,7 @@ import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifica
 import { logAudit } from '@/server/services/audit.service'
 import { isUserBanned } from '@/server/utils/query-builders'
 import { checkSpamContent } from '@/server/utils/spam-check'
+import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { handleCommentVoteTrustEffects } from '@/server/utils/vote-trust-effects'
 import { canDeleteComment, canEditComment } from '@/utils/permissions'
 import { AuditAction, AuditEntityType } from '@orm'
@@ -300,7 +301,8 @@ export const commentsRouter = createTRPCRouter({
       return ResourceError.comment.notFound()
     }
 
-    return await ctx.prisma.$transaction(async (tx) => {
+    const trustChanges: TrustScoreChange[] = []
+    const result = await ctx.prisma.$transaction(async (tx) => {
       const existingVote = await tx.pcListingCommentVote.findUnique({
         where: { userId_commentId: { userId, commentId } },
       })
@@ -341,6 +343,7 @@ export const commentsRouter = createTRPCRouter({
       if (trustAction) {
         await handleCommentVoteTrustEffects({
           tx,
+          trustChanges,
           trustAction,
           newValue: value,
           previousValue: existingVote?.value ?? null,
@@ -370,6 +373,8 @@ export const commentsRouter = createTRPCRouter({
 
       return voteResult
     })
+    for (const change of trustChanges) trackTrustScoreChange(change)
+    return result
   }),
 
   pinComment: protectedProcedure

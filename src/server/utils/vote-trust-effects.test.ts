@@ -6,12 +6,14 @@ const mockLogAction = vi.fn()
 const mockReverseLogAction = vi.fn()
 
 vi.mock('@/lib/trust/service', () => ({
-  TrustService: vi.fn().mockImplementation(function MockTrustService() {
-    return {
-      logAction: mockLogAction,
-      reverseLogAction: mockReverseLogAction,
-    }
-  }),
+  TrustService: {
+    inTransaction: () => {
+      return {
+        logAction: mockLogAction,
+        reverseLogAction: mockReverseLogAction,
+      }
+    },
+  },
 }))
 
 const USER_ID = 'voter-1'
@@ -30,6 +32,7 @@ describe('handleListingVoteTrustEffects', () => {
     it('applies UPVOTE for voter and LISTING_RECEIVED_UPVOTE for author on upvote', async () => {
       await handleListingVoteTrustEffects({
         tx: mockTx,
+        trustChanges: [],
         action: 'created',
         currentValue: true,
         previousValue: null,
@@ -56,6 +59,7 @@ describe('handleListingVoteTrustEffects', () => {
     it('applies DOWNVOTE for voter and LISTING_RECEIVED_DOWNVOTE for author on downvote', async () => {
       await handleListingVoteTrustEffects({
         tx: mockTx,
+        trustChanges: [],
         action: 'created',
         currentValue: false,
         previousValue: null,
@@ -80,6 +84,7 @@ describe('handleListingVoteTrustEffects', () => {
     it('skips author trust on self-vote', async () => {
       await handleListingVoteTrustEffects({
         tx: mockTx,
+        trustChanges: [],
         action: 'created',
         currentValue: true,
         previousValue: null,
@@ -98,6 +103,7 @@ describe('handleListingVoteTrustEffects', () => {
     it('skips author trust when authorId is null', async () => {
       await handleListingVoteTrustEffects({
         tx: mockTx,
+        trustChanges: [],
         action: 'created',
         currentValue: true,
         previousValue: null,
@@ -113,6 +119,7 @@ describe('handleListingVoteTrustEffects', () => {
     it('uses pcListingId context key for PC listings', async () => {
       await handleListingVoteTrustEffects({
         tx: mockTx,
+        trustChanges: [],
         action: 'created',
         currentValue: true,
         previousValue: null,
@@ -139,6 +146,7 @@ describe('handleListingVoteTrustEffects', () => {
     it('reverses previous upvote and applies downvote when changing from up to down', async () => {
       await handleListingVoteTrustEffects({
         tx: mockTx,
+        trustChanges: [],
         action: 'updated',
         currentValue: false,
         previousValue: true,
@@ -177,6 +185,7 @@ describe('handleListingVoteTrustEffects', () => {
     it('reverses previous downvote and applies upvote when changing from down to up', async () => {
       await handleListingVoteTrustEffects({
         tx: mockTx,
+        trustChanges: [],
         action: 'updated',
         currentValue: true,
         previousValue: false,
@@ -211,6 +220,7 @@ describe('handleListingVoteTrustEffects', () => {
     it('does nothing when previousValue is null (safety)', async () => {
       await handleListingVoteTrustEffects({
         tx: mockTx,
+        trustChanges: [],
         action: 'updated',
         currentValue: false,
         previousValue: null,
@@ -227,6 +237,7 @@ describe('handleListingVoteTrustEffects', () => {
     it('skips author reversals/applications on self-vote', async () => {
       await handleListingVoteTrustEffects({
         tx: mockTx,
+        trustChanges: [],
         action: 'updated',
         currentValue: false,
         previousValue: true,
@@ -244,6 +255,7 @@ describe('handleListingVoteTrustEffects', () => {
     it('uses pcListingId for PC listings on update', async () => {
       await handleListingVoteTrustEffects({
         tx: mockTx,
+        trustChanges: [],
         action: 'updated',
         currentValue: false,
         previousValue: true,
@@ -266,6 +278,7 @@ describe('handleListingVoteTrustEffects', () => {
     it('reverses UPVOTE and LISTING_RECEIVED_UPVOTE when an upvote is toggled off', async () => {
       await handleListingVoteTrustEffects({
         tx: mockTx,
+        trustChanges: [],
         action: 'deleted',
         currentValue: true,
         previousValue: true,
@@ -292,6 +305,7 @@ describe('handleListingVoteTrustEffects', () => {
     it('reverses DOWNVOTE and LISTING_RECEIVED_DOWNVOTE when a downvote is toggled off', async () => {
       await handleListingVoteTrustEffects({
         tx: mockTx,
+        trustChanges: [],
         action: 'deleted',
         currentValue: false,
         previousValue: false,
@@ -316,6 +330,7 @@ describe('handleListingVoteTrustEffects', () => {
     it('does nothing when previousValue is null (safety)', async () => {
       await handleListingVoteTrustEffects({
         tx: mockTx,
+        trustChanges: [],
         action: 'deleted',
         currentValue: true,
         previousValue: null,
@@ -332,6 +347,7 @@ describe('handleListingVoteTrustEffects', () => {
     it('skips author reversal on self-vote toggle-off', async () => {
       await handleListingVoteTrustEffects({
         tx: mockTx,
+        trustChanges: [],
         action: 'deleted',
         currentValue: true,
         previousValue: true,
@@ -350,6 +366,7 @@ describe('handleListingVoteTrustEffects', () => {
     it('uses pcListingId for PC listings on delete', async () => {
       await handleListingVoteTrustEffects({
         tx: mockTx,
+        trustChanges: [],
         action: 'deleted',
         currentValue: true,
         previousValue: true,
@@ -387,6 +404,7 @@ describe('handleCommentVoteTrustEffects', () => {
   ) {
     return handleCommentVoteTrustEffects({
       tx: commentMockTx,
+      trustChanges: [],
       trustAction: 'upvote',
       newValue: true,
       previousValue: null,
