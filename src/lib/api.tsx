@@ -78,7 +78,7 @@ function SessionQueryProvider(props: PropsWithChildren<{ sessionId: string | nul
   useEffect(() => {
     if (initialSession.current === undefined && props.sessionId !== undefined) {
       initialSession.current = props.sessionId
-      void queryClient.cancelQueries().then(() => queryClient.resetQueries())
+      void queryClient.cancelQueries().then(() => queryClient.invalidateQueries())
     }
   }, [props.sessionId, queryClient])
 

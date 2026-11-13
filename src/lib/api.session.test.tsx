@@ -24,9 +24,12 @@ const fetchQuery = vi.fn(async () => responseFor(ownerId))
 function Profile() {
   const query = api.users.me.useQuery()
   return (
-    <output aria-label="Profile owner">
-      {query.isPending ? 'Loading' : (query.data?.id ?? 'Signed out')}
-    </output>
+    <>
+      <output aria-label="Profile owner">
+        {query.isPending ? 'Loading' : (query.data?.id ?? 'Signed out')}
+      </output>
+      {query.data && <Draft label="Loaded profile draft" />}
+    </>
   )
 }
 
@@ -39,10 +42,18 @@ function App() {
   )
 }
 
-function Draft() {
+interface Props {
+  label?: string
+}
+
+function Draft(props: Props) {
   const [value, setValue] = useState('')
   return (
-    <input aria-label="Search draft" value={value} onChange={(ev) => setValue(ev.target.value)} />
+    <input
+      aria-label={props.label ?? 'Search draft'}
+      value={value}
+      onChange={(ev) => setValue(ev.target.value)}
+    />
   )
 }
 
@@ -129,6 +140,28 @@ it('discards a late initial-loading response after the session resolves', async 
     expect(screen.getByLabelText('Profile owner')).toHaveTextContent(firstOwner)
   } finally {
     older.resolve(responseFor(null))
+  }
+})
+
+it('keeps a draft mounted while refreshing data from initial auth loading', async () => {
+  sessionId = undefined
+  const refreshed = Promise.withResolvers<Response>()
+  fetchQuery.mockImplementationOnce(async () => responseFor(firstOwner))
+  fetchQuery.mockImplementationOnce(() => refreshed.promise)
+  const view = render(<App />)
+  try {
+    await screen.findByText(firstOwner)
+    fireEvent.change(screen.getByLabelText('Loaded profile draft'), {
+      target: { value: 'Mario' },
+    })
+    sessionId = 'session-a'
+    view.rerender(<App />)
+    await waitFor(() => expect(fetchQuery).toHaveBeenCalledTimes(2))
+    expect(screen.getByLabelText('Loaded profile draft')).toHaveValue('Mario')
+    await act(async () => refreshed.resolve(responseFor(firstOwner)))
+    expect(screen.getByLabelText('Loaded profile draft')).toHaveValue('Mario')
+  } finally {
+    refreshed.resolve(responseFor(firstOwner))
   }
 })
 
