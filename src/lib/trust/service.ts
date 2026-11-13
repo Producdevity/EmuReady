@@ -210,7 +210,7 @@ export class TrustService {
       await prismaCtx.user.update({
         where: { id: userId },
         data: {
-          trustScore: newTrustScore,
+          trustScore: { increment: weight },
           lastActiveAt: new Date(),
         },
       })
@@ -280,7 +280,7 @@ export class TrustService {
       await prismaCtx.user.update({
         where: { id: userId },
         data: {
-          trustScore: newTrustScore,
+          trustScore: { increment: reversalWeight },
           lastActiveAt: new Date(),
         },
       })
@@ -356,7 +356,7 @@ export class TrustService {
       await prismaCtx.user.update({
         where: { id: userId },
         data: {
-          trustScore: newTrustScore,
+          trustScore: { increment: adjustment },
           lastActiveAt: new Date(),
         },
       })
@@ -459,7 +459,7 @@ export class TrustService {
         await prismaCtx.user.update({
           where: { id: userId },
           data: {
-            trustScore: newTrustScore,
+            trustScore: { increment: adjustment },
             lastActiveAt: new Date(),
           },
         })

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { toPrismaCustomFieldValue } from './utils'
+import { toPrismaCustomFieldValue } from './prisma-json'
 
-describe('pcListings router utilities', () => {
+describe('Prisma JSON values', () => {
   it('preserves JSON-compatible custom field values', () => {
     expect(
       toPrismaCustomFieldValue({

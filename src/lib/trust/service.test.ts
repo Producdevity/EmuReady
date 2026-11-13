@@ -118,7 +118,7 @@ describe('TrustService.applyBulkManualAdjustments', () => {
     expect(prismaCtx.user.update).toHaveBeenCalledTimes(1)
     expect(prismaCtx.user.update).toHaveBeenCalledWith({
       where: { id: 'user-1' },
-      data: { trustScore: 40, lastActiveAt: expect.any(Date) },
+      data: { trustScore: { increment: -10 }, lastActiveAt: expect.any(Date) },
     })
   })
 
@@ -155,7 +155,7 @@ describe('TrustService.applyBulkManualAdjustments', () => {
 
     expect(prismaCtx.user.update).toHaveBeenCalledWith({
       where: { id: 'user-1' },
-      data: { trustScore: 40, lastActiveAt: expect.any(Date) },
+      data: { trustScore: { increment: -10 }, lastActiveAt: expect.any(Date) },
     })
 
     expect(prismaCtx.trustActionLog.createMany).toHaveBeenCalledWith({
@@ -223,7 +223,7 @@ describe('TrustService.applyBulkManualAdjustments', () => {
     // 5 + (-100) = -95 — negative scores are allowed (used for author-risk signals)
     expect(prismaCtx.user.update).toHaveBeenCalledWith({
       where: { id: 'user-1' },
-      data: { trustScore: -95, lastActiveAt: expect.any(Date) },
+      data: { trustScore: { increment: -100 }, lastActiveAt: expect.any(Date) },
     })
 
     const logData = prismaCtx.trustActionLog.createMany.mock.calls[0][0].data as {
@@ -428,7 +428,7 @@ describe('TrustService.applyManualAdjustment', () => {
     // 5 + (-100) = -95, not clamped to 0
     expect(prismaCtx.user.update).toHaveBeenCalledWith({
       where: { id: 'user-1' },
-      data: { trustScore: -95, lastActiveAt: expect.any(Date) },
+      data: { trustScore: { increment: -100 }, lastActiveAt: expect.any(Date) },
     })
   })
 
@@ -486,7 +486,7 @@ describe('TrustService.reverseLogAction', () => {
 
     expect(prismaCtx.user.update).toHaveBeenCalledWith({
       where: { id: 'author-1' },
-      data: { trustScore: 8, lastActiveAt: expect.any(Date) },
+      data: { trustScore: { increment: -2 }, lastActiveAt: expect.any(Date) },
     })
     expect(prismaCtx.trustActionLog.create).toHaveBeenCalledWith({
       data: {
@@ -514,7 +514,7 @@ describe('TrustService.reverseLogAction', () => {
 
     expect(prismaCtx.user.update).toHaveBeenCalledWith({
       where: { id: 'author-1' },
-      data: { trustScore: 6, lastActiveAt: expect.any(Date) },
+      data: { trustScore: { increment: 1 }, lastActiveAt: expect.any(Date) },
     })
     expect(prismaCtx.trustActionLog.create).toHaveBeenCalledWith({
       data: {
@@ -543,7 +543,7 @@ describe('TrustService.reverseLogAction', () => {
     // 1 + (-2) = -1, allowed
     expect(prismaCtx.user.update).toHaveBeenCalledWith({
       where: { id: 'author-1' },
-      data: { trustScore: -1, lastActiveAt: expect.any(Date) },
+      data: { trustScore: { increment: -2 }, lastActiveAt: expect.any(Date) },
     })
   })
 

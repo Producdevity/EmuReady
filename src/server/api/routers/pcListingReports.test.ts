@@ -4,18 +4,10 @@ import { ApprovalStatus, ReportReason, ReportStatus, Role, TrustAction } from '@
 
 vi.unmock('@/server/api/trpc')
 
-const mockLogAction = vi.fn().mockResolvedValue(undefined)
-const mockTrustService = vi.fn().mockImplementation(function MockTrustService() {
-  return { logAction: mockLogAction }
-})
-
-vi.mock('@/lib/trust/service', () => ({
-  TrustService: mockTrustService,
-}))
-
 const { pcListingReportsRouter } = await import('./pcListingReports')
 
 const USER_ID = '00000000-0000-4000-a000-000000000001'
+const AUTHOR_ID = '00000000-0000-4000-a000-000000000002'
 const REPORT_ID = '00000000-0000-4000-a000-000000000020'
 const PC_LISTING_ID = '00000000-0000-4000-a000-000000000030'
 
@@ -37,10 +29,11 @@ function createMockPrisma() {
     },
     user: {
       findUnique: vi.fn().mockResolvedValue({ trustScore: 0 }),
-      update: vi.fn().mockResolvedValue({ id: USER_ID }),
+      update: vi.fn().mockResolvedValue({ id: USER_ID, trustScore: 100 }),
     },
     trustActionLog: {
-      create: vi.fn().mockResolvedValue({ id: 'trust-log-id' }),
+      createMany: vi.fn().mockResolvedValue({ count: 1 }),
+      aggregate: vi.fn().mockResolvedValue({ _sum: { weight: 6 } }),
     },
   }
 
@@ -87,7 +80,7 @@ describe('pcListingReportsRouter', () => {
       reportedById: USER_ID,
       reason: ReportReason.SPAM,
       status: ReportStatus.PENDING,
-      pcListing: { status: ApprovalStatus.APPROVED },
+      pcListing: { status: ApprovalStatus.APPROVED, authorId: AUTHOR_ID },
     })
 
     await caller.updateStatus({
@@ -105,18 +98,29 @@ describe('pcListingReportsRouter', () => {
         processedNotes: 'Rejected due to report: Confirmed spam',
       }),
     })
-    expect(mockTrustService).toHaveBeenCalledWith(
-      expect.objectContaining({ pcListingReport: prisma.pcListingReport }),
-    )
-    expect(mockLogAction).toHaveBeenCalledWith({
-      userId: USER_ID,
-      action: TrustAction.REPORT_CONFIRMED,
-      metadata: {
-        reportId: REPORT_ID,
-        pcListingId: PC_LISTING_ID,
-        reviewedBy: USER_ID,
-        reason: ReportReason.SPAM,
-      },
+    expect(prisma.trustActionLog.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({
+          userId: USER_ID,
+          action: TrustAction.REPORT_CONFIRMED,
+          weight: 5,
+          metadata: expect.objectContaining({
+            reportId: REPORT_ID,
+            pcListingId: PC_LISTING_ID,
+            reviewedBy: USER_ID,
+          }),
+        }),
+      ],
+    })
+    expect(prisma.trustActionLog.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({ userId: AUTHOR_ID, weight: -6 }),
+        expect.objectContaining({
+          userId: AUTHOR_ID,
+          action: TrustAction.LISTING_REJECTED,
+          weight: -8,
+        }),
+      ],
     })
     expect(prisma.pcListingReport.update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -137,7 +141,7 @@ describe('pcListingReportsRouter', () => {
       reportedById: USER_ID,
       reason: ReportReason.SPAM,
       status: ReportStatus.RESOLVED,
-      pcListing: { status: ApprovalStatus.APPROVED },
+      pcListing: { status: ApprovalStatus.APPROVED, authorId: AUTHOR_ID },
     })
 
     await caller.updateStatus({
@@ -147,7 +151,7 @@ describe('pcListingReportsRouter', () => {
     })
 
     expect(prisma.pcListing.update).not.toHaveBeenCalled()
-    expect(mockLogAction).not.toHaveBeenCalled()
+    expect(prisma.trustActionLog.createMany).not.toHaveBeenCalled()
     expect(prisma.pcListingReport.update).toHaveBeenCalled()
   })
 
@@ -171,7 +175,7 @@ describe('pcListingReportsRouter', () => {
     ).rejects.toThrow('PC report has already been resolved or dismissed')
 
     expect(prisma.pcListing.update).not.toHaveBeenCalled()
-    expect(mockLogAction).not.toHaveBeenCalled()
+    expect(prisma.trustActionLog.createMany).not.toHaveBeenCalled()
     expect(prisma.pcListingReport.update).not.toHaveBeenCalled()
   })
 

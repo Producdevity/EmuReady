@@ -1,18 +1,17 @@
+import { ApprovalTrustRepository } from '@/features/reports/approval/server/approval-trust.repository'
+import { ApprovalTrustService } from '@/features/reports/approval/server/approval-trust.service'
 import { ResourceError } from '@/lib/errors'
-import { TrustService } from '@/lib/trust/service'
+import { TRUST_ACTIONS } from '@/lib/trust/config'
 import {
   ReportModerationRepository,
   type ListingReportModerationRecord,
   type PcListingReportModerationRecord,
 } from '@/server/repositories/report-moderation.repository'
+import { TrustScoreRepository } from '@/server/repositories/trust-score.repository'
 import { isPrismaError, PRISMA_ERROR_CODES } from '@/server/utils/prisma-errors'
-import {
-  ApprovalStatus,
-  ReportStatus,
-  TrustAction,
-  type Prisma,
-  type PrismaClient,
-} from '@orm/client'
+import { withRetryTransaction } from '@/server/utils/transactions'
+import { trackTrustScoreChange } from '@/server/utils/trust-score-analytics'
+import { ApprovalStatus, ReportStatus, TrustAction, Prisma, type PrismaClient } from '@orm/client'
 
 const FINAL_REPORT_STATUSES: ReadonlySet<ReportStatus> = new Set([
   ReportStatus.RESOLVED,
@@ -61,80 +60,40 @@ function shouldRejectReportedContent(params: {
   )
 }
 
-async function applyListingReportTrustEffect(params: {
+async function recordReporterTrustEffect(params: {
   tx: Prisma.TransactionClient
-  report: ListingReportModerationRecord
+  report: ListingReportModerationRecord | PcListingReportModerationRecord
   nextStatus: ReportStatus
   reviewerId: string
   reviewNotes?: string
-}): Promise<void> {
-  const trustService = new TrustService(params.tx)
-
-  if (params.nextStatus === ReportStatus.RESOLVED) {
-    await trustService.logAction({
-      userId: params.report.reportedById,
-      action: TrustAction.REPORT_CONFIRMED,
-      metadata: {
-        reportId: params.report.id,
-        listingId: params.report.listingId,
-        reviewedBy: params.reviewerId,
-        reason: params.report.reason,
+}) {
+  const action =
+    params.nextStatus === ReportStatus.RESOLVED
+      ? TrustAction.REPORT_CONFIRMED
+      : params.nextStatus === ReportStatus.DISMISSED
+        ? TrustAction.FALSE_REPORT
+        : null
+  if (!action) return null
+  const reportKey = 'listingId' in params.report ? 'listingId' : 'pcListingId'
+  const reportId =
+    'listingId' in params.report ? params.report.listingId : params.report.pcListingId
+  const result = await new TrustScoreRepository(params.tx).appendActions(
+    params.report.reportedById,
+    [
+      {
+        action,
+        weight: TRUST_ACTIONS[action].weight,
+        metadata: {
+          reportId: params.report.id,
+          [reportKey]: reportId,
+          reviewedBy: params.reviewerId,
+          reason: params.report.reason,
+          ...(params.reviewNotes === undefined ? {} : { reviewNotes: params.reviewNotes }),
+        },
       },
-    })
-    return
-  }
-
-  if (params.nextStatus === ReportStatus.DISMISSED) {
-    await trustService.logAction({
-      userId: params.report.reportedById,
-      action: TrustAction.FALSE_REPORT,
-      metadata: {
-        reportId: params.report.id,
-        listingId: params.report.listingId,
-        reviewedBy: params.reviewerId,
-        reason: params.report.reason,
-        reviewNotes: params.reviewNotes,
-      },
-    })
-  }
-}
-
-async function applyPcListingReportTrustEffect(params: {
-  tx: Prisma.TransactionClient
-  report: PcListingReportModerationRecord
-  nextStatus: ReportStatus
-  reviewerId: string
-  reviewNotes?: string
-}): Promise<void> {
-  const trustService = new TrustService(params.tx)
-
-  if (params.nextStatus === ReportStatus.RESOLVED) {
-    await trustService.logAction({
-      userId: params.report.reportedById,
-      action: TrustAction.REPORT_CONFIRMED,
-      metadata: {
-        reportId: params.report.id,
-        pcListingId: params.report.pcListingId,
-        reviewedBy: params.reviewerId,
-        reason: params.report.reason,
-      },
-    })
-    return
-  }
-
-  if (params.nextStatus === ReportStatus.DISMISSED) {
-    await trustService.logAction({
-      userId: params.report.reportedById,
-      action: TrustAction.FALSE_REPORT,
-      metadata: {
-        reportId: params.report.id,
-        pcListingId: params.report.pcListingId,
-        reviewedBy: params.reviewerId,
-        reason: params.report.reason,
-        reviewNotes: params.reviewNotes,
-      },
-    })
-  }
+    ],
+  )
+  return { ...result, userId: params.report.reportedById, action }
 }
 
 function translateListingReportModerationError(error: unknown): never {
@@ -158,54 +117,75 @@ export class ReportModerationService {
 
   async updateListingReportStatus(input: UpdateListingReportStatusInput) {
     try {
-      return await this.prisma.$transaction(async (tx) => {
-        const repository = new ReportModerationRepository(tx)
-        const report = await repository.findListingReportForModeration(input.id)
+      const result = await withRetryTransaction(
+        this.prisma,
+        async (tx) => {
+          const repository = new ReportModerationRepository(tx)
+          const report = await repository.findListingReportForModeration(input.id)
 
-        if (!report) return ResourceError.listingReport.notFound()
+          if (!report) return ResourceError.listingReport.notFound()
 
-        assertCanTransitionReportStatus({
-          currentStatus: report.status,
-          nextStatus: input.status,
-          onFinalStatusChange: ResourceError.listingReport.cannotChangeFinalStatus,
-        })
-
-        const statusChanged = report.status !== input.status
-        const reviewedAt = new Date()
-
-        if (
-          shouldRejectReportedContent({
-            statusChanged,
+          assertCanTransitionReportStatus({
+            currentStatus: report.status,
             nextStatus: input.status,
-            currentListingStatus: report.listing?.status,
+            onFinalStatusChange: ResourceError.listingReport.cannotChangeFinalStatus,
           })
-        ) {
-          await repository.rejectListingFromReport({
-            listingId: report.listingId,
-            reviewerId: input.reviewerId,
-            reviewNotes: input.reviewNotes,
-            processedAt: reviewedAt,
-          })
-        }
 
-        if (statusChanged && isFinalReportStatus(input.status)) {
-          await applyListingReportTrustEffect({
-            tx,
-            report,
-            nextStatus: input.status,
-            reviewerId: input.reviewerId,
-            reviewNotes: input.reviewNotes,
-          })
-        }
+          const statusChanged = report.status !== input.status
+          const reviewedAt = new Date()
+          let approvalTrustChange: Awaited<ReturnType<ApprovalTrustService['reconcile']>> = null
+          let reporterTrustChange: Awaited<ReturnType<typeof recordReporterTrustEffect>> = null
 
-        return repository.updateListingReportStatus({
-          id: input.id,
-          status: input.status,
-          reviewNotes: input.reviewNotes,
-          reviewerId: input.reviewerId,
-          reviewedAt,
-        })
-      })
+          if (
+            shouldRejectReportedContent({
+              statusChanged,
+              nextStatus: input.status,
+              currentListingStatus: report.listing?.status,
+            })
+          ) {
+            await repository.rejectListingFromReport({
+              listingId: report.listingId,
+              reviewerId: input.reviewerId,
+              reviewNotes: input.reviewNotes,
+              processedAt: reviewedAt,
+            })
+            approvalTrustChange = await new ApprovalTrustService(
+              new ApprovalTrustRepository(tx),
+            ).reconcile({
+              reportId: report.listingId,
+              reportType: 'handheld',
+              authorId: report.listing?.authorId ?? null,
+              actorId: input.reviewerId,
+              previousStatus: ApprovalStatus.APPROVED,
+              newStatus: ApprovalStatus.REJECTED,
+              reason: input.reviewNotes ?? 'Rejected due to confirmed content report',
+            })
+          }
+
+          if (statusChanged && isFinalReportStatus(input.status)) {
+            reporterTrustChange = await recordReporterTrustEffect({
+              tx,
+              report,
+              nextStatus: input.status,
+              reviewerId: input.reviewerId,
+              reviewNotes: input.reviewNotes,
+            })
+          }
+
+          const updatedReport = await repository.updateListingReportStatus({
+            id: input.id,
+            status: input.status,
+            reviewNotes: input.reviewNotes,
+            reviewerId: input.reviewerId,
+            reviewedAt,
+          })
+          return { updatedReport, approvalTrustChange, reporterTrustChange }
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      )
+      trackTrustScoreChange(result.approvalTrustChange)
+      trackTrustScoreChange(result.reporterTrustChange)
+      return result.updatedReport
     } catch (error) {
       translateListingReportModerationError(error)
     }
@@ -213,54 +193,75 @@ export class ReportModerationService {
 
   async updatePcListingReportStatus(input: UpdatePcListingReportStatusInput) {
     try {
-      return await this.prisma.$transaction(async (tx) => {
-        const repository = new ReportModerationRepository(tx)
-        const report = await repository.findPcListingReportForModeration(input.reportId)
+      const result = await withRetryTransaction(
+        this.prisma,
+        async (tx) => {
+          const repository = new ReportModerationRepository(tx)
+          const report = await repository.findPcListingReportForModeration(input.reportId)
 
-        if (!report) return ResourceError.pcListingReport.notFound()
+          if (!report) return ResourceError.pcListingReport.notFound()
 
-        assertCanTransitionReportStatus({
-          currentStatus: report.status,
-          nextStatus: input.status,
-          onFinalStatusChange: ResourceError.pcListingReport.cannotChangeFinalStatus,
-        })
-
-        const statusChanged = report.status !== input.status
-        const reviewedAt = new Date()
-
-        if (
-          shouldRejectReportedContent({
-            statusChanged,
+          assertCanTransitionReportStatus({
+            currentStatus: report.status,
             nextStatus: input.status,
-            currentListingStatus: report.pcListing?.status,
+            onFinalStatusChange: ResourceError.pcListingReport.cannotChangeFinalStatus,
           })
-        ) {
-          await repository.rejectPcListingFromReport({
-            pcListingId: report.pcListingId,
-            reviewerId: input.reviewerId,
-            reviewNotes: input.reviewNotes,
-            processedAt: reviewedAt,
-          })
-        }
 
-        if (statusChanged && isFinalReportStatus(input.status)) {
-          await applyPcListingReportTrustEffect({
-            tx,
-            report,
-            nextStatus: input.status,
-            reviewerId: input.reviewerId,
-            reviewNotes: input.reviewNotes,
-          })
-        }
+          const statusChanged = report.status !== input.status
+          const reviewedAt = new Date()
+          let approvalTrustChange: Awaited<ReturnType<ApprovalTrustService['reconcile']>> = null
+          let reporterTrustChange: Awaited<ReturnType<typeof recordReporterTrustEffect>> = null
 
-        return repository.updatePcListingReportStatus({
-          id: input.reportId,
-          status: input.status,
-          reviewNotes: input.reviewNotes,
-          reviewerId: input.reviewerId,
-          reviewedAt,
-        })
-      })
+          if (
+            shouldRejectReportedContent({
+              statusChanged,
+              nextStatus: input.status,
+              currentListingStatus: report.pcListing?.status,
+            })
+          ) {
+            await repository.rejectPcListingFromReport({
+              pcListingId: report.pcListingId,
+              reviewerId: input.reviewerId,
+              reviewNotes: input.reviewNotes,
+              processedAt: reviewedAt,
+            })
+            approvalTrustChange = await new ApprovalTrustService(
+              new ApprovalTrustRepository(tx),
+            ).reconcile({
+              reportId: report.pcListingId,
+              reportType: 'pc',
+              authorId: report.pcListing?.authorId ?? null,
+              actorId: input.reviewerId,
+              previousStatus: ApprovalStatus.APPROVED,
+              newStatus: ApprovalStatus.REJECTED,
+              reason: input.reviewNotes ?? 'Rejected due to confirmed content report',
+            })
+          }
+
+          if (statusChanged && isFinalReportStatus(input.status)) {
+            reporterTrustChange = await recordReporterTrustEffect({
+              tx,
+              report,
+              nextStatus: input.status,
+              reviewerId: input.reviewerId,
+              reviewNotes: input.reviewNotes,
+            })
+          }
+
+          const updatedReport = await repository.updatePcListingReportStatus({
+            id: input.reportId,
+            status: input.status,
+            reviewNotes: input.reviewNotes,
+            reviewerId: input.reviewerId,
+            reviewedAt,
+          })
+          return { updatedReport, approvalTrustChange, reporterTrustChange }
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      )
+      trackTrustScoreChange(result.approvalTrustChange)
+      trackTrustScoreChange(result.reporterTrustChange)
+      return result.updatedReport
     } catch (error) {
       translatePcListingReportModerationError(error)
     }

@@ -1,4 +1,5 @@
 import { AppError } from '@/lib/errors'
+import { isPrismaError, PRISMA_ERROR_CODES } from '@/server/utils/prisma-errors'
 import type { Prisma, PrismaClient } from '@orm/client'
 
 // Types
@@ -213,6 +214,7 @@ export async function batchOperations<T>(
  * Check if an error is retryable
  */
 function isRetryableError(error: unknown): boolean {
+  if (isPrismaError(error, PRISMA_ERROR_CODES.TRANSACTION_FAILED)) return true
   if (error instanceof Error) {
     const message = error.message.toLowerCase()
     return (

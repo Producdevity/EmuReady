@@ -35,6 +35,7 @@ import { PcListingsRepository } from '@/server/repositories/pc-listings.reposito
 import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
 import { attachReviewRiskProfileForViewer } from '@/server/services/review-risk.service'
 import { normalizeCustomFieldValues } from '@/server/utils/custom-field-values'
+import { toPrismaCustomFieldValue } from '@/server/utils/prisma-json'
 import { isUserBanned } from '@/server/utils/query-builders'
 import { validatePagination } from '@/server/utils/security-validation'
 import { checkSpamContent } from '@/server/utils/spam-check'
@@ -43,7 +44,7 @@ import { handleListingVoteTrustEffects } from '@/server/utils/vote-trust-effects
 import { PERMISSIONS, roleIncludesRole } from '@/utils/permission-system'
 import { hasRolePermission, isModerator } from '@/utils/permissions'
 import { ApprovalStatus, Role, TrustAction, type PcListingVote } from '@orm'
-import { invalidatePcListingStatsCache, toPrismaCustomFieldValue } from './utils'
+import { invalidatePcListingStatsCache } from './utils'
 
 export const coreRouter = createTRPCRouter({
   get: publicProcedure.input(GetPcListingsSchema).query(async ({ ctx, input }) => {
