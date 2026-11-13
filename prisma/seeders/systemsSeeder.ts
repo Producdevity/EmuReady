@@ -9,9 +9,18 @@ type SystemData = {
 
 const systems: SystemData[] = [
   {
+    name: 'Apple iOS',
+    key: 'apple_ios',
+    tgdbPlatformId: PLATFORM_MAPPINGS.tgdb.apple_ios ?? undefined,
+  },
+  {
     name: 'Microsoft Windows',
     key: 'microsoft_windows',
     tgdbPlatformId: PLATFORM_MAPPINGS.tgdb.microsoft_windows ?? undefined,
+  },
+  {
+    name: 'Microsoft Windows Phone',
+    key: 'microsoft_windows_phone',
   },
   {
     name: 'Microsoft Xbox 360',
@@ -49,6 +58,11 @@ const systems: SystemData[] = [
     tgdbPlatformId: PLATFORM_MAPPINGS.tgdb.nintendo_switch ?? undefined,
   },
   {
+    name: 'Nintendo Switch 2',
+    key: 'nintendo_switch_2',
+    tgdbPlatformId: PLATFORM_MAPPINGS.tgdb.nintendo_switch_2 ?? undefined,
+  },
+  {
     name: 'Nintendo Wii U',
     key: 'nintendo_wii_u',
     tgdbPlatformId: PLATFORM_MAPPINGS.tgdb.nintendo_wii_u ?? undefined,
@@ -57,6 +71,10 @@ const systems: SystemData[] = [
     name: 'Nintendo Wii',
     key: 'nintendo_wii',
     tgdbPlatformId: PLATFORM_MAPPINGS.tgdb.nintendo_wii ?? undefined,
+  },
+  {
+    name: 'PICO-8',
+    key: 'pico_8',
   },
   {
     name: 'Sega Dreamcast',

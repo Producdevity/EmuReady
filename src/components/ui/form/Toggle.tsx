@@ -24,13 +24,14 @@ const sizeClasses = {
 interface Props {
   checked: boolean
   onChange: (checked: boolean) => void
-  label?: string
   disabled?: boolean
   className?: string
   size?: 'sm' | 'md' | 'lg'
 }
 
-export function Toggle(props: Props) {
+type Label = { label: string; 'aria-label'?: string } | { label?: never; 'aria-label': string }
+
+export function Toggle(props: Props & Label) {
   const size = props.size ?? 'md'
 
   return (
@@ -44,6 +45,7 @@ export function Toggle(props: Props) {
       <div className="relative">
         <input
           type="checkbox"
+          aria-label={props['aria-label']}
           className="sr-only"
           checked={props.checked}
           disabled={props.disabled ?? false}

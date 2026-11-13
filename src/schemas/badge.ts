@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { refinePaginationOffset } from '@/schemas/pagination'
 
 // TailwindColor enum values for validation
 const TAILWIND_COLORS = [
@@ -57,15 +58,17 @@ export const GetBadgeSchema = z.object({
   id: z.string().uuid('Invalid badge ID'),
 })
 
-export const GetBadgesSchema = z.object({
-  limit: z.number().min(1).max(100).default(20),
-  offset: z.number().min(0).optional(),
-  page: z.number().min(1).optional(),
-  search: z.string().optional(),
-  isActive: z.boolean().optional(),
-  sortField: z.enum(['name', 'createdAt', 'updatedAt']).optional(),
-  sortDirection: z.enum(['asc', 'desc']).optional(),
-})
+export const GetBadgesSchema = z
+  .object({
+    limit: z.number().int().min(1).max(100).default(20),
+    offset: z.number().int().safe().min(0).optional(),
+    page: z.number().int().safe().min(1).optional(),
+    search: z.string().optional(),
+    isActive: z.boolean().optional(),
+    sortField: z.enum(['name', 'createdAt', 'updatedAt']).optional(),
+    sortDirection: z.enum(['asc', 'desc']).optional(),
+  })
+  .superRefine(refinePaginationOffset)
 
 // User badge assignment schemas
 export const AssignBadgeToUserSchema = z.object({

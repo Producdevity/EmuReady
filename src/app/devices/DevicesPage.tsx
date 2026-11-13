@@ -3,7 +3,7 @@
 import { Search, Smartphone, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, useEffect, useMemo, type ChangeEvent, Suspense } from 'react'
+import { useState, useMemo, type ChangeEvent, Suspense } from 'react'
 import { isEmpty } from 'remeda'
 import { RetroCatalogButton } from '@/components/retrocatalog'
 import {
@@ -40,7 +40,6 @@ function DevicesPage() {
   const [page, setPage] = useState(1)
   const [sortField, setSortField] = useState<DeviceSortField>('brand')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
-  const [selectedDevice, setSelectedDevice] = useState<DeviceData | null>(null)
 
   const columnVisibility = useColumnVisibility(DEVICES_COLUMNS, {
     storageKey: storageKeys.columnVisibility.devices,
@@ -69,26 +68,30 @@ function DevicesPage() {
 
   // Fetch single device if it's in URL but not in current page
   const singleDeviceQuery = api.devices.byId.useQuery(
-    { id: deviceIdFromUrl! },
+    { id: deviceIdFromUrl ?? '' },
     {
       enabled: !!deviceIdFromUrl && !deviceInCurrentPage,
     },
   )
 
-  // Set selected device from either the list or the single query
-  useEffect(() => {
-    if (!deviceIdFromUrl) return setSelectedDevice(null)
+  const availableDevice =
+    deviceInCurrentPage ??
+    (singleDeviceQuery.data?.id === deviceIdFromUrl ? (singleDeviceQuery.data ?? null) : null)
 
-    const device = deviceInCurrentPage || singleDeviceQuery.data
-    if (device) setSelectedDevice(device)
-  }, [deviceIdFromUrl, deviceInCurrentPage, singleDeviceQuery.data])
+  const [lastSelectedDevice, setLastSelectedDevice] = useState<typeof availableDevice>(null)
+  if (availableDevice && availableDevice !== lastSelectedDevice)
+    setLastSelectedDevice(availableDevice)
+  const selectedDevice =
+    availableDevice ??
+    (!singleDeviceQuery.isError && lastSelectedDevice?.id === deviceIdFromUrl
+      ? lastSelectedDevice
+      : null)
 
   const openModal = (device: DeviceData) => {
     // Update URL with device ID
     const params = new URLSearchParams(searchParams.toString())
     params.set('deviceId', device.id)
     router.replace(`/devices?${params.toString()}`)
-    setSelectedDevice(device)
   }
 
   const closeModal = () => {
@@ -97,7 +100,6 @@ function DevicesPage() {
     params.delete('deviceId')
     const query = params.toString()
     router.replace(`/devices${query ? `?${query}` : ''}`)
-    setSelectedDevice(null)
   }
 
   const handleSort = (field: string) => {

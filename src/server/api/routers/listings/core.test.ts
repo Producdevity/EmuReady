@@ -85,11 +85,6 @@ vi.mock('@/server/services/review-risk.service', () => ({
   attachReviewRiskProfileForViewer: mockAttachReviewRiskProfileForViewer,
 }))
 
-vi.mock('@/server/utils/security-validation', () => ({
-  validatePagination: vi.fn((page, limit, max) => ({ page: page ?? 1, limit: limit ?? max ?? 20 })),
-  sanitizeInput: vi.fn((s: string) => s),
-}))
-
 vi.mock('@/server/repositories/listings.repository', () => ({
   ListingsRepository: vi.fn().mockImplementation(function MockListingsRepository() {
     return {
@@ -111,6 +106,8 @@ const EMULATOR_ID = '00000000-0000-4000-a000-000000000032'
 
 function createMockPrisma() {
   const mockTx = {
+    trustActionLog: { findMany: vi.fn().mockResolvedValue([{ id: 'first-vote-action' }]) },
+    pcListingVote: { count: vi.fn().mockResolvedValue(0) },
     vote: {
       create: vi
         .fn()

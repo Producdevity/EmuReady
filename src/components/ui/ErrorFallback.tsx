@@ -4,7 +4,7 @@ import * as Sentry from '@sentry/nextjs'
 import { useEffect } from 'react'
 
 interface Props {
-  error: Error | null
+  error: (Pick<Error, 'message'> & Partial<Pick<Error, 'name'>>) | null
   resetErrorBoundary: () => void
 }
 

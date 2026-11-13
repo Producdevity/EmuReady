@@ -1,3 +1,5 @@
+import { VoteEffectsRepository } from '@/features/reports/voting/server/vote-effects.repository'
+import { VoteEffectsService } from '@/features/reports/voting/server/vote-effects.service'
 import analytics from '@/lib/analytics'
 import { AppError, ResourceError } from '@/lib/errors'
 import {
@@ -35,6 +37,7 @@ import {
   generateEmulatorConfig,
 } from '@/server/utils/emulator-config/emulator-detector'
 import { checkSpamContent } from '@/server/utils/spam-check'
+import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { updateListingVoteCounts } from '@/server/utils/vote-counts'
 import {
   handleCommentVoteTrustEffects,
@@ -236,6 +239,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
 
     if (!listing) return ResourceError.listing.notFound()
 
+    const trustChanges: TrustScoreChange[] = []
     const voteResult = await ctx.prisma.$transaction(async (tx) => {
       const existingVote = await tx.vote.findUnique({
         where: { userId_listingId: { userId, listingId: input.listingId } },
@@ -280,6 +284,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
 
       await handleListingVoteTrustEffects({
         tx,
+        trustChanges,
         action: result.action,
         currentValue: input.value,
         previousValue: result.previousValue,
@@ -292,22 +297,17 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       return result
     })
 
-    // Notify listing author on new votes / direction changes; skip on toggle-off.
-    if (voteResult.action === 'created' || voteResult.action === 'updated') {
-      if (voteResult.vote && 'id' in voteResult.vote) {
-        notificationEventEmitter.emitNotificationEvent({
-          eventType: NOTIFICATION_EVENTS.LISTING_VOTED,
-          entityType: 'listing',
-          entityId: input.listingId,
-          triggeredBy: userId,
-          payload: {
-            listingId: input.listingId,
-            voteId: voteResult.vote.id,
-            voteValue: input.value,
-          },
-        })
-      }
-    }
+    for (const change of trustChanges) trackTrustScoreChange(change)
+    const voteEffects = new VoteEffectsService(new VoteEffectsRepository(ctx.prisma))
+    await voteEffects.afterCommit({
+      listingId: input.listingId,
+      listingType: 'handheld',
+      userId,
+      action: voteResult.action,
+      voteId: voteResult.action === 'deleted' ? null : voteResult.vote.id,
+      value: input.value,
+      previousValue: voteResult.previousValue,
+    })
 
     return voteResult.vote
   }),
@@ -524,7 +524,8 @@ export const mobileListingsRouter = createMobileTRPCRouter({
       // from the same user could both read null and both attempt to insert,
       // producing a Prisma P2002 on the second. Keeping the read and write
       // under the same isolation avoids the race.
-      return await ctx.prisma.$transaction(async (tx) => {
+      const trustChanges: TrustScoreChange[] = []
+      const result = await ctx.prisma.$transaction(async (tx) => {
         const existingVote = await tx.commentVote.findUnique({
           where: { userId_commentId: { userId, commentId: input.commentId } },
         })
@@ -569,6 +570,7 @@ export const mobileListingsRouter = createMobileTRPCRouter({
         if (trustActionNeeded) {
           await handleCommentVoteTrustEffects({
             tx,
+            trustChanges,
             trustAction: trustActionNeeded,
             newValue: !!input.value,
             previousValue: existingVote?.value ?? null,
@@ -611,6 +613,8 @@ export const mobileListingsRouter = createMobileTRPCRouter({
 
         return voteResult
       })
+      for (const change of trustChanges) trackTrustScoreChange(change)
+      return result
     }),
 
   /**

@@ -22,13 +22,13 @@ import {
   useRef,
   useCallback,
   useEffect,
-  type ComponentType,
   type TouchEvent as ReactTouchEvent,
   type MouseEvent as ReactMouseEvent,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react'
 import { MarkdownRenderer } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import { MarkdownToolbarButton } from './MarkdownToolbarButton'
 
 interface Props {
   onChange: (value: string) => void
@@ -163,33 +163,6 @@ export function MarkdownEditor(props: Props) {
   const handleNumberedList = () => insertText('1. ', '', 'list item')
   const handleQuote = () => insertText('> ', '', 'quoted text')
 
-  const ToolbarButton = ({
-    onClick,
-    icon: Icon,
-    title,
-  }: {
-    onClick: () => void
-    icon: ComponentType<{ className?: string }>
-    title: string
-  }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className={cn(
-        'p-2 rounded-md transition-colors duration-150',
-        'text-gray-600 dark:text-gray-400',
-        'hover:text-gray-800 dark:hover:text-gray-200',
-        'hover:bg-gray-100 dark:hover:bg-gray-700',
-        'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1',
-        'disabled:opacity-50 disabled:cursor-not-allowed',
-      )}
-      disabled={props.disabled}
-    >
-      <Icon className="w-4 h-4" />
-    </button>
-  )
-
   return (
     <div className="space-y-2">
       {/* Label */}
@@ -217,24 +190,56 @@ export function MarkdownEditor(props: Props) {
           {/* Left toolbar group scrolls horizontally on small screens */}
           <div className="flex-1 min-w-0 overflow-x-auto">
             <div className="inline-flex items-center gap-1 pr-2">
-              <ToolbarButton onClick={handleBold} icon={Bold} title="Bold" />
-              <ToolbarButton onClick={handleItalic} icon={Italic} title="Italic" />
-              <ToolbarButton
+              <MarkdownToolbarButton
+                disabled={props.disabled}
+                onClick={handleBold}
+                icon={Bold}
+                title="Bold"
+              />
+              <MarkdownToolbarButton
+                disabled={props.disabled}
+                onClick={handleItalic}
+                icon={Italic}
+                title="Italic"
+              />
+              <MarkdownToolbarButton
+                disabled={props.disabled}
                 onClick={handleStrikethrough}
                 icon={Strikethrough}
                 title="Strikethrough"
               />
               <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
-              <ToolbarButton onClick={handleLink} icon={Link} title="Link" />
-              <ToolbarButton onClick={handleCode} icon={Code} title="Inline Code" />
+              <MarkdownToolbarButton
+                disabled={props.disabled}
+                onClick={handleLink}
+                icon={Link}
+                title="Link"
+              />
+              <MarkdownToolbarButton
+                disabled={props.disabled}
+                onClick={handleCode}
+                icon={Code}
+                title="Inline Code"
+              />
               <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
-              <ToolbarButton onClick={handleBulletList} icon={List} title="Bullet List" />
-              <ToolbarButton
+              <MarkdownToolbarButton
+                disabled={props.disabled}
+                onClick={handleBulletList}
+                icon={List}
+                title="Bullet List"
+              />
+              <MarkdownToolbarButton
+                disabled={props.disabled}
                 onClick={handleNumberedList}
                 icon={ListOrdered}
                 title="Numbered List"
               />
-              <ToolbarButton onClick={handleQuote} icon={Quote} title="Quote" />
+              <MarkdownToolbarButton
+                disabled={props.disabled}
+                onClick={handleQuote}
+                icon={Quote}
+                title="Quote"
+              />
             </div>
           </div>
 

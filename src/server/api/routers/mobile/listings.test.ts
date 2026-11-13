@@ -1,5 +1,10 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
-import { Role } from '@orm/client'
+import analytics from '@/lib/analytics'
+import { logger } from '@/lib/logger'
+import { prisma as database } from '@/server/db'
+import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
+import { type handleListingVoteTrustEffects } from '@/server/utils/vote-trust-effects'
+import { type Prisma, Role, TrustAction, type Vote } from '@orm/client'
 
 vi.unmock('@/server/api/trpc')
 vi.unmock('@/server/api/root')
@@ -20,7 +25,9 @@ vi.mock('@/server/repositories/api-keys.repository', () => ({
 }))
 
 const mockApplyTrustAction = vi.fn().mockResolvedValue(undefined)
-const mockHandleListingVoteTrustEffects = vi.fn().mockResolvedValue(undefined)
+const mockHandleListingVoteTrustEffects = vi
+  .fn<typeof handleListingVoteTrustEffects>()
+  .mockResolvedValue(undefined)
 const mockHandleCommentVoteTrustEffects = vi.fn().mockResolvedValue(undefined)
 const mockLogAction = vi.fn().mockResolvedValue(undefined)
 
@@ -32,7 +39,8 @@ vi.mock('@/lib/trust/service', () => ({
 }))
 
 vi.mock('@/server/utils/vote-trust-effects', () => ({
-  handleListingVoteTrustEffects: (...args: unknown[]) => mockHandleListingVoteTrustEffects(...args),
+  handleListingVoteTrustEffects: (input: Parameters<typeof handleListingVoteTrustEffects>[0]) =>
+    mockHandleListingVoteTrustEffects(input),
   handleCommentVoteTrustEffects: (...args: unknown[]) => mockHandleCommentVoteTrustEffects(...args),
 }))
 
@@ -43,8 +51,22 @@ vi.mock('@/server/utils/vote-counts', () => ({
 vi.mock('@/lib/analytics', () => ({
   default: {
     engagement: { vote: vi.fn(), commentVote: vi.fn() },
+    userJourney: { firstTimeAction: vi.fn() },
   },
 }))
+
+vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn() } }))
+vi.mock('@/server/utils/trust-score-analytics', () => ({ trackTrustScoreChange: vi.fn() }))
+
+const models = vi.hoisted(() => ({
+  vote: { create: vi.fn(), delete: vi.fn(), update: vi.fn(), findUnique: vi.fn() },
+  commentVote: { create: vi.fn(), delete: vi.fn(), update: vi.fn(), findUnique: vi.fn() },
+  comment: { findUnique: vi.fn(), update: vi.fn() },
+  listing: { findUnique: vi.fn() },
+  trustActionLog: { findMany: vi.fn() },
+  $transaction: vi.fn(),
+}))
+vi.mock('@/server/db', () => ({ prisma: models }))
 
 vi.mock('@/server/repositories/comments.repository', () => ({
   CommentsRepository: vi.fn().mockImplementation(function MockCommentsRepository() {
@@ -69,72 +91,80 @@ const USER_ID = '00000000-0000-4000-a000-000000000001'
 const AUTHOR_ID = '00000000-0000-4000-a000-000000000002'
 const LISTING_ID = '00000000-0000-4000-a000-000000000010'
 const COMMENT_ID = '00000000-0000-4000-a000-000000000020'
+const transaction: Prisma.TransactionClient = { ...database }
+const trustChange: TrustScoreChange = {
+  userId: USER_ID,
+  action: TrustAction.UPVOTE,
+  oldScore: 100,
+  newScore: 101,
+  delta: 1,
+}
 
-function createMockPrisma() {
-  const mockTx = {
-    vote: {
-      create: vi
-        .fn()
-        .mockResolvedValue({ id: 'vote-1', value: true, userId: USER_ID, listingId: LISTING_ID }),
-      delete: vi.fn().mockResolvedValue(undefined),
-      update: vi
-        .fn()
-        .mockResolvedValue({ id: 'vote-1', value: false, userId: USER_ID, listingId: LISTING_ID }),
-      findUnique: vi.fn().mockResolvedValue(null),
-    },
-    commentVote: {
-      create: vi.fn().mockResolvedValue({ userId: USER_ID, commentId: COMMENT_ID, value: true }),
-      delete: vi.fn().mockResolvedValue(undefined),
-      update: vi.fn().mockResolvedValue({ userId: USER_ID, commentId: COMMENT_ID, value: false }),
-      findUnique: vi.fn().mockResolvedValue(null),
-    },
-    comment: {
-      findUnique: vi.fn(),
-      update: vi.fn().mockResolvedValue({ id: COMMENT_ID, score: 1 }),
-    },
-    listing: {
-      findUnique: vi.fn(),
-    },
-  }
+function voteRecord(value: boolean): Vote {
   return {
-    ...mockTx,
-    $transaction: vi.fn(async (cb: (tx: typeof mockTx) => Promise<unknown>) => cb(mockTx)),
+    id: 'vote-1',
+    value,
+    userId: USER_ID,
+    listingId: LISTING_ID,
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+    nullifiedAt: null,
   }
 }
 
-type MockPrisma = ReturnType<typeof createMockPrisma>
-
-function createCaller(overrides: { userId?: string; role?: Role; prisma?: MockPrisma } = {}) {
-  const prisma = overrides.prisma ?? createMockPrisma()
+function createCaller() {
   return {
     caller: mobileListingsRouter.createCaller({
       session: {
         user: {
-          id: overrides.userId ?? USER_ID,
+          id: USER_ID,
           email: 'test@test.com',
           name: 'Test User',
-          role: overrides.role ?? Role.USER,
+          role: Role.USER,
           permissions: [],
           showNsfw: false,
         },
       },
-      prisma: prisma as never,
+      prisma: database,
       headers: new Headers(),
       apiKey: null,
     }),
-    prisma,
+    prisma: models,
   }
 }
 
 describe('mobile listings trust integration', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockEmitNotificationEvent.mockReset()
+    mockHandleListingVoteTrustEffects.mockReset().mockResolvedValue(undefined)
+    vi.mocked(analytics.engagement.vote).mockReset()
+    vi.mocked(analytics.userJourney.firstTimeAction).mockReset()
+    models.$transaction
+      .mockReset()
+      .mockImplementation(async (run: (tx: Prisma.TransactionClient) => Promise<unknown>) =>
+        run(transaction),
+      )
+    models.vote.findUnique.mockReset().mockResolvedValue(null)
+    models.vote.create.mockReset().mockResolvedValue(voteRecord(true))
+    models.vote.update.mockReset().mockResolvedValue(voteRecord(false))
+    models.vote.delete.mockReset().mockResolvedValue(undefined)
+    models.trustActionLog.findMany.mockReset().mockResolvedValue([{ id: 'vote-action-1' }])
+    models.commentVote.findUnique.mockReset().mockResolvedValue(null)
+    models.commentVote.create
+      .mockReset()
+      .mockResolvedValue({ userId: USER_ID, commentId: COMMENT_ID, value: true })
+    models.commentVote.update
+      .mockReset()
+      .mockResolvedValue({ userId: USER_ID, commentId: COMMENT_ID, value: false })
+    models.commentVote.delete.mockReset().mockResolvedValue(undefined)
+    models.comment.update.mockReset().mockResolvedValue({ id: COMMENT_ID, score: 1 })
+    models.comment.findUnique.mockReset()
+    models.listing.findUnique.mockReset().mockResolvedValue({ authorId: AUTHOR_ID })
   })
 
   describe('vote', () => {
     it('calls handleListingVoteTrustEffects with tx on new upvote', async () => {
-      const { caller, prisma } = createCaller()
-      prisma.listing.findUnique.mockResolvedValue({ authorId: AUTHOR_ID })
+      const { caller } = createCaller()
 
       await caller.vote({ listingId: LISTING_ID, value: true })
 
@@ -154,13 +184,7 @@ describe('mobile listings trust integration', () => {
 
     it('calls handleListingVoteTrustEffects with action deleted on vote toggle', async () => {
       const { caller, prisma } = createCaller()
-      prisma.listing.findUnique.mockResolvedValue({ authorId: AUTHOR_ID })
-      prisma.vote.findUnique.mockResolvedValue({
-        id: 'vote-1',
-        value: true,
-        userId: USER_ID,
-        listingId: LISTING_ID,
-      })
+      prisma.vote.findUnique.mockResolvedValue(voteRecord(true))
 
       await caller.vote({ listingId: LISTING_ID, value: true })
 
@@ -176,13 +200,7 @@ describe('mobile listings trust integration', () => {
 
     it('calls handleListingVoteTrustEffects with action updated on vote change', async () => {
       const { caller, prisma } = createCaller()
-      prisma.listing.findUnique.mockResolvedValue({ authorId: AUTHOR_ID })
-      prisma.vote.findUnique.mockResolvedValue({
-        id: 'vote-1',
-        value: true,
-        userId: USER_ID,
-        listingId: LISTING_ID,
-      })
+      prisma.vote.findUnique.mockResolvedValue(voteRecord(true))
 
       await caller.vote({ listingId: LISTING_ID, value: false })
 
@@ -198,18 +216,17 @@ describe('mobile listings trust integration', () => {
 
     it('runs trust call inside the transaction', async () => {
       const { caller, prisma } = createCaller()
-      prisma.listing.findUnique.mockResolvedValue({ authorId: AUTHOR_ID })
 
       await caller.vote({ listingId: LISTING_ID, value: true })
 
       expect(prisma.$transaction).toHaveBeenCalledTimes(1)
-      const trustCall = mockHandleListingVoteTrustEffects.mock.calls[0][0] as { tx: unknown }
-      expect(trustCall.tx).toHaveProperty('vote')
+      expect(mockHandleListingVoteTrustEffects).toHaveBeenCalledWith(
+        expect.objectContaining({ tx: transaction }),
+      )
     })
 
     it('emits LISTING_VOTED on a new vote', async () => {
-      const { caller, prisma } = createCaller()
-      prisma.listing.findUnique.mockResolvedValue({ authorId: AUTHOR_ID })
+      const { caller } = createCaller()
 
       await caller.vote({ listingId: LISTING_ID, value: true })
 
@@ -225,18 +242,130 @@ describe('mobile listings trust integration', () => {
 
     it('does NOT emit LISTING_VOTED on toggle-off', async () => {
       const { caller, prisma } = createCaller()
-      prisma.listing.findUnique.mockResolvedValue({ authorId: AUTHOR_ID })
-      prisma.vote.findUnique.mockResolvedValue({
-        id: 'vote-1',
-        value: true,
-        userId: USER_ID,
-        listingId: LISTING_ID,
-      })
+      prisma.vote.findUnique.mockResolvedValue(voteRecord(true))
 
       await caller.vote({ listingId: LISTING_ID, value: true })
 
       expect(mockEmitNotificationEvent).not.toHaveBeenCalled()
     })
+
+    it.each(['created', 'updated', 'deleted'] as const)(
+      'preserves the mobile %s response and tracks the vote direction',
+      async (action) => {
+        const { caller, prisma } = createCaller()
+        const value = action !== 'updated'
+        if (action !== 'created') prisma.vote.findUnique.mockResolvedValue(voteRecord(true))
+
+        const result = await caller.vote({ listingId: LISTING_ID, value })
+
+        expect(result).toEqual(
+          action === 'deleted' ? { id: 'vote-1', value: null, removed: true } : voteRecord(value),
+        )
+        expect(analytics.engagement.vote).toHaveBeenCalledExactlyOnceWith({
+          listingId: LISTING_ID,
+          voteValue: action === 'deleted' ? null : value,
+          previousVote: action === 'created' ? null : true,
+        })
+        if (action === 'created') {
+          expect(prisma.trustActionLog.findMany).toHaveBeenCalledExactlyOnceWith({
+            where: { userId: USER_ID, action: { in: [TrustAction.UPVOTE, TrustAction.DOWNVOTE] } },
+            select: { id: true },
+            take: 2,
+          })
+          expect(analytics.userJourney.firstTimeAction).toHaveBeenCalledExactlyOnceWith({
+            userId: USER_ID,
+            action: 'first_vote',
+          })
+        } else {
+          expect(prisma.trustActionLog.findMany).not.toHaveBeenCalled()
+          expect(analytics.userJourney.firstTimeAction).not.toHaveBeenCalled()
+        }
+      },
+    )
+
+    it('does not track a first-vote milestone for an established voter', async () => {
+      const { caller, prisma } = createCaller()
+      prisma.trustActionLog.findMany.mockResolvedValue([{ id: 'action-1' }, { id: 'action-2' }])
+      await caller.vote({ listingId: LISTING_ID, value: true })
+      expect(analytics.engagement.vote).toHaveBeenCalledOnce()
+      expect(analytics.userJourney.firstTimeAction).not.toHaveBeenCalled()
+    })
+
+    it('waits for commit before publishing trust changes and vote effects', async () => {
+      const { caller, prisma } = createCaller()
+      const commit = Promise.withResolvers<void>()
+      mockHandleListingVoteTrustEffects.mockImplementation(async (input) => {
+        input.trustChanges.push(trustChange)
+      })
+      prisma.$transaction.mockImplementationOnce(
+        async (run: (tx: Prisma.TransactionClient) => Promise<unknown>) => {
+          const result = await run(transaction)
+          await commit.promise
+          return result
+        },
+      )
+      const pending = caller.vote({ listingId: LISTING_ID, value: true })
+      try {
+        await vi.waitFor(() => expect(mockHandleListingVoteTrustEffects).toHaveBeenCalledOnce())
+        expect(trackTrustScoreChange).not.toHaveBeenCalled()
+        expect(mockEmitNotificationEvent).not.toHaveBeenCalled()
+        expect(analytics.engagement.vote).not.toHaveBeenCalled()
+        expect(prisma.trustActionLog.findMany).not.toHaveBeenCalled()
+        commit.resolve()
+        await expect(pending).resolves.toEqual(voteRecord(true))
+        expect(trackTrustScoreChange).toHaveBeenCalledExactlyOnceWith(trustChange)
+        expect(analytics.engagement.vote).toHaveBeenCalledOnce()
+      } finally {
+        commit.resolve()
+      }
+    })
+
+    it('publishes no vote effects when the transaction fails to commit', async () => {
+      const { caller, prisma } = createCaller()
+      mockHandleListingVoteTrustEffects.mockImplementation(async (input) => {
+        input.trustChanges.push(trustChange)
+      })
+      prisma.$transaction.mockImplementationOnce(
+        async (run: (tx: Prisma.TransactionClient) => Promise<unknown>) => {
+          await run(transaction)
+          throw new Error('Commit failed')
+        },
+      )
+      await expect(caller.vote({ listingId: LISTING_ID, value: true })).rejects.toThrow(
+        'Commit failed',
+      )
+      expect(trackTrustScoreChange).not.toHaveBeenCalled()
+      expect(mockEmitNotificationEvent).not.toHaveBeenCalled()
+      expect(analytics.engagement.vote).not.toHaveBeenCalled()
+      expect(analytics.userJourney.firstTimeAction).not.toHaveBeenCalled()
+      expect(prisma.trustActionLog.findMany).not.toHaveBeenCalled()
+    })
+
+    it.each(['notification', 'analytics', 'milestone lookup'] as const)(
+      'keeps a committed vote successful when %s fails',
+      async (failure) => {
+        const { caller, prisma } = createCaller()
+        const error = new Error(`${failure} failed`)
+        if (failure === 'notification') {
+          mockEmitNotificationEvent.mockImplementationOnce(() => {
+            throw error
+          })
+        } else if (failure === 'analytics') {
+          vi.mocked(analytics.engagement.vote).mockImplementationOnce(() => {
+            throw error
+          })
+        } else {
+          prisma.trustActionLog.findMany.mockRejectedValueOnce(error)
+        }
+        await expect(caller.vote({ listingId: LISTING_ID, value: true })).resolves.toEqual(
+          voteRecord(true),
+        )
+        expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('Committed vote'), error)
+        expect(analytics.userJourney.firstTimeAction).toHaveBeenCalledTimes(
+          failure === 'milestone lookup' ? 0 : 1,
+        )
+      },
+    )
   })
 
   describe('voteComment', () => {
@@ -366,11 +495,7 @@ describe('mobile listings trust integration', () => {
 
       await caller.voteComment({ commentId: COMMENT_ID, value: true })
 
-      const txCall = vi.mocked(prisma.$transaction).mock.invocationCallOrder[0]
-      const findUniqueCall = prisma.commentVote.findUnique.mock.invocationCallOrder[0]
-      expect(txCall).toBeDefined()
-      expect(findUniqueCall).toBeDefined()
-      expect(findUniqueCall).toBeGreaterThan(txCall as number)
+      expect(prisma.$transaction).toHaveBeenCalledBefore(prisma.commentVote.findUnique)
     })
   })
 })

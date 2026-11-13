@@ -6,7 +6,14 @@ type DeviceData = {
   socName?: string
 }
 
-const devices: DeviceData[] = [
+export const devices: DeviceData[] = [
+  // Alldocube
+  {
+    brandName: 'Alldocube',
+    modelName: 'iPlay 70 mini Ultra',
+    socName: 'Snapdragon 7+ Gen 3',
+  },
+
   // Apple
   {
     brandName: 'Apple',
@@ -39,7 +46,7 @@ const devices: DeviceData[] = [
   {
     brandName: 'Apple',
     modelName: 'iPhone SE (3rd Gen)',
-    socName: 'A15 Bionic',
+    socName: 'Apple A15 Bionic',
   },
   {
     brandName: 'Apple',
@@ -124,6 +131,13 @@ const devices: DeviceData[] = [
   { brandName: 'GPD', modelName: 'XP Plus', socName: 'Dimensity 1200' },
   { brandName: 'GPD', modelName: 'XP', socName: 'Helio G95' },
 
+  // Infinix
+  {
+    brandName: 'Infinix',
+    modelName: 'Note 50 Pro+ 5G',
+    socName: 'Dimensity 8350 Ultimate',
+  },
+
   // Lenovo
   { brandName: 'Lenovo', modelName: 'Legion Go', socName: 'AMD Z1 Extreme' },
   {
@@ -152,11 +166,20 @@ const devices: DeviceData[] = [
   { brandName: 'OnePlus', modelName: '12R', socName: 'Snapdragon 8 Gen 2' },
   { brandName: 'OnePlus', modelName: '13', socName: 'Snapdragon 8 Elite' },
   { brandName: 'OnePlus', modelName: '13R', socName: 'Snapdragon 8 Gen 3' },
+  { brandName: 'OnePlus', modelName: '15R', socName: 'Snapdragon 8 Gen 5' },
+  { brandName: 'OnePlus', modelName: 'Ace 6', socName: 'Snapdragon 8 Elite' },
+  { brandName: 'OnePlus', modelName: 'Ace 6T', socName: 'Snapdragon 8 Gen 5' },
   { brandName: 'OnePlus', modelName: '9 Pro', socName: 'Snapdragon 888' },
   { brandName: 'OnePlus', modelName: 'Open', socName: 'Snapdragon 8 Gen 2' },
 
+  // OPPO
+  { brandName: 'Oppo', modelName: 'Find X9 Pro', socName: 'Dimensity 9500' },
+
   // Pimax
   { brandName: 'Pimax', modelName: 'Portal', socName: 'Snapdragon 8 Gen 2' },
+
+  // Rakuten
+  { brandName: 'Rakuten', modelName: 'Hand 5G', socName: 'Snapdragon 480' },
 
   // Razer
   { brandName: 'Razer', modelName: 'Edge 5G', socName: 'Snapdragon 8 Gen 1' },
@@ -175,7 +198,6 @@ const devices: DeviceData[] = [
   { brandName: 'Realme', modelName: '9i', socName: 'Snapdragon 680' },
   { brandName: 'Realme', modelName: 'C55', socName: 'Helio G88' },
   { brandName: 'Realme', modelName: 'C75', socName: 'Helio G92 Max' },
-  { brandName: 'Realme', modelName: 'GT 2 Pro', socName: 'Snapdragon 8 Gen 1' },
   { brandName: 'Realme', modelName: 'GT 2 Pro', socName: 'Snapdragon 8 Gen 1' },
   { brandName: 'Realme', modelName: 'GT 3', socName: 'Snapdragon 8+ Gen 1' },
   { brandName: 'Realme', modelName: 'GT 5 Pro', socName: 'Snapdragon 8 Gen 3' },
@@ -391,27 +413,27 @@ const devices: DeviceData[] = [
   {
     brandName: 'Samsung',
     modelName: 'Galaxy Tab A7',
-    socName: 'MediaTek Helio P22T',
+    socName: 'Snapdragon 662',
   },
   {
     brandName: 'Samsung',
     modelName: 'Galaxy Tab A7 Lite',
-    socName: 'Unisoc Tiger T618',
+    socName: 'Helio P22T',
   },
   {
     brandName: 'Samsung',
     modelName: 'Galaxy Tab A8',
-    socName: 'Unisoc Tiger T618',
+    socName: 'Tiger T618',
   },
   {
     brandName: 'Samsung',
     modelName: 'Galaxy Tab A9',
-    socName: 'Unisoc Tiger T616',
+    socName: 'Helio G99',
   },
   {
     brandName: 'Samsung',
     modelName: 'Galaxy Tab A9+',
-    socName: 'Unisoc Tiger T616',
+    socName: 'Snapdragon 695',
   },
   {
     brandName: 'Samsung',
@@ -446,7 +468,7 @@ const devices: DeviceData[] = [
   {
     brandName: 'Samsung',
     modelName: 'Galaxy Tab S10 Ultra',
-    socName: 'MediaTek Dimensity 9300+',
+    socName: 'Dimensity 9300+',
   },
   {
     brandName: 'Samsung',
@@ -691,27 +713,19 @@ const devices: DeviceData[] = [
   // Realme
   { brandName: 'Realme', modelName: 'GT 7 Pro', socName: 'Snapdragon 8 Elite' },
   { brandName: 'Realme', modelName: 'GT 6', socName: 'Snapdragon 8s Gen 3' },
-  { brandName: 'Realme', modelName: 'GT 5 Pro', socName: 'Snapdragon 8 Gen 3' },
-  { brandName: 'Realme', modelName: 'GT 5', socName: 'Snapdragon 8 Gen 2' },
   { brandName: 'Realme', modelName: 'GT Neo6', socName: 'Snapdragon 8s Gen 3' },
   { brandName: 'Realme', modelName: 'GT Neo5', socName: 'Snapdragon 8+ Gen 1' },
-  { brandName: 'Realme', modelName: 'GT 3', socName: 'Snapdragon 8+ Gen 1' },
-  { brandName: 'Realme', modelName: 'GT 2 Pro', socName: 'Snapdragon 8 Gen 1' },
   { brandName: 'Realme', modelName: 'GT 2', socName: 'Snapdragon 888' },
   { brandName: 'Realme', modelName: 'GT Master', socName: 'Snapdragon 778G' },
   { brandName: 'Realme', modelName: 'GT', socName: 'Snapdragon 888' },
   { brandName: 'Realme', modelName: '13 Pro+', socName: 'Snapdragon 7s Gen 2' },
   { brandName: 'Realme', modelName: '13 Pro', socName: 'Snapdragon 7s Gen 2' },
-  { brandName: 'Realme', modelName: '12 Pro+', socName: 'Dimensity 7050' },
-  { brandName: 'Realme', modelName: '12 Pro', socName: 'Snapdragon 6 Gen 1' },
-  { brandName: 'Realme', modelName: '11 Pro+', socName: 'Dimensity 7050' },
-  { brandName: 'Realme', modelName: '11 Pro', socName: 'Dimensity 7050' },
 
   // Nothing
   {
     brandName: 'Nothing',
     modelName: 'Phone (2a) Plus',
-    socName: 'Dimensity 7350',
+    socName: 'Dimensity 7350 Pro',
   },
   { brandName: 'Nothing', modelName: 'Phone (2a)', socName: 'Dimensity 7200' },
   {
@@ -796,6 +810,18 @@ const devices: DeviceData[] = [
     brandName: 'Samsung',
     modelName: 'Galaxy S25 Ultra',
     socName: 'Snapdragon 8 Elite',
+  },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy S26 Ultra',
+    socName: 'Snapdragon 8 Elite Gen 5',
+  },
+  { brandName: 'Samsung', modelName: 'Galaxy S25 FE', socName: 'Exynos 2400' },
+  { brandName: 'Samsung', modelName: 'Galaxy A56 5G', socName: 'Exynos 1580' },
+  {
+    brandName: 'Samsung',
+    modelName: 'Galaxy Z Fold8 Ultra',
+    socName: 'Snapdragon 8 Elite Gen 5',
   },
   {
     brandName: 'Samsung',
@@ -917,6 +943,7 @@ const devices: DeviceData[] = [
     modelName: 'X1',
     socName: 'Intel Core Ultra 7 155H',
   },
+  { brandName: 'OneXPlayer', modelName: '3', socName: 'Intel Arc G3 Extreme' },
   { brandName: 'OneXPlayer', modelName: '2 Pro', socName: 'AMD Ryzen 7 7840U' },
   { brandName: 'OneXPlayer', modelName: '2', socName: 'AMD Ryzen 7 6800U' },
   {

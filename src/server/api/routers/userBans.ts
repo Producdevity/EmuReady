@@ -18,8 +18,8 @@ import {
 } from '@/server/api/trpc'
 import { UserBansRepository } from '@/server/repositories/user-bans.repository'
 import { logAudit, buildDiff } from '@/server/services/audit.service'
+import { withTrustScoreTransaction } from '@/server/services/trust-score-transaction.service'
 import { nullifyUserVotes, restoreUserVotes } from '@/server/services/vote-nullification.service'
-import { withRetryTransaction } from '@/server/utils/transactions'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
 import { AuditAction, AuditEntityType, Role } from '@orm/client'
@@ -78,18 +78,17 @@ export const userBansRouter = createTRPCRouter({
       return ResourceError.userBan.cannotBanHigherRole()
     }
 
-    // Check if user already has an active ban
-    const { isBanned } = await repository.checkBanStatus(userId)
-    if (isBanned) return ResourceError.userBan.alreadyBanned()
-
     if (expiresAt && expiresAt <= new Date()) {
       return AppError.badRequest('Expiration date must be in the future')
     }
 
-    const { created, nullificationResult } = await withRetryTransaction(
+    const { created, nullificationResult } = await withTrustScoreTransaction(
       ctx.prisma,
-      async (tx) => {
-        const ban = await new UserBansRepository(tx).create({
+      async (tx, trustChanges) => {
+        const transactionRepository = new UserBansRepository(tx)
+        const { isBanned } = await transactionRepository.checkBanStatus(userId)
+        if (isBanned) return ResourceError.userBan.alreadyBanned()
+        const ban = await transactionRepository.create({
           userId,
           bannedById,
           reason,
@@ -100,6 +99,7 @@ export const userBansRouter = createTRPCRouter({
         let nullResult: Awaited<ReturnType<typeof nullifyUserVotes>> | null = null
         if (shouldNullifyVotes) {
           nullResult = await nullifyUserVotes(tx, {
+            trustChanges,
             userId,
             adminUserId: ctx.session.user.id,
             reason: `Ban: ${reason}`,
@@ -115,7 +115,6 @@ export const userBansRouter = createTRPCRouter({
 
         return { created: ban, nullificationResult: nullResult }
       },
-      { timeout: 120_000 },
     )
 
     void logAudit(ctx.prisma, {
@@ -224,14 +223,15 @@ export const userBansRouter = createTRPCRouter({
       isActive: ban.isActive,
     }
 
-    const { lifted, restorationResult } = await withRetryTransaction(
+    const { lifted, restorationResult } = await withTrustScoreTransaction(
       ctx.prisma,
-      async (tx) => {
+      async (tx, trustChanges) => {
         const liftedBan = await new UserBansRepository(tx).lift(id, unbannedById, notes)
 
         let restoreResult: Awaited<ReturnType<typeof restoreUserVotes>> | null = null
         if (ban.votesNullified) {
           restoreResult = await restoreUserVotes(tx, {
+            trustChanges,
             userId: ban.userId,
             adminUserId: ctx.session.user.id,
             reason: `Ban lifted: ${ban.reason}`,
@@ -241,7 +241,6 @@ export const userBansRouter = createTRPCRouter({
 
         return { lifted: liftedBan, restorationResult: restoreResult }
       },
-      { timeout: 120_000 },
     )
 
     const next = {

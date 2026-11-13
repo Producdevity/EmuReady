@@ -1,14 +1,14 @@
 'use client'
 
 import { User, Save, X, Pencil } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button, Input } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 
-type UserProfileData = RouterOutput['users']['getProfile']
+type UserProfileData = Pick<RouterOutput['users']['getProfile'], 'name' | 'bio'>
 
 interface Props {
   userQuery: {
@@ -24,23 +24,39 @@ function ProfileInformation(props: Props) {
     name: '',
     bio: '',
   })
+  const [savedProfile, setSavedProfile] = useState<{
+    data: UserProfileData
+    previousQueryData: Props['userQuery']['data']
+  } | null>(null)
+  const profileData =
+    savedProfile && savedProfile.previousQueryData === props.userQuery.data
+      ? savedProfile.data
+      : props.userQuery.data
 
   const utils = api.useUtils()
 
-  // Initialize form data when user data loads
-  useEffect(() => {
-    if (!props.userQuery.data) return
+  function handleEditToggle() {
     setFormData({
-      name: props.userQuery.data.name ?? '',
-      bio: props.userQuery.data.bio ?? '',
+      name: profileData?.name ?? '',
+      bio: profileData?.bio ?? '',
     })
-  }, [props.userQuery.data])
+    setIsEditing(!isEditing)
+  }
 
   const updateProfile = api.users.update.useMutation({
-    onSuccess: () => {
-      utils.users.getProfile.invalidate().catch(console.error)
-      toast.success('Profile updated successfully!')
-      setIsEditing(false)
+    onSuccess: async (result) => {
+      setSavedProfile({
+        data: result.profile,
+        previousQueryData: props.userQuery.data,
+      })
+      try {
+        await utils.users.getProfile.invalidate(undefined, undefined, { throwOnError: true })
+        toast.success('Profile updated successfully!')
+        setIsEditing(false)
+      } catch (error) {
+        console.error('Error refreshing the saved profile:', error)
+        toast.warning('Profile saved, but it could not be refreshed. Your draft is still open.')
+      }
     },
     onError: (error) => {
       console.error('Error updating profile:', error)
@@ -53,10 +69,10 @@ function ProfileInformation(props: Props) {
   }
 
   const handleFormReset = () => {
-    if (props.userQuery.data) {
+    if (profileData) {
       setFormData({
-        name: props.userQuery.data.name ?? '',
-        bio: props.userQuery.data.bio ?? '',
+        name: profileData.name ?? '',
+        bio: profileData.bio ?? '',
       })
     }
     setIsEditing(false)
@@ -90,7 +106,7 @@ function ProfileInformation(props: Props) {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setIsEditing((prevState) => !prevState)}
+          onClick={handleEditToggle}
           icon={isEditing ? X : Pencil}
           className="flex items-center gap-2"
           isLoading={updateProfile.isPending}
@@ -112,9 +128,7 @@ function ProfileInformation(props: Props) {
               className="w-full"
             />
           ) : (
-            <p className="text-gray-900 dark:text-white">
-              {props.userQuery.data?.name || 'Not set'}
-            </p>
+            <p className="text-gray-900 dark:text-white">{profileData?.name || 'Not set'}</p>
           )}
         </div>
 
@@ -133,7 +147,7 @@ function ProfileInformation(props: Props) {
             />
           ) : (
             <p className="text-gray-900 dark:text-white">
-              {props.userQuery.data?.bio || 'No bio added yet'}
+              {profileData?.bio || 'No bio added yet'}
             </p>
           )}
         </div>

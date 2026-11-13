@@ -86,7 +86,6 @@ function AdminBrandsPage() {
 
   const handleModalSuccess = () => {
     invalidateBrandQueries()
-    closeModal()
   }
 
   const handleDelete = async (id: string) => {

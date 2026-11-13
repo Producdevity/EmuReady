@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { SortDirectionSchema } from '@/schemas/common'
+import { refinePaginationOffset } from '@/schemas/pagination'
 import { ReportReason, ReportStatus } from '@orm'
 
 export const ReportReasonSchema = z.nativeEnum(ReportReason)
@@ -26,9 +27,10 @@ export const GetListingReportsSchema = z
     reason: ReportReasonSchema.optional(),
     sortField: ListingReportSortField.optional(),
     sortDirection: SortDirectionSchema.optional(),
-    page: z.coerce.number().int().min(1).default(1),
+    page: z.coerce.number().int().safe().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export const GetReportByIdSchema = z.object({

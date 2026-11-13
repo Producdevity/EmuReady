@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { StrictMode, useState } from 'react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { Autocomplete, type AutocompleteOptionBase } from './Autocomplete'
 
@@ -50,6 +51,138 @@ const gameProps = {
   optionToLabel: (game: GameOption) => game.title,
   onChange: vi.fn(),
 }
+
+describe('Autocomplete async response ordering', () => {
+  it('does not select stale async options during the debounce window', async () => {
+    vi.useFakeTimers()
+    const onChange = vi.fn()
+    const loadItems = vi.fn(async (query: string) =>
+      mockStaticItems.filter((item) => !query || item.id === '2'),
+    )
+    render(<Autocomplete {...defaultProps} loadItems={loadItems} onChange={onChange} />)
+    try {
+      await act(async () => {})
+      const input = screen.getByRole('combobox')
+      fireEvent.focus(input)
+      expect(screen.getByRole('option', { name: 'Apple' })).toBeInTheDocument()
+      fireEvent.change(input, { target: { value: 'Ba' } })
+      expect(loadItems).not.toHaveBeenCalledWith('Ba')
+      fireEvent.keyDown(input, { key: 'ArrowDown' })
+      fireEvent.keyDown(input, { key: 'Enter' })
+      expect(onChange).not.toHaveBeenCalled()
+      expect(input).toHaveValue('Ba')
+      expect(input).not.toHaveAttribute('aria-activedescendant')
+      expect(screen.queryByRole('option')).not.toBeInTheDocument()
+
+      await act(async () => vi.advanceTimersByTime(300))
+      expect(loadItems).toHaveBeenCalledWith('Ba')
+      expect(screen.getByRole('option', { name: 'Banana' })).toBeInTheDocument()
+      fireEvent.keyDown(input, { key: 'ArrowDown' })
+      fireEvent.keyDown(input, { key: 'Enter' })
+      expect(onChange).toHaveBeenCalledExactlyOnceWith('2')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it.each(['debounce', 'request'] as const)(
+    'discards a pending %s when the parent selects another option',
+    async (stage) => {
+      vi.useFakeTimers()
+      const pending = Promise.withResolvers<TestOption[]>()
+      const loadItems = vi.fn((query: string) => (query ? pending.promise : Promise.resolve([])))
+      const props = { ...defaultProps, loadItems, items: mockStaticItems }
+      const view = render(<Autocomplete {...props} />)
+      try {
+        await act(async () => {})
+        fireEvent.change(screen.getByRole('combobox'), { target: { value: 'App' } })
+        if (stage === 'request') await act(async () => vi.advanceTimersByTime(300))
+
+        view.rerender(<Autocomplete {...props} value="2" />)
+        expect(screen.getByRole('combobox')).toHaveValue('Banana')
+        await act(async () => vi.advanceTimersByTime(300))
+        await act(async () => pending.resolve([{ id: '1', name: 'Apple' }]))
+
+        expect(screen.getByRole('combobox')).toHaveValue('Banana')
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+        if (stage === 'debounce') expect(loadItems).not.toHaveBeenCalledWith('App')
+      } finally {
+        pending.resolve([])
+        vi.useRealTimers()
+      }
+    },
+  )
+
+  it('searches the selected label instead of reopening the prior async results', async () => {
+    const loadItems = vi.fn(async (query: string) =>
+      query === 'App'
+        ? [
+            { id: '1', name: 'Apple' },
+            { id: '2', name: 'Application' },
+          ]
+        : [],
+    )
+    render(<Autocomplete {...defaultProps} loadItems={loadItems} debounceTime={0} />)
+    const input = screen.getByRole('combobox')
+    fireEvent.change(input, { target: { value: 'App' } })
+    fireEvent.mouseDown(await screen.findByRole('option', { name: 'Apple' }))
+    fireEvent.blur(input)
+    fireEvent.focus(input)
+    await waitFor(() => expect(loadItems).toHaveBeenCalledWith('Apple'))
+    expect(screen.queryByRole('option', { name: 'Application' })).not.toBeInTheDocument()
+  })
+
+  it('keeps a newer lookup when the initial empty lookup completes last', async () => {
+    const initial = Promise.withResolvers<TestOption[]>()
+    const typed = Promise.withResolvers<TestOption[]>()
+    const loadItems = vi.fn((query: string) => (query ? typed.promise : initial.promise))
+    render(<Autocomplete {...defaultProps} loadItems={loadItems} />)
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Rare' } })
+    await waitFor(() => expect(loadItems).toHaveBeenCalledWith('Rare'))
+    await act(async () => typed.resolve([{ id: 'new', name: 'Rare result' }]))
+    expect(screen.getByRole('option', { name: 'Rare result' })).toBeVisible()
+
+    await act(async () => initial.resolve([{ id: 'old', name: 'Initial result' }]))
+
+    expect(screen.getByRole('option', { name: 'Rare result' })).toBeVisible()
+    expect(screen.queryByRole('option', { name: 'Initial result' })).not.toBeInTheDocument()
+  })
+
+  it.each(['resolve', 'reject'] as const)(
+    'keeps a newer lookup when an older typed lookup finishes with %s',
+    async (outcome) => {
+      const older = Promise.withResolvers<TestOption[]>()
+      const newer = Promise.withResolvers<TestOption[]>()
+      const loadItems = vi.fn((query: string) => {
+        if (!query) return Promise.resolve([])
+        return query === 'Old' ? older.promise : newer.promise
+      })
+      const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {})
+      try {
+        render(<Autocomplete {...defaultProps} loadItems={loadItems} />)
+        const input = screen.getByRole('combobox')
+        fireEvent.change(input, { target: { value: 'Old' } })
+        await waitFor(() => expect(loadItems).toHaveBeenCalledWith('Old'))
+        fireEvent.change(input, { target: { value: 'New' } })
+        await waitFor(() => expect(loadItems).toHaveBeenCalledWith('New'))
+        await act(async () => newer.resolve([{ id: 'new', name: 'Newest result' }]))
+
+        await act(async () => {
+          if (outcome === 'reject') older.reject(new Error('Old request failed'))
+          else older.resolve([{ id: 'old', name: 'Older result' }])
+        })
+
+        expect(screen.getByRole('option', { name: 'Newest result' })).toBeVisible()
+        expect(screen.queryByRole('option', { name: 'Older result' })).not.toBeInTheDocument()
+        expect(errorLog).not.toHaveBeenCalled()
+      } finally {
+        older.resolve([])
+        newer.resolve([])
+        errorLog.mockRestore()
+      }
+    },
+  )
+})
 
 describe('Autocomplete Component', () => {
   let user: ReturnType<typeof userEvent.setup>
@@ -337,6 +470,74 @@ describe('Autocomplete Component', () => {
       })
     })
 
+    it('submits the form instead of selecting a dismissed option and can reopen with arrows', async () => {
+      const onChange = vi.fn()
+      const onSubmit = vi.fn()
+      render(
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            onSubmit()
+          }}
+        >
+          <Autocomplete {...defaultProps} items={mockStaticItems} onChange={onChange} />
+        </form>,
+      )
+      const input = screen.getByRole('combobox')
+      await user.click(input)
+      await user.keyboard('{ArrowDown}{Escape}{Enter}')
+      expect(onChange).not.toHaveBeenCalled()
+      expect(onSubmit).toHaveBeenCalledOnce()
+      expect(input).not.toHaveAttribute('aria-activedescendant')
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+
+      await user.keyboard('{ArrowDown}{ArrowDown}{Enter}')
+      expect(onChange).toHaveBeenCalledExactlyOnceWith('1')
+      expect(onSubmit).toHaveBeenCalledOnce()
+    })
+
+    it('does not schedule a lookup for Enter while the dropdown is closed', async () => {
+      render(<Autocomplete {...defaultProps} items={mockStaticItems} />)
+      const input = screen.getByRole('combobox')
+      await user.click(input)
+      await user.keyboard('{Escape}')
+      vi.useFakeTimers()
+      fireEvent.keyDown(input, { key: 'Enter' })
+      await act(() => vi.advanceTimersByTimeAsync(300))
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    })
+
+    it('does not select hidden prior results while an async lookup is loading', async () => {
+      const pending = Promise.withResolvers<TestOption[]>()
+      const onChange = vi.fn()
+      const loadItems = vi.fn((query: string) =>
+        query ? pending.promise : Promise.resolve(mockStaticItems),
+      )
+      render(
+        <Autocomplete
+          {...defaultProps}
+          loadItems={loadItems}
+          debounceTime={0}
+          onChange={onChange}
+        />,
+      )
+      try {
+        const input = screen.getByRole('combobox')
+        await user.click(input)
+        await screen.findByRole('option', { name: 'Apple' })
+        await user.type(input, 'Ba')
+        await waitFor(() => expect(loadItems).toHaveBeenCalledWith('Ba'))
+        expect(screen.queryByRole('option')).not.toBeInTheDocument()
+        fireEvent.keyDown(input, { key: 'ArrowDown' })
+        fireEvent.keyDown(input, { key: 'Enter' })
+        expect(onChange).not.toHaveBeenCalled()
+        expect(input).not.toHaveAttribute('aria-activedescendant')
+        expect(input).toHaveValue('Ba')
+      } finally {
+        await act(async () => pending.resolve([]))
+      }
+    })
+
     it('should close dropdown on Tab', async () => {
       render(<Autocomplete {...defaultProps} items={mockStaticItems} />)
 
@@ -610,7 +811,11 @@ describe('Autocomplete Component', () => {
         secondResolve = resolve
       })
 
-      mockLoadItems.mockReturnValueOnce(firstPromise).mockReturnValueOnce(secondPromise)
+      mockLoadItems.mockImplementation((query) => {
+        if (query === 'ap') return firstPromise
+        if (query === 'ba') return secondPromise
+        return Promise.resolve([])
+      })
 
       render(<Autocomplete {...defaultProps} loadItems={mockLoadItems} minCharsToTrigger={2} />)
 
@@ -806,6 +1011,75 @@ describe('Autocomplete Component', () => {
         expect(screen.getByText('Super Mario Bros')).toBeInTheDocument()
         expect(screen.queryByText('The Legend of Zelda')).not.toBeInTheDocument()
       })
+    })
+  })
+
+  describe('selection and request state', () => {
+    it('keeps a typed search when its controlled selection is cleared', async () => {
+      function Controlled() {
+        const [value, setValue] = useState<string | null>('1')
+        return (
+          <Autocomplete
+            {...defaultProps}
+            items={mockStaticItems}
+            value={value}
+            onChange={setValue}
+          />
+        )
+      }
+      render(<Controlled />)
+      const input = screen.getByRole('combobox')
+      await user.type(input, 'x')
+      expect(input).toHaveValue('Applex')
+    })
+
+    it('keeps the draft when the form maps a local selection clear to an empty string', async () => {
+      function Controlled() {
+        const [value, setValue] = useState('1')
+        return (
+          <Autocomplete
+            {...defaultProps}
+            items={mockStaticItems}
+            value={value}
+            onChange={(next) => setValue(next ?? '')}
+          />
+        )
+      }
+      render(<Controlled />)
+      const input = screen.getByRole('combobox')
+      await user.type(input, 'x')
+      expect(input).toHaveValue('Applex')
+    })
+
+    it('replaces a draft when the parent selects another item', async () => {
+      const { rerender } = render(
+        <Autocomplete {...defaultProps} items={mockStaticItems} value="1" />,
+      )
+      await user.type(screen.getByRole('combobox'), 'x')
+      rerender(<Autocomplete {...defaultProps} items={mockStaticItems} value="2" />)
+      expect(screen.getByRole('combobox')).toHaveValue('Banana')
+    })
+
+    it('updates open static options when same-length data changes', async () => {
+      const { rerender } = render(
+        <Autocomplete {...defaultProps} items={[{ id: '1', name: 'Apple' }]} />,
+      )
+      await user.click(screen.getByRole('combobox'))
+      expect(screen.getByRole('option', { name: 'Apple' })).toBeInTheDocument()
+      rerender(<Autocomplete {...defaultProps} items={[{ id: '2', name: 'Banana' }]} />)
+      expect(screen.getByRole('option', { name: 'Banana' })).toBeInTheDocument()
+      expect(screen.queryByRole('option', { name: 'Apple' })).not.toBeInTheDocument()
+    })
+
+    it('loads an initial selected label once in Strict Mode', async () => {
+      const loadItems = vi.fn().mockResolvedValue(mockStaticItems)
+      render(
+        <StrictMode>
+          <Autocomplete {...defaultProps} loadItems={loadItems} value="1" />
+        </StrictMode>,
+      )
+      await waitFor(() => expect(screen.getByRole('combobox')).toHaveValue('Apple'))
+      expect(loadItems).toHaveBeenCalledTimes(1)
     })
   })
 

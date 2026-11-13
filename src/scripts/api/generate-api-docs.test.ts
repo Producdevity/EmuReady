@@ -1,0 +1,204 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { describe, expect, it } from 'vitest'
+import { z } from 'zod'
+import {
+  BatchBySteamAppIdsResponseSchema,
+  BatchBySteamAppIdsSchema,
+  BatchSteamFullResultSchema,
+} from '@/schemas/mobile'
+
+describe('generated Steam batch response example', () => {
+  it('documents the default full response with a game, system, and compatibility report', () => {
+    const file = resolve(import.meta.dirname, '../../../public/api-docs/mobile-openapi.json')
+    let example: unknown = JSON.parse(readFileSync(file, 'utf8'))
+    for (const key of [
+      'paths',
+      '/games.batchBySteamAppIds',
+      'get',
+      'responses',
+      '200',
+      'content',
+      'application/json',
+      'examples',
+      'success',
+      'value',
+      'result',
+      'data',
+    ]) {
+      example = z.record(z.unknown()).parse(example)[key]
+    }
+
+    const serializedGame = BatchSteamFullResultSchema.shape.game.unwrap().extend({
+      createdAt: z.coerce.date(),
+    })
+    const response = BatchBySteamAppIdsResponseSchema.extend({
+      results: z.array(BatchSteamFullResultSchema.extend({ game: serializedGame })),
+    }).parse(example)
+
+    expect(BatchBySteamAppIdsSchema.parse({ steamAppIds: ['220'] }).minimal).toBe(false)
+    expect(response.results).toHaveLength(1)
+    expect(response.results[0].steamAppId).toBe('220')
+    expect(response.results[0].game.system.key).toBe('microsoft_windows')
+    expect(response.results[0].game.listings).toHaveLength(1)
+    expect(response.totalFound).toBe(response.results.length)
+  })
+})
+
+describe('generated mobile numeric input contracts', () => {
+  const file = resolve(import.meta.dirname, '../../../public/api-docs/mobile-openapi.json')
+  const schemas = z
+    .object({ components: z.object({ schemas: z.record(z.unknown()) }) })
+    .parse(JSON.parse(readFileSync(file, 'utf8'))).components.schemas
+  const limit = { type: 'integer', minimum: 1, maximum: 50, default: 20 }
+
+  it.each([
+    { name: 'GetGamesSchema', optional: true, maxLimit: 50 },
+    { name: 'GetListingsSchema', optional: true, maxLimit: 50 },
+    { name: 'GetPcListingsSchema', optional: false, maxLimit: 50 },
+    { name: 'GetNotificationsSchema', optional: true, maxLimit: 50 },
+  ])('documents nullable integer pages and bounded integer limits for $name', (schema) => {
+    const properties = {
+      page: {
+        anyOf: [
+          { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER, default: 1 },
+          { type: 'null' },
+        ],
+      },
+      limit: { ...limit, maximum: schema.maxLimit },
+    }
+    expect(schemas[schema.name]).toMatchObject(
+      schema.optional ? { anyOf: [{}, { properties }] } : { properties },
+    )
+  })
+
+  it('documents bounded integer preset list limits', () => {
+    expect(schemas.GetPcPresetsSchema).toMatchObject({ properties: { limit } })
+  })
+
+  it('documents bounded integer device and emulator limits with their existing defaults', () => {
+    expect(schemas.GetDevicesSchema).toMatchObject({
+      anyOf: [
+        {},
+        { properties: { limit: { type: 'integer', minimum: 1, maximum: 1000, default: 50 } } },
+      ],
+    })
+    expect(schemas.GetEmulatorsSchema).toMatchObject({
+      properties: { limit: { type: 'integer', minimum: 1, maximum: 100, default: 50 } },
+    })
+  })
+
+  it.each(['CreatePcPresetSchema', 'UpdatePcPresetSchema'])(
+    'documents integer memory sizes for %s',
+    (name) => {
+      expect(schemas[name]).toMatchObject({
+        properties: { memorySize: { type: 'integer', minimum: 1, maximum: 256 } },
+      })
+    },
+  )
+
+  it.each(['MobileGetCpusSchema', 'MobileGetGpusSchema'])(
+    'documents safe integer catalog fields without changing optionality or defaults for %s',
+    (name) => {
+      const branches = z
+        .object({
+          anyOf: z.tuple([
+            z.unknown(),
+            z.object({
+              properties: z.record(z.record(z.unknown())),
+              required: z.array(z.string()).optional(),
+            }),
+          ]),
+        })
+        .parse(schemas[name]).anyOf
+      const integer = {
+        type: 'integer',
+        minimum: -Number.MAX_SAFE_INTEGER,
+        maximum: Number.MAX_SAFE_INTEGER,
+      }
+      expect(branches[0]).toEqual({ not: {} })
+      expect(branches[1].required).toBeUndefined()
+      expect(branches[1].properties).toMatchObject({
+        limit: { ...integer, minimum: 1, default: 20 },
+        offset: { ...integer, default: 0 },
+        page: { ...integer, minimum: 1 },
+      })
+      for (const field of ['limit', 'offset', 'page']) {
+        expect(branches[1].properties[field]).not.toHaveProperty('exclusiveMinimum')
+        expect(branches[1].properties[field]).not.toHaveProperty('exclusiveMaximum')
+      }
+    },
+  )
+
+  it.each(['MobilePcListingCpusSchema', 'MobilePcListingGpusSchema'])(
+    'documents integer PC lookup limits with default50 and cap100 for %s',
+    (name) => {
+      expect(schemas[name]).toMatchObject({
+        properties: { limit: { type: 'integer', minimum: 1, maximum: 100, default: 50 } },
+      })
+    },
+  )
+})
+
+describe('generated report integer input contracts', () => {
+  const file = resolve(import.meta.dirname, '../../../public/api-docs/mobile-openapi.json')
+  const schemas = z
+    .object({ components: z.object({ schemas: z.record(z.unknown()) }) })
+    .parse(JSON.parse(readFileSync(file, 'utf8'))).components.schemas
+
+  it('documents bounded integer performance filters while retaining string inputs', () => {
+    const branches = z
+      .object({ anyOf: z.tuple([z.unknown(), z.unknown()]) })
+      .parse(schemas.GetListingsSchema).anyOf
+    expect(branches[0]).toEqual({ not: {} })
+    expect(branches[1]).toMatchObject({
+      properties: {
+        performanceIds: {
+          type: 'array',
+          items: {
+            anyOf: [
+              { type: 'integer', minimum: -2_147_483_648, maximum: 2_147_483_647 },
+              { type: 'string' },
+            ],
+          },
+        },
+      },
+    })
+  })
+
+  it.each([
+    'CreateListingSchema',
+    'UpdateListingSchema',
+    'CreatePcListingSchema',
+    'UpdatePcListingSchema',
+  ])('documents persisted performance ID bounds for %s', (name) => {
+    expect(schemas[name]).toMatchObject({
+      properties: {
+        performanceId: { type: 'integer', minimum: -2_147_483_648, maximum: 2_147_483_647 },
+      },
+    })
+  })
+
+  it('documents bounded integer memory while keeping PC update fields optional', () => {
+    expect(schemas.UpdatePcListingSchema).toMatchObject({
+      properties: { memorySize: { type: 'integer', minimum: 1, maximum: 256 } },
+      required: ['id'],
+    })
+  })
+
+  it.each(['CreatePcListingSchema', 'UpdatePcListingSchema'])(
+    'documents inclusive memory bounds for %s without an invalid numeric exclusive bound',
+    (name) => {
+      const schema = z
+        .object({ properties: z.object({ memorySize: z.record(z.unknown()) }) })
+        .parse(schemas[name])
+      expect(schema.properties.memorySize).toMatchObject({
+        type: 'integer',
+        minimum: 1,
+        maximum: 256,
+      })
+      expect(schema.properties.memorySize).not.toHaveProperty('exclusiveMinimum')
+      expect(schema.properties.memorySize).not.toHaveProperty('exclusiveMaximum')
+    },
+  )
+})

@@ -1,20 +1,21 @@
 'use client'
 
-import { useState, useEffect, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Button, Input, Modal, ModalCommonButton } from '@/components/ui'
 import { api } from '@/lib/api'
+import toast from '@/lib/toast'
+import { CreateSoCSchema } from '@/schemas/soc'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 
 // Common values for quick selection
 const commonNames = ['Snapdragon', 'Exynos', 'Dimensity', 'Helio']
 const commonManufacturers = ['Qualcomm', 'MediaTek', 'Samsung', 'Apple', 'AMD', 'NVIDIA']
-const commonArchitectures = ['ARM64', 'x86_64'] as const
+const commonArchitectures = CreateSoCSchema.shape.architecture.unwrap().options
 const commonProcessNodes = ['3nm', '4nm', '5nm', '6nm', '7nm', '10nm', '12nm', '14nm']
 const commonGpuModels = ['Adreno', 'Mali']
 
 type SocData = RouterOutput['socs']['get']['socs'][number]
-type SocArchitecture = (typeof commonArchitectures)[number]
 
 interface Props {
   isOpen: boolean
@@ -27,46 +28,72 @@ interface Props {
 function SocModal(props: Props) {
   const createSoC = api.socs.create.useMutation()
   const updateSoC = api.socs.update.useMutation()
+  const isPending = createSoC.isPending || updateSoC.isPending
+  function closeModal() {
+    if (!isPending) props.onClose()
+  }
+  return (
+    <Modal
+      isOpen={props.isOpen}
+      onClose={closeModal}
+      hideCloseButton={isPending}
+      title={props.editId ? 'Edit SoC' : 'Add SoC'}
+      closeOnEscape={false}
+      closeOnBackdropClick={false}
+      size="lg"
+    >
+      <SocForm
+        key={`${props.isOpen}:${props.editId ?? 'new'}`}
+        onClose={closeModal}
+        createSoC={createSoC}
+        updateSoC={updateSoC}
+        editId={props.editId}
+        socData={props.socData}
+        onSuccess={props.onSuccess}
+      />
+    </Modal>
+  )
+}
 
-  const [name, setName] = useState('')
-  const [manufacturer, setManufacturer] = useState('')
-  const [architecture, setArchitecture] = useState<SocArchitecture | ''>('')
-  const [processNode, setProcessNode] = useState('')
-  const [cpuCores, setCpuCores] = useState('')
-  const [gpuModel, setGpuModel] = useState('')
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+type FormProps = Omit<Props, 'isOpen'> & {
+  createSoC: ReturnType<typeof api.socs.create.useMutation>
+  updateSoC: ReturnType<typeof api.socs.update.useMutation>
+}
 
-  // Update form fields when socData changes
+function SocForm(props: FormProps) {
+  const { createSoC, updateSoC } = props
+  const active = useRef(false)
   useEffect(() => {
-    if (props.socData) {
-      setName(props.socData.name)
-      setManufacturer(props.socData.manufacturer)
-      setArchitecture((props.socData.architecture as SocArchitecture) ?? '')
-      setProcessNode(props.socData.processNode ?? '')
-      setCpuCores(props.socData.cpuCores?.toString() ?? '')
-      setGpuModel(props.socData.gpuModel ?? '')
-    } else {
-      setName('')
-      setManufacturer('')
-      setArchitecture('')
-      setProcessNode('')
-      setCpuCores('')
-      setGpuModel('')
+    active.current = true
+    return () => {
+      active.current = false
     }
-    setError('')
-    setSuccess('')
-  }, [props.socData, props.isOpen])
+  }, [])
+
+  const [name, setName] = useState(props.socData?.name ?? '')
+  const [manufacturer, setManufacturer] = useState(props.socData?.manufacturer ?? '')
+  const [architecture, setArchitecture] = useState(props.socData?.architecture ?? '')
+  const [processNode, setProcessNode] = useState(props.socData?.processNode ?? '')
+  const [cpuCores, setCpuCores] = useState(props.socData?.cpuCores?.toString() ?? '')
+  const [gpuModel, setGpuModel] = useState(props.socData?.gpuModel ?? '')
+  const [error, setError] = useState('')
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
+    if (createSoC.isPending || updateSoC.isPending) return
     setError('')
-    setSuccess('')
+    const parsedArchitecture = CreateSoCSchema.shape.architecture.safeParse(
+      architecture || undefined,
+    )
+    if (!parsedArchitecture.success) {
+      setError(`Architecture must be one of: ${commonArchitectures.join(', ')}.`)
+      return
+    }
     try {
       const socData = {
         name,
         manufacturer,
-        architecture: architecture || undefined,
+        architecture: parsedArchitecture.data,
         processNode: processNode || undefined,
         cpuCores: cpuCores ? parseInt(cpuCores, 10) : undefined,
         gpuModel: gpuModel || undefined,
@@ -77,217 +104,194 @@ function SocModal(props: Props) {
           id: props.editId,
           ...socData,
         } satisfies RouterInput['socs']['update'])
-        setSuccess('SoC updated!')
-        props.onSuccess()
       } else {
         await createSoC.mutateAsync(socData satisfies RouterInput['socs']['create'])
-        setSuccess('SoC created!')
-        props.onSuccess()
       }
 
-      // Reset form
-      setName('')
-      setManufacturer('')
-      setArchitecture('')
-      setProcessNode('')
-      setCpuCores('')
-      setGpuModel('')
+      toast.success(props.editId ? 'SoC updated!' : 'SoC created!')
+      props.onSuccess()
+      if (active.current) props.onClose()
     } catch (err) {
-      setError(getErrorMessage(err, 'Failed to save SoC.'))
+      if (active.current) setError(getErrorMessage(err, 'Failed to save SoC.'))
     }
   }
 
   return (
-    <Modal
-      isOpen={props.isOpen}
-      onClose={props.onClose}
-      title={props.editId ? 'Edit SoC' : 'Add SoC'}
-      closeOnEscape={false}
-      closeOnBackdropClick={false}
-      size="lg"
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2">
-            <label
-              htmlFor="name"
-              className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
-            >
-              Name *
-            </label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(ev) => setName(ev.target.value)}
-              required
-              className="w-full"
-              placeholder="e.g., Snapdragon 8 Gen 3"
-            />
-            <div className="flex flex-wrap gap-1 mt-2">
-              {commonNames.map((commonName) => (
-                <ModalCommonButton
-                  key={commonName}
-                  onClick={setName}
-                  value={`${commonName} `}
-                  label={`${commonName}...`}
-                  isSelected={name.includes(commonName)}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="col-span-2">
-            <label
-              htmlFor="manufacturer"
-              className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
-            >
-              Manufacturer *
-            </label>
-            <Input
-              id="manufacturer"
-              value={manufacturer}
-              onChange={(ev) => setManufacturer(ev.target.value)}
-              required
-              className="w-full"
-              placeholder="e.g., Qualcomm"
-            />
-            <div className="flex flex-wrap gap-1 mt-2">
-              {commonManufacturers.map((commonManufacturer) => (
-                <ModalCommonButton
-                  key={commonManufacturer}
-                  onClick={setManufacturer}
-                  label={commonManufacturer}
-                  isSelected={manufacturer === commonManufacturer}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="architecture"
-              className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
-            >
-              Architecture
-            </label>
-            <Input
-              id="architecture"
-              value={architecture}
-              onChange={(ev) => setArchitecture(ev.target.value as SocArchitecture)}
-              className="w-full"
-              placeholder="e.g., ARM64"
-            />
-            <div className="flex flex-wrap gap-1 mt-2">
-              {commonArchitectures.map((commonArchitecture) => (
-                <ModalCommonButton<SocArchitecture>
-                  key={commonArchitecture}
-                  onClick={setArchitecture}
-                  label={commonArchitecture}
-                  isSelected={architecture === commonArchitecture}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="processNode"
-              className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
-            >
-              Process Node
-            </label>
-            <Input
-              id="processNode"
-              value={processNode}
-              onChange={(e) => setProcessNode(e.target.value)}
-              className="w-full"
-              placeholder="e.g., 4nm"
-            />
-            <div className="flex flex-wrap gap-1 mt-2">
-              {commonProcessNodes.map((commonProcessNode) => (
-                <ModalCommonButton
-                  key={commonProcessNode}
-                  onClick={setProcessNode}
-                  label={commonProcessNode}
-                  isSelected={processNode === commonProcessNode}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="cpuCores"
-              className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
-            >
-              CPU Cores
-            </label>
-            <Input
-              id="cpuCores"
-              type="number"
-              value={cpuCores}
-              onChange={(e) => setCpuCores(e.target.value)}
-              className="w-full"
-              placeholder="e.g., 8"
-              min="1"
-              max="64"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="gpuModel"
-              className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
-            >
-              GPU Model
-            </label>
-            <Input
-              id="gpuModel"
-              value={gpuModel}
-              onChange={(ev) => setGpuModel(ev.target.value)}
-              className="w-full"
-              placeholder="e.g., Adreno 750"
-            />
-            <div className="flex flex-wrap gap-1 mt-2">
-              {commonGpuModels.map((commonGpuModel) => (
-                <ModalCommonButton
-                  key={commonGpuModel}
-                  onClick={setGpuModel}
-                  value={commonGpuModel}
-                  label={`${commonGpuModel}...`}
-                  isSelected={gpuModel.includes(commonGpuModel)}
-                />
-              ))}
-            </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="col-span-2">
+          <label htmlFor="name" className="block mb-2 font-medium text-gray-700 dark:text-gray-300">
+            Name *
+          </label>
+          <Input
+            id="name"
+            value={name}
+            onChange={(ev) => setName(ev.target.value)}
+            required
+            className="w-full"
+            placeholder="e.g., Snapdragon 8 Gen 3"
+          />
+          <div className="flex flex-wrap gap-1 mt-2">
+            {commonNames.map((commonName) => (
+              <ModalCommonButton
+                key={commonName}
+                onClick={setName}
+                value={`${commonName} `}
+                label={`${commonName}...`}
+                isSelected={name.includes(commonName)}
+              />
+            ))}
           </div>
         </div>
 
-        {error && (
-          <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded">
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div className="text-green-600 text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded">
-            {success}
-          </div>
-        )}
-
-        <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
-          <Button type="button" variant="ghost" onClick={props.onClose}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            isLoading={createSoC.isPending || updateSoC.isPending}
-            disabled={createSoC.isPending || updateSoC.isPending}
+        <div className="col-span-2">
+          <label
+            htmlFor="manufacturer"
+            className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
           >
-            {props.editId ? 'Save' : 'Create'}
-          </Button>
+            Manufacturer *
+          </label>
+          <Input
+            id="manufacturer"
+            value={manufacturer}
+            onChange={(ev) => setManufacturer(ev.target.value)}
+            required
+            className="w-full"
+            placeholder="e.g., Qualcomm"
+          />
+          <div className="flex flex-wrap gap-1 mt-2">
+            {commonManufacturers.map((commonManufacturer) => (
+              <ModalCommonButton
+                key={commonManufacturer}
+                onClick={setManufacturer}
+                label={commonManufacturer}
+                isSelected={manufacturer === commonManufacturer}
+              />
+            ))}
+          </div>
         </div>
-      </form>
-    </Modal>
+
+        <div>
+          <label
+            htmlFor="architecture"
+            className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
+          >
+            Architecture
+          </label>
+          <Input
+            id="architecture"
+            value={architecture}
+            onChange={(ev) => setArchitecture(ev.target.value)}
+            className="w-full"
+            placeholder="e.g., ARM64"
+          />
+          <div className="flex flex-wrap gap-1 mt-2">
+            {commonArchitectures.map((commonArchitecture) => (
+              <ModalCommonButton
+                key={commonArchitecture}
+                onClick={setArchitecture}
+                label={commonArchitecture}
+                isSelected={architecture === commonArchitecture}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label
+            htmlFor="processNode"
+            className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
+          >
+            Process Node
+          </label>
+          <Input
+            id="processNode"
+            value={processNode}
+            onChange={(e) => setProcessNode(e.target.value)}
+            className="w-full"
+            placeholder="e.g., 4nm"
+          />
+          <div className="flex flex-wrap gap-1 mt-2">
+            {commonProcessNodes.map((commonProcessNode) => (
+              <ModalCommonButton
+                key={commonProcessNode}
+                onClick={setProcessNode}
+                label={commonProcessNode}
+                isSelected={processNode === commonProcessNode}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label
+            htmlFor="cpuCores"
+            className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
+          >
+            CPU Cores
+          </label>
+          <Input
+            id="cpuCores"
+            type="number"
+            value={cpuCores}
+            onChange={(e) => setCpuCores(e.target.value)}
+            className="w-full"
+            placeholder="e.g., 8"
+            min="1"
+            max="64"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="gpuModel"
+            className="block mb-2 font-medium text-gray-700 dark:text-gray-300"
+          >
+            GPU Model
+          </label>
+          <Input
+            id="gpuModel"
+            value={gpuModel}
+            onChange={(ev) => setGpuModel(ev.target.value)}
+            className="w-full"
+            placeholder="e.g., Adreno 750"
+          />
+          <div className="flex flex-wrap gap-1 mt-2">
+            {commonGpuModels.map((commonGpuModel) => (
+              <ModalCommonButton
+                key={commonGpuModel}
+                onClick={setGpuModel}
+                value={commonGpuModel}
+                label={`${commonGpuModel}...`}
+                isSelected={gpuModel.includes(commonGpuModel)}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded">{error}</div>
+      )}
+
+      <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={props.onClose}
+          disabled={createSoC.isPending || updateSoC.isPending}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          isLoading={createSoC.isPending || updateSoC.isPending}
+          disabled={createSoC.isPending || updateSoC.isPending}
+        >
+          {props.editId ? 'Save' : 'Create'}
+        </Button>
+      </div>
+    </form>
   )
 }
 

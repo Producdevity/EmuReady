@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { SortDirectionSchema } from '@/schemas/common'
+import { SignedInt32Schema, SortDirectionSchema } from '@/schemas/common'
 
 export const PerformanceScaleSortField = z.enum(['label', 'rank'])
 
@@ -11,25 +11,25 @@ export const GetPerformanceScalesSchema = z
   })
   .optional()
 
-export const GetPerformanceScaleByIdSchema = z.object({ id: z.number() })
+export const GetPerformanceScaleByIdSchema = z.object({ id: SignedInt32Schema })
 
 export const CreatePerformanceScaleSchema = z.object({
   label: z.string().min(1),
-  rank: z.number(),
+  rank: SignedInt32Schema,
   description: z.string().optional(),
 })
 
 export const UpdatePerformanceScaleSchema = z.object({
-  id: z.number(),
+  id: SignedInt32Schema,
   label: z.string().min(1),
-  rank: z.number(),
+  rank: SignedInt32Schema,
   description: z.string().optional(),
 })
 
 export const DeletePerformanceScaleSchema = z
   .object({
-    id: z.number(),
-    replacementId: z.number().optional(),
+    id: SignedInt32Schema,
+    replacementId: SignedInt32Schema.optional(),
   })
   .refine((data) => data.replacementId === undefined || data.replacementId !== data.id, {
     message: 'Replacement performance scale must be different from the deleted scale',

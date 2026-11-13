@@ -72,20 +72,16 @@ test.describe('Accessibility Tests', () => {
   test('should be navigable with keyboard only', async ({ page }) => {
     const homePage = new HomePage(page)
     await homePage.goto()
+    await homePage.verifyHeroSectionVisible()
+    await homePage.verifyNavigationVisible()
 
-    const tabData = []
+    const focusedControl = page.locator(
+      'a:focus, button:focus, input:focus, select:focus, textarea:focus',
+    )
     for (let i = 0; i < 10; i++) {
       await page.keyboard.press('Tab')
-      const [tagName, text] = await page.evaluate(() => {
-        const focused = document.activeElement
-        return [focused?.tagName.toLowerCase() ?? '', focused?.textContent ?? '']
-      })
-      tabData.push({ tagName, text })
+      await expect(focusedControl).toHaveCount(1)
     }
-
-    const interactiveTags = ['a', 'button', 'input', 'select', 'textarea']
-    const hasInteractiveElements = tabData.some((item) => interactiveTags.includes(item.tagName))
-    expect(hasInteractiveElements).toBe(true)
   })
 
   test('should have sufficient color contrast', async ({ page }) => {

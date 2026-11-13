@@ -49,6 +49,7 @@ export default function AsyncMultiSelect(props: Props) {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const focusedOptionRef = useRef<HTMLInputElement | null>(null)
   const hasMountedRef = useRef(false)
   const loadMoreRequestedRef = useRef(false)
 
@@ -124,6 +125,14 @@ export default function AsyncMultiSelect(props: Props) {
   useEffect(() => {
     loadMoreRequestedRef.current = false
   }, [props.hasMore, props.isFetching, props.options.length, query])
+
+  useEffect(() => {
+    const focusedOption = focusedOptionRef.current
+    if (!focusedOption || focusedOption.isConnected) return
+
+    focusedOptionRef.current = null
+    if (isOpen && document.activeElement === document.body) inputRef.current?.focus()
+  }, [isOpen, props.options])
 
   const optionById = useMemo(() => {
     const result = new Map<string, Option>()
@@ -304,6 +313,12 @@ export default function AsyncMultiSelect(props: Props) {
                       <input
                         type="checkbox"
                         checked={isSelected}
+                        onFocus={(event) => {
+                          focusedOptionRef.current = event.currentTarget
+                        }}
+                        onBlur={() => {
+                          focusedOptionRef.current = null
+                        }}
                         onChange={(event) => {
                           event.stopPropagation()
                           toggleId(option.id)

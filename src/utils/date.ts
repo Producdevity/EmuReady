@@ -1,6 +1,6 @@
 import { format, formatDistanceToNow } from 'date-fns'
 import { de, enUS, es, fr, nl, type Locale } from 'date-fns/locale'
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { first } from 'remeda'
 
 export const localeMap: Record<string, Locale> = {
@@ -21,6 +21,15 @@ export function getLocale(): Locale {
   return localeMap.en
 }
 
+function subscribeToLocale(onChange: () => void) {
+  window.addEventListener('languagechange', onChange)
+  return () => window.removeEventListener('languagechange', onChange)
+}
+
+function getServerLocale(): Locale {
+  return localeMap.en
+}
+
 export type DateFormat = 'date' | 'monthYear' | 'dateTime' | 'timeAgo' | 'year'
 
 export const formatters: Record<DateFormat, (date: Date, locale: Locale) => string> = {
@@ -33,15 +42,11 @@ export const formatters: Record<DateFormat, (date: Date, locale: Locale) => stri
 
 /**
  * Hook to get locale-aware formatted dates that are hydration-safe
- * Returns English on first render, then updates to user's locale
+ * Uses English during server rendering and hydration, then follows the browser locale.
  * Use this when you need formatted dates as string values (for aria-labels, dynamic content, etc.)
  */
 export function useLocalizedDate() {
-  const [locale, setLocale] = useState<Locale>(localeMap.en)
-
-  useEffect(() => {
-    setLocale(getLocale())
-  }, [])
+  const locale = useSyncExternalStore(subscribeToLocale, getLocale, getServerLocale)
 
   return {
     formatDate: (dateString: Date | string) => formatters.date(new Date(dateString), locale),

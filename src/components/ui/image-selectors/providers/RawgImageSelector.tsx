@@ -1,7 +1,7 @@
 'use client'
 
 import { Search, Eye, Camera, Link as LinkIcon } from 'lucide-react'
-import { useState, useEffect, type KeyboardEvent, type MouseEvent } from 'react'
+import { useState, useEffect, useMemo, type KeyboardEvent, type MouseEvent } from 'react'
 import { Button, LoadingSpinner, OptimizedImage, Modal, Input, Toggle } from '@/components/ui'
 import { CACHE_DURATIONS } from '@/data/constants'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
@@ -23,7 +23,6 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
   const [searchTerm, setSearchTerm] = useState(props.gameTitle ?? '')
   const [isDirty, setIsDirty] = useState(false)
   const [selectedImage, setSelectedImage] = useState<GameImageOption | null>(null)
-  const [allImages, setAllImages] = useState<GameImageOption[]>([])
   const [previewImage, setPreviewImage] = useState<GameImageOption | null>(null)
   const [includeScreenshots, setIncludeScreenshots] = useState(false)
   const [useCustomUrl, setUseCustomUrl] = useState(false)
@@ -60,21 +59,16 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
     },
   )
 
-  // Update search term when gameTitle prop changes
-  useEffect(() => {
-    if (!isDirty && props.gameTitle) {
-      setSearchTerm(props.gameTitle)
-    }
-  }, [props.gameTitle, isDirty])
+  const [previousTitle, setPreviousTitle] = useState(props.gameTitle)
+  if (previousTitle !== props.gameTitle) {
+    setPreviousTitle(props.gameTitle)
+    if (!isDirty && props.gameTitle) setSearchTerm(props.gameTitle)
+  }
 
-  // Process search results and select initial image
-  useEffect(() => {
-    if (searchQuery.data && !useCustomUrl) {
-      const images = Object.values(searchQuery.data).flatMap((gameImages) => gameImages)
-
-      setAllImages(images)
-    }
-  }, [onImageSelect, searchQuery.data, selectedImage, useCustomUrl])
+  const allImages = useMemo(
+    () => Object.values(searchQuery.data ?? {}).flatMap((images) => images),
+    [searchQuery.data],
+  )
 
   // Handle search errors
   useEffect(() => {
@@ -168,7 +162,12 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
         <label className="font-medium text-gray-700 dark:text-gray-300">Game Cover Image</label>
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600 dark:text-gray-400">Use custom URL</span>
-          <Toggle checked={useCustomUrl} onChange={handleToggleCustomUrl} size="sm" />
+          <Toggle
+            aria-label="Use custom URL"
+            checked={useCustomUrl}
+            onChange={handleToggleCustomUrl}
+            size="sm"
+          />
         </div>
       </div>
 
@@ -244,7 +243,12 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
 
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Toggle checked={includeScreenshots} onChange={handleToggleScreenshots} size="sm" />
+              <Toggle
+                aria-label="Include screenshots"
+                checked={includeScreenshots}
+                onChange={handleToggleScreenshots}
+                size="sm"
+              />
               <span className="text-sm flex items-center gap-1 text-gray-700 dark:text-gray-300">
                 <Camera className="h-4 w-4" />
                 Include screenshots

@@ -3,10 +3,10 @@
 import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import { useState, useEffect, useCallback, useRef, Suspense, type ChangeEvent } from 'react'
+import { useCallback, Suspense, type ChangeEvent } from 'react'
 import { isDefined } from 'remeda'
 import { Pagination, LoadingSpinner, Button } from '@/components/ui'
-import useDebouncedValue from '@/hooks/useDebouncedValue'
+import { useUrlSearch } from '@/hooks/useUrlSearch'
 import { api } from '@/lib/api'
 import { filterNullAndEmpty } from '@/utils/filter'
 import { hasRolePermission } from '@/utils/permissions'
@@ -21,6 +21,7 @@ function GamesContent() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const limit = 12
 
   const getInitialSystemId = () => {
     const urlSystemId = searchParams.get('systemId')
@@ -30,7 +31,11 @@ function GamesContent() {
   const getInitialPage = () => {
     const urlPage = searchParams.get('page')
     const pageNum = urlPage ? parseInt(urlPage, 10) : 1
-    return !isNaN(pageNum) && pageNum > 0 ? pageNum : 1
+    return Number.isSafeInteger(pageNum) &&
+      pageNum > 0 &&
+      Number.isSafeInteger((pageNum - 1) * limit)
+      ? pageNum
+      : 1
   }
 
   const getInitialHideGames = () => {
@@ -57,19 +62,12 @@ function GamesContent() {
   const hideGamesWithNoListings = getInitialHideGames()
   const listingFilter = getInitialListingFilter()
 
-  // Get search from URL directly
-  const search = searchParams.get('search') || ''
-
-  // Only use local state for the input while typing
-  const [inputValue, setInputValue] = useState(search)
-  const debouncedSearch = useDebouncedValue(inputValue, 500)
-  const limit = 12
+  const [inputValue, setInputValue, search] = useUrlSearch(500)
 
   // Update URL params whenever the state changes
   const updateUrlParams = useCallback(
     (
       updates: {
-        search?: string
         systemId?: string
         page?: number
         hideNoListings?: boolean
@@ -89,7 +87,6 @@ function GamesContent() {
       }
 
       // Apply updates
-      if (updates.search !== undefined) setParam('search', updates.search.trim(), '')
       if (updates.systemId !== undefined) setParam('systemId', updates.systemId, '')
       if (updates.page !== undefined) setParam('page', updates.page.toString(), '1')
       if (updates.hideNoListings !== undefined) {
@@ -114,7 +111,7 @@ function GamesContent() {
 
   const gamesQuery = api.games.get.useQuery(
     filterNullAndEmpty({
-      search: debouncedSearch.trim() || undefined,
+      search: search.trim() || undefined,
       systemId: systemId || undefined,
       hideGamesWithNoListings,
       listingFilter,
@@ -126,40 +123,8 @@ function GamesContent() {
   const games = gamesQuery.data?.games ?? []
   const pagination = gamesQuery.data?.pagination
 
-  // Update URL when debounced search changes
-  useEffect(() => {
-    if (debouncedSearch !== search) {
-      updateUrlParams({ search: debouncedSearch, page: 1 })
-    }
-  }, [debouncedSearch, search, updateUrlParams])
-
-  // Update input when URL changes (browser back/forward)
-  const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
-  const isTypingRef = useRef(false)
-  const prevSearchRef = useRef(search)
-
-  useEffect(() => {
-    // Only sync from URL if it's an external change (browser navigation)
-    if (search !== prevSearchRef.current && !isTypingRef.current) {
-      setInputValue(search)
-    }
-    prevSearchRef.current = search
-  }, [search])
-
   const handleSearchChange = (ev: ChangeEvent<HTMLInputElement>) => {
-    const newInputValue = ev.target.value
-    setInputValue(newInputValue)
-    isTypingRef.current = true
-
-    // Clear existing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
-    }
-
-    // Set new timeout to clear typing flag
-    typingTimeoutRef.current = setTimeout(() => {
-      isTypingRef.current = false
-    }, 600)
+    setInputValue(ev.target.value)
   }
 
   const handleSystemChange = (value: string | null) => {
@@ -193,12 +158,12 @@ function GamesContent() {
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 px-4">
-      <div className="max-w-7xl mx-auto flex justify-between items-center mb-8">
+      <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4 mb-8">
         <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
           Games Library
         </h1>
-        {user && (
-          <Button asChild variant="fancy" className="hidden md:inline-flex">
+        {user && userQuery.data && (
+          <Button asChild variant="fancy">
             <Link href={addGameHref}>Add Game</Link>
           </Button>
         )}
@@ -246,7 +211,7 @@ function GamesContent() {
           />
         )}
 
-        {user && (
+        {user && userQuery.data && (
           <div className="mt-12 text-center">
             <Link
               href={addGameHref}

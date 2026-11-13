@@ -1,3 +1,5 @@
+import { VoteEffectsRepository } from '@/features/reports/voting/server/vote-effects.repository'
+import { VoteEffectsService } from '@/features/reports/voting/server/vote-effects.service'
 import analytics from '@/lib/analytics'
 import { AppError, ResourceError } from '@/lib/errors'
 import { applyTrustAction } from '@/lib/trust/service'
@@ -29,15 +31,15 @@ import { attachReviewRiskProfileForViewer } from '@/server/services/review-risk.
 import { normalizeCustomFieldValues } from '@/server/utils/custom-field-values'
 import { getDriverVersions } from '@/server/utils/driver-versions'
 import { isUserBanned } from '@/server/utils/query-builders'
-import { sanitizeInput, validatePagination } from '@/server/utils/security-validation'
 import { checkSpamContent } from '@/server/utils/spam-check'
 import { withSavepoint } from '@/server/utils/transactions'
+import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { validateCustomFields } from '@/server/utils/validate-custom-fields'
 import { updateListingVoteCounts } from '@/server/utils/vote-counts'
 import { handleListingVoteTrustEffects } from '@/server/utils/vote-trust-effects'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { ms } from '@/utils/time'
-import { ApprovalStatus, Prisma, Role, TrustAction } from '@orm/client'
+import { ApprovalStatus, Prisma, Role, TrustAction, type Vote } from '@orm/client'
 
 const EDIT_TIME_LIMIT_MINUTES = 60
 const EDIT_TIME_LIMIT = ms.minutes(EDIT_TIME_LIMIT_MINUTES)
@@ -49,12 +51,6 @@ export const coreRouter = createTRPCRouter({
     const userId = ctx.session?.user?.id
     const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
 
-    // Validate and sanitize pagination
-    const { page, limit } = validatePagination(input.page, input.limit, 100)
-
-    // Sanitize search term (plain text, not markdown)
-    const sanitizedSearchTerm = input.searchTerm ? sanitizeInput(input.searchTerm) : undefined
-
     // Map input to repository filters (convert null to undefined)
     const filters = {
       systemIds: input.systemIds || undefined,
@@ -62,9 +58,9 @@ export const coreRouter = createTRPCRouter({
       socIds: input.socIds || undefined,
       emulatorIds: input.emulatorIds || undefined,
       performanceIds: input.performanceIds || undefined,
-      search: sanitizedSearchTerm,
-      page,
-      limit,
+      search: input.searchTerm?.trim() || undefined,
+      page: input.page,
+      limit: input.limit,
       sortField: input.sortField || undefined,
       sortDirection: input.sortDirection || undefined,
       approvalStatus: input.approvalStatus || undefined,
@@ -261,6 +257,7 @@ export const coreRouter = createTRPCRouter({
     if (!userExists) return ResourceError.user.notInDatabase(userId)
 
     // Use a single transaction to avoid race conditions
+    const trustChanges: TrustScoreChange[] = []
     const voteResult = await ctx.prisma.$transaction(async (tx) => {
       // Check for existing vote with row-level lock (SELECT ... FOR UPDATE equivalent)
       const existingVote = await tx.vote.findUnique({
@@ -268,7 +265,7 @@ export const coreRouter = createTRPCRouter({
       })
 
       let result: {
-        vote: { id: string; value: boolean; userId: string; listingId: string } | null
+        vote: Pick<Vote, 'id' | 'value' | 'userId' | 'listingId'> | null
         action: 'created' | 'updated' | 'deleted'
         previousValue: boolean | null
       }
@@ -309,6 +306,7 @@ export const coreRouter = createTRPCRouter({
 
       await handleListingVoteTrustEffects({
         tx,
+        trustChanges,
         action: result.action,
         currentValue: input.value,
         previousValue: result.previousValue,
@@ -321,35 +319,17 @@ export const coreRouter = createTRPCRouter({
       return result
     })
 
-    // Handle post-transaction side effects for created/updated votes (TODO: consider abstracting)
-    if (voteResult.action === 'created' || voteResult.action === 'updated') {
-      if (voteResult.vote) {
-        notificationEventEmitter.emitNotificationEvent({
-          eventType: NOTIFICATION_EVENTS.LISTING_VOTED,
-          entityType: 'listing',
-          entityId: input.listingId,
-          triggeredBy: userId,
-          payload: {
-            listingId: input.listingId,
-            voteId: voteResult.vote.id,
-            voteValue: input.value,
-          },
-        })
-      }
-
-      analytics.engagement.vote({
-        listingId: input.listingId,
-        voteValue: input.value,
-      })
-    }
-
-    // Check if this is user's first vote for journey analytics
-    if (voteResult.action === 'created') {
-      const userVoteCount = await ctx.prisma.vote.count({ where: { userId: userId } })
-      if (userVoteCount === 1) {
-        analytics.userJourney.firstTimeAction({ userId: userId, action: 'first_vote' })
-      }
-    }
+    for (const change of trustChanges) trackTrustScoreChange(change)
+    const voteEffects = new VoteEffectsService(new VoteEffectsRepository(ctx.prisma))
+    await voteEffects.afterCommit({
+      listingId: input.listingId,
+      listingType: 'handheld',
+      userId,
+      action: voteResult.action,
+      voteId: voteResult.vote?.id ?? null,
+      value: input.value,
+      previousValue: voteResult.previousValue,
+    })
 
     return voteResult.vote
   }),

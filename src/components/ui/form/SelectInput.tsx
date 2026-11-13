@@ -1,4 +1,4 @@
-import { type ChangeEventHandler, type ReactNode } from 'react'
+import { type ChangeEventHandler, type ReactNode, useId } from 'react'
 import { Input } from '@/components/ui'
 
 interface Option {
@@ -7,6 +7,7 @@ interface Option {
 }
 
 interface Props {
+  id?: string
   leftIcon?: ReactNode
   label: string
   hideLabel?: boolean
@@ -17,10 +18,19 @@ interface Props {
 }
 
 export function SelectInput(props: Props) {
+  const generatedId = useId()
+  const id = props.id ?? generatedId
+
   return (
     <div>
-      {!props.hideLabel && <label className="block mb-1 font-medium">{props.label}</label>}
+      {!props.hideLabel && (
+        <label htmlFor={id} className="block mb-1 font-medium">
+          {props.label}
+        </label>
+      )}
       <Input
+        id={id}
+        aria-label={props.hideLabel ? props.label : undefined}
         leftIcon={props.leftIcon}
         name={props.label}
         as="select"

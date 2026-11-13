@@ -1,6 +1,12 @@
 import { TRUST_ACTIONS } from '@/lib/trust/config'
-import { ApprovalStatus, PermissionCategory, Role, type TrustAction } from '@orm'
+import { ApprovalStatus, PermissionCategory, Role, TailwindColor, type TrustAction } from '@orm'
 import type { BadgeVariant } from '@/components/ui/Badge'
+
+const tailwindColors = new Set<string>(Object.values(TailwindColor))
+
+export function getBadgeColor(color: string): string {
+  return tailwindColors.has(color) ? `var(--color-${color}-500)` : color
+}
 
 const approvalStatusVariantsMap: Record<ApprovalStatus, BadgeVariant> = {
   [ApprovalStatus.APPROVED]: 'success',

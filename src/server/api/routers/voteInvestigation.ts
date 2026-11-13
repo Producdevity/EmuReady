@@ -6,6 +6,7 @@ import {
   RestoreUserVotesSchema,
 } from '@/schemas/voteInvestigation'
 import { createTRPCRouter, permissionProcedure } from '@/server/api/trpc'
+import { withTrustScoreTransaction } from '@/server/services/trust-score-transaction.service'
 import {
   getUserVotes,
   getVotesOnAuthorListings,
@@ -36,23 +37,29 @@ export const voteInvestigationRouter = createTRPCRouter({
   nullifyVotes: manageBansProcedure
     .input(NullifyUserVotesSchema)
     .mutation(async ({ ctx, input }) => {
-      return nullifyUserVotes(ctx.prisma, {
-        userId: input.userId,
-        adminUserId: ctx.session.user.id,
-        reason: input.reason,
-        includeCommentVotes: input.includeCommentVotes,
-        headers: ctx.headers,
-      })
+      return withTrustScoreTransaction(ctx.prisma, (tx, trustChanges) =>
+        nullifyUserVotes(tx, {
+          trustChanges,
+          userId: input.userId,
+          adminUserId: ctx.session.user.id,
+          reason: input.reason,
+          includeCommentVotes: input.includeCommentVotes,
+          headers: ctx.headers,
+        }),
+      )
     }),
 
   restoreVotes: manageBansProcedure
     .input(RestoreUserVotesSchema)
     .mutation(async ({ ctx, input }) => {
-      return restoreUserVotes(ctx.prisma, {
-        userId: input.userId,
-        adminUserId: ctx.session.user.id,
-        reason: input.reason,
-        headers: ctx.headers,
-      })
+      return withTrustScoreTransaction(ctx.prisma, (tx, trustChanges) =>
+        restoreUserVotes(tx, {
+          trustChanges,
+          userId: input.userId,
+          adminUserId: ctx.session.user.id,
+          reason: input.reason,
+          headers: ctx.headers,
+        }),
+      )
     }),
 })

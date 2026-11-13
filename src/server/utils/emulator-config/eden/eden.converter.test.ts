@@ -141,24 +141,24 @@ describe('Eden Converter', () => {
   describe('Resolution Field Edge Cases', () => {
     it('should handle various resolution formats', () => {
       const testCases = [
-        { input: '1x', expected: 2, description: 'Native resolution' },
-        { input: 'Native', expected: 2, description: 'Native text' },
-        { input: '2x', expected: 4, description: '2x multiplier' },
-        { input: '0.5x', expected: 0, description: '0.5x multiplier' },
-        { input: '4x', expected: 6, description: '4x multiplier' },
-        { input: '3', expected: 5, description: '3x multiplier (no suffix)' },
-        { input: '10', expected: 10, description: 'Max value' },
-        { input: '1.5x', expected: 3, description: '1.5x multiplier' },
-        { input: '2.5 x', expected: 4, description: 'With space' },
+        { input: '1x', expected: 3, description: 'Native resolution' },
+        { input: 'Native', expected: 3, description: 'Native text' },
+        { input: '2x', expected: 6, description: '2x multiplier' },
+        { input: '0.5x', expected: 1, description: '0.5x multiplier' },
+        { input: '4x', expected: 8, description: '4x multiplier' },
+        { input: '3', expected: 7, description: '3x multiplier (no suffix)' },
+        { input: '10', expected: 10, description: 'Raw enum index' },
+        { input: '1.5x', expected: 5, description: '1.5x multiplier' },
+        { input: '2.5 x', expected: 6, description: 'With space' },
         {
           input: 'invalid',
-          expected: 2,
+          expected: 3,
           description: 'Invalid defaults to native',
         },
-        { input: '', expected: 2, description: 'Empty defaults to native' },
+        { input: '', expected: 3, description: 'Empty defaults to native' },
         {
           input: '100x',
-          expected: 10,
+          expected: 12,
           description: 'Too high defaults to max',
         },
       ]
@@ -203,7 +203,7 @@ describe('Eden Converter', () => {
         ],
       })
 
-      expect(config.Renderer?.resolution_setup?.value).toBe(4)
+      expect(config.Renderer?.resolution_setup?.value).toBe(6)
     })
   })
 
@@ -497,8 +497,8 @@ describe('Eden Converter', () => {
       expect(config.Renderer?.nvdec_emulation?.value).toBe(1) // CPU
       expect(config.Renderer?.optimize_spirv_output?.value).toBe(1) // On Load
       expect(config.Renderer?.provoking_vertex?.value).toBe(false)
-      // '1280x720' is not a valid Eden resolution format, it should default to native (2)
-      expect(config.Renderer?.resolution_setup?.value).toBe(2)
+      // Pixel-size labels default to native resolution.
+      expect(config.Renderer?.resolution_setup?.value).toBe(3)
       expect(config.Core?.sync_core_speed?.value).toBe(false)
       expect(config.Renderer?.use_asynchronous_shaders?.value).toBe(true)
       expect(config.Renderer?.use_fast_gpu_time?.value).toBe(false)
@@ -1289,11 +1289,11 @@ describe('Eden Converter', () => {
 
     it('should transform resolution values correctly', () => {
       const testCases = [
-        { input: '1280x720', expected: 2 }, // Not a multiplier, defaults to native
-        { input: '1920x1080', expected: 2 }, // Not a multiplier, defaults to native
-        { input: '1X (720p/1080p)', expected: 2 }, // 1x = native
-        { input: '2X (1440p/4K)', expected: 4 }, // 2x multiplier
-        { input: 'Native', expected: 2 }, // Native = 1x
+        { input: '1280x720', expected: 3 }, // Not a multiplier, defaults to native
+        { input: '1920x1080', expected: 3 }, // Not a multiplier, defaults to native
+        { input: '1X (720p/1080p)', expected: 3 }, // 1x = native
+        { input: '2X (1440p/4K)', expected: 6 }, // 2x multiplier
+        { input: 'Native', expected: 3 }, // Native = 1x
       ]
 
       testCases.forEach(({ input, expected }) => {

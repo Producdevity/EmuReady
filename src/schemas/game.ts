@@ -1,6 +1,8 @@
 import { z } from 'zod'
+import { PAGINATION } from '@/data/constants'
 import { HumanVerificationTokenSchema } from '@/features/human-verification/shared/schema'
-import { SortDirectionSchema } from '@/schemas/common'
+import { SignedInt32Schema, SortDirectionSchema } from '@/schemas/common'
+import { refinePaginationOffset } from '@/schemas/pagination'
 import { ApprovalStatus } from '@orm'
 
 export const GameSortField = z.enum([
@@ -36,12 +38,16 @@ export const GetGamesSchema = z
     submittedBy: z.string().uuid().nullable().optional(),
     hideGamesWithNoListings: z.boolean().optional().default(false), // Keep for backward compatibility
     listingFilter: GameListingFilter.nullable().optional().default('withListings'),
-    limit: z.number().default(100),
-    offset: z.number().default(0),
-    page: z.number().optional(),
+    limit: z.number().int().positive().max(PAGINATION.MAX_LIMIT).default(100),
+    offset: z.number().int().min(0).safe().default(0),
+    page: z.number().int().positive().safe().optional(),
     sortField: GameSortField.nullable().optional(),
     sortDirection: SortDirectionSchema.nullable().optional(),
   })
+  .refine(
+    (input) => input.page === undefined || Number.isSafeInteger((input.page - 1) * input.limit),
+    { message: 'Pagination offset exceeds the supported range', path: ['page'] },
+  )
   .optional()
   .transform((data) => {
     if (!data) return data
@@ -57,7 +63,7 @@ export const GetGamesSchema = z
 export const GetGameByIdSchema = z.object({ id: z.string().uuid() })
 
 export const CheckExistingByTgdbIdsSchema = z.object({
-  tgdbGameIds: z.array(z.number()),
+  tgdbGameIds: z.array(SignedInt32Schema).max(PAGINATION.MAX_LIMIT),
 })
 
 export const CheckExistingByNamesAndSystemsSchema = z.object({
@@ -83,7 +89,7 @@ export const CreateGameSchema = z.object({
   imageUrl: OptionalGameImageUrlSchema,
   boxartUrl: OptionalGameImageUrlSchema,
   bannerUrl: OptionalGameImageUrlSchema,
-  tgdbGameId: z.number().nullable().optional(), // TODO: store in metadata
+  tgdbGameId: SignedInt32Schema.nullable().optional(), // TODO: store in metadata
   igdbGameId: z.number().nullable().optional(), // TODO: For IGDB game creation (stored in metadata for now)
   isErotic: z.boolean().optional(),
 })
@@ -95,7 +101,7 @@ export const UpdateGameSchema = z.object({
   imageUrl: OptionalGameImageUrlSchema,
   boxartUrl: OptionalGameImageUrlSchema,
   bannerUrl: OptionalGameImageUrlSchema,
-  tgdbGameId: z.number().optional(),
+  tgdbGameId: SignedInt32Schema.optional(),
   isErotic: z.boolean().optional(),
 })
 
@@ -125,12 +131,13 @@ export const BulkRejectGamesSchema = z.object({
 export const GetPendingGamesSchema = z
   .object({
     search: z.string().optional(),
-    limit: z.number().default(50),
-    offset: z.number().default(0),
-    page: z.number().optional(),
+    limit: z.number().int().safe().default(50),
+    offset: z.number().int().safe().default(0),
+    page: z.number().int().safe().optional(),
     sortField: GameSortField.optional(),
     sortDirection: SortDirectionSchema.optional(),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 // Nintendo Switch Title ID lookup schemas

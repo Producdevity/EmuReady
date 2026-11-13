@@ -5,24 +5,11 @@ import { useState } from 'react'
 import { Button, Card, useConfirmDialog, LocalizedDate } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
-import { CustomFieldType, type Prisma } from '@orm'
+import { FilterValueSchema } from '@/schemas/common'
+import { type RouterOutput } from '@/types/trpc'
+import { CustomFieldType } from '@orm'
 
-interface CustomFieldTemplateWithFields {
-  id: string
-  name: string
-  description: string | null
-  createdAt: Date
-  updatedAt: Date
-  fields: {
-    id: string
-    name: string
-    label: string
-    type: CustomFieldType
-    options: Prisma.JsonValue
-    isRequired: boolean
-    displayOrder: number
-  }[]
-}
+type CustomFieldTemplateWithFields = RouterOutput['customFieldTemplates']['get'][number]
 
 interface Props {
   templates: CustomFieldTemplateWithFields[]
@@ -100,15 +87,9 @@ function CustomFieldTemplateList(props: Props) {
     return typeMap[type] || type
   }
 
-  function getOptionsDisplay(options: Prisma.JsonValue): string {
-    if (!options || !Array.isArray(options)) return ''
-    return options
-      .filter(
-        (opt): opt is { label: string } =>
-          typeof opt === 'object' && opt !== null && 'label' in opt,
-      )
-      .map((opt) => opt.label)
-      .join(', ')
+  function getOptionsDisplay(options: unknown): string {
+    const result = FilterValueSchema.array().safeParse(options)
+    return result.success ? result.data.map((option) => option.label).join(', ') : ''
   }
 
   return (
@@ -189,11 +170,12 @@ function CustomFieldTemplateList(props: Props) {
                             {field.name} • {getFieldTypeDisplayName(field.type)}
                             {field.isRequired && ' • Required'}
                           </div>
-                          {field.type === CustomFieldType.SELECT && field.options && (
-                            <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                              Options: {getOptionsDisplay(field.options)}
-                            </div>
-                          )}
+                          {field.type === CustomFieldType.SELECT &&
+                            Array.isArray(field.options) && (
+                              <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                Options: {getOptionsDisplay(field.options)}
+                              </div>
+                            )}
                         </div>
                       </div>
                     ))}

@@ -9,7 +9,6 @@ import { getSerializableAppError } from '@/lib/app-error-cause'
 import { AppError, ERROR_CODES } from '@/lib/errors'
 import { prisma } from '@/server/db'
 import { SessionUsersRepository } from '@/server/repositories/session-users.repository'
-import { hasDeveloperAccessToEmulator } from '@/server/utils/permissions'
 import { type Nullable } from '@/types/utils'
 import { hasPermissionInContext, PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
@@ -223,7 +222,6 @@ export const authorProcedure = t.procedure.use(performanceMiddleware).use(({ ctx
 
 /**
  * Middleware to check if a user has Moderator role
- * TODO: use implementation of this procedure
  */
 export const moderatorProcedure = t.procedure.use(performanceMiddleware).use(({ ctx, next }) => {
   if (!ctx.session?.user) AppError.unauthorized()
@@ -274,30 +272,6 @@ export const superAdminProcedure = t.procedure.use(performanceMiddleware).use(({
   return next({ ctx: { session: { ...ctx.session, user: ctx.session.user } } })
 })
 
-/**
- * Middleware to check if a developer has access to a specific emulator
- * This procedure ensures that a developer can only access emulators they're verified for,
- * while admins and super admins retain access to all emulators.
- *
- * @param emulatorId The ID of the emulator to check access for
- * @returns A procedure that can be used to create router endpoints requiring emulator-specific access
- * @throws {AppError} if the user does not have access to the emulator
- * TODO: use implementation of this procedure
- */
-export function developerEmulatorProcedure(emulatorId: string) {
-  return protectedProcedure.use(async ({ ctx, next }) => {
-    const hasAccess = await hasDeveloperAccessToEmulator(
-      ctx.session.user.id,
-      emulatorId,
-      ctx.prisma,
-    )
-
-    if (!hasAccess) return AppError.insufficientRole(Role.DEVELOPER)
-
-    return next({ ctx: { ...ctx, emulatorId } })
-  })
-}
-
 // ===== Permission-Based Procedures =====
 
 /**
@@ -312,45 +286,10 @@ export function permissionProcedure(requiredPermission: string) {
   })
 }
 
-/**
- * Procedure that requires multiple permissions (all must be present)
- * @param requiredPermissions Array of permission keys that are all required
- * TODO: use implementation of this procedure
- */
-export function multiPermissionProcedure(requiredPermissions: string[]) {
-  return protectedProcedure.use(({ ctx, next }) => {
-    const missingPermissions = requiredPermissions.filter(
-      (permission) => !hasPermissionInContext(ctx, permission),
-    )
-
-    if (missingPermissions.length > 0) return AppError.insufficientPermissions(missingPermissions)
-
-    return next({ ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } } })
-  })
-}
-
-/**
- * Procedure that requires any one of multiple permissions
- * @param requiredPermissions Array of permission keys (any one is sufficient)
- * TODO: use implementation of this procedure
- */
-export function anyPermissionProcedure(requiredPermissions: string[]) {
-  return protectedProcedure.use(({ ctx, next }) => {
-    const hasAnyPermission = requiredPermissions.some((permission) =>
-      hasPermissionInContext(ctx, permission),
-    )
-
-    if (!hasAnyPermission) return AppError.insufficientRoles(requiredPermissions)
-
-    return next({ ctx: { ...ctx, session: { ...ctx.session, user: ctx.session.user } } })
-  })
-}
-
 // Common permission-based procedures for convenience
 export const createListingProcedure = permissionProcedure(PERMISSIONS.CREATE_LISTING)
 export const approveListingsProcedure = permissionProcedure(PERMISSIONS.APPROVE_LISTINGS)
 
-// TODO: use implementation of this procedure
 export const manageUsersProcedure = permissionProcedure(PERMISSIONS.MANAGE_USERS)
 export const viewUserBansProcedure = permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
 export const manageUserBansProcedure = permissionProcedure(PERMISSIONS.MANAGE_USER_BANS)
@@ -361,12 +300,9 @@ export const manageEmulatorsProcedure = permissionProcedure(PERMISSIONS.MANAGE_E
 export const editGamesProcedure = permissionProcedure(PERMISSIONS.EDIT_GAMES)
 export const deleteGamesProcedure = permissionProcedure(PERMISSIONS.DELETE_GAMES)
 
-// TODO: use implementation of this procedure
-export const manageGamesProcedure = permissionProcedure(PERMISSIONS.MANAGE_GAMES)
 export const approveGamesProcedure = permissionProcedure(PERMISSIONS.APPROVE_GAMES)
 export const manageDevicesProcedure = permissionProcedure(PERMISSIONS.MANAGE_DEVICES)
 
-// TODO: use implementation of this procedure
 export const manageSystemsProcedure = permissionProcedure(PERMISSIONS.MANAGE_SYSTEMS)
 export const deleteAnyListingProcedure = permissionProcedure(PERMISSIONS.DELETE_ANY_LISTING)
 export const manageEmulatorVerifiedDevelopersProcedure = permissionProcedure(

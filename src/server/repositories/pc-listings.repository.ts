@@ -9,7 +9,6 @@ import { canUserAutoApprove } from '@/lib/trust/service'
 import { EMULATOR_VERSION_FIELD_NAME } from '@/schemas/submissionRisk'
 import { computeVoteCounts } from '@/server/utils/moderator-info'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
-import { sanitizeInput } from '@/server/utils/security-validation'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { calculateWilsonScore } from '@/utils/wilson-score'
 import { Prisma, ApprovalStatus, type PcOs, Role } from '@orm/client'
@@ -726,7 +725,7 @@ export class PcListingsRepository extends BaseRepository {
         memorySize,
         os,
         osVersion,
-        notes: notes ? sanitizeInput(notes) : (notes ?? null),
+        notes: notes?.trim() ?? null,
         authorId,
         status,
         successRate: calculateWilsonScore(0, 0),
@@ -995,58 +994,6 @@ export class PcListingsRepository extends BaseRepository {
     if (!orderBy.length) orderBy.push({ createdAt: sortDirection })
 
     return orderBy
-  }
-
-  /**
-   * Approve a PC listing
-   */
-  async approve(
-    pcListingId: string,
-    processedByUserId: string,
-  ): Promise<
-    Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.default }>
-  > {
-    return this.prisma.pcListing.update({
-      where: { id: pcListingId },
-      data: {
-        status: ApprovalStatus.APPROVED,
-        processedAt: new Date(),
-        processedByUserId,
-      },
-      include: PcListingsRepository.includes.forList,
-    })
-  }
-
-  /**
-   * Reject a PC listing
-   */
-  async reject(
-    pcListingId: string,
-    processedByUserId: string,
-    processedNotes?: string,
-  ): Promise<
-    Prisma.PcListingGetPayload<{ include: typeof PcListingsRepository.includes.default }>
-  > {
-    return this.prisma.pcListing.update({
-      where: { id: pcListingId },
-      data: {
-        status: ApprovalStatus.REJECTED,
-        processedAt: new Date(),
-        processedByUserId,
-        processedNotes,
-      },
-      include: PcListingsRepository.includes.forList,
-    })
-  }
-
-  /**
-   * Check if a developer is verified for an emulator
-   */
-  async isDeveloperVerifiedForEmulator(userId: string, emulatorId: string): Promise<boolean> {
-    const verified = await this.prisma.verifiedDeveloper.findUnique({
-      where: { userId_emulatorId: { userId, emulatorId } },
-    })
-    return !!verified
   }
 
   private static readonly moderatorInfoUserSelect = {

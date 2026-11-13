@@ -19,9 +19,9 @@ interface Props {
 }
 
 export function SystemIcon(props: Props) {
-  const IconComponent = getSystemIcon(props.systemKey)
+  const icon = getSystemIcon(props.systemKey)
 
-  return IconComponent ? (
+  return icon ? (
     <Tooltip>
       <TooltipTrigger asChild>
         <div>
@@ -32,7 +32,7 @@ export function SystemIcon(props: Props) {
               props.className,
             )}
           >
-            <IconComponent />
+            {icon}
           </div>
           <span className="sr-only">{props.name}</span>
         </div>

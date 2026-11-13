@@ -1,5 +1,14 @@
+import { AccountDeletionRepository } from '@/features/accounts/server/account-deletion.repository'
+import { AccountDeletionService } from '@/features/accounts/server/account-deletion.service'
+import { bookmarksRouter } from '@/features/bookmarks/server/bookmarks.router'
+import { customFieldConfigRouter } from '@/features/emulators/custom-field-config/server/config.router'
+import { customFieldTemplateRouter } from '@/features/emulators/custom-field-templates/server/template.router'
 import { cpuRouter } from '@/features/hardware/cpu/server/cpu.router'
 import { gpuRouter } from '@/features/hardware/gpu/server/gpu.router'
+import { reportHistoryRouter } from '@/features/reports/history/server/history.router'
+import { UserRepository } from '@/features/users/server/user.repository'
+import { createUsersRouter } from '@/features/users/server/user.router'
+import { UserService } from '@/features/users/server/user.service'
 import { createTRPCRouter } from '@/server/api/trpc'
 import { accountRouter } from './routers/account'
 import { activityRouter } from './routers/admin/activity'
@@ -9,10 +18,8 @@ import { titleIdToolsRouter } from './routers/admin/titleIdTools'
 import { apiKeysRouter } from './routers/apiKeys'
 import { auditLogsRouter } from './routers/auditLogs'
 import { badgesRouter } from './routers/badges'
-import { bookmarksRouter } from './routers/bookmarks'
 import { customFieldCategoryRouter } from './routers/customFieldCategories'
 import { customFieldDefinitionRouter } from './routers/customFieldDefinitions'
-import { customFieldTemplateRouter } from './routers/customFieldTemplates'
 import { deviceBrandsRouter } from './routers/deviceBrands'
 import { devicesRouter } from './routers/devices'
 import { emulatorsRouter } from './routers/emulators'
@@ -39,11 +46,11 @@ import { tgdbRouter } from './routers/tgdb'
 import { trustRouter } from './routers/trust'
 import { userBansRouter } from './routers/userBans'
 import { userPreferencesRouter } from './routers/userPreferences'
-import { usersRouter } from './routers/users'
 import { verifiedDevelopersRouter } from './routers/verifiedDevelopers'
 import { voteInvestigationRouter } from './routers/voteInvestigation'
 
 export const appRouter = createTRPCRouter({
+  reportHistory: reportHistoryRouter,
   account: accountRouter,
   activity: activityRouter,
   listings: listingsRouter,
@@ -58,13 +65,19 @@ export const appRouter = createTRPCRouter({
   games: gamesRouter,
   systems: systemsRouter,
   emulators: emulatorsRouter,
-  users: usersRouter,
+  users: createUsersRouter(
+    (prisma) =>
+      new UserService(new UserRepository(prisma), (userId) =>
+        new AccountDeletionService(new AccountDeletionRepository(prisma)).deleteAccount(userId),
+      ),
+  ),
   userPreferences: userPreferencesRouter,
   userBans: userBansRouter,
   badges: badgesRouter,
   notifications: notificationsRouter,
   customFieldCategories: customFieldCategoryRouter,
   customFieldDefinitions: customFieldDefinitionRouter,
+  customFieldConfigs: customFieldConfigRouter,
   customFieldTemplates: customFieldTemplateRouter,
   performanceScales: performanceScalesRouter,
   permissions: permissionsRouter,

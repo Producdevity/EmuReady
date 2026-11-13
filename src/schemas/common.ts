@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+export const SignedInt32Schema = z.number().int().min(-2_147_483_648).max(2_147_483_647)
+
 export const SortDirectionSchema = z.enum(['asc', 'desc'])
 export type SortDirection = z.output<typeof SortDirectionSchema>
 

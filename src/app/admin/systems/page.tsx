@@ -82,7 +82,6 @@ function AdminSystemsPage() {
   const handleModalSuccess = () => {
     utils.systems.get.invalidate().catch(console.error)
     utils.systems.stats.invalidate().catch(console.error)
-    closeModal()
   }
 
   const handleDelete = async (id: string) => {

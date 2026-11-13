@@ -20,7 +20,7 @@ export function usePreferredHardwareFilters(opts: Options) {
       userPreferences?.defaultToUserDevices && userPreferences.devicePreferences
         ? userPreferences.devicePreferences.map((pref) => pref.deviceId)
         : [],
-    [userPreferences?.defaultToUserDevices, userPreferences?.devicePreferences],
+    [userPreferences],
   )
 
   const userSocIds = useMemo(
@@ -28,7 +28,7 @@ export function usePreferredHardwareFilters(opts: Options) {
       userPreferences?.defaultToUserSocs && userPreferences.socPreferences
         ? userPreferences.socPreferences.map((pref) => pref.socId)
         : [],
-    [userPreferences?.defaultToUserSocs, userPreferences?.socPreferences],
+    [userPreferences],
   )
 
   const shouldUseUserDeviceFilter =

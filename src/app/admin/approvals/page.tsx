@@ -53,6 +53,7 @@ import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { logger } from '@/lib/logger'
 import toast from '@/lib/toast'
+import { BooleanPreferenceSchema } from '@/schemas/preferences'
 import { type RouterOutput, type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
@@ -102,6 +103,7 @@ function AdminApprovalsPage() {
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
     storageKeys.showSystemIcons,
     true,
+    BooleanPreferenceSchema,
   )
 
   const emulatorLogos = useEmulatorLogos()

@@ -13,6 +13,7 @@ interface Env {
   GITHUB_SUPPORT_URL: string
   GITHUB_CONTRIBUTING_URL: string
   GITHUB_REQUEST_EMULATOR_URL: string
+  GITHUB_REQUEST_HARDWARE_URL: string
   GITHUB_ISSUES_URL: string
   APP_URL: string
   GA_ID: string
@@ -44,7 +45,8 @@ function resolveAppEnv(): AppEnv {
 }
 
 const APP_ENV = resolveAppEnv()
-const GITHUB_URL = process.env.NEXT_PUBLIC_GITHUB_URL ?? 'https://github.com/Producdevity/EmuReady'
+const GITHUB_URL =
+  process.env.NEXT_PUBLIC_GITHUB_URL?.trim() || 'https://github.com/Producdevity/EmuReady'
 export const env = {
   EMUREADY_LITE_GITHUB_URL:
     process.env.NEXT_PUBLIC_EMUREADY_LITE_GITHUB_URL ??
@@ -67,6 +69,8 @@ export const env = {
   GITHUB_SUPPORT_URL: `${GITHUB_URL}/issues/new?template=question.yml`,
   GITHUB_CONTRIBUTING_URL: `${GITHUB_URL}/blob/master/CONTRIBUTING.md`,
   GITHUB_REQUEST_EMULATOR_URL: `${GITHUB_URL}/issues/new?template=emulator_request.yml`,
+
+  GITHUB_REQUEST_HARDWARE_URL: `${GITHUB_URL}/issues/new?template=feature_request.yml`,
 
   GITHUB_ISSUES_URL: `${GITHUB_URL}/issues`,
 

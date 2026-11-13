@@ -54,7 +54,10 @@ function isUrlValueValid(value: unknown): boolean {
   return z.string().url().safeParse(value).success
 }
 
-function isCustomFieldValueValid(field: CustomFieldDefinitionWithOptions, value: unknown): boolean {
+export function isCustomFieldValueValid(
+  field: CustomFieldDefinitionWithOptions,
+  value: unknown,
+): boolean {
   switch (field.type) {
     case CustomFieldType.BOOLEAN:
       return typeof value === 'boolean'

@@ -1,14 +1,15 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Joystick, MonitorSmartphone, Cpu, Gamepad, Rocket } from 'lucide-react'
+import { Joystick, MonitorSmartphone, Cpu, Gamepad, Rocket, Settings2 } from 'lucide-react'
+import Link from 'next/link'
 import { ActiveFiltersSummary, ListingsSearchBar } from '@/app/listings/shared/components'
 import { buildActiveFilterItems } from '@/app/listings/shared/utils/buildActiveFilterItems'
-import { MultiSelect } from '@/components/ui'
+import { Button, MultiSelect } from '@/components/ui'
 import { type Option } from '@/components/ui/form/async-multi-select/AsyncMultiSelect'
+import DeviceMultiSelect from '@/features/hardware/device/client/components/DeviceMultiSelect'
+import SocMultiSelect from '@/features/hardware/soc/client/components/SocMultiSelect'
 import { performanceOptions, systemOptions, emulatorOptions } from '@/utils/options'
-import AsyncDeviceFilterSelect from './filters/AsyncDeviceFilterSelect'
-import AsyncSocFilterSelect from './filters/AsyncSocFilterSelect'
 
 interface Props {
   systemIds: string[]
@@ -67,7 +68,7 @@ export default function ListingsFiltersContent(props: Props) {
         maxDisplayed={1}
       />
 
-      <AsyncDeviceFilterSelect
+      <DeviceMultiSelect
         label="Devices"
         leftIcon={<MonitorSmartphone className="w-5 h-5" />}
         value={props.deviceIds}
@@ -76,7 +77,7 @@ export default function ListingsFiltersContent(props: Props) {
         maxDisplayed={1}
       />
 
-      <AsyncSocFilterSelect
+      <SocMultiSelect
         label="SoCs"
         leftIcon={<Cpu className="w-5 h-5" />}
         value={props.socIds}
@@ -84,6 +85,18 @@ export default function ListingsFiltersContent(props: Props) {
         placeholder="All SoCs"
         maxDisplayed={1}
       />
+
+      <Button
+        asChild
+        variant="link"
+        size="sm"
+        className="h-auto justify-start px-0 whitespace-normal"
+      >
+        <Link href="/profile?tab=devices">
+          <Settings2 className="h-4 w-4" />
+          Save preferred devices and SoCs
+        </Link>
+      </Button>
 
       <MultiSelect
         label="Emulators"

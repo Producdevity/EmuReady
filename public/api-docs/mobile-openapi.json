@@ -212,15 +212,21 @@
                 "format": "uuid"
               },
               "limit": {
-                "type": "number",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991,
                 "default": 20
               },
               "offset": {
-                "type": "number",
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
                 "default": 0
               },
               "page": {
-                "type": "number"
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
               },
               "sortField": {
                 "type": "string",
@@ -464,7 +470,7 @@
                 "description": "Filter by brand ID"
               },
               "limit": {
-                "type": "number",
+                "type": "integer",
                 "minimum": 1,
                 "maximum": 1000,
                 "default": 50,
@@ -488,7 +494,7 @@
             "maxLength": 100
           },
           "limit": {
-            "type": "number",
+            "type": "integer",
             "minimum": 1,
             "maximum": 100,
             "default": 50
@@ -528,8 +534,9 @@
               "page": {
                 "anyOf": [
                   {
-                    "type": "number",
+                    "type": "integer",
                     "minimum": 1,
+                    "maximum": 9007199254740991,
                     "default": 1
                   },
                   {
@@ -538,7 +545,7 @@
                 ]
               },
               "limit": {
-                "type": "number",
+                "type": "integer",
                 "minimum": 1,
                 "maximum": 50,
                 "default": 20
@@ -1444,15 +1451,21 @@
                 "format": "uuid"
               },
               "limit": {
-                "type": "number",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991,
                 "default": 20
               },
               "offset": {
-                "type": "number",
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
                 "default": 0
               },
               "page": {
-                "type": "number"
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
               },
               "sortField": {
                 "type": "string",
@@ -1670,8 +1683,9 @@
               "page": {
                 "anyOf": [
                   {
-                    "type": "number",
+                    "type": "integer",
                     "minimum": 1,
+                    "maximum": 9007199254740991,
                     "default": 1
                   },
                   {
@@ -1681,7 +1695,7 @@
                 "description": "Page number for pagination"
               },
               "limit": {
-                "type": "number",
+                "type": "integer",
                 "minimum": 1,
                 "maximum": 50,
                 "default": 20,
@@ -1732,14 +1746,16 @@
                 "items": {
                   "anyOf": [
                     {
-                      "type": "number"
+                      "type": "integer",
+                      "minimum": -2147483648,
+                      "maximum": 2147483647
                     },
                     {
                       "type": "string"
                     }
                   ]
                 },
-                "description": "Filter by performance IDs"
+                "description": "Filter by performance IDs as integers or numeric strings"
               },
               "search": {
                 "type": "string",
@@ -1807,7 +1823,9 @@
             "format": "uuid"
           },
           "performanceId": {
-            "type": "number"
+            "type": "integer",
+            "minimum": -2147483648,
+            "maximum": 2147483647
           },
           "notes": {
             "anyOf": [
@@ -1943,7 +1961,9 @@
             "format": "uuid"
           },
           "performanceId": {
-            "type": "number"
+            "type": "integer",
+            "minimum": -2147483648,
+            "maximum": 2147483647
           },
           "notes": {
             "type": "string"
@@ -2403,8 +2423,9 @@
               "page": {
                 "anyOf": [
                   {
-                    "type": "number",
+                    "type": "integer",
                     "minimum": 1,
+                    "maximum": 9007199254740991,
                     "default": 1
                   },
                   {
@@ -2414,7 +2435,7 @@
                 "description": "Page number for pagination"
               },
               "limit": {
-                "type": "number",
+                "type": "integer",
                 "minimum": 1,
                 "maximum": 50,
                 "default": 20,
@@ -2450,8 +2471,9 @@
           "page": {
             "anyOf": [
               {
-                "type": "number",
+                "type": "integer",
                 "minimum": 1,
+                "maximum": 9007199254740991,
                 "default": 1
               },
               {
@@ -2460,7 +2482,7 @@
             ]
           },
           "limit": {
-            "type": "number",
+            "type": "integer",
             "minimum": 1,
             "maximum": 50,
             "default": 20
@@ -2532,11 +2554,12 @@
             "format": "uuid"
           },
           "performanceId": {
-            "type": "number"
+            "type": "integer",
+            "minimum": -2147483648,
+            "maximum": 2147483647
           },
           "memorySize": {
             "type": "integer",
-            "exclusiveMinimum": 0,
             "minimum": 1,
             "maximum": 256
           },
@@ -2680,10 +2703,12 @@
             "format": "uuid"
           },
           "performanceId": {
-            "type": "number"
+            "type": "integer",
+            "minimum": -2147483648,
+            "maximum": 2147483647
           },
           "memorySize": {
-            "type": "number",
+            "type": "integer",
             "minimum": 1,
             "maximum": 256
           },
@@ -2948,7 +2973,7 @@
             "format": "uuid"
           },
           "limit": {
-            "type": "number",
+            "type": "integer",
             "minimum": 1,
             "maximum": 100,
             "default": 50
@@ -3024,7 +3049,7 @@
             "format": "uuid"
           },
           "limit": {
-            "type": "number",
+            "type": "integer",
             "minimum": 1,
             "maximum": 100,
             "default": 50
@@ -3093,7 +3118,7 @@
         "type": "object",
         "properties": {
           "limit": {
-            "type": "number",
+            "type": "integer",
             "minimum": 1,
             "maximum": 50,
             "default": 20
@@ -3118,7 +3143,7 @@
             "format": "uuid"
           },
           "memorySize": {
-            "type": "number",
+            "type": "integer",
             "minimum": 1,
             "maximum": 256
           },
@@ -3168,7 +3193,7 @@
             "format": "uuid"
           },
           "memorySize": {
-            "type": "number",
+            "type": "integer",
             "minimum": 1,
             "maximum": 256
           },
@@ -7655,32 +7680,61 @@
                           "success": true,
                           "results": [
                             {
-                              "game_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                              "steam_app_id": "220",
-                              "title": "Half-Life 2",
-                              "performance": {
-                                "id": 1,
-                                "label": "Perfect",
-                                "rank": 1,
-                                "description": null
-                              },
-                              "emulator": {
-                                "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                                "name": "GameHub",
-                                "logo": null
-                              },
-                              "device": {
-                                "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                                "modelName": "Steam Deck",
-                                "soc": null
-                              },
-                              "listing": {
-                                "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                                "notes": "Runs well",
-                                "upvoteCount": 4,
-                                "downvoteCount": 1,
-                                "voteCount": 5,
-                                "successRate": 0.8
+                              "steamAppId": "220",
+                              "matchStrategy": "metadata",
+                              "game": {
+                                "id": "00000000-0000-4000-8000-000000000001",
+                                "title": "Half-Life 2",
+                                "systemId": "00000000-0000-4000-8000-000000000002",
+                                "imageUrl": null,
+                                "boxartUrl": null,
+                                "bannerUrl": null,
+                                "tgdbGameId": null,
+                                "metadata": {
+                                  "steamAppId": "220"
+                                },
+                                "isErotic": false,
+                                "status": "APPROVED",
+                                "createdAt": "2025-01-01T00:00:00.000Z",
+                                "system": {
+                                  "id": "00000000-0000-4000-8000-000000000002",
+                                  "name": "Microsoft Windows",
+                                  "key": "microsoft_windows"
+                                },
+                                "_count": {
+                                  "listings": 1
+                                },
+                                "listings": [
+                                  {
+                                    "id": "00000000-0000-4000-8000-000000000005",
+                                    "gameId": "00000000-0000-4000-8000-000000000001",
+                                    "deviceId": "00000000-0000-4000-8000-000000000003",
+                                    "emulatorId": "00000000-0000-4000-8000-000000000004",
+                                    "performanceId": 1,
+                                    "notes": "Runs well",
+                                    "upvoteCount": 4,
+                                    "downvoteCount": 1,
+                                    "voteCount": 5,
+                                    "successRate": 0.8,
+                                    "device": {
+                                      "id": "00000000-0000-4000-8000-000000000003",
+                                      "modelName": "Steam Deck",
+                                      "soc": null
+                                    },
+                                    "emulator": {
+                                      "id": "00000000-0000-4000-8000-000000000004",
+                                      "name": "GameNative",
+                                      "logo": null
+                                    },
+                                    "performance": {
+                                      "id": 1,
+                                      "label": "Perfect",
+                                      "rank": 1,
+                                      "description": null
+                                    },
+                                    "customFieldValues": []
+                                  }
+                                ]
                               }
                             }
                           ],

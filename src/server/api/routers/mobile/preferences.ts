@@ -1,3 +1,4 @@
+import { checkProfileAccess } from '@/features/users/server/profile-access.service'
 import { ResourceError } from '@/lib/errors'
 import {
   AddDevicePreferenceSchema,
@@ -10,7 +11,6 @@ import {
 } from '@/schemas/mobile'
 import { createMobileTRPCRouter, mobileProtectedProcedure } from '@/server/api/mobileContext'
 import { UserPreferencesRepository } from '@/server/repositories/user-preferences.repository'
-import { checkProfileAccess } from '@/server/services/user-profile.service'
 
 export const mobilePreferencesRouter = createMobileTRPCRouter({
   get: mobileProtectedProcedure.query(async ({ ctx }) => {
@@ -25,7 +25,7 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
       return repo.update(ctx.session.user.id, input)
     }),
 
-  // TODO: Find out if this is even used or needed, since we use bulkUpdateDevices on web
+  // Individual device writes remain part of the documented public mobile API.
   addDevice: mobileProtectedProcedure
     .input(AddDevicePreferenceSchema)
     .mutation(async ({ ctx, input }) => {
@@ -33,7 +33,6 @@ export const mobilePreferencesRouter = createMobileTRPCRouter({
       return repo.addDevice(ctx.session.user.id, input.deviceId)
     }),
 
-  // TODO: Find out if this is even used or needed, since we use bulkUpdateDevices on web
   removeDevice: mobileProtectedProcedure
     .input(RemoveDevicePreferenceSchema)
     .mutation(async ({ ctx, input }) => {

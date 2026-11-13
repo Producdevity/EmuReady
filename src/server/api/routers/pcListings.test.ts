@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { RISK_SIGNAL_TYPES } from '@/schemas/authorRisk'
 import { SUBMISSION_RISK_SIGNAL_TYPES } from '@/schemas/submissionRisk'
-import {
-  invalidatePcListingSeo,
-  invalidatePcListingSeoForUpdate,
-  invalidatePcListingsSeo,
-} from '@/server/cache/invalidation'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus, PcOs, ReportReason, Role, TrustAction } from '@orm'
 
@@ -72,6 +67,7 @@ vi.mock('@/server/cache/invalidation', () => ({
 vi.mock('@/lib/analytics', () => ({
   default: {
     engagement: { comment: vi.fn(), vote: vi.fn(), commentVote: vi.fn() },
+    userJourney: { firstTimeAction: vi.fn() },
     listing: { created: vi.fn() },
   },
 }))
@@ -110,18 +106,10 @@ vi.mock('@/server/api/utils/pinPermissions', () => ({
   canManageCommentPins: vi.fn().mockReturnValue(false),
 }))
 
-vi.mock('@/server/utils/security-validation', () => ({
-  validatePagination: vi.fn((page, limit, max) => ({ page: page ?? 1, limit: limit ?? max ?? 20 })),
-  sanitizeInput: vi.fn((value: string) => value.trim()),
-}))
-
 const mockRepositoryCreate = vi.fn()
 const mockRepositoryGetById = vi.fn()
 const mockRepositoryGetByIdWithDetails = vi.fn()
-const mockRepositoryApprove = vi.fn()
-const mockRepositoryReject = vi.fn()
 const mockRepositoryGetExistingVote = vi.fn()
-const mockIsDeveloperVerified = vi.fn()
 const mockRepositoryGetPendingListings = vi.fn()
 const mockRepositoryGetPendingListingRiskCandidates = vi.fn()
 const mockRepositoryGetPendingListingsByIds = vi.fn()
@@ -133,10 +121,7 @@ vi.mock('@/server/repositories/pc-listings.repository', () => ({
       create: mockRepositoryCreate,
       getById: mockRepositoryGetById,
       getByIdWithDetails: mockRepositoryGetByIdWithDetails,
-      approve: mockRepositoryApprove,
-      reject: mockRepositoryReject,
       getExistingVote: mockRepositoryGetExistingVote,
-      isDeveloperVerifiedForEmulator: mockIsDeveloperVerified,
       getPendingListings: mockRepositoryGetPendingListings,
       getPendingListingRiskCandidates: mockRepositoryGetPendingListingRiskCandidates,
       getPendingListingsByIds: mockRepositoryGetPendingListingsByIds,
@@ -153,6 +138,12 @@ vi.mock('@/server/repositories/user-pc-presets.repository', () => ({
   }),
 }))
 
+const { ReportApprovalService } = await import(
+  '@/features/reports/approval/server/report-approval.service'
+)
+const { ReportAdminEditService } = await import(
+  '@/features/reports/approval/server/report-admin-edit.service'
+)
 const { pcListingsRouter } = await import('./pcListings')
 
 const USER_ID = '00000000-0000-4000-a000-000000000001'
@@ -168,11 +159,21 @@ const COMMENT_ID = '00000000-0000-4000-a000-000000000020'
 
 function createMockPrisma() {
   const mockTx = {
+    trustActionLog: { findMany: vi.fn().mockResolvedValue([{ id: 'first-vote-action' }]) },
+    vote: { count: vi.fn().mockResolvedValue(0) },
     pcListingVote: {
-      create: vi.fn().mockResolvedValue({ userId: USER_ID, pcListingId: LISTING_ID, value: true }),
+      create: vi
+        .fn()
+        .mockResolvedValue({ id: 'vote-1', userId: USER_ID, pcListingId: LISTING_ID, value: true }),
       delete: vi.fn().mockResolvedValue(undefined),
-      update: vi.fn().mockResolvedValue({ userId: USER_ID, pcListingId: LISTING_ID, value: false }),
+      update: vi.fn().mockResolvedValue({
+        id: 'vote-1',
+        userId: USER_ID,
+        pcListingId: LISTING_ID,
+        value: false,
+      }),
       findUnique: vi.fn().mockResolvedValue(null),
+      count: vi.fn().mockResolvedValue(1),
     },
     pcListingCommentVote: {
       create: vi.fn().mockResolvedValue({ userId: USER_ID, commentId: COMMENT_ID, value: true }),
@@ -890,482 +891,86 @@ describe('pcListings trust integration', () => {
     })
   })
 
-  describe('overrideStatus', () => {
-    it('updates a processed PC report, invalidates SEO, and emits a rejected event', async () => {
-      const gameId = '00000000-0000-4000-a000-000000000040'
-      const cpuId = '00000000-0000-4000-a000-000000000070'
-      const processedAt = new Date('2026-06-01T12:00:00.000Z')
-      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.SUPER_ADMIN })
-      prisma.pcListing.findUnique.mockResolvedValueOnce({
-        id: LISTING_ID,
-        status: ApprovalStatus.APPROVED,
-        gameId,
-        cpuId,
-        gpuId: null,
-        authorId: AUTHOR_ID,
-        processedNotes: 'Old notes',
-      })
-      prisma.pcListing.update.mockResolvedValueOnce({
-        id: LISTING_ID,
-        status: ApprovalStatus.REJECTED,
-        processedAt,
-      })
+  describe('decision transport', () => {
+    beforeEach(() => vi.restoreAllMocks())
 
+    it('delegates overrides with a PC target and authenticated actor', async () => {
+      const change = vi
+        .spyOn(ReportApprovalService.prototype, 'changeStatus')
+        .mockResolvedValueOnce({
+          id: LISTING_ID,
+          status: ApprovalStatus.REJECTED,
+          processedAt: new Date(),
+        })
+      const { caller } = createCaller({ userId: ADMIN_ID, role: Role.SUPER_ADMIN })
       await caller.overrideStatus({
         pcListingId: LISTING_ID,
         newStatus: ApprovalStatus.REJECTED,
         overrideNotes: 'Incorrect hardware',
       })
-
-      expect(prisma.pcListing.update).toHaveBeenCalledWith({
-        where: { id: LISTING_ID },
-        data: {
-          status: ApprovalStatus.REJECTED,
-          processedByUserId: ADMIN_ID,
-          processedAt: expect.any(Date),
-          processedNotes: 'Incorrect hardware',
-        },
-      })
-      expect(invalidatePcListingSeo).toHaveBeenCalledWith({
-        id: LISTING_ID,
-        gameId,
-        cpuId,
-        gpuId: null,
-      })
-      expect(mockApplyTrustAction).toHaveBeenCalledWith({
-        userId: AUTHOR_ID,
-        action: TrustAction.LISTING_REJECTED,
-        context: {
-          pcListingId: LISTING_ID,
-          adminUserId: ADMIN_ID,
-          reason: 'Incorrect hardware',
-        },
-      })
-      expect(mockEmitNotificationEvent).toHaveBeenCalledWith({
-        eventType: 'PC_LISTING_REJECTED',
-        entityType: 'pcListing',
-        entityId: LISTING_ID,
-        triggeredBy: ADMIN_ID,
-        payload: {
-          pcListingId: LISTING_ID,
-          rejectedBy: ADMIN_ID,
-          rejectedAt: processedAt,
-          rejectionReason: 'Incorrect hardware',
-        },
-      })
+      expect(change).toHaveBeenCalledWith(
+        expect.objectContaining({
+          reportId: LISTING_ID,
+          reportType: 'pc',
+          intent: 'override',
+          notes: 'Incorrect hardware',
+          actor: expect.objectContaining({ id: ADMIN_ID }),
+        }),
+      )
     })
 
-    it('clears processed metadata without emitting a notification when returning to pending', async () => {
-      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.SUPER_ADMIN })
-      prisma.pcListing.findUnique.mockResolvedValueOnce({
-        id: LISTING_ID,
-        status: ApprovalStatus.REJECTED,
-        gameId: '00000000-0000-4000-a000-000000000040',
-        cpuId: '00000000-0000-4000-a000-000000000070',
-        gpuId: null,
-        authorId: AUTHOR_ID,
-        processedNotes: 'Rejected notes',
-      })
-      prisma.pcListing.update.mockResolvedValueOnce({
-        id: LISTING_ID,
-        status: ApprovalStatus.PENDING,
-      })
-
-      await caller.overrideStatus({
-        pcListingId: LISTING_ID,
-        newStatus: ApprovalStatus.PENDING,
-      })
-
-      expect(prisma.pcListing.update).toHaveBeenCalledWith({
-        where: { id: LISTING_ID },
-        data: {
-          status: ApprovalStatus.PENDING,
-          processedByUserId: null,
-          processedAt: null,
-          processedNotes: null,
-        },
-      })
-      expect(invalidatePcListingSeo).not.toHaveBeenCalled()
-      expect(mockApplyTrustAction).not.toHaveBeenCalled()
-      expect(mockEmitNotificationEvent).not.toHaveBeenCalled()
-    })
-  })
-
-  describe('approve', () => {
-    it('approves a retained anonymous PC report without awarding author trust', async () => {
-      const report = {
-        id: LISTING_ID,
-        authorId: null,
-        author: null,
-        status: ApprovalStatus.PENDING,
-        emulatorId: '00000000-0000-4000-a000-000000000060',
-        gameId: '00000000-0000-4000-a000-000000000061',
-        cpuId: '00000000-0000-4000-a000-000000000062',
-        gpuId: null,
-      }
-      const approvedReport = {
-        ...report,
-        status: ApprovalStatus.APPROVED,
-        processedAt: new Date('2026-10-11T10:00:00Z'),
-      }
-      mockRepositoryGetById.mockResolvedValueOnce(report)
-      mockRepositoryApprove.mockResolvedValueOnce(approvedReport)
+    it('preserves the PC bulk result count', async () => {
+      const review = vi
+        .spyOn(ReportApprovalService.prototype, 'reviewPending')
+        .mockResolvedValueOnce({ approvedCount: 2, rejectedCount: 1, skippedCount: 1 })
       const { caller } = createCaller({ userId: ADMIN_ID, role: Role.MODERATOR })
-
-      expect(await caller.approve({ pcListingId: LISTING_ID })).toEqual(approvedReport)
-      expect(mockRepositoryApprove).toHaveBeenCalledWith(LISTING_ID, ADMIN_ID)
-      expect(mockApplyTrustAction).not.toHaveBeenCalled()
-      expect(mockEmitNotificationEvent).toHaveBeenCalledWith({
-        eventType: 'PC_LISTING_APPROVED',
-        entityType: 'pcListing',
-        entityId: LISTING_ID,
-        triggeredBy: ADMIN_ID,
-        payload: {
-          pcListingId: LISTING_ID,
-          gameId: report.gameId,
-          approvedBy: ADMIN_ID,
-          approvedAt: approvedReport.processedAt,
-        },
+      await expect(caller.bulkApprove({ pcListingIds: [LISTING_ID] })).resolves.toEqual({
+        count: 2,
       })
+      expect(review).toHaveBeenCalledWith(
+        expect.objectContaining({
+          reportType: 'pc',
+          newStatus: ApprovalStatus.APPROVED,
+          reportIds: [LISTING_ID],
+          actor: expect.objectContaining({ id: ADMIN_ID }),
+        }),
+      )
     })
 
-    it('calls applyTrustAction with LISTING_APPROVED for author', async () => {
-      mockRepositoryGetById.mockResolvedValue({
-        id: LISTING_ID,
-        authorId: AUTHOR_ID,
-        status: ApprovalStatus.PENDING,
-        emulatorId: '00000000-0000-4000-a000-000000000060',
-      })
-      mockRepositoryApprove.mockResolvedValue({
+    it('delegates admin edits without relying on an unused report payload', async () => {
+      const update = vi.spyOn(ReportAdminEditService.prototype, 'updatePc').mockResolvedValueOnce({
         id: LISTING_ID,
         status: ApprovalStatus.APPROVED,
+        processedAt: new Date(),
       })
-
-      const { caller } = createCaller({ userId: ADMIN_ID, role: Role.MODERATOR })
-
-      await caller.approve({ pcListingId: LISTING_ID })
-
-      expect(mockApplyTrustAction).toHaveBeenCalledWith({
-        userId: AUTHOR_ID,
-        action: TrustAction.LISTING_APPROVED,
-        context: {
-          pcListingId: LISTING_ID,
-          adminUserId: ADMIN_ID,
-          reason: 'listing_approved',
-        },
-      })
-    })
-  })
-
-  describe('reject', () => {
-    it('calls applyTrustAction with LISTING_REJECTED for author', async () => {
-      mockRepositoryGetById.mockResolvedValue({
-        id: LISTING_ID,
-        authorId: AUTHOR_ID,
-        status: ApprovalStatus.PENDING,
-        emulatorId: '00000000-0000-4000-a000-000000000060',
-      })
-      mockRepositoryReject.mockResolvedValue({
-        id: LISTING_ID,
-        status: ApprovalStatus.REJECTED,
-      })
-
-      const { caller } = createCaller({ userId: ADMIN_ID, role: Role.MODERATOR })
-
-      await caller.reject({ pcListingId: LISTING_ID, notes: 'Incomplete report' })
-
-      expect(mockApplyTrustAction).toHaveBeenCalledWith({
-        userId: AUTHOR_ID,
-        action: TrustAction.LISTING_REJECTED,
-        context: {
-          pcListingId: LISTING_ID,
-          adminUserId: ADMIN_ID,
-          reason: 'Incomplete report',
-        },
-      })
-    })
-  })
-
-  describe('updateAdmin', () => {
-    it('invalidates public SEO when an admin update approves a PC report', async () => {
-      const gameId = '00000000-0000-4000-a000-000000000040'
-      const cpuId = '00000000-0000-4000-a000-000000000070'
-      const emulatorId = '00000000-0000-4000-a000-000000000060'
-      const updatedListing = {
-        id: LISTING_ID,
-        gameId,
-        cpuId,
-        gpuId: null,
-        status: ApprovalStatus.APPROVED,
-      }
-
-      const { caller, prisma } = createCaller({
+      const { caller } = createCaller({
         userId: ADMIN_ID,
         role: Role.MODERATOR,
         permissions: [PERMISSIONS.APPROVE_LISTINGS],
       })
-      prisma.pcListing.findUnique
-        .mockResolvedValueOnce({
-          id: LISTING_ID,
-          gameId,
-          cpuId,
-          gpuId: null,
-          status: ApprovalStatus.PENDING,
-        })
-        .mockResolvedValueOnce(updatedListing)
-      prisma.pcListing.update.mockResolvedValue(updatedListing)
-
-      await caller.updateAdmin({
+      const input = {
         id: LISTING_ID,
-        gameId,
-        cpuId,
-        emulatorId,
+        gameId: '00000000-0000-4000-a000-000000000040',
+        cpuId: '00000000-0000-4000-a000-000000000070',
+        emulatorId: '00000000-0000-4000-a000-000000000060',
         performanceId: 1,
         memorySize: 16,
         os: PcOs.WINDOWS,
         osVersion: '11',
-        notes: 'Updated report',
         status: ApprovalStatus.APPROVED,
-      })
-
-      expect(invalidatePcListingSeo).toHaveBeenCalledWith({
-        id: LISTING_ID,
-        gameId,
-        cpuId,
-        gpuId: null,
-      })
-      expect(invalidatePcListingSeoForUpdate).not.toHaveBeenCalled()
-    })
-
-    it('replaces custom field values inside the admin update transaction and returns the final report', async () => {
-      const gameId = '00000000-0000-4000-a000-000000000040'
-      const cpuId = '00000000-0000-4000-a000-000000000070'
-      const emulatorId = '00000000-0000-4000-a000-000000000060'
-      const customFieldDefinitionId = '00000000-0000-4000-a000-000000000090'
-      const updatedListing = {
-        id: LISTING_ID,
-        gameId,
-        cpuId,
-        gpuId: null,
-        status: ApprovalStatus.APPROVED,
-        customFieldValues: [
-          {
-            customFieldDefinitionId,
-            value: 'Enabled',
-          },
-        ],
+        customFieldValues: [],
       }
-
-      const { caller, prisma } = createCaller({
-        userId: ADMIN_ID,
-        role: Role.MODERATOR,
-        permissions: [PERMISSIONS.APPROVE_LISTINGS],
-      })
-      prisma.pcListing.findUnique
-        .mockResolvedValueOnce({
-          id: LISTING_ID,
-          gameId,
-          cpuId,
-          gpuId: null,
-          status: ApprovalStatus.APPROVED,
-        })
-        .mockResolvedValueOnce(updatedListing)
-
-      const result = await caller.updateAdmin({
-        id: LISTING_ID,
-        gameId,
-        cpuId,
-        emulatorId,
-        performanceId: 1,
-        memorySize: 16,
-        os: PcOs.WINDOWS,
-        osVersion: '11',
-        notes: 'Updated report',
-        status: ApprovalStatus.APPROVED,
-        customFieldValues: [{ customFieldDefinitionId, value: 'Enabled' }],
-      })
-
-      expect(prisma.$transaction).toHaveBeenCalled()
-      expect(prisma.pcListingCustomFieldValue.deleteMany).toHaveBeenCalledWith({
-        where: { pcListingId: LISTING_ID },
-      })
-      expect(prisma.pcListingCustomFieldValue.createMany).toHaveBeenCalledWith({
-        data: [
-          {
-            pcListingId: LISTING_ID,
-            customFieldDefinitionId,
-            value: 'Enabled',
-          },
-        ],
-      })
-      expect(result).toBe(updatedListing)
-    })
-  })
-
-  describe('bulkApprove', () => {
-    it('calls applyTrustAction with LISTING_APPROVED for each listing author', async () => {
-      const listing1 = {
-        id: LISTING_ID,
-        gameId: '00000000-0000-4000-a000-000000000040',
-        cpuId: '00000000-0000-4000-a000-000000000070',
-        gpuId: '00000000-0000-4000-a000-000000000080',
-        emulatorId: '00000000-0000-4000-a000-000000000060',
-        authorId: AUTHOR_ID,
-      }
-      const listing2 = {
-        id: '00000000-0000-4000-a000-000000000011',
-        gameId: '00000000-0000-4000-a000-000000000041',
-        cpuId: '00000000-0000-4000-a000-000000000071',
-        gpuId: null,
-        emulatorId: '00000000-0000-4000-a000-000000000061',
-        authorId: '00000000-0000-4000-a000-000000000050',
-      }
-
-      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.MODERATOR })
-      prisma.pcListing.findMany.mockResolvedValue([listing1, listing2])
-      prisma.pcListing.updateMany.mockResolvedValue({ count: 2 })
-
-      await caller.bulkApprove({ pcListingIds: [listing1.id, listing2.id] })
-
-      expect(prisma.pcListing.updateMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: {
-            id: { in: [listing1.id, listing2.id] },
-            status: ApprovalStatus.PENDING,
-          },
-        }),
-      )
-      expect(mockApplyTrustAction).toHaveBeenCalledTimes(2)
-      expect(mockApplyTrustAction).toHaveBeenCalledWith({
-        userId: AUTHOR_ID,
-        action: TrustAction.LISTING_APPROVED,
-        context: expect.objectContaining({ pcListingId: LISTING_ID }),
-      })
-      expect(mockApplyTrustAction).toHaveBeenCalledWith({
-        userId: '00000000-0000-4000-a000-000000000050',
-        action: TrustAction.LISTING_APPROVED,
-        context: expect.objectContaining({ pcListingId: '00000000-0000-4000-a000-000000000011' }),
-      })
-      expect(invalidatePcListingsSeo).toHaveBeenCalledWith([listing1, listing2])
-    })
-
-    it('prevents developers from bulk approving PC reports for unverified emulators', async () => {
-      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.DEVELOPER })
-      prisma.pcListing.findMany.mockResolvedValue([
-        {
-          id: LISTING_ID,
-          gameId: '00000000-0000-4000-a000-000000000040',
-          cpuId: '00000000-0000-4000-a000-000000000070',
-          gpuId: null,
-          emulatorId: '00000000-0000-4000-a000-000000000060',
-          authorId: AUTHOR_ID,
-        },
-      ])
-      prisma.verifiedDeveloper.findMany.mockResolvedValue([
-        { emulatorId: '00000000-0000-4000-a000-000000000061' },
-      ])
-
-      await expect(caller.bulkApprove({ pcListingIds: [LISTING_ID] })).rejects.toThrow(
-        'You can only approve PC listings for emulators you are verified for',
-      )
-
-      expect(prisma.pcListing.updateMany).not.toHaveBeenCalled()
-      expect(mockApplyTrustAction).not.toHaveBeenCalled()
-    })
-
-    it('does not emit side effects when a pending PC report changes before bulk approve writes', async () => {
-      const listing = {
-        id: LISTING_ID,
-        gameId: '00000000-0000-4000-a000-000000000040',
-        cpuId: '00000000-0000-4000-a000-000000000070',
-        gpuId: null,
-        emulatorId: '00000000-0000-4000-a000-000000000060',
-        authorId: AUTHOR_ID,
-      }
-
-      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.MODERATOR })
-      prisma.pcListing.findMany.mockResolvedValue([listing])
-      prisma.pcListing.updateMany.mockResolvedValue({ count: 0 })
-
-      await expect(caller.bulkApprove({ pcListingIds: [listing.id] })).rejects.toThrow(
-        'Some selected PC reports were already processed',
-      )
-
-      expect(mockApplyTrustAction).not.toHaveBeenCalled()
-      expect(invalidatePcListingsSeo).not.toHaveBeenCalled()
-    })
-  })
-
-  describe('bulkReject', () => {
-    it('calls applyTrustAction with LISTING_REJECTED for each listing author', async () => {
-      const listing1 = {
-        id: LISTING_ID,
-        authorId: AUTHOR_ID,
-        emulatorId: '00000000-0000-4000-a000-000000000060',
-      }
-      const listing2 = {
-        id: '00000000-0000-4000-a000-000000000011',
-        authorId: '00000000-0000-4000-a000-000000000050',
-        emulatorId: '00000000-0000-4000-a000-000000000061',
-      }
-
-      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.MODERATOR })
-      prisma.pcListing.findMany.mockResolvedValue([listing1, listing2])
-      prisma.pcListing.updateMany.mockResolvedValue({ count: 2 })
-
-      await caller.bulkReject({ pcListingIds: [listing1.id, listing2.id], notes: 'Spam' })
-
-      expect(prisma.pcListing.updateMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: {
-            id: { in: [listing1.id, listing2.id] },
-            status: ApprovalStatus.PENDING,
-          },
-        }),
-      )
-      expect(mockApplyTrustAction).toHaveBeenCalledTimes(2)
-      expect(mockApplyTrustAction).toHaveBeenCalledWith({
-        userId: AUTHOR_ID,
-        action: TrustAction.LISTING_REJECTED,
-        context: expect.objectContaining({
-          pcListingId: LISTING_ID,
-          reason: 'Spam',
-        }),
-      })
-      expect(mockApplyTrustAction).toHaveBeenCalledWith({
-        userId: '00000000-0000-4000-a000-000000000050',
-        action: TrustAction.LISTING_REJECTED,
-        context: expect.objectContaining({
-          pcListingId: '00000000-0000-4000-a000-000000000011',
-          reason: 'Spam',
-        }),
-      })
-    })
-
-    it('prevents developers from bulk rejecting PC reports for unverified emulators', async () => {
-      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.DEVELOPER })
-      prisma.pcListing.findMany.mockResolvedValue([
-        {
-          id: LISTING_ID,
-          authorId: AUTHOR_ID,
-          emulatorId: '00000000-0000-4000-a000-000000000060',
-        },
-      ])
-      prisma.verifiedDeveloper.findMany.mockResolvedValue([
-        { emulatorId: '00000000-0000-4000-a000-000000000061' },
-      ])
-
-      await expect(
-        caller.bulkReject({ pcListingIds: [LISTING_ID], notes: 'Spam' }),
-      ).rejects.toThrow('You can only reject PC listings for emulators you are verified for')
-
-      expect(prisma.pcListing.updateMany).not.toHaveBeenCalled()
-      expect(mockApplyTrustAction).not.toHaveBeenCalled()
+      await caller.updateAdmin(input)
+      expect(update).toHaveBeenCalledWith(input, expect.objectContaining({ id: ADMIN_ID }))
     })
   })
 
   describe('autoRejectRisky', () => {
+    beforeEach(() => vi.restoreAllMocks())
     it('rejects pending PC reports with high author risk or high submission risk with author risk', async () => {
+      const review = vi
+        .spyOn(ReportApprovalService.prototype, 'reviewPending')
+        .mockResolvedValueOnce({ approvedCount: 0, rejectedCount: 2, skippedCount: 0 })
       const highSubmissionOnlyListing = {
         id: LISTING_ID,
         authorId: CLEAN_AUTHOR_ID,
@@ -1478,158 +1083,19 @@ describe('pcListings trust integration', () => {
       const result = await caller.autoRejectRisky()
 
       expect(mockRepositoryGetPendingListingRiskCandidates).toHaveBeenCalledWith({})
-      expect(prisma.pcListing.findMany).toHaveBeenCalledWith({
-        where: {
-          id: { in: [LISTING_ID_C, LISTING_ID_D] },
-          status: ApprovalStatus.PENDING,
-        },
-        select: { id: true, authorId: true },
-      })
-      expect(prisma.pcListing.updateMany).toHaveBeenCalledTimes(2)
-      expect(prisma.pcListing.updateMany).toHaveBeenCalledWith({
-        where: { id: LISTING_ID_C, status: ApprovalStatus.PENDING },
-        data: expect.objectContaining({
-          status: ApprovalStatus.REJECTED,
-          processedByUserId: ADMIN_ID,
-          processedNotes:
-            'Automatically rejected by review risk bulk action: submission risk high severity; author risk low severity (1 signal).',
+      expect(review).toHaveBeenCalledWith(
+        expect.objectContaining({
+          reportIds: [LISTING_ID_C, LISTING_ID_D],
+          reportType: 'pc',
+          newStatus: ApprovalStatus.REJECTED,
+          actor: expect.objectContaining({ id: ADMIN_ID }),
         }),
-      })
-      expect(prisma.pcListing.updateMany).toHaveBeenCalledWith({
-        where: { id: LISTING_ID_D, status: ApprovalStatus.PENDING },
-        data: expect.objectContaining({
-          status: ApprovalStatus.REJECTED,
-          processedByUserId: ADMIN_ID,
-          processedNotes:
-            'Automatically rejected by review risk bulk action: author risk high severity (1 signal).',
-        }),
-      })
-      expect(mockApplyTrustAction).toHaveBeenCalledWith({
-        userId: AUTHOR_ID,
-        action: TrustAction.LISTING_REJECTED,
-        context: expect.objectContaining({
-          pcListingId: LISTING_ID_C,
-          reason:
-            'Automatically rejected by review risk bulk action: submission risk high severity; author risk low severity (1 signal).',
-        }),
-      })
-      expect(mockApplyTrustAction).toHaveBeenCalledWith({
-        userId: HIGH_RISK_AUTHOR_ID,
-        action: TrustAction.LISTING_REJECTED,
-        context: expect.objectContaining({
-          pcListingId: LISTING_ID_D,
-          reason:
-            'Automatically rejected by review risk bulk action: author risk high severity (1 signal).',
-        }),
-      })
+      )
       expect(result).toMatchObject({
         success: true,
         rejectedCount: 2,
         skippedCount: 0,
       })
-    })
-
-    it('skips automatic PC risk rejection if a report is no longer pending at update time', async () => {
-      mockRepositoryGetPendingListingRiskCandidates.mockResolvedValueOnce([
-        {
-          id: LISTING_ID_D,
-          authorId: HIGH_RISK_AUTHOR_ID,
-          author: { userBans: [] },
-          customFieldValues: [],
-        },
-      ])
-      mockComputeAuthorRiskProfiles.mockResolvedValue(
-        new Map([
-          [
-            HIGH_RISK_AUTHOR_ID,
-            {
-              authorId: HIGH_RISK_AUTHOR_ID,
-              highestSeverity: 'high',
-              signals: [
-                {
-                  type: RISK_SIGNAL_TYPES.ACTIVE_BAN,
-                  severity: 'high',
-                  label: 'Active Ban',
-                  description: 'Banned for spam',
-                },
-              ],
-            },
-          ],
-        ]),
-      )
-
-      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.ADMIN })
-      prisma.pcListing.findMany.mockResolvedValueOnce([
-        { id: LISTING_ID_D, authorId: HIGH_RISK_AUTHOR_ID },
-      ])
-      prisma.pcListing.updateMany.mockResolvedValueOnce({ count: 0 })
-
-      await expect(caller.autoRejectRisky()).resolves.toMatchObject({
-        success: true,
-        rejectedCount: 0,
-        skippedCount: 1,
-      })
-      expect(prisma.pcListing.updateMany).toHaveBeenCalledWith({
-        where: { id: LISTING_ID_D, status: ApprovalStatus.PENDING },
-        data: expect.objectContaining({
-          status: ApprovalStatus.REJECTED,
-          processedByUserId: ADMIN_ID,
-        }),
-      })
-      expect(mockApplyTrustAction).not.toHaveBeenCalled()
-      expect(mockEmitNotificationEvent).not.toHaveBeenCalled()
-    })
-
-    it('keeps automatic PC risk rejection successful when trust action emission fails', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
-      mockRepositoryGetPendingListingRiskCandidates.mockResolvedValueOnce([
-        {
-          id: LISTING_ID_D,
-          authorId: HIGH_RISK_AUTHOR_ID,
-          author: { userBans: [] },
-          customFieldValues: [],
-        },
-      ])
-      mockComputeAuthorRiskProfiles.mockResolvedValue(
-        new Map([
-          [
-            HIGH_RISK_AUTHOR_ID,
-            {
-              authorId: HIGH_RISK_AUTHOR_ID,
-              highestSeverity: 'high',
-              signals: [
-                {
-                  type: RISK_SIGNAL_TYPES.ACTIVE_BAN,
-                  severity: 'high',
-                  label: 'Active Ban',
-                  description: 'Banned for spam',
-                },
-              ],
-            },
-          ],
-        ]),
-      )
-      mockApplyTrustAction.mockRejectedValueOnce(new Error('trust failed'))
-
-      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.ADMIN })
-      prisma.pcListing.findMany.mockResolvedValueOnce([
-        { id: LISTING_ID_D, authorId: HIGH_RISK_AUTHOR_ID },
-      ])
-      prisma.pcListing.updateMany.mockResolvedValue({ count: 1 })
-
-      await expect(caller.autoRejectRisky()).resolves.toMatchObject({
-        success: true,
-        rejectedCount: 1,
-        skippedCount: 0,
-      })
-      expect(consoleError).toHaveBeenCalledWith(
-        'Some trust actions failed during review-risk PC auto-rejection:',
-        expect.arrayContaining([
-          expect.objectContaining({ status: 'rejected', reason: expect.any(Error) }),
-        ]),
-      )
-
-      consoleError.mockRestore()
     })
 
     it('fails automatic PC risk rejection when the admin user is missing from the database', async () => {
@@ -1734,59 +1200,6 @@ describe('pcListings trust integration', () => {
         eligibleCount: 2,
         reviewRiskQueueCount: 3,
       })
-    })
-
-    it('keeps automatic PC risk rejection successful when notification emission fails', async () => {
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
-      mockRepositoryGetPendingListingRiskCandidates.mockResolvedValueOnce([
-        {
-          id: LISTING_ID_D,
-          authorId: HIGH_RISK_AUTHOR_ID,
-          author: { userBans: [] },
-          customFieldValues: [],
-        },
-      ])
-      mockComputeAuthorRiskProfiles.mockResolvedValue(
-        new Map([
-          [
-            HIGH_RISK_AUTHOR_ID,
-            {
-              authorId: HIGH_RISK_AUTHOR_ID,
-              highestSeverity: 'high',
-              signals: [
-                {
-                  type: RISK_SIGNAL_TYPES.ACTIVE_BAN,
-                  severity: 'high',
-                  label: 'Active Ban',
-                  description: 'Banned for spam',
-                },
-              ],
-            },
-          ],
-        ]),
-      )
-      mockComputeSubmissionRiskProfiles.mockResolvedValue(new Map())
-      mockEmitNotificationEvent.mockImplementationOnce(() => {
-        throw new Error('notification failed')
-      })
-
-      const { caller, prisma } = createCaller({ userId: ADMIN_ID, role: Role.ADMIN })
-      prisma.pcListing.findMany.mockResolvedValueOnce([
-        { id: LISTING_ID_D, authorId: HIGH_RISK_AUTHOR_ID },
-      ])
-      prisma.pcListing.updateMany.mockResolvedValue({ count: 1 })
-
-      await expect(caller.autoRejectRisky()).resolves.toMatchObject({
-        success: true,
-        rejectedCount: 1,
-        skippedCount: 0,
-      })
-      expect(consoleError).toHaveBeenCalledWith(
-        `Failed to emit notification for PC listing ${LISTING_ID_D}:`,
-        expect.any(Error),
-      )
-
-      consoleError.mockRestore()
     })
 
     it('requires admin role for automatic PC risk rejection', async () => {

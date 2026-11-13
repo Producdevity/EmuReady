@@ -32,16 +32,22 @@ test.describe('Error Handling Tests', () => {
   })
 
   test('should render page shell even when API is slow', async ({ page }) => {
+    const releaseRequests = Promise.withResolvers<void>()
     await page.route('**/api/trpc/**', async (route) => {
-      await new Promise((resolve) => setTimeout(resolve, 3000))
+      await releaseRequests.promise
       await route.continue()
     })
-
-    await page.goto('/listings', { waitUntil: 'domcontentloaded' })
-
-    await expect(page.locator('main')).toBeVisible()
-
-    await page.unroute('**/api/trpc/**')
+    const pendingReports = page.waitForRequest((request) => request.url().includes('listings.get'))
+    try {
+      await page.goto('/listings', { waitUntil: 'domcontentloaded' })
+      await pendingReports
+      const listingsPage = new ListingsPage(page)
+      await expect(listingsPage.pageHeading).toBeVisible()
+      await expect(listingsPage.searchInput).toBeEnabled()
+    } finally {
+      releaseRequests.resolve()
+      await page.unrouteAll({ behavior: 'wait' })
+    }
   })
 
   test('should keep search input functional after failed search API call', async ({ page }) => {

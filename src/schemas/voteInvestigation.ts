@@ -1,20 +1,23 @@
 import { z } from 'zod'
 import { ListingType, SortDirectionSchema } from '@/schemas/common'
+import { refinePaginationOffset } from '@/schemas/pagination'
 
 export const VoteTypeFilter = z.enum(['all', 'up', 'down'])
 export const ListingTypeFilter = z.enum(['all', ...ListingType.options])
 export const VoteSortField = z.enum(['createdAt', 'value', 'listingTitle'])
 
-export const GetUserVotesSchema = z.object({
-  userId: z.string().uuid(),
-  page: z.number().int().min(1).default(1),
-  limit: z.number().int().min(1).max(100).default(50),
-  voteType: VoteTypeFilter.default('all'),
-  listingType: ListingTypeFilter.default('all'),
-  sortField: VoteSortField.default('createdAt'),
-  sortDirection: SortDirectionSchema.default('desc'),
-  includeNullified: z.boolean().default(false),
-})
+export const GetUserVotesSchema = z
+  .object({
+    userId: z.string().uuid(),
+    page: z.number().int().safe().min(1).default(1),
+    limit: z.number().int().min(1).max(100).default(50),
+    voteType: VoteTypeFilter.default('all'),
+    listingType: ListingTypeFilter.default('all'),
+    sortField: VoteSortField.default('createdAt'),
+    sortDirection: SortDirectionSchema.default('desc'),
+    includeNullified: z.boolean().default(false),
+  })
+  .superRefine(refinePaginationOffset)
 
 export const GetVotesOnAuthorListingsSchema = z.object({
   authorId: z.string().uuid(),

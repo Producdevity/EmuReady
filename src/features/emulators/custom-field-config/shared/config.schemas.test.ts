@@ -1,0 +1,159 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import MarkdownIt from 'markdown-it'
+import { describe, expect, it } from 'vitest'
+import { CustomFieldType } from '@orm'
+import { ConfigFieldSchema, CustomFieldConfigSchema, parseConfigJson } from './config.schemas'
+
+const field = { name: 'renderer', label: 'Renderer', type: CustomFieldType.TEXT }
+
+describe('custom field configuration JSON', () => {
+  it.each(['\n', '\r\n'])('accepts the guide example with line ending %j', (lineEnding) => {
+    const guide = readFileSync(
+      resolve(import.meta.dirname, '../../../../../docs/admin/custom-fields.md'),
+      'utf8',
+    )
+    const tokens = new MarkdownIt().parse(guide.replace(/\r?\n/g, lineEnding), {})
+    const example = tokens.find((token) => token.type === 'fence' && token.info === 'json')?.content
+    expect(parseConfigJson(example ?? '')).toMatchObject({ success: true })
+  })
+
+  it('preserves false and zero defaults and explicit ordering', () => {
+    const result = CustomFieldConfigSchema.parse({
+      version: 1,
+      categories: [{ name: 'Graphics', displayOrder: 4 }],
+      fields: [
+        {
+          ...field,
+          type: CustomFieldType.BOOLEAN,
+          defaultValue: false,
+          category: 'Graphics',
+          categoryOrder: 2,
+          displayOrder: 7,
+        },
+        {
+          name: 'scale',
+          label: 'Scale',
+          type: CustomFieldType.RANGE,
+          rangeMin: 0,
+          rangeMax: 4,
+          defaultValue: 0,
+          rangeDecimals: 1,
+        },
+      ],
+    })
+    expect(result.fields[0]?.defaultValue).toBe(false)
+    expect(result.fields[0]?.categoryOrder).toBe(2)
+    expect(result.fields[0]?.displayOrder).toBe(7)
+    expect(result.categories[0]?.displayOrder).toBe(4)
+    expect(result.fields[1]?.defaultValue).toBe(0)
+  })
+
+  it.each([-2_147_483_648, -1, 0, 2_147_483_647])(
+    'accepts persisted signed ordering %i for fields and categories',
+    (order) => {
+      const result = CustomFieldConfigSchema.parse({
+        version: 1,
+        categories: [{ name: 'Graphics', displayOrder: order }],
+        fields: [{ ...field, category: 'Graphics', displayOrder: order, categoryOrder: order }],
+      })
+      expect(result.categories[0]?.displayOrder).toBe(order)
+      expect(result.fields[0]?.displayOrder).toBe(order)
+      expect(result.fields[0]?.categoryOrder).toBe(order)
+    },
+  )
+
+  it.each([-2_147_483_649, 2_147_483_648, 0.5])('rejects unpersistable ordering %j', (order) => {
+    expect(ConfigFieldSchema.safeParse({ ...field, displayOrder: order }).success).toBe(false)
+    expect(ConfigFieldSchema.safeParse({ ...field, categoryOrder: order }).success).toBe(false)
+    expect(
+      CustomFieldConfigSchema.safeParse({
+        version: 1,
+        categories: [{ name: 'Graphics', displayOrder: order }],
+        fields: [],
+      }).success,
+    ).toBe(false)
+  })
+
+  it.each([
+    { ...field, id: 'not-a-uuid' },
+    { ...field, categoryId: 'foreign-category' },
+    { ...field, type: CustomFieldType.BOOLEAN, defaultValue: 'false' },
+    { ...field, type: CustomFieldType.BOOLEAN, placeholder: 'Unsupported' },
+    {
+      ...field,
+      type: CustomFieldType.SELECT,
+      options: [{ value: 'a', label: 'A' }],
+      placeholder: 'Unsupported',
+    },
+    { ...field, type: CustomFieldType.RANGE, rangeMin: 0, rangeMax: 1, placeholder: 'Unsupported' },
+    { ...field, type: CustomFieldType.RANGE, rangeMin: 2, rangeMax: 1 },
+    { ...field, type: CustomFieldType.RANGE, rangeMin: 0, rangeMax: 1, defaultValue: 2 },
+    { ...field, type: CustomFieldType.SELECT, options: [] },
+    {
+      ...field,
+      type: CustomFieldType.SELECT,
+      options: [{ value: 'a', label: 'A' }],
+      defaultValue: 'b',
+    },
+    {
+      ...field,
+      type: CustomFieldType.SELECT,
+      options: [
+        { value: 'a', label: 'A' },
+        { value: 'a', label: 'B' },
+      ],
+    },
+    { ...field, options: [{ value: 'a', label: 'A' }] },
+    { ...field, type: CustomFieldType.URL, defaultValue: 'not a URL' },
+  ])('rejects invalid field contracts %#', (input) => {
+    expect(ConfigFieldSchema.safeParse(input).success).toBe(false)
+  })
+
+  it('rejects duplicate field/category names and unknown category references', () => {
+    expect(
+      CustomFieldConfigSchema.safeParse({ version: 1, categories: [], fields: [field, field] })
+        .success,
+    ).toBe(false)
+    expect(
+      CustomFieldConfigSchema.safeParse({
+        version: 1,
+        categories: [{ name: 'A' }, { name: ' A ' }],
+        fields: [],
+      }).success,
+    ).toBe(false)
+    expect(
+      CustomFieldConfigSchema.safeParse({
+        version: 1,
+        categories: [],
+        fields: [{ ...field, category: 'Other' }],
+      }).success,
+    ).toBe(false)
+  })
+
+  it('reports syntax and field paths without throwing in the editor', () => {
+    expect(parseConfigJson('{')).toEqual({ success: false, error: 'Enter valid JSON.' })
+    expect(
+      parseConfigJson(
+        JSON.stringify({
+          version: 1,
+          categories: [],
+          fields: [{ ...field, type: CustomFieldType.SELECT }],
+        }),
+      ),
+    ).toMatchObject({ success: false, error: expect.stringContaining('fields.0.options') })
+  })
+  it('rejects duplicate IDs even when names differ', () => {
+    const id = '00000000-0000-4000-a000-000000000099'
+    expect(
+      CustomFieldConfigSchema.safeParse({
+        version: 1,
+        categories: [],
+        fields: [
+          { ...field, id },
+          { ...field, id, name: 'second' },
+        ],
+      }).success,
+    ).toBe(false)
+  })
+})
