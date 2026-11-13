@@ -26,6 +26,7 @@ describe('template catalog persistence', () => {
           rangeDecimals: 2,
           categoryName: 'CPU',
           categoryOrder: 3,
+          displayOrder: 7,
         },
         {
           name: 'driver',
@@ -34,6 +35,7 @@ describe('template catalog persistence', () => {
           placeholder: 'Enter driver',
           categoryName: 'Graphics',
           categoryOrder: 4,
+          displayOrder: 11,
         },
       ],
     })
@@ -47,11 +49,13 @@ describe('template catalog persistence', () => {
         rangeDecimals: 2,
         categoryName: 'CPU',
         categoryOrder: 3,
+        displayOrder: 7,
       }),
       expect.objectContaining({
         placeholder: 'Enter driver',
         categoryName: 'Graphics',
         categoryOrder: 4,
+        displayOrder: 11,
       }),
     ]
     expect(database.customFieldTemplate.upsert).toHaveBeenCalledOnce()

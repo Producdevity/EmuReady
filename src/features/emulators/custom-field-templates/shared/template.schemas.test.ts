@@ -50,6 +50,24 @@ describe('template field attributes', () => {
     })
     expect(result.fields[0]?.defaultValue).toBe(false)
   })
+
+  it('normalizes a dropdown default with the same whitespace rules as its options', () => {
+    const result = CreateCustomFieldTemplateSchema.parse({
+      name: 'Graphics',
+      fields: [
+        {
+          name: 'renderer',
+          label: 'Renderer',
+          type: CustomFieldType.SELECT,
+          options: [{ value: ' vulkan ', label: ' Vulkan ' }],
+          defaultValue: ' vulkan ',
+        },
+      ],
+    })
+    expect(result.fields[0]?.options).toEqual([{ value: 'vulkan', label: 'Vulkan' }])
+    expect(result.fields[0]?.defaultValue).toBe('vulkan')
+  })
+
   it('preserves numeric defaults and every range attribute', () => {
     const field = {
       name: 'resolution',

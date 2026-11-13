@@ -155,6 +155,7 @@ function SortableTemplateOptionItem({
         type="button"
         variant="destructive"
         size="sm"
+        aria-label="Remove option"
         onClick={() => onRemove(fieldIndex, optionIndex)}
       >
         <Trash2 className="h-3 w-3" />
@@ -489,21 +490,26 @@ function TemplateForm(props: FormProps) {
   }
 
   function updateField(index: number, updates: Partial<TemplateField>) {
-    setFields(
-      fields.map((field, i) =>
-        i === index
-          ? {
-              ...field,
-              ...updates,
-              options:
-                updates.type === CustomFieldType.SELECT
-                  ? (updates.options ?? field.options)
-                  : updates.type
-                    ? []
-                    : (updates.options ?? field.options),
-            }
-          : field,
-      ),
+    setFields((currentFields) =>
+      currentFields.map((field, i) => {
+        if (i !== index) return field
+        const updated = {
+          ...field,
+          ...updates,
+          options:
+            updates.type === CustomFieldType.SELECT
+              ? (updates.options ?? field.options)
+              : updates.type
+                ? []
+                : (updates.options ?? field.options),
+        }
+        if (
+          updated.type === CustomFieldType.SELECT &&
+          !updated.options.some((option) => option.value === updated.defaultValue)
+        )
+          updated.defaultValue = null
+        return updated
+      }),
     )
 
     if (updates.type && updates.type !== CustomFieldType.SELECT) {
@@ -850,6 +856,7 @@ function TemplateForm(props: FormProps) {
                   ) : field.type === CustomFieldType.SELECT && field.options.length > 0 ? (
                     <Input
                       as="select"
+                      aria-label={`${field.label} default value`}
                       value={field.defaultValue === null ? '' : String(field.defaultValue)}
                       onChange={(ev) =>
                         updateField(fieldIndex, {

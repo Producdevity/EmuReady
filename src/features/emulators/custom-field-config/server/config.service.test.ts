@@ -260,6 +260,47 @@ describe('custom field configuration service', () => {
     const snapshot = await s.service.get(actor, TARGET_ID)
     expect(snapshot.configuration.fields[0]?.defaultValue).toBe(value === 'true')
   })
+
+  it.each([
+    ['0', 0],
+    ['1.5', 1.5],
+    [' 1.5 ', 1.5],
+  ] as const)(
+    'exports stored RANGE string %s as a number without relaxing JSON writes',
+    async (value, expected) => {
+      const s = setup()
+      const field = s.record.customFieldDefinitions[0]
+      if (!field) throw new Error('Missing test field')
+      field.type = CustomFieldType.RANGE
+      field.options = null
+      field.rangeMin = 0
+      field.rangeMax = 4
+      field.defaultValue = value
+      const snapshot = await s.service.get(actor, TARGET_ID)
+      expect(snapshot.configuration.fields[0]?.defaultValue).toBe(expected)
+      expect(
+        ConfigFieldSchema.safeParse({ ...snapshot.configuration.fields[0], defaultValue: value })
+          .success,
+      ).toBe(false)
+      expect(s.saveField).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each(['', 'Infinity', 'not a number'])(
+    'rejects an invalid stored RANGE default %j without writes',
+    async (value) => {
+      const s = setup()
+      const field = s.record.customFieldDefinitions[0]
+      if (!field) throw new Error('Missing test field')
+      field.type = CustomFieldType.RANGE
+      field.options = null
+      field.rangeMin = 0
+      field.rangeMax = 4
+      field.defaultValue = value
+      await expect(s.service.get(actor, TARGET_ID)).rejects.toThrow()
+      expect(s.saveField).not.toHaveBeenCalled()
+    },
+  )
   it('preserves field and category identity when renaming in JSON', async () => {
     const s = setup()
     const existing = s.record.customFieldDefinitions[0]

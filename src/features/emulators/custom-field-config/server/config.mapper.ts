@@ -16,6 +16,10 @@ export function toConfigField(field: ConfigEmulatorRecord['customFieldDefinition
   ) {
     defaultValue = defaultValue === 'true'
   }
+  if (field.type === CustomFieldType.RANGE && typeof defaultValue === 'string') {
+    const numericDefault = defaultValue.trim() ? Number(defaultValue) : NaN
+    if (Number.isFinite(numericDefault)) defaultValue = numericDefault
+  }
   return ConfigFieldSchema.parse({
     id: field.id,
     name: field.name,

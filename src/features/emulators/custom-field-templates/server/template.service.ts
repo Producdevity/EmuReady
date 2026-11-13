@@ -6,6 +6,7 @@ import { parseStoredTemplateField } from './template.mapper'
 import { assertCanReadTemplates, assertCanWriteTemplates } from './template.policy'
 import { type CustomFieldTemplateRepository } from './template.repository'
 import {
+  TEMPLATE_NAME_MAX_LENGTH,
   type CreateCustomFieldTemplateSchema,
   type UpdateCustomFieldTemplateSchema,
   type ApplyCustomFieldTemplateSchema,
@@ -49,8 +50,9 @@ export class CustomFieldTemplateService {
     return this.repository.transaction(async (repository) => {
       const original = await repository.get(id)
       if (!original) return ResourceError.customFieldTemplate.notFound()
+      const prefix = 'Copy of '
       await repository.create({
-        name: `Copy of ${original.name}`,
+        name: `${prefix}${original.name.slice(0, TEMPLATE_NAME_MAX_LENGTH - prefix.length).trimEnd()}`,
         description: original.description,
         fields: original.fields.map(parseStoredTemplateField),
       })

@@ -89,6 +89,38 @@ beforeEach(() => {
 })
 
 describe('template form sessions', () => {
+  it.each(['edit', 'remove'] as const)(
+    'clears a dropdown default when its selected option is changed by %s',
+    async (operation) => {
+      template = record('template-1', 'Graphics')
+      const field = template.fields[0]
+      if (!field) throw new Error('Missing fixture field')
+      field.options = [
+        { value: 'quality', label: 'Quality' },
+        { value: 'fast', label: 'Fast' },
+      ]
+      render(
+        <CustomFieldTemplateFormModal isOpen templateIdToEdit="template-1" onClose={onClose} />,
+      )
+      expect(screen.getByRole('combobox', { name: 'Accuracy default value' })).toHaveValue(
+        'quality',
+      )
+      if (operation === 'edit')
+        fireEvent.change(screen.getAllByPlaceholderText('Value')[0], {
+          target: { value: 'balanced' },
+        })
+      else fireEvent.click(screen.getAllByRole('button', { name: 'Remove option' })[0])
+      expect(screen.getByRole('combobox', { name: 'Accuracy default value' })).toHaveValue('')
+      fireEvent.click(screen.getByRole('button', { name: 'Update Template' }))
+      await waitFor(() =>
+        expect(saving.submit).toHaveBeenCalledWith(
+          expect.objectContaining({ fields: [expect.objectContaining({ defaultValue: null })] }),
+        ),
+      )
+      await act(async () => saving.completion.resolve())
+    },
+  )
+
   it('creates a range with a zero maximum without replacing it with a fallback', async () => {
     render(<CustomFieldTemplateFormModal isOpen onClose={onClose} />)
     fireEvent.change(screen.getByLabelText(/^Template Name/), { target: { value: 'Cycles' } })

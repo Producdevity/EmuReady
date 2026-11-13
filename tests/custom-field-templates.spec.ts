@@ -128,6 +128,23 @@ test.describe('Custom field template attributes', () => {
         }),
       )
       await expect(prisma.customFieldCategory.count({ where: { emulatorId } })).resolves.toBe(2)
+
+      const range = applied.find((field) => field.name === 'resolution')
+      if (!range) throw new Error('Applied range field was absent')
+      await prisma.customFieldDefinition.update({
+        where: { id: range.id },
+        data: { defaultValue: '0' },
+      })
+      const snapshot = await client.customFieldConfigs.get.query({ emulatorId })
+      expect(
+        snapshot.configuration.fields.find((field) => field.name === 'resolution')?.defaultValue,
+      ).toBe(0)
+      await expect(
+        prisma.customFieldDefinition.findUnique({
+          where: { id: range.id },
+          select: { defaultValue: true },
+        }),
+      ).resolves.toEqual({ defaultValue: '0' })
     } finally {
       try {
         await prisma.$transaction([

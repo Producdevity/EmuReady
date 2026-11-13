@@ -151,6 +151,19 @@ describe('template attribute persistence', () => {
     )
   })
 
+  it('keeps a copied name within the editor limit for a maximum-length original', async () => {
+    transaction.customFieldTemplate.findUnique.mockResolvedValue({
+      ...template(),
+      name: 'x'.repeat(100),
+    })
+    await service().duplicate(actor, TEMPLATE_ID)
+    expect(transaction.customFieldTemplate.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ name: `Copy of ${'x'.repeat(92)}` }),
+      }),
+    )
+  })
+
   it('applies every attribute and creates a shared category once in a serializable transaction', async () => {
     await expect(service().apply(actor, applyInput)).resolves.toEqual({
       createdFields: 2,
@@ -204,6 +217,23 @@ describe('template attribute persistence', () => {
         data: expect.objectContaining({ name: 'driver', displayOrder: 10 }),
       }),
     )
+  })
+
+  it('preserves the explanatory no-op error when every field already exists', async () => {
+    transaction.emulator.findUnique.mockResolvedValue({
+      id: EMULATOR_ID,
+      customFieldCategories: [{ id: CATEGORY_ID, name: 'Graphics', displayOrder: 0 }],
+      customFieldDefinitions: [
+        { name: 'resolution', displayOrder: 0 },
+        { name: 'driver', displayOrder: 1 },
+      ],
+    })
+    await expect(service().apply(actor, applyInput)).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      message: 'All fields from the selected templates already exist for this emulator',
+    })
+    expect(transaction.customFieldCategory.create).not.toHaveBeenCalled()
+    expect(transaction.customFieldDefinition.create).not.toHaveBeenCalled()
   })
 
   it('rejects incomplete stored range settings before creating categories or fields', async () => {

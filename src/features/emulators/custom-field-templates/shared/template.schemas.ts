@@ -29,7 +29,10 @@ export const TemplateFieldSchema = CustomFieldAttributesSchema.extend({
 })
   .strict()
   .transform((field) => {
-    if (field.type !== CustomFieldType.RANGE || typeof field.defaultValue !== 'string') return field
+    if (typeof field.defaultValue !== 'string') return field
+    if (field.type === CustomFieldType.SELECT)
+      return { ...field, defaultValue: field.defaultValue.trim() }
+    if (field.type !== CustomFieldType.RANGE) return field
     const value = field.defaultValue.trim() ? Number(field.defaultValue) : NaN
     return Number.isFinite(value) ? { ...field, defaultValue: value } : field
   })
@@ -51,7 +54,8 @@ const fieldsSchema = z
       names.add(field.name)
     })
   })
-const templateNameSchema = z.string().trim().min(1).max(100)
+export const TEMPLATE_NAME_MAX_LENGTH = 100
+const templateNameSchema = z.string().trim().min(1).max(TEMPLATE_NAME_MAX_LENGTH)
 const descriptionSchema = z.string().trim().max(500).nullable()
 
 export const CreateCustomFieldTemplateSchema = z

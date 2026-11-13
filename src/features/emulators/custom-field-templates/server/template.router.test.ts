@@ -29,8 +29,9 @@ function caller(role: Role) {
 
 beforeEach(() => {
   vi.resetAllMocks()
-  database.customFieldTemplate.findMany.mockResolvedValue([template()])
-  database.customFieldTemplate.findUnique.mockResolvedValue(template())
+  const record = { ...template(), updatedAt: new Date('2026-01-02') }
+  database.customFieldTemplate.findMany.mockResolvedValue([record])
+  database.customFieldTemplate.findUnique.mockResolvedValue(record)
   database.customFieldTemplate.create.mockResolvedValue({ id: TEMPLATE_ID })
   database.customFieldTemplate.update.mockResolvedValue({ id: TEMPLATE_ID })
   database.customFieldTemplate.delete.mockResolvedValue({ id: TEMPLATE_ID })
