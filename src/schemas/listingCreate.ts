@@ -27,7 +27,7 @@ export const CreatePcListingBaseSchema = z.object({
   gpuId: z.string().uuid().optional(),
   emulatorId: z.string().uuid(),
   performanceId: PerformanceScaleIdSchema,
-  memorySize: z.number().int().positive().min(1).max(256),
+  memorySize: z.number().int().min(1).max(256),
   os: z.nativeEnum(PcOs),
   osVersion: z.string().min(1),
   notes: z.string().max(5000).optional(),

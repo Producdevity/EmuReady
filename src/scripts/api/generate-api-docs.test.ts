@@ -123,4 +123,19 @@ describe('generated report integer input contracts', () => {
       required: ['id'],
     })
   })
+
+  it.each(['CreatePcListingSchema', 'UpdatePcListingSchema'])(
+    'documents inclusive memory bounds for %s without an invalid numeric exclusive bound',
+    (name) => {
+      const schema = z
+        .object({ properties: z.object({ memorySize: z.record(z.unknown()) }) })
+        .parse(schemas[name])
+      expect(schema.properties.memorySize).toMatchObject({
+        type: 'integer',
+        minimum: 1,
+        maximum: 256,
+      })
+      expect(schema.properties.memorySize).not.toHaveProperty('exclusiveMinimum')
+    },
+  )
 })

@@ -2546,7 +2546,6 @@
           },
           "memorySize": {
             "type": "integer",
-            "exclusiveMinimum": 0,
             "minimum": 1,
             "maximum": 256
           },
@@ -2696,7 +2695,6 @@
           },
           "memorySize": {
             "type": "integer",
-            "exclusiveMinimum": 0,
             "minimum": 1,
             "maximum": 256
           },

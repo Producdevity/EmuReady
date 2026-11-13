@@ -302,6 +302,21 @@ describe('valid report persistence', () => {
     expect(models.pcListing.update.mock.calls[0]?.[0].data).not.toHaveProperty('performanceId')
     expect(models.pcListing.update.mock.calls[0]?.[0].data).not.toHaveProperty('memorySize')
   })
+
+  it.each([1, 256])(
+    'preserves the inclusive memory boundary %s through schema and persistence',
+    async (memorySize) => {
+      expect(CreatePcListingBaseSchema.parse({ ...pcInput, memorySize }).memorySize).toBe(
+        memorySize,
+      )
+      const updated = { ...pcReport, memorySize }
+      models.pcListing.update.mockResolvedValue(updated)
+      expect(await mobilePc.update({ id, memorySize })).toEqual(updated)
+      expect(models.pcListing.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ memorySize }) }),
+      )
+    },
+  )
 })
 
 it.each([-2_147_483_648, -1, 0, 2_147_483_647])(
