@@ -5,6 +5,7 @@ import { STALE_TIMES } from '@/data/constants'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import getErrorMessage from '@/utils/getErrorMessage'
+import { type BookmarkStatus } from './useBulkBookmarkStatuses'
 
 interface ListingBookmarkConfig {
   type: 'listing'
@@ -18,20 +19,28 @@ interface PcListingBookmarkConfig {
 
 export type BookmarkConfig = ListingBookmarkConfig | PcListingBookmarkConfig
 
-export function useBookmarkToggle(config: BookmarkConfig) {
+export function useBookmarkToggle(config: BookmarkConfig, status?: BookmarkStatus) {
   const { user } = useUser()
   const utils = api.useUtils()
   const [optimisticBookmarked, setOptimisticBookmarked] = useState<boolean | null>(null)
 
+  const reportId = config.type === 'listing' ? config.listingId : config.pcListingId
+  const identity = `${config.type}:${reportId}`
+  const [previousIdentity, setPreviousIdentity] = useState(identity)
+  if (previousIdentity !== identity) {
+    setPreviousIdentity(identity)
+    setOptimisticBookmarked(null)
+  }
+
   const isListing = config.type === 'listing'
 
   const listingStatusQuery = api.bookmarks.isBookmarked.useQuery(
-    user && isListing ? { listingId: config.listingId } : skipToken,
+    user && isListing && !status ? { listingId: config.listingId } : skipToken,
     { staleTime: STALE_TIMES.USER_ACTION },
   )
 
   const pcListingStatusQuery = api.bookmarks.isPcBookmarked.useQuery(
-    user && !isListing ? { pcListingId: config.pcListingId } : skipToken,
+    user && !isListing && !status ? { pcListingId: config.pcListingId } : skipToken,
     { staleTime: STALE_TIMES.USER_ACTION },
   )
 
@@ -43,11 +52,13 @@ export function useBookmarkToggle(config: BookmarkConfig) {
     toast.error(getErrorMessage(error))
   }
 
-  // Only the status query (isBookmarked/isPcBookmarked) is awaited to prevent flicker.
-  // List and count invalidations fire-and-forget since they don't affect the button state.
+  // Refresh active individual and batch statuses before clearing the optimistic value.
   const invalidateListingQueries = async () => {
     if (config.type === 'listing') {
-      await utils.bookmarks.isBookmarked.invalidate({ listingId: config.listingId })
+      await Promise.all([
+        utils.bookmarks.isBookmarked.invalidate({ listingId: config.listingId }),
+        utils.bookmarks.getBulkListingBookmarkStatuses.invalidate(),
+      ])
       utils.bookmarks.getListingBookmarks.invalidate()
     }
     utils.bookmarks.getCounts.invalidate()
@@ -55,7 +66,10 @@ export function useBookmarkToggle(config: BookmarkConfig) {
 
   const invalidatePcListingQueries = async () => {
     if (config.type === 'pcListing') {
-      await utils.bookmarks.isPcBookmarked.invalidate({ pcListingId: config.pcListingId })
+      await Promise.all([
+        utils.bookmarks.isPcBookmarked.invalidate({ pcListingId: config.pcListingId }),
+        utils.bookmarks.getBulkPcListingBookmarkStatuses.invalidate(),
+      ])
       utils.bookmarks.getPcListingBookmarks.invalidate()
     }
     utils.bookmarks.getCounts.invalidate()
@@ -93,13 +107,17 @@ export function useBookmarkToggle(config: BookmarkConfig) {
     onError,
   })
 
-  const isBookmarked = optimisticBookmarked ?? statusQuery.data?.isBookmarked ?? false
+  const isBookmarked =
+    optimisticBookmarked ?? status?.isBookmarked ?? statusQuery.data?.isBookmarked ?? false
   const isPending = isListing
     ? bookmarkMutation.isPending || unbookmarkMutation.isPending
     : pcBookmarkMutation.isPending || pcUnbookmarkMutation.isPending
 
+  const isStatusPending = status?.isPending ?? (statusQuery.isPending || statusQuery.isFetching)
+  const isStatusError = status?.isError ?? statusQuery.isError
+
   const handleToggle = () => {
-    if (isPending) return
+    if (!user || isPending || isStatusPending || isStatusError) return
 
     setOptimisticBookmarked(!isBookmarked)
 
@@ -122,7 +140,8 @@ export function useBookmarkToggle(config: BookmarkConfig) {
     user,
     isBookmarked,
     isPending,
-    isStatusPending: statusQuery.isPending,
+    isStatusPending,
+    isStatusError,
     handleToggle,
   }
 }

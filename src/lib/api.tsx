@@ -1,5 +1,6 @@
 'use client'
 
+import { useAuth } from '@clerk/nextjs'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { httpBatchLink } from '@trpc/client'
 import { createTRPCReact, getQueryKey } from '@trpc/react-query'
@@ -55,6 +56,15 @@ const MAX_URL_LENGTH = 2000
 const MAX_TRPC_BATCH_ITEMS = 20
 
 export function TRPCProvider(props: PropsWithChildren) {
+  const auth = useAuth()
+  return (
+    <SessionQueryProvider key={auth.sessionId ?? 'anonymous'}>
+      {props.children}
+    </SessionQueryProvider>
+  )
+}
+
+function SessionQueryProvider(props: PropsWithChildren) {
   const [queryClient] = useState(createQueryClient)
 
   const [trpcClient] = useState(() =>
