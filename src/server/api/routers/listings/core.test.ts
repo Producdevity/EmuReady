@@ -84,10 +84,6 @@ vi.mock('@/server/services/review-risk.service', () => ({
   attachReviewRiskProfileForViewer: mockAttachReviewRiskProfileForViewer,
 }))
 
-vi.mock('@/server/utils/security-validation', () => ({
-  sanitizeInput: vi.fn((s: string) => s),
-}))
-
 vi.mock('@/server/repositories/listings.repository', () => ({
   ListingsRepository: vi.fn().mockImplementation(function MockListingsRepository() {
     return {

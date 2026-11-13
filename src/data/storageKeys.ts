@@ -7,6 +7,7 @@ const storageKeys = {
   showEmulatorLogos: `${PREFIX}show_emulator_logos`,
   newListing: {
     lastUsedDevice: `${PREFIX}new_listing_last_used_device`,
+    lastUsedEmulatorSettings: `${PREFIX}last_used_emulator_settings`,
   },
   popups: {
     voteReminderDismissed: `${PREFIX}vote_reminder_dismissed`,
