@@ -63,6 +63,33 @@ describe('performance replacement session', () => {
     expect(mocks.deleteScale).not.toHaveBeenCalled()
   })
 
+  it.each(['Cancel', 'target change'] as const)(
+    'clears a failed deletion error after %s',
+    async (action) => {
+      mocks.deleteScale.mockRejectedValue(new Error('Replacement failed'))
+      const view = render(<ReplacementSelectionModal {...initialProps} />)
+      selectReplacement(2)
+      fireEvent.click(screen.getByRole('button', { name: 'Delete and Replace' }))
+      await screen.findByText('Replacement failed')
+
+      if (action === 'Cancel') {
+        fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+        view.rerender(<ReplacementSelectionModal {...initialProps} isOpen={false} />)
+        view.rerender(<ReplacementSelectionModal {...initialProps} />)
+      } else {
+        view.rerender(
+          <ReplacementSelectionModal
+            {...initialProps}
+            scaleToDelete={{ id: 3, label: 'Playable', listingsCount: 4 }}
+          />,
+        )
+      }
+
+      expect(screen.queryByText('Replacement failed')).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Delete and Replace' })).toBeDisabled()
+    },
+  )
+
   it('clears selection when the target changes while open', () => {
     const view = render(<ReplacementSelectionModal {...initialProps} />)
     selectReplacement(2)
