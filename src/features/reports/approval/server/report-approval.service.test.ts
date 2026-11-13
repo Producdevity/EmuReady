@@ -10,7 +10,15 @@ import { ReportApprovalService } from './report-approval.service'
 vi.mock('@/server/db', () => ({ prisma: {} }))
 vi.mock('./report-approval.effects', () => ({ completeReportApproval: vi.fn() }))
 
-function setup(reportType: 'handheld' | 'pc', initialStatus: ApprovalStatus) {
+function setup(
+  reportType: 'handheld' | 'pc',
+  initialStatus: ApprovalStatus,
+  initialContribution = initialStatus === ApprovalStatus.APPROVED
+    ? 6
+    : initialStatus === ApprovalStatus.REJECTED
+      ? -8
+      : 0,
+) {
   const userBans: Pick<UserBan, 'reason' | 'expiresAt'>[] = []
   const common = {
     id: 'report-1',
@@ -46,12 +54,7 @@ function setup(reportType: 'handheld' | 'pc', initialStatus: ApprovalStatus) {
       processedAt: input.status === ApprovalStatus.PENDING ? null : input.processedAt,
     }
   })
-  let contribution =
-    initialStatus === ApprovalStatus.APPROVED
-      ? 6
-      : initialStatus === ApprovalStatus.REJECTED
-        ? -8
-        : 0
+  let contribution = initialContribution
   const history: { action: TrustAction; weight: number }[] = []
   vi.spyOn(trust, 'statusContribution').mockImplementation(async () => contribution)
   const append = vi
@@ -102,6 +105,67 @@ for (const reportType of ['handheld', 'pc'] as const) {
         })
       }
     }
+
+    it.each([ApprovalStatus.PENDING, ApprovalStatus.REJECTED])(
+      'does not reverse a nonexistent auto-approval reward when moving to %s',
+      async (newStatus) => {
+        const run = setup(reportType, ApprovalStatus.APPROVED, 0)
+        await run.service.changeStatus({ ...run.input, newStatus })
+        expect(run.history.map((entry) => entry.weight)).toEqual(
+          newStatus === ApprovalStatus.REJECTED ? [-8] : [],
+        )
+        expect(run.contribution()).toBe(newStatus === ApprovalStatus.REJECTED ? -8 : 0)
+      },
+    )
+
+    it('persists same-status override notes without repeated trust or notifications', async () => {
+      const run = setup(reportType, ApprovalStatus.REJECTED)
+      const notes = vi.spyOn(run.repository, 'updateNotes').mockResolvedValue({
+        id: run.record.id,
+        status: run.record.status,
+        processedAt: run.record.processedAt,
+      })
+      await run.service.changeStatus({
+        ...run.input,
+        newStatus: ApprovalStatus.REJECTED,
+        notes: 'Corrected explanation',
+      })
+      expect(notes).toHaveBeenCalledWith(
+        { reportId: 'report-1', reportType },
+        'Corrected explanation',
+      )
+      expect(run.append).not.toHaveBeenCalled()
+      expect(run.update).not.toHaveBeenCalled()
+      expect(completeReportApproval).not.toHaveBeenCalled()
+    })
+
+    it('rejects an automated batch if its trust write fails instead of committing inconsistent status', async () => {
+      const run = setup(reportType, ApprovalStatus.PENDING)
+      run.append.mockRejectedValueOnce(new Error('trust write failed'))
+      await expect(
+        run.service.reviewPending({
+          reportIds: ['report-1'],
+          reportType,
+          newStatus: ApprovalStatus.REJECTED,
+          actor: run.input.actor,
+        }),
+      ).rejects.toThrow('trust write failed')
+      expect(run.transaction).toHaveBeenCalledOnce()
+      expect(completeReportApproval).not.toHaveBeenCalled()
+    })
+
+    it('uses a reject-specific authorization error before opening a transaction', async () => {
+      const run = setup(reportType, ApprovalStatus.PENDING)
+      await expect(
+        run.service.changeStatus({
+          ...run.input,
+          intent: 'review',
+          newStatus: ApprovalStatus.REJECTED,
+          actor: { id: 'user-1', role: Role.USER },
+        }),
+      ).rejects.toThrow(/reject/)
+      expect(run.transaction).not.toHaveBeenCalled()
+    })
 
     it('does not repeat a correction on a retried request', async () => {
       const run = setup(reportType, ApprovalStatus.REJECTED)

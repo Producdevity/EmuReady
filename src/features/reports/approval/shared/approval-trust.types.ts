@@ -12,3 +12,7 @@ export interface ApprovalTrustInput {
   newStatus: ApprovalStatus
   reason?: string
 }
+
+export function approvalReportIdKey(reportType: ListingType) {
+  return reportType === 'handheld' ? 'listingId' : 'pcListingId'
+}

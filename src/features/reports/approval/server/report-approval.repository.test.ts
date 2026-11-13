@@ -33,6 +33,35 @@ beforeEach(() => {
   database.pcListing.update.mockResolvedValue({ id: 'report-1', status: ApprovalStatus.PENDING })
 })
 
+function createTransaction() {
+  const transaction = {
+    ...prisma,
+    listing: {
+      ...prisma.listing,
+      update: vi.fn().mockResolvedValue({ id: 'report-1', status: ApprovalStatus.PENDING }),
+    },
+    pcListing: {
+      ...prisma.pcListing,
+      update: vi.fn().mockResolvedValue({ id: 'report-1', status: ApprovalStatus.PENDING }),
+    },
+    listingCustomFieldValue: {
+      ...prisma.listingCustomFieldValue,
+      deleteMany: vi.fn(),
+      createMany: vi.fn(),
+    },
+    pcListingCustomFieldValue: {
+      ...prisma.pcListingCustomFieldValue,
+      deleteMany: vi.fn(),
+      createMany: vi.fn(),
+    },
+  }
+  database.$transaction.mockImplementation(
+    async (operation: (client: Prisma.TransactionClient) => Promise<unknown>) =>
+      operation(transaction),
+  )
+  return transaction
+}
+
 describe('report decision persistence', () => {
   it('keeps transaction ownership explicit when a bound client exposes transaction methods', async () => {
     database.$transaction.mockImplementation(
@@ -88,24 +117,31 @@ describe('report decision persistence', () => {
   )
 
   it('replaces handheld custom fields in the same transaction-owned repository', async () => {
-    await repository.updateHandheld(
-      {
-        ...commonInput,
-        deviceId: 'device-1',
-        customFieldValues: [{ customFieldDefinitionId: 'field-1', value: { enabled: true } }],
-      },
-      'reviewer-1',
-      ApprovalStatus.REJECTED,
+    const transaction = createTransaction()
+    await repository.transaction((bound) =>
+      bound.updateHandheld(
+        {
+          ...commonInput,
+          deviceId: 'device-1',
+          customFieldValues: [{ customFieldDefinitionId: 'field-1', value: { enabled: true } }],
+        },
+        'reviewer-1',
+        ApprovalStatus.REJECTED,
+      ),
     )
-    expect(database.listingCustomFieldValue.deleteMany).toHaveBeenCalledWith({
+    expect(database.listing.update).not.toHaveBeenCalled()
+    expect(database.pcListing.update).not.toHaveBeenCalled()
+    expect(database.listingCustomFieldValue.deleteMany).not.toHaveBeenCalled()
+    expect(database.pcListingCustomFieldValue.deleteMany).not.toHaveBeenCalled()
+    expect(transaction.listingCustomFieldValue.deleteMany).toHaveBeenCalledWith({
       where: { listingId: 'report-1' },
     })
-    expect(database.listingCustomFieldValue.createMany).toHaveBeenCalledWith({
+    expect(transaction.listingCustomFieldValue.createMany).toHaveBeenCalledWith({
       data: [
         { listingId: 'report-1', customFieldDefinitionId: 'field-1', value: { enabled: true } },
       ],
     })
-    expect(database.listing.update).toHaveBeenCalledWith(
+    expect(transaction.listing.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           processedAt: null,
@@ -117,27 +153,34 @@ describe('report decision persistence', () => {
   })
 
   it('replaces PC custom fields and normalizes absent JSON values', async () => {
-    await repository.updatePc(
-      {
-        ...commonInput,
-        cpuId: 'cpu-1',
-        os: PcOs.WINDOWS,
-        osVersion: '11',
-        memorySize: 16,
-        customFieldValues: [{ customFieldDefinitionId: 'field-1' }],
-      },
-      'reviewer-1',
-      ApprovalStatus.APPROVED,
+    const transaction = createTransaction()
+    await repository.transaction((bound) =>
+      bound.updatePc(
+        {
+          ...commonInput,
+          cpuId: 'cpu-1',
+          os: PcOs.WINDOWS,
+          osVersion: '11',
+          memorySize: 16,
+          customFieldValues: [{ customFieldDefinitionId: 'field-1' }],
+        },
+        'reviewer-1',
+        ApprovalStatus.APPROVED,
+      ),
     )
-    expect(database.pcListingCustomFieldValue.deleteMany).toHaveBeenCalledWith({
+    expect(database.listing.update).not.toHaveBeenCalled()
+    expect(database.pcListing.update).not.toHaveBeenCalled()
+    expect(database.listingCustomFieldValue.deleteMany).not.toHaveBeenCalled()
+    expect(database.pcListingCustomFieldValue.deleteMany).not.toHaveBeenCalled()
+    expect(transaction.pcListingCustomFieldValue.deleteMany).toHaveBeenCalledWith({
       where: { pcListingId: 'report-1' },
     })
-    expect(database.pcListingCustomFieldValue.createMany).toHaveBeenCalledWith({
+    expect(transaction.pcListingCustomFieldValue.createMany).toHaveBeenCalledWith({
       data: [
         { pcListingId: 'report-1', customFieldDefinitionId: 'field-1', value: Prisma.JsonNull },
       ],
     })
-    expect(database.pcListing.update).toHaveBeenCalledWith(
+    expect(transaction.pcListing.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           processedAt: null,
@@ -149,29 +192,43 @@ describe('report decision persistence', () => {
   })
 
   it('preserves custom fields when an edit omits them', async () => {
-    await repository.updateHandheld(
-      { ...commonInput, deviceId: 'device-1' },
-      'reviewer-1',
-      ApprovalStatus.PENDING,
+    const transaction = createTransaction()
+    await repository.transaction((bound) =>
+      bound.updateHandheld(
+        { ...commonInput, deviceId: 'device-1' },
+        'reviewer-1',
+        ApprovalStatus.PENDING,
+      ),
     )
+    expect(database.listing.update).not.toHaveBeenCalled()
+    expect(database.pcListing.update).not.toHaveBeenCalled()
     expect(database.listingCustomFieldValue.deleteMany).not.toHaveBeenCalled()
-    expect(database.listingCustomFieldValue.createMany).not.toHaveBeenCalled()
+    expect(database.pcListingCustomFieldValue.deleteMany).not.toHaveBeenCalled()
+    expect(transaction.listingCustomFieldValue.deleteMany).not.toHaveBeenCalled()
+    expect(transaction.listingCustomFieldValue.createMany).not.toHaveBeenCalled()
   })
 
   it('clears custom fields when an edit explicitly supplies an empty array', async () => {
-    await repository.updatePc(
-      {
-        ...commonInput,
-        cpuId: 'cpu-1',
-        os: PcOs.WINDOWS,
-        osVersion: '11',
-        memorySize: 16,
-        customFieldValues: [],
-      },
-      'reviewer-1',
-      ApprovalStatus.PENDING,
+    const transaction = createTransaction()
+    await repository.transaction((bound) =>
+      bound.updatePc(
+        {
+          ...commonInput,
+          cpuId: 'cpu-1',
+          os: PcOs.WINDOWS,
+          osVersion: '11',
+          memorySize: 16,
+          customFieldValues: [],
+        },
+        'reviewer-1',
+        ApprovalStatus.PENDING,
+      ),
     )
-    expect(database.pcListingCustomFieldValue.deleteMany).toHaveBeenCalledOnce()
-    expect(database.pcListingCustomFieldValue.createMany).not.toHaveBeenCalled()
+    expect(database.listing.update).not.toHaveBeenCalled()
+    expect(database.pcListing.update).not.toHaveBeenCalled()
+    expect(database.listingCustomFieldValue.deleteMany).not.toHaveBeenCalled()
+    expect(database.pcListingCustomFieldValue.deleteMany).not.toHaveBeenCalled()
+    expect(transaction.pcListingCustomFieldValue.deleteMany).toHaveBeenCalledOnce()
+    expect(transaction.pcListingCustomFieldValue.createMany).not.toHaveBeenCalled()
   })
 })

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { APPROVAL_TRUST_SOURCE } from '@/features/reports/approval/shared/approval-trust.types'
 import { PERMISSIONS } from '@/utils/permission-system'
-import { ApprovalStatus, ReportReason, ReportStatus, Role, TrustAction } from '@orm'
+import { ApprovalStatus, ReportReason, ReportStatus, Role, TrustAction, type Prisma } from '@orm'
 
 vi.unmock('@/server/api/trpc')
 
@@ -29,7 +30,10 @@ function createMockPrisma() {
     },
     user: {
       findUnique: vi.fn().mockResolvedValue({ trustScore: 0 }),
-      update: vi.fn().mockResolvedValue({ id: USER_ID, trustScore: 100 }),
+      update: vi.fn().mockImplementation(async (input: Prisma.UserUpdateArgs) => ({
+        id: input.where.id,
+        trustScore: 100,
+      })),
     },
     trustActionLog: {
       createMany: vi.fn().mockResolvedValue({ count: 1 }),
@@ -98,6 +102,18 @@ describe('pcListingReportsRouter', () => {
         processedNotes: 'Rejected due to report: Confirmed spam',
       }),
     })
+    expect(prisma.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: AUTHOR_ID },
+        data: expect.objectContaining({ trustScore: { increment: -14 } }),
+      }),
+    )
+    expect(prisma.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: USER_ID },
+        data: expect.objectContaining({ trustScore: { increment: 5 } }),
+      }),
+    )
     expect(prisma.trustActionLog.createMany).toHaveBeenCalledWith({
       data: [
         expect.objectContaining({
@@ -114,7 +130,15 @@ describe('pcListingReportsRouter', () => {
     })
     expect(prisma.trustActionLog.createMany).toHaveBeenCalledWith({
       data: [
-        expect.objectContaining({ userId: AUTHOR_ID, weight: -6 }),
+        expect.objectContaining({
+          userId: AUTHOR_ID,
+          action: TrustAction.ADMIN_ADJUSTMENT_NEGATIVE,
+          weight: -6,
+          metadata: expect.objectContaining({
+            source: APPROVAL_TRUST_SOURCE,
+            pcListingId: PC_LISTING_ID,
+          }),
+        }),
         expect.objectContaining({
           userId: AUTHOR_ID,
           action: TrustAction.LISTING_REJECTED,

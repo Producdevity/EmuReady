@@ -59,14 +59,16 @@ describe('report approval trust persistence', () => {
   )
 
   it('increments the score and appends the audit entry within its supplied transaction', async () => {
-    const entries = [{ userId: 'author-1', action: TrustAction.LISTING_APPROVED, weight: 6 }]
+    const entries = [{ action: TrustAction.LISTING_APPROVED, weight: 6 }]
     await expect(repository.appendReconciliation('author-1', entries)).resolves.toBe(106)
     expect(database.user.update).toHaveBeenCalledWith({
       where: { id: 'author-1' },
       data: { trustScore: { increment: 6 }, lastActiveAt: expect.any(Date) },
       select: { trustScore: true },
     })
-    expect(database.trustActionLog.createMany).toHaveBeenCalledWith({ data: entries })
+    expect(database.trustActionLog.createMany).toHaveBeenCalledWith({
+      data: entries.map((entry) => ({ ...entry, userId: 'author-1' })),
+    })
   })
 
   it('fails without appending history when the author no longer exists', async () => {

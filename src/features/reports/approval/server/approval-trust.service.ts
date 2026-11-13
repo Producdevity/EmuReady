@@ -1,7 +1,11 @@
 import { TRUST_ACTIONS } from '@/lib/trust/config'
 import { ApprovalStatus, TrustAction, type Prisma } from '@orm'
 import { type ApprovalTrustRepository } from './approval-trust.repository'
-import { APPROVAL_TRUST_SOURCE, type ApprovalTrustInput } from '../shared/approval-trust.types'
+import {
+  APPROVAL_TRUST_SOURCE,
+  approvalReportIdKey,
+  type ApprovalTrustInput,
+} from '../shared/approval-trust.types'
 
 function approvalAction(status: ApprovalStatus) {
   if (status === ApprovalStatus.APPROVED) return TrustAction.LISTING_APPROVED
@@ -19,7 +23,7 @@ export class ApprovalTrustService {
     // Automatic approval can produce an approved report without an approval trust action.
     const previousContribution = await this.repository.statusContribution(input.authorId, input)
     const action = approvalAction(input.newStatus)
-    const reportKey = input.reportType === 'handheld' ? 'listingId' : 'pcListingId'
+    const reportKey = approvalReportIdKey(input.reportType)
     const metadata = {
       [reportKey]: input.reportId,
       source: APPROVAL_TRUST_SOURCE,
@@ -28,7 +32,7 @@ export class ApprovalTrustService {
       newStatus: input.newStatus,
       reason: input.reason ?? 'Report status changed',
     }
-    const entries: Prisma.TrustActionLogCreateManyInput[] = []
+    const entries: Omit<Prisma.TrustActionLogCreateManyInput, 'userId'>[] = []
     const compensationAction =
       previousContribution < 0
         ? TrustAction.ADMIN_ADJUSTMENT_POSITIVE
@@ -36,7 +40,6 @@ export class ApprovalTrustService {
 
     if (previousContribution !== 0) {
       entries.push({
-        userId: input.authorId,
         action: compensationAction,
         weight: -previousContribution,
         metadata: { ...metadata, reversedContribution: previousContribution },
@@ -44,7 +47,6 @@ export class ApprovalTrustService {
     }
     if (action) {
       entries.push({
-        userId: input.authorId,
         action,
         weight: TRUST_ACTIONS[action].weight,
         metadata,

@@ -29,7 +29,7 @@ export class ReportApprovalService {
   constructor(private readonly repository: ReportApprovalRepository) {}
 
   async changeStatus(input: ChangeStatusInput) {
-    assertCanChangeReportStatus(input.actor, input.intent, input.reportType)
+    assertCanChangeReportStatus(input.actor, input.intent, input.reportType, input.newStatus)
     const result = await this.repository.transaction(async (repository, trustRepository) => {
       const report = await repository.find(input)
       const errors =
@@ -44,8 +44,11 @@ export class ReportApprovalService {
         notes: result.notes,
       })
     }
-    if (result.banReason !== null)
-      return ResourceError.listing.cannotApproveBannedUser(result.banReason)
+    if (result.banReason !== null) {
+      const errors =
+        input.reportType === 'handheld' ? ResourceError.listing : ResourceError.pcListing
+      return errors.cannotApproveBannedUser(result.banReason)
+    }
     return {
       id: result.updated.id,
       status: result.updated.status,
@@ -60,7 +63,7 @@ export class ReportApprovalService {
       notesById?: ReadonlyMap<string, string>
     },
   ) {
-    assertCanChangeReportStatus(input.actor, 'review', input.reportType)
+    assertCanChangeReportStatus(input.actor, 'review', input.reportType, input.newStatus)
     const reportIds = [...new Set(input.reportIds)].sort()
     const changes = await this.repository.transaction(async (repository, trustRepository) => {
       const decisions = []
@@ -128,7 +131,16 @@ export class ReportApprovalService {
       ? `Automatically rejected: User is currently banned (${ban.reason})`
       : (input.notes ?? (input.intent === 'override' ? report.processedNotes : null))
     if (report.status === newStatus) {
-      return { report, updated: report, changed: false, trustChange: null, banReason: null, notes }
+      const updated =
+        input.intent === 'override' &&
+        input.notes !== undefined &&
+        input.notes !== report.processedNotes
+          ? await repository.updateNotes(
+              { reportId: input.reportId, reportType: input.reportType },
+              input.notes,
+            )
+          : report
+      return { report, updated, changed: false, trustChange: null, banReason: null, notes }
     }
     const updated = await repository.setStatus({
       ...input,

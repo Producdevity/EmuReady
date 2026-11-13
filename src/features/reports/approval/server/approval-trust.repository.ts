@@ -25,7 +25,7 @@ export class ApprovalTrustRepository extends PrismaRepository {
 
   async appendReconciliation(
     authorId: string,
-    entries: Prisma.TrustActionLogCreateManyInput[],
+    entries: Omit<Prisma.TrustActionLogCreateManyInput, 'userId'>[],
   ): Promise<number> {
     const result = await this.scores.appendActions(authorId, entries)
     return result.newScore

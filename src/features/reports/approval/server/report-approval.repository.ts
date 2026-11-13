@@ -120,6 +120,24 @@ export class ReportApprovalRepository extends PrismaWriteRepository<Target> {
     )
   }
 
+  updateNotes(target: Target, notes: string | null) {
+    return this.executeWrite(
+      () =>
+        target.reportType === 'handheld'
+          ? this.prisma.listing.update({
+              where: { id: target.reportId },
+              data: { processedNotes: notes },
+              select: { id: true, status: true, processedAt: true },
+            })
+          : this.prisma.pcListing.update({
+              where: { id: target.reportId },
+              data: { processedNotes: notes },
+              select: { id: true, status: true, processedAt: true },
+            }),
+      target,
+    )
+  }
+
   async updateHandheld(
     input: z.output<typeof UpdateListingAdminSchema>,
     actorId: string,

@@ -2,7 +2,7 @@ import { AppError, ResourceError } from '@/lib/errors'
 import { type ListingType } from '@/schemas/common'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
-import { Role, type User } from '@orm'
+import { ApprovalStatus, Role, type User } from '@orm'
 
 export type ApprovalActor = Pick<User, 'id' | 'role'> & { permissions?: string[] }
 type ApprovalIntent = 'review' | 'permission-review' | 'override' | 'reset'
@@ -11,6 +11,7 @@ export function assertCanChangeReportStatus(
   actor: ApprovalActor,
   intent: ApprovalIntent,
   reportType: ListingType,
+  newStatus: ApprovalStatus,
 ): void {
   if (intent === 'override') {
     if (!hasRolePermission(actor.role, Role.SUPER_ADMIN))
@@ -27,9 +28,10 @@ export function assertCanChangeReportStatus(
     return
   }
   if (!hasRolePermission(actor.role, Role.DEVELOPER)) {
-    return reportType === 'handheld'
-      ? ResourceError.listing.requiresDeveloperToApprove()
-      : ResourceError.pcListing.requiresDeveloperToApprove()
+    const errors = reportType === 'handheld' ? ResourceError.listing : ResourceError.pcListing
+    return newStatus === ApprovalStatus.REJECTED
+      ? errors.requiresDeveloperToReject()
+      : errors.requiresDeveloperToApprove()
   }
 }
 

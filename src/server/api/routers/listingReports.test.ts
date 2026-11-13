@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { APPROVAL_TRUST_SOURCE } from '@/features/reports/approval/shared/approval-trust.types'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus, ReportReason, ReportStatus, Role, TrustAction } from '@orm/client'
 
@@ -178,7 +179,15 @@ describe('listingReportsRouter create', () => {
     })
     expect(prisma.trustActionLog.createMany).toHaveBeenCalledWith({
       data: [
-        expect.objectContaining({ userId: AUTHOR_ID, weight: -6 }),
+        expect.objectContaining({
+          userId: AUTHOR_ID,
+          action: TrustAction.ADMIN_ADJUSTMENT_NEGATIVE,
+          weight: -6,
+          metadata: expect.objectContaining({
+            source: APPROVAL_TRUST_SOURCE,
+            listingId: LISTING_ID,
+          }),
+        }),
         expect.objectContaining({
           userId: AUTHOR_ID,
           action: TrustAction.LISTING_REJECTED,

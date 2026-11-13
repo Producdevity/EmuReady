@@ -34,41 +34,49 @@ export class ReportAdminEditService {
   async updateHandheld(input: z.output<typeof UpdateListingAdminSchema>, actor: ApprovalActor) {
     if (!hasRolePermission(actor.role, Role.MODERATOR))
       return ResourceError.listing.requiresModeratorToUpdate()
-    const result = await this.repository.transaction(async (repository, trust) => {
-      const previous = await repository.find({ reportId: input.id, reportType: 'handheld' })
-      if (!previous) return ResourceError.listing.notFound()
-      const updated = await repository.updateHandheld(input, actor.id, previous.status)
-      const change = await new ApprovalTrustService(trust).reconcile({
-        reportId: input.id,
-        reportType: 'handheld',
-        authorId: previous.authorId,
-        actorId: actor.id,
-        previousStatus: previous.status,
-        newStatus: updated.status,
-        reason: 'Report updated by moderator',
-      })
-      return { previous, updated, change }
-    })
-    trackTrustScoreChange(result.change)
-    await invalidateEditedReport(result.previous)
-    await invalidateEditedReport(result.updated)
-    return {
-      id: result.updated.id,
-      status: result.updated.status,
-      processedAt: result.updated.processedAt,
-    }
+    return this.updateReport(
+      { reportId: input.id, reportType: 'handheld', status: input.status },
+      actor,
+      (repository, previous) => repository.updateHandheld(input, actor.id, previous.status),
+    )
   }
 
   async updatePc(input: z.output<typeof UpdatePcListingAdminSchema>, actor: ApprovalActor) {
     if (!hasPermission(actor.permissions, PERMISSIONS.APPROVE_LISTINGS))
       return AppError.insufficientPermissions([PERMISSIONS.APPROVE_LISTINGS])
+    return this.updateReport(
+      { reportId: input.id, reportType: 'pc', status: input.status },
+      actor,
+      (repository, previous) => repository.updatePc(input, actor.id, previous.status),
+    )
+  }
+
+  private async updateReport(
+    target: Parameters<ReportApprovalRepository['find']>[0] & { status: ApprovalStatus },
+    actor: ApprovalActor,
+    persist: (
+      repository: ReportApprovalRepository,
+      previous: ApprovalRecord,
+    ) => Promise<ApprovalRecord>,
+  ) {
     const result = await this.repository.transaction(async (repository, trust) => {
-      const previous = await repository.find({ reportId: input.id, reportType: 'pc' })
-      if (!previous) return ResourceError.pcListing.notFound()
-      const updated = await repository.updatePc(input, actor.id, previous.status)
+      const previous = await repository.find(target)
+      const errors =
+        target.reportType === 'handheld' ? ResourceError.listing : ResourceError.pcListing
+      if (!previous) return errors.notFound()
+      if (
+        previous.status !== ApprovalStatus.APPROVED &&
+        target.status === ApprovalStatus.APPROVED
+      ) {
+        const ban = previous.author?.userBans.find(
+          (entry) => !entry.expiresAt || entry.expiresAt > new Date(),
+        )
+        if (ban) return errors.cannotApproveBannedUser(ban.reason)
+      }
+      const updated = await persist(repository, previous)
       const change = await new ApprovalTrustService(trust).reconcile({
-        reportId: input.id,
-        reportType: 'pc',
+        reportId: target.reportId,
+        reportType: target.reportType,
         authorId: previous.authorId,
         actorId: actor.id,
         previousStatus: previous.status,

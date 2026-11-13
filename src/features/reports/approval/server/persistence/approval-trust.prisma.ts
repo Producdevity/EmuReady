@@ -1,11 +1,15 @@
 import { TrustAction, type Prisma } from '@orm'
-import { APPROVAL_TRUST_SOURCE, type ApprovalTrustInput } from '../../shared/approval-trust.types'
+import {
+  APPROVAL_TRUST_SOURCE,
+  approvalReportIdKey,
+  type ApprovalTrustInput,
+} from '../../shared/approval-trust.types'
 
 export function statusContributionWhere(
   authorId: string,
   target: Pick<ApprovalTrustInput, 'reportId' | 'reportType'>,
 ): Prisma.TrustActionLogWhereInput {
-  const reportKey = target.reportType === 'handheld' ? 'listingId' : 'pcListingId'
+  const reportKey = approvalReportIdKey(target.reportType)
   return {
     userId: authorId,
     AND: [

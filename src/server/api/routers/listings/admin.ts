@@ -270,6 +270,10 @@ export const adminRouter = createTRPCRouter({
         newStatus: ApprovalStatus.APPROVED,
         actor: ctx.session.user,
       })
+      if (result.approvedCount + result.rejectedCount === 0)
+        return AppError.badRequest(
+          'No valid pending listings found to approve. The listings may have already been processed.',
+        )
       return {
         success: true,
         ...result,
@@ -291,6 +295,10 @@ export const adminRouter = createTRPCRouter({
         actor: ctx.session.user,
         notes: input.notes,
       })
+      if (result.rejectedCount === 0)
+        return AppError.badRequest(
+          'No valid pending listings found to reject. The listings may have already been processed.',
+        )
       return {
         success: true,
         rejectedCount: result.rejectedCount,

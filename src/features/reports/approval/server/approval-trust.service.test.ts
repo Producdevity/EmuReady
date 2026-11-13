@@ -3,6 +3,7 @@ import { prisma } from '@/server/db'
 import { ApprovalStatus, TrustAction, type TrustActionLog } from '@orm'
 import { ApprovalTrustRepository } from './approval-trust.repository'
 import { ApprovalTrustService } from './approval-trust.service'
+import { APPROVAL_TRUST_SOURCE } from '../shared/approval-trust.types'
 
 vi.mock('@/server/db', () => ({ prisma: {} }))
 
@@ -70,18 +71,37 @@ describe.each(['handheld', 'pc'] as const)('%s report approval trust', (reportTy
           ...(next.contribution === 0 ? [] : [next.contribution]),
         ]
         expect(run.history.map((entry) => entry.weight)).toEqual(expectedWeights)
+        const expectedActions = [
+          ...(previous.contribution === 0
+            ? []
+            : [
+                previous.contribution < 0
+                  ? TrustAction.ADMIN_ADJUSTMENT_POSITIVE
+                  : TrustAction.ADMIN_ADJUSTMENT_NEGATIVE,
+              ]),
+          ...(next.status === ApprovalStatus.PENDING
+            ? []
+            : [
+                next.status === ApprovalStatus.APPROVED
+                  ? TrustAction.LISTING_APPROVED
+                  : TrustAction.LISTING_REJECTED,
+              ]),
+        ]
         expect(run.append).toHaveBeenCalledWith(
           input.authorId,
-          expect.arrayContaining([
+          expectedWeights.map((weight, index) =>
             expect.objectContaining({
+              action: expectedActions[index],
+              weight,
               metadata: expect.objectContaining({
                 [reportType === 'handheld' ? 'listingId' : 'pcListingId']: input.reportId,
+                source: APPROVAL_TRUST_SOURCE,
                 adminUserId: input.actorId,
                 previousStatus: previous.status,
                 newStatus: next.status,
               }),
             }),
-          ]),
+          ),
         )
       })
     }

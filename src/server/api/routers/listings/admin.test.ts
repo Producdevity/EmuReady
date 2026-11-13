@@ -344,6 +344,23 @@ describe('listing admin processed reports', () => {
 describe('listing admin decision transport', () => {
   beforeEach(() => vi.restoreAllMocks())
 
+  it.each(['approve', 'reject'] as const)(
+    'rejects a bulk %s request when nothing remains pending',
+    async (decision) => {
+      vi.spyOn(ReportApprovalService.prototype, 'reviewPending').mockResolvedValueOnce({
+        approvedCount: 0,
+        rejectedCount: 0,
+        skippedCount: 1,
+      })
+      const { caller } = createCaller({ role: Role.SUPER_ADMIN })
+      const request =
+        decision === 'approve'
+          ? caller.bulkApprove({ listingIds: [LISTING_ID] })
+          : caller.bulkReject({ listingIds: [LISTING_ID], notes: 'Invalid' })
+      await expect(request).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+    },
+  )
+
   it('passes an override to the shared workflow and returns its declared receipt', async () => {
     const change = vi.spyOn(ReportApprovalService.prototype, 'changeStatus').mockResolvedValueOnce({
       id: LISTING_ID,
@@ -377,6 +394,7 @@ describe('listing admin decision transport', () => {
     await caller.resetToPending({ listingId: LISTING_ID })
     expect(change).toHaveBeenCalledWith(
       expect.objectContaining({
+        reportId: LISTING_ID,
         reportType: 'handheld',
         newStatus: ApprovalStatus.PENDING,
         intent: 'reset',
