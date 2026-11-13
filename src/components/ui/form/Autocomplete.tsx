@@ -225,6 +225,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>(props: Props<T>) 
     if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current)
     ++requestSequence.current
     setSelectedOption(item)
+    if (loadItems) setSearchItems([])
     setInputDraft(optionToLabel(item))
     setClearingSelection(false)
     setIsOpen(false)

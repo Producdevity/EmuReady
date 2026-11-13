@@ -469,7 +469,11 @@ function CustomFieldFormModal(props: Props) {
               rangeMax={rangeMax}
               rangeUnit={rangeUnit}
               rangeDecimals={rangeDecimals}
-              defaultValue={typeof defaultValue === 'number' ? defaultValue : null}
+              defaultValue={
+                typeof defaultValue === 'number' || typeof defaultValue === 'string'
+                  ? defaultValue
+                  : null
+              }
               errors={rangeErrors}
               onChange={handleRangeChange}
             />

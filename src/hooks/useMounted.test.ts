@@ -1,7 +1,7 @@
 import { render, renderHook, screen } from '@testing-library/react'
 import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import useMounted from './useMounted'
 
 describe('useMounted', () => {
@@ -16,7 +16,9 @@ describe('useMounted', () => {
     container.innerHTML = markup
     document.body.append(container)
 
-    render(element, { container, hydrate: true })
+    const onRecoverableError = vi.fn()
+    render(element, { container, hydrate: true, onRecoverableError })
+    expect(onRecoverableError).not.toHaveBeenCalled()
     expect(screen.getByText('Client content')).toBeInTheDocument()
   })
 

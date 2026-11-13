@@ -76,9 +76,18 @@ function EmulatorsPage() {
     },
   )
 
-  const selectedEmulator =
+  const availableEmulator =
     emulatorInCurrentPage ??
     (singleEmulatorQuery.data?.id === emulatorIdFromUrl ? (singleEmulatorQuery.data ?? null) : null)
+
+  const [lastSelectedEmulator, setLastSelectedEmulator] = useState<typeof availableEmulator>(null)
+  if (availableEmulator && availableEmulator.id !== lastSelectedEmulator?.id)
+    setLastSelectedEmulator(availableEmulator)
+  const selectedEmulator =
+    availableEmulator ??
+    (!singleEmulatorQuery.isError && lastSelectedEmulator?.id === emulatorIdFromUrl
+      ? lastSelectedEmulator
+      : null)
 
   const openModal = (emulator: EmulatorData) => {
     // Update URL with emulator ID

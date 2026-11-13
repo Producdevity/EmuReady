@@ -51,10 +51,14 @@ function IGDBSearchContent() {
     input: RouterInput['igdb']['searchGames']
   } | null>(null)
   const urlKey = JSON.stringify([urlQuery, urlSystemId || null])
+  const [formKey, setFormKey] = useState(urlKey)
   const [previousUrlKey, setPreviousUrlKey] = useState(urlKey)
   if (previousUrlKey !== urlKey) {
     setPreviousUrlKey(urlKey)
-    if (submittedSearch?.urlKey !== urlKey) setSubmittedSearch(null)
+    if (submittedSearch?.urlKey !== urlKey) {
+      setSubmittedSearch(null)
+      setFormKey(urlKey)
+    }
   }
   const [selectedGame, setSelectedGame] = useState<IGDBGameResult | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -210,7 +214,7 @@ function IGDBSearchContent() {
         />
 
         <GameSearchForm
-          key={urlKey}
+          key={formKey}
           provider="igdb"
           onSearch={handleSearch}
           systems={systemsQuery.data ?? []}

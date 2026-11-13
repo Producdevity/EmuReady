@@ -93,10 +93,14 @@ function CategoryForm(props: FormProps) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label
+          htmlFor="category-name"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
           Category Name
         </label>
         <Input
+          id="category-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g., Graphics, Audio, Performance"

@@ -29,9 +29,9 @@ type ImageField = 'imageUrl' | 'boxartUrl' | 'bannerUrl'
 
 function imageUrls(game: Pick<Game, ImageField>) {
   return {
-    imageUrl: game.imageUrl ?? '',
-    boxartUrl: game.boxartUrl ?? '',
-    bannerUrl: game.bannerUrl ?? '',
+    imageUrl: game.imageUrl,
+    boxartUrl: game.boxartUrl,
+    bannerUrl: game.bannerUrl,
   }
 }
 

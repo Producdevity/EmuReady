@@ -7,6 +7,7 @@ import CustomFieldTemplateFormModal from './CustomFieldTemplateFormModal'
 type Template = RouterOutput['customFieldTemplates']['byId']
 let template: Template | undefined
 let error: Error | null
+let fetching = false
 const refetch = vi.fn()
 vi.mock('@sentry/nextjs', () => ({ captureMessage: vi.fn() }))
 vi.mock('@/lib/api', () => ({
@@ -18,7 +19,16 @@ vi.mock('@/lib/api', () => ({
       },
     }),
     customFieldTemplates: {
-      byId: { useQuery: () => ({ data: template, error, isError: Boolean(error), refetch }) },
+      byId: {
+        useQuery: () => ({
+          data: template,
+          error,
+          isError: Boolean(error),
+          isSuccess: template !== undefined && !error,
+          isFetching: fetching,
+          refetch,
+        }),
+      },
       create: { useMutation: () => ({ mutate: vi.fn() }) },
       update: { useMutation: () => ({ mutate: vi.fn() }) },
     },
@@ -61,10 +71,34 @@ const onClose = vi.fn()
 beforeEach(() => {
   template = undefined
   error = null
+  fetching = false
   vi.clearAllMocks()
 })
 
 describe('template form sessions', () => {
+  it('shows a not-found result when the requested template was deleted', () => {
+    template = null
+    render(<CustomFieldTemplateFormModal isOpen templateIdToEdit="template-1" onClose={onClose} />)
+    expect(screen.getByText('Template not found')).toBeInTheDocument()
+    expect(screen.queryByText('Loading template...')).not.toBeInTheDocument()
+  })
+
+  it('waits for a stale cached record to refresh before starting a draft', () => {
+    template = record('template-1', 'Stale cached template')
+    fetching = true
+    const props = { isOpen: true, templateIdToEdit: 'template-1', onClose }
+    const view = render(<CustomFieldTemplateFormModal {...props} />)
+    expect(screen.queryByLabelText(/^Template Name/)).not.toBeInTheDocument()
+    fetching = false
+    template = record('template-1', 'Refreshed template')
+    view.rerender(<CustomFieldTemplateFormModal {...props} />)
+    expect(screen.getByLabelText(/^Template Name/)).toHaveValue('Refreshed template')
+    fireEvent.change(screen.getByLabelText(/^Template Name/), { target: { value: 'My draft' } })
+    fetching = true
+    view.rerender(<CustomFieldTemplateFormModal {...props} />)
+    expect(screen.getByLabelText(/^Template Name/)).toHaveValue('My draft')
+  })
+
   it('initializes an edit form after its record loads', () => {
     const view = render(
       <CustomFieldTemplateFormModal isOpen templateIdToEdit="template-1" onClose={onClose} />,

@@ -35,14 +35,11 @@ export function useUrlFilterState<TSortField extends string>(config: Config) {
   useEffect(() => {
     if (!urlLimit) return
     try {
-      const value = String(parseLimit(urlLimit, config.maxLimit))
-      if (window.localStorage.getItem(config.storageKey) === value) return
-      window.localStorage.setItem(config.storageKey, value)
-      window.dispatchEvent(new StorageEvent('storage', { key: config.storageKey }))
+      setStoredLimit(parseLimit(urlLimit, config.maxLimit))
     } catch (error) {
       console.warn('Failed to save report page size:', error)
     }
-  }, [config.storageKey, config.maxLimit, urlLimit])
+  }, [config.maxLimit, urlLimit, setStoredLimit])
 
   const updateFilters = useCallback(
     (updates: Record<string, unknown>, shouldPush = false) => {

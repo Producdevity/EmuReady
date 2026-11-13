@@ -22,12 +22,12 @@ function useReportForm(gameIdFromUrl: string | null) {
     form.setValue('gameId', option.id)
     setSelected(option)
   }
-  const state = usePreSelectedGame({
+  usePreSelectedGame({
     gameIdFromUrl,
     onGameSelect: select,
     onSearchTermChange: setSearch,
   })
-  return { ...state, form, selected, search, select, setSearch }
+  return { form, selected, search, select, setSearch }
 }
 
 beforeEach(() => {
@@ -35,15 +35,20 @@ beforeEach(() => {
 })
 
 describe('URL game preselection', () => {
+  it('applies a cached URL game directly to the form and metadata', () => {
+    queryGame = game('game-1', 'Cached game')
+    const { result } = renderHook(() => useReportForm('game-1'))
+    expect(result.current.form.getValues('gameId')).toBe('game-1')
+    expect(result.current.selected?.title).toBe('Cached game')
+  })
+
   it('initializes the real report form and its game metadata after the game loads', () => {
     const { result, rerender } = renderHook(() => useReportForm('game-1'))
-    expect(result.current.isInitialGameLoaded).toBe(false)
     queryGame = game('game-1', 'First game')
     rerender()
     expect(result.current.form.getValues('gameId')).toBe('game-1')
     expect(result.current.selected?.title).toBe('First game')
     expect(result.current.search).toBe('First game')
-    expect(result.current.isInitialGameLoaded).toBe(true)
   })
 
   it('does not overwrite manual game selection on a refetch', () => {
@@ -66,7 +71,6 @@ describe('URL game preselection', () => {
       initialProps: { id: 'game-1' },
     })
     rerender({ id: 'game-2' })
-    expect(result.current.isInitialGameLoaded).toBe(false)
     expect(result.current.form.getValues('gameId')).toBe('game-1')
     queryGame = game('game-2', 'Second game')
     rerender({ id: 'game-2' })
@@ -88,7 +92,6 @@ describe('URL game preselection', () => {
   it('ignores cached game data when no URL target is selected', () => {
     queryGame = game('game-1', 'Cached game')
     const { result } = renderHook(() => useReportForm(null))
-    expect(result.current.isInitialGameLoaded).toBe(false)
     expect(result.current.form.getValues('gameId')).toBe('')
   })
 })

@@ -13,7 +13,7 @@ import {
   Bookmark,
 } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect } from 'react'
 import { Button, PageSkeletonLoading } from '@/components/ui'
 import analytics from '@/lib/analytics'
@@ -86,7 +86,6 @@ function ProfilePage() {
   const { user, isLoaded } = useUser()
   const searchParams = useSearchParams()
   const pathname = usePathname()
-  const router = useRouter()
   const activeTab = searchParams.get('tab') || 'profile'
 
   const userQuery = api.users.getProfile.useQuery(undefined, {
@@ -135,7 +134,7 @@ function ProfilePage() {
   const handleTabChange = (tabId: string) => {
     const params = new URLSearchParams(Array.from(searchParams.entries()))
     params.set('tab', tabId)
-    router.replace(`/profile?${params.toString()}`)
+    window.history.replaceState(null, '', `${pathname}?${params.toString()}`)
 
     analytics.navigation.menuItemClicked({
       menuItem: `profile_tab_${tabId}`,

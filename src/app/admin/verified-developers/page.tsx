@@ -374,7 +374,9 @@ function AdminVerifiedDevelopersPage() {
       <VerifyDeveloperModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onSuccess={handleModalSuccess}
+        onSuccess={() => {
+          void utils.verifiedDevelopers.getVerifiedDevelopers.invalidate()
+        }}
       />
 
       <EditVerifiedDeveloperModal

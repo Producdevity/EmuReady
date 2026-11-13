@@ -20,6 +20,12 @@ class MemoryStorage {
 }
 
 describe('isTrackingAllowed', () => {
+  it('rejects incomplete saved preferences consistently with the consent hook', () => {
+    localStorage.setItem(storageKeys.cookies.consent, 'true')
+    localStorage.setItem(storageKeys.cookies.preferences, JSON.stringify({ analytics: true }))
+    expect(isTrackingAllowed('filter')).toBe(false)
+  })
+
   const mem = new MemoryStorage()
 
   beforeEach(() => {
@@ -35,7 +41,7 @@ describe('isTrackingAllowed', () => {
       mem.setItem(storageKeys.cookies.consent, consent)
       mem.setItem(
         storageKeys.cookies.preferences,
-        JSON.stringify({ analytics: true, performance: true }),
+        JSON.stringify({ necessary: true, analytics: true, performance: true }),
       )
       expect(isTrackingAllowed('filter')).toBe(false)
       expect(isTrackingAllowed('performance')).toBe(false)
@@ -51,7 +57,7 @@ describe('isTrackingAllowed', () => {
     mem.setItem(storageKeys.cookies.consent, 'true')
     mem.setItem(
       storageKeys.cookies.preferences,
-      JSON.stringify({ analytics: true, performance: false }),
+      JSON.stringify({ necessary: true, analytics: true, performance: false }),
     )
 
     expect(isTrackingAllowed('filter')).toBe(true)
@@ -63,7 +69,7 @@ describe('isTrackingAllowed', () => {
     mem.setItem(storageKeys.cookies.consent, 'true')
     mem.setItem(
       storageKeys.cookies.preferences,
-      JSON.stringify({ analytics: false, performance: true }),
+      JSON.stringify({ necessary: true, analytics: false, performance: true }),
     )
 
     expect(isTrackingAllowed('performance')).toBe(true)

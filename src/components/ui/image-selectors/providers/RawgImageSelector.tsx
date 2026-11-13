@@ -1,5 +1,6 @@
 'use client'
 
+import { keepPreviousData } from '@tanstack/react-query'
 import { Search, Eye, Camera, Link as LinkIcon } from 'lucide-react'
 import { useState, useEffect, useMemo, type KeyboardEvent, type MouseEvent } from 'react'
 import { Button, LoadingSpinner, OptimizedImage, Modal, Input, Toggle } from '@/components/ui'
@@ -56,6 +57,7 @@ export function RawgImageSelector({ onImageSelect, onError, ...props }: Props) {
     {
       enabled: !useCustomUrl && debouncedSearchTerm.length >= 2,
       staleTime: CACHE_DURATIONS.MEDIUM,
+      placeholderData: keepPreviousData,
     },
   )
 

@@ -16,7 +16,6 @@ export function usePreSelectedGame(params: Params) {
     { enabled: Boolean(gameIdFromUrl) },
   )
   const game = query.data
-  const isInitialGameLoaded = Boolean(gameIdFromUrl && game?.id === gameIdFromUrl)
 
   useEffect(() => {
     if (preselection.current.gameId !== gameIdFromUrl) {
@@ -34,6 +33,4 @@ export function usePreSelectedGame(params: Params) {
     })
     onSearchTermChange(game.title)
   }, [game, gameIdFromUrl, onGameSelect, onSearchTermChange])
-
-  return { isInitialGameLoaded }
 }

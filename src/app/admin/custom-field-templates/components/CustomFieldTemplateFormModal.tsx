@@ -204,14 +204,6 @@ function initialFields(template: TemplateRecord | null): TemplateField[] {
 }
 
 function CustomFieldTemplateFormModal(props: Props) {
-  const templateQuery = api.customFieldTemplates.byId.useQuery(
-    { id: props.templateIdToEdit ?? '' },
-    { enabled: Boolean(props.templateIdToEdit) && props.isOpen },
-  )
-  const template =
-    props.templateIdToEdit && templateQuery.data?.id === props.templateIdToEdit
-      ? templateQuery.data
-      : null
   return (
     <Modal
       isOpen={props.isOpen}
@@ -221,24 +213,50 @@ function CustomFieldTemplateFormModal(props: Props) {
       closeOnEscape={false}
       size="3xl"
     >
-      {props.templateIdToEdit && !template && templateQuery.isError ? (
-        <ErrorFallback
-          error={templateQuery.error}
-          resetErrorBoundary={() => {
-            void templateQuery.refetch()
-          }}
-        />
-      ) : props.templateIdToEdit && !template ? (
-        <LoadingSpinner text="Loading template..." />
-      ) : (
-        <TemplateForm
-          key={`${props.isOpen}:${props.templateIdToEdit ?? 'new'}`}
+      {props.isOpen && (
+        <TemplateSession
+          key={props.templateIdToEdit ?? 'new'}
           templateIdToEdit={props.templateIdToEdit}
           onClose={props.onClose}
-          template={template}
         />
       )}
     </Modal>
+  )
+}
+
+function TemplateSession(props: Omit<Props, 'isOpen'>) {
+  const query = api.customFieldTemplates.byId.useQuery(
+    { id: props.templateIdToEdit ?? '' },
+    { enabled: Boolean(props.templateIdToEdit) },
+  )
+  const [template, setTemplate] = useState<TemplateRecord | null>(null)
+  if (
+    !template &&
+    !query.isFetching &&
+    !query.isError &&
+    query.data &&
+    query.data.id === props.templateIdToEdit
+  )
+    setTemplate(query.data)
+  if (props.templateIdToEdit && !template) {
+    if (query.isError || (query.isSuccess && !query.isFetching && query.data === null)) {
+      return (
+        <ErrorFallback
+          error={query.error ?? { message: 'Template not found' }}
+          resetErrorBoundary={() => {
+            void query.refetch()
+          }}
+        />
+      )
+    }
+    return <LoadingSpinner text="Loading template..." />
+  }
+  return (
+    <TemplateForm
+      templateIdToEdit={props.templateIdToEdit}
+      onClose={props.onClose}
+      template={template}
+    />
   )
 }
 

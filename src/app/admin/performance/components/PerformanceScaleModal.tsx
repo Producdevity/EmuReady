@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FormEvent, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ChangeEvent } from 'react'
 import { Button, Input, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
 import { type RouterInput } from '@/types/trpc'
@@ -16,10 +16,18 @@ interface Props {
 }
 
 function PerformanceScaleModal(props: Props) {
+  const createPerformanceScale = api.performanceScales.create.useMutation()
+  const updatePerformanceScale = api.performanceScales.update.useMutation()
+  const isPending = createPerformanceScale.isPending || updatePerformanceScale.isPending
+  function closeModal() {
+    if (!isPending) props.onClose()
+  }
   return (
     <Modal
       isOpen={props.isOpen}
-      onClose={props.onClose}
+      onClose={closeModal}
+      closeOnEscape={!isPending}
+      hideCloseButton={isPending}
       title={props.editId ? 'Edit Performance Scale' : 'Add Performance Scale'}
       closeOnBackdropClick={false}
       size="md"
@@ -28,28 +36,38 @@ function PerformanceScaleModal(props: Props) {
         key={`${props.isOpen}:${props.editId ?? 'new'}`}
         editId={props.editId}
         scale={props.scale}
-        onClose={props.onClose}
+        onClose={closeModal}
         onSuccess={props.onSuccess}
+        createPerformanceScale={createPerformanceScale}
+        updatePerformanceScale={updatePerformanceScale}
       />
     </Modal>
   )
 }
 
-type FormProps = Omit<Props, 'isOpen'>
+type FormProps = Omit<Props, 'isOpen'> & {
+  createPerformanceScale: ReturnType<typeof api.performanceScales.create.useMutation>
+  updatePerformanceScale: ReturnType<typeof api.performanceScales.update.useMutation>
+}
 
 function PerformanceScaleForm(props: FormProps) {
-  const createPerformanceScale = api.performanceScales.create.useMutation()
-  const updatePerformanceScale = api.performanceScales.update.useMutation()
+  const { createPerformanceScale, updatePerformanceScale } = props
+  const active = useRef(false)
+  useEffect(() => {
+    active.current = true
+    return () => {
+      active.current = false
+    }
+  }, [])
   const [label, setLabel] = useState(props.scale?.label ?? '')
   const [description, setDescription] = useState(props.scale?.description ?? '')
   const [rank, setRank] = useState<number | string>(props.scale?.rank ?? '')
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
+    if (createPerformanceScale.isPending || updatePerformanceScale.isPending) return
     setError('')
-    setSuccess('')
 
     const rankNumber = Number(rank)
     if (isNaN(rankNumber) || rankNumber < 1) {
@@ -65,19 +83,18 @@ function PerformanceScaleForm(props: FormProps) {
           description: description.trim() || undefined,
           rank: rankNumber,
         } satisfies RouterInput['performanceScales']['update'])
-        setSuccess('Performance scale updated!')
       } else {
         await createPerformanceScale.mutateAsync({
           label,
           description: description.trim() || undefined,
           rank: rankNumber,
         } satisfies RouterInput['performanceScales']['create'])
-        setSuccess('Performance scale created!')
       }
 
       props.onSuccess()
+      if (active.current) props.onClose()
     } catch (err) {
-      setError(getErrorMessage(err, 'Failed to save performance scale.'))
+      if (active.current) setError(getErrorMessage(err, 'Failed to save performance scale.'))
     }
   }
 
@@ -140,14 +157,13 @@ function PerformanceScaleForm(props: FormProps) {
         <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded">{error}</div>
       )}
 
-      {success && (
-        <div className="text-green-600 text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded">
-          {success}
-        </div>
-      )}
-
       <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
-        <Button type="button" variant="outline" onClick={props.onClose}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={props.onClose}
+          disabled={createPerformanceScale.isPending || updatePerformanceScale.isPending}
+        >
           Cancel
         </Button>
         <Button

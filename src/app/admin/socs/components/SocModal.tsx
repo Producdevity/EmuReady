@@ -68,7 +68,7 @@ function SocForm(props: FormProps) {
       architecture || undefined,
     )
     if (!parsedArchitecture.success) {
-      setError('Architecture must be ARM64 or x86_64.')
+      setError(`Architecture must be one of: ${commonArchitectures.join(', ')}.`)
       return
     }
     try {

@@ -75,10 +75,14 @@ function TGDBSearchContent() {
     input: RouterInput['tgdb']['searchGames']
   } | null>(null)
   const urlKey = JSON.stringify([urlQuery, urlSystemId || null])
+  const [formKey, setFormKey] = useState(urlKey)
   const [previousUrlKey, setPreviousUrlKey] = useState(urlKey)
   if (previousUrlKey !== urlKey) {
     setPreviousUrlKey(urlKey)
-    if (submittedSearch?.urlKey !== urlKey) setSubmittedSearch(null)
+    if (submittedSearch?.urlKey !== urlKey) {
+      setSubmittedSearch(null)
+      setFormKey(urlKey)
+    }
   }
   const [selectedGame, setSelectedGame] = useState<TGDBGameWithBoxart | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -231,7 +235,7 @@ function TGDBSearchContent() {
         />
 
         <GameSearchForm
-          key={urlKey}
+          key={formKey}
           provider="tgdb"
           onSearch={handleSearch}
           systems={systemsQuery.data ?? []}

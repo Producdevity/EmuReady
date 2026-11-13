@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { TRPCClientError, type TRPCLink } from '@trpc/client'
 import { observable } from '@trpc/server/observable'
+import { useEffect } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { type GameSearchFormProps, type BaseGameResult } from '@/components/game-search/types'
 import { api } from '@/lib/api'
@@ -10,7 +11,12 @@ import GameSearchPage from './GameSearchPage'
 import IGDBSearchPage from './v2/IGDBSearchPage'
 
 let params = new URLSearchParams()
-const mocks = vi.hoisted(() => ({ replace: vi.fn(), error: vi.fn(), warning: vi.fn() }))
+const mocks = vi.hoisted(() => ({
+  replace: vi.fn(),
+  error: vi.fn(),
+  warning: vi.fn(),
+  formMount: vi.fn(),
+}))
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mocks.replace, push: vi.fn() }),
   useSearchParams: () => params,
@@ -26,11 +32,16 @@ vi.mock('./components/GamePreviewModal', () => ({ default: () => null }))
 vi.mock('./v2/components/IGDBGamePreviewModal', () => ({ default: () => null }))
 vi.mock('@/components/game-search', () => ({
   GameSearchHeader: () => null,
-  GameSearchForm: (props: GameSearchFormProps) => (
-    <button onClick={() => props.onSearch('Manual', null, 'switch2')}>
-      {props.isSearching ? 'Searching' : 'Search all platforms'}
-    </button>
-  ),
+  GameSearchForm: function Form(props: GameSearchFormProps) {
+    useEffect(() => {
+      mocks.formMount()
+    }, [])
+    return (
+      <button onClick={() => props.onSearch('Manual', null, 'switch2')}>
+        {props.isSearching ? 'Searching' : 'Search all platforms'}
+      </button>
+    )
+  },
   GameSearchResults: (props: { results: { games: BaseGameResult[] } }) => (
     <div>
       {props.results.games.map((game) => (
@@ -149,6 +160,7 @@ describe.each(['igdb', 'tgdb'] as const)('%s search query state', (provider) => 
     await screen.findByText('Initial result')
     fireEvent.click(screen.getByRole('button', { name: 'Search all platforms' }))
     await screen.findByText('Manual result')
+    expect(mocks.formMount).toHaveBeenCalledOnce()
     const manual = {
       path: `${provider}.searchGames`,
       input:
@@ -159,6 +171,7 @@ describe.each(['igdb', 'tgdb'] as const)('%s search query state', (provider) => 
     expect(requests).toContainEqual(manual)
     params = new URLSearchParams('q=Manual&system=switch2')
     page.rerender()
+    expect(mocks.formMount).toHaveBeenCalledOnce()
     expect(screen.getByText('Manual result')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Search all platforms' }))
     await waitFor(() =>

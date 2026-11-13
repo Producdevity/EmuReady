@@ -53,6 +53,25 @@ const gameProps = {
 }
 
 describe('Autocomplete async response ordering', () => {
+  it('searches the selected label instead of reopening the prior async results', async () => {
+    const loadItems = vi.fn(async (query: string) =>
+      query === 'App'
+        ? [
+            { id: '1', name: 'Apple' },
+            { id: '2', name: 'Application' },
+          ]
+        : [],
+    )
+    render(<Autocomplete {...defaultProps} loadItems={loadItems} debounceTime={0} />)
+    const input = screen.getByRole('combobox')
+    fireEvent.change(input, { target: { value: 'App' } })
+    fireEvent.mouseDown(await screen.findByRole('option', { name: 'Apple' }))
+    fireEvent.blur(input)
+    fireEvent.focus(input)
+    await waitFor(() => expect(loadItems).toHaveBeenCalledWith('Apple'))
+    expect(screen.queryByRole('option', { name: 'Application' })).not.toBeInTheDocument()
+  })
+
   it('keeps a newer lookup when the initial empty lookup completes last', async () => {
     const initial = Promise.withResolvers<TestOption[]>()
     const typed = Promise.withResolvers<TestOption[]>()
@@ -104,7 +123,6 @@ describe('Autocomplete async response ordering', () => {
     },
   )
 })
-
 
 describe('Autocomplete Component', () => {
   let user: ReturnType<typeof userEvent.setup>

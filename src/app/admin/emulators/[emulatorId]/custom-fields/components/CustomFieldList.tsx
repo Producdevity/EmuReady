@@ -67,12 +67,10 @@ function CustomFieldList(props: Props) {
   )
 
   const updateOrderMutation = api.customFieldDefinitions.updateOrder.useMutation({
-    onSuccess: () => {
-      utils.customFieldDefinitions.getByEmulator
-        .invalidate({ emulatorId: props.emulatorId })
-        .then(() => toast.success('Order updated successfully!'))
-
-      setIsDirty(false) // Reset dirty state on successful save
+    onSuccess: async () => {
+      await utils.customFieldDefinitions.getByEmulator.invalidate({ emulatorId: props.emulatorId })
+      setIsDirty(false)
+      toast.success('Order updated successfully!')
     },
     onError: (error) => {
       console.error('Error updating order:', error)
@@ -82,7 +80,7 @@ function CustomFieldList(props: Props) {
   })
 
   const handleDragEnd = (event: DragEndEvent) => {
-    if (!event.over || event.active.id === event.over.id) return
+    if (updateOrderMutation.isPending || !event.over || event.active.id === event.over.id) return
     const oldIndex = orderedFields.findIndex((field) => field.id === event.active.id)
     const newIndex = orderedFields.findIndex((field) => field.id === event.over?.id)
     if (oldIndex < 0 || newIndex < 0) return
@@ -220,7 +218,13 @@ function CustomFieldList(props: Props) {
       <div className="flex justify-end mb-4 space-x-2">
         {isReorderMode && isDirty && (
           <>
-            <Button variant="outline" icon={Undo} onClick={handleCancelReorder} size="sm">
+            <Button
+              variant="outline"
+              icon={Undo}
+              onClick={handleCancelReorder}
+              disabled={updateOrderMutation.isPending}
+              size="sm"
+            >
               Cancel Changes
             </Button>
             <Button
@@ -238,6 +242,7 @@ function CustomFieldList(props: Props) {
           variant="outline"
           icon={isReorderMode ? X : GripVertical}
           onClick={toggleReorderMode}
+          disabled={updateOrderMutation.isPending}
           size="sm"
         >
           {isReorderMode ? 'Finish Reordering' : 'Reorder Fields'}

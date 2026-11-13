@@ -6,10 +6,11 @@ import CustomFieldList from './CustomFieldList'
 import type * as DndCore from '@dnd-kit/core'
 
 interface MutationOptions {
-  onSuccess: () => void
+  onSuccess: () => Promise<void>
   onError: (error: Error) => void
 }
 const recorded = vi.hoisted(() => ({
+  invalidate: vi.fn<() => Promise<void>>(),
   context: vi.fn<(props: ComponentProps<typeof DndCore.DndContext>) => void>(),
   update: vi.fn<(options: MutationOptions) => void>(),
   mutate: vi.fn<(payload: { id: string; displayOrder: number }[]) => void>(),
@@ -27,7 +28,7 @@ vi.mock('@/lib/api', () => ({
   api: {
     useUtils: () => ({
       customFieldDefinitions: {
-        getByEmulator: { invalidate: vi.fn().mockResolvedValue(undefined) },
+        getByEmulator: { invalidate: recorded.invalidate },
       },
     }),
     customFieldDefinitions: {
@@ -90,12 +91,47 @@ function labels() {
   return screen.getAllByText(/^Field [AB]$/).map((element) => element.textContent)
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => {
+  vi.clearAllMocks()
+  recorded.invalidate.mockResolvedValue(undefined)
+})
 
 describe('custom field ordering sessions', () => {
   const first = field('field-a', 'Field A', 0)
   const second = field('field-b', 'Field B', 1)
   const callbacks = { onEdit: vi.fn(), onDeleteSuccess: vi.fn(), emulatorId: 'emulator-1' }
+
+  it('keeps the submitted draft until cache invalidation finishes', async () => {
+    const pending = Promise.withResolvers<void>()
+    recorded.invalidate.mockReturnValue(pending.promise)
+    const view = render(<CustomFieldList {...callbacks} customFields={[first, second]} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Reorder Fields' }))
+    drag(first.id, second.id)
+    const saved = recorded.update.mock.lastCall?.[0].onSuccess
+    if (!saved) throw new Error('Save callback was not registered')
+    let saving: Promise<void> | undefined
+    act(() => {
+      saving = saved()
+    })
+    expect(screen.getByRole('button', { name: 'Cancel Changes' })).toBeInTheDocument()
+    expect(labels()).toEqual(['Field B', 'Field A'])
+    view.rerender(
+      <CustomFieldList
+        {...callbacks}
+        customFields={[
+          { ...first, displayOrder: 1 },
+          { ...second, displayOrder: 0 },
+        ]}
+      />,
+    )
+    await act(async () => {
+      pending.resolve()
+      await saving
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Finish Reordering' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Reorder Fields' }))
+    expect(labels()).toEqual(['Field B', 'Field A'])
+  })
 
   it('shows refreshed server ordering when no reorder session is active', () => {
     const view = render(<CustomFieldList {...callbacks} customFields={[first, second]} />)

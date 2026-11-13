@@ -1,3 +1,4 @@
+import { format } from 'date-fns'
 import { useState } from 'react'
 import {
   Button,
@@ -55,7 +56,7 @@ function QuotaForm(props: FormProps) {
     weeklyQuota: props.apiKey.weeklyQuota,
     burstQuota: props.apiKey.burstQuota,
     expiresAt: props.apiKey.expiresAt
-      ? new Date(props.apiKey.expiresAt).toISOString().slice(0, 16)
+      ? format(new Date(props.apiKey.expiresAt), "yyyy-MM-dd'T'HH:mm")
       : null,
   }))
   const [dateError, setDateError] = useState<string | null>(null)

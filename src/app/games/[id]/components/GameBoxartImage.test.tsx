@@ -64,6 +64,15 @@ async function acknowledge(images: ImageResult) {
 beforeEach(() => vi.clearAllMocks())
 
 describe('game image acknowledgements', () => {
+  it.each(['boxartUrl', 'bannerUrl'] as const)('falls back to the available %s', (field) => {
+    const original = { ...game('one', null), [field]: 'https://example.com/fallback.webp' }
+    render(<GameBoxartImage game={original} />)
+    expect(screen.getByRole('img')).toHaveAttribute(
+      'data-source',
+      'https://example.com/fallback.webp',
+    )
+  })
+
   it('keeps a confirmed image until refreshed server images arrive', async () => {
     const original = game('one', 'https://example.com/one.webp')
     const view = render(<GameBoxartImage game={original} />)

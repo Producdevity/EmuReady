@@ -1,6 +1,6 @@
 'use client'
 
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { Button, Input, Modal, SelectInput } from '@/components/ui'
 import { Autocomplete } from '@/components/ui/form'
 import { api } from '@/lib/api'
@@ -24,26 +24,42 @@ interface UserOption {
 }
 
 function VerifyDeveloperModal(props: Props) {
+  const mutation = api.verifiedDevelopers.verifyDeveloper.useMutation()
+  function closeModal() {
+    if (!mutation.isPending) props.onClose()
+  }
   return (
     <Modal
       isOpen={props.isOpen}
-      onClose={props.onClose}
+      onClose={closeModal}
+      closeOnEscape={!mutation.isPending}
+      hideCloseButton={mutation.isPending}
       title="Verify Developer"
       size="md"
       closeOnBackdropClick={false}
     >
       <VerifyDeveloperForm
         key={String(props.isOpen)}
-        onClose={props.onClose}
+        onClose={closeModal}
         onSuccess={props.onSuccess}
+        mutation={mutation}
       />
     </Modal>
   )
 }
 
-type FormProps = Omit<Props, 'isOpen'>
+type FormProps = Omit<Props, 'isOpen'> & {
+  mutation: ReturnType<typeof api.verifiedDevelopers.verifyDeveloper.useMutation>
+}
 
 function VerifyDeveloperForm(props: FormProps) {
+  const active = useRef(false)
+  useEffect(() => {
+    active.current = true
+    return () => {
+      active.current = false
+    }
+  }, [])
   const [userId, setUserId] = useState<string | null>(null)
   const [emulatorId, setEmulatorId] = useState('')
   const [notes, setNotes] = useState('')
@@ -57,7 +73,7 @@ function VerifyDeveloperForm(props: FormProps) {
     sortDirection: 'asc',
   })
 
-  const verifyDeveloperMutation = api.verifiedDevelopers.verifyDeveloper.useMutation()
+  const verifyDeveloperMutation = props.mutation
 
   const loadUsers = async (query: string): Promise<UserOption[]> => {
     return await utils.users.searchUsers.fetch({
@@ -69,6 +85,7 @@ function VerifyDeveloperForm(props: FormProps) {
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
+    if (verifyDeveloperMutation.isPending) return
     setError('')
 
     if (!userId || !emulatorId) {
@@ -85,9 +102,10 @@ function VerifyDeveloperForm(props: FormProps) {
 
       toast.success('Developer verified successfully!')
       props.onSuccess()
+      if (active.current) props.onClose()
     } catch (err) {
       const errorMessage = getErrorMessage(err)
-      setError(errorMessage)
+      if (active.current) setError(errorMessage)
       toast.error(`Failed to verify developer: ${errorMessage}`)
     }
   }

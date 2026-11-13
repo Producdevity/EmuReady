@@ -67,7 +67,7 @@ function CreateBanForm(props: Props) {
   )
   const user = preselectedUserQuery.data
   const selectedUser: UserSearchResult | null = props.userId
-    ? user?.id === props.userId
+    ? user?.id === props.userId && user.name
       ? {
           id: user.id,
           name: user.name,

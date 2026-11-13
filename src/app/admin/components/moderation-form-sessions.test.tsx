@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { Role, type User } from '@orm'
@@ -6,8 +6,12 @@ import { AdminQuotaDialog } from '../api-access/components/AdminQuotaDialog'
 import CreateBanModal from '../user-bans/components/CreateBanModal'
 import EditVerifiedDeveloperModal from '../verified-developers/components/EditVerifiedDeveloperModal'
 
-let preselectedUser: Pick<User, 'id' | 'name' | 'role' | 'profileImage' | 'trustScore'> | undefined
-const createBan = vi.fn()
+const mocks = vi.hoisted(
+  (): {
+    preselectedUser: Pick<User, 'id' | 'name' | 'role' | 'profileImage' | 'trustScore'> | undefined
+    createBan: ReturnType<typeof vi.fn>
+  } => ({ preselectedUser: undefined, createBan: vi.fn() }),
+)
 vi.mock('@clerk/nextjs', () => ({ useUser: () => ({ user: { id: 'clerk-1' } }) }))
 vi.mock('@/lib/toast', () => ({ default: { error: vi.fn(), success: vi.fn() } }))
 vi.mock('@/lib/api', () => ({
@@ -20,9 +24,9 @@ vi.mock('@/lib/api', () => ({
         }),
       },
       searchUsers: { useQuery: () => ({ data: [], isFetching: false }) },
-      getUserById: { useQuery: () => ({ data: preselectedUser }) },
+      getUserById: { useQuery: () => ({ data: mocks.preselectedUser }) },
     },
-    userBans: { create: { useMutation: () => ({ mutate: createBan, isPending: false }) } },
+    userBans: { create: { useMutation: () => ({ mutate: mocks.createBan, isPending: false }) } },
     emulators: {
       get: {
         useQuery: () => ({ data: { emulators: [{ id: 'emulator-1', name: 'Emulator One' }] } }),
@@ -35,11 +39,47 @@ vi.mock('@/lib/api', () => ({
 }))
 
 beforeEach(() => {
-  preselectedUser = undefined
+  mocks.preselectedUser = undefined
   vi.clearAllMocks()
 })
 
 describe('quota form sessions', () => {
+  it('keeps an unchanged expiry at the same instant in a non-UTC timezone', async () => {
+    const previous = process.env.TZ
+    process.env.TZ = 'America/New_York'
+    try {
+      const onSubmit = vi.fn().mockResolvedValue(undefined)
+      const onClose = vi.fn()
+      render(
+        <AdminQuotaDialog
+          keyId="expiring"
+          keys={[
+            {
+              id: 'expiring',
+              name: 'Expiry',
+              expiresAt: new Date('2027-01-15T15:30:00Z'),
+              monthlyQuota: 100,
+              weeklyQuota: 20,
+              burstQuota: 5,
+            },
+          ]}
+          isSubmitting={false}
+          onSubmit={onSubmit}
+          onClose={onClose}
+        />,
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+      await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ expiresAt: '2027-01-15T15:30:00.000Z' }),
+        ),
+      )
+    } finally {
+      if (previous === undefined) delete process.env.TZ
+      else process.env.TZ = previous
+    }
+  })
+
   const key = {
     id: 'key-1',
     name: 'First key',
@@ -117,12 +157,24 @@ describe('verified developer sessions', () => {
 })
 
 describe('preselected ban targets', () => {
+  it('does not select an unnamed preselected user', () => {
+    mocks.preselectedUser = {
+      id: 'user-1',
+      name: null,
+      role: Role.USER,
+      profileImage: null,
+      trustScore: 10,
+    }
+    render(<CreateBanModal isOpen userId="user-1" onClose={vi.fn()} onSuccess={vi.fn()} />)
+    expect(screen.getByRole('button', { name: 'Ban User Permanently' })).toBeDisabled()
+  })
+
   const callbacks = { onClose: vi.fn(), onSuccess: vi.fn() }
 
   it('shows an asynchronously loaded target without copying it into form state', () => {
     const view = render(<CreateBanModal {...callbacks} isOpen userId="user-1" />)
     expect(screen.getByPlaceholderText('Search users by name or email...')).toHaveValue('')
-    preselectedUser = {
+    mocks.preselectedUser = {
       id: 'user-1',
       name: 'Target User',
       role: Role.USER,
@@ -136,7 +188,7 @@ describe('preselected ban targets', () => {
   })
 
   it('does not retain the previous user while a different target is loading', () => {
-    preselectedUser = {
+    mocks.preselectedUser = {
       id: 'user-1',
       name: 'First User',
       role: Role.USER,
