@@ -118,17 +118,30 @@ export function Autocomplete<T extends AutocompleteOptionBase>(props: Props<T>) 
     [externalInputRef],
   )
 
-  if (previousValue !== value) {
-    setPreviousValue(value)
-    if ((value != null && value !== '') || !clearingSelection) setInputDraft(null)
-    setClearingSelection(false)
-  }
-
   const matchingOption =
     staticItems?.find((item) => optionToValue(item) === value) ??
     searchItems?.find((item) => optionToValue(item) === value) ??
     initialItems.find((item) => optionToValue(item) === value) ??
     (selectedOption && optionToValue(selectedOption) === value ? selectedOption : null)
+
+  if (previousValue !== value) {
+    setPreviousValue(value)
+    if ((value != null && value !== '') || !clearingSelection) {
+      setInputDraft(null)
+      setSelectedOption(matchingOption)
+      setSearchItems([])
+      setIsLoading(false)
+      setIsOpen(false)
+    }
+    setClearingSelection(false)
+  }
+
+  useLayoutEffect(() => {
+    if (inputDraft !== null) return
+    ++requestSequence.current
+    if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current)
+  }, [inputDraft, value])
+
   const inputValue = inputDraft ?? (matchingOption ? optionToLabel(matchingOption) : '')
   const lowerQuery = inputValue.toLowerCase()
   const suggestions = loadItems

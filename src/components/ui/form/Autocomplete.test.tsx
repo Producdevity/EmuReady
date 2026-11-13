@@ -53,6 +53,34 @@ const gameProps = {
 }
 
 describe('Autocomplete async response ordering', () => {
+  it.each(['debounce', 'request'] as const)(
+    'discards a pending %s when the parent selects another option',
+    async (stage) => {
+      vi.useFakeTimers()
+      const pending = Promise.withResolvers<TestOption[]>()
+      const loadItems = vi.fn((query: string) => (query ? pending.promise : Promise.resolve([])))
+      const props = { ...defaultProps, loadItems, items: mockStaticItems }
+      const view = render(<Autocomplete {...props} />)
+      try {
+        await act(async () => {})
+        fireEvent.change(screen.getByRole('combobox'), { target: { value: 'App' } })
+        if (stage === 'request') await act(async () => vi.advanceTimersByTime(300))
+
+        view.rerender(<Autocomplete {...props} value="2" />)
+        expect(screen.getByRole('combobox')).toHaveValue('Banana')
+        await act(async () => vi.advanceTimersByTime(300))
+        await act(async () => pending.resolve([{ id: '1', name: 'Apple' }]))
+
+        expect(screen.getByRole('combobox')).toHaveValue('Banana')
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+        if (stage === 'debounce') expect(loadItems).not.toHaveBeenCalledWith('App')
+      } finally {
+        pending.resolve([])
+        vi.useRealTimers()
+      }
+    },
+  )
+
   it('searches the selected label instead of reopening the prior async results', async () => {
     const loadItems = vi.fn(async (query: string) =>
       query === 'App'
