@@ -23,83 +23,84 @@ interface Props {
 }
 
 const logoOptions = [
-  'aethersx2.png',
-  'aps3e.png',
-  'armsx2.png',
+  'aethersx2.webp',
+  'aps3e.webp',
+  'armsx2.webp',
   'armsx3.webp',
   'astris.webp',
   'ax360e.webp',
-  'azahar.png',
+  'azahar.webp',
   'bannerhub.webp',
   'bizhawk.webp',
-  'cemu.png',
-  'citra.png',
-  'citron.png',
-  'cxbx.png',
-  'dolphin.png',
-  'dolphin_mmjr.png',
-  'drastic.png',
+  'cemu.webp',
+  'citra.webp',
+  'citron.webp',
+  'cxbx.webp',
+  'dolphin.webp',
+  'dolphin_mmjr.webp',
+  'drastic.webp',
   'droiddeck.webp',
-  'duckstation.png',
-  'eden.png',
+  'duckstation.webp',
+  'eden.webp',
   'epsxe.webp',
-  'exagear.png',
+  'exagear.webp',
   'fin.webp',
-  'flycast.png',
-  'gamefusion.png',
-  'gamehub.png',
-  'gamenative.png',
+  'flycast.webp',
+  'gamefusion.webp',
+  'gamehub.webp',
+  'gamenative.webp',
   'hakux.webp',
-  'horizon.png',
+  'horizon.webp',
   'idtech4amm.webp',
   'joiplay.webp',
-  'kenjinx.png',
+  'kenjinx.webp',
   'lemon.webp',
-  'lemuroid.png',
+  'lemuroid.webp',
   'lichii.webp',
-  'lime3ds.png',
-  'mame.png',
+  'lime3ds.webp',
+  'mame.webp',
   'manicemu.webp',
-  'melonds.png',
+  'melonds.webp',
   'melondualds.webp',
-  'melonx.png',
-  'micewine.png',
-  'mobox.png',
-  'nethersx2.png',
+  'melonx.webp',
+  'micewine.webp',
+  'mobox.webp',
+  'nethersx2.webp',
   'nx.webp',
   'openmw-ds.webp',
-  'pcsx2.png',
+  'pcsx2.webp',
   'picpic.webp',
-  'pluvia.png',
-  'ppsspp.png',
-  'redream.png',
-  'retroarch.png',
+  'pluvia.webp',
+  'ppsspp.webp',
+  'redream.webp',
+  'retroarch.webp',
   'rmg.webp',
-  'rpcs3.png',
-  'rpcsx.png',
-  'ryujinx.png',
-  'shadps4.png',
-  'skyline.png',
-  'sudachi.png',
-  'sumi.png',
-  'torzu.png',
+  'rpcs3.webp',
+  'rpcsx.webp',
+  'ryujinx.webp',
+  'shadps4.webp',
+  'skyemu.webp',
+  'skyline.webp',
+  'sudachi.webp',
+  'sumi.webp',
+  'torzu.webp',
   'touchhle.webp',
-  'utm.png',
+  'utm.webp',
   'vita3k-plus.webp',
-  'vita3k.png',
+  'vita3k.webp',
   'watermelonds.webp',
-  'winlator.png',
+  'winlator.webp',
   'winnative.webp',
   'wpr.webp',
   'x1-box.webp',
   'x360mobile.webp',
-  'xbsx2.png',
-  'xemu.png',
+  'xbsx2.webp',
+  'xemu.webp',
   'xendroid-plus.webp',
   'xendroid.webp',
-  'xenia.png',
-  'yaba.png',
-  'yuzu.png',
+  'xenia.webp',
+  'yaba.webp',
+  'yuzu.webp',
   'zomdroid.webp',
 ] as const
 
@@ -138,6 +139,7 @@ function EmulatorEditForm(props: Props) {
   })
 
   const watchedLogo = watch('logo')
+  const selectedLogo = watchedLogo?.replace(/\.png$/, '.webp')
 
   const onSubmit = (data: UpdateEmulatorFormData) => {
     setIsSubmitting(true)
@@ -245,11 +247,12 @@ function EmulatorEditForm(props: Props) {
             <motion.button
               key={logoFileName}
               type="button"
+              aria-pressed={selectedLogo === logoFileName}
               onClick={() => handleLogoSelect(logoFileName)}
               className={`
                 relative p-2 rounded-lg border-2 transition-all duration-200 hover:scale-105
                 ${
-                  watchedLogo === logoFileName
+                  selectedLogo === logoFileName
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                     : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                 }
@@ -265,7 +268,7 @@ function EmulatorEditForm(props: Props) {
                 showLogo={true}
                 size="sm"
               />
-              {watchedLogo === logoFileName && (
+              {selectedLogo === logoFileName && (
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
