@@ -136,6 +136,7 @@ describe('generated report integer input contracts', () => {
         maximum: 256,
       })
       expect(schema.properties.memorySize).not.toHaveProperty('exclusiveMinimum')
+      expect(schema.properties.memorySize).not.toHaveProperty('exclusiveMaximum')
     },
   )
 })
