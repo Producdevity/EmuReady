@@ -72,7 +72,7 @@ cpu_accuracy=1
 [Renderer]
 backend=0
 use_disk_shader_cache=false
-resolution_setup=4
+resolution_setup=6
 dyna_state=2
 use_video_framerate=true
 
