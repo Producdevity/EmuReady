@@ -72,6 +72,7 @@ function ListingsPage() {
   const listingsState = useListingsState()
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+  const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(false)
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
     storageKeys.showSystemIcons,
     true,
@@ -242,8 +243,8 @@ function ListingsPage() {
             onPerformanceChange={handlePerformanceChange}
             onSearchChange={handleSearchChange}
             onClearAll={handleClearAllFilters}
-            isCollapsed={isMobileSidebarOpen}
-            onToggleCollapse={() => setIsMobileSidebarOpen((prevState) => !prevState)}
+            isCollapsed={isFiltersCollapsed}
+            onToggleCollapse={() => setIsFiltersCollapsed((prevState) => !prevState)}
             userPreferences={userPreferencesQuery.data}
             shouldUseUserDeviceFilter={preferred.shouldUseUserDeviceFilter}
             userDeviceIds={preferred.userDeviceIds}
