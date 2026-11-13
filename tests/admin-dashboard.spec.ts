@@ -28,8 +28,7 @@ test.describe('Admin Dashboard', () => {
 
     await expect(mainContent.getByRole('heading', { name: 'Platform Stats' })).toBeVisible()
     for (const label of ['New Users:', 'Handheld Reports:', 'PC Reports:']) {
-      const statRow = mainContent.getByText(label, { exact: true }).locator('..')
-      await expect(statRow.getByText(/^\d+$/)).toBeVisible()
+      await expect(mainContent.getByText(new RegExp(`^${label}\\s*\\d+`))).toBeVisible()
     }
   })
 
