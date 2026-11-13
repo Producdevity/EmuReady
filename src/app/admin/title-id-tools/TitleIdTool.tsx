@@ -1,6 +1,6 @@
 'use client'
 
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useMemo, useState } from 'react'
 import { AdminTableNoResults } from '@/components/admin'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -23,26 +23,15 @@ const EMPTY_PROVIDERS: TitleIdProviderInfo[] = []
 
 function TitleIdTool() {
   const providersQuery = api.titleIdTools.providers.useQuery()
-  const [selectedPlatformId, setSelectedPlatformId] = useState<TitleIdPlatformId | null>(null)
+  const [preferredPlatformId, setPreferredPlatformId] = useState<TitleIdPlatformId | null>(null)
   const [gameName, setGameName] = useState('')
   const [maxResults, setMaxResults] = useState<number>(5)
 
   const providers = providersQuery.data?.providers ?? EMPTY_PROVIDERS
 
-  useEffect(() => {
-    if (providers.length === 0) return
-    if (selectedPlatformId && providers.some((provider) => provider.id === selectedPlatformId)) {
-      return
-    }
-
-    const defaultProvider = providers[0]
-    if (defaultProvider) setSelectedPlatformId(defaultProvider.id)
-  }, [providers, selectedPlatformId])
-
-  const selectedProvider = useMemo(() => {
-    if (!selectedPlatformId) return null
-    return providers.find((provider) => provider.id === selectedPlatformId) ?? null
-  }, [providers, selectedPlatformId])
+  const selectedProvider =
+    providers.find((provider) => provider.id === preferredPlatformId) ?? providers[0] ?? null
+  const selectedPlatformId = selectedProvider?.id ?? null
 
   const statsQueryEnabled = Boolean(selectedProvider?.supportsStats)
 
@@ -75,9 +64,8 @@ function TitleIdTool() {
   }, [selectedPlatformId, gameName])
 
   function handlePlatformChange(value: string) {
-    if (TITLE_ID_PLATFORM_IDS.includes(value as TitleIdPlatformId)) {
-      return setSelectedPlatformId(value as TitleIdPlatformId)
-    }
+    const platformId = TITLE_ID_PLATFORM_IDS.find((id) => id === value)
+    if (platformId) return setPreferredPlatformId(platformId)
 
     toast.error('Unsupported title ID provider selected')
   }

@@ -42,12 +42,6 @@ function VoteAuthorSection() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  useEffect(() => {
-    if (authorSearchQuery.data && authorSearch.length >= 2 && !selectedAuthor) {
-      setShowDropdown(true)
-    }
-  }, [authorSearchQuery.data, authorSearch, selectedAuthor])
-
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -62,11 +56,7 @@ function VoteAuthorSection() {
           value={authorSearch}
           onChange={(ev) => {
             setAuthorSearch(ev.target.value)
-            if (!selectedAuthor && ev.target.value.length >= 2) {
-              setShowDropdown(true)
-            } else if (ev.target.value.length < 2) {
-              setShowDropdown(false)
-            }
+            setShowDropdown(ev.target.value.length >= 2)
             if (
               selectedAuthor &&
               ev.target.value !== (selectedAuthor.name || selectedAuthor.email)
@@ -77,28 +67,31 @@ function VoteAuthorSection() {
           placeholder="Search for the targeted author..."
           leftIcon={<Search className="w-5 h-5" />}
         />
-        {showDropdown && authorSearchQuery.data && authorSearchQuery.data.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
-            {authorSearchQuery.data.map((user) => (
-              <button
-                key={user.id}
-                type="button"
-                onClick={() => handleAuthorSelect(user)}
-                className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {user.name || 'Unknown'}
+        {showDropdown &&
+          !selectedAuthor &&
+          authorSearchQuery.data &&
+          authorSearchQuery.data.length > 0 && (
+            <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
+              {authorSearchQuery.data.map((user) => (
+                <button
+                  key={user.id}
+                  type="button"
+                  onClick={() => handleAuthorSelect(user)}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        {user.name || 'Unknown'}
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{user.email}</div>
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">{user.email}</div>
+                    <Badge>{user.role}</Badge>
                   </div>
-                  <Badge>{user.role}</Badge>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
+                </button>
+              ))}
+            </div>
+          )}
 
         {selectedAuthor && (
           <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded border flex items-center justify-between">

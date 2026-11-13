@@ -415,3 +415,23 @@ describe('MarkdownEditor Resize Functionality', () => {
     })
   })
 })
+
+describe('MarkdownEditor toolbar', () => {
+  it('preserves toolbar focus when the controlled value changes', () => {
+    const onChange = vi.fn()
+    const view = render(<MarkdownEditor value="First draft" onChange={onChange} />)
+    const bold = screen.getByRole('button', { name: 'Bold' })
+    bold.focus()
+
+    view.rerender(<MarkdownEditor value="Updated draft" onChange={onChange} />)
+
+    expect(screen.getByRole('button', { name: 'Bold' })).toBe(bold)
+    expect(bold).toHaveFocus()
+  })
+
+  it('keeps formatting actions disabled when the editor is disabled', () => {
+    render(<MarkdownEditor value="Read only" onChange={vi.fn()} disabled />)
+    expect(screen.getByRole('button', { name: 'Bold' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Link' })).toBeDisabled()
+  })
+})

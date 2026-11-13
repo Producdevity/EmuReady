@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { StrictMode, useState } from 'react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { Autocomplete, type AutocompleteOptionBase } from './Autocomplete'
 
@@ -19,7 +20,86 @@ interface GameOption extends AutocompleteOptionBase {
   }
 }
 
+const mockStaticItems: TestOption[] = [
+  { id: '1', name: 'Apple', category: 'fruit' },
+  { id: '2', name: 'Banana', category: 'fruit' },
+  { id: '3', name: 'Carrot', category: 'vegetable' },
+  { id: '4', name: 'Date', category: 'fruit' },
+  { id: '5', name: 'Eggplant', category: 'vegetable' },
+]
+
+const mockGameItems: GameOption[] = [
+  { id: 'g1', title: 'Super Mario Bros', system: { id: 's1', name: 'NES' } },
+  { id: 'g2', title: 'The Legend of Zelda', system: { id: 's1', name: 'NES' } },
+  {
+    id: 'g3',
+    title: 'Sonic the Hedgehog',
+    system: { id: 's2', name: 'Genesis' },
+  },
+]
+
+const defaultProps = {
+  optionToValue: (item: TestOption) => item.id,
+  optionToLabel: (item: TestOption) => item.name,
+  onChange: vi.fn(),
+}
+
+const gameProps = {
+  label: 'Game',
+  placeholder: 'Select a game...',
+  optionToValue: (game: GameOption) => game.id,
+  optionToLabel: (game: GameOption) => game.title,
+  onChange: vi.fn(),
+}
+
 describe('Autocomplete async response ordering', () => {
+  it.each(['debounce', 'request'] as const)(
+    'discards a pending %s when the parent selects another option',
+    async (stage) => {
+      vi.useFakeTimers()
+      const pending = Promise.withResolvers<TestOption[]>()
+      const loadItems = vi.fn((query: string) => (query ? pending.promise : Promise.resolve([])))
+      const props = { ...defaultProps, loadItems, items: mockStaticItems }
+      const view = render(<Autocomplete {...props} />)
+      try {
+        await act(async () => {})
+        fireEvent.change(screen.getByRole('combobox'), { target: { value: 'App' } })
+        if (stage === 'request') await act(async () => vi.advanceTimersByTime(300))
+
+        view.rerender(<Autocomplete {...props} value="2" />)
+        expect(screen.getByRole('combobox')).toHaveValue('Banana')
+        await act(async () => vi.advanceTimersByTime(300))
+        await act(async () => pending.resolve([{ id: '1', name: 'Apple' }]))
+
+        expect(screen.getByRole('combobox')).toHaveValue('Banana')
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+        if (stage === 'debounce') expect(loadItems).not.toHaveBeenCalledWith('App')
+      } finally {
+        pending.resolve([])
+        vi.useRealTimers()
+      }
+    },
+  )
+
+  it('searches the selected label instead of reopening the prior async results', async () => {
+    const loadItems = vi.fn(async (query: string) =>
+      query === 'App'
+        ? [
+            { id: '1', name: 'Apple' },
+            { id: '2', name: 'Application' },
+          ]
+        : [],
+    )
+    render(<Autocomplete {...defaultProps} loadItems={loadItems} debounceTime={0} />)
+    const input = screen.getByRole('combobox')
+    fireEvent.change(input, { target: { value: 'App' } })
+    fireEvent.mouseDown(await screen.findByRole('option', { name: 'Apple' }))
+    fireEvent.blur(input)
+    fireEvent.focus(input)
+    await waitFor(() => expect(loadItems).toHaveBeenCalledWith('Apple'))
+    expect(screen.queryByRole('option', { name: 'Application' })).not.toBeInTheDocument()
+  })
+
   it('keeps a newer lookup when the initial empty lookup completes last', async () => {
     const initial = Promise.withResolvers<TestOption[]>()
     const typed = Promise.withResolvers<TestOption[]>()
@@ -71,38 +151,6 @@ describe('Autocomplete async response ordering', () => {
     },
   )
 })
-
-const mockStaticItems: TestOption[] = [
-  { id: '1', name: 'Apple', category: 'fruit' },
-  { id: '2', name: 'Banana', category: 'fruit' },
-  { id: '3', name: 'Carrot', category: 'vegetable' },
-  { id: '4', name: 'Date', category: 'fruit' },
-  { id: '5', name: 'Eggplant', category: 'vegetable' },
-]
-
-const mockGameItems: GameOption[] = [
-  { id: 'g1', title: 'Super Mario Bros', system: { id: 's1', name: 'NES' } },
-  { id: 'g2', title: 'The Legend of Zelda', system: { id: 's1', name: 'NES' } },
-  {
-    id: 'g3',
-    title: 'Sonic the Hedgehog',
-    system: { id: 's2', name: 'Genesis' },
-  },
-]
-
-const defaultProps = {
-  optionToValue: (item: TestOption) => item.id,
-  optionToLabel: (item: TestOption) => item.name,
-  onChange: vi.fn(),
-}
-
-const gameProps = {
-  label: 'Game',
-  placeholder: 'Select a game...',
-  optionToValue: (game: GameOption) => game.id,
-  optionToLabel: (game: GameOption) => game.title,
-  onChange: vi.fn(),
-}
 
 describe('Autocomplete Component', () => {
   let user: ReturnType<typeof userEvent.setup>
@@ -520,7 +568,7 @@ describe('Autocomplete Component', () => {
     const mockLoadItems = vi.fn()
 
     beforeEach(() => {
-      mockLoadItems.mockReset()
+      mockLoadItems.mockClear()
     })
 
     it('should call loadItems when typing', async () => {
@@ -663,7 +711,7 @@ describe('Autocomplete Component', () => {
         secondResolve = resolve
       })
 
-      mockLoadItems.mockImplementation((query: string) => {
+      mockLoadItems.mockImplementation((query) => {
         if (query === 'ap') return firstPromise
         if (query === 'ba') return secondPromise
         return Promise.resolve([])
@@ -863,6 +911,75 @@ describe('Autocomplete Component', () => {
         expect(screen.getByText('Super Mario Bros')).toBeInTheDocument()
         expect(screen.queryByText('The Legend of Zelda')).not.toBeInTheDocument()
       })
+    })
+  })
+
+  describe('selection and request state', () => {
+    it('keeps a typed search when its controlled selection is cleared', async () => {
+      function Controlled() {
+        const [value, setValue] = useState<string | null>('1')
+        return (
+          <Autocomplete
+            {...defaultProps}
+            items={mockStaticItems}
+            value={value}
+            onChange={setValue}
+          />
+        )
+      }
+      render(<Controlled />)
+      const input = screen.getByRole('combobox')
+      await user.type(input, 'x')
+      expect(input).toHaveValue('Applex')
+    })
+
+    it('keeps the draft when the form maps a local selection clear to an empty string', async () => {
+      function Controlled() {
+        const [value, setValue] = useState('1')
+        return (
+          <Autocomplete
+            {...defaultProps}
+            items={mockStaticItems}
+            value={value}
+            onChange={(next) => setValue(next ?? '')}
+          />
+        )
+      }
+      render(<Controlled />)
+      const input = screen.getByRole('combobox')
+      await user.type(input, 'x')
+      expect(input).toHaveValue('Applex')
+    })
+
+    it('replaces a draft when the parent selects another item', async () => {
+      const { rerender } = render(
+        <Autocomplete {...defaultProps} items={mockStaticItems} value="1" />,
+      )
+      await user.type(screen.getByRole('combobox'), 'x')
+      rerender(<Autocomplete {...defaultProps} items={mockStaticItems} value="2" />)
+      expect(screen.getByRole('combobox')).toHaveValue('Banana')
+    })
+
+    it('updates open static options when same-length data changes', async () => {
+      const { rerender } = render(
+        <Autocomplete {...defaultProps} items={[{ id: '1', name: 'Apple' }]} />,
+      )
+      await user.click(screen.getByRole('combobox'))
+      expect(screen.getByRole('option', { name: 'Apple' })).toBeInTheDocument()
+      rerender(<Autocomplete {...defaultProps} items={[{ id: '2', name: 'Banana' }]} />)
+      expect(screen.getByRole('option', { name: 'Banana' })).toBeInTheDocument()
+      expect(screen.queryByRole('option', { name: 'Apple' })).not.toBeInTheDocument()
+    })
+
+    it('loads an initial selected label once in Strict Mode', async () => {
+      const loadItems = vi.fn().mockResolvedValue(mockStaticItems)
+      render(
+        <StrictMode>
+          <Autocomplete {...defaultProps} loadItems={loadItems} value="1" />
+        </StrictMode>,
+      )
+      await waitFor(() => expect(screen.getByRole('combobox')).toHaveValue('Apple'))
+      expect(loadItems).toHaveBeenCalledTimes(1)
     })
   })
 

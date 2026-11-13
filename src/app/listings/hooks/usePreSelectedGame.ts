@@ -1,51 +1,36 @@
-import { useEffect, useState } from 'react'
-import { type UseFormReturn, type Path } from 'react-hook-form'
+import { useEffect, useRef } from 'react'
 import { api } from '@/lib/api'
 import { type GameOption } from '../components/shared'
 
-interface UsePreSelectedGameParams<TFormValues extends { gameId: string }> {
+interface Params {
   gameIdFromUrl: string | null
-  form: UseFormReturn<TFormValues>
   onGameSelect: (game: GameOption) => void
   onSearchTermChange: (term: string) => void
 }
 
-export function usePreSelectedGame<TFormValues extends { gameId: string }>({
-  gameIdFromUrl,
-  form,
-  onGameSelect,
-  onSearchTermChange,
-}: UsePreSelectedGameParams<TFormValues>) {
-  const [isInitialGameLoaded, setIsInitialGameLoaded] = useState(false)
-
-  const preSelectedGameQuery = api.games.byId.useQuery(
-    { id: gameIdFromUrl! },
-    { enabled: !!gameIdFromUrl && !isInitialGameLoaded },
+export function usePreSelectedGame(params: Params) {
+  const { gameIdFromUrl, onGameSelect, onSearchTermChange } = params
+  const preselection = useRef({ gameId: gameIdFromUrl, applied: false })
+  const query = api.games.byId.useQuery(
+    { id: gameIdFromUrl ?? '' },
+    { enabled: Boolean(gameIdFromUrl) },
   )
+  const game = query.data
 
   useEffect(() => {
-    if (preSelectedGameQuery.data && gameIdFromUrl && !isInitialGameLoaded) {
-      const gameOption: GameOption = {
-        id: preSelectedGameQuery.data.id,
-        title: preSelectedGameQuery.data.title,
-        system: preSelectedGameQuery.data.system,
-        status: preSelectedGameQuery.data.status,
-        imageUrl: preSelectedGameQuery.data.imageUrl ?? undefined,
-        boxartUrl: preSelectedGameQuery.data.boxartUrl ?? undefined,
-      }
-      onGameSelect(gameOption)
-      form.setValue('gameId' as Path<TFormValues>, preSelectedGameQuery.data.id as never)
-      setIsInitialGameLoaded(true)
-      onSearchTermChange(preSelectedGameQuery.data.title)
+    if (preselection.current.gameId !== gameIdFromUrl) {
+      preselection.current = { gameId: gameIdFromUrl, applied: false }
     }
-  }, [
-    preSelectedGameQuery.data,
-    gameIdFromUrl,
-    isInitialGameLoaded,
-    form,
-    onGameSelect,
-    onSearchTermChange,
-  ])
-
-  return { isInitialGameLoaded, preSelectedGameQuery }
+    if (!game || game.id !== gameIdFromUrl || preselection.current.applied) return
+    preselection.current.applied = true
+    onGameSelect({
+      id: game.id,
+      title: game.title,
+      system: game.system,
+      status: game.status,
+      imageUrl: game.imageUrl ?? undefined,
+      boxartUrl: game.boxartUrl ?? undefined,
+    })
+    onSearchTermChange(game.title)
+  }, [game, gameIdFromUrl, onGameSelect, onSearchTermChange])
 }

@@ -150,8 +150,10 @@ function AddPcListingPage() {
 
   usePreSelectedGame({
     gameIdFromUrl,
-    form,
-    onGameSelect: setSelectedGame,
+    onGameSelect: (game) => {
+      form.setValue('gameId', game.id)
+      setSelectedGame(game)
+    },
     onSearchTermChange: setGameSearchTerm,
   })
 

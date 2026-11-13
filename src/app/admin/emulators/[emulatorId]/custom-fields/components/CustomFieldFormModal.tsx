@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useRef } from 'react'
-import { useForm, Controller, useFieldArray } from 'react-hook-form'
+import { useForm, Controller, useFieldArray, useWatch } from 'react-hook-form'
 import { toSnakeCase } from 'remeda'
 import { z } from 'zod'
 import {
@@ -70,7 +70,7 @@ function CustomFieldFormModal(props: Props) {
     { enabled: !!props.emulatorId },
   )
 
-  const { control, register, handleSubmit, reset, watch, setValue, formState } =
+  const { control, register, handleSubmit, reset, setValue, formState } =
     useForm<CustomFieldFormValues>({
       resolver: zodResolver(customFieldFormSchema),
       defaultValues: {
@@ -90,8 +90,26 @@ function CustomFieldFormModal(props: Props) {
       },
     })
 
-  const selectedFieldType = watch('type')
-  const watchedLabel = watch('label')
+  const [
+    selectedFieldType,
+    watchedLabel,
+    rangeMin,
+    rangeMax,
+    rangeUnit,
+    rangeDecimals,
+    defaultValue,
+  ] = useWatch({
+    control,
+    name: [
+      'type',
+      'label',
+      'rangeMin',
+      'rangeMax',
+      'rangeUnit',
+      'rangeDecimals',
+      'defaultValue',
+    ] as const,
+  })
   const { fields, append, remove, update } = useFieldArray({ control, name: 'options' })
 
   // Autopopulate field name from label
@@ -447,11 +465,15 @@ function CustomFieldFormModal(props: Props) {
           {/* Use shared RangeFieldConfig for RANGE type */}
           {selectedFieldType === CustomFieldType.RANGE && (
             <RangeFieldConfig
-              rangeMin={watch('rangeMin')}
-              rangeMax={watch('rangeMax')}
-              rangeUnit={watch('rangeUnit')}
-              rangeDecimals={watch('rangeDecimals')}
-              defaultValue={watch('defaultValue') as number | null}
+              rangeMin={rangeMin}
+              rangeMax={rangeMax}
+              rangeUnit={rangeUnit}
+              rangeDecimals={rangeDecimals}
+              defaultValue={
+                typeof defaultValue === 'number' || typeof defaultValue === 'string'
+                  ? defaultValue
+                  : null
+              }
               errors={rangeErrors}
               onChange={handleRangeChange}
             />

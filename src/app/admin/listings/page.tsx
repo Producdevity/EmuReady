@@ -37,6 +37,7 @@ import {
 import { useAdminTable, useAdminFilters } from '@/hooks/admin'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
+import { BooleanPreferenceSchema } from '@/schemas/preferences'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getGameImageUrl from '@/utils/images/getGameImageUrl'
 import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
@@ -87,6 +88,7 @@ function AdminListingsPage() {
   const [showSystemIcons, setShowSystemIcons, isSystemIconsHydrated] = useLocalStorage(
     storageKeys.showSystemIcons,
     true,
+    BooleanPreferenceSchema,
   )
 
   const emulatorLogos = useEmulatorLogos()
