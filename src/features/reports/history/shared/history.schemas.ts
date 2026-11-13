@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { ListingType } from '@/schemas/common'
-import { PaginationResultSchema } from '@/schemas/pagination'
+import { PaginationResultSchema, refinePaginationOffset } from '@/schemas/pagination'
 import { ApprovalStatus } from '@orm'
 
 export const GetReportHistorySchema = z
@@ -11,10 +11,7 @@ export const GetReportHistorySchema = z
     search: z.string().trim().max(100).default(''),
     status: z.nativeEnum(ApprovalStatus).optional(),
   })
-  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
-    message: 'Pagination offset exceeds the supported range',
-    path: ['page'],
-  })
+  .superRefine(refinePaginationOffset)
 
 export const ReportHistoryOutputSchema = z.object({
   items: z.array(

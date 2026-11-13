@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { JsonValueSchema } from '@/schemas/common'
 import { CreateListingBaseSchema, CreatePcListingBaseSchema } from '@/schemas/listingCreate'
-import { PaginationResultSchema } from '@/schemas/pagination'
+import { PaginationResultSchema, refinePaginationOffset } from '@/schemas/pagination'
 import { ReportReason, ReportStatus, PcOs, CustomFieldType, NotificationType } from '@orm'
 
 const MOBILE_SEARCH_QUERY_MAX_LENGTH = 100
@@ -401,10 +401,7 @@ export const GetListingsSchema = z
       .optional()
       .describe('Search listings by game name'),
   })
-  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
-    message: 'Pagination offset exceeds the supported range',
-    path: ['page'],
-  })
+  .superRefine(refinePaginationOffset)
   .optional()
   .describe('Get listings with optional filters and pagination')
 
@@ -424,10 +421,7 @@ export const GetGamesSchema = z
       .transform((val) => val ?? 1),
     limit: z.number().int().min(1).max(50).default(20),
   })
-  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
-    message: 'Pagination offset exceeds the supported range',
-    path: ['page'],
-  })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export type GetGamesInput = z.infer<typeof GetGamesSchema>
@@ -510,10 +504,7 @@ export const GetNotificationsSchema = z
       .describe('Number of results per page (1-50)'),
     unreadOnly: z.boolean().default(false).describe('Show only unread notifications'),
   })
-  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
-    message: 'Pagination offset exceeds the supported range',
-    path: ['page'],
-  })
+  .superRefine(refinePaginationOffset)
   .optional()
   .describe('Get notifications with optional filters and pagination')
 
@@ -587,10 +578,7 @@ export const GetMyVerificationsSchema = z
     limit: z.number().int().min(1).max(100).optional(),
     page: z.number().int().safe().min(1).optional(),
   })
-  .refine((input) => Number.isSafeInteger(((input.page ?? 1) - 1) * (input.limit ?? 20)), {
-    message: 'Pagination offset exceeds the supported range',
-    path: ['page'],
-  })
+  .superRefine(refinePaginationOffset)
 
 // PC Listings schemas
 export const CreatePcListingSchema = CreatePcListingBaseSchema
@@ -632,10 +620,7 @@ export const GetPcListingsSchema = z
     minMemory: z.number().min(1).max(256).optional(),
     maxMemory: z.number().min(1).max(256).optional(),
   })
-  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
-    message: 'Pagination offset exceeds the supported range',
-    path: ['page'],
-  })
+  .superRefine(refinePaginationOffset)
 
 export const GetPcPresetsSchema = z.object({
   limit: z.number().int().min(1).max(50).default(20),
@@ -681,10 +666,7 @@ export const MobileAdminGetPendingListingsSchema = z
       .transform((val) => val ?? 1),
     limit: z.number().int().min(1).max(100).default(20),
   })
-  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
-    message: 'Pagination offset exceeds the supported range',
-    path: ['page'],
-  })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export const MobileAdminApproveListingSchema = z.object({
@@ -709,10 +691,7 @@ export const MobileAdminGetPendingGamesSchema = z
       .transform((val) => val ?? 1),
     limit: z.number().int().min(1).max(100).default(20),
   })
-  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
-    message: 'Pagination offset exceeds the supported range',
-    path: ['page'],
-  })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export const MobileAdminApproveGameSchema = z.object({
@@ -737,10 +716,7 @@ export const MobileAdminGetReportsSchema = z
       .transform((val) => val ?? 1),
     limit: z.number().int().min(1).max(100).default(20),
   })
-  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
-    message: 'Pagination offset exceeds the supported range',
-    path: ['page'],
-  })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export const MobileAdminUpdateReportStatusSchema = z.object({
@@ -762,10 +738,7 @@ export const MobileAdminGetUserBansSchema = z
       .transform((val) => val ?? 1),
     limit: z.number().int().min(1).max(100).default(20),
   })
-  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
-    message: 'Pagination offset exceeds the supported range',
-    path: ['page'],
-  })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export const MobileAdminCreateUserBanSchema = z.object({

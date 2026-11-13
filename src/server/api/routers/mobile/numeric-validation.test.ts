@@ -248,6 +248,15 @@ describe.each(paginatedCatalogs)('mobile $name pagination', (catalog) => {
     vi.clearAllMocks()
     await expect(catalog.get({ page: page + 1, limit: catalog.maxLimit })).rejects.toMatchObject({
       code: 'BAD_REQUEST',
+      cause: {
+        issues: [
+          {
+            code: 'custom',
+            message: 'Pagination offset exceeds the supported range',
+            path: ['page'],
+          },
+        ],
+      },
     })
     expectNoDatabaseCalls()
   })
