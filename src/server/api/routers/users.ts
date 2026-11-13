@@ -15,6 +15,7 @@ import {
 } from '@/schemas/user'
 import {
   createTRPCRouter,
+  manageUsersProcedure,
   permissionProcedure,
   protectedProcedure,
   publicProcedure,
@@ -862,16 +863,14 @@ export const usersRouter = createTRPCRouter({
       return updatedUser
     }),
 
-  delete: permissionProcedure(PERMISSIONS.MANAGE_USERS)
-    .input(DeleteUserSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Prevent self-deletion
-      if (input.userId === ctx.session.user.id) return ResourceError.user.cannotDeleteSelf()
+  delete: manageUsersProcedure.input(DeleteUserSchema).mutation(async ({ ctx, input }) => {
+    // Prevent self-deletion
+    if (input.userId === ctx.session.user.id) return ResourceError.user.cannotDeleteSelf()
 
-      await ctx.prisma.user.delete({ where: { id: input.userId } })
+    await ctx.prisma.user.delete({ where: { id: input.userId } })
 
-      return { success: true }
-    }),
+    return { success: true }
+  }),
 
   searchUsers: permissionProcedure(PERMISSIONS.VIEW_USER_BANS)
     .input(SearchUsersSchema)
