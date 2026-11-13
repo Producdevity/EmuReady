@@ -141,10 +141,12 @@ describe('template form sessions', () => {
       },
     ]
     render(<CustomFieldTemplateFormModal isOpen templateIdToEdit="template-1" onClose={onClose} />)
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: '' } })
     fireEvent.click(screen.getByRole('button', { name: 'Update Template' }))
     await waitFor(() =>
       expect(saving.submit).toHaveBeenCalledWith(
         expect.objectContaining({
+          description: null,
           fields: [
             expect.objectContaining({
               defaultValue: 1.5,
