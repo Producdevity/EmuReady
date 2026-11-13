@@ -27,6 +27,7 @@ import { getCpuLabel } from '@/features/hardware/cpu/shared/cpu-format'
 import { getGpuLabel } from '@/features/hardware/gpu/shared/gpu-format'
 import { HardwareRequestLink } from '@/features/hardware/requests/client/HardwareRequestLink'
 import { useSubmitWithHumanVerification } from '@/features/human-verification/client'
+import { useLastEmulatorSettings } from '@/features/reports/last-settings/client/useLastEmulatorSettings'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { MarkdownEditor } from '@/lib/dynamic-imports'
@@ -147,6 +148,15 @@ function AddPcListingPage() {
     () => parsedCustomFields.map((field) => field.id).join('|'),
     [parsedCustomFields],
   )
+  const currentSettings = useWatch({ control: form.control, name: 'customFieldValues' })
+  const lastSettings = useLastEmulatorSettings({
+    userId: currentUserQuery.data?.id,
+    emulatorId: selectedEmulatorId,
+    fields: parsedCustomFields,
+    enabled: customFieldDefinitionsQuery.isSuccess && !customFieldDefinitionsQuery.isFetching,
+    values: currentSettings,
+    blocked: Boolean(form.formState.dirtyFields.customFieldValues),
+  })
 
   usePreSelectedGame({
     gameIdFromUrl,
@@ -205,6 +215,7 @@ function AddPcListingPage() {
           humanVerificationToken,
         }),
       )
+      lastSettings.remember(result.authorId, result.emulatorId, data.customFieldValues)
 
       analytics.listing.created({
         listingId: result.id,
@@ -643,6 +654,28 @@ function AddPcListingPage() {
               !customFieldDefinitionsQuery.isPending &&
               parsedCustomFields.length > 0 && (
                 <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl">
+                  {lastSettings.available && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mb-4"
+                      disabled={form.formState.isSubmitting}
+                      onClick={() => {
+                        const values = lastSettings.apply(
+                          form.getValues('customFieldValues'),
+                          form.getFieldState('customFieldValues').isDirty,
+                        )
+                        if (values)
+                          form.setValue('customFieldValues', values, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          })
+                      }}
+                    >
+                      Use last settings
+                    </Button>
+                  )}
                   <CustomFieldsFormSection
                     parsedCustomFields={parsedCustomFields}
                     control={form.control}
