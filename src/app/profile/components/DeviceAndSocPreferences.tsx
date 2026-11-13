@@ -42,9 +42,12 @@ function DeviceAndSocPreferences(props: Props) {
 
   const bulkUpdateDevices = api.userPreferences.bulkUpdateDevices.useMutation({
     scope: { id: 'hardware-preferences' },
-    onSuccess: async (_data, variables) => {
+    onSuccess: async (data, variables) => {
+      utils.userPreferences.get.setData(undefined, (current) =>
+        current ? { ...current, devicePreferences: data } : current,
+      )
       await invalidatePreferences()
-      setDeviceDraft((current) => clearSavedSelection(current, variables.deviceIds))
+      setDeviceDraft((current) => clearSubmittedSelection(current, variables.deviceIds))
       toast.success('Device preferences updated successfully!')
 
       analytics.user.preferencesUpdated({
@@ -54,7 +57,7 @@ function DeviceAndSocPreferences(props: Props) {
       })
     },
     onError: (error, variables) => {
-      setDeviceDraft((current) => clearSavedSelection(current, variables.deviceIds))
+      setDeviceDraft((current) => clearSubmittedSelection(current, variables.deviceIds))
       console.error('Error updating device preferences:', error)
       toast.error(`Failed to update device preferences: ${getErrorMessage(error)}`)
     },
@@ -62,9 +65,12 @@ function DeviceAndSocPreferences(props: Props) {
 
   const bulkUpdateSocs = api.userPreferences.bulkUpdateSocs.useMutation({
     scope: { id: 'hardware-preferences' },
-    onSuccess: async (_data, variables) => {
+    onSuccess: async (data, variables) => {
+      utils.userPreferences.get.setData(undefined, (current) =>
+        current ? { ...current, socPreferences: data } : current,
+      )
       await invalidatePreferences()
-      setSocDraft((current) => clearSavedSelection(current, variables.socIds))
+      setSocDraft((current) => clearSubmittedSelection(current, variables.socIds))
       toast.success('SOC preferences updated successfully!')
 
       analytics.user.preferencesUpdated({
@@ -74,7 +80,7 @@ function DeviceAndSocPreferences(props: Props) {
       })
     },
     onError: (error, variables) => {
-      setSocDraft((current) => clearSavedSelection(current, variables.socIds))
+      setSocDraft((current) => clearSubmittedSelection(current, variables.socIds))
       console.error('Error updating SOC preferences:', error)
       toast.error(`Failed to update SOC preferences: ${getErrorMessage(error)}`)
     },
@@ -96,13 +102,15 @@ function DeviceAndSocPreferences(props: Props) {
   }
 
   function handleDevicesChange(deviceIds: string[]) {
-    setDeviceDraft(deviceIds)
-    bulkUpdateDevices.mutate({ deviceIds })
+    const submittedIds = [...deviceIds]
+    setDeviceDraft(submittedIds)
+    bulkUpdateDevices.mutate({ deviceIds: submittedIds })
   }
 
   function handleSocsChange(socIds: string[]) {
-    setSocDraft(socIds)
-    bulkUpdateSocs.mutate({ socIds })
+    const submittedIds = [...socIds]
+    setSocDraft(submittedIds)
+    bulkUpdateSocs.mutate({ socIds: submittedIds })
   }
 
   if (props.preferencesQuery.isPending) {
@@ -247,10 +255,8 @@ function DeviceAndSocPreferences(props: Props) {
   )
 }
 
-function clearSavedSelection(current: string[] | null, saved: string[]): string[] | null {
-  return current?.length === saved.length && current.every((id) => saved.includes(id))
-    ? null
-    : current
+function clearSubmittedSelection(current: string[] | null, submitted: string[]): string[] | null {
+  return current === submitted ? null : current
 }
 
 export default DeviceAndSocPreferences

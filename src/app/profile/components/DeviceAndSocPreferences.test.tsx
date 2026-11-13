@@ -23,12 +23,19 @@ const mocks = vi.hoisted(() => ({
   devices: vi.fn<(input: DeviceInput) => Promise<DeviceResult>>(),
   socs: vi.fn<(input: SocInput) => Promise<SocResult>>(),
   invalidate: vi.fn(),
+  setData:
+    vi.fn<
+      (
+        input: undefined,
+        update: (current: Preferences | undefined) => Preferences | undefined,
+      ) => void
+    >(),
 }))
 
 vi.mock('@/lib/api', () => ({
   api: {
     useUtils: () => ({
-      userPreferences: { get: { invalidate: mocks.invalidate } },
+      userPreferences: { get: { invalidate: mocks.invalidate, setData: mocks.setData } },
       users: { me: { invalidate: vi.fn() } },
       listings: { get: { invalidate: vi.fn() } },
     }),
@@ -62,6 +69,7 @@ function Selection(props: ComponentProps<typeof DeviceMultiSelect>) {
       >
         Add {prefix}
       </button>
+      <button onClick={() => props.onChange(props.value.slice(0, -1), [])}>Remove {prefix}</button>
     </div>
   )
 }
@@ -90,14 +98,49 @@ const initialPreferences = {
 let saved: Preferences = initialPreferences
 
 function saveDevices(deviceIds: string[]) {
+  const createdAt = new Date('2026-01-01T00:00:00Z')
+  const rows: DeviceResult = deviceIds.map((id) => ({
+    id: `pref-${id}`,
+    userId: 'user-1',
+    deviceId: id,
+    createdAt,
+    device: {
+      id,
+      brandId: 'brand-1',
+      modelName: id,
+      socId: null,
+      brand: { id: 'brand-1', name: 'Brand', createdAt },
+      soc: null,
+    },
+  }))
   saved = {
     ...saved,
-    devicePreferences: deviceIds.map((id) => ({
-      id: `pref-${id}`,
-      deviceId: id,
-      device: { id, modelName: id, brand: { id: 'brand-1', name: 'Brand' }, soc: null },
-    })),
+    devicePreferences: rows,
   }
+  return rows
+}
+
+function saveSocs(socIds: string[]) {
+  const createdAt = new Date('2026-01-01T00:00:00Z')
+  const rows: SocResult = socIds.map((id) => ({
+    id: `pref-${id}`,
+    userId: 'user-1',
+    socId: id,
+    createdAt,
+    updatedAt: createdAt,
+    soc: {
+      id,
+      name: id,
+      manufacturer: 'Manufacturer',
+      architecture: null,
+      processNode: null,
+      cpuCores: null,
+      gpuModel: null,
+      createdAt,
+    },
+  }))
+  saved = { ...saved, socPreferences: rows }
+  return rows
 }
 
 function Harness() {
@@ -115,6 +158,9 @@ function renderPreferences() {
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   mocks.invalidate.mockImplementation(() => client.invalidateQueries({ queryKey: ['preferences'] }))
+  mocks.setData.mockImplementation((_input, update) => {
+    client.setQueryData<Preferences>(['preferences'], update)
+  })
   return render(
     <QueryClientProvider client={client}>
       <Harness />
@@ -135,13 +181,11 @@ describe('async hardware preference saves', () => {
     const second = Promise.withResolvers<void>()
     mocks.devices.mockImplementationOnce(async ({ deviceIds }) => {
       await first.promise
-      saveDevices(deviceIds)
-      return []
+      return saveDevices(deviceIds)
     })
     mocks.devices.mockImplementationOnce(async ({ deviceIds }) => {
       await second.promise
-      saveDevices(deviceIds)
-      return []
+      return saveDevices(deviceIds)
     })
     renderPreferences()
 
@@ -165,11 +209,11 @@ describe('async hardware preference saves', () => {
 
   it('shares the save scope between device and SoC preferences', async () => {
     const first = Promise.withResolvers<void>()
-    mocks.socs.mockImplementationOnce(async () => {
+    mocks.socs.mockImplementationOnce(async ({ socIds }) => {
       await first.promise
-      return []
+      return saveSocs(socIds)
     })
-    mocks.devices.mockResolvedValue([])
+    mocks.devices.mockImplementation(async ({ deviceIds }) => saveDevices(deviceIds))
     renderPreferences()
     fireEvent.click(screen.getByRole('button', { name: 'Add soc' }))
     await waitFor(() => expect(mocks.socs).toHaveBeenCalledTimes(1))
@@ -197,4 +241,64 @@ describe('async hardware preference saves', () => {
       errorLog.mockRestore()
     }
   })
+
+  it.each(['success', 'error'] as const)(
+    'keeps the latest selection when an older matching save completes with %s',
+    async (outcome) => {
+      const gates = [
+        Promise.withResolvers<void>(),
+        Promise.withResolvers<void>(),
+        Promise.withResolvers<void>(),
+      ]
+      for (const gate of gates) {
+        mocks.devices.mockImplementationOnce(async ({ deviceIds }) => {
+          await gate.promise
+          return saveDevices(deviceIds)
+        })
+      }
+      const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {})
+      try {
+        renderPreferences()
+        fireEvent.click(screen.getByRole('button', { name: 'Add device' }))
+        await waitFor(() => expect(mocks.devices).toHaveBeenCalledTimes(1))
+        fireEvent.click(screen.getByRole('button', { name: 'Add device' }))
+        fireEvent.click(screen.getByRole('button', { name: 'Remove device' }))
+
+        await act(async () => {
+          if (outcome === 'error') gates[0].reject(new Error('Older save failed'))
+          else gates[0].resolve()
+        })
+        await waitFor(() => expect(mocks.devices).toHaveBeenCalledTimes(2))
+        await act(async () => gates[1].resolve())
+        await waitFor(() => expect(mocks.devices).toHaveBeenCalledTimes(3))
+
+        expect(screen.getByTestId('device')).toHaveTextContent(/^device-1$/)
+        await act(async () => gates[2].resolve())
+        await waitFor(() => expect(saved.devicePreferences).toHaveLength(1))
+        expect(screen.getByTestId('device')).toHaveTextContent(/^device-1$/)
+      } finally {
+        await act(async () => gates.forEach((gate) => gate.resolve()))
+        errorLog.mockRestore()
+      }
+    },
+  )
+
+  it.each(['device', 'soc'] as const)(
+    'keeps confirmed %s selections when preference refetching fails',
+    async (kind) => {
+      mocks.devices.mockImplementation(async ({ deviceIds }) => saveDevices(deviceIds))
+      mocks.socs.mockImplementation(async ({ socIds }) => saveSocs(socIds))
+      const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {})
+      try {
+        renderPreferences()
+        mocks.invalidate.mockRejectedValueOnce(new Error('Refetch unavailable'))
+        fireEvent.click(screen.getByRole('button', { name: `Add ${kind}` }))
+        await waitFor(() => expect(toast.success).toHaveBeenCalledOnce())
+
+        expect(screen.getByTestId(kind)).toHaveTextContent(`${kind}-1`)
+      } finally {
+        errorLog.mockRestore()
+      }
+    },
+  )
 })
