@@ -95,7 +95,6 @@ test.describe('Performance Tests', () => {
     await gamesPage.goto()
     await gamesPage.verifyPageLoaded()
 
-    await page.getByRole('navigation', { name: /pagination/i }).scrollIntoViewIfNeeded()
     await expect(page.getByRole('navigation', { name: /pagination/i })).toBeVisible()
 
     await page.getByRole('button', { name: /go to next page/i }).click()
