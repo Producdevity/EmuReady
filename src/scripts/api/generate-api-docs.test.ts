@@ -44,3 +44,56 @@ describe('generated Steam batch response example', () => {
     expect(response.totalFound).toBe(response.results.length)
   })
 })
+
+describe('generated mobile numeric input contracts', () => {
+  const file = resolve(import.meta.dirname, '../../../public/api-docs/mobile-openapi.json')
+  const schemas = z
+    .object({ components: z.object({ schemas: z.record(z.unknown()) }) })
+    .parse(JSON.parse(readFileSync(file, 'utf8'))).components.schemas
+  const limit = { type: 'integer', minimum: 1, maximum: 50, default: 20 }
+
+  it.each([
+    { name: 'GetGamesSchema', optional: true, maxLimit: 50 },
+    { name: 'GetListingsSchema', optional: true, maxLimit: 50 },
+    { name: 'GetPcListingsSchema', optional: false, maxLimit: 50 },
+    { name: 'GetNotificationsSchema', optional: true, maxLimit: 50 },
+  ])('documents nullable integer pages and bounded integer limits for $name', (schema) => {
+    const properties = {
+      page: {
+        anyOf: [
+          { type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER, default: 1 },
+          { type: 'null' },
+        ],
+      },
+      limit: { ...limit, maximum: schema.maxLimit },
+    }
+    expect(schemas[schema.name]).toMatchObject(
+      schema.optional ? { anyOf: [{}, { properties }] } : { properties },
+    )
+  })
+
+  it('documents bounded integer preset list limits', () => {
+    expect(schemas.GetPcPresetsSchema).toMatchObject({ properties: { limit } })
+  })
+
+  it('documents bounded integer device and emulator limits with their existing defaults', () => {
+    expect(schemas.GetDevicesSchema).toMatchObject({
+      anyOf: [
+        {},
+        { properties: { limit: { type: 'integer', minimum: 1, maximum: 1000, default: 50 } } },
+      ],
+    })
+    expect(schemas.GetEmulatorsSchema).toMatchObject({
+      properties: { limit: { type: 'integer', minimum: 1, maximum: 100, default: 50 } },
+    })
+  })
+
+  it.each(['CreatePcPresetSchema', 'UpdatePcPresetSchema'])(
+    'documents integer memory sizes for %s',
+    (name) => {
+      expect(schemas[name]).toMatchObject({
+        properties: { memorySize: { type: 'integer', minimum: 1, maximum: 256 } },
+      })
+    },
+  )
+})
