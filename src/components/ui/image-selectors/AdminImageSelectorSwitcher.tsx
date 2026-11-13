@@ -55,6 +55,7 @@ export function AdminImageSelectorSwitcher(props: Props) {
         setShowApplied(false)
       }, 1500)
     } else if (trimmedUrl === '') {
+      setManualUrl('')
       props.onImageSelect('')
     } else {
       props.onError?.(getGameImageUrlValidationError(trimmedUrl) ?? 'Invalid image URL')

@@ -7,6 +7,27 @@ vi.mock('./providers/RawgImageSelector', () => ({ RawgImageSelector: () => null 
 vi.mock('./providers/TGDBImageSelector', () => ({ TGDBImageSelector: () => null }))
 
 describe('AdminImageSelectorSwitcher manual URL', () => {
+  it('resumes external synchronization after applying whitespace as an empty URL', () => {
+    const onImageSelect = vi.fn()
+    const view = render(
+      <AdminImageSelectorSwitcher
+        selectedImageUrl="https://example.com/original.jpg"
+        onImageSelect={onImageSelect}
+      />,
+    )
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '   ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+    expect(onImageSelect).toHaveBeenCalledWith('')
+    view.rerender(<AdminImageSelectorSwitcher selectedImageUrl="" onImageSelect={onImageSelect} />)
+    view.rerender(
+      <AdminImageSelectorSwitcher
+        selectedImageUrl="https://example.com/next.jpg"
+        onImageSelect={onImageSelect}
+      />,
+    )
+    expect(screen.getByRole('textbox')).toHaveValue('https://example.com/next.jpg')
+  })
+
   it('preserves an in-progress draft when the selected image changes', () => {
     const onImageSelect = vi.fn()
     const view = render(
