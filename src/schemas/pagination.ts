@@ -22,8 +22,8 @@ function createPaginationInputSchema(options: PaginationInputSchemaOptions = {})
 
   return z.object({
     limit: z.number().int().min(1).max(maxLimit).default(defaultLimit),
-    offset: z.number().int().min(0).default(0),
-    page: z.number().int().positive().optional(),
+    offset: z.number().int().safe().min(0).default(0),
+    page: z.number().int().safe().min(1).optional(),
   })
 }
 
@@ -33,7 +33,7 @@ function createOffsetPaginationInputSchema(options: PaginationInputSchemaOptions
 
   return z.object({
     limit: z.number().int().min(1).max(maxLimit).default(defaultLimit),
-    offset: z.number().int().min(0).default(0),
+    offset: z.number().int().safe().min(0).default(0),
   })
 }
 
@@ -44,16 +44,20 @@ export const LookupPaginationInputSchema = createOffsetPaginationInputSchema({
 })
 
 export function refinePaginationOffset(
-  input: Pick<PaginationInput, 'page' | 'limit'>,
+  input: Pick<PaginationInput, 'page' | 'limit' | 'offset'>,
   context: z.RefinementCtx,
+  issuePath?: z.IssueData['path'],
 ) {
-  const page = input.page ?? 1
   const limit = input.limit ?? PAGINATION.DEFAULT_LIMIT
-  if (!Number.isSafeInteger((page - 1) * limit)) {
+  const offset = input.page ? (input.page - 1) * limit : (input.offset ?? 0)
+  if (offset < 0 || !Number.isSafeInteger(offset)) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'Pagination offset exceeds the supported range',
-      path: ['page'],
+      message:
+        offset < 0
+          ? 'Pagination offset must not be negative'
+          : 'Pagination offset exceeds the supported range',
+      path: issuePath ?? (input.page ? ['page'] : ['offset']),
     })
   }
 }

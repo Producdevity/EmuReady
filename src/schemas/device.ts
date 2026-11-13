@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { HOME_PAGE_LIMITS, LOOKUP_PAGINATION } from '@/data/constants'
 import { SortDirectionSchema } from '@/schemas/common'
-import { LookupPaginationInputSchema } from '@/schemas/pagination'
+import { LookupPaginationInputSchema, refinePaginationOffset } from '@/schemas/pagination'
 
 export const DeviceSortField = z.enum(['brand', 'modelName', 'soc', 'listings'])
 
@@ -10,12 +10,13 @@ export const GetDevicesSchema = z
     search: z.string().nullable().optional(),
     brandId: z.string().uuid().nullable().optional(),
     socId: z.string().uuid().nullable().optional(),
-    limit: z.number().default(20),
-    offset: z.number().default(0),
-    page: z.number().optional(),
+    limit: z.number().int().safe().default(20),
+    offset: z.number().int().safe().default(0),
+    page: z.number().int().safe().optional(),
     sortField: DeviceSortField.nullable().optional(),
     sortDirection: SortDirectionSchema.nullable().optional(),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export const GetDeviceOptionsSchema = z

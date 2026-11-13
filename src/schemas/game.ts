@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { PAGINATION } from '@/data/constants'
 import { HumanVerificationTokenSchema } from '@/features/human-verification/shared/schema'
 import { SignedInt32Schema, SortDirectionSchema } from '@/schemas/common'
+import { refinePaginationOffset } from '@/schemas/pagination'
 import { ApprovalStatus } from '@orm'
 
 export const GameSortField = z.enum([
@@ -130,12 +131,13 @@ export const BulkRejectGamesSchema = z.object({
 export const GetPendingGamesSchema = z
   .object({
     search: z.string().optional(),
-    limit: z.number().default(50),
-    offset: z.number().default(0),
-    page: z.number().optional(),
+    limit: z.number().int().safe().default(50),
+    offset: z.number().int().safe().default(0),
+    page: z.number().int().safe().optional(),
     sortField: GameSortField.optional(),
     sortDirection: SortDirectionSchema.optional(),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 // Nintendo Switch Title ID lookup schemas

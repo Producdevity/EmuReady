@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { SortDirectionSchema } from '@/schemas/common'
+import { refinePaginationOffset } from '@/schemas/pagination'
 
 export const UserBanSortField = z.enum(['bannedAt', 'expiresAt', 'isActive', 'reason'])
 
@@ -30,9 +31,10 @@ export const GetUserBansSchema = z
     isActive: z.boolean().optional(),
     sortField: UserBanSortField.optional(),
     sortDirection: SortDirectionSchema.optional(),
-    page: z.number().min(1).default(1),
-    limit: z.number().min(1).max(100).default(20),
+    page: z.number().int().safe().min(1).default(1),
+    limit: z.number().int().min(1).max(100).default(20),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export const GetUserBanByIdSchema = z.object({

@@ -1,17 +1,19 @@
 import { z } from 'zod'
 import { SortDirectionSchema } from '@/schemas/common'
+import { refinePaginationOffset } from '@/schemas/pagination'
 
 export const EmulatorSortField = z.enum(['name', 'systemCount', 'listingCount'])
 
 export const GetEmulatorsSchema = z
   .object({
     search: z.string().optional(),
-    limit: z.number().default(20),
-    offset: z.number().default(0),
-    page: z.number().optional(),
+    limit: z.number().int().safe().default(20),
+    offset: z.number().int().safe().default(0),
+    page: z.number().int().safe().optional(),
     sortField: EmulatorSortField.optional(),
     sortDirection: SortDirectionSchema.optional(),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export const GetEmulatorByIdSchema = z.object({ id: z.string().uuid() })
