@@ -1,10 +1,11 @@
 'use client'
 
 import { keepPreviousData } from '@tanstack/react-query'
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { type z } from 'zod'
 import { ErrorFallback, LoadingSpinner, Pagination } from '@/components/ui'
 import { api } from '@/lib/api'
+import { type RouterOutput } from '@/types/trpc'
 import BookmarkCard from './BookmarkCard'
 import SearchEmptyState from './SearchEmptyState'
 import { type BookmarkFiltersSchema } from '../../shared/bookmark-filters.schemas'
@@ -21,6 +22,11 @@ interface Props {
   onPageChange: (page: number) => void
   emptyContent: ReactNode
 }
+
+type BookmarkPagination = Extract<
+  RouterOutput['bookmarks']['getListingBookmarks'],
+  { visibility: 'visible' }
+>['pagination']
 
 function BookmarkGrid(props: Props) {
   const listingQuery = api.bookmarks.getListingBookmarks.useQuery(
@@ -46,6 +52,42 @@ function BookmarkGrid(props: Props) {
   )
 
   const query = props.variant === 'handheld' ? listingQuery : pcQuery
+  const paginationScope = JSON.stringify([
+    props.userId,
+    props.variant,
+    props.limit,
+    props.search,
+    props.filters,
+  ])
+  const [lastPagination, setLastPagination] = useState<{
+    scope: string
+    pagination: BookmarkPagination
+  } | null>(null)
+  if (
+    query.data?.visibility === 'visible' &&
+    !query.isPlaceholderData &&
+    (lastPagination?.scope !== paginationScope ||
+      lastPagination.pagination !== query.data.pagination)
+  ) {
+    setLastPagination({ scope: paginationScope, pagination: query.data.pagination })
+  } else if (query.data?.visibility === 'hidden' && lastPagination !== null) {
+    setLastPagination(null)
+  }
+  const pagination =
+    query.data?.visibility === 'visible'
+      ? query.data.pagination
+      : query.data?.visibility !== 'hidden' && lastPagination?.scope === paginationScope
+        ? lastPagination.pagination
+        : null
+  const paginationControls = pagination && pagination.pages > 1 && (
+    <Pagination
+      page={props.page}
+      totalPages={pagination.pages}
+      totalItems={pagination.total}
+      itemsPerPage={props.limit}
+      onPageChange={props.onPageChange}
+    />
+  )
 
   const ids =
     props.variant === 'handheld'
@@ -75,12 +117,15 @@ function BookmarkGrid(props: Props) {
 
   if (query.isError) {
     return (
-      <ErrorFallback
-        error={query.error instanceof Error ? query.error : null}
-        resetErrorBoundary={() => {
-          void query.refetch()
-        }}
-      />
+      <>
+        <ErrorFallback
+          error={query.error instanceof Error ? query.error : null}
+          resetErrorBoundary={() => {
+            void query.refetch()
+          }}
+        />
+        {paginationControls}
+      </>
     )
   }
 
@@ -132,15 +177,7 @@ function BookmarkGrid(props: Props) {
   return (
     <>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">{renderItems()}</div>
-      {query.data.pagination.pages > 1 && (
-        <Pagination
-          page={props.page}
-          totalPages={query.data.pagination.pages}
-          totalItems={query.data.pagination.total}
-          itemsPerPage={props.limit}
-          onPageChange={props.onPageChange}
-        />
-      )}
+      {paginationControls}
     </>
   )
 }

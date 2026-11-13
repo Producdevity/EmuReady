@@ -46,7 +46,7 @@ export class TrustAdminRepository extends PrismaRepository {
     const [logs, total] = await Promise.all([
       this.prisma.trustActionLog.findMany({
         where,
-        orderBy,
+        orderBy: [orderBy, { id: Prisma.SortOrder.asc }],
         skip: (input.page - 1) * input.limit,
         take: input.limit,
         select: TRUST_LOG_SELECT,

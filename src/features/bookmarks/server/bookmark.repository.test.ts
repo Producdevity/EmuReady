@@ -27,6 +27,24 @@ beforeEach(() => {
   mocks.pcListingBookmark.count.mockResolvedValue(13)
 })
 
+it('counts only approved reports with approved games for the visible profile tabs', async () => {
+  await new BookmarkRepository(prisma).counts(userId, owner)
+  expect(mocks.listingBookmark.count).toHaveBeenCalledWith({
+    where: { userId, listing: { status: 'APPROVED', game: { status: 'APPROVED' } } },
+  })
+  expect(mocks.pcListingBookmark.count).toHaveBeenCalledWith({
+    where: { userId, pcListing: { status: 'APPROVED', game: { status: 'APPROVED' } } },
+  })
+})
+
+it('hides bookmark counts before querying either saved-report total', async () => {
+  await expect(
+    new BookmarkRepository(prisma).counts(userId, { requestingUserId: 'another-user' }),
+  ).resolves.toEqual({ visibility: 'hidden' })
+  expect(mocks.listingBookmark.count).not.toHaveBeenCalled()
+  expect(mocks.pcListingBookmark.count).not.toHaveBeenCalled()
+})
+
 describe.each(['handheld', 'pc'] as const)('%s bookmark browsing', (variant) => {
   function list(input: Parameters<typeof GetListingBookmarksSchema.parse>[0], context = owner) {
     const repository = new BookmarkRepository(prisma)
@@ -61,7 +79,11 @@ describe.each(['handheld', 'pc'] as const)('%s bookmark browsing', (variant) => 
       userId,
       [relation]: {
         status: 'APPROVED',
-        game: { title: { contains: 'Mario', mode: 'insensitive' }, systemId: { in: [entityId] } },
+        game: {
+          status: 'APPROVED',
+          title: { contains: 'Mario', mode: 'insensitive' },
+          systemId: { in: [entityId] },
+        },
         emulatorId: { in: [entityId] },
         performanceId: { in: [1] },
         ...(variant === 'handheld'
@@ -83,6 +105,15 @@ describe.each(['handheld', 'pc'] as const)('%s bookmark browsing', (variant) => 
     )
     expect(model().count).toHaveBeenCalledWith({ where })
     expect(result).toMatchObject({ visibility: 'visible', pagination: { total: 13, pages: 2 } })
+  })
+
+  it('requires approved games even without title or system filters', async () => {
+    await list({ userId })
+    const where = expect.objectContaining({
+      [relation]: expect.objectContaining({ game: { status: 'APPROVED' } }),
+    })
+    expect(model().findMany).toHaveBeenCalledWith(expect.objectContaining({ where }))
+    expect(model().count).toHaveBeenCalledWith({ where })
   })
 
   it.each([

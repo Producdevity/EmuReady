@@ -8,8 +8,10 @@ import DriverVersionField from './DriverVersionField'
 const mocks = vi.hoisted(() => ({ submit: vi.fn() }))
 let releases: DriverRelease[] | null = []
 let loading = false
+let rateLimited = false
+let errorMessage: string | null = null
 vi.mock('../hooks/useDriverVersions', () => ({
-  useDriverVersions: () => ({ data: releases, loading, rateLimited: false, errorMessage: null }),
+  useDriverVersions: () => ({ data: releases, loading, rateLimited, errorMessage }),
 }))
 
 const knownRelease: DriverRelease = {
@@ -25,6 +27,7 @@ const knownRelease: DriverRelease = {
 interface Props {
   initialDriver?: string
   required?: boolean
+  placeholder?: string
 }
 
 function Form(props: Props) {
@@ -40,6 +43,7 @@ function Form(props: Props) {
           name: 'dynamic_driver_version',
           label: 'Graphics Driver',
           isRequired: props.required ?? true,
+          placeholder: props.placeholder,
         }}
         rules={props.required === false ? {} : { required: 'Graphics Driver is required' }}
         errorMessage={form.formState.errors.driver?.message}
@@ -55,6 +59,23 @@ beforeEach(() => {
   vi.clearAllMocks()
   releases = []
   loading = false
+  rateLimited = false
+  errorMessage = null
+})
+
+it('keeps configured placeholder text in custom entry mode', async () => {
+  const user = userEvent.setup()
+  render(<Form placeholder="Driver name and version" />)
+  await user.click(screen.getByRole('button', { name: 'Enter a custom driver' }))
+  expect(screen.getByPlaceholderText('Driver name and version')).toHaveFocus()
+})
+
+it('shows actionable custom-driver guidance when the server reports a rate limit', () => {
+  rateLimited = true
+  errorMessage = 'GitHub API rate limit exceeded'
+  render(<Form />)
+  expect(screen.getByText(/Select a default option or enter a custom driver/)).toBeInTheDocument()
+  expect(screen.queryByText(errorMessage, { exact: true })).not.toBeInTheDocument()
 })
 
 it('submits a custom graphics-driver name instead of a fixed dropdown option', async () => {

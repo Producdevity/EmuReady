@@ -145,7 +145,7 @@ describe('trust router permission checks', () => {
       expect(mockPrismaTrustActionLogFindMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where,
-          orderBy: { user: { trustScore: 'desc' } },
+          orderBy: [{ user: { trustScore: 'desc' } }, { id: 'asc' }],
           skip: 10,
           take: 10,
         }),

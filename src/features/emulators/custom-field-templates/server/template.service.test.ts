@@ -219,6 +219,61 @@ describe('template attribute persistence', () => {
     )
   })
 
+  it.each([
+    { categoryOrder: 0, fieldOrder: 2_147_483_647, distinctCategories: false },
+    { categoryOrder: 0, fieldOrder: 2_147_483_646, distinctCategories: false },
+    { categoryOrder: 2_147_483_647, fieldOrder: 0, distinctCategories: false },
+    { categoryOrder: 2_147_483_646, fieldOrder: 0, distinctCategories: true },
+  ])('rejects ordering overflow before any writes %#', async (testCase) => {
+    transaction.emulator.findUnique.mockResolvedValue({
+      id: EMULATOR_ID,
+      customFieldCategories: [
+        { id: CATEGORY_ID, name: 'Existing category', displayOrder: testCase.categoryOrder },
+      ],
+      customFieldDefinitions: [{ name: 'existing_field', displayOrder: testCase.fieldOrder }],
+    })
+    if (testCase.distinctCategories) {
+      transaction.customFieldTemplate.findMany.mockResolvedValue([
+        template([rangeField, { ...textField, categoryName: 'Driver settings' }]),
+      ])
+    }
+
+    await expect(service().apply(actor, applyInput)).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+    expect(transaction.customFieldCategory.create).not.toHaveBeenCalled()
+    expect(transaction.customFieldDefinition.create).not.toHaveBeenCalled()
+  })
+
+  it('uses the final field-order slot while reusing a category already at the maximum', async () => {
+    transaction.customFieldTemplate.findMany.mockResolvedValue([template([textField])])
+    transaction.emulator.findUnique.mockResolvedValue({
+      id: EMULATOR_ID,
+      customFieldCategories: [{ id: CATEGORY_ID, name: 'Graphics', displayOrder: 2_147_483_647 }],
+      customFieldDefinitions: [{ name: 'existing_field', displayOrder: 2_147_483_646 }],
+    })
+
+    await expect(service().apply(actor, applyInput)).resolves.toMatchObject({ createdFields: 1 })
+    expect(transaction.customFieldCategory.create).not.toHaveBeenCalled()
+    expect(transaction.customFieldDefinition.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ displayOrder: 2_147_483_647 }) }),
+    )
+  })
+
+  it('uses the final category-order slot once for fields sharing a new category', async () => {
+    transaction.emulator.findUnique.mockResolvedValue({
+      id: EMULATOR_ID,
+      customFieldCategories: [
+        { id: CATEGORY_ID, name: 'Existing category', displayOrder: 2_147_483_646 },
+      ],
+      customFieldDefinitions: [],
+    })
+
+    await expect(service().apply(actor, applyInput)).resolves.toMatchObject({ createdFields: 2 })
+    expect(transaction.customFieldCategory.create).toHaveBeenCalledOnce()
+    expect(transaction.customFieldCategory.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ displayOrder: 2_147_483_647 }) }),
+    )
+  })
+
   it('preserves the explanatory no-op error when every field already exists', async () => {
     transaction.emulator.findUnique.mockResolvedValue({
       id: EMULATOR_ID,

@@ -45,7 +45,10 @@ export class CustomFieldConfigRepository extends PrismaRepository {
       if (isPrismaError(error, PRISMA_ERROR_CODES.FOREIGN_KEY_CONSTRAINT_VIOLATION)) {
         return ResourceError.emulator.notFound()
       }
-      return AppError.databaseError('apply custom field configuration')
+      return AppError.databaseError(
+        'apply custom field configuration',
+        error instanceof Error ? error : undefined,
+      )
     }
   }
 

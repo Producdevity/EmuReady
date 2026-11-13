@@ -16,3 +16,16 @@ export const BookmarkFiltersSchema = z.object({
   sortField: BookmarkSortFieldSchema.default('savedAt'),
   sortDirection: SortDirectionSchema.default('desc'),
 })
+
+export function refineBookmarkMemoryRange(
+  input: Pick<z.output<typeof BookmarkFiltersSchema>, 'memoryMin' | 'memoryMax'>,
+  context: z.RefinementCtx,
+) {
+  if (input.memoryMin !== null && input.memoryMax !== null && input.memoryMin > input.memoryMax) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['memoryMax'],
+      message: 'Maximum memory must be at least minimum memory.',
+    })
+  }
+}

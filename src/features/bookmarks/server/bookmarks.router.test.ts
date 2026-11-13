@@ -97,6 +97,18 @@ describe.each(['handheld', 'pc'] as const)('%s bookmark transport', (variant) =>
     expect(mocks.pcListingBookmark.findMany).not.toHaveBeenCalled()
   })
 
+  it('rejects inverted memory bounds before any database access', async () => {
+    const query =
+      variant === 'handheld' ? caller().getListingBookmarks : caller().getPcListingBookmarks
+    await expect(query({ userId, memoryMin: 32, memoryMax: 16 })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      cause: { issues: expect.arrayContaining([expect.objectContaining({ path: ['memoryMax'] })]) },
+    })
+    expect(mocks.user.findUnique).not.toHaveBeenCalled()
+    expect(mocks.listingBookmark.findMany).not.toHaveBeenCalled()
+    expect(mocks.pcListingBookmark.findMany).not.toHaveBeenCalled()
+  })
+
   it('uses the session owner for writes even when input includes another user', async () => {
     if (variant === 'handheld') {
       const input = { listingId: reportId, userId: reportId }

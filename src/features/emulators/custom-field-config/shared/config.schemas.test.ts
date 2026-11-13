@@ -49,6 +49,32 @@ describe('custom field configuration JSON', () => {
     expect(result.fields[1]?.defaultValue).toBe(0)
   })
 
+  it.each([-2_147_483_648, -1, 0, 2_147_483_647])(
+    'accepts persisted signed ordering %i for fields and categories',
+    (order) => {
+      const result = CustomFieldConfigSchema.parse({
+        version: 1,
+        categories: [{ name: 'Graphics', displayOrder: order }],
+        fields: [{ ...field, category: 'Graphics', displayOrder: order, categoryOrder: order }],
+      })
+      expect(result.categories[0]?.displayOrder).toBe(order)
+      expect(result.fields[0]?.displayOrder).toBe(order)
+      expect(result.fields[0]?.categoryOrder).toBe(order)
+    },
+  )
+
+  it.each([-2_147_483_649, 2_147_483_648, 0.5])('rejects unpersistable ordering %j', (order) => {
+    expect(ConfigFieldSchema.safeParse({ ...field, displayOrder: order }).success).toBe(false)
+    expect(ConfigFieldSchema.safeParse({ ...field, categoryOrder: order }).success).toBe(false)
+    expect(
+      CustomFieldConfigSchema.safeParse({
+        version: 1,
+        categories: [{ name: 'Graphics', displayOrder: order }],
+        fields: [],
+      }).success,
+    ).toBe(false)
+  })
+
   it.each([
     { ...field, id: 'not-a-uuid' },
     { ...field, categoryId: 'foreign-category' },

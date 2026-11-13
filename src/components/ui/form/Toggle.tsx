@@ -22,16 +22,16 @@ const sizeClasses = {
 }
 
 interface Props {
-  'aria-label'?: string
   checked: boolean
   onChange: (checked: boolean) => void
-  label?: string
   disabled?: boolean
   className?: string
   size?: 'sm' | 'md' | 'lg'
 }
 
-export function Toggle(props: Props) {
+type Label = { label: string; 'aria-label'?: string } | { label?: never; 'aria-label': string }
+
+export function Toggle(props: Props & Label) {
   const size = props.size ?? 'md'
 
   return (

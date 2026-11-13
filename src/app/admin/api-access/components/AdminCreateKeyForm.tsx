@@ -259,6 +259,7 @@ export function AdminCreateKeyForm(props: Props) {
 
       <div className="flex items-center gap-3 text-sm">
         <Toggle
+          aria-label="Create as system key (unlimited)"
           checked={isSystemKey}
           onChange={handleSystemKeyToggle}
           disabled={!props.canCreateSystemKey}

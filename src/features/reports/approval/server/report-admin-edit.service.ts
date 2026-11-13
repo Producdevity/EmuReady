@@ -2,7 +2,7 @@ import { type z } from 'zod'
 import { AppError, ResourceError } from '@/lib/errors'
 import { type UpdateListingAdminSchema } from '@/schemas/listing'
 import { type UpdatePcListingAdminSchema } from '@/schemas/pcListing'
-import { invalidateListingSeo, invalidatePcListingSeo } from '@/server/cache/invalidation'
+import { invalidateListingsSeo, invalidatePcListingsSeo } from '@/server/cache/invalidation'
 import {
   invalidateCatalogCompatibilityCacheForDevice,
   listingStatsCache,
@@ -12,19 +12,31 @@ import { hasPermission, PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
 import { ApprovalStatus, Role } from '@orm'
 import { ApprovalTrustService } from './approval-trust.service'
+import { notifyReportDecision } from './report-approval.effects'
 import { type ApprovalActor } from './report-approval.policy'
 import { type ReportApprovalRepository } from './report-approval.repository'
 
 type ApprovalRecord = NonNullable<Awaited<ReturnType<ReportApprovalRepository['find']>>>
 
-async function invalidateEditedReport(report: ApprovalRecord): Promise<void> {
-  if (report.reportType === 'handheld') {
+async function invalidateEditedReport(
+  previous: ApprovalRecord,
+  updated: ApprovalRecord,
+): Promise<void> {
+  const reports = [previous, updated]
+  if (updated.reportType === 'handheld') {
     listingStatsCache.delete('listing-stats')
-    invalidateCatalogCompatibilityCacheForDevice(report.deviceId)
-    if (report.status === ApprovalStatus.APPROVED) await invalidateListingSeo(report)
+    const handheld = reports.filter((report) => report.reportType === 'handheld')
+    for (const deviceId of new Set(handheld.map((report) => report.deviceId))) {
+      invalidateCatalogCompatibilityCacheForDevice(deviceId)
+    }
+    const publicReports = handheld.filter((report) => report.status === ApprovalStatus.APPROVED)
+    if (publicReports.length > 0) await invalidateListingsSeo(publicReports)
   } else {
     listingStatsCache.delete('pc-listing-stats')
-    if (report.status === ApprovalStatus.APPROVED) await invalidatePcListingSeo(report)
+    const publicReports = reports
+      .filter((report) => report.reportType === 'pc')
+      .filter((report) => report.status === ApprovalStatus.APPROVED)
+    if (publicReports.length > 0) await invalidatePcListingsSeo(publicReports)
   }
 }
 
@@ -86,8 +98,15 @@ export class ReportAdminEditService {
       return { previous, updated, change }
     })
     trackTrustScoreChange(result.change)
-    await invalidateEditedReport(result.previous)
-    await invalidateEditedReport(result.updated)
+    await invalidateEditedReport(result.previous, result.updated)
+    if (result.previous.status !== result.updated.status) {
+      notifyReportDecision({
+        report: result.updated,
+        updated: result.updated,
+        actorId: actor.id,
+        notes: result.updated.processedNotes,
+      })
+    }
     return {
       id: result.updated.id,
       status: result.updated.status,

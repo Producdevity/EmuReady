@@ -1,4 +1,4 @@
-import { type ChangeEventHandler, type ReactNode } from 'react'
+import { type ChangeEventHandler, type ReactNode, useId } from 'react'
 import { Input } from '@/components/ui'
 
 interface Option {
@@ -18,15 +18,19 @@ interface Props {
 }
 
 export function SelectInput(props: Props) {
+  const generatedId = useId()
+  const id = props.id ?? generatedId
+
   return (
     <div>
       {!props.hideLabel && (
-        <label htmlFor={props.id} className="block mb-1 font-medium">
+        <label htmlFor={id} className="block mb-1 font-medium">
           {props.label}
         </label>
       )}
       <Input
-        id={props.id}
+        id={id}
+        aria-label={props.hideLabel ? props.label : undefined}
         leftIcon={props.leftIcon}
         name={props.label}
         as="select"

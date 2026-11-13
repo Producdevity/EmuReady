@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { AppError } from '@/lib/errors'
 import { CustomFieldType } from '@orm'
 import { type ConfigEmulatorRecord } from './persistence/config.prisma'
 import {
@@ -6,6 +7,7 @@ import {
   supportsPlaceholder,
 } from '../../shared/custom-field-attributes.schemas'
 import {
+  ConfigCategorySchema,
   ConfigFieldSchema,
   CustomFieldConfigSchema,
   type CustomFieldConfigSnapshot,
@@ -20,7 +22,7 @@ export function toConfigField(field: ConfigEmulatorRecord['customFieldDefinition
     defaultValue = defaultValue === 'true'
   }
   if (field.type === CustomFieldType.RANGE) defaultValue = normalizeRangeDefault(defaultValue)
-  return ConfigFieldSchema.parse({
+  const result = ConfigFieldSchema.safeParse({
     id: field.id,
     name: field.name,
     label: field.label,
@@ -37,21 +39,33 @@ export function toConfigField(field: ConfigEmulatorRecord['customFieldDefinition
     displayOrder: field.displayOrder,
     categoryOrder: field.categoryOrder,
   })
+  if (!result.success)
+    return AppError.badRequest(
+      `Field "${field.name}" has invalid settings. Correct it in the field editor before editing its JSON configuration.`,
+    )
+  return result.data
 }
 
 export function toConfigSnapshot(emulator: ConfigEmulatorRecord): CustomFieldConfigSnapshot {
-  const configuration = CustomFieldConfigSchema.parse({
+  const result = CustomFieldConfigSchema.safeParse({
     version: 1,
-    categories: emulator.customFieldCategories.map((category) => ({
-      id: category.id,
-      name: category.name,
-      displayOrder: category.displayOrder,
-    })),
+    categories: emulator.customFieldCategories.map((category) => {
+      const result = ConfigCategorySchema.safeParse(category)
+      if (!result.success)
+        return AppError.badRequest(
+          `Category "${category.name}" has invalid settings. Correct it in the category editor before editing its JSON configuration.`,
+        )
+      return result.data
+    }),
     fields: emulator.customFieldDefinitions.map(toConfigField),
   })
+  if (!result.success)
+    return AppError.badRequest(
+      `Emulator "${emulator.id}" has invalid field or category settings. Correct them before editing its JSON configuration.`,
+    )
 
   return {
-    configuration,
-    revision: createHash('sha256').update(JSON.stringify(configuration)).digest('hex'),
+    configuration: result.data,
+    revision: createHash('sha256').update(JSON.stringify(result.data)).digest('hex'),
   }
 }

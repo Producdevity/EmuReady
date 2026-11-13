@@ -74,9 +74,18 @@ function DevicesPage() {
     },
   )
 
-  const selectedDevice =
+  const availableDevice =
     deviceInCurrentPage ??
     (singleDeviceQuery.data?.id === deviceIdFromUrl ? (singleDeviceQuery.data ?? null) : null)
+
+  const [lastSelectedDevice, setLastSelectedDevice] = useState<typeof availableDevice>(null)
+  if (availableDevice && availableDevice !== lastSelectedDevice)
+    setLastSelectedDevice(availableDevice)
+  const selectedDevice =
+    availableDevice ??
+    (!singleDeviceQuery.isError && lastSelectedDevice?.id === deviceIdFromUrl
+      ? lastSelectedDevice
+      : null)
 
   const openModal = (device: DeviceData) => {
     // Update URL with device ID

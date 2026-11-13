@@ -1,12 +1,14 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect } from 'react'
-import { type PageSizeOption } from '@/data/constants'
+import { PAGINATION, type PageSizeOption } from '@/data/constants'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import { useUrlSearch } from '@/hooks/useUrlSearch'
 import analytics from '@/lib/analytics'
 import { PageSizePreferenceSchema } from '@/schemas/preferences'
 import { type SortDirection } from '@/types/api'
 import { parseLimit } from '../utils/pagination'
+
+const storedPageSizeSchema = PageSizePreferenceSchema.catch(PAGINATION.PUBLIC_DEFAULT_LIMIT)
 
 interface Config {
   basePath: string
@@ -28,7 +30,7 @@ export function useUrlFilterState<TSortField extends string>(config: Config) {
   const [storedLimit, setStoredLimit] = useLocalStorage(
     config.storageKey,
     parseLimit(null, config.maxLimit),
-    PageSizePreferenceSchema,
+    storedPageSizeSchema,
   )
   const limit = parseLimit(urlLimit || String(storedLimit), config.maxLimit)
   const page =
