@@ -1,3 +1,4 @@
+import { escape } from 'html-escaper'
 import { type NotificationData, type NotificationDeliveryResult } from './types'
 
 export type EmailProvider = 'sendgrid' | 'mailersend'
@@ -53,6 +54,8 @@ class EmailService {
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     const actionUrl = notification.actionUrl ? `${baseUrl}${notification.actionUrl}` : null
+    const htmlBaseUrl = escape(baseUrl)
+    const htmlActionUrl = actionUrl ? escape(actionUrl) : null
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -61,7 +64,7 @@ class EmailService {
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <meta http-equiv="X-UA-Compatible" content="IE=edge">
-          <title>${subject}</title>
+          <title>${escape(subject)}</title>
           <!--[if mso]>
           <style type="text/css">
             table { border-collapse: collapse; }
@@ -84,7 +87,7 @@ class EmailService {
                         <tr>
                           <td align="center">
                             <!-- Logo -->
-                            <img src="${baseUrl}/logo/460x460_rounded.png" alt="EmuReady Logo" width="64" height="64" style="display: block; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+                            <img src="${htmlBaseUrl}/logo/460x460_rounded.png" alt="EmuReady Logo" width="64" height="64" style="display: block; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
                             
                             <!-- Brand Name -->
                             <h1 style="margin: 0; font-size: 32px; font-weight: 900; color: #ffffff; text-align: center; letter-spacing: -0.025em; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
@@ -109,7 +112,7 @@ class EmailService {
                         <tr>
                           <td>
                             <div style="display: inline-block; background: linear-gradient(135deg, #3b82f6, #6366f1); color: #ffffff; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 24px;">
-                              ${notification.category}
+                              ${escape(notification.category)}
                             </div>
                           </td>
                         </tr>
@@ -117,11 +120,11 @@ class EmailService {
                       
                       <!-- Main Message -->
                       <h2 style="margin: 0 0 16px 0; font-size: 24px; font-weight: 700; color: #1f2937; line-height: 1.3;">
-                        ${notification.title}
+                        ${escape(notification.title)}
                       </h2>
                       
                       <p style="margin: 0 0 32px 0; font-size: 16px; color: #4b5563; line-height: 1.6;">
-                        ${notification.message}
+                        ${escape(notification.message)}
                       </p>
                       
                       ${
@@ -132,13 +135,13 @@ class EmailService {
                         <tr>
                           <td align="center" style="padding: 0 0 32px 0;">
                             <!--[if mso]>
-                            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${actionUrl}" style="height:48px;v-text-anchor:middle;width:200px;" arcsize="25%" fillcolor="#3b82f6">
+                            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${htmlActionUrl}" style="height:48px;v-text-anchor:middle;width:200px;" arcsize="25%" fillcolor="#3b82f6">
                               <w:anchorlock/>
                               <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">View Details</center>
                             </v:roundrect>
                             <![endif]-->
                             <!--[if !mso]><!-->
-                            <a href="${actionUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #a855f7 100%); color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; text-align: center; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); transition: all 0.2s ease;">
+                            <a href="${htmlActionUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #a855f7 100%); color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; text-align: center; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); transition: all 0.2s ease;">
                               View Details
                             </a>
                             <!--<![endif]-->
@@ -167,11 +170,11 @@ class EmailService {
                             
                             <!-- Manage Preferences -->
                             <p style="margin: 0 0 12px 0; font-size: 14px; color: #6b7280; text-align: center;">
-                              You're receiving this email because you have notifications enabled for ${notification.category.toLowerCase()} updates.
+                              You're receiving this email because you have notifications enabled for ${escape(notification.category.toLowerCase())} updates.
                             </p>
                             
                             <p style="margin: 0 0 16px 0; font-size: 14px; text-align: center;">
-                              <a href="${baseUrl}/profile?tab=notifications" style="color: #3b82f6; text-decoration: none; font-weight: 500;">Manage your notification preferences</a>
+                              <a href="${htmlBaseUrl}/profile?tab=notifications" style="color: #3b82f6; text-decoration: none; font-weight: 500;">Manage your notification preferences</a>
                             </p>
                             
                             <!-- Copyright -->
@@ -190,7 +193,7 @@ class EmailService {
                   <tr>
                     <td style="padding: 20px; text-align: center;">
                       <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-                        If you're having trouble viewing this email, <a href="${baseUrl}" style="color: #3b82f6; text-decoration: none;">view it in your browser</a>.
+                        If you're having trouble viewing this email, <a href="${htmlBaseUrl}" style="color: #3b82f6; text-decoration: none;">view it in your browser</a>.
                       </p>
                     </td>
                   </tr>
