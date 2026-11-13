@@ -54,6 +54,7 @@ test.describe('Filtering Tests', () => {
     }) => {
       await page.setViewportSize({ width: 1280, height: 800 })
       await page.goto(route)
+      await waitForListingsTableIdle(page)
       await page.getByRole('button', { name: 'Collapse filters', exact: true }).click()
 
       await expect(page.getByRole('button', { name: 'Expand filters', exact: true })).toBeVisible()
