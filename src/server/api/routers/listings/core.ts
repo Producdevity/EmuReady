@@ -31,7 +31,6 @@ import { attachReviewRiskProfileForViewer } from '@/server/services/review-risk.
 import { normalizeCustomFieldValues } from '@/server/utils/custom-field-values'
 import { getDriverVersions } from '@/server/utils/driver-versions'
 import { isUserBanned } from '@/server/utils/query-builders'
-import { validatePagination } from '@/server/utils/security-validation'
 import { checkSpamContent } from '@/server/utils/spam-check'
 import { withSavepoint } from '@/server/utils/transactions'
 import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
@@ -52,9 +51,6 @@ export const coreRouter = createTRPCRouter({
     const userId = ctx.session?.user?.id
     const canSeeBannedUsers = roleIncludesRole(userRole, Role.MODERATOR)
 
-    // Validate and sanitize pagination
-    const { page, limit } = validatePagination(input.page, input.limit, 100)
-
     // Map input to repository filters (convert null to undefined)
     const filters = {
       systemIds: input.systemIds || undefined,
@@ -63,8 +59,8 @@ export const coreRouter = createTRPCRouter({
       emulatorIds: input.emulatorIds || undefined,
       performanceIds: input.performanceIds || undefined,
       search: input.searchTerm?.trim() || undefined,
-      page,
-      limit,
+      page: input.page,
+      limit: input.limit,
       sortField: input.sortField || undefined,
       sortDirection: input.sortDirection || undefined,
       approvalStatus: input.approvalStatus || undefined,

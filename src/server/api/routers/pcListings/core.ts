@@ -37,7 +37,6 @@ import { attachReviewRiskProfileForViewer } from '@/server/services/review-risk.
 import { normalizeCustomFieldValues } from '@/server/utils/custom-field-values'
 import { toPrismaCustomFieldValue } from '@/server/utils/prisma-json'
 import { isUserBanned } from '@/server/utils/query-builders'
-import { validatePagination } from '@/server/utils/security-validation'
 import { checkSpamContent } from '@/server/utils/spam-check'
 import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
@@ -52,8 +51,6 @@ export const coreRouter = createTRPCRouter({
     const repository = new PcListingsRepository(ctx.prisma)
     const canSeeBannedUsers = ctx.session?.user ? isModerator(ctx.session.user.role) : false
 
-    const { page, limit } = validatePagination(input.page, input.limit, 50)
-
     const result = await repository.list({
       ...input,
       sortDirection: input.sortDirection ?? undefined,
@@ -62,8 +59,6 @@ export const coreRouter = createTRPCRouter({
       showNsfw: ctx.session?.user?.showNsfw,
       canSeeBannedUsers,
       approvalStatus: input.approvalStatus || ApprovalStatus.APPROVED,
-      page,
-      limit,
     })
 
     return {
