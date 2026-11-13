@@ -1,9 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { TRPCClientError, type TRPCLink } from '@trpc/client'
 import { observable } from '@trpc/server/observable'
 import { type PropsWithChildren } from 'react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '@/lib/api'
 import { type AppRouter, type RouterInput, type RouterOutput } from '@/types/trpc'
 import { ApprovalStatus } from '@orm'
@@ -11,8 +11,11 @@ import { ReportHistory } from './ReportHistory'
 import { GetReportHistorySchema } from '../shared/history.schemas'
 
 const requests: RouterInput['reportHistory']['get'][] = []
+const rawRequests: unknown[] = []
+const heldResponses: (() => void)[] = []
 let failQuery = false
 let emptyResult = false
+let holdQuery = false
 let total = 21
 
 function wrapper() {
@@ -21,10 +24,11 @@ function wrapper() {
     () =>
     ({ op }) =>
       observable((observer) => {
+        rawRequests.push(op.input)
         const input = GetReportHistorySchema.parse(op.input)
         requests.push(input)
         let active = true
-        queueMicrotask(() => {
+        function respond() {
           if (!active) return
           if (failQuery) {
             observer.error(TRPCClientError.from<AppRouter>(new Error('Temporarily unavailable')))
@@ -55,7 +59,9 @@ function wrapper() {
           }
           observer.next({ result: { data: result } })
           observer.complete()
-        })
+        }
+        if (holdQuery) heldResponses.push(respond)
+        else queueMicrotask(respond)
         return () => {
           active = false
         }
@@ -72,9 +78,16 @@ function wrapper() {
 
 beforeEach(() => {
   requests.length = 0
+  rawRequests.length = 0
+  heldResponses.length = 0
   failQuery = false
   emptyResult = false
+  holdQuery = false
   total = 21
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 describe('private report history', () => {
@@ -93,7 +106,25 @@ describe('private report history', () => {
     expect(screen.getAllByText('AYN Odin 2')).toHaveLength(3)
     expect(screen.queryByRole('button', { name: /edit|delete/i })).not.toBeInTheDocument()
     expect(requests.at(-1)).toMatchObject({ kind: 'handheld', page: 1 })
-    expect(requests.at(-1)).not.toHaveProperty('userId')
+    expect(rawRequests.at(-1)).not.toHaveProperty('userId')
+  })
+
+  it('keeps the report list and pagination focus while the next page is pending', async () => {
+    render(<ReportHistory />, { wrapper: wrapper() })
+    await screen.findByText('Handheld game 1')
+    holdQuery = true
+    const next = screen.getAllByRole('button', { name: 'Go to next page' })[0]
+    next.focus()
+    fireEvent.click(next)
+    await waitFor(() => expect(requests.at(-1)?.page).toBe(2))
+    expect(screen.getByText('Handheld game 1')).toBeInTheDocument()
+    expect(screen.getByRole('list')).toHaveAttribute('aria-busy', 'true')
+    expect(next).toHaveFocus()
+    await act(async () => {
+      heldResponses.splice(0).forEach((respond) => respond())
+    })
+    expect(next).toHaveFocus()
+    await waitFor(() => expect(screen.getByRole('list')).toHaveAttribute('aria-busy', 'false'))
   })
 
   it('resets pagination when switching report type or approval status', async () => {
@@ -123,11 +154,20 @@ describe('private report history', () => {
     await screen.findByText('Handheld game 1')
     fireEvent.click(screen.getAllByRole('button', { name: 'Go to next page' })[0])
     await waitFor(() => expect(requests.at(-1)?.page).toBe(2))
+    vi.useFakeTimers()
+    fireEvent.change(screen.getByLabelText('Search your reports by game title'), {
+      target: { value: 'Ma' },
+    })
+    expect(screen.queryByRole('button', { name: 'Go to next page' })).not.toBeInTheDocument()
+    await act(() => vi.advanceTimersByTimeAsync(299))
+    expect(requests.some((input) => input.search === 'Ma')).toBe(false)
     fireEvent.change(screen.getByLabelText('Search your reports by game title'), {
       target: { value: 'Mario' },
     })
-    expect(screen.queryByRole('button', { name: 'Go to next page' })).not.toBeInTheDocument()
-    await waitFor(() => expect(requests.at(-1)).toMatchObject({ search: 'Mario', page: 1 }))
+    await act(() => vi.advanceTimersByTimeAsync(299))
+    expect(requests.some((input) => input.search === 'Ma' || input.search === 'Mario')).toBe(false)
+    await act(() => vi.advanceTimersByTimeAsync(1))
+    expect(requests.at(-1)).toMatchObject({ search: 'Mario', page: 1 })
   })
 
   it('shows an empty archive without a loading or error state', async () => {

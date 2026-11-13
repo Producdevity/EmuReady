@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ZodError } from 'zod'
 import { prisma } from '@/server/db'
 import { ApprovalStatus, Role } from '@orm'
 import { reportHistoryRouter } from './history.router'
@@ -71,6 +72,16 @@ describe.each(['handheld', 'pc'] as const)('%s report history', (kind) => {
     expect(database.pcListing.findMany).not.toHaveBeenCalled()
   })
 
+  it('rejects an unsafe pagination offset before querying either report table', async () => {
+    await expect(
+      caller().get({ kind, page: Number.MAX_SAFE_INTEGER, limit: 50 }),
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    })
+    expect(database.listing.findMany).not.toHaveBeenCalled()
+    expect(database.pcListing.findMany).not.toHaveBeenCalled()
+  })
+
   it('uses the session owner even when another user ID is supplied', async () => {
     const input = { kind, userId: reportId }
     const result = await caller().get(input)
@@ -132,9 +143,18 @@ it('formats PC hardware with and without a dedicated GPU', async () => {
 it.each([
   { limit: 51 },
   { page: 0 },
+  { page: Number.MAX_SAFE_INTEGER + 1 },
+  { page: Number.MAX_SAFE_INTEGER, limit: 50 },
   { status: 'INVALID' },
   { kind: 'mobile' },
   { search: 'x'.repeat(101) },
 ])('rejects invalid history filters: %j', (input) =>
-  expect(() => GetReportHistorySchema.parse(input)).toThrow(),
+  expect(() => GetReportHistorySchema.parse(input)).toThrow(ZodError),
 )
+
+it('accepts an exactly representable offset at the pagination boundary', () => {
+  const page = Math.floor(Number.MAX_SAFE_INTEGER / 50) + 1
+  const input = GetReportHistorySchema.parse({ page, limit: 50 })
+  expect(Number.isSafeInteger((input.page - 1) * input.limit)).toBe(true)
+  expect(() => GetReportHistorySchema.parse({ page: page + 1, limit: 50 })).toThrow(ZodError)
+})

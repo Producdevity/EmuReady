@@ -31,13 +31,16 @@ export function ReportHistory() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const debouncedSearch = useDebouncedValue(search, 300)
-  const history = api.reportHistory.get.useQuery({
-    kind,
-    status,
-    search: debouncedSearch,
-    page,
-    limit: 20,
-  })
+  const history = api.reportHistory.get.useQuery(
+    {
+      kind,
+      status,
+      search: debouncedSearch,
+      page,
+      limit: 20,
+    },
+    { placeholderData: (previous) => previous },
+  )
   if (!history.isFetching && !history.error && history.data?.pagination.page === page) {
     const lastPage = Math.max(1, history.data.pagination.pages)
     if (page > lastPage) setPage(lastPage)
@@ -110,7 +113,10 @@ export function ReportHistory() {
           No reports match these filters.
         </p>
       ) : (
-        <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+        <ul
+          aria-busy={history.isFetching}
+          className="divide-y divide-gray-200 dark:divide-gray-700"
+        >
           {history.data.items.map((report) => (
             <li key={report.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:justify-between">
               <div className="min-w-0 space-y-1">
