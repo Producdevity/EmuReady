@@ -1,3 +1,5 @@
+import { VoteEffectsRepository } from '@/features/reports/voting/server/vote-effects.repository'
+import { VoteEffectsService } from '@/features/reports/voting/server/vote-effects.service'
 import analytics from '@/lib/analytics'
 import { AppError, ResourceError } from '@/lib/errors'
 import { applyTrustAction } from '@/lib/trust/service'
@@ -37,7 +39,7 @@ import { updateListingVoteCounts } from '@/server/utils/vote-counts'
 import { handleListingVoteTrustEffects } from '@/server/utils/vote-trust-effects'
 import { roleIncludesRole } from '@/utils/permission-system'
 import { ms } from '@/utils/time'
-import { ApprovalStatus, Prisma, Role, TrustAction } from '@orm/client'
+import { ApprovalStatus, Prisma, Role, TrustAction, type Vote } from '@orm/client'
 
 const EDIT_TIME_LIMIT_MINUTES = 60
 const EDIT_TIME_LIMIT = ms.minutes(EDIT_TIME_LIMIT_MINUTES)
@@ -266,7 +268,7 @@ export const coreRouter = createTRPCRouter({
       })
 
       let result: {
-        vote: { id: string; value: boolean; userId: string; listingId: string } | null
+        vote: Pick<Vote, 'id' | 'value' | 'userId' | 'listingId'> | null
         action: 'created' | 'updated' | 'deleted'
         previousValue: boolean | null
       }
@@ -319,35 +321,16 @@ export const coreRouter = createTRPCRouter({
       return result
     })
 
-    // Handle post-transaction side effects for created/updated votes (TODO: consider abstracting)
-    if (voteResult.action === 'created' || voteResult.action === 'updated') {
-      if (voteResult.vote) {
-        notificationEventEmitter.emitNotificationEvent({
-          eventType: NOTIFICATION_EVENTS.LISTING_VOTED,
-          entityType: 'listing',
-          entityId: input.listingId,
-          triggeredBy: userId,
-          payload: {
-            listingId: input.listingId,
-            voteId: voteResult.vote.id,
-            voteValue: input.value,
-          },
-        })
-      }
-
-      analytics.engagement.vote({
-        listingId: input.listingId,
-        voteValue: input.value,
-      })
-    }
-
-    // Check if this is user's first vote for journey analytics
-    if (voteResult.action === 'created') {
-      const userVoteCount = await ctx.prisma.vote.count({ where: { userId: userId } })
-      if (userVoteCount === 1) {
-        analytics.userJourney.firstTimeAction({ userId: userId, action: 'first_vote' })
-      }
-    }
+    const voteEffects = new VoteEffectsService(new VoteEffectsRepository(ctx.prisma))
+    await voteEffects.afterCommit({
+      listingId: input.listingId,
+      listingType: 'handheld',
+      userId,
+      action: voteResult.action,
+      voteId: voteResult.vote?.id ?? null,
+      value: input.value,
+      previousValue: voteResult.previousValue,
+    })
 
     return voteResult.vote
   }),
