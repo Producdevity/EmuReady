@@ -39,6 +39,19 @@ describe.each([
     schema: GetPcListingsSchema,
   },
 ])('$name report URL pagination', (catalog) => {
+  it('keeps a safe calculated offset and normalizes the next page before querying', () => {
+    const page = Math.floor(Number.MAX_SAFE_INTEGER / 50) + 1
+    query = new URLSearchParams({ page: String(page), limit: '50' })
+    const { result, rerender } = renderHook(() => useUrlFilterState(catalog.config))
+    expect(result.current.page).toBe(page)
+    query = new URLSearchParams({ page: String(page + 1), limit: '50' })
+    rerender()
+    expect(result.current.page).toBe(1)
+    expect(
+      catalog.schema.safeParse({ page: result.current.page, limit: result.current.limit }).success,
+    ).toBe(true)
+  })
+
   it.each([
     { raw: '', page: 1 },
     { raw: '3', page: 3 },

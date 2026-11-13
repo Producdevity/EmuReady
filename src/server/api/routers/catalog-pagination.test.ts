@@ -85,6 +85,26 @@ describe.each(catalogs)('$name pagination boundary', (catalog) => {
       expect.objectContaining({ skip: catalog.maxLimit, take: catalog.maxLimit }),
     )
   })
+
+  it('rejects a safe page number whose calculated offset is unsafe before querying Prisma', async () => {
+    await expect(
+      catalog.get({ page: Number.MAX_SAFE_INTEGER, limit: catalog.maxLimit }),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+    for (const read of [...Object.values(reads), ...Object.values(counts)]) {
+      expect(read).not.toHaveBeenCalled()
+    }
+  })
+
+  it('accepts the last safe calculated offset without imposing an arbitrary page cap', async () => {
+    const page = Math.floor(Number.MAX_SAFE_INTEGER / catalog.maxLimit) + 1
+    await catalog.get({ page, limit: catalog.maxLimit })
+    expect(catalog.read).toHaveBeenCalledWith(
+      expect.objectContaining({
+        skip: (page - 1) * catalog.maxLimit,
+        take: catalog.maxLimit,
+      }),
+    )
+  })
 })
 
 it.each([-1, 0.5, 1e40, Number.MAX_SAFE_INTEGER + 1])(

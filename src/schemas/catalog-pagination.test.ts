@@ -26,6 +26,14 @@ describe.each(catalogs)('$name pagination', (catalog) => {
     expect(catalog.schema.safeParse({ limit: catalog.maxLimit }).success).toBe(true)
     expect(catalog.schema.safeParse({ limit: catalog.maxLimit + 1 }).success).toBe(false)
   })
+
+  it('accepts the last safe calculated offset and rejects the next page', () => {
+    const page = Math.floor(Number.MAX_SAFE_INTEGER / catalog.maxLimit) + 1
+    expect(catalog.schema.safeParse({ page, limit: catalog.maxLimit }).success).toBe(true)
+    expect(catalog.schema.safeParse({ page: page + 1, limit: catalog.maxLimit }).success).toBe(
+      false,
+    )
+  })
 })
 
 it('preserves an omitted games input and its optional page', () => {

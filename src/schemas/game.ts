@@ -43,6 +43,10 @@ export const GetGamesSchema = z
     sortField: GameSortField.nullable().optional(),
     sortDirection: SortDirectionSchema.nullable().optional(),
   })
+  .refine(
+    (input) => input.page === undefined || Number.isSafeInteger((input.page - 1) * input.limit),
+    { message: 'Pagination offset exceeds the supported range', path: ['page'] },
+  )
   .optional()
   .transform((data) => {
     if (!data) return data

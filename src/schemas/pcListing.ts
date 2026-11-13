@@ -10,36 +10,41 @@ export const CreatePcListingSchema = CreatePcListingBaseSchema.extend({
   humanVerificationToken: HumanVerificationTokenSchema.optional(),
 })
 
-export const GetPcListingsSchema = z.object({
-  systemIds: z.array(z.string().uuid()).optional(),
-  cpuIds: z.array(z.string().uuid()).optional(),
-  gpuIds: z.array(z.string().uuid()).optional(),
-  emulatorIds: z.array(z.string().uuid()).optional(),
-  performanceIds: z.array(z.number()).optional(),
-  osFilter: z.array(z.nativeEnum(PcOs)).optional(),
-  memoryMin: z.number().int().positive().optional(),
-  memoryMax: z.number().int().positive().optional(),
-  searchTerm: z.string().optional(),
-  page: z.number().int().positive().safe().default(1),
-  limit: z.number().int().positive().max(PAGINATION.PUBLIC_MAX_LIMIT_PC_LISTINGS).default(10),
-  sortField: z
-    .enum([
-      'game.title',
-      'game.system.name',
-      'cpu',
-      'gpu',
-      'emulator.name',
-      'performance.rank',
-      'successRate',
-      'author.name',
-      'createdAt',
-      'memorySize',
-    ])
-    .optional(),
-  sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
-  approvalStatus: z.nativeEnum(ApprovalStatus).optional(),
-  myListings: z.boolean().optional(),
-})
+export const GetPcListingsSchema = z
+  .object({
+    systemIds: z.array(z.string().uuid()).optional(),
+    cpuIds: z.array(z.string().uuid()).optional(),
+    gpuIds: z.array(z.string().uuid()).optional(),
+    emulatorIds: z.array(z.string().uuid()).optional(),
+    performanceIds: z.array(z.number()).optional(),
+    osFilter: z.array(z.nativeEnum(PcOs)).optional(),
+    memoryMin: z.number().int().positive().optional(),
+    memoryMax: z.number().int().positive().optional(),
+    searchTerm: z.string().optional(),
+    page: z.number().int().positive().safe().default(1),
+    limit: z.number().int().positive().max(PAGINATION.PUBLIC_MAX_LIMIT_PC_LISTINGS).default(10),
+    sortField: z
+      .enum([
+        'game.title',
+        'game.system.name',
+        'cpu',
+        'gpu',
+        'emulator.name',
+        'performance.rank',
+        'successRate',
+        'author.name',
+        'createdAt',
+        'memorySize',
+      ])
+      .optional(),
+    sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
+    approvalStatus: z.nativeEnum(ApprovalStatus).optional(),
+    myListings: z.boolean().optional(),
+  })
+  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
+    message: 'Pagination offset exceeds the supported range',
+    path: ['page'],
+  })
 
 export const GetPcListingByIdSchema = z.object({ id: z.string().uuid() })
 

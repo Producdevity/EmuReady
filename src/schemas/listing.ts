@@ -10,32 +10,37 @@ export const CreateListingSchema = CreateListingBaseSchema.extend({
   humanVerificationToken: HumanVerificationTokenSchema.optional(),
 })
 
-export const GetListingsSchema = z.object({
-  systemIds: z.array(z.string().uuid()).nullable().optional(),
-  deviceIds: z.array(z.string().uuid()).nullable().optional(),
-  socIds: z.array(z.string().uuid()).nullable().optional(),
-  emulatorIds: z.array(z.string().uuid()).nullable().optional(),
-  performanceIds: z.array(z.number()).nullable().optional(),
-  searchTerm: z.string().nullable().optional(),
-  page: z.number().int().positive().safe().default(1),
-  limit: z.number().int().positive().max(PAGINATION.PUBLIC_MAX_LIMIT_LISTINGS).default(10),
-  sortField: z
-    .enum([
-      'game.title',
-      'game.system.name',
-      'device',
-      'emulator.name',
-      'performance.rank',
-      'successRate',
-      'author.name',
-      'createdAt',
-    ])
-    .nullable()
-    .optional(),
-  sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
-  approvalStatus: z.nativeEnum(ApprovalStatus).nullable().optional(),
-  myListings: z.boolean().nullable().optional(),
-})
+export const GetListingsSchema = z
+  .object({
+    systemIds: z.array(z.string().uuid()).nullable().optional(),
+    deviceIds: z.array(z.string().uuid()).nullable().optional(),
+    socIds: z.array(z.string().uuid()).nullable().optional(),
+    emulatorIds: z.array(z.string().uuid()).nullable().optional(),
+    performanceIds: z.array(z.number()).nullable().optional(),
+    searchTerm: z.string().nullable().optional(),
+    page: z.number().int().positive().safe().default(1),
+    limit: z.number().int().positive().max(PAGINATION.PUBLIC_MAX_LIMIT_LISTINGS).default(10),
+    sortField: z
+      .enum([
+        'game.title',
+        'game.system.name',
+        'device',
+        'emulator.name',
+        'performance.rank',
+        'successRate',
+        'author.name',
+        'createdAt',
+      ])
+      .nullable()
+      .optional(),
+    sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
+    approvalStatus: z.nativeEnum(ApprovalStatus).nullable().optional(),
+    myListings: z.boolean().nullable().optional(),
+  })
+  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
+    message: 'Pagination offset exceeds the supported range',
+    path: ['page'],
+  })
 
 export const GetListingByIdSchema = z.object({ id: z.string().uuid() })
 
