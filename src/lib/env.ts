@@ -45,7 +45,8 @@ function resolveAppEnv(): AppEnv {
 }
 
 const APP_ENV = resolveAppEnv()
-const GITHUB_URL = process.env.NEXT_PUBLIC_GITHUB_URL ?? 'https://github.com/Producdevity/EmuReady'
+const GITHUB_URL =
+  process.env.NEXT_PUBLIC_GITHUB_URL?.trim() || 'https://github.com/Producdevity/EmuReady'
 export const env = {
   EMUREADY_LITE_GITHUB_URL:
     process.env.NEXT_PUBLIC_EMUREADY_LITE_GITHUB_URL ??
