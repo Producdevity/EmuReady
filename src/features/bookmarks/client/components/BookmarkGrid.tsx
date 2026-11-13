@@ -1,10 +1,13 @@
 'use client'
 
 import { keepPreviousData } from '@tanstack/react-query'
-import { LoadingSpinner, Pagination } from '@/components/ui'
+import { type z } from 'zod'
+import { ErrorFallback, LoadingSpinner, Pagination } from '@/components/ui'
 import { api } from '@/lib/api'
 import BookmarkCard from './BookmarkCard'
 import SearchEmptyState from './SearchEmptyState'
+import { type BookmarkFiltersSchema } from '../../shared/bookmark-filters.schemas'
+import { useBulkBookmarkStatuses } from '../hooks/useBulkBookmarkStatuses'
 import type { ReactNode } from 'react'
 
 interface Props {
@@ -13,6 +16,8 @@ interface Props {
   page: number
   limit: number
   search: string
+  filters: z.output<typeof BookmarkFiltersSchema>
+  hasFilters: boolean
   onPageChange: (page: number) => void
   emptyContent: ReactNode
 }
@@ -24,6 +29,7 @@ function BookmarkGrid(props: Props) {
       page: props.page,
       limit: props.limit,
       search: props.search || undefined,
+      ...props.filters,
     },
     { placeholderData: keepPreviousData, enabled: props.variant === 'handheld' },
   )
@@ -34,11 +40,36 @@ function BookmarkGrid(props: Props) {
       page: props.page,
       limit: props.limit,
       search: props.search || undefined,
+      ...props.filters,
     },
     { placeholderData: keepPreviousData, enabled: props.variant === 'pc' },
   )
 
   const query = props.variant === 'handheld' ? listingQuery : pcQuery
+
+  const ids =
+    props.variant === 'handheld'
+      ? listingQuery.data?.visibility === 'visible'
+        ? listingQuery.data.items.map((item) => item.listing.id)
+        : []
+      : pcQuery.data?.visibility === 'visible'
+        ? pcQuery.data.items.map((item) => item.pcListing.id)
+        : []
+  const bookmarks = useBulkBookmarkStatuses(
+    props.variant === 'handheld' ? 'listing' : 'pcListing',
+    ids,
+  )
+
+  if (query.isError) {
+    return (
+      <ErrorFallback
+        error={query.error instanceof Error ? query.error : null}
+        resetErrorBoundary={() => {
+          void query.refetch()
+        }}
+      />
+    )
+  }
 
   if (query.isPending) {
     return (
@@ -53,7 +84,7 @@ function BookmarkGrid(props: Props) {
   }
 
   if (query.data.items.length === 0) {
-    if (props.search) {
+    if (props.hasFilters) {
       return <SearchEmptyState />
     }
     return <>{props.emptyContent}</>
@@ -62,12 +93,30 @@ function BookmarkGrid(props: Props) {
   const renderItems = () => {
     if (props.variant === 'handheld' && listingQuery.data?.visibility === 'visible') {
       return listingQuery.data.items.map((item, index) => (
-        <BookmarkCard key={item.id} item={item} variant="handheld" index={index} />
+        <BookmarkCard
+          key={item.id}
+          item={item}
+          variant="handheld"
+          index={index}
+          status={{
+            isBookmarked: bookmarks.statuses[item.listing.id] ?? false,
+            isPending: bookmarks.isPending,
+          }}
+        />
       ))
     }
     if (props.variant === 'pc' && pcQuery.data?.visibility === 'visible') {
       return pcQuery.data.items.map((item, index) => (
-        <BookmarkCard key={item.id} item={item} variant="pc" index={index} />
+        <BookmarkCard
+          key={item.id}
+          item={item}
+          variant="pc"
+          index={index}
+          status={{
+            isBookmarked: bookmarks.statuses[item.pcListing.id] ?? false,
+            isPending: bookmarks.isPending,
+          }}
+        />
       ))
     }
     return null

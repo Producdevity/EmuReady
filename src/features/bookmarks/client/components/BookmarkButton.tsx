@@ -3,13 +3,18 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bookmark, BookmarkCheck } from 'lucide-react'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui'
-import { useBookmarkToggle, type BookmarkConfig } from '@/hooks/useBookmarkToggle'
 import { cn } from '@/lib/utils'
+import { useBookmarkToggle, type BookmarkConfig } from '../hooks/useBookmarkToggle'
 
-type Props = BookmarkConfig
+type Props = BookmarkConfig & {
+  status?: { isBookmarked: boolean; isPending: boolean }
+}
 
 function BookmarkButton(props: Props) {
-  const { user, isBookmarked, isPending, isStatusPending, handleToggle } = useBookmarkToggle(props)
+  const { user, isBookmarked, isPending, isStatusPending, handleToggle } = useBookmarkToggle(
+    props,
+    props.status,
+  )
 
   if (!user) return null
 
@@ -20,7 +25,11 @@ function BookmarkButton(props: Props) {
       <TooltipTrigger asChild>
         <motion.button
           type="button"
-          onClick={handleToggle}
+          onClick={(event) => {
+            event.stopPropagation()
+            handleToggle()
+          }}
+          onAuxClick={(event) => event.stopPropagation()}
           disabled={disabled}
           whileTap={{ scale: 0.85 }}
           aria-pressed={isBookmarked}
@@ -60,7 +69,7 @@ function BookmarkButton(props: Props) {
         </motion.button>
       </TooltipTrigger>
       <TooltipContent side="top">
-        {isBookmarked ? 'Remove bookmark' : 'Bookmark this listing'}
+        {isBookmarked ? 'Remove bookmark' : 'Bookmark this report'}
       </TooltipContent>
     </Tooltip>
   )

@@ -32,6 +32,8 @@ import {
   ViewButton,
 } from '@/components/ui'
 import storageKeys from '@/data/storageKeys'
+import BookmarkButton from '@/features/bookmarks/client/components/BookmarkButton'
+import { useBulkBookmarkStatuses } from '@/features/bookmarks/client/hooks/useBulkBookmarkStatuses'
 import { getCpuLabel } from '@/features/hardware/cpu/shared/cpu-format'
 import { getGpuLabel } from '@/features/hardware/gpu/shared/gpu-format'
 import {
@@ -124,6 +126,13 @@ function PcListingsPage() {
   const listingsQuery = api.pcListings.get.useQuery(filterParams, {
     placeholderData: (previous) => previous,
   })
+
+  const bookmarks = useBulkBookmarkStatuses(
+    'pcListing',
+    (listingsQuery.data?.pcListings ?? [])
+      .filter((report) => report.status === ApprovalStatus.APPROVED)
+      .map((report) => report.id),
+  )
 
   const handleCpuChange = (values: string[]) => {
     listingsState.setCpuIds(values)
@@ -605,6 +614,16 @@ function PcListingsPage() {
                         {columnVisibility.isColumnVisible('actions') && (
                           <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-end gap-2">
+                              {listing.status === ApprovalStatus.APPROVED && (
+                                <BookmarkButton
+                                  type="pcListing"
+                                  pcListingId={listing.id}
+                                  status={{
+                                    isBookmarked: bookmarks.statuses[listing.id] ?? false,
+                                    isPending: bookmarks.isPending,
+                                  }}
+                                />
+                              )}
                               {isAdmin && (
                                 <EditButton
                                   href={`/admin/pc-listings/${listing.id}/edit`}

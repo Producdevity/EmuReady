@@ -1,90 +1,33 @@
+import { type z } from 'zod'
+import {
+  type GetListingBookmarksSchema,
+  type GetPcListingBookmarksSchema,
+} from '@/features/bookmarks/shared/bookmark.schemas'
 import { ResourceError } from '@/lib/errors'
+import { BaseRepository } from '@/server/repositories/base.repository'
+import { hiddenList, visibleList, hiddenCounts, visibleCounts } from '@/server/repositories/types'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { ApprovalStatus } from '@orm/client'
-import { BaseRepository } from './base.repository'
-import { hiddenList, visibleList, hiddenCounts, visibleCounts } from './types'
-import type { VisibilityContext, VisibilityGatedList, VisibilityGatedCounts } from './types'
+import {
+  buildListingBookmarkQuery,
+  buildPcListingBookmarkQuery,
+} from './persistence/bookmark-queries'
+import { bookmarkSelects } from './persistence/bookmark.selects'
+import type {
+  VisibilityContext,
+  VisibilityGatedList,
+  VisibilityGatedCounts,
+} from '@/server/repositories/types'
 import type { Prisma } from '@orm/client'
 
-const bookmarkSelects = {
-  listingBookmark: {
-    id: true,
-    createdAt: true,
-    listing: {
-      select: {
-        id: true,
-        createdAt: true,
-        status: true,
-        successRate: true,
-        _count: { select: { votes: true, comments: true } },
-        author: { select: { id: true, name: true, profileImage: true } },
-        game: {
-          select: {
-            id: true,
-            title: true,
-            system: { select: { id: true, name: true, key: true } },
-          },
-        },
-        device: {
-          select: {
-            id: true,
-            modelName: true,
-            brand: { select: { id: true, name: true } },
-          },
-        },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true, description: true } },
-      },
-    },
-  } satisfies Prisma.ListingBookmarkSelect,
-
-  pcListingBookmark: {
-    id: true,
-    createdAt: true,
-    pcListing: {
-      select: {
-        id: true,
-        createdAt: true,
-        status: true,
-        successRate: true,
-        _count: { select: { votes: true, comments: true } },
-        author: { select: { id: true, name: true, profileImage: true } },
-        game: {
-          select: {
-            id: true,
-            title: true,
-            system: { select: { id: true, name: true, key: true } },
-          },
-        },
-        cpu: {
-          select: {
-            id: true,
-            modelName: true,
-            brand: { select: { id: true, name: true } },
-          },
-        },
-        gpu: {
-          select: {
-            id: true,
-            modelName: true,
-            brand: { select: { id: true, name: true } },
-          },
-        },
-        emulator: { select: { id: true, name: true, logo: true } },
-        performance: { select: { id: true, label: true, rank: true, description: true } },
-      },
-    },
-  } satisfies Prisma.PcListingBookmarkSelect,
-} as const
-
 type ListingBookmarkItem = Prisma.ListingBookmarkGetPayload<{
-  select: (typeof bookmarkSelects)['listingBookmark']
+  select: typeof bookmarkSelects.listingBookmark
 }>
-
 type PcListingBookmarkItem = Prisma.PcListingBookmarkGetPayload<{
-  select: (typeof bookmarkSelects)['pcListingBookmark']
+  select: typeof bookmarkSelects.pcListingBookmark
 }>
 
+// BaseRepository supplies the shared profile-setting visibility policy.
 export class BookmarkRepository extends BaseRepository {
   static readonly selects = bookmarkSelects
 
@@ -149,37 +92,28 @@ export class BookmarkRepository extends BaseRepository {
   }
 
   async list(
-    userId: string,
-    page: number,
-    limit: number,
+    input: z.output<typeof GetListingBookmarksSchema>,
     ctx?: VisibilityContext,
-    search?: string,
   ): Promise<VisibilityGatedList<ListingBookmarkItem>> {
     return this.handleDatabaseOperation(async () => {
-      const isHidden = await this.checkBookmarkVisibility(userId, ctx)
+      const isHidden = await this.checkBookmarkVisibility(input.userId, ctx)
       if (isHidden) return hiddenList()
 
-      const offset = calculateOffset({ page }, limit)
-      const where: Prisma.ListingBookmarkWhereInput = {
-        userId,
-        listing: {
-          status: ApprovalStatus.APPROVED,
-          ...(search ? { game: { title: { contains: search, mode: this.mode } } } : {}),
-        },
-      }
+      const offset = calculateOffset({ page: input.page }, input.limit)
+      const { where, orderBy } = buildListingBookmarkQuery(input)
 
       const [items, total] = await Promise.all([
         this.prisma.listingBookmark.findMany({
           where,
           select: BookmarkRepository.selects.listingBookmark,
-          orderBy: { createdAt: 'desc' },
+          orderBy,
           skip: offset,
-          take: limit,
+          take: input.limit,
         }),
         this.prisma.listingBookmark.count({ where }),
       ])
 
-      return visibleList(items, paginate({ total, page, limit }))
+      return visibleList(items, paginate({ total, page: input.page, limit: input.limit }))
     }, 'ListingBookmark')
   }
 
@@ -244,37 +178,28 @@ export class BookmarkRepository extends BaseRepository {
   }
 
   async pcList(
-    userId: string,
-    page: number,
-    limit: number,
+    input: z.output<typeof GetPcListingBookmarksSchema>,
     ctx?: VisibilityContext,
-    search?: string,
   ): Promise<VisibilityGatedList<PcListingBookmarkItem>> {
     return this.handleDatabaseOperation(async () => {
-      const isHidden = await this.checkBookmarkVisibility(userId, ctx)
+      const isHidden = await this.checkBookmarkVisibility(input.userId, ctx)
       if (isHidden) return hiddenList()
 
-      const offset = calculateOffset({ page }, limit)
-      const where: Prisma.PcListingBookmarkWhereInput = {
-        userId,
-        pcListing: {
-          status: ApprovalStatus.APPROVED,
-          ...(search ? { game: { title: { contains: search, mode: this.mode } } } : {}),
-        },
-      }
+      const offset = calculateOffset({ page: input.page }, input.limit)
+      const { where, orderBy } = buildPcListingBookmarkQuery(input)
 
       const [items, total] = await Promise.all([
         this.prisma.pcListingBookmark.findMany({
           where,
           select: BookmarkRepository.selects.pcListingBookmark,
-          orderBy: { createdAt: 'desc' },
+          orderBy,
           skip: offset,
-          take: limit,
+          take: input.limit,
         }),
         this.prisma.pcListingBookmark.count({ where }),
       ])
 
-      return visibleList(items, paginate({ total, page, limit }))
+      return visibleList(items, paginate({ total, page: input.page, limit: input.limit }))
     }, 'PcListingBookmark')
   }
 

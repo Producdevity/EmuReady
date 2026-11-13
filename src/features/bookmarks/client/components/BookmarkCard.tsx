@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { SystemIcon } from '@/components/icons'
 import { Badge, LocalizedDate, PerformanceBadge, SuccessRateBar } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import BookmarkButton from './BookmarkButton'
 import type { RouterOutput } from '@/types/trpc'
 
 type VisibleListingResult = Extract<
@@ -24,12 +25,14 @@ interface HandheldProps {
   item: ListingBookmarkItem
   variant: 'handheld'
   index: number
+  status: { isBookmarked: boolean; isPending: boolean }
 }
 
 interface PcProps {
   item: PcListingBookmarkItem
   variant: 'pc'
   index: number
+  status: { isBookmarked: boolean; isPending: boolean }
 }
 
 type Props = HandheldProps | PcProps
@@ -46,6 +49,7 @@ function BookmarkCard(props: Props) {
 
   return (
     <motion.div
+      className="relative"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: props.index * 0.04 }}
@@ -143,7 +147,7 @@ function BookmarkCard(props: Props) {
           ) : null}
         </div>
 
-        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+        <div className="flex items-center justify-between pr-10 text-xs text-gray-500 dark:text-gray-400">
           <div className="flex items-center gap-1.5">
             <Bookmark className="size-3 text-amber-400" />
             <LocalizedDate date={props.item.createdAt} format="timeAgo" />
@@ -157,6 +161,17 @@ function BookmarkCard(props: Props) {
           )}
         </div>
       </Link>
+      <div className="absolute bottom-3 right-3">
+        {props.variant === 'handheld' ? (
+          <BookmarkButton type="listing" listingId={props.item.listing.id} status={props.status} />
+        ) : (
+          <BookmarkButton
+            type="pcListing"
+            pcListingId={props.item.pcListing.id}
+            status={props.status}
+          />
+        )}
+      </div>
     </motion.div>
   )
 }
