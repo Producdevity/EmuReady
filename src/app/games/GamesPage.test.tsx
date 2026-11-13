@@ -70,7 +70,9 @@ describe('games library search navigation', () => {
     )
 
     act(() => vi.advanceTimersByTime(1))
-    expect(mocks.replace).toHaveBeenCalledExactlyOnceWith('/games?search=Mario&systemId=switch')
+    expect(mocks.replace).toHaveBeenCalledExactlyOnceWith('/games?search=Mario&systemId=switch', {
+      scroll: false,
+    })
   })
 
   it('updates both input and query after navigating back to an earlier search', () => {
@@ -82,6 +84,56 @@ describe('games library search navigation', () => {
 
     expect(screen.getByLabelText('Game search')).toHaveValue('Zelda')
     expect(mocks.queryGames).toHaveBeenLastCalledWith(expect.objectContaining({ search: 'Zelda' }))
+    expect(mocks.replace).not.toHaveBeenCalled()
+  })
+
+  it('keeps filters changed while a search is pending', () => {
+    const view = render(<GamesPage />)
+    fireEvent.change(screen.getByLabelText('Game search'), { target: { value: 'Mario' } })
+    mocks.params = new URLSearchParams('search=Zelda&systemId=switch')
+    view.rerender(<GamesPage />)
+
+    act(() => vi.advanceTimersByTime(500))
+
+    expect(mocks.replace).toHaveBeenCalledExactlyOnceWith('/games?search=Mario&systemId=switch', {
+      scroll: false,
+    })
+  })
+
+  it('cancels pending typing when another search is navigated to', () => {
+    const view = render(<GamesPage />)
+    fireEvent.change(screen.getByLabelText('Game search'), { target: { value: 'Mario' } })
+    mocks.params = new URLSearchParams('search=Dark+Souls')
+    view.rerender(<GamesPage />)
+    act(() => vi.advanceTimersByTime(500))
+
+    expect(screen.getByLabelText('Game search')).toHaveValue('Dark Souls')
+    expect(mocks.replace).not.toHaveBeenCalled()
+
+    mocks.params = new URLSearchParams('search=Zelda')
+    view.rerender(<GamesPage />)
+    expect(screen.getByLabelText('Game search')).toHaveValue('Zelda')
+  })
+
+  it.each([
+    ['   ', '/games?systemId=switch'],
+    ['  Mario  ', '/games?search=Mario&systemId=switch'],
+  ])('normalizes the search URL for %j', (value, expectedUrl) => {
+    mocks.params = new URLSearchParams('search=Zelda&systemId=switch&page=3')
+    render(<GamesPage />)
+    fireEvent.change(screen.getByLabelText('Game search'), { target: { value } })
+    act(() => vi.advanceTimersByTime(500))
+
+    expect(mocks.replace).toHaveBeenCalledExactlyOnceWith(expectedUrl, { scroll: false })
+  })
+
+  it('cancels the pending URL update when the page unmounts', () => {
+    const view = render(<GamesPage />)
+    fireEvent.change(screen.getByLabelText('Game search'), { target: { value: 'Mario' } })
+
+    view.unmount()
+    act(() => vi.advanceTimersByTime(500))
+
     expect(mocks.replace).not.toHaveBeenCalled()
   })
 })

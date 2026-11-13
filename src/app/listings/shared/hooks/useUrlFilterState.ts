@@ -1,7 +1,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { PAGINATION, type PageSizeOption } from '@/data/constants'
-import { useUrlSearch } from '@/hooks/useUrlState'
+import { useUrlSearch } from '@/hooks/useUrlSearch'
 import analytics from '@/lib/analytics'
 import { type SortDirection } from '@/types/api'
 import { parseLimit } from '../utils/pagination'
