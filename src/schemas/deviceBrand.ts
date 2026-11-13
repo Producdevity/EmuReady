@@ -8,7 +8,7 @@ export const GetDeviceBrandsSchema = z
   .object({
     search: z.string().optional(),
     category: DeviceBrandCategory.optional(),
-    limit: z.number().default(50),
+    limit: z.number().int().safe().default(50),
     sortField: DeviceBrandSortField.optional(),
     sortDirection: SortDirectionSchema.optional(),
   })

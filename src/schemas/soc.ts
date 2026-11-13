@@ -1,19 +1,20 @@
 import { z } from 'zod'
 import { LOOKUP_PAGINATION } from '@/data/constants'
 import { SortDirectionSchema } from '@/schemas/common'
-import { LookupPaginationInputSchema } from '@/schemas/pagination'
+import { LookupPaginationInputSchema, refinePaginationOffset } from '@/schemas/pagination'
 
 export const SoCSortField = z.enum(['name', 'manufacturer', 'devicesCount'])
 
 export const GetSoCsSchema = z
   .object({
     search: z.string().optional(),
-    limit: z.number().default(20),
-    offset: z.number().default(0),
-    page: z.number().optional(),
+    limit: z.number().int().safe().default(20),
+    offset: z.number().int().safe().default(0),
+    page: z.number().int().safe().optional(),
     sortField: SoCSortField.optional(),
     sortDirection: SortDirectionSchema.optional(),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export const GetSoCOptionsSchema = z

@@ -3,6 +3,7 @@ import { PAGINATION, CHAR_LIMITS } from '@/data/constants'
 import { HumanVerificationTokenSchema } from '@/features/human-verification/shared/schema'
 import { JsonValueSchema, SignedInt32Schema, SortDirectionSchema } from '@/schemas/common'
 import { CreatePcListingBaseSchema } from '@/schemas/listingCreate'
+import { refinePaginationOffset } from '@/schemas/pagination'
 import { REVIEW_RISK_FILTERS, ReviewRiskFilterSchema } from '@/schemas/submissionRisk'
 import { ApprovalStatus, PcOs, ReportReason, ReportStatus } from '@orm'
 
@@ -51,8 +52,8 @@ export const GetPcListingByIdSchema = z.object({ id: z.string().uuid() })
 export const GetPendingPcListingsSchema = z
   .object({
     search: z.string().optional(),
-    page: z.number().default(1),
-    limit: z.number().default(20),
+    page: z.number().int().safe().default(1),
+    limit: z.number().int().safe().default(20),
     sortField: z
       .enum([
         'game.title',
@@ -67,31 +68,44 @@ export const GetPendingPcListingsSchema = z
     sortDirection: z.enum(['asc', 'desc']).optional(),
     riskFilter: ReviewRiskFilterSchema.default(REVIEW_RISK_FILTERS.ALL),
   })
+  .superRefine((input, context) =>
+    refinePaginationOffset(
+      input.riskFilter === REVIEW_RISK_FILTERS.RISKY
+        ? { offset: (input.page - 1) * input.limit }
+        : input,
+      context,
+      ['page'],
+    ),
+  )
   .optional()
 
 export const DeletePcListingSchema = z.object({ id: z.string().uuid() })
 
-export const GetProcessedPcSchema = z.object({
-  page: z.number().default(1),
-  limit: z.number().default(10),
-  filterStatus: z.nativeEnum(ApprovalStatus).nullable().optional(),
-  search: z.string().nullable().optional(),
-  sortField: z
-    .enum([
-      'processedAt',
-      'createdAt',
-      'status',
-      'game.title',
-      'game.system.name',
-      'cpu',
-      'gpu',
-      'emulator.name',
-      'author.name',
-    ])
-    .nullable()
-    .optional(),
-  sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
-})
+export const GetProcessedPcSchema = z
+  .object({
+    page: z.number().int().safe().default(1),
+    limit: z.number().int().safe().default(10),
+    filterStatus: z.nativeEnum(ApprovalStatus).nullable().optional(),
+    search: z.string().nullable().optional(),
+    sortField: z
+      .enum([
+        'processedAt',
+        'createdAt',
+        'status',
+        'game.title',
+        'game.system.name',
+        'cpu',
+        'gpu',
+        'emulator.name',
+        'author.name',
+      ])
+      .nullable()
+      .optional(),
+    sortDirection: z.enum(['asc', 'desc']).nullable().optional(),
+  })
+  .superRefine((input, context) =>
+    refinePaginationOffset({ offset: (input.page - 1) * input.limit }, context, ['page']),
+  )
 
 export const OverridePcApprovalStatusSchema = z.object({
   pcListingId: z.string().uuid(),
@@ -126,30 +140,32 @@ export const VerifyPcListingAdminSchema = z.object({
 })
 
 // Admin schemas for PC listing management
-export const GetAllPcListingsAdminSchema = z.object({
-  page: z.number().int().positive().default(1),
-  limit: z.number().int().positive().max(PAGINATION.MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
-  sortField: z
-    .enum([
-      'game.title',
-      'game.system.name',
-      'cpu',
-      'gpu',
-      'emulator.name',
-      'performance.rank',
-      'author.name',
-      'createdAt',
-      'status',
-      'memorySize',
-    ])
-    .optional(),
-  sortDirection: z.enum(['asc', 'desc']).optional(),
-  search: z.string().min(1).optional(),
-  statusFilter: z.nativeEnum(ApprovalStatus).optional(),
-  systemFilter: z.string().uuid().optional(),
-  emulatorFilter: z.string().uuid().optional(),
-  osFilter: z.nativeEnum(PcOs).optional(),
-})
+export const GetAllPcListingsAdminSchema = z
+  .object({
+    page: z.number().int().safe().positive().default(1),
+    limit: z.number().int().positive().max(PAGINATION.MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
+    sortField: z
+      .enum([
+        'game.title',
+        'game.system.name',
+        'cpu',
+        'gpu',
+        'emulator.name',
+        'performance.rank',
+        'author.name',
+        'createdAt',
+        'status',
+        'memorySize',
+      ])
+      .optional(),
+    sortDirection: z.enum(['asc', 'desc']).optional(),
+    search: z.string().min(1).optional(),
+    statusFilter: z.nativeEnum(ApprovalStatus).optional(),
+    systemFilter: z.string().uuid().optional(),
+    emulatorFilter: z.string().uuid().optional(),
+    osFilter: z.nativeEnum(PcOs).optional(),
+  })
+  .superRefine(refinePaginationOffset)
 
 export const GetPcListingForAdminEditSchema = z.object({
   id: z.string().uuid(),
@@ -291,9 +307,10 @@ export const GetPcListingReportsSchema = z
     reason: z.nativeEnum(ReportReason).optional(),
     sortField: PcListingReportSortField.optional(),
     sortDirection: SortDirectionSchema.optional(),
-    page: z.coerce.number().int().min(1).default(1),
+    page: z.coerce.number().int().safe().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 // PC Listing Verification schemas

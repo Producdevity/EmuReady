@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { SortDirectionSchema } from '@/schemas/common'
+import { refinePaginationOffset } from '@/schemas/pagination'
 import { Role, PermissionActionType } from '@orm'
 
 // Sorting and filtering schemas
@@ -14,10 +15,11 @@ export const GetAllPermissionsSchema = z
     category: PermissionCategory.optional(),
     sortField: PermissionSortField.optional(),
     sortDirection: SortDirectionSchema.optional(),
-    page: z.number().int().min(1).default(1),
+    page: z.number().int().safe().min(1).default(1),
     limit: z.number().int().min(1).max(100).default(50),
     includeSystemOnly: z.boolean().optional(),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 // Permission CRUD schemas
@@ -79,11 +81,12 @@ export const GetPermissionLogsSchema = z
     permissionId: z.string().uuid().optional(),
     sortField: PermissionLogSortField.optional(),
     sortDirection: SortDirectionSchema.optional(),
-    page: z.number().int().min(1).default(1),
+    page: z.number().int().safe().min(1).default(1),
     limit: z.number().int().min(1).max(100).default(20),
     dateFrom: z.string().datetime().optional(),
     dateTo: z.string().datetime().optional(),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 // Permission matrix schema for UI

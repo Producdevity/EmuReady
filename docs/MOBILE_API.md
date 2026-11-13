@@ -1,6 +1,6 @@
 # EmuReady Public Integration API (mobile-compatible tRPC)
 
-*Auto-generated on: 2026-11-13T19:55:28.902Z*
+*Auto-generated on: 2026-11-13T21:18:52.607Z*
 
 ## Summary
 - **Total Endpoints**: 113

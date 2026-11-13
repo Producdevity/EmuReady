@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { SortDirectionSchema } from '@/schemas/common'
+import { refinePaginationOffset } from '@/schemas/pagination'
 import { AuditAction, AuditEntityType } from '@orm'
 
 export const AuditLogSortField = z.enum([
@@ -19,11 +20,12 @@ export const GetAuditLogsSchema = z
     targetUserId: z.string().uuid().optional(),
     sortField: AuditLogSortField.optional(),
     sortDirection: SortDirectionSchema.optional(),
-    page: z.number().int().min(1).default(1),
+    page: z.number().int().safe().min(1).default(1),
     limit: z.number().int().min(1).max(100).default(50),
     dateFrom: z.string().datetime().optional(),
     dateTo: z.string().datetime().optional(),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export const GetAuditLogByIdSchema = z.object({ id: z.string().uuid() })

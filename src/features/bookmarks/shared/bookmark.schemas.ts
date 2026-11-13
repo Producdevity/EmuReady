@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { PAGINATION } from '@/data/constants'
 import { BookmarkFiltersSchema } from '@/features/bookmarks/shared/bookmark-filters.schemas'
+import { refinePaginationOffset } from '@/schemas/pagination'
 
 const listingIdSchema = z.object({
   listingId: z.string().uuid(),
@@ -13,11 +14,12 @@ const pcListingIdSchema = z.object({
 const bookmarkListSchema = z
   .object({
     userId: z.string().uuid(),
-    page: z.number().int().min(1).default(1),
+    page: z.number().int().safe().min(1).default(1),
     limit: z.number().int().min(1).max(PAGINATION.MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
     search: z.string().max(100).optional(),
   })
   .merge(BookmarkFiltersSchema)
+  .superRefine(refinePaginationOffset)
 
 export const BookmarkListingSchema = listingIdSchema
 export const UnbookmarkListingSchema = listingIdSchema

@@ -121,24 +121,18 @@ test.describe('Page Content Tests', () => {
     const homePage = new HomePage(page)
     await homePage.goto()
 
+    const navigation = page.getByRole('navigation')
+    const homeLink = navigation.getByRole('link', { name: 'Home', exact: true })
+
+    await expect(homeLink).toBeVisible()
+    await homeLink.focus()
+    await expect(homeLink).toBeFocused()
+
     await page.keyboard.press('Tab')
+    await expect(navigation.getByRole('link', { name: 'Handheld', exact: true })).toBeFocused()
 
-    const navigationLinks = ['Home', 'Handheld', 'PC', 'Games', 'Emulators']
-    const focusedTexts: string[] = []
-
-    for (let i = 0; i < navigationLinks.length; i++) {
-      const focusedElement = page.locator(':focus')
-      const text = await focusedElement.textContent()
-      if (text) {
-        focusedTexts.push(text.trim().toLowerCase())
-      }
-      await page.keyboard.press('Tab')
-    }
-
-    const matchedLinks = navigationLinks.filter((link) =>
-      focusedTexts.some((text) => text.includes(link.toLowerCase())),
-    )
-    expect(matchedLinks.length).toBeGreaterThan(0)
+    await page.keyboard.press('Tab')
+    await expect(navigation.getByRole('link', { name: 'PC', exact: true })).toBeFocused()
   })
 })
 
