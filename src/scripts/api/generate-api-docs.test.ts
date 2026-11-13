@@ -53,9 +53,10 @@ describe('generated mobile numeric input contracts', () => {
   const limit = { type: 'integer', minimum: 1, maximum: 50, default: 20 }
 
   it.each([
-    { name: 'GetGamesSchema', optional: true },
-    { name: 'GetListingsSchema', optional: true },
-    { name: 'GetPcListingsSchema', optional: false },
+    { name: 'GetGamesSchema', optional: true, maxLimit: 50 },
+    { name: 'GetListingsSchema', optional: true, maxLimit: 50 },
+    { name: 'GetPcListingsSchema', optional: false, maxLimit: 50 },
+    { name: 'GetNotificationsSchema', optional: true, maxLimit: 50 },
   ])('documents nullable integer pages and bounded integer limits for $name', (schema) => {
     const properties = {
       page: {
@@ -64,7 +65,7 @@ describe('generated mobile numeric input contracts', () => {
           { type: 'null' },
         ],
       },
-      limit,
+      limit: { ...limit, maximum: schema.maxLimit },
     }
     expect(schemas[schema.name]).toMatchObject(
       schema.optional ? { anyOf: [{}, { properties }] } : { properties },
@@ -73,6 +74,18 @@ describe('generated mobile numeric input contracts', () => {
 
   it('documents bounded integer preset list limits', () => {
     expect(schemas.GetPcPresetsSchema).toMatchObject({ properties: { limit } })
+  })
+
+  it('documents bounded integer device and emulator limits with their existing defaults', () => {
+    expect(schemas.GetDevicesSchema).toMatchObject({
+      anyOf: [
+        {},
+        { properties: { limit: { type: 'integer', minimum: 1, maximum: 1000, default: 50 } } },
+      ],
+    })
+    expect(schemas.GetEmulatorsSchema).toMatchObject({
+      properties: { limit: { type: 'integer', minimum: 1, maximum: 100, default: 50 } },
+    })
   })
 
   it.each(['CreatePcPresetSchema', 'UpdatePcPresetSchema'])(

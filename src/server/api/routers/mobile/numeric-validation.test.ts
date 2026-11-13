@@ -1,8 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { prisma } from '@/server/db'
+import { PERMISSIONS } from '@/utils/permission-system'
 import { PcOs, type Prisma, Role } from '@orm'
+import { mobileAdminRouter } from './admin'
+import { mobileDevicesRouter } from './devices'
+import { mobileEmulatorsRouter } from './emulators'
 import { mobileGamesRouter } from './games'
 import { mobileListingsRouter } from './listings'
+import { mobileNotificationsRouter } from './notifications'
 import { mobilePcListingsRouter } from './pcListings'
 import { mobilePcPresetsRouter } from './pcPresets'
 import type { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
@@ -15,6 +20,11 @@ const db = vi.hoisted(() => ({
   game: { findMany: vi.fn(), count: vi.fn() },
   listing: { findMany: vi.fn(), count: vi.fn() },
   pcListing: { findMany: vi.fn(), count: vi.fn() },
+  device: { findMany: vi.fn(), count: vi.fn() },
+  emulator: { findMany: vi.fn(), count: vi.fn() },
+  notification: { findMany: vi.fn(), count: vi.fn() },
+  listingReport: { findMany: vi.fn(), count: vi.fn() },
+  userBan: { findMany: vi.fn(), count: vi.fn() },
   userPcPreset: {
     findMany: vi.fn(),
     findFirst: vi.fn(),
@@ -59,7 +69,7 @@ const preset = {
 } satisfies Prisma.UserPcPresetGetPayload<{
   include: typeof UserPcPresetsRepository.includes.full
 }>
-const presets = mobilePcPresetsRouter.createCaller({
+const userContext = {
   ...context,
   session: {
     user: {
@@ -71,29 +81,91 @@ const presets = mobilePcPresetsRouter.createCaller({
       showNsfw: false,
     },
   },
+}
+const presets = mobilePcPresetsRouter.createCaller(userContext)
+const admin = mobileAdminRouter.createCaller({
+  ...userContext,
+  session: {
+    user: {
+      ...userContext.session.user,
+      role: Role.ADMIN,
+      permissions: [
+        PERMISSIONS.APPROVE_LISTINGS,
+        PERMISSIONS.APPROVE_GAMES,
+        PERMISSIONS.MANAGE_USERS,
+      ],
+    },
+  },
 })
 const catalogs = [
-  { name: 'games', get: mobileGamesRouter.createCaller(context).get, read: db.game.findMany },
+  {
+    name: 'games',
+    get: mobileGamesRouter.createCaller(context).get,
+    read: db.game.findMany,
+    maxLimit: 50,
+  },
   {
     name: 'handheld reports',
     get: mobileListingsRouter.createCaller(context).get,
     read: db.listing.findMany,
+    maxLimit: 50,
   },
   {
     name: 'handheld report alias',
     get: mobileListingsRouter.createCaller(context).getListings,
     read: db.listing.findMany,
+    maxLimit: 50,
   },
   {
     name: 'PC reports',
     get: mobilePcListingsRouter.createCaller(context).get,
     read: db.pcListing.findMany,
+    maxLimit: 50,
+  },
+  {
+    name: 'notifications',
+    get: mobileNotificationsRouter.createCaller(userContext).get,
+    read: db.notification.findMany,
+    maxLimit: 50,
+  },
+  {
+    name: 'pending handheld reports',
+    get: admin.getPendingListings,
+    read: db.listing.findMany,
+    maxLimit: 100,
+  },
+  {
+    name: 'pending games',
+    get: admin.getPendingGames,
+    read: db.game.findMany,
+    maxLimit: 100,
+  },
+  {
+    name: 'moderation reports',
+    get: admin.getReports,
+    read: db.listingReport.findMany,
+    maxLimit: 100,
+  },
+  {
+    name: 'user bans',
+    get: admin.getUserBans,
+    read: db.userBan.findMany,
+    maxLimit: 100,
   },
 ]
 
 beforeEach(() => {
   vi.clearAllMocks()
-  for (const catalog of [db.game, db.listing, db.pcListing]) {
+  for (const catalog of [
+    db.game,
+    db.listing,
+    db.pcListing,
+    db.device,
+    db.emulator,
+    db.notification,
+    db.listingReport,
+    db.userBan,
+  ]) {
     catalog.findMany.mockResolvedValue([])
     catalog.count.mockResolvedValue(0)
   }
@@ -123,7 +195,7 @@ describe.each(catalogs)('mobile $name pagination', (catalog) => {
     { page: 1e40 },
     { page: Number.MAX_SAFE_INTEGER + 1 },
     { page: Number.MAX_SAFE_INTEGER, limit: 50 },
-    { limit: 51 },
+    { limit: catalog.maxLimit + 1 },
   ])('rejects %j before any database operation', async (input) => {
     await expect(catalog.get(input)).rejects.toMatchObject({ code: 'BAD_REQUEST' })
     expectNoDatabaseCalls()
@@ -144,18 +216,20 @@ describe.each(catalogs)('mobile $name pagination', (catalog) => {
   })
 
   it('preserves the maximum page size and requested page', async () => {
-    await catalog.get({ page: 2, limit: 50 })
-    expect(catalog.read).toHaveBeenCalledWith(expect.objectContaining({ skip: 50, take: 50 }))
+    await catalog.get({ page: 2, limit: catalog.maxLimit })
+    expect(catalog.read).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: catalog.maxLimit, take: catalog.maxLimit }),
+    )
   })
 
   it('accepts the last safe computed offset and rejects the next page', async () => {
-    const page = Math.floor(Number.MAX_SAFE_INTEGER / 50) + 1
-    await catalog.get({ page, limit: 50 })
+    const page = Math.floor(Number.MAX_SAFE_INTEGER / catalog.maxLimit) + 1
+    await catalog.get({ page, limit: catalog.maxLimit })
     expect(catalog.read).toHaveBeenCalledWith(
-      expect.objectContaining({ skip: (page - 1) * 50, take: 50 }),
+      expect.objectContaining({ skip: (page - 1) * catalog.maxLimit, take: catalog.maxLimit }),
     )
     vi.clearAllMocks()
-    await expect(catalog.get({ page: page + 1, limit: 50 })).rejects.toMatchObject({
+    await expect(catalog.get({ page: page + 1, limit: catalog.maxLimit })).rejects.toMatchObject({
       code: 'BAD_REQUEST',
     })
     expectNoDatabaseCalls()
@@ -168,6 +242,65 @@ it('preserves omitted game and handheld catalog inputs', async () => {
   await mobileListingsRouter.createCaller(context).getListings()
   expect(db.game.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 0, take: 20 }))
   expect(db.listing.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 0, take: 20 }))
+})
+
+it('preserves omitted notification and admin pagination inputs', async () => {
+  await mobileNotificationsRouter.createCaller(userContext).get()
+  await admin.getPendingListings()
+  await admin.getPendingGames()
+  await admin.getReports()
+  await admin.getUserBans()
+  for (const model of [db.notification, db.listing, db.game, db.listingReport, db.userBan]) {
+    expect(model.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 0, take: 20 }))
+  }
+})
+
+describe.each([
+  {
+    name: 'devices',
+    get: mobileDevicesRouter.createCaller(context).get,
+    read: db.device.findMany,
+    maxLimit: 1000,
+  },
+  {
+    name: 'emulators',
+    get: mobileEmulatorsRouter.createCaller(context).get,
+    read: db.emulator.findMany,
+    maxLimit: 100,
+  },
+])('mobile $name limits', (catalog) => {
+  it.each([1.5, 0, Infinity, NaN, catalog.maxLimit + 1])(
+    'rejects limit %s before any database operation',
+    async (limit) => {
+      await expect(catalog.get({ limit })).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+      expectNoDatabaseCalls()
+    },
+  )
+
+  it('preserves the default and maximum page sizes', async () => {
+    await catalog.get({})
+    expect(catalog.read).toHaveBeenCalledWith(expect.objectContaining({ skip: 0, take: 50 }))
+    await catalog.get({ limit: catalog.maxLimit })
+    expect(catalog.read).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: 0, take: catalog.maxLimit }),
+    )
+  })
+})
+
+it('preserves the omitted device input and existing response shape', async () => {
+  expect(await mobileDevicesRouter.createCaller(context).get()).toEqual({
+    devices: [],
+    pagination: {
+      total: 0,
+      page: 1,
+      limit: 20,
+      pages: 0,
+      offset: 0,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    },
+  })
+  expect(await mobileEmulatorsRouter.createCaller(context).get({})).toEqual([])
 })
 
 describe('mobile PC preset numeric inputs', () => {

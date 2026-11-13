@@ -464,7 +464,7 @@
                 "description": "Filter by brand ID"
               },
               "limit": {
-                "type": "number",
+                "type": "integer",
                 "minimum": 1,
                 "maximum": 1000,
                 "default": 50,
@@ -488,7 +488,7 @@
             "maxLength": 100
           },
           "limit": {
-            "type": "number",
+            "type": "integer",
             "minimum": 1,
             "maximum": 100,
             "default": 50
@@ -2405,8 +2405,9 @@
               "page": {
                 "anyOf": [
                   {
-                    "type": "number",
+                    "type": "integer",
                     "minimum": 1,
+                    "maximum": 9007199254740991,
                     "default": 1
                   },
                   {
@@ -2416,7 +2417,7 @@
                 "description": "Page number for pagination"
               },
               "limit": {
-                "type": "number",
+                "type": "integer",
                 "minimum": 1,
                 "maximum": 50,
                 "default": 20,

@@ -469,7 +469,13 @@ export const GetDevicesSchema = z
       .optional()
       .describe('Search devices by name'),
     brandId: z.string().uuid().optional().describe('Filter by brand ID'),
-    limit: z.number().min(1).max(1000).default(50).describe('Number of results to return (1-1000)'),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(1000)
+      .default(50)
+      .describe('Number of results to return (1-1000)'),
   })
   .optional()
   .describe('Get devices with optional filters')
@@ -477,7 +483,7 @@ export const GetDevicesSchema = z
 export const GetEmulatorsSchema = z.object({
   systemId: z.string().uuid().optional(),
   search: z.string().max(MOBILE_SEARCH_QUERY_MAX_LENGTH).optional(),
-  limit: z.number().min(1).max(100).default(50),
+  limit: z.number().int().min(1).max(100).default(50),
 })
 
 export const GetEmulatorByIdSchema = z.object({
@@ -488,13 +494,25 @@ export const GetNotificationsSchema = z
   .object({
     page: z
       .number()
+      .int()
+      .safe()
       .min(1)
       .default(1)
       .nullable()
       .transform((val) => val ?? 1)
       .describe('Page number for pagination'),
-    limit: z.number().min(1).max(50).default(20).describe('Number of results per page (1-50)'),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(50)
+      .default(20)
+      .describe('Number of results per page (1-50)'),
     unreadOnly: z.boolean().default(false).describe('Show only unread notifications'),
+  })
+  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
+    message: 'Pagination offset exceeds the supported range',
+    path: ['page'],
   })
   .optional()
   .describe('Get notifications with optional filters and pagination')
@@ -650,11 +668,17 @@ export const MobileAdminGetPendingListingsSchema = z
     search: z.string().max(MOBILE_SEARCH_QUERY_MAX_LENGTH).optional(),
     page: z
       .number()
+      .int()
+      .safe()
       .min(1)
       .default(1)
       .nullable()
       .transform((val) => val ?? 1),
-    limit: z.number().min(1).max(100).default(20),
+    limit: z.number().int().min(1).max(100).default(20),
+  })
+  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
+    message: 'Pagination offset exceeds the supported range',
+    path: ['page'],
   })
   .optional()
 
@@ -672,11 +696,17 @@ export const MobileAdminGetPendingGamesSchema = z
     search: z.string().max(MOBILE_SEARCH_QUERY_MAX_LENGTH).optional(),
     page: z
       .number()
+      .int()
+      .safe()
       .min(1)
       .default(1)
       .nullable()
       .transform((val) => val ?? 1),
-    limit: z.number().min(1).max(100).default(20),
+    limit: z.number().int().min(1).max(100).default(20),
+  })
+  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
+    message: 'Pagination offset exceeds the supported range',
+    path: ['page'],
   })
   .optional()
 
@@ -694,11 +724,17 @@ export const MobileAdminGetReportsSchema = z
     status: z.nativeEnum(ReportStatus).optional(),
     page: z
       .number()
+      .int()
+      .safe()
       .min(1)
       .default(1)
       .nullable()
       .transform((val) => val ?? 1),
-    limit: z.number().min(1).max(100).default(20),
+    limit: z.number().int().min(1).max(100).default(20),
+  })
+  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
+    message: 'Pagination offset exceeds the supported range',
+    path: ['page'],
   })
   .optional()
 
@@ -713,11 +749,17 @@ export const MobileAdminGetUserBansSchema = z
     isActive: z.boolean().optional(),
     page: z
       .number()
+      .int()
+      .safe()
       .min(1)
       .default(1)
       .nullable()
       .transform((val) => val ?? 1),
-    limit: z.number().min(1).max(100).default(20),
+    limit: z.number().int().min(1).max(100).default(20),
+  })
+  .refine((input) => Number.isSafeInteger((input.page - 1) * input.limit), {
+    message: 'Pagination offset exceeds the supported range',
+    path: ['page'],
   })
   .optional()
 
