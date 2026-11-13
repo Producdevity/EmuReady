@@ -96,6 +96,48 @@ describe('generated mobile numeric input contracts', () => {
       })
     },
   )
+
+  it.each(['MobileGetCpusSchema', 'MobileGetGpusSchema'])(
+    'documents safe integer catalog fields without changing optionality or defaults for %s',
+    (name) => {
+      const branches = z
+        .object({
+          anyOf: z.tuple([
+            z.unknown(),
+            z.object({
+              properties: z.record(z.record(z.unknown())),
+              required: z.array(z.string()).optional(),
+            }),
+          ]),
+        })
+        .parse(schemas[name]).anyOf
+      const integer = {
+        type: 'integer',
+        minimum: -Number.MAX_SAFE_INTEGER,
+        maximum: Number.MAX_SAFE_INTEGER,
+      }
+      expect(branches[0]).toEqual({ not: {} })
+      expect(branches[1].required).toBeUndefined()
+      expect(branches[1].properties).toMatchObject({
+        limit: { ...integer, minimum: 1, default: 20 },
+        offset: { ...integer, default: 0 },
+        page: { ...integer, minimum: 1 },
+      })
+      for (const field of ['limit', 'offset', 'page']) {
+        expect(branches[1].properties[field]).not.toHaveProperty('exclusiveMinimum')
+        expect(branches[1].properties[field]).not.toHaveProperty('exclusiveMaximum')
+      }
+    },
+  )
+
+  it.each(['MobilePcListingCpusSchema', 'MobilePcListingGpusSchema'])(
+    'documents integer PC lookup limits with default50 and cap100 for %s',
+    (name) => {
+      expect(schemas[name]).toMatchObject({
+        properties: { limit: { type: 'integer', minimum: 1, maximum: 100, default: 50 } },
+      })
+    },
+  )
 })
 
 describe('generated report integer input contracts', () => {

@@ -1,14 +1,17 @@
 import { z } from 'zod'
 import { PAGINATION } from '@/data/constants'
+import { refinePaginationOffset } from '@/schemas/pagination'
 import { NotificationCategory, NotificationType } from '@orm'
 
-export const GetNotificationsSchema = z.object({
-  limit: z.number().min(1).max(PAGINATION.MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
-  offset: z.number().min(0).optional(),
-  page: z.number().min(1).optional(),
-  isRead: z.boolean().optional(),
-  category: z.nativeEnum(NotificationCategory).optional(),
-})
+export const GetNotificationsSchema = z
+  .object({
+    limit: z.number().int().min(1).max(PAGINATION.MAX_LIMIT).default(PAGINATION.DEFAULT_LIMIT),
+    offset: z.number().int().safe().min(0).optional(),
+    page: z.number().int().safe().min(1).optional(),
+    isRead: z.boolean().optional(),
+    category: z.nativeEnum(NotificationCategory).optional(),
+  })
+  .superRefine(refinePaginationOffset)
 
 export const UpdateNotificationPreferenceSchema = z.object({
   type: z.nativeEnum(NotificationType),

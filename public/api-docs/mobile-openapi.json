@@ -212,15 +212,21 @@
                 "format": "uuid"
               },
               "limit": {
-                "type": "number",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991,
                 "default": 20
               },
               "offset": {
-                "type": "number",
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
                 "default": 0
               },
               "page": {
-                "type": "number"
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
               },
               "sortField": {
                 "type": "string",
@@ -1445,15 +1451,21 @@
                 "format": "uuid"
               },
               "limit": {
-                "type": "number",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991,
                 "default": 20
               },
               "offset": {
-                "type": "number",
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
                 "default": 0
               },
               "page": {
-                "type": "number"
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
               },
               "sortField": {
                 "type": "string",
@@ -2961,7 +2973,7 @@
             "format": "uuid"
           },
           "limit": {
-            "type": "number",
+            "type": "integer",
             "minimum": 1,
             "maximum": 100,
             "default": 50
@@ -3037,7 +3049,7 @@
             "format": "uuid"
           },
           "limit": {
-            "type": "number",
+            "type": "integer",
             "minimum": 1,
             "maximum": 100,
             "default": 50

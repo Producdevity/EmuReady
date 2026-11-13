@@ -7,6 +7,7 @@ export const ActivityQuerySchema = z.object({
   timeRange: TimeRangeSchema,
   limit: z
     .number()
+    .int()
     .min(1)
     .max(50)
     .optional()
