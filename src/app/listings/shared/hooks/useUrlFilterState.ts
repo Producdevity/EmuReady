@@ -64,7 +64,7 @@ export function useUrlFilterState<TSortField extends string>(config: Config) {
       if (shouldPush) {
         router.push(url)
       } else {
-        router.replace(url)
+        router.replace(url, { scroll: false })
       }
     },
     [config.basePath, router, searchParams],
