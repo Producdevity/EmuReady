@@ -10,7 +10,7 @@ const LISTING_REPORT_MODERATION_SELECT = {
   reportedById: true,
   reason: true,
   status: true,
-  listing: { select: { status: true } },
+  listing: { select: { status: true, authorId: true } },
 } satisfies Prisma.ListingReportSelect
 
 const PC_LISTING_REPORT_MODERATION_SELECT = {
@@ -19,7 +19,7 @@ const PC_LISTING_REPORT_MODERATION_SELECT = {
   reportedById: true,
   reason: true,
   status: true,
-  pcListing: { select: { status: true } },
+  pcListing: { select: { status: true, authorId: true } },
 } satisfies Prisma.PcListingReportSelect
 
 const LISTING_REPORT_STATUS_RESULT_INCLUDE = {

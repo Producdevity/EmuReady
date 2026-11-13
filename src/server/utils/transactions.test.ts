@@ -34,6 +34,28 @@ describe('transaction retries', () => {
     expect(database.$transaction).toHaveBeenCalledOnce()
   })
 
+  it('retries a write conflict preserved inside repository error causes', async () => {
+    const conflict = Object.assign(new Error('Write conflict'), { code: 'P2034' })
+    const wrapped = new Error('Database write failed', {
+      cause: new Error('Database operation failed', { cause: conflict }),
+    })
+    database.$transaction.mockRejectedValueOnce(wrapped).mockResolvedValueOnce('committed')
+    await expect(
+      withRetryTransaction(prisma, async () => 'committed', { retryDelay: 0 }),
+    ).resolves.toBe('committed')
+    expect(database.$transaction).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not retry a different Prisma failure wrapped by a repository', async () => {
+    const constraint = Object.assign(new Error('Duplicate entry'), { code: 'P2002' })
+    const wrapped = new Error('Database write failed', { cause: constraint })
+    database.$transaction.mockRejectedValue(wrapped)
+    await expect(withRetryTransaction(prisma, async () => null, { retryDelay: 0 })).rejects.toBe(
+      wrapped,
+    )
+    expect(database.$transaction).toHaveBeenCalledOnce()
+  })
+
   it('stops at the configured retry limit', async () => {
     const conflict = Object.assign(new Error('Write conflict'), { code: 'P2034' })
     database.$transaction.mockRejectedValue(conflict)
