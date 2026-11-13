@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest'
-import type AsyncSocFilterSelectComponent from './AsyncSocFilterSelect'
+import type SocMultiSelectComponent from './SocMultiSelect'
 
 const apiMocks = vi.hoisted(() => ({
   useQueries: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock('@/lib/api', () => ({
   },
 }))
 
-let AsyncSocFilterSelect: typeof AsyncSocFilterSelectComponent
+let SocMultiSelect: typeof SocMultiSelectComponent
 
 const OPTION_SOC = {
   id: 'soc-1',
@@ -79,9 +79,9 @@ function setupApiMocks() {
   }))
 }
 
-describe('AsyncSocFilterSelect', () => {
+describe('SocMultiSelect', () => {
   beforeAll(async () => {
-    ;({ default: AsyncSocFilterSelect } = await import('./AsyncSocFilterSelect'))
+    ;({ default: SocMultiSelect } = await import('./SocMultiSelect'))
   })
 
   beforeEach(() => {
@@ -90,7 +90,7 @@ describe('AsyncSocFilterSelect', () => {
   })
 
   it('maps SoC option and selected labels', () => {
-    render(<AsyncSocFilterSelect label={SOC_LABEL} value={[SELECTED_SOC.id]} onChange={vi.fn()} />)
+    render(<SocMultiSelect label={SOC_LABEL} value={[SELECTED_SOC.id]} onChange={vi.fn()} />)
 
     expect(screen.getByText(SELECTED_SOC_LABEL)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: `${SOC_LABEL} multi-select` }))

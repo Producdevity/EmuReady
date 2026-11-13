@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useCallback, useMemo, useState, type FormEvent } from 'react'
 import { Button, Input, Modal, Autocomplete } from '@/components/ui'
 import { LOOKUP_PAGINATION } from '@/data/constants'
 import { api } from '@/lib/api'
@@ -55,8 +55,19 @@ function DeviceModalForm(props: FormProps) {
   const createDevice = api.devices.create.useMutation()
   const updateDevice = api.devices.update.useMutation()
   const deviceBrandsQuery = api.deviceBrands.get.useQuery({ limit: 100 })
-  // TODO: Make this selector async instead of preloading 1000 options.
-  const socsQuery = api.socs.options.useQuery({ limit: LOOKUP_PAGINATION.MAX_LIMIT })
+  const utils = api.useUtils()
+  const loadSocs = useCallback(
+    async (search: string) => {
+      const result = await utils.socs.options.fetch({
+        search: search || undefined,
+        limit: LOOKUP_PAGINATION.DEFAULT_LIMIT,
+      })
+      return result.socs
+    },
+    [utils],
+  )
+  const initialSoc = props.deviceData?.soc
+  const selectedSocs = useMemo(() => (initialSoc ? [initialSoc] : []), [initialSoc])
 
   const [brandId, setBrandId] = useState(props.deviceData?.brandId ?? '')
   const [modelName, setModelName] = useState(props.deviceData?.modelName ?? '')
@@ -130,7 +141,9 @@ function DeviceModalForm(props: FormProps) {
         <Autocomplete
           value={socId}
           onChange={(value) => setSocId(value ?? '')}
-          items={socsQuery.data?.socs ?? []}
+          id="soc"
+          items={selectedSocs}
+          loadItems={loadSocs}
           optionToValue={(soc) => soc.id}
           optionToLabel={(soc) => `${soc.manufacturer} ${soc.name}`}
           placeholder="Select a SoC..."

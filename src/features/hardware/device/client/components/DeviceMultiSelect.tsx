@@ -17,7 +17,7 @@ interface Props {
   maxDisplayed?: number
 }
 
-export default function AsyncDeviceFilterSelect(props: Props) {
+export default function DeviceMultiSelect(props: Props) {
   const [query, setQuery] = useState('')
   const [pageOffsets, setPageOffsets] = useState([0])
 

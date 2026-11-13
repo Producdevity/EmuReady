@@ -7,9 +7,9 @@ import { ActiveFiltersSummary, ListingsSearchBar } from '@/app/listings/shared/c
 import { buildActiveFilterItems } from '@/app/listings/shared/utils/buildActiveFilterItems'
 import { Button, MultiSelect } from '@/components/ui'
 import { type Option } from '@/components/ui/form/async-multi-select/AsyncMultiSelect'
+import DeviceMultiSelect from '@/features/hardware/device/client/components/DeviceMultiSelect'
+import SocMultiSelect from '@/features/hardware/soc/client/components/SocMultiSelect'
 import { performanceOptions, systemOptions, emulatorOptions } from '@/utils/options'
-import AsyncDeviceFilterSelect from './filters/AsyncDeviceFilterSelect'
-import AsyncSocFilterSelect from './filters/AsyncSocFilterSelect'
 
 interface Props {
   systemIds: string[]
@@ -68,7 +68,7 @@ export default function ListingsFiltersContent(props: Props) {
         maxDisplayed={1}
       />
 
-      <AsyncDeviceFilterSelect
+      <DeviceMultiSelect
         label="Devices"
         leftIcon={<MonitorSmartphone className="w-5 h-5" />}
         value={props.deviceIds}
@@ -77,7 +77,7 @@ export default function ListingsFiltersContent(props: Props) {
         maxDisplayed={1}
       />
 
-      <AsyncSocFilterSelect
+      <SocMultiSelect
         label="SoCs"
         leftIcon={<Cpu className="w-5 h-5" />}
         value={props.socIds}

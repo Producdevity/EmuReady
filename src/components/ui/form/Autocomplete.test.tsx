@@ -19,6 +19,59 @@ interface GameOption extends AutocompleteOptionBase {
   }
 }
 
+describe('Autocomplete async response ordering', () => {
+  it('keeps a newer lookup when the initial empty lookup completes last', async () => {
+    const initial = Promise.withResolvers<TestOption[]>()
+    const typed = Promise.withResolvers<TestOption[]>()
+    const loadItems = vi.fn((query: string) => (query ? typed.promise : initial.promise))
+    render(<Autocomplete {...defaultProps} loadItems={loadItems} />)
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Rare' } })
+    await waitFor(() => expect(loadItems).toHaveBeenCalledWith('Rare'))
+    await act(async () => typed.resolve([{ id: 'new', name: 'Rare result' }]))
+    expect(screen.getByRole('option', { name: 'Rare result' })).toBeVisible()
+
+    await act(async () => initial.resolve([{ id: 'old', name: 'Initial result' }]))
+
+    expect(screen.getByRole('option', { name: 'Rare result' })).toBeVisible()
+    expect(screen.queryByRole('option', { name: 'Initial result' })).not.toBeInTheDocument()
+  })
+
+  it.each(['resolve', 'reject'] as const)(
+    'keeps a newer lookup when an older typed lookup finishes with %s',
+    async (outcome) => {
+      const older = Promise.withResolvers<TestOption[]>()
+      const newer = Promise.withResolvers<TestOption[]>()
+      const loadItems = vi.fn((query: string) => {
+        if (!query) return Promise.resolve([])
+        return query === 'Old' ? older.promise : newer.promise
+      })
+      const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {})
+      try {
+        render(<Autocomplete {...defaultProps} loadItems={loadItems} />)
+        const input = screen.getByRole('combobox')
+        fireEvent.change(input, { target: { value: 'Old' } })
+        await waitFor(() => expect(loadItems).toHaveBeenCalledWith('Old'))
+        fireEvent.change(input, { target: { value: 'New' } })
+        await waitFor(() => expect(loadItems).toHaveBeenCalledWith('New'))
+        await act(async () => newer.resolve([{ id: 'new', name: 'Newest result' }]))
+
+        await act(async () => {
+          if (outcome === 'reject') older.reject(new Error('Old request failed'))
+          else older.resolve([{ id: 'old', name: 'Older result' }])
+        })
+
+        expect(screen.getByRole('option', { name: 'Newest result' })).toBeVisible()
+        expect(screen.queryByRole('option', { name: 'Older result' })).not.toBeInTheDocument()
+        expect(errorLog).not.toHaveBeenCalled()
+      } finally {
+        older.resolve([])
+        newer.resolve([])
+        errorLog.mockRestore()
+      }
+    },
+  )
+})
+
 const mockStaticItems: TestOption[] = [
   { id: '1', name: 'Apple', category: 'fruit' },
   { id: '2', name: 'Banana', category: 'fruit' },
@@ -467,7 +520,7 @@ describe('Autocomplete Component', () => {
     const mockLoadItems = vi.fn()
 
     beforeEach(() => {
-      mockLoadItems.mockClear()
+      mockLoadItems.mockReset()
     })
 
     it('should call loadItems when typing', async () => {
@@ -610,7 +663,11 @@ describe('Autocomplete Component', () => {
         secondResolve = resolve
       })
 
-      mockLoadItems.mockReturnValueOnce(firstPromise).mockReturnValueOnce(secondPromise)
+      mockLoadItems.mockImplementation((query: string) => {
+        if (query === 'ap') return firstPromise
+        if (query === 'ba') return secondPromise
+        return Promise.resolve([])
+      })
 
       render(<Autocomplete {...defaultProps} loadItems={mockLoadItems} minCharsToTrigger={2} />)
 
