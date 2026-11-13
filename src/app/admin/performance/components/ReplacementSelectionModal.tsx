@@ -15,12 +15,22 @@ interface Props {
 }
 
 function ReplacementSelectionModal(props: Props) {
+  const activeScaleId = props.isOpen ? (props.scaleToDelete?.id ?? null) : null
+  const [previousScaleId, setPreviousScaleId] = useState(activeScaleId)
   const [selectedReplacementId, setSelectedReplacementId] = useState<number | null>(null)
   const [error, setError] = useState('')
+
+  if (previousScaleId !== activeScaleId) {
+    setPreviousScaleId(activeScaleId)
+    setSelectedReplacementId(null)
+    setError('')
+  }
 
   const performanceScalesQuery = api.performanceScales.get.useQuery({})
   const deletePerformanceScale = api.performanceScales.delete.useMutation({
     onSuccess: () => {
+      setSelectedReplacementId(null)
+      setError('')
       props.onSuccess()
     },
     onError: (err: unknown) => {
@@ -31,6 +41,12 @@ function ReplacementSelectionModal(props: Props) {
   const availableScales = (performanceScalesQuery.data ?? []).filter(
     (scale) => scale.id !== props.scaleToDelete?.id,
   )
+
+  const handleClose = () => {
+    setSelectedReplacementId(null)
+    setError('')
+    props.onClose()
+  }
 
   const handleDelete = async () => {
     if (!props.scaleToDelete || selectedReplacementId === null) return
@@ -52,7 +68,7 @@ function ReplacementSelectionModal(props: Props) {
   return (
     <Modal
       isOpen={props.isOpen}
-      onClose={props.onClose}
+      onClose={handleClose}
       title="Replace Performance Scale"
       closeOnBackdropClick={false}
       size="md"
@@ -118,7 +134,7 @@ function ReplacementSelectionModal(props: Props) {
         )}
 
         <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
-          <Button type="button" variant="outline" onClick={props.onClose}>
+          <Button type="button" variant="outline" onClick={handleClose}>
             Cancel
           </Button>
           <Button
