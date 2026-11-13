@@ -120,18 +120,18 @@ export class ReportApprovalRepository extends PrismaWriteRepository<Target> {
     )
   }
 
-  updateNotes(target: Target, notes: string | null) {
+  updateNotes(target: Target, notes: string | null, actorId: string, processedAt: Date) {
     return this.executeWrite(
       () =>
         target.reportType === 'handheld'
           ? this.prisma.listing.update({
               where: { id: target.reportId },
-              data: { processedNotes: notes },
+              data: { processedNotes: notes, processedByUserId: actorId, processedAt },
               select: { id: true, status: true, processedAt: true },
             })
           : this.prisma.pcListing.update({
               where: { id: target.reportId },
-              data: { processedNotes: notes },
+              data: { processedNotes: notes, processedByUserId: actorId, processedAt },
               select: { id: true, status: true, processedAt: true },
             }),
       target,

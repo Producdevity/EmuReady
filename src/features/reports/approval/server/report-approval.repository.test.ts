@@ -116,6 +116,32 @@ describe('report decision persistence', () => {
     },
   )
 
+  it.each(['handheld', 'pc'] as const)(
+    'attributes %s note corrections to the current reviewer',
+    async (reportType) => {
+      const transaction = createTransaction()
+      const processedAt = new Date('2026-11-13T12:00:00Z')
+      await repository.transaction((bound) =>
+        bound.updateNotes(
+          { reportId: 'report-1', reportType },
+          'Corrected explanation',
+          'super-admin',
+          processedAt,
+        ),
+      )
+      const model = reportType === 'handheld' ? transaction.listing : transaction.pcListing
+      expect(model.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: {
+            processedNotes: 'Corrected explanation',
+            processedByUserId: 'super-admin',
+            processedAt,
+          },
+        }),
+      )
+    },
+  )
+
   it('replaces handheld custom fields in the same transaction-owned repository', async () => {
     const transaction = createTransaction()
     await repository.transaction((bound) =>

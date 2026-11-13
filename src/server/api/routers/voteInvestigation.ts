@@ -15,6 +15,7 @@ import { nullifyUserVotes, restoreUserVotes } from '@/server/services/vote-nulli
 import { withRetryTransaction } from '@/server/utils/transactions'
 import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { PERMISSIONS } from '@/utils/permission-system'
+import { Prisma } from '@orm/client'
 
 const manageBansProcedure = permissionProcedure(PERMISSIONS.MANAGE_USER_BANS)
 
@@ -52,7 +53,7 @@ export const voteInvestigationRouter = createTRPCRouter({
           })
           return { result, changes }
         },
-        { timeout: 120_000 },
+        { timeout: 120_000, isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
       )
       for (const change of committed.changes) trackTrustScoreChange(change)
       return committed.result
@@ -74,7 +75,7 @@ export const voteInvestigationRouter = createTRPCRouter({
           })
           return { result, changes }
         },
-        { timeout: 120_000 },
+        { timeout: 120_000, isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
       )
       for (const change of committed.changes) trackTrustScoreChange(change)
       return committed.result

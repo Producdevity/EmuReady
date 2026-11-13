@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest'
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest'
 import { prisma } from '@/server/db'
 import { type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { TrustAction } from '@orm'
@@ -21,18 +21,37 @@ const database = vi.hoisted(() => ({
 vi.mock('@/server/db', () => ({ prisma: database }))
 
 function createMockPrismaCtx() {
-  database.user.findMany.mockReset().mockResolvedValue([])
-  database.user.findUnique.mockReset().mockResolvedValue(null)
-  database.user.update.mockReset().mockResolvedValue({ trustScore: 50 })
-  database.trustActionLog.create.mockReset().mockResolvedValue({})
-  database.trustActionLog.createMany.mockReset().mockResolvedValue({ count: 0 })
+  const models = {
+    user: {
+      findMany: vi.fn().mockResolvedValue([]),
+      findUnique: vi.fn().mockResolvedValue(null),
+      update: vi.fn().mockResolvedValue({ trustScore: 50 }),
+    },
+    trustActionLog: {
+      create: vi.fn().mockResolvedValue({}),
+      createMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
+  }
+  const transaction: Prisma.TransactionClient = {
+    ...prisma,
+    user: { ...prisma.user, ...models.user },
+    trustActionLog: { ...prisma.trustActionLog, ...models.trustActionLog },
+  }
   database.$transaction
     .mockReset()
     .mockImplementation(async (operation: (tx: Prisma.TransactionClient) => Promise<unknown>) =>
-      operation(prisma),
+      operation(transaction),
     )
-  return database
+  return { ...models, transaction, $transaction: database.$transaction }
 }
+
+afterEach(() => {
+  expect(database.user.findUnique).not.toHaveBeenCalled()
+  expect(database.user.findMany).not.toHaveBeenCalled()
+  expect(database.user.update).not.toHaveBeenCalled()
+  expect(database.trustActionLog.create).not.toHaveBeenCalled()
+  expect(database.trustActionLog.createMany).not.toHaveBeenCalled()
+})
 
 type MockPrismaCtx = ReturnType<typeof createMockPrismaCtx>
 
@@ -314,7 +333,7 @@ describe('TrustService.applyBulkManualAdjustments', () => {
 
     const { TrustService } = await import('./service')
     const changes: TrustScoreChange[] = []
-    const service = TrustService.inTransaction(prisma, changes)
+    const service = TrustService.inTransaction(prismaCtx.transaction, changes)
 
     const result = await service.applyBulkManualAdjustments({
       adjustments: new Map([['user-1', 5]]),
@@ -611,7 +630,7 @@ describe('TrustService.reverseLogAction', () => {
     prismaCtx.user.findUnique.mockResolvedValue({ trustScore: 10 })
     const { TrustService } = await import('./service')
     const changes: TrustScoreChange[] = []
-    const service = TrustService.inTransaction(prisma, changes)
+    const service = TrustService.inTransaction(prismaCtx.transaction, changes)
 
     await service.reverseLogAction({
       userId: 'user-1',

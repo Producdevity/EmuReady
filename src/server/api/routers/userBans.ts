@@ -23,7 +23,7 @@ import { withRetryTransaction } from '@/server/utils/transactions'
 import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { hasRolePermission } from '@/utils/permissions'
-import { AuditAction, AuditEntityType, Role } from '@orm/client'
+import { AuditAction, AuditEntityType, Prisma, Role } from '@orm/client'
 
 export const userBansRouter = createTRPCRouter({
   stats: permissionProcedure(PERMISSIONS.VIEW_STATISTICS).query(async ({ ctx }) => {
@@ -118,7 +118,7 @@ export const userBansRouter = createTRPCRouter({
 
         return { created: ban, nullificationResult: nullResult, trustChanges }
       },
-      { timeout: 120_000 },
+      { timeout: 120_000, isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     )
 
     for (const change of trustChanges) trackTrustScoreChange(change)
@@ -247,7 +247,7 @@ export const userBansRouter = createTRPCRouter({
 
         return { lifted: liftedBan, restorationResult: restoreResult, trustChanges }
       },
-      { timeout: 120_000 },
+      { timeout: 120_000, isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     )
 
     for (const change of trustChanges) trackTrustScoreChange(change)
