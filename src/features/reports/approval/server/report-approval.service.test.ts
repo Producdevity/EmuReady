@@ -134,7 +134,6 @@ for (const reportType of ['handheld', 'pc'] as const) {
         { reportId: 'report-1', reportType },
         'Corrected explanation',
         run.input.actor.id,
-        expect.any(Date),
       )
       expect(run.append).not.toHaveBeenCalled()
       expect(run.update).not.toHaveBeenCalled()

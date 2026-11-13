@@ -214,7 +214,13 @@ export async function batchOperations<T>(
  * Check if an error is retryable
  */
 function isRetryableError(error: unknown): boolean {
-  if (isPrismaError(error, PRISMA_ERROR_CODES.TRANSACTION_FAILED)) return true
+  const seen = new Set<Error>()
+  let cause = error
+  while (cause instanceof Error && !seen.has(cause)) {
+    if (isPrismaError(cause, PRISMA_ERROR_CODES.TRANSACTION_FAILED)) return true
+    seen.add(cause)
+    cause = cause.cause
+  }
   if (error instanceof Error) {
     const message = error.message.toLowerCase()
     return (

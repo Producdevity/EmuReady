@@ -117,16 +117,14 @@ describe('report decision persistence', () => {
   )
 
   it.each(['handheld', 'pc'] as const)(
-    'attributes %s note corrections to the current reviewer',
+    'attributes %s note corrections without changing the approval timestamp',
     async (reportType) => {
       const transaction = createTransaction()
-      const processedAt = new Date('2026-11-13T12:00:00Z')
       await repository.transaction((bound) =>
         bound.updateNotes(
           { reportId: 'report-1', reportType },
           'Corrected explanation',
           'super-admin',
-          processedAt,
         ),
       )
       const model = reportType === 'handheld' ? transaction.listing : transaction.pcListing
@@ -135,7 +133,6 @@ describe('report decision persistence', () => {
           data: {
             processedNotes: 'Corrected explanation',
             processedByUserId: 'super-admin',
-            processedAt,
           },
         }),
       )

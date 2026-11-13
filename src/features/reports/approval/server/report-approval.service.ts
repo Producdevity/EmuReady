@@ -139,7 +139,6 @@ export class ReportApprovalService {
               { reportId: input.reportId, reportType: input.reportType },
               input.notes,
               input.actor.id,
-              now,
             )
           : report
       return { report, updated, changed: false, trustChange: null, banReason: null, notes }

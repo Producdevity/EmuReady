@@ -79,10 +79,6 @@ export const userBansRouter = createTRPCRouter({
       return ResourceError.userBan.cannotBanHigherRole()
     }
 
-    // Check if user already has an active ban
-    const { isBanned } = await repository.checkBanStatus(userId)
-    if (isBanned) return ResourceError.userBan.alreadyBanned()
-
     if (expiresAt && expiresAt <= new Date()) {
       return AppError.badRequest('Expiration date must be in the future')
     }
@@ -91,7 +87,10 @@ export const userBansRouter = createTRPCRouter({
       ctx.prisma,
       async (tx) => {
         const trustChanges: TrustScoreChange[] = []
-        const ban = await new UserBansRepository(tx).create({
+        const transactionRepository = new UserBansRepository(tx)
+        const { isBanned } = await transactionRepository.checkBanStatus(userId)
+        if (isBanned) return ResourceError.userBan.alreadyBanned()
+        const ban = await transactionRepository.create({
           userId,
           bannedById,
           reason,
