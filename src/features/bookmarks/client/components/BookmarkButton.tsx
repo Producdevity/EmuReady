@@ -31,17 +31,18 @@ function BookmarkButton(props: Props) {
           type="button"
           onClick={(event) => {
             event.stopPropagation()
-            handleToggle()
+            if (!disabled) handleToggle()
           }}
           onAuxClick={(event) => event.stopPropagation()}
-          disabled={disabled}
-          whileTap={{ scale: 0.85 }}
+          disabled={disabled && !isStatusError}
+          aria-disabled={disabled}
+          whileTap={disabled ? undefined : { scale: 0.85 }}
           aria-pressed={isBookmarked}
           aria-label={actionLabel}
           className={cn(
             'relative flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-200 outline-none',
             'focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900',
-            'disabled:opacity-50 disabled:cursor-not-allowed',
+            'aria-disabled:opacity-50 aria-disabled:cursor-not-allowed',
             isBookmarked
               ? 'text-amber-500 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/50'
               : 'text-gray-400 dark:text-gray-500 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-gray-100 dark:hover:bg-gray-800',

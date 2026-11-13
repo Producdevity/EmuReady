@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApprovalStatus } from '@orm'
 import BookmarkButton from './BookmarkButton'
@@ -81,11 +81,14 @@ describe('bookmark actions', () => {
   })
 })
 
-it('explains an unavailable bookmark status and prevents writes', () => {
+it('keeps the unavailable status explanation keyboard-accessible without permitting writes', async () => {
   state.isStatusError = true
   render(<BookmarkButton type="listing" listingId={id} />)
   const button = screen.getByRole('button', { name: 'Bookmark status unavailable' })
-  expect(button).toBeDisabled()
+  expect(button).toHaveAttribute('aria-disabled', 'true')
+  act(() => button.focus())
+  expect(button).toHaveFocus()
+  expect(await screen.findByRole('tooltip')).toHaveTextContent('Bookmark status unavailable')
   fireEvent.click(button)
   expect(state.handleToggle).not.toHaveBeenCalled()
 })
