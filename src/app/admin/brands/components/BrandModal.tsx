@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Button, Input, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
+import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 
@@ -15,11 +16,19 @@ interface Props {
 }
 
 function BrandModal(props: Props) {
+  const createBrand = api.deviceBrands.create.useMutation()
+  const updateBrand = api.deviceBrands.update.useMutation()
+  const isPending = createBrand.isPending || updateBrand.isPending
+  function closeModal() {
+    if (!isPending) props.onClose()
+  }
   return (
     <Modal
       isOpen={props.isOpen}
-      onClose={props.onClose}
+      onClose={closeModal}
+      hideCloseButton={isPending}
       title={props.editId ? 'Edit Brand' : 'Add Brand'}
+      closeOnEscape={!isPending}
       closeOnBackdropClick={false}
       size="md"
     >
@@ -27,43 +36,53 @@ function BrandModal(props: Props) {
         key={`${props.isOpen}:${props.editId ?? 'new'}`}
         editId={props.editId}
         brandName={props.brandName}
-        onClose={props.onClose}
+        onClose={closeModal}
         onSuccess={props.onSuccess}
+        createBrand={createBrand}
+        updateBrand={updateBrand}
       />
     </Modal>
   )
 }
 
-type FormProps = Omit<Props, 'isOpen'>
+type FormProps = Omit<Props, 'isOpen'> & {
+  createBrand: ReturnType<typeof api.deviceBrands.create.useMutation>
+  updateBrand: ReturnType<typeof api.deviceBrands.update.useMutation>
+}
 
 function BrandForm(props: FormProps) {
-  const createBrand = api.deviceBrands.create.useMutation()
-  const updateBrand = api.deviceBrands.update.useMutation()
+  const { createBrand, updateBrand } = props
+  const active = useRef(false)
+  useEffect(() => {
+    active.current = true
+    return () => {
+      active.current = false
+    }
+  }, [])
   const [name, setName] = useState(props.brandName)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
+    if (createBrand.isPending || updateBrand.isPending) return
     setError('')
-    setSuccess('')
     try {
       if (props.editId) {
         await updateBrand.mutateAsync({
           id: props.editId,
           name,
         } satisfies RouterInput['deviceBrands']['update'])
-        setSuccess('Brand updated!')
       } else {
         await createBrand.mutateAsync({
           name,
         } satisfies RouterInput['deviceBrands']['create'])
-        setSuccess('Brand created!')
       }
 
+      toast.success(props.editId ? 'Brand updated!' : 'Brand created!')
       props.onSuccess()
+      if (active.current) props.onClose()
     } catch (err) {
-      setError(getErrorMessage(err, 'Failed to save brand.'))
+      if (active.current) setError(getErrorMessage(err, 'Failed to save brand.'))
     }
   }
 
@@ -87,14 +106,13 @@ function BrandForm(props: FormProps) {
         <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded">{error}</div>
       )}
 
-      {success && (
-        <div className="text-green-600 text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded">
-          {success}
-        </div>
-      )}
-
       <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
-        <Button type="button" variant="ghost" onClick={props.onClose}>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={props.onClose}
+          disabled={createBrand.isPending || updateBrand.isPending}
+        >
           Cancel
         </Button>
         <Button

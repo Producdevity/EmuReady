@@ -120,7 +120,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>(props: Props<T>) 
 
   if (previousValue !== value) {
     setPreviousValue(value)
-    if (value !== null || !clearingSelection) setInputDraft(null)
+    if ((value != null && value !== '') || !clearingSelection) setInputDraft(null)
     setClearingSelection(false)
   }
 

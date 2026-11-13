@@ -905,6 +905,24 @@ describe('Autocomplete Component', () => {
       expect(input).toHaveValue('Applex')
     })
 
+    it('keeps the draft when the form maps a local selection clear to an empty string', async () => {
+      function Controlled() {
+        const [value, setValue] = useState('1')
+        return (
+          <Autocomplete
+            {...defaultProps}
+            items={mockStaticItems}
+            value={value}
+            onChange={(next) => setValue(next ?? '')}
+          />
+        )
+      }
+      render(<Controlled />)
+      const input = screen.getByRole('combobox')
+      await user.type(input, 'x')
+      expect(input).toHaveValue('Applex')
+    })
+
     it('replaces a draft when the parent selects another item', async () => {
       const { rerender } = render(
         <Autocomplete {...defaultProps} items={mockStaticItems} value="1" />,

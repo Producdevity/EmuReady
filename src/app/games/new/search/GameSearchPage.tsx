@@ -75,13 +75,13 @@ function TGDBSearchContent() {
     input: RouterInput['tgdb']['searchGames']
   } | null>(null)
   const urlKey = JSON.stringify([urlQuery, urlSystemId || null])
-  const [formKey, setFormKey] = useState(urlKey)
+  const [formKey, setFormKey] = useState(0)
   const [previousUrlKey, setPreviousUrlKey] = useState(urlKey)
   if (previousUrlKey !== urlKey) {
     setPreviousUrlKey(urlKey)
     if (submittedSearch?.urlKey !== urlKey) {
       setSubmittedSearch(null)
-      setFormKey(urlKey)
+      setFormKey((previous) => previous + 1)
     }
   }
   const [selectedGame, setSelectedGame] = useState<TGDBGameWithBoxart | null>(null)

@@ -1,4 +1,4 @@
-import { act, cleanup, render, renderHook, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import storageKeys from '@/data/storageKeys'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
@@ -26,6 +26,43 @@ afterEach(() => {
 })
 
 describe('cookie banner storage updates', () => {
+  it('offers a new save when preferences were persisted without the consent marker', () => {
+    storage.set(
+      storageKeys.cookies.preferences,
+      JSON.stringify({ necessary: true, analytics: false, performance: false }),
+    )
+    render(<CookieConsent />)
+    act(() => vi.advanceTimersByTime(2000))
+    expect(screen.getByRole('heading', { name: 'Cookie Preferences' })).toBeInTheDocument()
+  })
+
+  it.each(Object.values(storageKeys.cookies))(
+    'keeps retry controls available when saving %s fails',
+    (failedKey) => {
+      const warning = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const writer = vi.spyOn(window.localStorage, 'setItem').mockImplementation((key, value) => {
+        if (key === failedKey) throw new Error('Storage blocked')
+        storage.set(key, value)
+      })
+      try {
+        render(<CookieConsent />)
+        act(() => vi.advanceTimersByTime(2000))
+        fireEvent.click(screen.getByRole('button', { name: 'Necessary Only' }))
+        expect(screen.getByRole('alert')).toHaveTextContent('Please try again')
+        expect(screen.getByRole('button', { name: 'Necessary Only' })).toBeInTheDocument()
+        writer.mockRestore()
+        fireEvent.click(screen.getByRole('button', { name: 'Necessary Only' }))
+        expect(
+          screen.queryByRole('heading', { name: 'Cookie Preferences' }),
+        ).not.toBeInTheDocument()
+        expect(storage.get(storageKeys.cookies.consent)).toBe('true')
+      } finally {
+        writer.mockRestore()
+        warning.mockRestore()
+      }
+    },
+  )
+
   it('shows after its delay and closes when consent is saved elsewhere', () => {
     const writer = renderHook(() =>
       useLocalStorage(storageKeys.cookies.consent, false, BooleanPreferenceSchema),

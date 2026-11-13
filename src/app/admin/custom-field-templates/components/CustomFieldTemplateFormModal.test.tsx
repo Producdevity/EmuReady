@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { type RouterOutput } from '@/types/trpc'
 import { CustomFieldType } from '@orm'
@@ -9,6 +10,22 @@ let template: Template | undefined
 let error: Error | null
 let fetching = false
 const refetch = vi.fn()
+const saving = vi.hoisted(() => ({ completion: Promise.withResolvers<void>(), submit: vi.fn() }))
+function useSaveMutation() {
+  const [isPending, setPending] = useState(false)
+  return {
+    isPending,
+    mutateAsync: async (input: unknown) => {
+      saving.submit(input)
+      setPending(true)
+      try {
+        await saving.completion.promise
+      } finally {
+        setPending(false)
+      }
+    },
+  }
+}
 vi.mock('@sentry/nextjs', () => ({ captureMessage: vi.fn() }))
 vi.mock('@/lib/api', () => ({
   api: {
@@ -29,8 +46,8 @@ vi.mock('@/lib/api', () => ({
           refetch,
         }),
       },
-      create: { useMutation: () => ({ mutate: vi.fn() }) },
-      update: { useMutation: () => ({ mutate: vi.fn() }) },
+      create: { useMutation: useSaveMutation },
+      update: { useMutation: useSaveMutation },
     },
   },
 }))
@@ -70,12 +87,29 @@ function record(id: string, name: string): Template {
 const onClose = vi.fn()
 beforeEach(() => {
   template = undefined
+  saving.completion = Promise.withResolvers<void>()
   error = null
   fetching = false
   vi.clearAllMocks()
 })
 
 describe('template form sessions', () => {
+  it('preserves a pending save and does not close a reopened session on its completion', async () => {
+    template = record('template-1', 'Template')
+    const props = { templateIdToEdit: 'template-1', onClose }
+    const view = render(<CustomFieldTemplateFormModal {...props} isOpen />)
+    fireEvent.click(screen.getByRole('button', { name: 'Update Template' }))
+    await waitFor(() => expect(saving.submit).toHaveBeenCalledOnce())
+    view.rerender(<CustomFieldTemplateFormModal {...props} isOpen={false} />)
+    view.rerender(<CustomFieldTemplateFormModal {...props} isOpen />)
+    expect(screen.getByRole('button', { name: /Saving/ })).toBeDisabled()
+    await act(async () => {
+      saving.completion.resolve()
+    })
+    expect(onClose).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Update Template' })).toBeEnabled()
+  })
+
   it('shows a not-found result when the requested template was deleted', () => {
     template = null
     render(<CustomFieldTemplateFormModal isOpen templateIdToEdit="template-1" onClose={onClose} />)

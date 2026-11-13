@@ -181,6 +181,20 @@ describe.each(['igdb', 'tgdb'] as const)('%s search query state', (provider) => 
     )
   })
 
+  it('starts a new form session when Back returns to its previous initialization URL', async () => {
+    const page = mount(provider)
+    await screen.findByText('Initial result')
+    fireEvent.click(screen.getByRole('button', { name: 'Search all platforms' }))
+    await screen.findByText('Manual result')
+    params = new URLSearchParams('q=Manual&system=switch2')
+    page.rerender()
+    expect(mocks.formMount).toHaveBeenCalledOnce()
+    params = new URLSearchParams('q=Initial&system=switch2')
+    page.rerender()
+    await screen.findByText('Initial result')
+    expect(mocks.formMount).toHaveBeenCalledTimes(2)
+  })
+
   it('ignores late results after navigating to another query', async () => {
     let resolveOld: (name: string) => void = () => {}
     providerResult = (query) =>

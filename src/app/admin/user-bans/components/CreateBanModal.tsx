@@ -34,10 +34,30 @@ interface Props {
 type UserSearchResult = RouterOutput['users']['searchUsers'][number]
 
 function CreateBanModal(props: Props) {
-  return <CreateBanForm key={`${props.isOpen}:${props.userId ?? 'search'}`} {...props} />
+  const mutation = api.userBans.create.useMutation()
+  function closeModal() {
+    if (!mutation.isPending) props.onClose()
+  }
+  return (
+    <CreateBanForm
+      key={`${props.isOpen}:${props.userId ?? 'search'}`}
+      {...props}
+      onClose={closeModal}
+      mutation={mutation}
+    />
+  )
 }
 
-function CreateBanForm(props: Props) {
+type FormProps = Props & { mutation: ReturnType<typeof api.userBans.create.useMutation> }
+
+function CreateBanForm(props: FormProps) {
+  const active = useRef(false)
+  useEffect(() => {
+    active.current = true
+    return () => {
+      active.current = false
+    }
+  }, [])
   const { user: clerkUser } = useUser()
   const [chosenUser, setChosenUser] = useState<UserSearchResult | null>(null)
   const [userSearch, setUserSearch] = useState('')
@@ -83,17 +103,7 @@ function CreateBanForm(props: Props) {
     { enabled: userSearch.length >= 2 && !selectedUser && !props.userId },
   )
 
-  const createBanMutation = api.userBans.create.useMutation({
-    onSuccess: () => {
-      toast.success('User banned successfully!')
-      props.onSuccess()
-      props.onClose()
-    },
-    onError: (err) => {
-      toast.error(`Failed to ban user: ${getErrorMessage(err)}`)
-      logger.error('Failed to create user ban:', err)
-    },
-  })
+  const createBanMutation = props.mutation
 
   const handleUserSelect = (user: UserSearchResult) => {
     setChosenUser(user)
@@ -114,6 +124,7 @@ function CreateBanForm(props: Props) {
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
+    if (createBanMutation.isPending) return
 
     if (!selectedUser) {
       toast.error('Please select a user to ban')
@@ -147,13 +158,21 @@ function CreateBanForm(props: Props) {
       expiresAt = expirationDateTime
     }
 
-    createBanMutation.mutate({
-      userId: selectedUser.id,
-      reason: reason.trim(),
-      notes: notes.trim() || undefined,
-      expiresAt: expiresAt || undefined,
-      nullifyVotes,
-    } satisfies RouterInput['userBans']['create'])
+    try {
+      await createBanMutation.mutateAsync({
+        userId: selectedUser.id,
+        reason: reason.trim(),
+        notes: notes.trim() || undefined,
+        expiresAt: expiresAt || undefined,
+        nullifyVotes,
+      } satisfies RouterInput['userBans']['create'])
+      toast.success('User banned successfully!')
+      props.onSuccess()
+      if (active.current) props.onClose()
+    } catch (error) {
+      toast.error(`Failed to ban user: ${getErrorMessage(error)}`)
+      logger.error('Failed to create user ban:', error)
+    }
   }
 
   // Close dropdown when clicking outside
@@ -198,7 +217,14 @@ function CreateBanForm(props: Props) {
   }
 
   return (
-    <Modal isOpen={props.isOpen} onClose={props.onClose} title="Create User Ban" size="lg">
+    <Modal
+      isOpen={props.isOpen}
+      onClose={props.onClose}
+      title="Create User Ban"
+      size="lg"
+      closeOnEscape={!createBanMutation.isPending}
+      hideCloseButton={createBanMutation.isPending}
+    >
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Warning */}
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">

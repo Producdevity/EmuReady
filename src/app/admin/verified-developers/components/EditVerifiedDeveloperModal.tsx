@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Button, Input, Modal, SelectInput } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -21,19 +21,35 @@ interface Props {
 }
 
 function EditVerifiedDeveloperModal(props: Props) {
+  const mutation = api.verifiedDevelopers.updateVerifiedDeveloper.useMutation()
+  function closeModal() {
+    if (!mutation.isPending) props.onClose()
+  }
   if (!props.verifiedDeveloper) return null
   return (
     <VerifiedDeveloperForm
       key={`${props.isOpen}:${props.verifiedDeveloper.id}`}
       {...props}
       verifiedDeveloper={props.verifiedDeveloper}
+      mutation={mutation}
+      onClose={closeModal}
     />
   )
 }
 
-type FormProps = Omit<Props, 'verifiedDeveloper'> & { verifiedDeveloper: VerifiedDeveloper }
+type FormProps = Omit<Props, 'verifiedDeveloper'> & {
+  verifiedDeveloper: VerifiedDeveloper
+  mutation: ReturnType<typeof api.verifiedDevelopers.updateVerifiedDeveloper.useMutation>
+}
 
 function VerifiedDeveloperForm(props: FormProps) {
+  const active = useRef(false)
+  useEffect(() => {
+    active.current = true
+    return () => {
+      active.current = false
+    }
+  }, [])
   const [emulatorId, setEmulatorId] = useState(props.verifiedDeveloper.emulatorId)
   const [notes, setNotes] = useState(props.verifiedDeveloper.notes ?? '')
   const [error, setError] = useState('')
@@ -44,11 +60,11 @@ function VerifiedDeveloperForm(props: FormProps) {
     sortDirection: 'asc',
   })
 
-  const updateVerifiedDeveloperMutation =
-    api.verifiedDevelopers.updateVerifiedDeveloper.useMutation()
+  const updateVerifiedDeveloperMutation = props.mutation
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
+    if (updateVerifiedDeveloperMutation.isPending) return
     setError('')
 
     if (!emulatorId) {
@@ -65,9 +81,10 @@ function VerifiedDeveloperForm(props: FormProps) {
 
       toast.success('Verified developer updated successfully!')
       props.onSuccess()
+      if (active.current) props.onClose()
     } catch (err) {
       const errorMessage = getErrorMessage(err)
-      setError(errorMessage)
+      if (active.current) setError(errorMessage)
       toast.error(`Failed to update verified developer: ${errorMessage}`)
     }
   }
@@ -84,6 +101,8 @@ function VerifiedDeveloperForm(props: FormProps) {
     <Modal
       isOpen={props.isOpen}
       onClose={props.onClose}
+      hideCloseButton={updateVerifiedDeveloperMutation.isPending}
+      closeOnEscape={!updateVerifiedDeveloperMutation.isPending}
       title="Edit Verified Developer"
       size="md"
       closeOnBackdropClick={false}

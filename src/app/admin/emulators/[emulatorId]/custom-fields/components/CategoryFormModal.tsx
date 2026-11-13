@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button, Input, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -16,75 +16,82 @@ interface Props {
 }
 
 export default function CategoryFormModal(props: Props) {
+  const createMutation = api.customFieldCategories.create.useMutation()
+  const updateMutation = api.customFieldCategories.update.useMutation()
+  const isPending = createMutation.isPending || updateMutation.isPending
+  function closeModal() {
+    if (!isPending) props.onClose()
+  }
   return (
     <Modal
       isOpen={props.isOpen}
-      onClose={props.onClose}
+      onClose={closeModal}
+      closeOnEscape={!isPending}
+      closeOnBackdropClick={!isPending}
+      hideCloseButton={isPending}
       title={props.categoryToEdit ? 'Edit Category' : 'Create Category'}
     >
       <CategoryForm
         key={`${props.isOpen}:${props.emulatorId}:${props.categoryToEdit?.id ?? 'new'}`}
         emulatorId={props.emulatorId}
         categoryToEdit={props.categoryToEdit}
-        onClose={props.onClose}
+        onClose={closeModal}
         onSuccess={props.onSuccess}
+        createMutation={createMutation}
+        updateMutation={updateMutation}
       />
     </Modal>
   )
 }
 
-type FormProps = Omit<Props, 'isOpen'>
+type FormProps = Omit<Props, 'isOpen'> & {
+  createMutation: ReturnType<typeof api.customFieldCategories.create.useMutation>
+  updateMutation: ReturnType<typeof api.customFieldCategories.update.useMutation>
+}
 
 function CategoryForm(props: FormProps) {
+  const { createMutation, updateMutation } = props
+  const active = useRef(false)
+  useEffect(() => {
+    active.current = true
+    return () => {
+      active.current = false
+    }
+  }, [])
   const [name, setName] = useState(props.categoryToEdit?.name || '')
   const [error, setError] = useState<string | null>(null)
 
   const utils = api.useUtils()
 
-  const createMutation = api.customFieldCategories.create.useMutation({
-    onSuccess: () => {
-      utils.customFieldCategories.getByEmulator
-        .invalidate({ emulatorId: props.emulatorId })
-        .catch(console.error)
-      toast.success('Category created successfully!')
-      props.onSuccess()
-      props.onClose()
-    },
-    onError: (err) => {
-      setError(getErrorMessage(err))
-    },
-  })
-
-  const updateMutation = api.customFieldCategories.update.useMutation({
-    onSuccess: () => {
-      utils.customFieldCategories.getByEmulator
-        .invalidate({ emulatorId: props.emulatorId })
-        .catch(console.error)
-      toast.success('Category updated successfully!')
-      props.onSuccess()
-      props.onClose()
-    },
-    onError: (err) => {
-      setError(getErrorMessage(err))
-    },
-  })
-
-  function handleSubmit() {
+  async function handleSubmit() {
+    if (createMutation.isPending || updateMutation.isPending) return
     if (!name.trim()) {
       setError('Category name is required')
       return
     }
 
-    if (props.categoryToEdit) {
-      updateMutation.mutate({
-        id: props.categoryToEdit.id,
-        name: name.trim(),
-      })
-    } else {
-      createMutation.mutate({
-        emulatorId: props.emulatorId,
-        name: name.trim(),
-      })
+    try {
+      if (props.categoryToEdit) {
+        await updateMutation.mutateAsync({
+          id: props.categoryToEdit.id,
+          name: name.trim(),
+        })
+      } else {
+        await createMutation.mutateAsync({
+          emulatorId: props.emulatorId,
+          name: name.trim(),
+        })
+      }
+      utils.customFieldCategories.getByEmulator
+        .invalidate({ emulatorId: props.emulatorId })
+        .catch(console.error)
+      toast.success(
+        props.categoryToEdit ? 'Category updated successfully!' : 'Category created successfully!',
+      )
+      props.onSuccess()
+      if (active.current) props.onClose()
+    } catch (error) {
+      if (active.current) setError(getErrorMessage(error))
     }
   }
 

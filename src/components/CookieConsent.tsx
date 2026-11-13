@@ -73,6 +73,7 @@ const colorClasses = {
 function CookieConsent() {
   const [isVisible, setIsVisible] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [savedPreferences, setSavedPreferences] = useLocalStorage<CookiePreferences | null>(
     storageKeys.cookies.preferences,
     null,
@@ -100,28 +101,27 @@ function CookieConsent() {
   )
   const [draftPreferences, setDraftPreferences] = useState<CookiePreferences | null>(null)
   const preferences = draftPreferences ?? savedPreferences ?? DEFAULT_PREFERENCES
-  const [hasInteractedLocally, setHasInteractedLocally] = useState(false)
-  const hasInteracted = savedPreferences !== null || hasInteractedLocally
 
   useEffect(() => {
-    if (!hasConsented && !hasInteracted) {
+    if (!hasConsented) {
       const timer = setTimeout(() => setIsVisible(true), 2000)
       return () => clearTimeout(timer)
     }
-  }, [hasConsented, hasInteracted])
+  }, [hasConsented])
 
   const savePreferences = (newPreferences: CookiePreferences) => {
-    setSavedPreferences(newPreferences)
-    setHasConsented(true)
-    setConsentDate(new Date().toISOString())
-
-    // Apply preferences immediately
-    setAnalyticsEnabled(newPreferences.analytics)
-    setPerformanceEnabled(newPreferences.performance)
-
     setDraftPreferences(newPreferences)
-    setIsVisible(false)
-    setHasInteractedLocally(true)
+    setSaveError(null)
+    try {
+      setSavedPreferences(newPreferences)
+      setConsentDate(new Date().toISOString())
+      setAnalyticsEnabled(newPreferences.analytics)
+      setPerformanceEnabled(newPreferences.performance)
+      setHasConsented(true)
+      setIsVisible(false)
+    } catch {
+      setSaveError('Your cookie preferences could not be saved. Please try again.')
+    }
   }
 
   const handleAcceptAll = () => {
@@ -142,7 +142,7 @@ function CookieConsent() {
     })
   }
 
-  if (!isVisible || hasConsented) return null
+  if (!isVisible || (hasConsented && !saveError)) return null
 
   return (
     <AnimatePresence>
@@ -212,6 +212,11 @@ function CookieConsent() {
               </div>
             </div>
 
+            {saveError && (
+              <p role="alert" className="px-6 py-3 text-sm text-red-600 dark:text-red-400">
+                {saveError}
+              </p>
+            )}
             {/* Content */}
             <AnimatePresence mode="wait">
               {!showDetails ? (

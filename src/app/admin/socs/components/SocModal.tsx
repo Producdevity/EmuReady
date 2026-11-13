@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Button, Input, Modal, ModalCommonButton } from '@/components/ui'
 import { api } from '@/lib/api'
+import toast from '@/lib/toast'
 import { CreateSoCSchema } from '@/schemas/soc'
 import { type RouterInput, type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
@@ -25,10 +26,17 @@ interface Props {
 }
 
 function SocModal(props: Props) {
+  const createSoC = api.socs.create.useMutation()
+  const updateSoC = api.socs.update.useMutation()
+  const isPending = createSoC.isPending || updateSoC.isPending
+  function closeModal() {
+    if (!isPending) props.onClose()
+  }
   return (
     <Modal
       isOpen={props.isOpen}
-      onClose={props.onClose}
+      onClose={closeModal}
+      hideCloseButton={isPending}
       title={props.editId ? 'Edit SoC' : 'Add SoC'}
       closeOnEscape={false}
       closeOnBackdropClick={false}
@@ -36,7 +44,9 @@ function SocModal(props: Props) {
     >
       <SocForm
         key={`${props.isOpen}:${props.editId ?? 'new'}`}
-        onClose={props.onClose}
+        onClose={closeModal}
+        createSoC={createSoC}
+        updateSoC={updateSoC}
         editId={props.editId}
         socData={props.socData}
         onSuccess={props.onSuccess}
@@ -45,11 +55,20 @@ function SocModal(props: Props) {
   )
 }
 
-type FormProps = Omit<Props, 'isOpen'>
+type FormProps = Omit<Props, 'isOpen'> & {
+  createSoC: ReturnType<typeof api.socs.create.useMutation>
+  updateSoC: ReturnType<typeof api.socs.update.useMutation>
+}
 
 function SocForm(props: FormProps) {
-  const createSoC = api.socs.create.useMutation()
-  const updateSoC = api.socs.update.useMutation()
+  const { createSoC, updateSoC } = props
+  const active = useRef(false)
+  useEffect(() => {
+    active.current = true
+    return () => {
+      active.current = false
+    }
+  }, [])
 
   const [name, setName] = useState(props.socData?.name ?? '')
   const [manufacturer, setManufacturer] = useState(props.socData?.manufacturer ?? '')
@@ -58,12 +77,11 @@ function SocForm(props: FormProps) {
   const [cpuCores, setCpuCores] = useState(props.socData?.cpuCores?.toString() ?? '')
   const [gpuModel, setGpuModel] = useState(props.socData?.gpuModel ?? '')
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
+    if (createSoC.isPending || updateSoC.isPending) return
     setError('')
-    setSuccess('')
     const parsedArchitecture = CreateSoCSchema.shape.architecture.safeParse(
       architecture || undefined,
     )
@@ -86,23 +104,15 @@ function SocForm(props: FormProps) {
           id: props.editId,
           ...socData,
         } satisfies RouterInput['socs']['update'])
-        setSuccess('SoC updated!')
-        props.onSuccess()
       } else {
         await createSoC.mutateAsync(socData satisfies RouterInput['socs']['create'])
-        setSuccess('SoC created!')
-        props.onSuccess()
       }
 
-      // Reset form
-      setName('')
-      setManufacturer('')
-      setArchitecture('')
-      setProcessNode('')
-      setCpuCores('')
-      setGpuModel('')
+      toast.success(props.editId ? 'SoC updated!' : 'SoC created!')
+      props.onSuccess()
+      if (active.current) props.onClose()
     } catch (err) {
-      setError(getErrorMessage(err, 'Failed to save SoC.'))
+      if (active.current) setError(getErrorMessage(err, 'Failed to save SoC.'))
     }
   }
 
@@ -264,14 +274,13 @@ function SocForm(props: FormProps) {
         <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded">{error}</div>
       )}
 
-      {success && (
-        <div className="text-green-600 text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded">
-          {success}
-        </div>
-      )}
-
       <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
-        <Button type="button" variant="ghost" onClick={props.onClose}>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={props.onClose}
+          disabled={createSoC.isPending || updateSoC.isPending}
+        >
           Cancel
         </Button>
         <Button

@@ -133,10 +133,7 @@ function AdminVerifiedDevelopersPage() {
   }
 
   const handleModalSuccess = () => {
-    utils.verifiedDevelopers.getVerifiedDevelopers.invalidate()
-    setShowAddModal(false)
-    setShowEditModal(false)
-    setSelectedDeveloper(null)
+    utils.verifiedDevelopers.getVerifiedDevelopers.invalidate().catch(console.error)
   }
 
   const emulatorFilterOptions = [
@@ -374,9 +371,7 @@ function AdminVerifiedDevelopersPage() {
       <VerifyDeveloperModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onSuccess={() => {
-          void utils.verifiedDevelopers.getVerifiedDevelopers.invalidate()
-        }}
+        onSuccess={handleModalSuccess}
       />
 
       <EditVerifiedDeveloperModal

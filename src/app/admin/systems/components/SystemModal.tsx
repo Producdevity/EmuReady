@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Button, Input, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
+import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 
@@ -16,10 +17,17 @@ interface Props {
 }
 
 function SystemModal(props: Props) {
+  const createSystem = api.systems.create.useMutation()
+  const updateSystem = api.systems.update.useMutation()
+  const isPending = createSystem.isPending || updateSystem.isPending
+  function closeModal() {
+    if (!isPending) props.onClose()
+  }
   return (
     <Modal
       isOpen={props.isOpen}
-      onClose={props.onClose}
+      onClose={closeModal}
+      hideCloseButton={isPending}
       title={props.editId ? 'Edit System' : 'Add System'}
       closeOnEscape={false}
       closeOnBackdropClick={false}
@@ -30,27 +38,37 @@ function SystemModal(props: Props) {
         editId={props.editId}
         systemName={props.systemName}
         systemKey={props.systemKey}
-        onClose={props.onClose}
+        onClose={closeModal}
         onSuccess={props.onSuccess}
+        createSystem={createSystem}
+        updateSystem={updateSystem}
       />
     </Modal>
   )
 }
 
-type FormProps = Omit<Props, 'isOpen'>
+type FormProps = Omit<Props, 'isOpen'> & {
+  createSystem: ReturnType<typeof api.systems.create.useMutation>
+  updateSystem: ReturnType<typeof api.systems.update.useMutation>
+}
 
 function SystemForm(props: FormProps) {
-  const createSystem = api.systems.create.useMutation()
-  const updateSystem = api.systems.update.useMutation()
+  const { createSystem, updateSystem } = props
+  const active = useRef(false)
+  useEffect(() => {
+    active.current = true
+    return () => {
+      active.current = false
+    }
+  }, [])
   const [name, setName] = useState(props.systemName)
   const [key, setKey] = useState(props.systemKey)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
+    if (createSystem.isPending || updateSystem.isPending) return
     setError('')
-    setSuccess('')
     try {
       if (props.editId) {
         await updateSystem.mutateAsync({
@@ -58,19 +76,17 @@ function SystemForm(props: FormProps) {
           name,
           key: key || null,
         } satisfies RouterInput['systems']['update'])
-        setSuccess('System updated!')
       } else {
         await createSystem.mutateAsync({
           name,
           key: key || null,
         } satisfies RouterInput['systems']['create'])
-        setSuccess('System created!')
       }
-      setName('')
-      setKey('')
+      toast.success(props.editId ? 'System updated!' : 'System created!')
       props.onSuccess()
+      if (active.current) props.onClose()
     } catch (err) {
-      setError(getErrorMessage(err, 'Failed to save system.'))
+      if (active.current) setError(getErrorMessage(err, 'Failed to save system.'))
     }
   }
 
@@ -110,14 +126,13 @@ function SystemForm(props: FormProps) {
         <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded">{error}</div>
       )}
 
-      {success && (
-        <div className="text-green-600 text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded">
-          {success}
-        </div>
-      )}
-
       <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
-        <Button type="button" variant="outline" onClick={props.onClose}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={props.onClose}
+          disabled={createSystem.isPending || updateSystem.isPending}
+        >
           Cancel
         </Button>
         <Button

@@ -18,12 +18,14 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Plus, Trash2, GripVertical } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { toSnakeCase } from 'remeda'
 import { Button, ErrorFallback, Input, LoadingSpinner, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
+import toast from '@/lib/toast'
 import { FilterValueSchema, type FilterValue } from '@/schemas/common'
 import { type RouterOutput } from '@/types/trpc'
+import getErrorMessage from '@/utils/getErrorMessage'
 import { CustomFieldType } from '@orm'
 
 interface TemplateField {
@@ -172,7 +174,11 @@ function SortableTemplateOptionItem({
 }
 
 type TemplateRecord = RouterOutput['customFieldTemplates']['byId']
-type FormProps = Omit<Props, 'isOpen'> & { template: TemplateRecord | null }
+type Mutations = {
+  createMutation: ReturnType<typeof api.customFieldTemplates.create.useMutation>
+  updateMutation: ReturnType<typeof api.customFieldTemplates.update.useMutation>
+}
+type FormProps = Omit<Props, 'isOpen'> & Mutations & { template: TemplateRecord | null }
 
 function initialFields(template: TemplateRecord | null): TemplateField[] {
   return (
@@ -204,10 +210,17 @@ function initialFields(template: TemplateRecord | null): TemplateField[] {
 }
 
 function CustomFieldTemplateFormModal(props: Props) {
+  const createMutation = api.customFieldTemplates.create.useMutation()
+  const updateMutation = api.customFieldTemplates.update.useMutation()
+  const isPending = createMutation.isPending || updateMutation.isPending
+  function closeModal() {
+    if (!isPending) props.onClose()
+  }
   return (
     <Modal
       isOpen={props.isOpen}
-      onClose={props.onClose}
+      onClose={closeModal}
+      hideCloseButton={isPending}
       title={props.templateIdToEdit ? 'Edit Template' : 'Create Template'}
       closeOnBackdropClick={false}
       closeOnEscape={false}
@@ -217,7 +230,9 @@ function CustomFieldTemplateFormModal(props: Props) {
         <TemplateSession
           key={props.templateIdToEdit ?? 'new'}
           templateIdToEdit={props.templateIdToEdit}
-          onClose={props.onClose}
+          onClose={closeModal}
+          createMutation={createMutation}
+          updateMutation={updateMutation}
         />
       )}
     </Modal>
@@ -226,7 +241,7 @@ function CustomFieldTemplateFormModal(props: Props) {
 
 const TEMPLATE_NOT_FOUND = { message: 'Template not found' }
 
-function TemplateSession(props: Omit<Props, 'isOpen'>) {
+function TemplateSession(props: Omit<Props, 'isOpen'> & Mutations) {
   const query = api.customFieldTemplates.byId.useQuery(
     { id: props.templateIdToEdit ?? '' },
     { enabled: Boolean(props.templateIdToEdit) },
@@ -258,16 +273,26 @@ function TemplateSession(props: Omit<Props, 'isOpen'>) {
       templateIdToEdit={props.templateIdToEdit}
       onClose={props.onClose}
       template={template}
+      createMutation={props.createMutation}
+      updateMutation={props.updateMutation}
     />
   )
 }
 
 function TemplateForm(props: FormProps) {
+  const { createMutation, updateMutation } = props
+  const active = useRef(false)
+  useEffect(() => {
+    active.current = true
+    return () => {
+      active.current = false
+    }
+  }, [])
   const [templateName, setTemplateName] = useState(props.template?.name ?? '')
   const [templateDescription, setTemplateDescription] = useState(props.template?.description ?? '')
   const [fields, setFields] = useState<TemplateField[]>(() => initialFields(props.template))
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const isSubmitting = createMutation.isPending || updateMutation.isPending
 
   const utils = api.useUtils()
 
@@ -285,23 +310,11 @@ function TemplateForm(props: FormProps) {
         .invalidate({ id: props.templateIdToEdit })
         .catch(console.error)
     }
-    props.onClose()
+    toast.success(
+      props.templateIdToEdit ? 'Template updated successfully!' : 'Template created successfully!',
+    )
+    if (active.current) props.onClose()
   }
-
-  const createMutation = api.customFieldTemplates.create.useMutation({
-    onSuccess: handleSaved,
-    onError: (error) => {
-      setErrors({ general: error.message })
-      setIsSubmitting(false)
-    },
-  })
-  const updateMutation = api.customFieldTemplates.update.useMutation({
-    onSuccess: handleSaved,
-    onError: (error) => {
-      setErrors({ general: error.message })
-      setIsSubmitting(false)
-    },
-  })
 
   function validateForm() {
     const newErrors: { [key: string]: string } = {}
@@ -404,12 +417,11 @@ function TemplateForm(props: FormProps) {
     return Object.keys(newErrors).length === 0
   }
 
-  function handleSubmit(ev: FormEvent) {
+  async function handleSubmit(ev: FormEvent) {
     ev.preventDefault()
 
     if (!validateForm() || isSubmitting) return
 
-    setIsSubmitting(true)
     setErrors({})
 
     const templateData = {
@@ -446,13 +458,18 @@ function TemplateForm(props: FormProps) {
       })),
     }
 
-    if (props.templateIdToEdit) {
-      updateMutation.mutate({
-        id: props.templateIdToEdit,
-        ...templateData,
-      })
-    } else {
-      createMutation.mutate(templateData)
+    try {
+      if (props.templateIdToEdit) {
+        await updateMutation.mutateAsync({
+          id: props.templateIdToEdit,
+          ...templateData,
+        })
+      } else {
+        await createMutation.mutateAsync(templateData)
+      }
+      handleSaved()
+    } catch (error) {
+      if (active.current) setErrors({ general: getErrorMessage(error) })
     }
   }
 
