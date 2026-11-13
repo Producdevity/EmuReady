@@ -1,19 +1,20 @@
-import { SignInButton, SignUpButton } from '@clerk/nextjs'
+import { SignInButton, SignUpButton, useAuth } from '@clerk/nextjs'
 import { LoadingSpinner } from '@/components/ui'
 import useMounted from '@/hooks/useMounted'
 
-interface ListingFormAuthGuardProps {
+interface Props {
   isLoading: boolean
   isAuthenticated: boolean
   children: React.ReactNode
 }
 
-export function ListingFormAuthGuard(props: ListingFormAuthGuardProps) {
+export function ListingFormAuthGuard(props: Props) {
+  const auth = useAuth()
   const mounted = useMounted()
 
   if (!mounted) return null
 
-  if (props.isLoading) {
+  if (!auth.isLoaded || props.isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <LoadingSpinner size="lg" />

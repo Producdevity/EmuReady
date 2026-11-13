@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useState } from 'react'
 import superjson from 'superjson'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { ListingFormAuthGuard } from '@/app/listings/components/shared/ListingFormAuthGuard'
 import { Role } from '@orm'
 import { api, TRPCProvider } from './api'
 
@@ -10,7 +11,9 @@ let ownerId: string | null = '00000000-0000-4000-a000-000000000001'
 const firstOwner = '00000000-0000-4000-a000-000000000001'
 const secondOwner = '00000000-0000-4000-a000-000000000002'
 
-vi.mock('@clerk/nextjs', () => ({ useAuth: () => ({ sessionId, userId: ownerId }) }))
+vi.mock('@clerk/nextjs', () => ({
+  useAuth: () => ({ sessionId, userId: ownerId, isLoaded: sessionId !== undefined }),
+}))
 
 function responseFor(id: string | null) {
   const data = id ? { id, name: id, email: null, role: Role.USER, permissions: [] } : null
@@ -43,6 +46,24 @@ function Draft() {
   const [value, setValue] = useState('')
   return (
     <input aria-label="Search draft" value={value} onChange={(ev) => setValue(ev.target.value)} />
+  )
+}
+
+function ReportDraft() {
+  const query = api.users.me.useQuery()
+  return (
+    <ListingFormAuthGuard isLoading={query.isLoading} isAuthenticated={Boolean(query.data)}>
+      <Draft />
+    </ListingFormAuthGuard>
+  )
+}
+
+function ReportApp() {
+  return (
+    <TRPCProvider>
+      <Profile />
+      <ReportDraft />
+    </TRPCProvider>
   )
 }
 
@@ -88,6 +109,28 @@ it('preserves the cache while the active session stays the same', async () => {
   view.rerender(<App />)
   expect(screen.getByLabelText('Profile owner')).toHaveTextContent(firstOwner)
   expect(fetchQuery).toHaveBeenCalledOnce()
+})
+
+it('waits for auth initialization before allowing report input', async () => {
+  sessionId = undefined
+  const refreshed = Promise.withResolvers<Response>()
+  fetchQuery.mockImplementationOnce(async () => responseFor(firstOwner))
+  fetchQuery.mockImplementationOnce(() => refreshed.promise)
+  const view = render(<ReportApp />)
+  try {
+    await screen.findByText(firstOwner)
+    expect(screen.queryByLabelText('Search draft')).not.toBeInTheDocument()
+    sessionId = 'session-a'
+    view.rerender(<ReportApp />)
+    await waitFor(() => expect(fetchQuery).toHaveBeenCalledTimes(2))
+    expect(screen.queryByLabelText('Search draft')).not.toBeInTheDocument()
+    await act(async () => refreshed.resolve(responseFor(firstOwner)))
+    const input = await screen.findByLabelText('Search draft')
+    fireEvent.change(input, { target: { value: 'Rog' } })
+    expect(input).toHaveValue('Rog')
+  } finally {
+    refreshed.resolve(responseFor(firstOwner))
+  }
 })
 
 it.each(['session-a', null])(
