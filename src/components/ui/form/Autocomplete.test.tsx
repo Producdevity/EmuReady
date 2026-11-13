@@ -53,6 +53,38 @@ const gameProps = {
 }
 
 describe('Autocomplete async response ordering', () => {
+  it('does not select stale async options during the debounce window', async () => {
+    vi.useFakeTimers()
+    const onChange = vi.fn()
+    const loadItems = vi.fn(async (query: string) =>
+      mockStaticItems.filter((item) => !query || item.id === '2'),
+    )
+    render(<Autocomplete {...defaultProps} loadItems={loadItems} onChange={onChange} />)
+    try {
+      await act(async () => {})
+      const input = screen.getByRole('combobox')
+      fireEvent.focus(input)
+      expect(screen.getByRole('option', { name: 'Apple' })).toBeInTheDocument()
+      fireEvent.change(input, { target: { value: 'Ba' } })
+      expect(loadItems).not.toHaveBeenCalledWith('Ba')
+      fireEvent.keyDown(input, { key: 'ArrowDown' })
+      fireEvent.keyDown(input, { key: 'Enter' })
+      expect(onChange).not.toHaveBeenCalled()
+      expect(input).toHaveValue('Ba')
+      expect(input).not.toHaveAttribute('aria-activedescendant')
+      expect(screen.queryByRole('option')).not.toBeInTheDocument()
+
+      await act(async () => vi.advanceTimersByTime(300))
+      expect(loadItems).toHaveBeenCalledWith('Ba')
+      expect(screen.getByRole('option', { name: 'Banana' })).toBeInTheDocument()
+      fireEvent.keyDown(input, { key: 'ArrowDown' })
+      fireEvent.keyDown(input, { key: 'Enter' })
+      expect(onChange).toHaveBeenCalledExactlyOnceWith('2')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it.each(['debounce', 'request'] as const)(
     'discards a pending %s when the parent selects another option',
     async (stage) => {

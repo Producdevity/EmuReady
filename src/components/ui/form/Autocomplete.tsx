@@ -230,6 +230,10 @@ export function Autocomplete<T extends AutocompleteOptionBase>(props: Props<T>) 
       setIsLoading(false)
       setIsOpen(Boolean(staticItems?.length))
     } else {
+      if (loadItems) {
+        setSearchItems([])
+        setIsLoading(query.length >= minCharsToTrigger)
+      }
       debouncedSearch(query)
     }
   }
