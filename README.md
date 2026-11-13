@@ -20,9 +20,6 @@
   <a href="https://github.com/Producdevity/emuready/actions">
     <img src="https://img.shields.io/github/actions/workflow/status/Producdevity/emuready/ci.yml?style=flat-square&logo=github&label=CI/CD" alt="CI/CD Status">
   </a>
-  <a href="https://vercel.com">
-    <img src="https://img.shields.io/badge/Deployed_on-Vercel-black?style=flat-square&logo=vercel" alt="Deployed on Vercel">
-  </a>
   <!-- Code Quality -->
   <a href="https://github.com/Producdevity/emuready/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/Producdevity/emuready?style=flat-square&label=License" alt="License">
@@ -142,6 +139,8 @@ Then open [http://localhost:3000](http://localhost:3000).
 
 Environment setup is documented in [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md). Docker-specific setup is documented in
 [docs/DOCKER.md](docs/DOCKER.md), and the production container contract is in [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md).
+
+The [documentation index](docs/README.md) links the development, operations, integration and admin guides.
 
 ## Common Commands
 
