@@ -9,7 +9,7 @@ type SoCData = {
   gpuModel?: string
 }
 
-const socs: SoCData[] = [
+export const socs: SoCData[] = [
   // Qualcomm Snapdragon
   {
     name: 'Snapdragon 8 Elite Gen 5',
@@ -18,6 +18,13 @@ const socs: SoCData[] = [
     processNode: '3nm',
     cpuCores: 8,
     gpuModel: 'Adreno 840',
+  },
+  {
+    name: 'Snapdragon 8 Gen 5',
+    manufacturer: 'Qualcomm',
+    architecture: 'ARM64',
+    processNode: '3nm',
+    cpuCores: 8,
   },
   {
     name: 'Snapdragon 8 Elite',
@@ -34,6 +41,13 @@ const socs: SoCData[] = [
     processNode: '4nm',
     cpuCores: 8,
     gpuModel: 'Adreno 750',
+  },
+  {
+    name: 'Snapdragon 7+ Gen 3',
+    manufacturer: 'Qualcomm',
+    architecture: 'ARM64',
+    processNode: '4nm',
+    cpuCores: 8,
   },
   {
     name: 'Snapdragon 7s Gen 2',
@@ -140,12 +154,20 @@ const socs: SoCData[] = [
     gpuModel: 'Adreno 650',
   },
   {
+    name: 'Snapdragon 855+',
+    manufacturer: 'Qualcomm',
+  },
+  {
     name: 'Snapdragon 855',
     manufacturer: 'Qualcomm',
     architecture: 'ARM64',
     processNode: '7nm',
     cpuCores: 8,
     gpuModel: 'Adreno 640',
+  },
+  {
+    name: 'Snapdragon 782G',
+    manufacturer: 'Qualcomm',
   },
   {
     name: 'Snapdragon 750G',
@@ -186,6 +208,10 @@ const socs: SoCData[] = [
     processNode: '6nm',
     cpuCores: 8,
     gpuModel: 'Adreno 610',
+  },
+  {
+    name: 'Snapdragon 665',
+    manufacturer: 'Qualcomm',
   },
   {
     name: 'Snapdragon 662',
@@ -253,6 +279,14 @@ const socs: SoCData[] = [
   },
 
   // MediaTek Dimensity
+  {
+    name: 'Dimensity 9500',
+    manufacturer: 'MediaTek',
+    architecture: 'ARM64',
+    processNode: '3nm',
+    cpuCores: 8,
+    gpuModel: 'Arm G1-Ultra',
+  },
   {
     name: 'Dimensity 9300',
     manufacturer: 'MediaTek',
@@ -324,6 +358,10 @@ const socs: SoCData[] = [
     processNode: '12nm',
     cpuCores: 8,
     gpuModel: 'Mali-G72 MP3',
+  },
+  {
+    name: 'Helio P22T',
+    manufacturer: 'MediaTek',
   },
   {
     name: 'Helio P22',
@@ -494,6 +532,14 @@ const socs: SoCData[] = [
     processNode: '5nm',
     cpuCores: 8,
     gpuModel: 'Mali-G78',
+  },
+  {
+    name: 'Exynos 1580',
+    manufacturer: 'Samsung',
+    architecture: 'ARM64',
+    processNode: '4nm',
+    cpuCores: 8,
+    gpuModel: 'Xclipse 540',
   },
   {
     name: 'Exynos 1480',
@@ -806,6 +852,12 @@ const socs: SoCData[] = [
 
   // Intel
   {
+    name: 'Intel Arc G3 Extreme',
+    manufacturer: 'Intel',
+    architecture: 'x86_64',
+    gpuModel: 'Intel Arc B390',
+  },
+  {
     name: 'Intel Core Ultra 7 155H',
     manufacturer: 'Intel',
     architecture: 'x86_64',
@@ -1026,6 +1078,14 @@ const socs: SoCData[] = [
     gpuModel: 'Mali-G615',
   },
   {
+    name: 'Dimensity 8350 Ultimate',
+    manufacturer: 'MediaTek',
+    architecture: 'ARM64',
+    processNode: '4nm',
+    cpuCores: 8,
+    gpuModel: 'Mali-G615 MC6',
+  },
+  {
     name: 'Dimensity 8250',
     manufacturer: 'MediaTek',
     architecture: 'ARM64',
@@ -1042,12 +1102,23 @@ const socs: SoCData[] = [
     gpuModel: 'Mali-G610',
   },
   {
+    name: 'Dimensity 8000',
+    manufacturer: 'MediaTek',
+  },
+  {
     name: 'Dimensity 8050',
     manufacturer: 'MediaTek',
     architecture: 'ARM64',
     processNode: '6nm',
     cpuCores: 8,
     gpuModel: 'Mali-G77',
+  },
+  {
+    name: 'Dimensity 7350 Pro',
+    manufacturer: 'MediaTek',
+    processNode: '4nm',
+    cpuCores: 8,
+    gpuModel: 'Mali-G610 MC4',
   },
   {
     name: 'Dimensity 7300',
@@ -1128,14 +1199,6 @@ const socs: SoCData[] = [
     processNode: '12nm',
     cpuCores: 8,
     gpuModel: 'Mali-G57',
-  },
-  {
-    name: 'Helio G88',
-    manufacturer: 'MediaTek',
-    architecture: 'ARM64',
-    processNode: '12nm',
-    cpuCores: 8,
-    gpuModel: 'Mali-G52',
   },
   {
     name: 'Helio G85',

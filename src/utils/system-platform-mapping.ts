@@ -40,6 +40,13 @@ export function systemNameToPlatformKey(systemName: string): PlatformKey | null 
     return 'apple_ios'
   }
 
+  if (normalized.includes('windows phone')) {
+    return 'microsoft_windows_phone'
+  }
+  if (normalized === 'pico-8' || normalized === 'pico 8' || normalized === 'pico8') {
+    return 'pico_8'
+  }
+
   // Microsoft Windows/PC
   if (normalized.includes('windows') || normalized.includes('pc') || normalized === 'win') {
     return 'microsoft_windows'
