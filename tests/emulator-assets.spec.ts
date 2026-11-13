@@ -1,9 +1,10 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { test, expect } from './fixtures'
 
 test('emulator WebP assets also serve stored PNG paths', async ({ request }) => {
-  const directory = join(process.cwd(), 'public/assets/emulators')
+  const directory = fileURLToPath(new URL('../public/assets/emulators/', import.meta.url))
   const files = readdirSync(directory).filter((file) => file.endsWith('.webp'))
   expect(files.length).toBeGreaterThan(0)
 
