@@ -4,7 +4,7 @@ import { useAuth } from '@clerk/nextjs'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { httpBatchLink } from '@trpc/client'
 import { createTRPCReact, getQueryKey } from '@trpc/react-query'
-import { useEffect, useRef, useState, type PropsWithChildren } from 'react'
+import { useLayoutEffect, useRef, useState, type PropsWithChildren } from 'react'
 import superjson from 'superjson'
 import { CACHE_DURATIONS } from '@/data/constants'
 import { shouldRetryTRPCQuery } from '@/lib/trpc-client-errors'
@@ -61,7 +61,8 @@ export function TRPCProvider(props: PropsWithChildren) {
   if (session.id !== auth.sessionId) {
     setSession({
       id: auth.sessionId,
-      generation: session.generation + (session.id === undefined ? 0 : 1),
+      generation:
+        session.generation + (session.id === undefined && session.generation === 0 ? 0 : 1),
     })
   }
   return (
@@ -75,10 +76,10 @@ function SessionQueryProvider(props: PropsWithChildren<{ sessionId: string | nul
   const [queryClient] = useState(createQueryClient)
   const initialSession = useRef(props.sessionId)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (initialSession.current === undefined && props.sessionId !== undefined) {
       initialSession.current = props.sessionId
-      void queryClient.cancelQueries().then(() => queryClient.invalidateQueries())
+      void queryClient.resetQueries()
     }
   }, [props.sessionId, queryClient])
 

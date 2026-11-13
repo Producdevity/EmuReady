@@ -24,12 +24,9 @@ const fetchQuery = vi.fn(async () => responseFor(ownerId))
 function Profile() {
   const query = api.users.me.useQuery()
   return (
-    <>
-      <output aria-label="Profile owner">
-        {query.isPending ? 'Loading' : (query.data?.id ?? 'Signed out')}
-      </output>
-      {query.data && <Draft label="Loaded profile draft" />}
-    </>
+    <output aria-label="Profile owner">
+      {query.isPending ? 'Loading' : (query.data?.id ?? 'Signed out')}
+    </output>
   )
 }
 
@@ -42,18 +39,10 @@ function App() {
   )
 }
 
-interface Props {
-  label?: string
-}
-
-function Draft(props: Props) {
+function Draft() {
   const [value, setValue] = useState('')
   return (
-    <input
-      aria-label={props.label ?? 'Search draft'}
-      value={value}
-      onChange={(ev) => setValue(ev.target.value)}
-    />
+    <input aria-label="Search draft" value={value} onChange={(ev) => setValue(ev.target.value)} />
   )
 }
 
@@ -143,27 +132,38 @@ it('discards a late initial-loading response after the session resolves', async 
   }
 })
 
-it('keeps a draft mounted while refreshing data from initial auth loading', async () => {
-  sessionId = undefined
-  const refreshed = Promise.withResolvers<Response>()
-  fetchQuery.mockImplementationOnce(async () => responseFor(firstOwner))
-  fetchQuery.mockImplementationOnce(() => refreshed.promise)
-  const view = render(<App />)
-  try {
+it.each(['initial loading', 'later account switch'] as const)(
+  'discards completed loading-period data on %s',
+  async (transition) => {
+    if (transition === 'initial loading') sessionId = undefined
+    const view = render(<App />)
     await screen.findByText(firstOwner)
-    fireEvent.change(screen.getByLabelText('Loaded profile draft'), {
-      target: { value: 'Mario' },
-    })
-    sessionId = 'session-a'
-    view.rerender(<App />)
-    await waitFor(() => expect(fetchQuery).toHaveBeenCalledTimes(2))
-    expect(screen.getByLabelText('Loaded profile draft')).toHaveValue('Mario')
-    await act(async () => refreshed.resolve(responseFor(firstOwner)))
-    expect(screen.getByLabelText('Loaded profile draft')).toHaveValue('Mario')
-  } finally {
-    refreshed.resolve(responseFor(firstOwner))
-  }
-})
+    if (transition === 'later account switch') {
+      sessionId = undefined
+      view.rerender(<App />)
+      await waitFor(() => expect(fetchQuery).toHaveBeenCalledTimes(2))
+      await screen.findByText(firstOwner)
+    }
+    fireEvent.change(screen.getByLabelText('Search draft'), { target: { value: 'Mario' } })
+    const next = Promise.withResolvers<Response>()
+    fetchQuery.mockImplementation(() => next.promise)
+    try {
+      sessionId = 'session-b'
+      ownerId = secondOwner
+      view.rerender(<App />)
+      expect(screen.getByLabelText('Profile owner')).not.toHaveTextContent(firstOwner)
+      if (transition === 'initial loading')
+        expect(screen.getByLabelText('Search draft')).toHaveValue('Mario')
+      await waitFor(() =>
+        expect(fetchQuery).toHaveBeenCalledTimes(transition === 'initial loading' ? 2 : 3),
+      )
+      await act(async () => next.resolve(responseFor(secondOwner)))
+      await screen.findByText(secondOwner)
+    } finally {
+      next.resolve(responseFor(secondOwner))
+    }
+  },
+)
 
 it('isolates a later session even when auth passes through loading', async () => {
   const view = render(<App />)
