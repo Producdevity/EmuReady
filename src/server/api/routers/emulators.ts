@@ -55,6 +55,7 @@ export const emulatorsRouter = createTRPCRouter({
     const repository = new EmulatorsRepository(ctx.prisma)
     return repository.list({
       search: input?.search,
+      searchNameOnly: true,
       limit: input?.limit,
       offset: input?.offset,
       page: input?.page,

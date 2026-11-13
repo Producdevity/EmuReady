@@ -72,9 +72,10 @@ function AdminEmulatorsPage() {
     PERMISSIONS.MANAGE_CUSTOM_FIELDS,
   )
   const canDeleteEmulators = isAdminOrHigher && hasManageEmulatorsPermission
+  const canViewStatistics = hasPermission(userPermissions, PERMISSIONS.VIEW_STATISTICS)
 
   const emulatorsStatsQuery = api.emulators.stats.useQuery(undefined, {
-    enabled: hasPermission(userPermissions, PERMISSIONS.VIEW_STATISTICS),
+    enabled: canViewStatistics,
   })
   const emulatorsQuery = api.emulators.getForAdmin.useQuery({
     search: table.search ?? undefined,
@@ -158,7 +159,7 @@ function AdminEmulatorsPage() {
         </>
       }
     >
-      {emulatorsStatsQuery.data && (
+      {canViewStatistics && emulatorsStatsQuery.data && (
         <AdminStatsDisplay
           stats={[
             {

@@ -1,6 +1,7 @@
 import { PAGINATION } from '@/data/constants'
 import { ResourceError } from '@/lib/errors'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
+import { buildSearchFilter } from '@/server/utils/query-builders'
 import { ApprovalStatus, Prisma } from '@orm/client'
 import { BaseRepository } from './base.repository'
 import type { PaginationResult } from '@/schemas/pagination'
@@ -14,6 +15,7 @@ export interface EmulatorFilters {
   sortDirection?: Prisma.SortOrder | null
   systemId?: string | null
   verifiedDeveloperId?: string
+  searchNameOnly?: boolean
 }
 
 type DetailedEmulatorListItem = Prisma.EmulatorGetPayload<{
@@ -150,7 +152,7 @@ export class EmulatorsRepository extends BaseRepository {
       sortDirection,
     } = filters
 
-    const where = this.buildWhereClause(search, systemId)
+    const where = this.buildWhereClause(search, systemId, filters.searchNameOnly)
     if (filters.verifiedDeveloperId) {
       where.verifiedDevelopers = { some: { userId: filters.verifiedDeveloperId } }
     }
@@ -295,10 +297,14 @@ export class EmulatorsRepository extends BaseRepository {
   private buildWhereClause(
     search?: string | null,
     systemId?: string | null,
+    searchNameOnly = false,
   ): Prisma.EmulatorWhereInput {
     const clauses: Prisma.EmulatorWhereInput[] = []
 
-    if (search) {
+    if (searchNameOnly) {
+      const conditions = buildSearchFilter(search, ['name'])
+      if (conditions) clauses.push({ OR: conditions })
+    } else if (search) {
       clauses.push({
         OR: [
           { name: { contains: search, mode: this.mode } },
