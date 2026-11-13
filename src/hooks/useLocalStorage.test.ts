@@ -3,6 +3,7 @@ import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { z } from 'zod'
+import toast from '@/lib/toast'
 import { useLocalStorage } from './useLocalStorage'
 
 const StringSchema = z.string()
@@ -93,6 +94,38 @@ describe('useLocalStorage', () => {
   })
 
   describe('function setValue', () => {
+    it('does not rewrite or dispatch an event for an unchanged stored value', () => {
+      localStorageMock.setItem('unchanged', '5')
+      const changed = vi.fn()
+      window.addEventListener('storage', changed)
+      try {
+        const { result } = renderHook(() => useLocalStorage('unchanged', 0, NumberSchema))
+        localStorageMock.setItem.mockClear()
+        act(() => result.current[1](5))
+        expect(localStorageMock.setItem).not.toHaveBeenCalled()
+        expect(changed).not.toHaveBeenCalled()
+      } finally {
+        window.removeEventListener('storage', changed)
+      }
+    })
+
+    it('keeps failed background writes local without displaying a save-error toast', () => {
+      const warning = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const { result } = renderHook(() => useLocalStorage('background', 0, NumberSchema))
+      localStorageMock.setItem.mockImplementationOnce(() => {
+        throw new Error('Storage blocked')
+      })
+      try {
+        act(() => {
+          expect(() => result.current[1](5, { notifyOnError: false })).toThrow('Storage blocked')
+        })
+        expect(result.current[0]).toBe(5)
+        expect(toast.warning).not.toHaveBeenCalled()
+      } finally {
+        warning.mockRestore()
+      }
+    })
+
     it('should handle function updates', () => {
       const { result } = renderHook(() => useLocalStorage('test-key', 0, NumberSchema))
 

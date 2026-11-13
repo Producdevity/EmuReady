@@ -166,6 +166,10 @@ describe('preselected ban targets', () => {
       trustScore: 10,
     }
     render(<CreateBanModal isOpen userId="user-1" onClose={vi.fn()} onSuccess={vi.fn()} />)
+    fireEvent.change(
+      screen.getByPlaceholderText('Provide a clear reason for banning this user...'),
+      { target: { value: 'Spam' } },
+    )
     expect(screen.getByRole('button', { name: 'Ban User Permanently' })).toBeDisabled()
   })
 

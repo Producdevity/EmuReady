@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ChangeEvent } from 'react'
 import { Button, Input, Modal } from '@/components/ui'
 import { api } from '@/lib/api'
+import toast from '@/lib/toast'
 import { type RouterInput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { type PerformanceScale } from '../types'
@@ -91,6 +92,7 @@ function PerformanceScaleForm(props: FormProps) {
         } satisfies RouterInput['performanceScales']['create'])
       }
 
+      toast.success(props.editId ? 'Performance scale updated!' : 'Performance scale created!')
       props.onSuccess()
       if (active.current) props.onClose()
     } catch (err) {

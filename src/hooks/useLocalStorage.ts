@@ -93,7 +93,7 @@ export function useLocalStorage<T>(
   }, [enabled, key, parsed, snapshot])
 
   const setValue = useCallback(
-    (update: T | ((previous: T) => T)) => {
+    (update: T | ((previous: T) => T), options?: { notifyOnError?: boolean }) => {
       let nextSnapshot = getSnapshot()
       const previousDraft = draftRef.current
       const stored = parseStoredValue(nextSnapshot, schema)
@@ -104,14 +104,18 @@ export function useLocalStorage<T>(
             ? stored.data
             : initialValue
       const nextValue = update instanceof Function ? update(previousValue) : update
+      let changed = false
       let failed = false
       let failure: unknown
       try {
         if (enabled && typeof window !== 'undefined') {
-          const serialized = JSON.stringify(nextValue)
-          if (serialized === undefined) window.localStorage.removeItem(key)
-          else window.localStorage.setItem(key, serialized)
-          nextSnapshot = serialized ?? null
+          const serialized = JSON.stringify(nextValue) ?? null
+          if (serialized !== nextSnapshot) {
+            if (serialized === null) window.localStorage.removeItem(key)
+            else window.localStorage.setItem(key, serialized)
+            changed = true
+          }
+          nextSnapshot = serialized
         }
       } catch (error) {
         failed = true
@@ -122,10 +126,11 @@ export function useLocalStorage<T>(
       setDraft(nextDraft)
       if (failed) {
         console.warn(`Error setting localStorage key "${key}":`, failure)
-        toast.warning('Failed to save your preferences. Please try again.')
+        if (options?.notifyOnError !== false)
+          toast.warning('Failed to save your preferences. Please try again.')
         throw failure
       }
-      if (enabled && typeof window !== 'undefined') {
+      if (changed && enabled && typeof window !== 'undefined') {
         // Browsers send storage events to other documents; notify this document too.
         window.dispatchEvent(new StorageEvent('storage', { key }))
       }

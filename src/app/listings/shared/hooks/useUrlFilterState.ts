@@ -35,7 +35,7 @@ export function useUrlFilterState<TSortField extends string>(config: Config) {
   useEffect(() => {
     if (!urlLimit) return
     try {
-      setStoredLimit(parseLimit(urlLimit, config.maxLimit))
+      setStoredLimit(parseLimit(urlLimit, config.maxLimit), { notifyOnError: false })
     } catch (error) {
       console.warn('Failed to save report page size:', error)
     }
