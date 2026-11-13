@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { PAGINATION } from '@/data/constants'
 import { HumanVerificationTokenSchema } from '@/features/human-verification/shared/schema'
 import { SortDirectionSchema } from '@/schemas/common'
 import { ApprovalStatus } from '@orm'
@@ -36,12 +37,16 @@ export const GetGamesSchema = z
     submittedBy: z.string().uuid().nullable().optional(),
     hideGamesWithNoListings: z.boolean().optional().default(false), // Keep for backward compatibility
     listingFilter: GameListingFilter.nullable().optional().default('withListings'),
-    limit: z.number().default(100),
-    offset: z.number().default(0),
-    page: z.number().optional(),
+    limit: z.number().int().positive().max(PAGINATION.MAX_LIMIT).default(100),
+    offset: z.number().int().min(0).safe().default(0),
+    page: z.number().int().positive().safe().optional(),
     sortField: GameSortField.nullable().optional(),
     sortDirection: SortDirectionSchema.nullable().optional(),
   })
+  .refine(
+    (input) => input.page === undefined || Number.isSafeInteger((input.page - 1) * input.limit),
+    { message: 'Pagination offset exceeds the supported range', path: ['page'] },
+  )
   .optional()
   .transform((data) => {
     if (!data) return data
