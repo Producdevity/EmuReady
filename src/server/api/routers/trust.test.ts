@@ -1,5 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
-import { Role } from '@orm/client'
+import { TRUST_LEVELS } from '@/lib/trust/config'
+import { prisma } from '@/server/db'
+import { Role, TrustAction } from '@orm'
 
 vi.unmock('@/server/api/trpc')
 vi.unmock('@/server/api/root')
@@ -39,19 +41,21 @@ const { trustRouter } = await import('./trust')
 const USER_ID = '00000000-0000-4000-a000-000000000001'
 const TARGET_USER_ID = '00000000-0000-4000-a000-000000000002'
 
-function createCaller(role: Role) {
+function createCaller(role: Role | null) {
   return trustRouter.createCaller({
-    session: {
-      user: {
-        id: USER_ID,
-        email: 'test@test.com',
-        name: 'Test User',
-        role,
-        permissions: [],
-        showNsfw: false,
-      },
-    },
-    prisma: {} as never,
+    session: role
+      ? {
+          user: {
+            id: USER_ID,
+            email: 'test@test.com',
+            name: 'Test User',
+            role,
+            permissions: [],
+            showNsfw: false,
+          },
+        }
+      : null,
+    prisma,
     headers: new Headers(),
   })
 }
@@ -69,6 +73,30 @@ const NON_SUPER_ADMIN_ROLES: Role[] = [
 describe('trust router permission checks', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('rejects unauthenticated admin operations before accessing persistence', async () => {
+    const caller = createCaller(null)
+    await expect(caller.getTrustLogs(VALID_PAGINATION)).rejects.toMatchObject({
+      code: 'UNAUTHORIZED',
+    })
+    await expect(caller.getTrustStats({})).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
+    await expect(caller.runMonthlyActiveBonus({})).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
+    await expect(
+      caller.adjustTrustScore({
+        userId: TARGET_USER_ID,
+        adjustment: 1,
+        reason: 'Not authenticated',
+      }),
+    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' })
+    expect(mockPrismaTrustActionLogFindMany).not.toHaveBeenCalled()
+    expect(mockPrismaTrustActionLogCount).not.toHaveBeenCalled()
+    expect(mockApplyMonthlyActiveBonus).not.toHaveBeenCalled()
+    expect(mockApplyManualAdjustment).not.toHaveBeenCalled()
+  })
+
+  it('keeps trust level configuration available to signed-in users', async () => {
+    await expect(createCaller(Role.USER).getTrustLevels()).resolves.toEqual(TRUST_LEVELS)
   })
 
   describe('getTrustLogs (SUPER_ADMIN only)', () => {
@@ -94,6 +122,37 @@ describe('trust router permission checks', () => {
       expect(result).toHaveProperty('pagination')
       expect(mockPrismaTrustActionLogFindMany).toHaveBeenCalledTimes(1)
     })
+
+    it('applies search and action filters to both the page and total', async () => {
+      mockPrismaTrustActionLogCount.mockResolvedValueOnce(21)
+      const result = await createCaller(Role.SUPER_ADMIN).getTrustLogs({
+        page: 2,
+        limit: 10,
+        search: 'Alice',
+        action: TrustAction.LISTING_APPROVED,
+        sortField: 'user.trustScore',
+        sortDirection: 'desc',
+      })
+      const where = {
+        action: TrustAction.LISTING_APPROVED,
+        user: {
+          OR: [
+            { name: { contains: 'Alice', mode: 'insensitive' } },
+            { email: { contains: 'Alice', mode: 'insensitive' } },
+          ],
+        },
+      }
+      expect(mockPrismaTrustActionLogFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where,
+          orderBy: { user: { trustScore: 'desc' } },
+          skip: 10,
+          take: 10,
+        }),
+      )
+      expect(mockPrismaTrustActionLogCount).toHaveBeenCalledWith({ where })
+      expect(result.pagination).toMatchObject({ page: 2, limit: 10, total: 21, pages: 3 })
+    })
   })
 
   describe('getTrustStats (SUPER_ADMIN only)', () => {
@@ -118,6 +177,33 @@ describe('trust router permission checks', () => {
 
       expect(result).toHaveProperty('totalActions')
       expect(mockPrismaTrustActionLogCount).toHaveBeenCalledTimes(1)
+    })
+
+    it('assigns score groups to the correct trust level at each boundary', async () => {
+      mockPrismaUserGroupBy.mockResolvedValueOnce([
+        { trustScore: 0, _count: { id: 2 } },
+        { trustScore: 99, _count: { id: 3 } },
+        { trustScore: 100, _count: { id: 4 } },
+        { trustScore: 250, _count: { id: 5 } },
+        { trustScore: 1500, _count: { id: 6 } },
+      ])
+      const result = await createCaller(Role.SUPER_ADMIN).getTrustStats({})
+      expect(result.levelDistribution.map((level) => level.count)).toEqual([5, 4, 5, 0, 0, 6])
+    })
+
+    it('includes users with negative scores in the Newcomer total', async () => {
+      mockPrismaUserCount.mockResolvedValueOnce(5)
+      mockPrismaUserGroupBy.mockResolvedValueOnce([
+        { trustScore: -10, _count: { id: 3 } },
+        { trustScore: 100, _count: { id: 2 } },
+      ])
+
+      const result = await createCaller(Role.SUPER_ADMIN).getTrustStats({})
+
+      expect(result.levelDistribution.map((level) => level.count)).toEqual([3, 2, 0, 0, 0, 0])
+      expect(result.levelDistribution.reduce((total, level) => total + level.count, 0)).toBe(
+        result.totalUsers,
+      )
     })
   })
 

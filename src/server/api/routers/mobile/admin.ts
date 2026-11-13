@@ -1,5 +1,7 @@
+import { ReportApprovalRepository } from '@/features/reports/approval/server/report-approval.repository'
+import { ReportApprovalService } from '@/features/reports/approval/server/report-approval.service'
+import { ReportApprovalResultSchema } from '@/features/reports/approval/shared/report-approval.schemas'
 import { ResourceError, AppError } from '@/lib/errors'
-import { applyTrustAction } from '@/lib/trust/service'
 import {
   MobileAdminApproveGameSchema,
   MobileAdminApproveListingSchema,
@@ -23,20 +25,11 @@ import {
   mobileViewStatisticsProcedure,
 } from '@/server/api/mobileContext'
 import { logAudit } from '@/server/services/audit.service'
-import { listingStatsCache } from '@/server/utils/cache/instances'
 import { paginate } from '@/server/utils/pagination'
 import { buildSearchFilter } from '@/server/utils/query-builders'
 import { canBanUser } from '@/utils/permission-system'
-import {
-  ApprovalStatus,
-  Prisma,
-  ReportStatus,
-  TrustAction,
-  AuditAction,
-  AuditEntityType,
-} from '@orm/client'
+import { ApprovalStatus, Prisma, ReportStatus, AuditAction, AuditEntityType } from '@orm/client'
 
-const LISTING_STATS_CACHE_KEY = 'listing-stats'
 const mode = Prisma.QueryMode.insensitive
 
 export const mobileAdminRouter = createMobileTRPCRouter({
@@ -147,123 +140,33 @@ export const mobileAdminRouter = createMobileTRPCRouter({
    */
   approveListing: mobileApproveListingsProcedure
     .input(MobileAdminApproveListingSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { listingId } = input
-      const adminUserId = ctx.session.user.id
-
-      const listingToApprove = await ctx.prisma.listing.findUnique({
-        where: { id: listingId },
-        include: {
-          author: {
-            select: {
-              id: true,
-              userBans: {
-                where: {
-                  isActive: true,
-                  OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-                },
-                select: { reason: true },
-              },
-            },
-          },
-        },
-      })
-
-      if (!listingToApprove || listingToApprove.status !== ApprovalStatus.PENDING) {
-        return ResourceError.listing.notPending()
-      }
-
-      // Auto-reject if user is banned
-      if (listingToApprove.author && listingToApprove.author.userBans.length > 0) {
-        const banReason = listingToApprove.author.userBans[0].reason
-        await ctx.prisma.listing.update({
-          where: { id: listingId },
-          data: {
-            status: ApprovalStatus.REJECTED,
-            processedByUserId: adminUserId,
-            processedAt: new Date(),
-            processedNotes: `Automatically rejected: User is currently banned (${banReason})`,
-          },
-        })
-
-        return ResourceError.listing.cannotApproveBannedUser(banReason)
-      }
-
-      const updatedListing = await ctx.prisma.listing.update({
-        where: { id: listingId },
-        data: {
-          status: ApprovalStatus.APPROVED,
-          processedByUserId: adminUserId,
-          processedAt: new Date(),
-          processedNotes: null,
-        },
-      })
-
-      // Apply trust action for listing approval to the author
-      if (listingToApprove.authorId) {
-        await applyTrustAction({
-          userId: listingToApprove.authorId,
-          action: TrustAction.LISTING_APPROVED,
-          context: {
-            listingId,
-            adminUserId,
-            reason: 'listing_approved',
-          },
-        })
-      }
-
-      // Invalidate listing stats cache
-      listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
-
-      return updatedListing
-    }),
+    .output(ReportApprovalResultSchema)
+    .mutation(({ ctx, input }) =>
+      new ReportApprovalService(new ReportApprovalRepository(ctx.prisma)).changeStatus({
+        reportId: input.listingId,
+        reportType: 'handheld',
+        newStatus: ApprovalStatus.APPROVED,
+        intent: 'permission-review',
+        actor: ctx.session.user,
+      }),
+    ),
 
   /**
    * Reject a listing
    */
   rejectListing: mobileApproveListingsProcedure
     .input(MobileAdminRejectListingSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { listingId, notes } = input
-      const adminUserId = ctx.session.user.id
-
-      const listingToReject = await ctx.prisma.listing.findUnique({
-        where: { id: listingId },
-        include: { author: { select: { id: true } } },
-      })
-
-      if (!listingToReject || listingToReject.status !== ApprovalStatus.PENDING) {
-        return ResourceError.listing.notPending()
-      }
-
-      const updatedListing = await ctx.prisma.listing.update({
-        where: { id: listingId },
-        data: {
-          status: ApprovalStatus.REJECTED,
-          processedByUserId: adminUserId,
-          processedAt: new Date(),
-          processedNotes: notes,
-        },
-      })
-
-      // Apply trust action for listing rejection to the author
-      if (listingToReject.authorId) {
-        await applyTrustAction({
-          userId: listingToReject.authorId,
-          action: TrustAction.LISTING_REJECTED,
-          context: {
-            listingId,
-            adminUserId,
-            reason: notes || 'listing_rejected',
-          },
-        })
-      }
-
-      // Invalidate listing stats cache
-      listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
-
-      return updatedListing
-    }),
+    .output(ReportApprovalResultSchema)
+    .mutation(({ ctx, input }) =>
+      new ReportApprovalService(new ReportApprovalRepository(ctx.prisma)).changeStatus({
+        reportId: input.listingId,
+        reportType: 'handheld',
+        newStatus: ApprovalStatus.REJECTED,
+        intent: 'permission-review',
+        actor: ctx.session.user,
+        notes: input.notes,
+      }),
+    ),
 
   /**
    * Get pending games for approval

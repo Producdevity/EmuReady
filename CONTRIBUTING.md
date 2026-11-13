@@ -16,8 +16,8 @@ Do not report security issues in public GitHub issues. Contact a maintainer priv
 
 Prerequisites:
 
-- Node.js `v22.17.0`, matching [.nvmrc](.nvmrc)
-- pnpm through Corepack; this repo uses `pnpm@11.1.0`
+- Node.js matching [.nvmrc](.nvmrc)
+- pnpm through Corepack, using the `packageManager` version in [package.json](package.json)
 - PostgreSQL
 - Clerk credentials for authenticated flows
 
@@ -99,6 +99,13 @@ pnpm test:e2e:ci
 ```
 
 Playwright reads `.env.test.local` and `.env.test`. See [docs/E2E_TESTING_SETUP.md](docs/E2E_TESTING_SETUP.md).
+
+## Documentation
+
+- Extend an existing topic before adding a guide. New guides should serve a lasting reader task and be linked from the [documentation index](docs/README.md).
+- Keep test results, rollout status, issue audits and review-only screenshots in the pull request. Attach review images to GitHub instead of committing them as documentation assets.
+- Link to schemas and configuration files for exact contracts and tool versions. Validate documented configuration examples against their schemas.
+- Update affected guidance in the same PR as behavior changes. Remove obsolete or duplicated material; a code change does not automatically require a new documentation file.
 
 ## Pull Requests
 

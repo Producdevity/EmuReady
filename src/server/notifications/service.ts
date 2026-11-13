@@ -4,6 +4,7 @@ import { notificationAnalyticsService } from '@/server/notifications/analyticsSe
 import { notificationBatchingService } from '@/server/notifications/batchingService'
 import { GameFollowRepository } from '@/server/repositories/game-follow.repository'
 import { NotificationPreferencesRepository } from '@/server/repositories/notification-preferences.repository'
+import { NotificationRecipientsRepository } from '@/server/repositories/notification-recipients.repository'
 import { paginate, calculateOffset } from '@/server/utils/pagination'
 import { hasRolePermission } from '@/utils/permissions'
 import { ms } from '@/utils/time'
@@ -31,6 +32,7 @@ export class NotificationService {
   private config: NotificationServiceConfig
   private emailService = createEmailService()
   private prefRepo = new NotificationPreferencesRepository(prisma)
+  private readonly recipientRepository = new NotificationRecipientsRepository(prisma)
   private listenersSetup = false
   private systemRoles: Role[] = [Role.MODERATOR, Role.ADMIN, Role.SUPER_ADMIN]
   private aliasPreferenceMap: Partial<Record<NotificationType, NotificationType>> = {
@@ -533,17 +535,18 @@ export class NotificationService {
         break
       }
       case 'listing.commented':
-      case 'listing.voted':
-        if (eventData.payload?.listingId && eventData.triggeredBy) {
-          const listing = await prisma.listing.findUnique({
-            where: { id: eventData.payload.listingId },
-            select: { authorId: true },
-          })
-          if (listing?.authorId && listing.authorId !== eventData.triggeredBy) {
-            userIds.push(listing.authorId)
+      case 'listing.voted': {
+        const reportType = eventData.entityType === 'pcListing' ? 'pc' : 'handheld'
+        const reportId =
+          reportType === 'pc' ? eventData.payload?.pcListingId : eventData.payload?.listingId
+        if (reportId && eventData.triggeredBy) {
+          const authorId = await this.recipientRepository.findReportAuthor(reportType, reportId)
+          if (authorId && authorId !== eventData.triggeredBy) {
+            userIds.push(authorId)
           }
         }
         break
+      }
 
       case 'comment.upvoted':
       case 'comment.downvoted':

@@ -1,14 +1,14 @@
 'use client'
 
 import { User, Save, X, Pencil } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button, Input } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 
-type UserProfileData = RouterOutput['users']['getProfile']
+type UserProfileData = Pick<RouterOutput['users']['getProfile'], 'name' | 'bio'>
 
 interface Props {
   userQuery: {
@@ -27,14 +27,13 @@ function ProfileInformation(props: Props) {
 
   const utils = api.useUtils()
 
-  // Initialize form data when user data loads
-  useEffect(() => {
-    if (!props.userQuery.data) return
+  function handleEditToggle() {
     setFormData({
-      name: props.userQuery.data.name ?? '',
-      bio: props.userQuery.data.bio ?? '',
+      name: props.userQuery.data?.name ?? '',
+      bio: props.userQuery.data?.bio ?? '',
     })
-  }, [props.userQuery.data])
+    setIsEditing(!isEditing)
+  }
 
   const updateProfile = api.users.update.useMutation({
     onSuccess: () => {
@@ -90,7 +89,7 @@ function ProfileInformation(props: Props) {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setIsEditing((prevState) => !prevState)}
+          onClick={handleEditToggle}
           icon={isEditing ? X : Pencil}
           className="flex items-center gap-2"
           isLoading={updateProfile.isPending}

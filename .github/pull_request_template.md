@@ -31,7 +31,7 @@ Fixes # (issue)
 
 - [ ] My code follows the [style guidelines](https://github.com/Producdevity/EmuReady/blob/master/CONTRIBUTING.md#code-style) of this project
 - [ ] I have performed a self-review of my code
-- [ ] I have made corresponding changes to the documentation
+- [ ] I have updated relevant documentation, or no documentation update is needed
 - [ ] I have checked that all checks (lint, typecheck, test) pass
 
 ## Notes for reviewers

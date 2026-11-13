@@ -1,4 +1,5 @@
-import analytics from '@/lib/analytics'
+import { VoteEffectsRepository } from '@/features/reports/voting/server/vote-effects.repository'
+import { VoteEffectsService } from '@/features/reports/voting/server/vote-effects.service'
 import { AppError, ResourceError } from '@/lib/errors'
 import { applyTrustAction } from '@/lib/trust/service'
 import {
@@ -30,20 +31,21 @@ import {
   invalidatePcListingSeo,
   invalidatePcListingSeoForUpdate,
 } from '@/server/cache/invalidation'
-import { NOTIFICATION_EVENTS, notificationEventEmitter } from '@/server/notifications/eventEmitter'
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
 import { UserPcPresetsRepository } from '@/server/repositories/user-pc-presets.repository'
 import { attachReviewRiskProfileForViewer } from '@/server/services/review-risk.service'
 import { normalizeCustomFieldValues } from '@/server/utils/custom-field-values'
+import { toPrismaCustomFieldValue } from '@/server/utils/prisma-json'
 import { isUserBanned } from '@/server/utils/query-builders'
 import { validatePagination } from '@/server/utils/security-validation'
 import { checkSpamContent } from '@/server/utils/spam-check'
+import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { updatePcListingVoteCounts } from '@/server/utils/vote-counts'
 import { handleListingVoteTrustEffects } from '@/server/utils/vote-trust-effects'
 import { PERMISSIONS, roleIncludesRole } from '@/utils/permission-system'
 import { hasRolePermission, isModerator } from '@/utils/permissions'
-import { ApprovalStatus, Role, TrustAction } from '@orm'
-import { invalidatePcListingStatsCache, toPrismaCustomFieldValue } from './utils'
+import { ApprovalStatus, Role, TrustAction, type PcListingVote } from '@orm'
+import { invalidatePcListingStatsCache } from './utils'
 
 export const coreRouter = createTRPCRouter({
   get: publicProcedure.input(GetPcListingsSchema).query(async ({ ctx, input }) => {
@@ -406,13 +408,14 @@ export const coreRouter = createTRPCRouter({
 
     if (!pcListing) return ResourceError.pcListing.notFound()
 
+    const trustChanges: TrustScoreChange[] = []
     const voteResult = await ctx.prisma.$transaction(async (tx) => {
       const existingVote = await tx.pcListingVote.findUnique({
         where: { userId_pcListingId: { userId, pcListingId } },
       })
 
       let result: {
-        vote: { userId: string; pcListingId: string; value: boolean } | null
+        vote: Pick<PcListingVote, 'id' | 'userId' | 'pcListingId' | 'value'> | null
         action: 'created' | 'updated' | 'deleted'
         previousValue: boolean | null
       }
@@ -440,6 +443,7 @@ export const coreRouter = createTRPCRouter({
 
       await handleListingVoteTrustEffects({
         tx,
+        trustChanges,
         action: result.action,
         currentValue: value,
         previousValue: result.previousValue,
@@ -452,26 +456,16 @@ export const coreRouter = createTRPCRouter({
       return result
     })
 
-    if (voteResult.action === 'created' || voteResult.action === 'updated') {
-      if (voteResult.vote) {
-        notificationEventEmitter.emitNotificationEvent({
-          eventType: NOTIFICATION_EVENTS.LISTING_VOTED,
-          entityType: 'pcListing',
-          entityId: pcListingId,
-          triggeredBy: userId,
-          payload: {
-            pcListingId,
-            voteValue: value,
-          },
-        })
-      }
-    }
-
-    const finalVoteValue = voteResult.action === 'deleted' ? null : value
-    analytics.engagement.vote({
+    for (const change of trustChanges) trackTrustScoreChange(change)
+    const voteEffects = new VoteEffectsService(new VoteEffectsRepository(ctx.prisma))
+    await voteEffects.afterCommit({
       listingId: pcListingId,
-      voteValue: finalVoteValue,
-      previousVote: voteResult.previousValue,
+      listingType: 'pc',
+      userId,
+      action: voteResult.action,
+      voteId: voteResult.vote?.id ?? null,
+      value,
+      previousValue: voteResult.previousValue,
     })
 
     return voteResult.vote

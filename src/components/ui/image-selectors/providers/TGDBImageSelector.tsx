@@ -1,7 +1,7 @@
 'use client'
 
 import { Search, Eye, Camera, LinkIcon } from 'lucide-react'
-import { useState, useEffect, type KeyboardEvent, type MouseEvent } from 'react'
+import { useState, useEffect, useMemo, type KeyboardEvent, type MouseEvent } from 'react'
 import { Button, LoadingSpinner, OptimizedImage, Modal, Input, Toggle } from '@/components/ui'
 import { CACHE_DURATIONS } from '@/data/constants'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
@@ -38,7 +38,6 @@ export function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
   const [searchTerm, setSearchTerm] = useState(props.gameTitle ?? '')
   const [isDirty, setIsDirty] = useState(false)
   const [selectedImage, setSelectedImage] = useState<GameImageOption | null>(null)
-  const [allImages, setAllImages] = useState<GameImageOption[]>([])
   const [previewImage, setPreviewImage] = useState<GameImageOption | null>(null)
   const [includeAllTypes, setIncludeAllTypes] = useState(false)
   const [useCustomUrl, setUseCustomUrl] = useState(false)
@@ -60,35 +59,22 @@ export function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
     staleTime: CACHE_DURATIONS.MEDIUM,
   })
 
-  // Update search term when gameTitle prop changes
-  useEffect(() => {
-    if (!isDirty && props.gameTitle) {
-      setSearchTerm(props.gameTitle)
-    }
-  }, [props.gameTitle, isDirty])
+  const [previousTitle, setPreviousTitle] = useState(props.gameTitle)
+  if (previousTitle !== props.gameTitle) {
+    setPreviousTitle(props.gameTitle)
+    if (!isDirty && props.gameTitle) setSearchTerm(props.gameTitle)
+  }
 
-  // Process search results and select initial image
-  useEffect(() => {
-    if (searchQuery.data && !useCustomUrl) {
-      const images = Object.values(searchQuery.data)
-        .flatMap((gameImages) => gameImages)
-        .filter((image) => includeAllTypes || image.type === 'boxart')
-
-      // Deduplicate images based on URL to prevent showing the same image twice
-      const uniqueImages = images.reduce(
-        (acc, image) => {
-          const existingImage = acc.find((existing) => existing.url === image.url)
-          if (!existingImage) {
-            acc.push(image)
-          }
-          return acc
-        },
-        [] as typeof images,
-      )
-
-      setAllImages(uniqueImages)
-    }
-  }, [searchQuery.data, useCustomUrl, includeAllTypes])
+  const allImages = useMemo(() => {
+    const seen = new Set<string>()
+    return Object.values(searchQuery.data ?? {})
+      .flatMap((images) => images)
+      .filter((image) => {
+        if ((!includeAllTypes && image.type !== 'boxart') || seen.has(image.url)) return false
+        seen.add(image.url)
+        return true
+      })
+  }, [searchQuery.data, includeAllTypes])
 
   // Handle search errors
   useEffect(() => {
@@ -181,7 +167,12 @@ export function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
         </label>
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600 dark:text-gray-400">Use custom URL</span>
-          <Toggle checked={useCustomUrl} onChange={handleToggleCustomUrl} size="sm" />
+          <Toggle
+            aria-label="Use custom URL"
+            checked={useCustomUrl}
+            onChange={handleToggleCustomUrl}
+            size="sm"
+          />
         </div>
       </div>
 
@@ -257,7 +248,12 @@ export function TGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
 
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Toggle checked={includeAllTypes} onChange={handleToggleAllTypes} size="sm" />
+              <Toggle
+                aria-label="Include all image types"
+                checked={includeAllTypes}
+                onChange={handleToggleAllTypes}
+                size="sm"
+              />
               <span className="text-sm flex items-center gap-1 text-gray-700 dark:text-gray-300">
                 <Camera className="h-4 w-4" />
                 Include all image types

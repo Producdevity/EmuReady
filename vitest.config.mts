@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tsconfigPaths from 'vite-tsconfig-paths'
 
@@ -9,7 +9,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     globals: true,
     include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
-    exclude: ['playwright.config.ts'],
+    exclude: [...configDefaults.exclude, 'playwright.config.ts', '**/.agents/**'],
     pool: 'threads',
     fileParallelism: false,
     typecheck: {

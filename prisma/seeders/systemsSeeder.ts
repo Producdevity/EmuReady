@@ -9,6 +9,11 @@ type SystemData = {
 
 const systems: SystemData[] = [
   {
+    name: 'Apple iOS',
+    key: 'apple_ios',
+    tgdbPlatformId: PLATFORM_MAPPINGS.tgdb.apple_ios ?? undefined,
+  },
+  {
     name: 'Microsoft Windows',
     key: 'microsoft_windows',
     tgdbPlatformId: PLATFORM_MAPPINGS.tgdb.microsoft_windows ?? undefined,
@@ -47,6 +52,11 @@ const systems: SystemData[] = [
     name: 'Nintendo Switch',
     key: 'nintendo_switch',
     tgdbPlatformId: PLATFORM_MAPPINGS.tgdb.nintendo_switch ?? undefined,
+  },
+  {
+    name: 'Nintendo Switch 2',
+    key: 'nintendo_switch_2',
+    tgdbPlatformId: PLATFORM_MAPPINGS.tgdb.nintendo_switch_2 ?? undefined,
   },
   {
     name: 'Nintendo Wii U',

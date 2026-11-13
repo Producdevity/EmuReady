@@ -111,6 +111,8 @@ const EMULATOR_ID = '00000000-0000-4000-a000-000000000032'
 
 function createMockPrisma() {
   const mockTx = {
+    trustActionLog: { findMany: vi.fn().mockResolvedValue([{ id: 'first-vote-action' }]) },
+    pcListingVote: { count: vi.fn().mockResolvedValue(0) },
     vote: {
       create: vi
         .fn()

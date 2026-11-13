@@ -1,6 +1,15 @@
+import { GameModerationRepository } from '@/features/games/moderation/server/game-moderation.repository'
+import {
+  GameModerationService,
+  GAME_STATS_CACHE_KEY,
+} from '@/features/games/moderation/server/game-moderation.service'
+import {
+  GameModerationResultSchema,
+  BulkGameApprovalResultSchema,
+  BulkGameRejectionResultSchema,
+} from '@/features/games/moderation/shared/game-moderation.schemas'
 import { AppError, ResourceError } from '@/lib/errors'
 import { logger } from '@/lib/logger'
-import { TrustService } from '@/lib/trust/service'
 import {
   ApproveGameSchema,
   CheckExistingByTgdbIdsSchema,
@@ -32,6 +41,7 @@ import {
   superAdminProcedure,
   viewStatisticsProcedure,
 } from '@/server/api/trpc'
+import { createActorFromSession } from '@/server/auth/actor'
 import {
   invalidateGame,
   invalidateGameRelatedContent,
@@ -40,17 +50,14 @@ import {
   revalidateByTag,
 } from '@/server/cache/invalidation'
 import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
+import { assertCanEditOwnPendingGame } from '@/server/policies/game-edit.policy'
 import { assertGameImageUrlsAllowed } from '@/server/policies/game-image-url.policy'
 import { GamesRepository } from '@/server/repositories/games.repository'
 import { gameStatsCache } from '@/server/utils/cache'
 import { buildOrderBy, paginate } from '@/server/utils/pagination'
 import { isPrismaError, PRISMA_ERROR_CODES } from '@/server/utils/prisma-errors'
 import { buildSearchFilter } from '@/server/utils/query-builders'
-import {
-  validatePagination,
-  sanitizeInput,
-  validateNonEmptyArray,
-} from '@/server/utils/security-validation'
+import { validatePagination, sanitizeInput } from '@/server/utils/security-validation'
 import { checkSpamContent } from '@/server/utils/spam-check'
 import { getSubmissionBalance } from '@/server/utils/submission-balance'
 import {
@@ -63,12 +70,8 @@ import {
   getBestThreeDsTitleIdMatch,
   getThreeDsGamesStats,
 } from '@/server/utils/threeDsGameSearch'
-import { transactionalBatch } from '@/server/utils/transactions'
 import { roleIncludesRole } from '@/utils/permission-system'
-import { ApprovalStatus, Role, TrustAction } from '@orm/client'
-import type { Prisma } from '@orm/client'
-
-const GAME_STATS_CACHE_KEY = 'game-stats'
+import { ApprovalStatus, Role, type Prisma } from '@orm/client'
 
 // Helper function to validate game conflicts
 async function validateGameConflicts(
@@ -443,21 +446,13 @@ export const gamesRouter = createTRPCRouter({
 
       if (!existingGame) return ResourceError.game.notFound()
 
-      // Verify ownership and pending status
-      // TODO: maybe move this into a middleware of some sort
-      if (existingGame!.submittedBy !== ctx.session.user.id) {
-        return ResourceError.game.canOnlyEditOwn()
-      }
-
-      if (existingGame!.status !== ApprovalStatus.PENDING) {
-        return ResourceError.game.canOnlyEditPending()
-      }
+      assertCanEditOwnPendingGame(existingGame, ctx.session.user.id)
 
       assertGameImageUrlsAllowed(data, ctx.session.user)
 
-      await validateGameConflicts(ctx.prisma, id, data, existingGame!)
+      await validateGameConflicts(ctx.prisma, id, data, existingGame)
 
-      const result = await performGameUpdate(ctx.prisma, id, data, existingGame!)
+      const result = await performGameUpdate(ctx.prisma, id, data, existingGame)
 
       // Queue SEO cache invalidation (non-blocking)
       Promise.all([
@@ -573,216 +568,42 @@ export const gamesRouter = createTRPCRouter({
       return { games, pagination }
     }),
 
-  approveGame: approveGamesProcedure.input(ApproveGameSchema).mutation(async ({ ctx, input }) => {
-    const { id, status } = input
-
-    const game = await ctx.prisma.game.findUnique({ where: { id } })
-
-    if (!game) return ResourceError.game.notFound()
-
-    if (game.status !== ApprovalStatus.PENDING) {
-      return ResourceError.game.alreadyProcessed()
-    }
-
-    const result = await ctx.prisma.$transaction(async (tx) => {
-      const updatedGame = await tx.game.update({
-        where: { id },
-        data: {
-          status: status as ApprovalStatus,
-          approvedBy: ctx.session.user.id,
-          approvedAt: new Date(),
-        },
-        include: {
-          system: true,
-          submitter: { select: { id: true, name: true, email: true } },
-          approver: { select: { id: true, name: true, email: true } },
-        },
-      })
-
-      // Award trust points to the game submitter
-      if (game.submittedBy) {
-        const trustService = new TrustService(tx)
-
-        if (status === ApprovalStatus.APPROVED) {
-          await trustService.logAction({
-            userId: game.submittedBy,
-            action: TrustAction.GAME_SUBMISSION_APPROVED,
-            metadata: {
-              gameId: id,
-              gameTitle: updatedGame.title,
-              systemId: updatedGame.systemId,
-              approvedBy: ctx.session.user.id,
-            },
-          })
-        } else if (status === ApprovalStatus.REJECTED) {
-          await trustService.logAction({
-            userId: game.submittedBy,
-            action: TrustAction.GAME_SUBMISSION_REJECTED,
-            metadata: {
-              gameId: id,
-              gameTitle: updatedGame.title,
-              systemId: updatedGame.systemId,
-              rejectedBy: ctx.session.user.id,
-            },
-          })
-        }
-      }
-
-      return updatedGame
-    })
-
-    // Invalidate cache when game status changes
-    gameStatsCache.delete(GAME_STATS_CACHE_KEY)
-
-    // Invalidate SEO cache
-    await invalidateGameRelatedContent(id)
-    if (status === ApprovalStatus.APPROVED) {
-      await invalidateSitemap()
-      await revalidateByTag('games')
-      await revalidateByTag(`game-${id}`)
-      await revalidateByTag(`system-${game.systemId}`)
-    }
-
-    return result
-  }),
+  approveGame: approveGamesProcedure
+    .input(ApproveGameSchema)
+    .output(GameModerationResultSchema)
+    .mutation(({ ctx, input }) =>
+      new GameModerationService(new GameModerationRepository(ctx.prisma)).review(
+        createActorFromSession(ctx.session),
+        input,
+      ),
+    ),
 
   bulkApproveGames: approveGamesProcedure
     .input(BulkApproveGamesSchema)
+    .output(BulkGameApprovalResultSchema)
     .mutation(async ({ ctx, input }) => {
-      const { gameIds } = input
-      const adminUserId = ctx.session.user.id
-
-      // Validate array is not empty
-      validateNonEmptyArray(gameIds, 'gameIds')
-
-      // First validate games exist and are pending
-      const gamesToApprove = await ctx.prisma.game.findMany({
-        where: {
-          id: { in: gameIds },
-          status: ApprovalStatus.PENDING,
-        },
-      })
-
-      if (gamesToApprove.length === 0) {
-        return AppError.badRequest('No valid pending games found to approve')
-      }
-
-      await transactionalBatch(ctx.prisma, [
-        {
-          name: 'approve-games',
-          execute: async (tx) => {
-            const result = await tx.game.updateMany({
-              where: { id: { in: gameIds }, status: ApprovalStatus.PENDING },
-              data: {
-                status: ApprovalStatus.APPROVED,
-                approvedBy: adminUserId,
-                approvedAt: new Date(),
-              },
-            })
-
-            // Award trust points to submitters
-            const trustService = new TrustService(tx)
-            for (const game of gamesToApprove) {
-              if (game.submittedBy) {
-                await trustService.logAction({
-                  userId: game.submittedBy,
-                  action: TrustAction.GAME_SUBMISSION_APPROVED,
-                  metadata: {
-                    gameId: game.id,
-                    gameTitle: game.title,
-                    systemId: game.systemId,
-                    approvedBy: adminUserId,
-                    bulkOperation: true,
-                  },
-                })
-              }
-            }
-
-            return result
-          },
-        },
-        {
-          name: 'clear-cache',
-          execute: async () => {
-            gameStatsCache.delete(GAME_STATS_CACHE_KEY)
-            return Promise.resolve()
-          },
-        },
-      ])
-      Promise.all([
-        ...gameIds.map((id) => invalidateGameRelatedContent(id)),
-        ...gameIds.map((id) => revalidateByTag(`game-${id}`)),
-        invalidateSitemap(),
-        revalidateByTag('games'),
-      ]).catch((error) => {
-        logger.error('[Games Router] Cache invalidation failed:', error)
-      })
-
+      const approvedCount = await new GameModerationService(
+        new GameModerationRepository(ctx.prisma),
+      ).approveMany(createActorFromSession(ctx.session), input.gameIds)
       return {
         success: true,
-        approvedCount: gamesToApprove.length,
-        message: `Successfully approved ${gamesToApprove.length} game(s)`,
+        approvedCount,
+        message: `Successfully approved ${approvedCount} game(s)`,
       }
     }),
 
   bulkRejectGames: approveGamesProcedure
     .input(BulkRejectGamesSchema)
+    .output(BulkGameRejectionResultSchema)
     .mutation(async ({ ctx, input }) => {
-      const { gameIds } = input
-      const adminUserId = ctx.session.user.id
-
-      // Validate array is not empty
-      validateNonEmptyArray(gameIds, 'gameIds')
-
-      return ctx.prisma.$transaction(async (tx) => {
-        // Get all games to reject and verify they are pending
-        const gamesToReject = await tx.game.findMany({
-          where: { id: { in: gameIds }, status: ApprovalStatus.PENDING },
-        })
-
-        if (gamesToReject.length === 0) {
-          return AppError.badRequest('No valid pending games found to reject')
-        }
-
-        // Reject all games to
-        await tx.game.updateMany({
-          where: { id: { in: gamesToReject.map((g) => g.id) } },
-          data: {
-            status: ApprovalStatus.REJECTED,
-            approvedBy: adminUserId,
-            approvedAt: new Date(),
-            // TODO: Add rejectionNotes
-            // Note: There's no rejectionNotes field in the schema, we should add it
-          },
-        })
-
-        // Apply trust penalties to submitters
-        const trustService = new TrustService(tx)
-        for (const game of gamesToReject) {
-          if (game.submittedBy) {
-            await trustService.logAction({
-              userId: game.submittedBy,
-              action: TrustAction.GAME_SUBMISSION_REJECTED,
-              metadata: {
-                gameId: game.id,
-                gameTitle: game.title,
-                systemId: game.systemId,
-                rejectedBy: adminUserId,
-                bulkOperation: true,
-              },
-            })
-          }
-        }
-
-        // Invalidate cache
-        gameStatsCache.delete(GAME_STATS_CACHE_KEY)
-
-        return {
-          success: true,
-          rejectedCount: gamesToReject.length,
-          message: `Successfully rejected ${gamesToReject.length} game(s)`,
-        }
-      })
+      const rejectedCount = await new GameModerationService(
+        new GameModerationRepository(ctx.prisma),
+      ).rejectMany(createActorFromSession(ctx.session), input.gameIds)
+      return {
+        success: true,
+        rejectedCount,
+        message: `Successfully rejected ${rejectedCount} game(s)`,
+      }
     }),
 
   // Nintendo Switch Title ID lookup endpoints

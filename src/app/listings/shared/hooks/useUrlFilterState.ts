@@ -1,8 +1,10 @@
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
-import { PAGINATION, type PageSizeOption } from '@/data/constants'
-import { useUrlSearch } from '@/hooks/useUrlState'
+import { useCallback, useEffect } from 'react'
+import { type PageSizeOption } from '@/data/constants'
+import { useLocalStorage } from '@/hooks/useLocalStorage'
+import { useUrlSearch } from '@/hooks/useUrlSearch'
 import analytics from '@/lib/analytics'
+import { PageSizePreferenceSchema } from '@/schemas/preferences'
 import { type SortDirection } from '@/types/api'
 import { parseLimit } from '../utils/pagination'
 
@@ -23,22 +25,21 @@ export function useUrlFilterState<TSortField extends string>(config: Config) {
   const myListings = searchParams.get('myListings') === 'true'
 
   const urlLimit = searchParams.get('limit')
-  const [storedLimit, setStoredLimit] = useState<PageSizeOption | null>(null)
-
-  const limit: PageSizeOption = urlLimit
-    ? parseLimit(urlLimit, config.maxLimit)
-    : (storedLimit ?? (PAGINATION.PUBLIC_DEFAULT_LIMIT as PageSizeOption))
+  const [storedLimit, setStoredLimit] = useLocalStorage(
+    config.storageKey,
+    parseLimit(null, config.maxLimit),
+    PageSizePreferenceSchema,
+  )
+  const limit = parseLimit(urlLimit || String(storedLimit), config.maxLimit)
 
   useEffect(() => {
-    if (urlLimit) {
-      localStorage.setItem(config.storageKey, String(parseLimit(urlLimit, config.maxLimit)))
-      return
+    if (!urlLimit) return
+    try {
+      setStoredLimit(parseLimit(urlLimit, config.maxLimit), { notifyOnError: false })
+    } catch (error) {
+      console.warn('Failed to save report page size:', error)
     }
-    const stored = localStorage.getItem(config.storageKey)
-    if (stored) {
-      setStoredLimit(parseLimit(stored, config.maxLimit))
-    }
-  }, [config.storageKey, config.maxLimit, urlLimit])
+  }, [config.maxLimit, urlLimit, setStoredLimit])
 
   const updateFilters = useCallback(
     (updates: Record<string, unknown>, shouldPush = false) => {
@@ -64,7 +65,7 @@ export function useUrlFilterState<TSortField extends string>(config: Config) {
       if (shouldPush) {
         router.push(url)
       } else {
-        router.replace(url)
+        router.replace(url, { scroll: false })
       }
     },
     [config.basePath, router, searchParams],
@@ -88,11 +89,9 @@ export function useUrlFilterState<TSortField extends string>(config: Config) {
   const setLimit = useCallback(
     (value: PageSizeOption) => {
       updateFilters({ limit: value, page: 1 }, true)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(config.storageKey, String(value))
-      }
+      setStoredLimit(value)
     },
-    [config.storageKey, updateFilters],
+    [setStoredLimit, updateFilters],
   )
 
   const setSortField = useCallback(

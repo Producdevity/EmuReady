@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { AccountDeletionRepository } from '@/features/accounts/server/account-deletion.repository'
 import analytics from '@/lib/analytics'
 import { createPrismaClient } from '@/server/prisma-client'
+import { trackTrustScoreChange, type TrustScoreChange } from '@/server/utils/trust-score-analytics'
 import { updateListingVoteCounts, updatePcListingVoteCounts } from '@/server/utils/vote-counts'
 import { handleListingVoteTrustEffects } from '@/server/utils/vote-trust-effects'
 import { calculateWilsonScore } from '@/utils/wilson-score'
@@ -253,25 +254,31 @@ describe('voting after account deletion locks a report', () => {
       deletionResult = Promise.allSettled([accounts.deleteAccount({ id: voter.id })])
       const deletionPid = await waitForBlockedTransaction(lockerPid)
 
-      const writer = db.$transaction(
-        async (tx) => {
-          await tx.vote.create({
-            data: { listingId: otherReport.id, userId: fixtures.writer.id, value: true },
-          })
-          await updateListingVoteCounts(tx, otherReport.id, 'create', true)
-          await handleListingVoteTrustEffects({
-            tx,
-            action: 'created',
-            currentValue: true,
-            previousValue: null,
-            userId: fixtures.writer.id,
-            listingId: otherReport.id,
-            listingType: 'handheld',
-            authorId: author.id,
-          })
-        },
-        { timeout: 20_000 },
-      )
+      const trustChanges: TrustScoreChange[] = []
+      const writer = db
+        .$transaction(
+          async (tx) => {
+            await tx.vote.create({
+              data: { listingId: otherReport.id, userId: fixtures.writer.id, value: true },
+            })
+            await updateListingVoteCounts(tx, otherReport.id, 'create', true)
+            await handleListingVoteTrustEffects({
+              tx,
+              trustChanges,
+              action: 'created',
+              currentValue: true,
+              previousValue: null,
+              userId: fixtures.writer.id,
+              listingId: otherReport.id,
+              listingType: 'handheld',
+              authorId: author.id,
+            })
+          },
+          { timeout: 20_000 },
+        )
+        .then(() => {
+          for (const change of trustChanges) trackTrustScoreChange(change)
+        })
       writerResult = Promise.allSettled([writer])
       await waitForBlockedTransaction(deletionPid)
       releaseLock.resolve()

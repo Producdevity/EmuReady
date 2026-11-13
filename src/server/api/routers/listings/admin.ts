@@ -1,5 +1,12 @@
+import { ReportAdminEditService } from '@/features/reports/approval/server/report-admin-edit.service'
+import { ReportApprovalRepository } from '@/features/reports/approval/server/report-approval.repository'
+import { ReportApprovalService } from '@/features/reports/approval/server/report-approval.service'
+import {
+  ReportApprovalResultSchema,
+  HandheldBulkApprovalResultSchema,
+  HandheldBulkRejectionResultSchema,
+} from '@/features/reports/approval/shared/report-approval.schemas'
 import { ResourceError, AppError } from '@/lib/errors'
-import { applyTrustAction } from '@/lib/trust/service'
 import { ListingType } from '@/schemas/common'
 import {
   ApproveListingSchema,
@@ -28,9 +35,6 @@ import {
   protectedProcedure,
 } from '@/server/api/trpc'
 import { buildProcessedOrderBy } from '@/server/api/utils/listingHelpers'
-import { getProcessedStatusTrustAction } from '@/server/api/utils/processedStatusTrust'
-import { invalidateListingSeo, invalidateListingsSeo } from '@/server/cache/invalidation'
-import { notificationEventEmitter, NOTIFICATION_EVENTS } from '@/server/notifications/eventEmitter'
 import { ListingsRepository } from '@/server/repositories/listings.repository'
 import { PcListingsRepository } from '@/server/repositories/pc-listings.repository'
 import { autoRejectRiskyHandheldReports } from '@/server/services/review-risk-auto-reject.service'
@@ -40,15 +44,11 @@ import {
   getAutoRejectableReviewRiskPreviewForCandidates,
   getRiskOnlyReviewPage,
 } from '@/server/services/review-risk.service'
-import {
-  invalidateCatalogCompatibilityCacheForDevice,
-  invalidateCatalogCompatibilityCacheForDevices,
-  listingStatsCache,
-} from '@/server/utils/cache/instances'
+import { listingStatsCache } from '@/server/utils/cache/instances'
 import { generateEmulatorConfig } from '@/server/utils/emulator-config/emulator-detector'
 import { paginate } from '@/server/utils/pagination'
 import { hasRolePermission } from '@/utils/permissions'
-import { ApprovalStatus, Role, TrustAction } from '@orm'
+import { ApprovalStatus, Role } from '@orm'
 import { Prisma } from '@orm/client'
 
 const LISTING_STATS_CACHE_KEY = 'listing-stats'
@@ -132,259 +132,45 @@ export const adminRouter = createTRPCRouter({
     }
   }),
 
-  approve: protectedProcedure.input(ApproveListingSchema).mutation(async ({ ctx, input }) => {
-    // Check if user has permission to approve listings
-    // Either through APPROVE_LISTINGS permission or being a verified developer
-    const isModerator = hasRolePermission(ctx.session.user.role, Role.MODERATOR)
-    const isDeveloper = hasRolePermission(ctx.session.user.role, Role.DEVELOPER)
+  approve: protectedProcedure
+    .input(ApproveListingSchema)
+    .output(ReportApprovalResultSchema)
+    .mutation(({ ctx, input }) =>
+      new ReportApprovalService(new ReportApprovalRepository(ctx.prisma)).changeStatus({
+        reportId: input.listingId,
+        reportType: 'handheld',
+        newStatus: ApprovalStatus.APPROVED,
+        intent: 'review',
+        actor: ctx.session.user,
+      }),
+    ),
 
-    if (!isModerator && !isDeveloper) {
-      return ResourceError.listing.requiresDeveloperToApprove()
-    }
-    const { listingId } = input
-    const adminUserId = ctx.session.user.id
-
-    // Verify admin user exists
-    const adminUserExists = await ctx.prisma.user.findUnique({
-      where: { id: adminUserId },
-      select: { id: true },
-    })
-    if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
-
-    const listingToApprove = await ctx.prisma.listing.findUnique({
-      where: { id: listingId },
-      include: {
-        author: {
-          select: {
-            id: true,
-            userBans: {
-              where: {
-                isActive: true,
-                OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-              },
-              select: { reason: true },
-            },
-          },
-        },
-      },
-    })
-
-    if (!listingToApprove || listingToApprove.status !== ApprovalStatus.PENDING) {
-      return ResourceError.listing.notPending()
-    }
-
-    // For developers, verify they can approve this emulator's listings
-    if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
-      const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
-        where: {
-          userId_emulatorId: {
-            userId: adminUserId,
-            emulatorId: listingToApprove.emulatorId,
-          },
-        },
-      })
-
-      if (!verifiedDeveloper) {
-        return ResourceError.listing.mustBeVerifiedToApprove()
-      }
-    }
-
-    // Auto-reject if user is banned
-    if (listingToApprove.author && listingToApprove.author.userBans.length > 0) {
-      const banReason = listingToApprove.author.userBans[0].reason
-      await ctx.prisma.listing.update({
-        where: { id: listingId },
-        data: {
-          status: ApprovalStatus.REJECTED,
-          processedByUserId: adminUserId,
-          processedAt: new Date(),
-          processedNotes: `Automatically rejected: User is currently banned (${banReason})`,
-        },
-      })
-
-      return ResourceError.listing.cannotApproveBannedUser(banReason)
-    }
-
-    // Update listing status
-    const updatedListing = await ctx.prisma.listing.update({
-      where: { id: listingId },
-      data: {
-        status: ApprovalStatus.APPROVED,
-        processedByUserId: adminUserId,
-        processedAt: new Date(),
-        processedNotes: null,
-      },
-    })
-
-    await invalidateListingSeo({
-      id: listingId,
-      gameId: listingToApprove.gameId,
-      deviceId: listingToApprove.deviceId,
-      emulatorId: listingToApprove.emulatorId,
-    })
-    invalidateCatalogCompatibilityCacheForDevice(listingToApprove.deviceId)
-
-    // Apply trust action for listing approval to the author
-    if (listingToApprove.authorId) {
-      await applyTrustAction({
-        userId: listingToApprove.authorId,
-        action: TrustAction.LISTING_APPROVED,
-        context: {
-          listingId,
-          adminUserId,
-          reason: 'listing_approved',
-        },
-      })
-    }
-
-    // Emit notification event
-    notificationEventEmitter.emitNotificationEvent({
-      eventType: NOTIFICATION_EVENTS.LISTING_APPROVED,
-      entityType: 'listing',
-      entityId: listingId,
-      triggeredBy: adminUserId,
-      payload: {
-        listingId,
-        approvedBy: adminUserId,
-        approvedAt: updatedListing.processedAt,
-      },
-    })
-
-    // Invalidate listing stats cache
-    listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
-
-    return updatedListing
-  }),
-
-  reject: protectedProcedure.input(RejectListingSchema).mutation(async ({ ctx, input }) => {
-    // Check if user has permission to reject listings
-    // Either through APPROVE_LISTINGS permission or being a verified developer
-    const isModerator = hasRolePermission(ctx.session.user.role, Role.MODERATOR)
-    const isDeveloper = hasRolePermission(ctx.session.user.role, Role.DEVELOPER)
-
-    if (!isModerator && !isDeveloper) {
-      return ResourceError.listing.requiresDeveloperToReject()
-    }
-    const { listingId, notes } = input
-    const adminUserId = ctx.session.user.id
-
-    // Verify admin user exists
-    const adminUserExists = await ctx.prisma.user.findUnique({
-      where: { id: adminUserId },
-      select: { id: true },
-    })
-    if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
-
-    const listingToReject = await ctx.prisma.listing.findUnique({
-      where: { id: listingId },
-      include: { author: { select: { id: true } } },
-    })
-
-    if (!listingToReject || listingToReject.status !== ApprovalStatus.PENDING) {
-      return ResourceError.listing.notPending()
-    }
-
-    // For developers, verify they can reject this emulator's listings
-    if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
-      const verifiedDeveloper = await ctx.prisma.verifiedDeveloper.findUnique({
-        where: {
-          userId_emulatorId: {
-            userId: adminUserId,
-            emulatorId: listingToReject.emulatorId,
-          },
-        },
-      })
-
-      if (!verifiedDeveloper) {
-        return ResourceError.listing.mustBeVerifiedToReject()
-      }
-    }
-
-    // Update listing status
-    const updatedListing = await ctx.prisma.listing.update({
-      where: { id: listingId },
-      data: {
-        status: ApprovalStatus.REJECTED,
-        processedByUserId: adminUserId,
-        processedAt: new Date(),
-        processedNotes: notes,
-      },
-    })
-
-    // Apply trust action for listing rejection
-    if (listingToReject.authorId) {
-      await applyTrustAction({
-        userId: listingToReject.authorId,
-        action: TrustAction.LISTING_REJECTED,
-        context: {
-          listingId,
-          adminUserId,
-          reason: notes || 'listing_rejected',
-        },
-      })
-    }
-
-    notificationEventEmitter.emitNotificationEvent({
-      eventType: NOTIFICATION_EVENTS.LISTING_REJECTED,
-      entityType: 'listing',
-      entityId: listingId,
-      triggeredBy: adminUserId,
-      payload: {
-        listingId,
-        rejectedBy: adminUserId,
-        rejectedAt: updatedListing.processedAt,
-        rejectionReason: notes,
-      },
-    })
-
-    // Invalidate listing stats cache
-    listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
-
-    invalidateCatalogCompatibilityCacheForDevice(listingToReject.deviceId)
-
-    return updatedListing
-  }),
+  reject: protectedProcedure
+    .input(RejectListingSchema)
+    .output(ReportApprovalResultSchema)
+    .mutation(({ ctx, input }) =>
+      new ReportApprovalService(new ReportApprovalRepository(ctx.prisma)).changeStatus({
+        reportId: input.listingId,
+        reportType: 'handheld',
+        newStatus: ApprovalStatus.REJECTED,
+        intent: 'review',
+        actor: ctx.session.user,
+        notes: input.notes,
+      }),
+    ),
 
   resetToPending: moderatorProcedure
     .input(ResetListingToPendingSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { listingId } = input
-
-      const listing = await ctx.prisma.listing.findUnique({
-        where: { id: listingId },
-        select: { id: true, status: true, gameId: true, deviceId: true, emulatorId: true },
-      })
-
-      if (!listing) return ResourceError.listing.notFound()
-
-      if (listing.status === ApprovalStatus.PENDING) {
-        return ResourceError.listing.alreadyPending()
-      }
-
-      const updatedListing = await ctx.prisma.listing.update({
-        where: { id: listingId },
-        data: {
-          status: ApprovalStatus.PENDING,
-          processedByUserId: null,
-          processedAt: null,
-          processedNotes: null,
-        },
-      })
-
-      listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
-
-      if (listing.status === ApprovalStatus.APPROVED) {
-        await invalidateListingSeo({
-          id: listingId,
-          gameId: listing.gameId,
-          deviceId: listing.deviceId,
-          emulatorId: listing.emulatorId,
-        })
-        invalidateCatalogCompatibilityCacheForDevice(listing.deviceId)
-      }
-
-      return updatedListing
-    }),
+    .output(ReportApprovalResultSchema)
+    .mutation(({ ctx, input }) =>
+      new ReportApprovalService(new ReportApprovalRepository(ctx.prisma)).changeStatus({
+        reportId: input.listingId,
+        reportType: 'handheld',
+        newStatus: ApprovalStatus.PENDING,
+        intent: 'reset',
+        actor: ctx.session.user,
+      }),
+    ),
 
   getProcessed: superAdminProcedure.input(GetProcessedSchema).query(async ({ ctx, input }) => {
     const { page, limit, filterStatus, search, sortField, sortDirection } = input
@@ -444,103 +230,17 @@ export const adminRouter = createTRPCRouter({
 
   overrideStatus: superAdminProcedure
     .input(OverrideApprovalStatusSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { listingId, newStatus, overrideNotes } = input
-      const superAdminUserId = ctx.session.user.id
-
-      const listingToOverride = await ctx.prisma.listing.findUnique({
-        where: { id: listingId },
-        select: {
-          id: true,
-          status: true,
-          gameId: true,
-          deviceId: true,
-          emulatorId: true,
-          authorId: true,
-          processedNotes: true,
-        },
-      })
-
-      if (!listingToOverride) return ResourceError.listing.notFound()
-
-      const updatedListing = await ctx.prisma.listing.update({
-        where: { id: listingId },
-        data:
-          newStatus === ApprovalStatus.PENDING
-            ? {
-                status: newStatus,
-                processedByUserId: null,
-                processedAt: null,
-                processedNotes: null,
-              }
-            : {
-                status: newStatus,
-                processedByUserId: superAdminUserId,
-                processedAt: new Date(),
-                processedNotes: overrideNotes ?? listingToOverride.processedNotes,
-              },
-      })
-
-      if (
-        listingToOverride.status === ApprovalStatus.APPROVED ||
-        newStatus === ApprovalStatus.APPROVED
-      ) {
-        await invalidateListingSeo({
-          id: listingId,
-          gameId: listingToOverride.gameId,
-          deviceId: listingToOverride.deviceId,
-          emulatorId: listingToOverride.emulatorId,
-        })
-        invalidateCatalogCompatibilityCacheForDevice(listingToOverride.deviceId)
-      }
-
-      const trustAction = getProcessedStatusTrustAction({
-        previousStatus: listingToOverride.status,
-        newStatus,
-        authorId: listingToOverride.authorId,
-      })
-      if (trustAction) {
-        await applyTrustAction({
-          userId: trustAction.userId,
-          action: trustAction.action,
-          context: {
-            listingId,
-            adminUserId: superAdminUserId,
-            reason: overrideNotes || 'listing_status_override',
-          },
-        })
-      }
-
-      if (newStatus === ApprovalStatus.APPROVED || newStatus === ApprovalStatus.REJECTED) {
-        notificationEventEmitter.emitNotificationEvent({
-          eventType:
-            newStatus === ApprovalStatus.APPROVED
-              ? NOTIFICATION_EVENTS.LISTING_APPROVED
-              : NOTIFICATION_EVENTS.LISTING_REJECTED,
-          entityType: 'listing',
-          entityId: listingId,
-          triggeredBy: superAdminUserId,
-          payload:
-            newStatus === ApprovalStatus.APPROVED
-              ? {
-                  listingId,
-                  approvedBy: superAdminUserId,
-                  approvedAt: updatedListing.processedAt,
-                }
-              : {
-                  listingId,
-                  rejectedBy: superAdminUserId,
-                  rejectedAt: updatedListing.processedAt,
-                  rejectionReason: overrideNotes,
-                },
-        })
-      }
-
-      // Invalidate listing stats cache
-      listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
-
-      return updatedListing
-    }),
+    .output(ReportApprovalResultSchema)
+    .mutation(({ ctx, input }) =>
+      new ReportApprovalService(new ReportApprovalRepository(ctx.prisma)).changeStatus({
+        reportId: input.listingId,
+        reportType: 'handheld',
+        newStatus: input.newStatus,
+        intent: 'override',
+        actor: ctx.session.user,
+        notes: input.overrideNotes,
+      }),
+    ),
 
   delete: deleteAnyListingProcedure.input(DeleteListingSchema).mutation(async ({ ctx, input }) => {
     const listing = await ctx.prisma.listing.findUnique({
@@ -560,353 +260,50 @@ export const adminRouter = createTRPCRouter({
 
   bulkApprove: protectedProcedure
     .input(BulkApproveListingsSchema)
+    .output(HandheldBulkApprovalResultSchema)
     .mutation(async ({ ctx, input }) => {
-      // Check if user has permission to approve listings
-      // Either through APPROVE_LISTINGS permission or being a verified developer
-      const isModerator = hasRolePermission(ctx.session.user.role, Role.MODERATOR)
-      const isDeveloper = hasRolePermission(ctx.session.user.role, Role.DEVELOPER)
-
-      if (!isModerator && !isDeveloper) {
-        return ResourceError.listing.requiresDeveloperToApprove()
-      }
-      const { listingIds } = input
-      const adminUserId = ctx.session.user.id
-
-      // Verify admin user exists
-      const adminUserExists = await ctx.prisma.user.findUnique({
-        where: { id: adminUserId },
-        select: { id: true },
+      const result = await new ReportApprovalService(
+        new ReportApprovalRepository(ctx.prisma),
+      ).reviewPending({
+        reportIds: input.listingIds,
+        reportType: 'handheld',
+        newStatus: ApprovalStatus.APPROVED,
+        actor: ctx.session.user,
       })
-      if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
-
-      // Execute database transaction first, then emit notifications
-      const transactionResult = await ctx.prisma.$transaction(async (tx) => {
-        // Get all listings to approve and verify they are pending
-        const listingsToApprove = await tx.listing.findMany({
-          where: {
-            id: { in: listingIds },
-            status: ApprovalStatus.PENDING,
-          },
-          include: {
-            author: {
-              select: {
-                id: true,
-                userBans: {
-                  where: {
-                    isActive: true,
-                    OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-                  },
-                  select: { reason: true },
-                },
-              },
-            },
-          },
-        })
-
-        // For developers, verify they can approve these emulator listings
-        if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
-          const userVerifiedEmulators = await tx.verifiedDeveloper.findMany({
-            where: { userId: adminUserId },
-            select: { emulatorId: true },
-          })
-
-          const verifiedEmulatorIds = userVerifiedEmulators.map((ve) => ve.emulatorId)
-          const unauthorizedListings = listingsToApprove.filter(
-            (listing) => !verifiedEmulatorIds.includes(listing.emulatorId),
-          )
-
-          if (unauthorizedListings.length > 0) {
-            return ResourceError.listing.mustBeVerifiedToApprove()
-          }
-        }
-
-        // Get the IDs of listings that were not found or not pending
-        const notFoundOrNotPendingIds = listingIds.filter(
-          (id) => !listingsToApprove.some((listing) => listing.id === id),
+      if (result.approvedCount + result.rejectedCount === 0)
+        return AppError.badRequest(
+          'No valid pending listings found to approve. The listings may have already been processed.',
         )
-
-        if (listingsToApprove.length === 0) {
-          return AppError.badRequest(
-            'No valid pending listings found to approve. The listings may have already been processed.',
-          )
-        }
-
-        // Separate listings by banned/non-banned authors
-        const bannedUserListings = listingsToApprove.filter(
-          (l) => (l.author?.userBans.length ?? 0) > 0,
-        )
-        const validListings = listingsToApprove.filter(
-          (l) => (l.author?.userBans.length ?? 0) === 0,
-        )
-
-        // Auto-reject listings from banned users
-        if (bannedUserListings.length > 0) {
-          for (const listing of bannedUserListings) {
-            const banReason = listing.author?.userBans[0]?.reason || 'No reason provided'
-            await tx.listing.update({
-              where: { id: listing.id },
-              data: {
-                status: ApprovalStatus.REJECTED,
-                processedByUserId: adminUserId,
-                processedAt: new Date(),
-                processedNotes: `Automatically rejected during bulk approval: User is currently banned (${banReason})`,
-              },
-            })
-          }
-        }
-
-        // Update valid listings to approved
-        if (validListings.length > 0) {
-          await tx.listing.updateMany({
-            where: { id: { in: validListings.map((l) => l.id) } },
-            data: {
-              status: ApprovalStatus.APPROVED,
-              processedByUserId: adminUserId,
-              processedAt: new Date(),
-              processedNotes: null,
-            },
-          })
-        }
-
-        // Return data needed for post-transaction operations.
-        // Trust actions intentionally run AFTER the transaction commits — applyTrustAction
-        // opens its own internal transaction, so nesting would deadlock or surprise.
-        return {
-          validListings,
-          bannedUserListings,
-          notFoundOrNotPendingIds,
-        }
-      })
-
-      // Apply trust actions in parallel for approved listings (post-commit, distinct authors).
-      const approvedListingsWithAuthor = transactionResult.validListings.filter(
-        (l): l is typeof l & { authorId: string } => l.authorId !== null,
-      )
-      await Promise.all(
-        approvedListingsWithAuthor.map((listing) =>
-          applyTrustAction({
-            userId: listing.authorId,
-            action: TrustAction.LISTING_APPROVED,
-            context: {
-              listingId: listing.id,
-              adminUserId,
-              reason: 'bulk_listing_approved',
-            },
-          }),
-        ),
-      )
-
-      // Emit notification events AFTER transaction completes successfully
-      try {
-        const { validListings } = transactionResult
-        const approvedAt = new Date()
-
-        await invalidateListingsSeo(validListings)
-
-        // Emit notification events for each approved listing
-        for (const listing of validListings) {
-          try {
-            notificationEventEmitter.emitNotificationEvent({
-              eventType: NOTIFICATION_EVENTS.LISTING_APPROVED,
-              entityType: 'listing',
-              entityId: listing.id,
-              triggeredBy: adminUserId,
-              payload: {
-                listingId: listing.id,
-                approvedBy: adminUserId,
-                approvedAt,
-                bulk: true,
-              },
-            })
-          } catch (notificationError) {
-            // Log notification errors but don't fail the operation
-            console.error(
-              `Failed to emit notification for listing ${listing.id}:`,
-              notificationError,
-            )
-          }
-        }
-      } catch (error) {
-        console.error('Error emitting bulk approval notifications:', error)
-        // Don't throw - the database operations succeeded
-      }
-
-      // Invalidate listing stats cache
-      listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
-
-      const { validListings, bannedUserListings, notFoundOrNotPendingIds } = transactionResult
-      invalidateCatalogCompatibilityCacheForDevices([
-        ...validListings.map((listing) => listing.deviceId),
-        ...bannedUserListings.map((listing) => listing.deviceId),
-      ])
-
-      let message = `Successfully approved ${validListings.length} listing(s).`
-
-      if (bannedUserListings.length > 0) {
-        message += ` ${bannedUserListings.length} listing(s) were automatically rejected due to banned users.`
-      }
-
-      if (notFoundOrNotPendingIds.length > 0) {
-        message += ` ${notFoundOrNotPendingIds.length} listing(s) were skipped because they were already processed.`
-      }
-
       return {
         success: true,
-        approvedCount: validListings.length,
-        rejectedCount: bannedUserListings.length,
-        skippedCount: notFoundOrNotPendingIds.length,
-        message,
-        hasReportedUsers: bannedUserListings.length > 0,
+        ...result,
+        message: `Successfully approved ${result.approvedCount} report(s).${result.rejectedCount > 0 ? ` ${result.rejectedCount} automatically rejected due to banned authors.` : ''}${result.skippedCount > 0 ? ` ${result.skippedCount} skipped because they were already processed.` : ''}`,
+        hasReportedUsers: result.rejectedCount > 0,
       }
     }),
 
   bulkReject: protectedProcedure
     .input(BulkRejectListingsSchema)
+    .output(HandheldBulkRejectionResultSchema)
     .mutation(async ({ ctx, input }) => {
-      // Check if user has permission to reject listings
-      // Either through APPROVE_LISTINGS permission or being a verified developer
-      const isModerator = hasRolePermission(ctx.session.user.role, Role.MODERATOR)
-      const isDeveloper = hasRolePermission(ctx.session.user.role, Role.DEVELOPER)
-
-      if (!isModerator && !isDeveloper) {
-        return ResourceError.listing.requiresDeveloperToReject()
-      }
-      const { listingIds, notes } = input
-      const adminUserId = ctx.session.user.id
-
-      // Verify admin user exists
-      const adminUserExists = await ctx.prisma.user.findUnique({
-        where: { id: adminUserId },
-        select: { id: true },
+      const result = await new ReportApprovalService(
+        new ReportApprovalRepository(ctx.prisma),
+      ).reviewPending({
+        reportIds: input.listingIds,
+        reportType: 'handheld',
+        newStatus: ApprovalStatus.REJECTED,
+        actor: ctx.session.user,
+        notes: input.notes,
       })
-      if (!adminUserExists) return ResourceError.user.notInDatabase(adminUserId)
-
-      // CRITICAL: Execute database transaction first, then emit notifications
-      const transactionResult = await ctx.prisma.$transaction(async (tx) => {
-        // Get all listings to reject and verify they are pending
-        const listingsToReject = await tx.listing.findMany({
-          where: { id: { in: listingIds }, status: ApprovalStatus.PENDING },
-          include: { author: { select: { id: true } } },
-        })
-
-        // For developers, verify they can reject these emulator listings
-        if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
-          const userVerifiedEmulators = await tx.verifiedDeveloper.findMany({
-            where: { userId: adminUserId },
-            select: { emulatorId: true },
-          })
-
-          const verifiedEmulatorIds = userVerifiedEmulators.map((ve) => ve.emulatorId)
-          const unauthorizedListings = listingsToReject.filter(
-            (listing) => !verifiedEmulatorIds.includes(listing.emulatorId),
-          )
-
-          if (unauthorizedListings.length > 0) {
-            return ResourceError.listing.mustBeVerifiedToReject()
-          }
-        }
-
-        // Get the IDs of listings that were not found or not pending
-        const notFoundOrNotPendingIds = listingIds.filter(
-          (id) => !listingsToReject.some((listing) => listing.id === id),
+      if (result.rejectedCount === 0)
+        return AppError.badRequest(
+          'No valid pending listings found to reject. The listings may have already been processed.',
         )
-
-        if (listingsToReject.length === 0) {
-          return AppError.badRequest(
-            'No valid pending listings found to reject. The listings may have already been processed.',
-          )
-        }
-
-        // Update all listings to rejected
-        await tx.listing.updateMany({
-          where: { id: { in: listingsToReject.map((l) => l.id) } },
-          data: {
-            status: ApprovalStatus.REJECTED,
-            processedByUserId: adminUserId,
-            processedAt: new Date(),
-            processedNotes: notes,
-          },
-        })
-
-        // Return data needed for post-transaction operations.
-        // Trust actions intentionally run AFTER the transaction commits — applyTrustAction
-        // opens its own internal transaction, so nesting would deadlock or surprise.
-        return {
-          listingsToReject,
-          notFoundOrNotPendingIds,
-        }
-      })
-
-      // Apply trust actions in parallel for rejected listings (post-commit, distinct authors).
-      const rejectedListingsWithAuthor = transactionResult.listingsToReject.filter(
-        (l): l is typeof l & { authorId: string } => l.authorId !== null,
-      )
-      await Promise.all(
-        rejectedListingsWithAuthor.map((listing) =>
-          applyTrustAction({
-            userId: listing.authorId,
-            action: TrustAction.LISTING_REJECTED,
-            context: {
-              listingId: listing.id,
-              adminUserId,
-              reason: notes || 'bulk_listing_rejected',
-            },
-          }),
-        ),
-      )
-
-      // NOTE: Emit notification events AFTER transaction completes successfully
-      try {
-        const { listingsToReject } = transactionResult
-        const rejectedAt = new Date()
-
-        // Emit notification events for each rejected listing
-        for (const listing of listingsToReject) {
-          try {
-            notificationEventEmitter.emitNotificationEvent({
-              eventType: NOTIFICATION_EVENTS.LISTING_REJECTED,
-              entityType: 'listing',
-              entityId: listing.id,
-              triggeredBy: adminUserId,
-              payload: {
-                listingId: listing.id,
-                rejectedBy: adminUserId,
-                rejectedAt,
-                rejectionReason: notes,
-                bulk: true,
-              },
-            })
-          } catch (notificationError) {
-            // Log notification errors but don't fail the operation
-            console.error(
-              `Failed to emit notification for listing ${listing.id}:`,
-              notificationError,
-            )
-          }
-        }
-      } catch (error) {
-        console.error('Error emitting bulk rejection notifications:', error)
-        // Don't throw - the database operations succeeded
-      }
-
-      // Invalidate listing stats cache
-      listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
-
-      const { listingsToReject, notFoundOrNotPendingIds } = transactionResult
-      invalidateCatalogCompatibilityCacheForDevices(
-        listingsToReject.map((listing) => listing.deviceId),
-      )
-
-      const message =
-        notFoundOrNotPendingIds.length > 0
-          ? `Successfully rejected ${listingsToReject.length} listing(s). ${notFoundOrNotPendingIds.length} listing(s) were skipped because they were already processed.`
-          : `Successfully rejected ${listingsToReject.length} listing(s).`
-
       return {
         success: true,
-        rejectedCount: listingsToReject.length,
-        skippedCount: notFoundOrNotPendingIds.length,
-        message,
+        rejectedCount: result.rejectedCount,
+        skippedCount: result.skippedCount,
+        message: `Successfully rejected ${result.rejectedCount} report(s).${result.skippedCount > 0 ? ` ${result.skippedCount} skipped because they were already processed.` : ''}`,
       }
     }),
 
@@ -930,7 +327,7 @@ export const adminRouter = createTRPCRouter({
 
     return autoRejectRiskyHandheldReports({
       prisma: ctx.prisma,
-      adminUserId,
+      actor: ctx.session.user,
     })
   }),
 
@@ -1073,57 +470,13 @@ export const adminRouter = createTRPCRouter({
 
   updateListing: protectedProcedure
     .input(UpdateListingAdminSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Allow moderators and above to update listings
-      if (!hasRolePermission(ctx.session.user.role, Role.MODERATOR)) {
-        return ResourceError.listing.requiresModeratorToUpdate()
-      }
-      const { id, customFieldValues, ...updateData } = input
-      const adminUserId = ctx.session.user.id
-
-      const existingListing = await ctx.prisma.listing.findUnique({
-        where: { id },
-        include: { customFieldValues: true },
-      })
-
-      if (!existingListing) return ResourceError.listing.notFound()
-
-      return await ctx.prisma.$transaction(async (tx) => {
-        // Update the main listing fields
-        const updatedListing = await tx.listing.update({
-          where: { id },
-          data: {
-            ...updateData,
-            processedByUserId: adminUserId,
-            processedAt: new Date(),
-          },
-        })
-
-        // Handle custom field values
-        if (customFieldValues) {
-          // Delete existing custom field values
-          await tx.listingCustomFieldValue.deleteMany({
-            where: { listingId: id },
-          })
-
-          // Create new custom field values
-          if (customFieldValues.length > 0) {
-            await tx.listingCustomFieldValue.createMany({
-              data: customFieldValues.map((cfv) => ({
-                listingId: id,
-                customFieldDefinitionId: cfv.customFieldDefinitionId,
-                value: cfv.value === null || cfv.value === undefined ? Prisma.JsonNull : cfv.value,
-              })),
-            })
-          }
-        }
-
-        // Invalidate listing stats cache
-        listingStatsCache.delete(LISTING_STATS_CACHE_KEY)
-
-        return updatedListing
-      })
-    }),
+    .output(ReportApprovalResultSchema)
+    .mutation(({ ctx, input }) =>
+      new ReportAdminEditService(new ReportApprovalRepository(ctx.prisma)).updateHandheld(
+        input,
+        ctx.session.user,
+      ),
+    ),
 
   getListingConfig: protectedProcedure.input(GetListingByIdSchema).query(async ({ ctx, input }) => {
     // Check if user has admin permissions or is a verified developer for this emulator

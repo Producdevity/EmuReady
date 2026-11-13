@@ -1,17 +1,14 @@
 import { TRUST_CONFIG } from '@/lib/trust/config'
 import { TrustService } from '@/lib/trust/service'
 import { type ListingType } from '@/schemas/common'
-import { TrustAction, type PrismaClient, type Prisma } from '@orm/client'
+import { TrustAction, type Prisma } from '@orm/client'
+import { type TrustScoreChange } from './trust-score-analytics'
 
 type VoteAction = 'created' | 'updated' | 'deleted'
 
-type PrismaTransactionClient = Omit<
-  PrismaClient,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
->
-
 interface ListingVoteTrustParams {
-  tx: PrismaTransactionClient | Prisma.TransactionClient
+  tx: Prisma.TransactionClient
+  trustChanges: TrustScoreChange[]
   action: VoteAction
   currentValue: boolean
   previousValue: boolean | null
@@ -31,7 +28,7 @@ export async function handleListingVoteTrustEffects(params: ListingVoteTrustPara
 
   const contextKey = listingType === 'handheld' ? 'listingId' : 'pcListingId'
   const context = { [contextKey]: listingId }
-  const trustService = new TrustService(tx)
+  const trustService = TrustService.inTransaction(tx, params.trustChanges)
 
   const applyVoterTrust = (value: boolean) =>
     trustService.logAction({
@@ -90,7 +87,8 @@ export async function handleListingVoteTrustEffects(params: ListingVoteTrustPara
 type CommentVoteTrustAction = 'upvote' | 'downvote' | 'change' | 'remove'
 
 interface CommentVoteTrustParams {
-  tx: PrismaTransactionClient | Prisma.TransactionClient
+  tx: Prisma.TransactionClient
+  trustChanges: TrustScoreChange[]
   trustAction: CommentVoteTrustAction
   newValue: boolean
   previousValue: boolean | null
@@ -124,7 +122,7 @@ export async function handleCommentVoteTrustEffects(params: CommentVoteTrustPara
 
   if (commentAuthorId === voterId) return
 
-  const trustService = new TrustService(tx)
+  const trustService = TrustService.inTransaction(tx, params.trustChanges)
   const parentKey = listingType === 'handheld' ? 'listingId' : 'pcListingId'
   const baseMeta = { commentId, voterId, [parentKey]: parentEntityId }
 

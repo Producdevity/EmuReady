@@ -88,7 +88,8 @@ const featureLayerBoundaryZones = featureLayerRootNames.flatMap((featureRootName
 const featureToAppRouteBoundaryZone = {
   target: './src/features',
   from: './src/app',
-  message: 'Feature modules must not import from Next.js app routes. Compose features in app routes.',
+  message:
+    'Feature modules must not import from Next.js app routes. Compose features in app routes.',
 }
 
 const featureBoundaryZones = [
@@ -103,6 +104,7 @@ const eslintConfig = [
     ignores: [
       '*.log',
       '*.tsbuildinfo',
+      '**/.agents/**',
       '.clerk/**',
       '.husky/**',
       '.idea/**',
@@ -142,14 +144,13 @@ const eslintConfig = [
       'no-case-declarations': 'off',
       'no-prototype-builtins': 'off',
       'no-redeclare': 'off',
-      // TODO: set to error after fixing existing React Compiler rule violations.
-      'react-hooks/purity': 'warn',
-      'react-hooks/static-components': 'warn',
-      'react-hooks/immutability': 'warn',
-      'react-hooks/incompatible-library': 'warn',
-      'react-hooks/preserve-manual-memoization': 'warn',
-      'react-hooks/refs': 'warn',
-      'react-hooks/set-state-in-effect': 'warn',
+      'react-hooks/purity': 'error',
+      'react-hooks/static-components': 'error',
+      'react-hooks/immutability': 'error',
+      'react-hooks/incompatible-library': 'error',
+      'react-hooks/preserve-manual-memoization': 'error',
+      'react-hooks/refs': 'error',
+      'react-hooks/set-state-in-effect': 'error',
     },
   },
   {

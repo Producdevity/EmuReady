@@ -3,7 +3,9 @@
 import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { zodToJsonSchema } from 'zod-to-json-schema'
+import { ApprovalStatus } from '@orm'
 import { getMobileApiSchema } from './mobile-schema-registry'
+import type { BatchBySteamAppIdsResponse } from '@/schemas/mobile'
 import type { z } from 'zod'
 
 interface SwaggerEndpoint {
@@ -40,43 +42,56 @@ function createGenericResponse(routerName: string, procedureName: string): unkno
 function getResponseExampleOverride(outputSchemaName: string | undefined): unknown | null {
   if (outputSchemaName !== 'BatchBySteamAppIdsResponseSchema') return null
 
+  const gameId = '00000000-0000-4000-8000-000000000001'
+  const systemId = '00000000-0000-4000-8000-000000000002'
+  const deviceId = '00000000-0000-4000-8000-000000000003'
+  const emulatorId = '00000000-0000-4000-8000-000000000004'
+
   return {
     success: true,
     results: [
       {
-        game_id: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-        steam_app_id: '220',
-        title: 'Half-Life 2',
-        performance: {
-          id: 1,
-          label: 'Perfect',
-          rank: 1,
-          description: null,
-        },
-        emulator: {
-          id: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-          name: 'GameHub',
-          logo: null,
-        },
-        device: {
-          id: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-          modelName: 'Steam Deck',
-          soc: null,
-        },
-        listing: {
-          id: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-          notes: 'Runs well',
-          upvoteCount: 4,
-          downvoteCount: 1,
-          voteCount: 5,
-          successRate: 0.8,
+        steamAppId: '220',
+        matchStrategy: 'metadata',
+        game: {
+          id: gameId,
+          title: 'Half-Life 2',
+          systemId,
+          imageUrl: null,
+          boxartUrl: null,
+          bannerUrl: null,
+          tgdbGameId: null,
+          metadata: { steamAppId: '220' },
+          isErotic: false,
+          status: ApprovalStatus.APPROVED,
+          createdAt: new Date('2025-01-01T00:00:00.000Z'),
+          system: { id: systemId, name: 'Microsoft Windows', key: 'microsoft_windows' },
+          _count: { listings: 1 },
+          listings: [
+            {
+              id: '00000000-0000-4000-8000-000000000005',
+              gameId,
+              deviceId,
+              emulatorId,
+              performanceId: 1,
+              notes: 'Runs well',
+              upvoteCount: 4,
+              downvoteCount: 1,
+              voteCount: 5,
+              successRate: 0.8,
+              device: { id: deviceId, modelName: 'Steam Deck', soc: null },
+              emulator: { id: emulatorId, name: 'GameNative', logo: null },
+              performance: { id: 1, label: 'Perfect', rank: 1, description: null },
+              customFieldValues: [],
+            },
+          ],
         },
       },
     ],
     totalRequested: 1,
     totalFound: 1,
     totalNotFound: 0,
-  }
+  } satisfies BatchBySteamAppIdsResponse
 }
 
 function getBaseItemStructure(routerName: string): Record<string, unknown> {
