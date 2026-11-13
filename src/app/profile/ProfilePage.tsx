@@ -11,11 +11,13 @@ import {
   Shield,
   Users,
   Bookmark,
+  ClipboardList,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useState, Suspense, useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { Button, PageSkeletonLoading } from '@/components/ui'
+import { ReportHistory } from '@/features/reports/history/client/ReportHistory'
 import analytics from '@/lib/analytics'
 import { api } from '@/lib/api'
 import { hasRolePermission } from '@/utils/permissions'
@@ -56,6 +58,11 @@ const baseTabs = [
     icon: <Bookmark className="w-4 h-4" />,
   },
   {
+    id: 'reports',
+    label: 'My Reports',
+    icon: <ClipboardList className="w-4 h-4" />,
+  },
+  {
     id: 'privacy',
     label: 'Privacy',
     icon: <Shield className="w-4 h-4" />,
@@ -87,7 +94,7 @@ function ProfilePage() {
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profile')
+  const activeTab = searchParams.get('tab') || 'profile'
 
   const userQuery = api.users.getProfile.useQuery(undefined, {
     enabled: !!user,
@@ -133,8 +140,6 @@ function ProfilePage() {
   }, [userQuery.data, preferencesQuery.data, user?.id])
 
   const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId)
-
     const params = new URLSearchParams(Array.from(searchParams.entries()))
     params.set('tab', tabId)
     router.replace(`/profile?${params.toString()}`)
@@ -145,12 +150,6 @@ function ProfilePage() {
       page: 'profile',
     })
   }
-
-  // Keep state in sync with URL (back/forward or external links)
-  useEffect(() => {
-    const tab = searchParams.get('tab') || 'profile'
-    setActiveTab(tab)
-  }, [searchParams])
 
   if (!isLoaded) return <PageSkeletonLoading />
 
@@ -176,6 +175,8 @@ function ProfilePage() {
           {activeTab === 'profile' && <ProfileInformation userQuery={userQuery} />}
 
           {activeTab === 'account' && <AccountSettings />}
+
+          {activeTab === 'reports' && <ReportHistory />}
 
           {activeTab === 'privacy' && <PrivacySettings preferencesQuery={preferencesQuery} />}
 
