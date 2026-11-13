@@ -20,7 +20,14 @@ import { CSS } from '@dnd-kit/utilities'
 import { Plus, Trash2, GripVertical } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { toSnakeCase } from 'remeda'
+import { type z } from 'zod'
 import { Button, ErrorFallback, Input, LoadingSpinner, Modal } from '@/components/ui'
+import { type TemplateFieldSchema } from '@/features/emulators/custom-field-templates/shared/template.schemas'
+import {
+  CustomFieldAttributesSchema,
+  normalizeRangeDefault,
+  supportsPlaceholder,
+} from '@/features/emulators/shared/custom-field-attributes.schemas'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
 import { FilterValueSchema, type FilterValue } from '@/schemas/common'
@@ -28,23 +35,7 @@ import { type RouterOutput } from '@/types/trpc'
 import getErrorMessage from '@/utils/getErrorMessage'
 import { CustomFieldType } from '@orm'
 
-interface TemplateField {
-  name: string
-  label: string
-  type: CustomFieldType
-  categoryName?: string
-  categoryOrder?: number
-  options: FilterValue[]
-  defaultValue?: string | boolean | number | null
-  placeholder?: string
-  isRequired: boolean
-  displayOrder: number
-  // Range-specific fields
-  rangeMin?: number
-  rangeMax?: number
-  rangeUnit?: string
-  rangeDecimals?: number
-  // Track if user has manually edited fields
+type TemplateField = z.output<typeof TemplateFieldSchema> & {
   userEditedName?: boolean
   userEditedLabel?: boolean
 }
@@ -165,6 +156,7 @@ function SortableTemplateOptionItem({
         type="button"
         variant="destructive"
         size="sm"
+        aria-label="Remove option"
         onClick={() => onRemove(fieldIndex, optionIndex)}
       >
         <Trash2 className="h-3 w-3" />
@@ -196,14 +188,15 @@ function initialFields(template: TemplateRecord | null): TemplateField[] {
         categoryName: field.categoryName ?? '',
         categoryOrder: field.categoryOrder,
         options: options.success ? options.data : [],
-        defaultValue,
+        defaultValue:
+          field.type === CustomFieldType.RANGE ? normalizeRangeDefault(defaultValue) : defaultValue,
         placeholder: field.placeholder ?? '',
         isRequired: field.isRequired,
         displayOrder: field.displayOrder,
-        rangeMin: field.rangeMin ?? 0,
-        rangeMax: field.rangeMax ?? 100,
-        rangeUnit: field.rangeUnit ?? '',
-        rangeDecimals: field.rangeDecimals ?? 0,
+        rangeMin: field.rangeMin,
+        rangeMax: field.rangeMax,
+        rangeUnit: field.rangeUnit,
+        rangeDecimals: field.rangeDecimals,
       }
     }) ?? []
   )
@@ -239,8 +232,6 @@ function CustomFieldTemplateFormModal(props: Props) {
   )
 }
 
-const TEMPLATE_NOT_FOUND = { message: 'Template not found' }
-
 function TemplateSession(props: Omit<Props, 'isOpen'> & Mutations) {
   const query = api.customFieldTemplates.byId.useQuery(
     { id: props.templateIdToEdit ?? '' },
@@ -256,10 +247,10 @@ function TemplateSession(props: Omit<Props, 'isOpen'> & Mutations) {
   )
     setTemplate(query.data)
   if (props.templateIdToEdit && !template) {
-    if (query.isError || (query.isSuccess && !query.isFetching && query.data === null)) {
+    if (query.isError) {
       return (
         <ErrorFallback
-          error={query.error ?? TEMPLATE_NOT_FOUND}
+          error={query.error}
           resetErrorBoundary={() => {
             void query.refetch()
           }}
@@ -372,19 +363,27 @@ function TemplateForm(props: FormProps) {
         const min = field.rangeMin ?? 0
         const max = field.rangeMax ?? 100
 
-        if (min >= max) {
+        if (field.rangeMin === null || field.rangeMax === null || min >= max) {
           newErrors[`field-${index}-rangeMin`] = 'Minimum value must be less than maximum value'
           newErrors[`field-${index}-rangeMax`] = 'Maximum value must be greater than minimum value'
+        }
+
+        if (
+          field.defaultValue !== null &&
+          (typeof field.defaultValue !== 'number' ||
+            !Number.isFinite(field.defaultValue) ||
+            field.defaultValue < min ||
+            field.defaultValue > max)
+        ) {
+          newErrors[`field-${index}-defaultValue`] =
+            'Default value must be a number within the range'
         }
 
         if (field.rangeUnit && field.rangeUnit.length > 10) {
           newErrors[`field-${index}-rangeUnit`] = 'Unit must be 10 characters or less'
         }
 
-        if (
-          field.rangeDecimals !== undefined &&
-          (field.rangeDecimals < 0 || field.rangeDecimals > 5)
-        ) {
+        if (field.rangeDecimals !== null && (field.rangeDecimals < 0 || field.rangeDecimals > 5)) {
           newErrors[`field-${index}-rangeDecimals`] = 'Decimal places must be between 0 and 5'
         }
       }
@@ -426,28 +425,19 @@ function TemplateForm(props: FormProps) {
 
     const templateData = {
       name: templateName.trim(),
-      description: templateDescription.trim() || undefined,
+      description: templateDescription.trim() || null,
       fields: fields.map((field, index) => ({
         name: field.name.trim().toLowerCase(),
         label: field.label.trim(),
         type: field.type,
         categoryName: field.categoryName?.trim() || undefined,
-        categoryOrder: field.categoryOrder ?? 0,
+        categoryOrder: field.categoryOrder,
         options:
           field.type === CustomFieldType.SELECT
             ? field.options.filter((opt) => opt.value.trim() && opt.label.trim())
             : undefined,
-        defaultValue:
-          field.defaultValue === null
-            ? undefined
-            : typeof field.defaultValue === 'number'
-              ? String(field.defaultValue)
-              : field.defaultValue,
-        placeholder: (
-          [CustomFieldType.TEXT, CustomFieldType.TEXTAREA, CustomFieldType.URL] as CustomFieldType[]
-        ).includes(field.type)
-          ? field.placeholder || undefined
-          : undefined,
+        defaultValue: field.defaultValue,
+        placeholder: supportsPlaceholder(field.type) ? field.placeholder || undefined : undefined,
         isRequired: field.isRequired,
         displayOrder: index,
         // Range-specific fields
@@ -513,21 +503,26 @@ function TemplateForm(props: FormProps) {
   }
 
   function updateField(index: number, updates: Partial<TemplateField>) {
-    setFields(
-      fields.map((field, i) =>
-        i === index
-          ? {
-              ...field,
-              ...updates,
-              options:
-                updates.type === CustomFieldType.SELECT
-                  ? (updates.options ?? field.options)
-                  : updates.type
-                    ? []
-                    : (updates.options ?? field.options),
-            }
-          : field,
-      ),
+    setFields((currentFields) =>
+      currentFields.map((field, i) => {
+        if (i !== index) return field
+        const updated = {
+          ...field,
+          ...updates,
+          options:
+            updates.type === CustomFieldType.SELECT
+              ? (updates.options ?? field.options)
+              : updates.type
+                ? []
+                : (updates.options ?? field.options),
+        }
+        if (
+          updated.type === CustomFieldType.SELECT &&
+          !updated.options.some((option) => option.value === updated.defaultValue)
+        )
+          updated.defaultValue = null
+        return updated
+      }),
     )
 
     if (updates.type && updates.type !== CustomFieldType.SELECT) {
@@ -769,13 +764,15 @@ function TemplateForm(props: FormProps) {
                   <Input
                     as="select"
                     value={field.type}
-                    onChange={(ev) =>
+                    onChange={(ev) => {
+                      const type = CustomFieldAttributesSchema.shape.type.safeParse(ev.target.value)
+                      if (!type.success) return
                       updateField(fieldIndex, {
-                        type: ev.target.value as CustomFieldType,
-                        defaultValue: null, // Reset default value when type changes
-                        placeholder: '', // Reset placeholder when type changes
+                        type: type.data,
+                        defaultValue: null,
+                        placeholder: '',
                       })
-                    }
+                    }}
                   >
                     {FIELD_TYPES.map((type) => (
                       <option key={type.value} value={type.value}>
@@ -872,6 +869,7 @@ function TemplateForm(props: FormProps) {
                   ) : field.type === CustomFieldType.SELECT && field.options.length > 0 ? (
                     <Input
                       as="select"
+                      aria-label={`${field.label} default value`}
                       value={field.defaultValue === null ? '' : String(field.defaultValue)}
                       onChange={(ev) =>
                         updateField(fieldIndex, {
@@ -902,6 +900,46 @@ function TemplateForm(props: FormProps) {
                   <h3 className="text-md font-medium text-gray-700 dark:text-gray-300">
                     Range Configuration
                   </h3>
+                  <div>
+                    <label
+                      htmlFor={`field-${fieldIndex}-range-default`}
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                    >
+                      Default Value (Optional)
+                    </label>
+                    <Input
+                      id={`field-${fieldIndex}-range-default`}
+                      type="number"
+                      step="any"
+                      aria-label={`${field.label} default value`}
+                      aria-invalid={!!errors[`field-${fieldIndex}-defaultValue`]}
+                      aria-describedby={
+                        errors[`field-${fieldIndex}-defaultValue`]
+                          ? `field-${fieldIndex}-range-default-error`
+                          : undefined
+                      }
+                      value={field.defaultValue === null ? '' : String(field.defaultValue)}
+                      onChange={(ev) =>
+                        updateField(fieldIndex, {
+                          defaultValue: ev.target.value === '' ? null : Number(ev.target.value),
+                        })
+                      }
+                      className={
+                        errors[`field-${fieldIndex}-defaultValue`]
+                          ? 'border-red-300 dark:border-red-600'
+                          : ''
+                      }
+                    />
+                    {errors[`field-${fieldIndex}-defaultValue`] && (
+                      <p
+                        id={`field-${fieldIndex}-range-default-error`}
+                        className="text-red-500 text-xs mt-1"
+                        role="alert"
+                      >
+                        {errors[`field-${fieldIndex}-defaultValue`]}
+                      </p>
+                    )}
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -910,10 +948,10 @@ function TemplateForm(props: FormProps) {
                       <Input
                         type="number"
                         step="any"
-                        value={field.rangeMin ?? 0}
+                        value={field.rangeMin ?? ''}
                         onChange={(ev) =>
                           updateField(fieldIndex, {
-                            rangeMin: parseFloat(ev.target.value) || 0,
+                            rangeMin: ev.target.value ? Number(ev.target.value) : null,
                           })
                         }
                         placeholder="0"
@@ -936,10 +974,10 @@ function TemplateForm(props: FormProps) {
                       <Input
                         type="number"
                         step="any"
-                        value={field.rangeMax ?? 100}
+                        value={field.rangeMax ?? ''}
                         onChange={(ev) =>
                           updateField(fieldIndex, {
-                            rangeMax: parseFloat(ev.target.value) || 100,
+                            rangeMax: ev.target.value ? Number(ev.target.value) : null,
                           })
                         }
                         placeholder="100"
@@ -1000,6 +1038,8 @@ function TemplateForm(props: FormProps) {
                         <option value="1">1 decimal place</option>
                         <option value="2">2 decimal places</option>
                         <option value="3">3 decimal places</option>
+                        <option value="4">4 decimal places</option>
+                        <option value="5">5 decimal places</option>
                       </Input>
                       {errors[`field-${fieldIndex}-rangeDecimals`] && (
                         <p className="text-red-500 text-xs mt-1">

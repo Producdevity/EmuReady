@@ -43,6 +43,21 @@ export const LookupPaginationInputSchema = createOffsetPaginationInputSchema({
   maxLimit: LOOKUP_PAGINATION.MAX_LIMIT,
 })
 
+export function refinePaginationOffset(
+  input: Pick<PaginationInput, 'page' | 'limit'>,
+  context: z.RefinementCtx,
+) {
+  const page = input.page ?? 1
+  const limit = input.limit ?? PAGINATION.DEFAULT_LIMIT
+  if (!Number.isSafeInteger((page - 1) * limit)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Pagination offset exceeds the supported range',
+      path: ['page'],
+    })
+  }
+}
+
 export type PaginationResult = z.output<typeof PaginationResultSchema>
 export type PaginationInput = z.input<typeof PaginationInputSchema>
 export type PaginatedResponse<T> = {

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { JsonValueSchema } from '@/schemas/common'
 import { CreateListingBaseSchema, CreatePcListingBaseSchema } from '@/schemas/listingCreate'
-import { PaginationResultSchema } from '@/schemas/pagination'
+import { PaginationResultSchema, refinePaginationOffset } from '@/schemas/pagination'
 import { ReportReason, ReportStatus, PcOs, CustomFieldType, NotificationType } from '@orm'
 
 const MOBILE_SEARCH_QUERY_MAX_LENGTH = 100
@@ -372,12 +372,20 @@ export const GetListingsSchema = z
   .object({
     page: z
       .number()
+      .int()
+      .safe()
       .min(1)
       .default(1)
       .nullable()
       .transform((val) => val ?? 1)
       .describe('Page number for pagination'),
-    limit: z.number().min(1).max(50).default(20).describe('Number of results per page (1-50)'),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(50)
+      .default(20)
+      .describe('Number of results per page (1-50)'),
     gameIds: z.array(z.string().uuid()).optional().describe('Filter by game IDs'),
     systemIds: z.array(z.string().uuid()).optional().describe('Filter by system IDs'),
     deviceIds: z.array(z.string().uuid()).optional().describe('Filter by device IDs'),
@@ -393,6 +401,7 @@ export const GetListingsSchema = z
       .optional()
       .describe('Search listings by game name'),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
   .describe('Get listings with optional filters and pagination')
 
@@ -404,12 +413,15 @@ export const GetGamesSchema = z
     systemId: z.string().uuid().optional(),
     page: z
       .number()
+      .int()
+      .safe()
       .min(1)
       .default(1)
       .nullable()
       .transform((val) => val ?? 1),
-    limit: z.number().min(1).max(50).default(20),
+    limit: z.number().int().min(1).max(50).default(20),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export type GetGamesInput = z.infer<typeof GetGamesSchema>
@@ -451,7 +463,13 @@ export const GetDevicesSchema = z
       .optional()
       .describe('Search devices by name'),
     brandId: z.string().uuid().optional().describe('Filter by brand ID'),
-    limit: z.number().min(1).max(1000).default(50).describe('Number of results to return (1-1000)'),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(1000)
+      .default(50)
+      .describe('Number of results to return (1-1000)'),
   })
   .optional()
   .describe('Get devices with optional filters')
@@ -459,7 +477,7 @@ export const GetDevicesSchema = z
 export const GetEmulatorsSchema = z.object({
   systemId: z.string().uuid().optional(),
   search: z.string().max(MOBILE_SEARCH_QUERY_MAX_LENGTH).optional(),
-  limit: z.number().min(1).max(100).default(50),
+  limit: z.number().int().min(1).max(100).default(50),
 })
 
 export const GetEmulatorByIdSchema = z.object({
@@ -470,14 +488,23 @@ export const GetNotificationsSchema = z
   .object({
     page: z
       .number()
+      .int()
+      .safe()
       .min(1)
       .default(1)
       .nullable()
       .transform((val) => val ?? 1)
       .describe('Page number for pagination'),
-    limit: z.number().min(1).max(50).default(20).describe('Number of results per page (1-50)'),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(50)
+      .default(20)
+      .describe('Number of results per page (1-50)'),
     unreadOnly: z.boolean().default(false).describe('Show only unread notifications'),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
   .describe('Get notifications with optional filters and pagination')
 
@@ -546,10 +573,12 @@ export const GetListingVerificationsSchema = z.object({
   listingId: z.string().uuid(),
 })
 
-export const GetMyVerificationsSchema = z.object({
-  limit: z.number().min(1).max(100).optional(),
-  page: z.number().min(1).optional(),
-})
+export const GetMyVerificationsSchema = z
+  .object({
+    limit: z.number().int().min(1).max(100).optional(),
+    page: z.number().int().safe().min(1).optional(),
+  })
+  .superRefine(refinePaginationOffset)
 
 // PC Listings schemas
 export const CreatePcListingSchema = CreatePcListingBaseSchema
@@ -570,34 +599,38 @@ export const UpdatePcListingSchema = z.object({
     .optional(),
 })
 
-export const GetPcListingsSchema = z.object({
-  page: z
-    .number()
-    .min(1)
-    .default(1)
-    .nullable()
-    .transform((val) => val ?? 1),
-  limit: z.number().min(1).max(50).default(20),
-  gameId: z.string().uuid().optional(),
-  systemId: z.string().uuid().optional(),
-  cpuId: z.string().uuid().optional(),
-  gpuId: z.string().uuid().optional(),
-  emulatorId: z.string().uuid().optional(),
-  os: z.nativeEnum(PcOs).optional(),
-  search: z.string().max(MOBILE_SEARCH_QUERY_MAX_LENGTH).optional(),
-  minMemory: z.number().min(1).max(256).optional(),
-  maxMemory: z.number().min(1).max(256).optional(),
-})
+export const GetPcListingsSchema = z
+  .object({
+    page: z
+      .number()
+      .int()
+      .safe()
+      .min(1)
+      .default(1)
+      .nullable()
+      .transform((val) => val ?? 1),
+    limit: z.number().int().min(1).max(50).default(20),
+    gameId: z.string().uuid().optional(),
+    systemId: z.string().uuid().optional(),
+    cpuId: z.string().uuid().optional(),
+    gpuId: z.string().uuid().optional(),
+    emulatorId: z.string().uuid().optional(),
+    os: z.nativeEnum(PcOs).optional(),
+    search: z.string().max(MOBILE_SEARCH_QUERY_MAX_LENGTH).optional(),
+    minMemory: z.number().min(1).max(256).optional(),
+    maxMemory: z.number().min(1).max(256).optional(),
+  })
+  .superRefine(refinePaginationOffset)
 
 export const GetPcPresetsSchema = z.object({
-  limit: z.number().min(1).max(50).default(20),
+  limit: z.number().int().min(1).max(50).default(20),
 })
 
 export const CreatePcPresetSchema = z.object({
   name: z.string().min(1).max(50),
   cpuId: z.string().uuid(),
   gpuId: z.string().uuid(),
-  memorySize: z.number().min(1).max(256),
+  memorySize: z.number().int().min(1).max(256),
   os: z.nativeEnum(PcOs),
   osVersion: z.string().min(1),
 })
@@ -607,7 +640,7 @@ export const UpdatePcPresetSchema = z.object({
   name: z.string().min(1).max(50).optional(),
   cpuId: z.string().uuid().optional(),
   gpuId: z.string().uuid().optional(),
-  memorySize: z.number().min(1).max(256).optional(),
+  memorySize: z.number().int().min(1).max(256).optional(),
   os: z.nativeEnum(PcOs).optional(),
   osVersion: z.string().min(1).optional(),
 })
@@ -625,12 +658,15 @@ export const MobileAdminGetPendingListingsSchema = z
     search: z.string().max(MOBILE_SEARCH_QUERY_MAX_LENGTH).optional(),
     page: z
       .number()
+      .int()
+      .safe()
       .min(1)
       .default(1)
       .nullable()
       .transform((val) => val ?? 1),
-    limit: z.number().min(1).max(100).default(20),
+    limit: z.number().int().min(1).max(100).default(20),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export const MobileAdminApproveListingSchema = z.object({
@@ -647,12 +683,15 @@ export const MobileAdminGetPendingGamesSchema = z
     search: z.string().max(MOBILE_SEARCH_QUERY_MAX_LENGTH).optional(),
     page: z
       .number()
+      .int()
+      .safe()
       .min(1)
       .default(1)
       .nullable()
       .transform((val) => val ?? 1),
-    limit: z.number().min(1).max(100).default(20),
+    limit: z.number().int().min(1).max(100).default(20),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export const MobileAdminApproveGameSchema = z.object({
@@ -669,12 +708,15 @@ export const MobileAdminGetReportsSchema = z
     status: z.nativeEnum(ReportStatus).optional(),
     page: z
       .number()
+      .int()
+      .safe()
       .min(1)
       .default(1)
       .nullable()
       .transform((val) => val ?? 1),
-    limit: z.number().min(1).max(100).default(20),
+    limit: z.number().int().min(1).max(100).default(20),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export const MobileAdminUpdateReportStatusSchema = z.object({
@@ -688,12 +730,15 @@ export const MobileAdminGetUserBansSchema = z
     isActive: z.boolean().optional(),
     page: z
       .number()
+      .int()
+      .safe()
       .min(1)
       .default(1)
       .nullable()
       .transform((val) => val ?? 1),
-    limit: z.number().min(1).max(100).default(20),
+    limit: z.number().int().min(1).max(100).default(20),
   })
+  .superRefine(refinePaginationOffset)
   .optional()
 
 export const MobileAdminCreateUserBanSchema = z.object({

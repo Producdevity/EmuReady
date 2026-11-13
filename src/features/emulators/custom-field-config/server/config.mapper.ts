@@ -2,9 +2,12 @@ import { createHash } from 'node:crypto'
 import { CustomFieldType } from '@orm'
 import { type ConfigEmulatorRecord } from './persistence/config.prisma'
 import {
+  normalizeRangeDefault,
+  supportsPlaceholder,
+} from '../../shared/custom-field-attributes.schemas'
+import {
   ConfigFieldSchema,
   CustomFieldConfigSchema,
-  supportsPlaceholder,
   type CustomFieldConfigSnapshot,
 } from '../shared/config.schemas'
 
@@ -16,6 +19,7 @@ export function toConfigField(field: ConfigEmulatorRecord['customFieldDefinition
   ) {
     defaultValue = defaultValue === 'true'
   }
+  if (field.type === CustomFieldType.RANGE) defaultValue = normalizeRangeDefault(defaultValue)
   return ConfigFieldSchema.parse({
     id: field.id,
     name: field.name,

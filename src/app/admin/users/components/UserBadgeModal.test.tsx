@@ -209,6 +209,19 @@ beforeEach(() => {
 })
 
 describe('badge assignment sessions', () => {
+  it.each([TailwindColor.emerald, TailwindColor.sky, TailwindColor.stone, TailwindColor.blue])(
+    'renders the assigned %s override instead of the catalog hex color',
+    (color) => {
+      const currentBadge = assignedBadge(1)
+      currentBadge.color = color
+      currentBadge.badge.icon = '★'
+      assigned.set(firstUser.id, [currentBadge])
+      renderModal()
+
+      expect(screen.getByText('★').style.backgroundColor).toBe(`var(--color-${color}-500)`)
+    },
+  )
+
   it.each([firstUser, secondUser])(
     'clears a cancelled selection and color when reopening for $name',
     (user) => {
