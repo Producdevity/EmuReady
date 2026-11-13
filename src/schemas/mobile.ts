@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { JsonValueSchema } from '@/schemas/common'
+import { JsonValueSchema, SignedInt32Schema } from '@/schemas/common'
 import { CreateListingBaseSchema, CreatePcListingBaseSchema } from '@/schemas/listingCreate'
 import { PaginationResultSchema, refinePaginationOffset } from '@/schemas/pagination'
 import { ReportReason, ReportStatus, PcOs, CustomFieldType, NotificationType } from '@orm'
@@ -392,9 +392,19 @@ export const GetListingsSchema = z
     socIds: z.array(z.string().uuid()).optional().describe('Filter by SoC IDs'),
     emulatorIds: z.array(z.string().uuid()).optional().describe('Filter by emulator IDs'),
     performanceIds: z
-      .array(z.union([z.number(), z.string().transform(Number)]))
+      .array(
+        z.union([
+          SignedInt32Schema,
+          z
+            .string()
+            .transform(Number)
+            .refine((value) => SignedInt32Schema.safeParse(value).success, {
+              message: 'Performance ID must be a signed 32-bit integer',
+            }),
+        ]),
+      )
       .optional()
-      .describe('Filter by performance IDs'),
+      .describe('Filter by performance IDs as integers or numeric strings'),
     search: z
       .string()
       .max(MOBILE_SEARCH_QUERY_MAX_LENGTH)

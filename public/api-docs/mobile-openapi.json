@@ -1734,14 +1734,16 @@
                 "items": {
                   "anyOf": [
                     {
-                      "type": "number"
+                      "type": "integer",
+                      "minimum": -2147483648,
+                      "maximum": 2147483647
                     },
                     {
                       "type": "string"
                     }
                   ]
                 },
-                "description": "Filter by performance IDs"
+                "description": "Filter by performance IDs as integers or numeric strings"
               },
               "search": {
                 "type": "string",

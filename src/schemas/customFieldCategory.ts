@@ -1,9 +1,10 @@
 import { z } from 'zod'
+import { SignedInt32Schema } from '@/schemas/common'
 
 export const CreateCustomFieldCategorySchema = z.object({
   emulatorId: z.string().uuid(),
   name: z.string().min(1).max(100),
-  displayOrder: z.number().int().optional().default(0),
+  displayOrder: SignedInt32Schema.optional().default(0),
 })
 
 export const GetCustomFieldCategoriesByEmulatorSchema = z.object({
@@ -17,7 +18,7 @@ export const GetCustomFieldCategoryByIdSchema = z.object({
 export const UpdateCustomFieldCategorySchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(100).optional(),
-  displayOrder: z.number().int().optional(),
+  displayOrder: SignedInt32Schema.optional(),
 })
 
 export const DeleteCustomFieldCategorySchema = z.object({
@@ -27,6 +28,6 @@ export const DeleteCustomFieldCategorySchema = z.object({
 export const UpdateCustomFieldCategoryOrderSchema = z.array(
   z.object({
     id: z.string().uuid(),
-    displayOrder: z.number().int(),
+    displayOrder: SignedInt32Schema,
   }),
 )

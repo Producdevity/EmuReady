@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { SignedInt32Schema } from '@/schemas/common'
 import { CustomFieldType } from '@orm'
 
 const customFieldOptionSchema = z.object({
@@ -26,7 +27,7 @@ export const CreateCustomFieldDefinitionSchema = z.object({
   rangeUnit: z.string().optional(),
   rangeDecimals: z.number().int().min(0).max(5).optional(),
   isRequired: z.boolean().optional().default(false),
-  categoryOrder: z.number().int().optional().default(0),
+  categoryOrder: SignedInt32Schema.optional().default(0),
 })
 
 export const GetCustomFieldDefinitionsByEmulatorSchema = z.object({
@@ -58,7 +59,7 @@ export const UpdateCustomFieldDefinitionSchema = z.object({
   rangeUnit: z.string().optional(),
   rangeDecimals: z.number().int().min(0).max(5).optional(),
   isRequired: z.boolean().optional(),
-  categoryOrder: z.number().int().optional(),
+  categoryOrder: SignedInt32Schema.optional(),
 })
 
 export const DeleteCustomFieldDefinitionSchema = z.object({
@@ -68,6 +69,6 @@ export const DeleteCustomFieldDefinitionSchema = z.object({
 export const UpdateCustomFieldDefinitionOrderSchema = z.array(
   z.object({
     id: z.string().uuid(),
-    displayOrder: z.number().int(),
+    displayOrder: SignedInt32Schema,
   }),
 )
