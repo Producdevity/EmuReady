@@ -1,4 +1,4 @@
-import type { DriverRelease } from './hooks/useDriverVersions'
+import type { DriverRelease } from '@/types/driver-versions'
 
 export function normalizeFilename(input: string | null | undefined): string {
   if (!input) return ''

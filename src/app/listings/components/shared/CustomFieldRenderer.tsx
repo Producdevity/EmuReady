@@ -1,8 +1,8 @@
 'use client'
 
 import { type Control, type FieldPath, type FieldValues } from 'react-hook-form'
-import CustomFieldTypeDriverVersion from '@/app/listings/components/shared/custom-fields/CustomFieldTypeDriverVersion'
 import { DRIVER_VERSION_FIELD_NAME } from '@/constants/customFields'
+import DriverVersionField from '@/features/custom-fields/driver/client/components/DriverVersionField'
 import { isCustomFieldValueEmpty } from '@/utils/custom-fields'
 import { CustomFieldType } from '@orm'
 import {
@@ -82,10 +82,9 @@ export function CustomFieldRenderer<TFieldValues extends FieldValues = FieldValu
   ) {
     // Special case for driver version field
     return (
-      <CustomFieldTypeDriverVersion
+      <DriverVersionField
         fieldDef={props.fieldDef}
         fieldName={props.fieldName}
-        index={props.index}
         rules={validationRules}
         control={props.control}
         errorMessage={props.errorMessage}

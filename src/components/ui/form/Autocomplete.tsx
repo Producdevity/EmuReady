@@ -4,6 +4,7 @@ import {
   type ChangeEvent,
   type FocusEvent,
   type KeyboardEvent,
+  type AriaAttributes,
   type ReactNode,
   useCallback,
   useEffect,
@@ -46,6 +47,10 @@ interface AutocompleteProps<T extends AutocompleteOptionBase> {
   disabled?: boolean
   className?: string
   inputClassName?: string
+  inputRef?: (input: HTMLInputElement | null) => void
+  'aria-required'?: AriaAttributes['aria-required']
+  'aria-invalid'?: AriaAttributes['aria-invalid']
+  'aria-describedby'?: AriaAttributes['aria-describedby']
   minCharsToTrigger?: number
   debounceTime?: number
 }
@@ -75,6 +80,10 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
   disabled,
   className,
   inputClassName,
+  inputRef: externalInputRef,
+  'aria-required': ariaRequired,
+  'aria-invalid': ariaInvalid,
+  'aria-describedby': ariaDescribedBy,
   minCharsToTrigger = 0,
   debounceTime = 300,
 }: AutocompleteProps<T>) {
@@ -98,6 +107,14 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastStaticLenRef = useRef<number>(staticItems?.length ?? 0)
   const requestSequenceRef = useRef(0)
+
+  const setInputRef = useCallback(
+    (element: HTMLInputElement | null) => {
+      inputRef.current = element
+      externalInputRef?.(element)
+    },
+    [externalInputRef],
+  )
 
   // Load initial items from server if loadItems is provided (only once)
   useEffect(() => {
@@ -523,7 +540,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
           </span>
         )}
         <input
-          ref={inputRef}
+          ref={setInputRef}
           id={id ?? label}
           name={name}
           type="text"
@@ -543,6 +560,9 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
           autoComplete="off"
           role="combobox"
           aria-autocomplete="list"
+          aria-required={ariaRequired}
+          aria-invalid={ariaInvalid}
+          aria-describedby={ariaDescribedBy}
           aria-expanded={isOpen}
           aria-controls={isOpen ? 'autocomplete-list' : undefined}
           aria-activedescendant={
