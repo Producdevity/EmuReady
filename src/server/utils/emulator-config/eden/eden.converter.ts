@@ -4,6 +4,7 @@
  */
 
 import { applyEdenMapping, EDEN_FIELD_MAPPINGS } from '@/shared/emulator-config/eden/mapping'
+import { EDEN_RESOLUTION_SCALES } from '@/shared/emulator-config/eden/resolution'
 import { EdenDefaults, DEFAULT_CONFIG } from './eden.defaults'
 import type {
   EdenConfig,
@@ -121,6 +122,12 @@ export interface EdenConfigInput {
  * @param value
  */
 function resolutionParser(value: unknown): ResolutionSetup | undefined {
+  if (typeof value === 'number' && Number.isInteger(value)) {
+    return (
+      EDEN_RESOLUTION_SCALES.find((scale) => scale.setup === value)?.setup ??
+      EdenDefaults.getDefaultResolutionSetup()
+    )
+  }
   const resStr = String(value)
 
   // First try using the helper function
@@ -137,9 +144,8 @@ function resolutionParser(value: unknown): ResolutionSetup | undefined {
   const trimmed = resStr.trim()
   if (/^\d+$/.test(trimmed)) {
     const directNumber = parseInt(trimmed, 10)
-    if (!isNaN(directNumber) && directNumber >= 0 && directNumber <= 10) {
-      return directNumber as ResolutionSetup
-    }
+    const resolution = EDEN_RESOLUTION_SCALES.find((scale) => scale.setup === directNumber)
+    if (resolution) return resolution.setup
   }
 
   // Default to native resolution
