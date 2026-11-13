@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { GameModerationRepository } from '@/features/games/moderation/server/game-moderation.repository'
+import { GameModerationService } from '@/features/games/moderation/server/game-moderation.service'
 import analytics from '@/lib/analytics'
+import { createActorFromSession } from '@/server/auth/actor'
 import { prisma } from '@/server/db'
+import { gameStatsCache } from '@/server/utils/cache'
 import { PERMISSIONS } from '@/utils/permission-system'
 import { ApprovalStatus, Prisma, Role } from '@orm/client'
 import { gamesRouter } from './games'
@@ -83,6 +87,19 @@ beforeEach(() => {
 })
 
 describe('game moderation transactions', () => {
+  it('enforces the moderation capability when the service is called directly', async () => {
+    const service = new GameModerationService(new GameModerationRepository(prisma))
+    const actor = createActorFromSession({
+      user: { id: adminId, role: Role.ADMIN, permissions: [] },
+    })
+    await expect(
+      service.review(actor, { id: firstId, status: ApprovalStatus.APPROVED }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    await expect(service.approveMany(actor, [firstId])).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    await expect(service.rejectMany(actor, [firstId])).rejects.toMatchObject({ code: 'FORBIDDEN' })
+    expect(root.$transaction).not.toHaveBeenCalled()
+  })
+
   it('rewards and counts only the games still pending inside the transaction', async () => {
     const result = await caller.bulkApproveGames({ gameIds: [firstId, secondId] })
     expect(result.approvedCount).toBe(1)
@@ -125,7 +142,10 @@ describe('game moderation transactions', () => {
     await expect(
       caller.approveGame({ id: firstId, status: ApprovalStatus.APPROVED }),
     ).rejects.toThrow()
-    expect(models.game.findUnique).toHaveBeenCalledWith({ where: { id: firstId } })
+    expect(models.game.findUnique).toHaveBeenCalledWith({
+      where: { id: firstId },
+      select: { id: true, title: true, systemId: true, status: true, submittedBy: true },
+    })
     expect(models.game.update).not.toHaveBeenCalled()
     expect(models.trustActionLog.create).not.toHaveBeenCalled()
     expect(root.$transaction).toHaveBeenCalledWith(
@@ -143,4 +163,103 @@ describe('game moderation transactions', () => {
       expect.objectContaining({ isolationLevel: Prisma.TransactionIsolationLevel.Serializable }),
     )
   })
+
+  it.each([ApprovalStatus.APPROVED, ApprovalStatus.REJECTED])(
+    'returns only the consumed status contract for a single %s decision',
+    async (status) => {
+      models.game.update.mockResolvedValue({
+        ...game(firstId),
+        status,
+        submitter: { email: 'private@example.com' },
+      })
+      const result = await caller.approveGame({ id: firstId, status })
+      expect(result).toEqual({ status })
+      expect(models.trustActionLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            metadata: expect.objectContaining({
+              gameId: firstId,
+              ...(status === ApprovalStatus.APPROVED
+                ? { approvedBy: adminId }
+                : { rejectedBy: adminId }),
+            }),
+          }),
+        }),
+      )
+      expect(root.$transaction).toHaveBeenCalledOnce()
+    },
+  )
+
+  it('publishes analytics and cache changes only after the owning transaction commits', async () => {
+    const commit = Promise.withResolvers<void>()
+    root.$transaction.mockImplementationOnce(
+      async (operation: (tx: Prisma.TransactionClient) => Promise<unknown>) => {
+        const result = await operation(transaction)
+        await commit.promise
+        return result
+      },
+    )
+    const result = caller.approveGame({ id: firstId, status: ApprovalStatus.APPROVED })
+    try {
+      await vi.waitFor(() => expect(models.trustActionLog.create).toHaveBeenCalledOnce())
+      expect(analytics.trust.trustScoreChanged).not.toHaveBeenCalled()
+      expect(gameStatsCache.delete).not.toHaveBeenCalled()
+      commit.resolve()
+      await expect(result).resolves.toEqual({ status: ApprovalStatus.APPROVED })
+      expect(analytics.trust.trustScoreChanged).toHaveBeenCalledOnce()
+      expect(gameStatsCache.delete).toHaveBeenCalledOnce()
+    } finally {
+      commit.resolve()
+    }
+  })
+
+  it.each(['single', 'bulk approve', 'bulk reject'] as const)(
+    'discards completion effects when a %s decision fails to commit',
+    async (operation) => {
+      root.$transaction.mockImplementationOnce(
+        async (run: (tx: Prisma.TransactionClient) => Promise<unknown>) => {
+          await run(transaction)
+          throw new Error('Commit failed')
+        },
+      )
+      const decision =
+        operation === 'single'
+          ? caller.approveGame({ id: firstId, status: ApprovalStatus.APPROVED })
+          : operation === 'bulk approve'
+            ? caller.bulkApproveGames({ gameIds: [firstId, secondId] })
+            : caller.bulkRejectGames({ gameIds: [firstId, secondId] })
+      await expect(decision).rejects.toThrow('Commit failed')
+      expect(analytics.trust.trustScoreChanged).not.toHaveBeenCalled()
+      expect(gameStatsCache.delete).not.toHaveBeenCalled()
+    },
+  )
+
+  it('retries a conflict thrown by the bound game write without publishing the failed attempt', async () => {
+    models.game.update.mockRejectedValueOnce(
+      Object.assign(new Error('Write conflict'), { code: 'P2034' }),
+    )
+    await expect(
+      caller.approveGame({ id: firstId, status: ApprovalStatus.APPROVED }),
+    ).resolves.toEqual({ status: ApprovalStatus.APPROVED })
+    expect(root.$transaction).toHaveBeenCalledTimes(2)
+    expect(models.game.findUnique).toHaveBeenCalledTimes(2)
+    expect(models.trustActionLog.create).toHaveBeenCalledOnce()
+    expect(analytics.trust.trustScoreChanged).toHaveBeenCalledOnce()
+  })
+
+  it.each(['approve', 'reject'] as const)(
+    'refuses an empty pending set during bulk %s without another trust adjustment',
+    async (decision) => {
+      models.game.findMany.mockResolvedValue([])
+      const result =
+        decision === 'approve'
+          ? caller.bulkApproveGames({ gameIds: [firstId] })
+          : caller.bulkRejectGames({ gameIds: [firstId] })
+      await expect(result).rejects.toThrow(`No valid pending games found to ${decision}`)
+      expect(models.game.updateMany).not.toHaveBeenCalled()
+      expect(models.trustActionLog.create).not.toHaveBeenCalled()
+      expect(analytics.trust.trustScoreChanged).not.toHaveBeenCalled()
+      expect(gameStatsCache.delete).not.toHaveBeenCalled()
+    },
+  )
 })
