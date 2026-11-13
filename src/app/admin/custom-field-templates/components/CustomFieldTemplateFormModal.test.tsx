@@ -41,7 +41,6 @@ vi.mock('@/lib/api', () => ({
           data: template,
           error,
           isError: Boolean(error),
-          isSuccess: template !== undefined && !error,
           isFetching: fetching,
           refetch,
         }),
@@ -59,11 +58,9 @@ function record(id: string, name: string): Template {
     name,
     description: 'Template description',
     createdAt: date,
-    updatedAt: date,
     fields: [
       {
         id: 'field-1',
-        templateId: id,
         name: 'accuracy',
         label: 'Accuracy',
         type: CustomFieldType.SELECT,
@@ -78,12 +75,29 @@ function record(id: string, name: string): Template {
         categoryName: 'Graphics',
         categoryOrder: 0,
         displayOrder: 0,
-        createdAt: date,
-        updatedAt: date,
       },
     ],
   }
 }
+
+function rangeRecord(defaultValue: number | string): Template {
+  const result = record('template-1', 'Graphics')
+  const field = result.fields[0]
+  if (!field) throw new Error('Missing fixture field')
+  result.fields = [
+    {
+      ...field,
+      type: CustomFieldType.RANGE,
+      options: null,
+      defaultValue,
+      rangeMin: -100,
+      rangeMax: 100,
+      rangeDecimals: 2,
+    },
+  ]
+  return result
+}
+
 const onClose = vi.fn()
 beforeEach(() => {
   template = undefined
@@ -94,6 +108,199 @@ beforeEach(() => {
 })
 
 describe('template form sessions', () => {
+  it.each([
+    { bound: 'minimum', intermediate: '-1', final: '-1000', defaultValue: -50 },
+    { bound: 'maximum', intermediate: '1', final: '1000', defaultValue: 50 },
+  ])('preserves a range default during intermediate $bound edits', async (testCase) => {
+    template = rangeRecord(testCase.defaultValue)
+    render(<CustomFieldTemplateFormModal isOpen templateIdToEdit="template-1" onClose={onClose} />)
+    const bound = screen.getByPlaceholderText(testCase.bound === 'minimum' ? '0' : '100')
+    const defaultInput = screen.getByRole('spinbutton', { name: 'Accuracy default value' })
+    fireEvent.change(bound, { target: { value: testCase.intermediate } })
+    expect(defaultInput).toHaveValue(testCase.defaultValue)
+    fireEvent.change(bound, { target: { value: testCase.final } })
+    fireEvent.click(screen.getByRole('button', { name: 'Update Template' }))
+    await waitFor(() =>
+      expect(saving.submit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fields: [expect.objectContaining({ defaultValue: testCase.defaultValue })],
+        }),
+      ),
+    )
+    await act(async () => saving.completion.resolve())
+  })
+
+  it.each([
+    { value: '', expected: null },
+    { value: '5', expected: 5 },
+  ])('allows repairing an excluded range default with $value', async (testCase) => {
+    template = rangeRecord(50)
+    render(<CustomFieldTemplateFormModal isOpen templateIdToEdit="template-1" onClose={onClose} />)
+    fireEvent.change(screen.getByPlaceholderText('100'), { target: { value: '10' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Update Template' }))
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Default value must be a number within the range',
+    )
+    expect(saving.submit).not.toHaveBeenCalled()
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Accuracy default value' }), {
+      target: { value: testCase.value },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Update Template' }))
+    await waitFor(() =>
+      expect(saving.submit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fields: [expect.objectContaining({ defaultValue: testCase.expected })],
+        }),
+      ),
+    )
+    await act(async () => saving.completion.resolve())
+  })
+
+  it('loads a historical range string as an editable numeric default', async () => {
+    template = rangeRecord('1.5')
+    render(<CustomFieldTemplateFormModal isOpen templateIdToEdit="template-1" onClose={onClose} />)
+    expect(screen.getByRole('spinbutton', { name: 'Accuracy default value' })).toHaveValue(1.5)
+    fireEvent.click(screen.getByRole('button', { name: 'Update Template' }))
+    await waitFor(() =>
+      expect(saving.submit).toHaveBeenCalledWith(
+        expect.objectContaining({ fields: [expect.objectContaining({ defaultValue: 1.5 })] }),
+      ),
+    )
+    await act(async () => saving.completion.resolve())
+  })
+
+  it.each(['edit', 'remove'] as const)(
+    'clears a dropdown default when its selected option is changed by %s',
+    async (operation) => {
+      template = record('template-1', 'Graphics')
+      const field = template.fields[0]
+      if (!field) throw new Error('Missing fixture field')
+      field.options = [
+        { value: 'quality', label: 'Quality' },
+        { value: 'fast', label: 'Fast' },
+      ]
+      render(
+        <CustomFieldTemplateFormModal isOpen templateIdToEdit="template-1" onClose={onClose} />,
+      )
+      expect(screen.getByRole('combobox', { name: 'Accuracy default value' })).toHaveValue(
+        'quality',
+      )
+      if (operation === 'edit')
+        fireEvent.change(screen.getAllByPlaceholderText('Value')[0], {
+          target: { value: 'balanced' },
+        })
+      else fireEvent.click(screen.getAllByRole('button', { name: 'Remove option' })[0])
+      expect(screen.getByRole('combobox', { name: 'Accuracy default value' })).toHaveValue('')
+      fireEvent.click(screen.getByRole('button', { name: 'Update Template' }))
+      await waitFor(() =>
+        expect(saving.submit).toHaveBeenCalledWith(
+          expect.objectContaining({ fields: [expect.objectContaining({ defaultValue: null })] }),
+        ),
+      )
+      await act(async () => saving.completion.resolve())
+    },
+  )
+
+  it('creates a range with a zero maximum without replacing it with a fallback', async () => {
+    render(<CustomFieldTemplateFormModal isOpen onClose={onClose} />)
+    fireEvent.change(screen.getByLabelText(/^Template Name/), { target: { value: 'Cycles' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add Field' }))
+    fireEvent.change(screen.getByPlaceholderText('e.g., driver_version'), {
+      target: { value: 'cycles' },
+    })
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: CustomFieldType.RANGE } })
+    fireEvent.change(screen.getByPlaceholderText('0'), { target: { value: '-3' } })
+    fireEvent.change(screen.getByPlaceholderText('100'), { target: { value: '0' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Create Template' }))
+    await waitFor(() =>
+      expect(saving.submit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Cycles',
+          fields: [expect.objectContaining({ rangeMin: -3, rangeMax: 0, defaultValue: null })],
+        }),
+      ),
+    )
+    await act(async () => saving.completion.resolve())
+  })
+
+  it('submits numeric defaults, ranges, placeholders and categories unchanged', async () => {
+    template = record('template-1', 'Graphics')
+    const field = template.fields[0]
+    if (!field) throw new Error('Missing fixture field')
+    template.fields = [
+      {
+        ...field,
+        type: CustomFieldType.RANGE,
+        options: null,
+        defaultValue: 1.5,
+        rangeMin: 0.25,
+        rangeMax: 4,
+        rangeUnit: 'x',
+        rangeDecimals: 2,
+        categoryOrder: 3,
+      },
+      {
+        ...field,
+        id: 'driver',
+        name: 'driver',
+        label: 'Driver',
+        type: CustomFieldType.TEXT,
+        options: null,
+        defaultValue: 'custom',
+        placeholder: 'Enter a driver',
+        categoryOrder: 4,
+      },
+    ]
+    render(<CustomFieldTemplateFormModal isOpen templateIdToEdit="template-1" onClose={onClose} />)
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: '' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Update Template' }))
+    await waitFor(() =>
+      expect(saving.submit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: null,
+          fields: [
+            expect.objectContaining({
+              defaultValue: 1.5,
+              rangeMin: 0.25,
+              rangeMax: 4,
+              rangeUnit: 'x',
+              rangeDecimals: 2,
+              categoryName: 'Graphics',
+              categoryOrder: 3,
+            }),
+            expect.objectContaining({
+              placeholder: 'Enter a driver',
+              categoryName: 'Graphics',
+              categoryOrder: 4,
+            }),
+          ],
+        }),
+      ),
+    )
+    await act(async () => saving.completion.resolve())
+  })
+
+  it('requires repairing a missing range bound instead of inventing one when editing', () => {
+    template = record('template-1', 'Incomplete range')
+    const field = template.fields[0]
+    if (!field) throw new Error('Missing fixture field')
+    template.fields = [
+      {
+        ...field,
+        type: CustomFieldType.RANGE,
+        options: null,
+        defaultValue: null,
+        rangeMin: null,
+        rangeMax: 4,
+      },
+    ]
+    render(<CustomFieldTemplateFormModal isOpen templateIdToEdit="template-1" onClose={onClose} />)
+    expect(screen.getByPlaceholderText('0')).toHaveValue(null)
+    fireEvent.click(screen.getByRole('button', { name: 'Update Template' }))
+    expect(screen.getByText('Minimum value must be less than maximum value')).toBeInTheDocument()
+    expect(saving.submit).not.toHaveBeenCalled()
+  })
+
   it('preserves a pending save and does not close a reopened session on its completion', async () => {
     template = record('template-1', 'Template')
     const props = { templateIdToEdit: 'template-1', onClose }
@@ -111,9 +318,9 @@ describe('template form sessions', () => {
   })
 
   it('shows a not-found result when the requested template was deleted', () => {
-    template = null
+    error = new Error('Custom field template not found')
     render(<CustomFieldTemplateFormModal isOpen templateIdToEdit="template-1" onClose={onClose} />)
-    expect(screen.getByText('Template not found')).toBeInTheDocument()
+    expect(screen.getByText('Custom field template not found')).toBeInTheDocument()
     expect(screen.queryByText('Loading template...')).not.toBeInTheDocument()
   })
 
