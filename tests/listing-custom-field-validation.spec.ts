@@ -11,7 +11,9 @@ const TEXT_FIELD_ID = '00000000-0000-4000-a000-000000000101'
 const SELECT_FIELD_ID = '00000000-0000-4000-a000-000000000102'
 
 const CustomFieldInputEnvelope = z.object({ json: GetCustomFieldDefinitionsByEmulatorSchema })
-const CreateInputEnvelope = z.record(z.object({ json: CreateListingSchema }))
+const CreateInputEnvelope = z.record(
+  z.preprocess((value) => superjson.parse<unknown>(JSON.stringify(value)), CreateListingSchema),
+)
 
 function customFields(emulatorId: string) {
   const base = {
@@ -121,7 +123,7 @@ test.describe('Handheld report custom-field validation', () => {
     await page.getByRole('button', { name: 'Create Compatibility Report', exact: true }).click()
     const payload = CreateInputEnvelope.parse((await submitted).postDataJSON())
 
-    expect(payload['0']?.json.customFieldValues).toEqual([
+    expect(payload['0']?.customFieldValues).toEqual([
       { customFieldDefinitionId: TEXT_FIELD_ID, value: 'v1.0.0' },
       { customFieldDefinitionId: SELECT_FIELD_ID, value: 'high' },
     ])
@@ -152,6 +154,6 @@ test.describe('Handheld report custom-field validation', () => {
     const submitted = page.waitForRequest(isCreateRequest)
     await page.getByRole('button', { name: 'Create Compatibility Report', exact: true }).click()
     const payload = CreateInputEnvelope.parse((await submitted).postDataJSON())
-    expect(payload['0']?.json.customFieldValues).toEqual([])
+    expect(payload['0']?.customFieldValues).toEqual([])
   })
 })
