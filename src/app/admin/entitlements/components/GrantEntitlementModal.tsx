@@ -33,10 +33,6 @@ export default function GrantEntitlementModal(props: Props) {
   )
 
   useEffect(() => {
-    if (searchQuery.data && query.length >= 2 && !selectedUser) setShowDropdown(true)
-  }, [searchQuery.data, query, selectedUser])
-
-  useEffect(() => {
     const handler = (event: MouseEvent) => {
       if (!dropdownRef.current || dropdownRef.current.contains(event.target as Node)) return
       setShowDropdown(false)
@@ -70,7 +66,7 @@ export default function GrantEntitlementModal(props: Props) {
     setQuery('')
     setSelectedUser(null)
     setShowDropdown(false)
-    setSource('MANUAL')
+    setSource(EntitlementSource.MANUAL)
     setReferenceId('')
     setNotes('')
     props.onClose()
@@ -86,12 +82,13 @@ export default function GrantEntitlementModal(props: Props) {
               value={selectedUser ? selectedUser.name || selectedUser.email : query}
               onChange={(e) => {
                 setSelectedUser(null)
-                setQuery((e.target as HTMLInputElement).value)
+                setQuery(e.target.value)
+                setShowDropdown(true)
               }}
               placeholder="Search users by name or email…"
               leftIcon={<Search className="w-4 h-4" />}
             />
-            {showDropdown && (
+            {showDropdown && query.length >= 2 && !selectedUser && (
               <div className="absolute z-20 mt-1 w-full rounded-md border border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-700 shadow-xl">
                 {searchQuery.isPending ? (
                   <div className="p-3 text-sm text-gray-500">Searching…</div>

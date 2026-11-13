@@ -2,6 +2,7 @@ import { renderHook, act } from '@testing-library/react'
 import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from 'vitest'
 import { useColumnVisibility, type ColumnDefinition } from './useColumnVisibility'
 
+const storage = new Map<string, string>()
 const localStorageMock = {
   getItem: vi.fn(),
   setItem: vi.fn(),
@@ -24,6 +25,14 @@ describe('useColumnVisibility', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    storage.clear()
+    localStorageMock.getItem
+      .mockReset()
+      .mockImplementation((key: string) => storage.get(key) ?? null)
+    localStorageMock.setItem
+      .mockReset()
+      .mockImplementation((key: string, value: string) => storage.set(key, value))
+    localStorageMock.removeItem.mockReset().mockImplementation((key: string) => storage.delete(key))
     // Create a silent mock that doesn't output anything
     consoleErrorMock = vi.spyOn(console, 'error').mockImplementation(() => {})
     // Also mock console.warn to suppress useLocalStorage errors

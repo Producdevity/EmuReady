@@ -133,10 +133,7 @@ function AdminVerifiedDevelopersPage() {
   }
 
   const handleModalSuccess = () => {
-    utils.verifiedDevelopers.getVerifiedDevelopers.invalidate()
-    setShowAddModal(false)
-    setShowEditModal(false)
-    setSelectedDeveloper(null)
+    utils.verifiedDevelopers.getVerifiedDevelopers.invalidate().catch(console.error)
   }
 
   const emulatorFilterOptions = [

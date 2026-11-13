@@ -12,6 +12,7 @@ import {
   type MouseEvent,
 } from 'react'
 import { createPortal } from 'react-dom'
+import useMounted from '@/hooks/useMounted'
 import { cn } from '@/lib/utils'
 
 const FOCUS_DELAY_MS = 300
@@ -25,12 +26,8 @@ interface MobileSearchOverlayProps {
 function MobileSearchOverlay(props: MobileSearchOverlayProps) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
-  const [mounted, setMounted] = useState(false)
+  const mounted = useMounted()
   const inputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   useEffect(() => {
     let focusTimeoutId: NodeJS.Timeout | undefined

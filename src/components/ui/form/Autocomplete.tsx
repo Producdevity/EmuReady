@@ -20,7 +20,7 @@ export interface AutocompleteOptionBase {
   [key: string]: unknown // Allow any other properties
 }
 
-interface AutocompleteProps<T extends AutocompleteOptionBase> {
+interface Props<T extends AutocompleteOptionBase> {
   value?: string | null // The actual selected value (e.g., an ID)
   onChange: (value: string | null) => void // Callback with the new selected value
 
@@ -59,41 +59,44 @@ const DROPDOWN_MAX_HEIGHT_PX = 240
 const DROPDOWN_MIN_HEIGHT_PX = 160
 const DROPDOWN_MARGIN_PX = 8
 
-export function Autocomplete<T extends AutocompleteOptionBase>({
-  value,
-  onChange,
-  onFocus,
-  onBlur,
-  items: staticItems,
-  loadItems,
-  optionToValue,
-  optionToLabel,
-  optionToIcon,
-  customOptionRenderer,
-  filterKeys = [], // Default to empty array, implying label search or specific logic
-  placeholder,
-  id,
-  label,
-  name,
-  leftIcon,
-  rightIcon,
-  disabled,
-  className,
-  inputClassName,
-  inputRef: externalInputRef,
-  'aria-required': ariaRequired,
-  'aria-invalid': ariaInvalid,
-  'aria-describedby': ariaDescribedBy,
-  minCharsToTrigger = 0,
-  debounceTime = 300,
-}: AutocompleteProps<T>) {
-  const [inputValue, setInputValue] = useState('')
-  const [suggestions, setSuggestions] = useState<T[]>([])
+export function Autocomplete<T extends AutocompleteOptionBase>(props: Props<T>) {
+  const {
+    value,
+    onChange,
+    onFocus,
+    onBlur,
+    items: staticItems,
+    loadItems,
+    optionToValue,
+    optionToLabel,
+    optionToIcon,
+    customOptionRenderer,
+    filterKeys = [],
+    placeholder,
+    id,
+    label,
+    name,
+    leftIcon,
+    rightIcon,
+    disabled,
+    className,
+    inputClassName,
+    inputRef: externalInputRef,
+    'aria-required': ariaRequired,
+    'aria-invalid': ariaInvalid,
+    'aria-describedby': ariaDescribedBy,
+    minCharsToTrigger = 0,
+    debounceTime = 300,
+  } = props
+  const [inputDraft, setInputDraft] = useState<string | null>(null)
+  const [previousValue, setPreviousValue] = useState(value)
+  const [clearingSelection, setClearingSelection] = useState(false)
+  const [selectedOption, setSelectedOption] = useState<T | null>(null)
+  const [initialItems, setInitialItems] = useState<T[]>([])
+  const [searchItems, setSearchItems] = useState<T[] | null>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
-  const [hasInitialLoad, setHasInitialLoad] = useState(false)
-  const [isUserTyping, setIsUserTyping] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
   const [dropdownStyles, setDropdownStyles] = useState<{
     top: number
@@ -101,12 +104,11 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
     width: number
     maxHeight: number
   } | null>(null)
-
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const lastStaticLenRef = useRef<number>(staticItems?.length ?? 0)
-  const requestSequenceRef = useRef(0)
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const initialRequest = useRef<Promise<T[]> | null>(null)
+  const requestSequence = useRef(0)
 
   const setInputRef = useCallback(
     (element: HTMLInputElement | null) => {
@@ -116,182 +118,133 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
     [externalInputRef],
   )
 
-  // Load initial items from server if loadItems is provided (only once)
-  useEffect(() => {
-    if (!loadItems || hasInitialLoad) return
-    setHasInitialLoad(true)
+  const matchingOption =
+    staticItems?.find((item) => optionToValue(item) === value) ??
+    searchItems?.find((item) => optionToValue(item) === value) ??
+    initialItems.find((item) => optionToValue(item) === value) ??
+    (selectedOption && optionToValue(selectedOption) === value ? selectedOption : null)
 
-    if (debounceTime < 200) return
-    const requestSequence = ++requestSequenceRef.current
-    loadItems('')
-      .then((results) => {
-        if (requestSequence === requestSequenceRef.current) setSuggestions(results)
-      })
-      .catch((error) => {
-        if (requestSequence === requestSequenceRef.current) {
-          console.error('Error fetching/filtering suggestions:', error)
+  if (previousValue !== value) {
+    setPreviousValue(value)
+    if ((value != null && value !== '') || !clearingSelection) {
+      setInputDraft(null)
+      setSelectedOption(matchingOption)
+      setSearchItems([])
+      setIsLoading(false)
+      setIsOpen(false)
+    }
+    setClearingSelection(false)
+  }
+
+  useLayoutEffect(() => {
+    if (inputDraft !== null) return
+    ++requestSequence.current
+    if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current)
+  }, [inputDraft, value])
+
+  const inputValue = inputDraft ?? (matchingOption ? optionToLabel(matchingOption) : '')
+  const lowerQuery = inputValue.toLowerCase()
+  const suggestions = loadItems
+    ? (searchItems ?? initialItems)
+    : (inputValue.length > 0 && inputValue.length < minCharsToTrigger
+        ? []
+        : (staticItems ?? [])
+      ).filter((item) => {
+        if (!inputValue) return true
+        if (filterKeys.length) {
+          return filterKeys.some((key) => {
+            const field = item[key]
+            return typeof field === 'string' && field.toLowerCase().includes(lowerQuery)
+          })
         }
+        return optionToLabel(item)?.toLowerCase().includes(lowerQuery)
       })
-  }, [loadItems, hasInitialLoad, debounceTime])
 
-  // Effect to update inputValue when the external `value` prop changes (controlled mode only)
   useEffect(() => {
-    // Don't override input value when user is actively typing
-    if (isUserTyping) return
-
-    // If value is null or undefined, clear the input
-    if (value == null) {
-      setInputValue('')
-      return
+    if (!loadItems || debounceTime < 200) return
+    let cancelled = false
+    initialRequest.current ??= loadItems('')
+    initialRequest.current.then(
+      (items) => {
+        if (!cancelled) setInitialItems(items)
+      },
+      (error: unknown) => {
+        if (!cancelled) console.error('Error fetching/filtering suggestions:', error)
+      },
+    )
+    return () => {
+      cancelled = true
     }
-
-    if (staticItems && staticItems.length > 0) {
-      const staticSelectedItem = staticItems.find((item) => optionToValue(item) === value)
-      if (staticSelectedItem) {
-        setInputValue(optionToLabel(staticSelectedItem))
-        return
-      }
-    }
-
-    if (!loadItems) return
-
-    const selectedItem = suggestions.find((item) => optionToValue(item) === value)
-    if (selectedItem) return setInputValue(optionToLabel(selectedItem))
-
-    // If we reach here and no item was found, but value is not null,
-    // it might mean the item hasn't been loaded yet, so keep current input
-  }, [value, staticItems, optionToValue, optionToLabel, suggestions, loadItems, isUserTyping])
+  }, [loadItems, debounceTime])
 
   const performSearch = useCallback(
-    async (query: string, requestSequence = ++requestSequenceRef.current) => {
-      if (requestSequence !== requestSequenceRef.current) return
-      // For static items, allow showing all items when query is empty
-      // For async loading, allow showing initial results even with empty query
-      if (
-        query.length < minCharsToTrigger &&
-        !(loadItems && query.length === 0) &&
-        !(staticItems && query.length === 0)
-      ) {
-        setSuggestions([])
+    async (query: string) => {
+      const request = ++requestSequence.current
+      setHighlightedIndex(-1)
+      setHasSearched(true)
+      setIsOpen(true)
+      if (!loadItems) return
+      if (query.length > 0 && query.length < minCharsToTrigger) {
+        setSearchItems([])
         setIsLoading(false)
-        setIsOpen(query.length > 0) // Keep open if user is typing but below threshold
         return
       }
-
       setIsLoading(true)
-      setIsOpen(true) // Open dropdown immediately when loading starts
-
       try {
-        let newSuggestions: T[] = []
-
-        if (loadItems) {
-          newSuggestions = await loadItems(query)
-        } else if (staticItems) {
-          if (query.length === 0) {
-            // Show all items when query is empty for static items
-            newSuggestions = staticItems
-          } else {
-            const lowerQuery = query.toLowerCase()
-            newSuggestions = staticItems.filter((item) => {
-              if (filterKeys.length > 0) {
-                return filterKeys.some((key) => {
-                  const val = item[key]
-                  return typeof val === 'string' && val.toLowerCase().includes(lowerQuery)
-                })
-              } else {
-                // Default to filtering by label if no filterKeys provided
-                return optionToLabel(item).toLowerCase().includes(lowerQuery)
-              }
-            })
-          }
-        }
-
-        if (requestSequence !== requestSequenceRef.current) return
-        setSuggestions(newSuggestions)
-        setIsLoading(false)
-        setHasSearched(true)
+        const items = await loadItems(query)
+        if (request === requestSequence.current) setSearchItems(items)
       } catch (error) {
-        if (requestSequence !== requestSequenceRef.current) return
-        console.error('Error fetching/filtering suggestions:', error)
-        setSuggestions([])
-        setIsLoading(false)
-        setHasSearched(true)
+        if (request === requestSequence.current) {
+          console.error('Error fetching/filtering suggestions:', error)
+          setSearchItems([])
+        }
+      } finally {
+        if (request === requestSequence.current) setIsLoading(false)
       }
-
-      setIsOpen(true)
-      setHighlightedIndex(-1)
     },
-    [loadItems, staticItems, optionToLabel, filterKeys, minCharsToTrigger],
+    [loadItems, minCharsToTrigger],
   )
 
   const debouncedSearch = useCallback(
-    (query: string, requestSequence = ++requestSequenceRef.current) => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current)
-      }
+    (query: string) => {
+      if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current)
       debounceTimeoutRef.current = setTimeout(() => {
-        performSearch(query, requestSequence).catch(console.error)
+        void performSearch(query)
       }, debounceTime)
     },
     [performSearch, debounceTime],
   )
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const requestSequence = ++requestSequenceRef.current
-    const newQuery = e.target.value
-    setInputValue(newQuery)
-    setIsUserTyping(true)
-
-    // Clear the user typing flag after a delay to allow controlled updates
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current)
+  function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
+    const query = event.target.value
+    setInputDraft(query)
+    ++requestSequence.current
+    setHighlightedIndex(-1)
+    if (value != null && (!matchingOption || optionToLabel(matchingOption) !== query)) {
+      setClearingSelection(true)
+      onChange(null)
     }
-    debounceTimeoutRef.current = setTimeout(() => {
-      setIsUserTyping(false)
-    }, debounceTime + 100)
-
-    if (newQuery.length === 0) {
+    if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current)
+    if (!query) {
+      setSearchItems([])
       setIsLoading(false)
-      // Clear selection when input is completely empty
-      if (value != null) {
-        onChange(null)
-      }
-      // For static items, show all items when input is cleared
-      if (staticItems && staticItems.length > 0) {
-        setSuggestions(staticItems)
-        setIsOpen(true)
-      } else {
-        setSuggestions([])
-        setIsOpen(false)
-      }
+      setIsOpen(Boolean(staticItems?.length))
     } else {
-      // Check if we need to clear selection when typing something different
-      if (value != null) {
-        const currentSelectedItem =
-          staticItems?.find((item) => optionToValue(item) === value) ??
-          suggestions.find((item) => optionToValue(item) === value)
-
-        // Clear selection if the typed text doesn't match the selected item's label
-        if (currentSelectedItem && optionToLabel(currentSelectedItem) !== newQuery) {
-          // Delay the onChange call slightly to avoid race condition with useEffect
-          setTimeout(() => onChange(null), 0)
-        }
-      }
-
-      debouncedSearch(newQuery, requestSequence)
+      debouncedSearch(query)
     }
   }
 
-  const handleOptionClick = (item: T) => {
-    const itemValue = optionToValue(item)
-    const itemLabel = optionToLabel(item)
-    setInputValue(itemLabel)
-    setIsUserTyping(false)
-    onChange(itemValue)
+  function handleOptionClick(item: T) {
+    if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current)
+    ++requestSequence.current
+    setSelectedOption(item)
+    if (loadItems) setSearchItems([])
+    setInputDraft(optionToLabel(item))
+    setClearingSelection(false)
     setIsOpen(false)
-    // Don't clear suggestions immediately to allow useEffect to work
-    setTimeout(() => setSuggestions([]), 0)
+    setIsLoading(false)
     inputRef.current?.focus()
+    onChange(optionToValue(item))
   }
 
   const handleKeyDown = (ev: KeyboardEvent<HTMLInputElement>) => {
@@ -335,7 +288,6 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
         break
       case 'Escape':
         setIsOpen(false)
-        setSuggestions([])
         break
       case 'Tab':
         // Allow tab to function normally, potentially closing dropdown if desired
@@ -361,7 +313,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
         setIsOpen(true)
       } else if (inputValue.length >= minCharsToTrigger) {
         performSearch(inputValue).catch(console.error)
-      } else if (inputValue.length === 0 && hasInitialLoad) {
+      } else if (inputValue.length === 0) {
         // Show initial results on focus if we have them
         setIsOpen(true)
       }
@@ -422,19 +374,6 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
     updateDropdownPosition()
   }, [isOpen, updateDropdownPosition, suggestions.length])
 
-  // Refresh suggestions once when static items length changes (e.g., async data arrived)
-  useEffect(() => {
-    const currentLen = staticItems?.length ?? 0
-    if (!isOpen) {
-      lastStaticLenRef.current = currentLen
-      return
-    }
-    if (currentLen !== lastStaticLenRef.current) {
-      lastStaticLenRef.current = currentLen
-      performSearch(inputValue).catch(console.error)
-    }
-  }, [staticItems?.length, isOpen, performSearch, inputValue])
-
   useEffect(() => {
     if (!isOpen) return
 
@@ -464,7 +403,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
   useEffect(() => {
     const currentList = listRef.current
     if (isOpen && highlightedIndex >= 0 && currentList) {
-      const optionElement = currentList.children[highlightedIndex] as HTMLLIElement | undefined
+      const optionElement = currentList.children[highlightedIndex]
       if (optionElement && typeof optionElement.scrollIntoView === 'function') {
         optionElement.scrollIntoView({
           behavior: 'smooth',
@@ -478,10 +417,11 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
+        event.target instanceof Node &&
         inputRef.current &&
-        !inputRef.current.contains(event.target as Node) &&
+        !inputRef.current.contains(event.target) &&
         listRef.current &&
-        !listRef.current.contains(event.target as Node)
+        !listRef.current.contains(event.target)
       ) {
         setIsOpen(false)
       }
@@ -496,7 +436,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current)
       }
-      setIsUserTyping(false)
+      requestSequence.current = requestSequence.current + 1
     }
   }, [])
 
