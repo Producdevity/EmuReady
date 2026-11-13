@@ -47,11 +47,7 @@ import { gameStatsCache } from '@/server/utils/cache'
 import { buildOrderBy, paginate } from '@/server/utils/pagination'
 import { isPrismaError, PRISMA_ERROR_CODES } from '@/server/utils/prisma-errors'
 import { buildSearchFilter } from '@/server/utils/query-builders'
-import {
-  validatePagination,
-  sanitizeInput,
-  validateNonEmptyArray,
-} from '@/server/utils/security-validation'
+import { validatePagination, validateNonEmptyArray } from '@/server/utils/security-validation'
 import { checkSpamContent } from '@/server/utils/spam-check'
 import { getSubmissionBalance } from '@/server/utils/submission-balance'
 import {
@@ -155,12 +151,9 @@ export const gamesRouter = createTRPCRouter({
     const effectiveLimit =
       !input?.search && input?.offset === 0 && !input?.page ? Math.min(limit, 50) : limit
 
-    // Sanitize search term (plain text, not markdown)
-    const sanitizedSearch = input?.search ? sanitizeInput(input.search) : undefined
-
     const filters = {
       ...input,
-      search: sanitizedSearch,
+      search: input?.search?.trim() || undefined,
       listingFilter: effectiveListingFilter,
       limit: effectiveLimit,
       userRole: ctx.session?.user?.role,

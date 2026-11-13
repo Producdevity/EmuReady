@@ -13,10 +13,6 @@ vi.mock('@/server/notifications/eventEmitter', () => ({
   },
 }))
 
-vi.mock('@/server/utils/security-validation', () => ({
-  sanitizeInput: vi.fn((value: string) => value.trim()),
-}))
-
 const mockLogAction = vi.fn().mockResolvedValue(undefined)
 vi.mock('@/lib/trust/service', () => ({
   TrustService: vi.fn().mockImplementation(function MockTrustService() {
