@@ -16,7 +16,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { GripVertical, X, Check, Undo } from 'lucide-react'
-import { useState, useEffect, type ReactNode } from 'react'
+import { useState, useMemo, type ReactNode } from 'react'
 import { Button, Badge, useConfirmDialog } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -34,44 +34,30 @@ interface CustomFieldOptionUI {
   label: string
 }
 
-interface CustomFieldListProps {
+interface Props {
   customFields: CustomFieldWithCategory[]
   onEdit: (fieldId: string) => void
   onDeleteSuccess: () => void
   emulatorId: string
 }
 
-function CustomFieldList(props: CustomFieldListProps) {
+function CustomFieldList(props: Props) {
   const utils = api.useUtils()
   const confirm = useConfirmDialog()
   const [isReorderMode, setIsReorderMode] = useState(false)
-  const [orderedFields, setOrderedFields] = useState<CustomFieldWithCategory[]>(() => {
-    const fields = props.customFields ?? []
-    return [...fields].sort((a, b) => {
-      if (a.categoryId === b.categoryId) {
-        return a.categoryOrder - b.categoryOrder || a.displayOrder - b.displayOrder
-      }
-      return (a.categoryId || '').localeCompare(b.categoryId || '')
-    })
-  })
+  const sortedFields = useMemo(
+    () =>
+      [...props.customFields].sort((left, right) => {
+        if (left.categoryId === right.categoryId)
+          return left.categoryOrder - right.categoryOrder || left.displayOrder - right.displayOrder
+        return (left.categoryId ?? '').localeCompare(right.categoryId ?? '')
+      }),
+    [props.customFields],
+  )
+  const [draftOrder, setDraftOrder] = useState<CustomFieldWithCategory[]>([])
   const [previousOrder, setPreviousOrder] = useState<CustomFieldWithCategory[]>([])
   const [isDirty, setIsDirty] = useState(false)
-
-  useEffect(() => {
-    // Keep local state in sync if initialCustomFields prop changes and not in reorder mode or dirty
-    if (!isReorderMode && !isDirty) {
-      const fields = props.customFields ?? []
-      const sortedInitialFields = [...fields].sort((a, b) => {
-        if (a.categoryId === b.categoryId) {
-          return a.categoryOrder - b.categoryOrder || a.displayOrder - b.displayOrder
-        }
-        return (a.categoryId || '').localeCompare(b.categoryId || '')
-      })
-      setOrderedFields(sortedInitialFields)
-      // Ensure previousOrder is also in sync when not dirty and not in reorder mode
-      setPreviousOrder(sortedInitialFields)
-    }
-  }, [props.customFields, isReorderMode, isDirty])
+  const orderedFields = isReorderMode || isDirty ? draftOrder : sortedFields
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -81,36 +67,26 @@ function CustomFieldList(props: CustomFieldListProps) {
   )
 
   const updateOrderMutation = api.customFieldDefinitions.updateOrder.useMutation({
-    onSuccess: () => {
-      utils.customFieldDefinitions.getByEmulator
-        .invalidate({ emulatorId: props.emulatorId })
-        .then(() => toast.success('Order updated successfully!'))
-
-      setIsDirty(false) // Reset dirty state on successful save
+    onSuccess: async () => {
+      await utils.customFieldDefinitions.getByEmulator.invalidate({ emulatorId: props.emulatorId })
+      setIsDirty(false)
+      toast.success('Order updated successfully!')
     },
     onError: (error) => {
       console.error('Error updating order:', error)
       toast.error(`Error updating order: ${getErrorMessage(error)}`)
-      setOrderedFields(previousOrder)
+      setDraftOrder(previousOrder)
     },
   })
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
-    if (active.id !== over?.id && over) {
-      // Ensure over is not null
-      setOrderedFields((items) => {
-        // Store current order before changing if not already dirty (i.e., first drag)
-        if (!isDirty) {
-          setPreviousOrder([...items])
-        }
-        const oldIndex = items.findIndex((item) => item.id === active.id)
-        const newIndex = items.findIndex((item) => item.id === over.id)
-        const newItems = arrayMove(items, oldIndex, newIndex)
-        setIsDirty(true) // Mark as dirty, needs save or cancel
-        return newItems
-      })
-    }
+    if (updateOrderMutation.isPending || !event.over || event.active.id === event.over.id) return
+    const oldIndex = orderedFields.findIndex((field) => field.id === event.active.id)
+    const newIndex = orderedFields.findIndex((field) => field.id === event.over?.id)
+    if (oldIndex < 0 || newIndex < 0) return
+    if (!isDirty) setPreviousOrder(orderedFields)
+    setDraftOrder(arrayMove(orderedFields, oldIndex, newIndex))
+    setIsDirty(true)
   }
 
   const handleConfirmReorder = () => {
@@ -123,25 +99,17 @@ function CustomFieldList(props: CustomFieldListProps) {
   }
 
   const handleCancelReorder = () => {
-    setOrderedFields(previousOrder) // Revert to the order before drag started
+    setDraftOrder(previousOrder) // Revert to the order before drag started
     setIsDirty(false)
   }
 
   const toggleReorderMode = () => {
-    if (isReorderMode && isDirty) {
-      // If exiting reorder mode with unsaved changes, revert them
-      // and reset dirty state.
-      const fields = props.customFields ?? []
-      const sortedInitialFields = [...fields].sort((a, b) => a.displayOrder - b.displayOrder)
-      setOrderedFields(sortedInitialFields)
-      setPreviousOrder(sortedInitialFields) // also reset previousOrder to initial
-      setIsDirty(false)
-    }
-    setIsReorderMode(!isReorderMode)
-    // If entering reorder mode, ensure previousOrder is set to current display order
     if (!isReorderMode) {
-      setPreviousOrder([...orderedFields])
+      setDraftOrder(sortedFields)
+      setPreviousOrder(sortedFields)
     }
+    setIsDirty(false)
+    setIsReorderMode(!isReorderMode)
   }
 
   const deleteCustomField = api.customFieldDefinitions.delete.useMutation({
@@ -176,8 +144,8 @@ function CustomFieldList(props: CustomFieldListProps) {
     const validOptions: CustomFieldOptionUI[] = []
     for (const item of optionsAsJson) {
       if (typeof item === 'object' && item !== null && 'value' in item && 'label' in item) {
-        const val = (item as { value?: unknown }).value
-        const lbl = (item as { label?: unknown }).label
+        const val = item.value
+        const lbl = item.label
         if (typeof val === 'string' && typeof lbl === 'string') {
           validOptions.push({ value: val, label: lbl })
         }
@@ -192,7 +160,7 @@ function CustomFieldList(props: CustomFieldListProps) {
       <div className="flex flex-wrap gap-1">
         {validOptions.slice(0, 3).map((opt, index) => (
           <Badge key={index} variant="default">
-            {opt.label ?? opt.value ?? 'Invalid Option'}
+            {opt.label}
           </Badge>
         ))}
         {validOptions.length > 3 && (
@@ -202,7 +170,7 @@ function CustomFieldList(props: CustomFieldListProps) {
     )
   }
 
-  if (!props.customFields || props.customFields.length === 0) {
+  if (props.customFields.length === 0) {
     return <p>No custom fields defined for this emulator yet.</p>
   }
 
@@ -250,7 +218,13 @@ function CustomFieldList(props: CustomFieldListProps) {
       <div className="flex justify-end mb-4 space-x-2">
         {isReorderMode && isDirty && (
           <>
-            <Button variant="outline" icon={Undo} onClick={handleCancelReorder} size="sm">
+            <Button
+              variant="outline"
+              icon={Undo}
+              onClick={handleCancelReorder}
+              disabled={updateOrderMutation.isPending}
+              size="sm"
+            >
               Cancel Changes
             </Button>
             <Button
@@ -268,6 +242,7 @@ function CustomFieldList(props: CustomFieldListProps) {
           variant="outline"
           icon={isReorderMode ? X : GripVertical}
           onClick={toggleReorderMode}
+          disabled={updateOrderMutation.isPending}
           size="sm"
         >
           {isReorderMode ? 'Finish Reordering' : 'Reorder Fields'}

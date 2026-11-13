@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Button, Input } from '@/components/ui'
 import { api } from '@/lib/api'
 import toast from '@/lib/toast'
@@ -16,11 +16,15 @@ interface Props {
 
 function ManageSupportedSystems(props: Props) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedSystemIds, setSelectedSystemIds] = useState<Set<string>>(() => new Set())
+  const [selectedSystemIds, setSelectedSystemIds] = useState(
+    () => new Set(props.currentlySupportedSystems.map((system) => system.id)),
+  )
+  const [previousSystems, setPreviousSystems] = useState(props.currentlySupportedSystems)
 
-  useEffect(() => {
-    setSelectedSystemIds(new Set(props.currentlySupportedSystems.map((s) => s.id)))
-  }, [props.currentlySupportedSystems])
+  if (previousSystems !== props.currentlySupportedSystems) {
+    setPreviousSystems(props.currentlySupportedSystems)
+    setSelectedSystemIds(new Set(props.currentlySupportedSystems.map((system) => system.id)))
+  }
 
   const filteredSystems = useMemo(
     () =>

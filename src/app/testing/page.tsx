@@ -14,95 +14,77 @@ import {
   LogIn,
   Shield,
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
-import { Button, Card, Input, LoadingSpinner } from '@/components/ui'
+import { useState } from 'react'
+import { type z } from 'zod'
+import { Button, Card, Input, LoadingSpinner, useConfirmDialog } from '@/components/ui'
+import { useLocalStorage } from '@/hooks/useLocalStorage'
+import useMounted from '@/hooks/useMounted'
 import toast from '@/lib/toast'
 import { cn } from '@/lib/utils'
+import { TestingSessionSchema, type TestResultSchema } from '@/schemas/testing'
 import { testScenarios, testAccounts } from './testScenarios'
 
-type TestResult = {
-  checked: boolean
-  notes?: string
-}
-
-type TestResults = {
-  [roleId: string]: {
-    [categoryId: string]: {
-      [scenarioId: string]: TestResult
-    }
-  }
-}
+type TestResult = z.infer<typeof TestResultSchema>
+type TestingSession = z.infer<typeof TestingSessionSchema>
+const initialSession = TestingSessionSchema.parse({})
+const allowedHosts = ['localhost', '127.0.0.1', 'staging.emuready.com', 'dev.emuready.com']
 
 export default function TestingPage() {
-  const [testerName, setTesterName] = useState('')
-  const [selectedRole, setSelectedRole] = useState('user')
-  const [testResults, setTestResults] = useState<TestResults>({})
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [session, setSession] = useLocalStorage(
+    'emuready-test-results',
+    initialSession,
+    TestingSessionSchema,
+  )
+  const { testerName, selectedRole, results: testResults } = session
+  const expandedCategories = new Set(session.expandedCategories)
   const [copiedEmail, setCopiedEmail] = useState(false)
   const [copiedPassword, setCopiedPassword] = useState(false)
   const [isSigningIn, setIsSigningIn] = useState(false)
-  const [isAllowed, setIsAllowed] = useState<boolean | null>(null)
-
+  const isMounted = useMounted()
+  const isAllowed = isMounted && allowedHosts.includes(window.location.hostname)
+  const confirm = useConfirmDialog()
   const { signOut, isSignedIn } = useAuth()
   const { signIn, setActive } = useSignIn()
   const { user } = useUser()
 
-  // Check if we're on an allowed environment
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const hostname = window.location.hostname
-      const allowedHosts = ['localhost', '127.0.0.1', 'staging.emuready.com', 'dev.emuready.com']
-      setIsAllowed(allowedHosts.some((host) => hostname.includes(host)))
+  function updateSession(
+    update: Partial<TestingSession> | ((current: TestingSession) => Partial<TestingSession>),
+  ) {
+    const lastSaved = new Date().toISOString()
+    try {
+      setSession((current) => ({
+        ...current,
+        ...(typeof update === 'function' ? update(current) : update),
+        lastSaved,
+      }))
+    } catch (error) {
+      console.error('Failed to save test checklist:', error)
     }
-  }, [])
-
-  // Load saved data on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('emuready-test-results')
-    if (saved) {
-      const parsed = JSON.parse(saved)
-      setTestResults(parsed.results || {})
-      setTesterName(parsed.testerName || '')
-      setSelectedRole(parsed.selectedRole || 'user')
-      setExpandedCategories(new Set(parsed.expandedCategories || []))
-    }
-  }, [])
-
-  // Auto-save
-  useEffect(() => {
-    const data = {
-      testerName,
-      results: testResults,
-      selectedRole,
-      expandedCategories: Array.from(expandedCategories),
-      lastSaved: new Date().toISOString(),
-    }
-    localStorage.setItem('emuready-test-results', JSON.stringify(data))
-  }, [testResults, testerName, selectedRole, expandedCategories])
-
-  const toggleCategory = (categoryId: string) => {
-    const newExpanded = new Set(expandedCategories)
-    if (newExpanded.has(categoryId)) {
-      newExpanded.delete(categoryId)
-    } else {
-      newExpanded.add(categoryId)
-    }
-    setExpandedCategories(newExpanded)
   }
 
-  const updateTestResult = (
+  function toggleCategory(categoryId: string) {
+    updateSession((current) => ({
+      expandedCategories: current.expandedCategories.includes(categoryId)
+        ? current.expandedCategories.filter((id) => id !== categoryId)
+        : [...current.expandedCategories, categoryId],
+    }))
+  }
+
+  function updateTestResult(
     roleId: string,
     categoryId: string,
     scenarioId: string,
     result: TestResult,
-  ) => {
-    setTestResults((prev) => ({
-      ...prev,
-      [roleId]: {
-        ...prev[roleId],
-        [categoryId]: {
-          ...(prev[roleId]?.[categoryId] || {}),
-          [scenarioId]: result,
+  ) {
+    updateSession((current) => ({
+      results: {
+        ...current.results,
+        [roleId]: {
+          ...current.results[roleId],
+          [categoryId]: {
+            ...current.results[roleId]?.[categoryId],
+            [scenarioId]: result,
+          },
         },
       },
     }))
@@ -272,12 +254,14 @@ export default function TestingPage() {
     URL.revokeObjectURL(url)
   }
 
-  const clearAll = () => {
-    if (confirm('Are you sure you want to clear all test results? This cannot be undone.')) {
-      setTestResults({})
-      setTesterName('')
-      localStorage.removeItem('emuready-test-results')
-    }
+  async function clearAll() {
+    const confirmed = await confirm({
+      title: 'Clear all test results?',
+      description: 'This cannot be undone.',
+      confirmText: 'Clear Results',
+      confirmVariant: 'destructive',
+    })
+    if (confirmed) updateSession({ results: {}, testerName: '' })
   }
 
   const progress = getProgress()
@@ -285,7 +269,7 @@ export default function TestingPage() {
   const currentAccount = testAccounts[selectedRole]
 
   // Show loading while checking environment
-  if (isAllowed === null) {
+  if (!isMounted) {
     return <LoadingSpinner size="lg" text="Checking environment..." />
   }
 
@@ -341,7 +325,7 @@ export default function TestingPage() {
               <label className="block text-sm font-medium mb-2">Tester Name</label>
               <Input
                 value={testerName}
-                onChange={(e) => setTesterName(e.target.value)}
+                onChange={(e) => updateSession({ testerName: e.target.value })}
                 placeholder="Enter your name"
               />
             </div>
@@ -376,7 +360,7 @@ export default function TestingPage() {
               return (
                 <button
                   key={role.id}
-                  onClick={() => setSelectedRole(role.id)}
+                  onClick={() => updateSession({ selectedRole: role.id })}
                   className={cn(
                     selectedRole === role.id
                       ? 'border-blue-500 text-blue-600 dark:text-blue-400'

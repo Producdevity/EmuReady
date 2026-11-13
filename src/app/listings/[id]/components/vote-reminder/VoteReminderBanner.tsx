@@ -2,10 +2,11 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, HelpCircle } from 'lucide-react'
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import storageKeys from '@/data/storageKeys'
 import { useLocalStorage } from '@/hooks'
 import analytics from '@/lib/analytics'
+import { BooleanPreferenceSchema } from '@/schemas/preferences'
 import { ms } from '@/utils/time'
 import VotingHelpModal from '../VotingHelpModal'
 import voteReminderMessages from './voteReminderMessages'
@@ -22,22 +23,28 @@ export function VoteReminderBanner(props: Props) {
   const [hasBeenDismissed, setHasBeenDismissed] = useLocalStorage(
     storageKeys.popups.voteReminderDismissed,
     false,
+    BooleanPreferenceSchema,
   )
   const [showHelpModal, setShowHelpModal] = useState(false)
 
-  // Track the time when component mounts
-  const startTimeRef = useRef<number>(Date.now())
+  const [startTime] = useState(() => Date.now())
+  const [previousVote, setPreviousVote] = useState(props.currentVote)
+
+  if (previousVote !== props.currentVote) {
+    setPreviousVote(props.currentVote)
+    setIsVisible(false)
+  }
 
   // Function to get actual time spent on page in seconds
   const getTimeOnPage = (): number => {
-    return Math.round((Date.now() - startTimeRef.current) / 1000)
+    return Math.round((Date.now() - startTime) / 1000)
   }
 
   // Randomly select a message when the component mounts
-  const selectedMessage = useMemo(() => {
+  const [selectedMessage] = useState(() => {
     const randomIndex = Math.floor(Math.random() * voteReminderMessages.length)
     return voteReminderMessages[randomIndex]
-  }, [])
+  })
 
   useEffect(() => {
     // Don't show if user has already voted or dismissed
@@ -47,19 +54,12 @@ export function VoteReminderBanner(props: Props) {
       setIsVisible(true)
       analytics.engagement.voteReminderShown({
         listingId: props.listingId,
-        timeOnPage: getTimeOnPage(),
+        timeOnPage: Math.round((Date.now() - startTime) / 1000),
       })
     }, ms.seconds(60))
 
     return () => clearTimeout(timer)
-  }, [hasBeenDismissed, props.listingId, props.currentVote])
-
-  // Hide banner when user votes elsewhere after it's been shown
-  useEffect(() => {
-    if (isVisible && props.currentVote !== null) {
-      setIsVisible(false)
-    }
-  }, [props.currentVote, isVisible])
+  }, [hasBeenDismissed, props.listingId, props.currentVote, startTime])
 
   const handleDismiss = () => {
     analytics.engagement.voteReminderDismissed({

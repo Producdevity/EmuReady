@@ -7,15 +7,10 @@ import { CACHE_DURATIONS } from '@/data/constants'
 import useDebouncedValue from '@/hooks/useDebouncedValue'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { type RouterOutput } from '@/types/trpc'
 import getImageUrl from '@/utils/getImageUrl'
 
-interface IGDBImage {
-  url: string
-  type: 'cover' | 'artwork' | 'screenshot' | 'banner'
-  width?: number
-  height?: number
-  label: string
-}
+type IGDBImage = RouterOutput['igdb']['getGameImages'][number]
 
 interface Props {
   gameTitle?: string
@@ -54,7 +49,6 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
   const [searchTerm, setSearchTerm] = useState(props.gameTitle ?? '')
   const [isDirty, setIsDirty] = useState(false)
   const [selectedImage, setSelectedImage] = useState<IGDBImage | null>(null)
-  const [allImages, setAllImages] = useState<IGDBImage[]>([])
   const [previewImage, setPreviewImage] = useState<IGDBImage | null>(null)
   const [selectedGameId, setSelectedGameId] = useState<number | null>(props.igdbGameId ?? null)
 
@@ -79,26 +73,19 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
     },
   )
 
-  // Initialize from prop, but don't override user edits
-  useEffect(() => {
-    if (!isDirty && props.gameTitle) {
-      setSearchTerm(props.gameTitle)
-    }
-  }, [props.gameTitle, isDirty])
+  const [previousTitle, setPreviousTitle] = useState(props.gameTitle)
+  if (previousTitle !== props.gameTitle) {
+    setPreviousTitle(props.gameTitle)
+    if (!isDirty && props.gameTitle) setSearchTerm(props.gameTitle)
+  }
 
-  // Update selected game ID when prop changes
-  useEffect(() => {
-    if (props.igdbGameId && props.igdbGameId !== selectedGameId) {
-      setSelectedGameId(props.igdbGameId)
-    }
-  }, [props.igdbGameId, selectedGameId])
+  const [previousGameId, setPreviousGameId] = useState(props.igdbGameId)
+  if (previousGameId !== props.igdbGameId) {
+    setPreviousGameId(props.igdbGameId)
+    setSelectedGameId(props.igdbGameId ?? null)
+  }
 
-  // Process images when query completes
-  useEffect(() => {
-    if (imagesQuery.data) {
-      setAllImages(imagesQuery.data as IGDBImage[])
-    }
-  }, [imagesQuery.data])
+  const allImages = selectedGameId ? (imagesQuery.data ?? []) : []
 
   // Handle search errors
   useEffect(() => {
@@ -245,7 +232,6 @@ export function IGDBImageSelector({ onImageSelect, onError, ...props }: Props) {
               size="sm"
               onClick={() => {
                 setSelectedGameId(null)
-                setAllImages([])
               }}
             >
               ← Back to search

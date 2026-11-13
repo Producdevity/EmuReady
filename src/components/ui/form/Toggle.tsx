@@ -22,6 +22,7 @@ const sizeClasses = {
 }
 
 interface Props {
+  'aria-label'?: string
   checked: boolean
   onChange: (checked: boolean) => void
   label?: string
@@ -44,6 +45,7 @@ export function Toggle(props: Props) {
       <div className="relative">
         <input
           type="checkbox"
+          aria-label={props['aria-label']}
           className="sr-only"
           checked={props.checked}
           disabled={props.disabled ?? false}

@@ -15,23 +15,25 @@ interface Props {
 }
 
 function CustomFieldSortableRow(props: Props) {
-  const sortable = useSortable({ id: props.field.id })
+  const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
+    id: props.field.id,
+  })
 
   const style: CSSProperties = {
-    transform: CSS.Transform.toString(sortable.transform),
-    transition: sortable.transition,
-    opacity: sortable.isDragging ? 0.8 : 1,
-    zIndex: sortable.isDragging ? 1 : 0,
+    transform: CSS.Transform.toString(transform),
+    transition: transition,
+    opacity: isDragging ? 0.8 : 1,
+    zIndex: isDragging ? 1 : 0,
     position: 'relative' as const,
   }
 
   return (
     <Fragment>
       <tr
-        ref={sortable.setNodeRef}
+        ref={setNodeRef}
         style={style}
-        {...(props.isReorderMode ? sortable.attributes : {})}
-        {...(props.isReorderMode ? sortable.listeners : {})}
+        {...(props.isReorderMode ? attributes : {})}
+        {...(props.isReorderMode ? listeners : {})}
       >
         {props.isReorderMode && (
           <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 cursor-grab">

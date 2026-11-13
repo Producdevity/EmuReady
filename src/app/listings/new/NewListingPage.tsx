@@ -332,25 +332,16 @@ function AddListingPage() {
     }
   }, [])
 
-  const selectedGameId = useWatch({ control: form.control, name: 'gameId' })
-  const { isInitialGameLoaded } = usePreSelectedGame({
+  usePreSelectedGame({
     gameIdFromUrl,
-    form,
-    onGameSelect: setSelectedGame,
+    onGameSelect: (game) => {
+      form.setValue('gameId', game.id)
+      setSelectedGame(game)
+    },
     onSearchTermChange: setGameSearchTerm,
   })
 
   const { handleKeyDown } = useFormKeyDown()
-
-  // Update selected game when gameId changes (but not during initial load)
-  useEffect(() => {
-    if (isInitialGameLoaded && selectedGameId && !selectedGame) {
-      loadGameItems(gameSearchTerm).then((games) => {
-        const game = games.find((g) => g.id === selectedGameId)
-        if (game) setSelectedGame(game)
-      })
-    }
-  }, [selectedGameId, selectedGame, gameSearchTerm, loadGameItems, isInitialGameLoaded])
 
   // Clear emulator when game changes and load initial emulators
   useEffect(() => {
