@@ -24,6 +24,7 @@ const knownRelease: DriverRelease = {
 
 interface Props {
   initialDriver?: string
+  required?: boolean
 }
 
 function Form(props: Props) {
@@ -38,9 +39,9 @@ function Form(props: Props) {
           id: 'driver',
           name: 'dynamic_driver_version',
           label: 'Graphics Driver',
-          isRequired: true,
+          isRequired: props.required ?? true,
         }}
-        rules={{ required: 'Graphics Driver is required' }}
+        rules={props.required === false ? {} : { required: 'Graphics Driver is required' }}
         errorMessage={form.formState.errors.driver?.message}
         icon={null}
       />
@@ -210,3 +211,14 @@ it('keeps custom entry available after an unmatched catalog search', async () =>
     ),
   )
 })
+
+it.each([true, false])(
+  'announces the required state in both driver input modes (%s)',
+  async (required) => {
+    const user = userEvent.setup()
+    render(<Form required={required} />)
+    expect(screen.getByRole('combobox')).toHaveAttribute('aria-required', String(required))
+    await user.click(screen.getByRole('button', { name: 'Enter a custom driver' }))
+    expect(screen.getByRole('textbox')).toHaveAttribute('aria-required', String(required))
+  },
+)

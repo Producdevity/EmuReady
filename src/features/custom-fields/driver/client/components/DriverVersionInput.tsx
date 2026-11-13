@@ -11,6 +11,7 @@ type DriverOption = DriverRelease | (typeof baseOptions)[number]
 
 interface Props {
   id: string
+  required: boolean
   value: string
   onChange: (value: string) => void
   onBlur: () => void
@@ -55,6 +56,7 @@ export function DriverVersionInput(props: Props) {
           leftIcon={input.leftIcon}
           placeholder="Enter your graphics driver name and version"
           className={input.className}
+          aria-required={input.required}
           aria-describedby={input.errorId}
           aria-invalid={input.errorId ? true : undefined}
         />
@@ -89,6 +91,7 @@ export function DriverVersionInput(props: Props) {
         debounceTime={300}
         placeholder={input.placeholder}
         inputClassName={input.className}
+        aria-required={input.required}
         aria-describedby={input.errorId}
         aria-invalid={input.errorId ? true : undefined}
         filterKeys={['name', 'label', 'value']}

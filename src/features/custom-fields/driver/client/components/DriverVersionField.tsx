@@ -46,6 +46,7 @@ export default function DriverVersionField<TFieldValues extends FieldValues>(
         render={({ field }) => (
           <DriverVersionInput
             id={props.fieldName}
+            required={props.fieldDef.isRequired}
             value={typeof field.value === 'string' ? field.value : ''}
             onChange={field.onChange}
             onBlur={field.onBlur}

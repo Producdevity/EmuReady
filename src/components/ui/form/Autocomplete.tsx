@@ -48,6 +48,7 @@ interface AutocompleteProps<T extends AutocompleteOptionBase> {
   className?: string
   inputClassName?: string
   inputRef?: (input: HTMLInputElement | null) => void
+  'aria-required'?: AriaAttributes['aria-required']
   'aria-invalid'?: AriaAttributes['aria-invalid']
   'aria-describedby'?: AriaAttributes['aria-describedby']
   minCharsToTrigger?: number
@@ -80,6 +81,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
   className,
   inputClassName,
   inputRef: externalInputRef,
+  'aria-required': ariaRequired,
   'aria-invalid': ariaInvalid,
   'aria-describedby': ariaDescribedBy,
   minCharsToTrigger = 0,
@@ -545,6 +547,7 @@ export function Autocomplete<T extends AutocompleteOptionBase>({
           autoComplete="off"
           role="combobox"
           aria-autocomplete="list"
+          aria-required={ariaRequired}
           aria-invalid={ariaInvalid}
           aria-describedby={ariaDescribedBy}
           aria-expanded={isOpen}
