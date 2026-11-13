@@ -20,9 +20,7 @@ export type ShaderBackend = 0 | 1 | 2 // 0: GLSL, 1: GLASM, 2: SPIRV (default)
 // GPU Accuracy levels
 export type GpuAccuracy = 0 | 1 | 2 // 0: Normal (default), 1: High, 2: Extreme
 
-// Resolution scaling options
-export type ResolutionSetup = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
-// 0: 0.5x, 1: 0.75x, 2: 1x (default), 3: 1.5x, 4: 2x, 5: 3x, 6: 4x, 7: 5x, 8: 6x, 9: 7x, 10: 8x
+export type { ResolutionSetup } from '@/shared/emulator-config/eden/resolution'
 
 // Aspect Ratio options
 export type AspectRatio = 0 | 1 | 2 | 3 | 4
