@@ -22,6 +22,15 @@ describe('getSelectedOptionNames', () => {
   })
 
   it('does not include options that are not selected', () => {
+    expect(
+      getSelectedOptionNames(
+        [
+          { id: 'device-a', name: 'Device A' },
+          { id: 'device-b', name: 'Device B' },
+        ],
+        ['device-a'],
+      ),
+    ).toEqual(['Device A'])
     expect(getSelectedOptionNames([{ id: 'device-a', name: 'Device A' }], [])).toEqual([])
   })
 })
