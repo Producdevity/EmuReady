@@ -46,6 +46,7 @@ beforeEach(() => {
 describe('quota form sessions', () => {
   it('keeps an unchanged expiry at the same instant in a non-UTC timezone', async () => {
     const previous = process.env.TZ
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-11-01T12:00:00Z').getTime())
     process.env.TZ = 'America/New_York'
     try {
       const onSubmit = vi.fn().mockResolvedValue(undefined)
@@ -75,6 +76,7 @@ describe('quota form sessions', () => {
         ),
       )
     } finally {
+      clock.mockRestore()
       if (previous === undefined) delete process.env.TZ
       else process.env.TZ = previous
     }
