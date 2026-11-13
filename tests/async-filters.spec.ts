@@ -59,24 +59,30 @@ async function getAsyncFilterFixtures() {
       device: {
         label: `${device.brand.name} ${device.modelName}`,
         searchTerm: device.modelName,
+        procedure: 'devices.options',
       },
       soc: {
         label: `${device.soc.manufacturer} ${device.soc.name}`,
         searchTerm: device.soc.name,
+        procedure: 'socs.options',
       },
       cpu: {
         label: `${cpu.brand.name} ${cpu.modelName}`,
         searchTerm: cpu.modelName,
+        procedure: 'cpus.options',
       },
       gpu: {
         label: `${gpu.brand.name} ${gpu.modelName}`,
         searchTerm: gpu.modelName,
+        procedure: 'gpus.options',
       },
     }
   } finally {
     await prisma.$disconnect()
   }
 }
+
+type AsyncFilterFixtures = Awaited<ReturnType<typeof getAsyncFilterFixtures>>
 
 async function waitForListingsTableIdle(page: Page) {
   const tableBody = page.locator('table tbody').first()
@@ -109,14 +115,26 @@ async function selectAsyncFilterOption(
   page: Page,
   filterButton: Locator,
   searchPlaceholder: string,
-  fixture: { label: string; searchTerm: string },
+  fixture: AsyncFilterFixtures[keyof AsyncFilterFixtures],
   expectedParam: string,
 ) {
   await openFilterDropdown(filterButton)
 
   const searchInput = page.getByPlaceholder(searchPlaceholder)
   await expect(searchInput).toBeVisible()
+  const searchResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/trpc/') &&
+      response.url().includes(fixture.procedure) &&
+      response.url().includes(encodeURIComponent(fixture.searchTerm)),
+  )
   await searchInput.fill(fixture.searchTerm)
+  const response = await searchResponse
+  expect(response.ok(), `${fixture.procedure} returned status ${response.status()}`).toBe(true)
+  await response.finished()
+  await expect(
+    page.getByTestId('async-multi-select-options').getByText('Loading…', { exact: true }),
+  ).not.toBeVisible()
 
   const option = page
     .getByTestId('async-multi-select-options')

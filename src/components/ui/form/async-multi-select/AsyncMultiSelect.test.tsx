@@ -22,8 +22,7 @@ function renderSelect(overrides: Partial<AsyncMultiSelectProps> = {}) {
     ...overrides,
   }
 
-  render(<AsyncMultiSelect {...props} />)
-  return props
+  return { props, rerender: render(<AsyncMultiSelect {...props} />).rerender }
 }
 
 describe('AsyncMultiSelect', () => {
@@ -140,6 +139,71 @@ describe('AsyncMultiSelect', () => {
     fireEvent.click(document.body)
 
     expect(screen.queryByText('Retroid Pocket 5')).not.toBeInTheDocument()
+  })
+
+  it.each([
+    { state: 'pending', nextOptions: [], isFetching: true },
+    { state: 'changed', nextOptions: [options[1]], isFetching: false },
+  ])('returns focus to search when $state results remove the focused option', (next) => {
+    const view = renderSelect()
+    const trigger = screen.getByRole('button', { name: 'Devices multi-select' })
+    fireEvent.click(trigger)
+    const searchInput = screen.getByPlaceholderText('Search devices...')
+    const option = screen.getByRole('checkbox', { name: 'Retroid Pocket 5' })
+    option.focus()
+    expect(option).toHaveFocus()
+
+    view.rerender(
+      <AsyncMultiSelect {...view.props} options={next.nextOptions} isFetching={next.isFetching} />,
+    )
+
+    expect(option).not.toBeInTheDocument()
+    expect(searchInput).toHaveFocus()
+
+    view.rerender(<AsyncMultiSelect {...view.props} />)
+    expect(screen.getByRole('checkbox', { name: 'Retroid Pocket 5' })).toBeInTheDocument()
+    expect(searchInput).toHaveFocus()
+
+    fireEvent.keyDown(searchInput, { key: 'Escape' })
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    expect(trigger).toHaveFocus()
+  })
+
+  it('keeps focus on an option that survives a result update', () => {
+    const view = renderSelect()
+    fireEvent.click(screen.getByRole('button', { name: 'Devices multi-select' }))
+    const option = screen.getByRole('checkbox', { name: 'Retroid Pocket 5' })
+    option.focus()
+
+    view.rerender(<AsyncMultiSelect {...view.props} value={['device-1']} options={[...options]} />)
+
+    expect(option).toBeChecked()
+    expect(option).toHaveFocus()
+  })
+
+  it('does not steal focus from another control when results remove an option', () => {
+    const view = renderSelect()
+    render(<button type="button">Outside control</button>)
+    fireEvent.click(screen.getByRole('button', { name: 'Devices multi-select' }))
+    screen.getByRole('checkbox', { name: 'Retroid Pocket 5' }).focus()
+    const outsideControl = screen.getByRole('button', { name: 'Outside control' })
+    outsideControl.focus()
+
+    view.rerender(<AsyncMultiSelect {...view.props} options={[]} isFetching />)
+
+    expect(outsideControl).toHaveFocus()
+  })
+
+  it('does not restore focus after the user deliberately blurs an option', () => {
+    const view = renderSelect()
+    fireEvent.click(screen.getByRole('button', { name: 'Devices multi-select' }))
+    const option = screen.getByRole('checkbox', { name: 'Retroid Pocket 5' })
+    option.focus()
+    option.blur()
+
+    view.rerender(<AsyncMultiSelect {...view.props} options={[]} isFetching />)
+
+    expect(document.body).toHaveFocus()
   })
 
   it('opens another async select from the same click that closes the current select', () => {
